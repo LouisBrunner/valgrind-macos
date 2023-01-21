@@ -1069,9 +1069,10 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    1b. Then the host loads ld.so and the guest exe. This is done in
        the sequence
           load_client -> VG_(do_exec) -> VG_(do_exec_inner) ->
-          exe_handlers->load_fn ( == VG_(load_ELF) ).
+          exe_handlers->load_fn ( == VG_(load_ELF) )
+          [or load_MACHO].
 
-       This does the mmap'ing and creats the associated NSegments.
+       This does the mmap'ing and creates the associated NSegments.
 
        The NSegments may get merged, (see maybe_merge_nsegments)
        so there could be more PT_LOADs than there are NSegments.

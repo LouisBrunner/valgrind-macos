@@ -1026,9 +1026,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 /* Notify the debuginfo system about a new mapping.  This is the way
    new debug information gets loaded.
 
-   redelf -e will output something like
-
-   readelf -e says
+   readelf -e will output something like
 
    Program Headers:
   Type           Offset             VirtAddr           PhysAddr
@@ -1063,7 +1061,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
    "HOST TRIGGERED"
 
-   1a. For the tool exe and tool/core shared libs. These are already
+   1a. For the tool exe, called from valgrind_main. This is already
        mmap'd when the host starts so we look at something like the
        /proc filesystem to get the mapping after the event and build
        up the NSegments from that.
@@ -1082,8 +1080,10 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
    "GUEST TRIGGERED"
 
-   2.  When the guest loads any further shared libs (libc,
-       other dependencies, dlopens) using mmap.
+   2.  When the guest loads any further shared libs (valgrind core and
+       tool preload shred libraries, libc, other dependencies, dlopens)
+       using mmap. The call will be from ML_(generic_PRE_sys_mmap) or
+       a platform-specific variation.
 
        There are a few variations for syswraps/platforms.
 

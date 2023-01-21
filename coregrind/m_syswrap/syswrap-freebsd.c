@@ -55,6 +55,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_inner.h"
+#include "pub_core_pathscan.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "pub_core_clreq.h"
 #endif
@@ -1938,6 +1939,46 @@ static void sysctl_kern_usrstack(SizeT* out, SizeT* outlen)
    *outlen = sizeof(ULong);
 }
 
+static Bool sysctl_kern_proc_pathname(HChar *out, SizeT *len)
+{
+   // is this stashed somewhere?
+   const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
+
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+   return VG_(realpath)(exe_name, out);
+#else
+   // poor man's realpath
+   const HChar *resolved_name;
+   HChar tmp[VKI_PATH_MAX];
+
+   struct vg_stat statbuf;
+   SysRes res = VG_(lstat)(exe_name, &statbuf);
+
+   if (sr_isError(res)) {
+      return False;
+   } else if (VKI_S_ISLNK(statbuf.mode)) {
+      SizeT link_len = VG_(readlink)(exe_name, tmp, VKI_PATH_MAX);
+      tmp[link_len] = '\0';
+      resolved_name = tmp;
+   } else {
+      // not a link
+      resolved_name = exe_name;
+   }
+
+   if (resolved_name[0] != '/') {
+      // relative path
+      if (resolved_name[0] == '.' && resolved_name[1] == '/') {
+         resolved_name += 2;
+      }
+      VG_(snprintf)(out, *len, "%s/%s", VG_(get_startup_wd)(), resolved_name);
+   } else {
+      VG_(snprintf)(out, *len, "%s", resolved_name);
+   }
+   *len = VG_(strlen)(out)+1;
+   return True;
+#endif
+}
+
 // SYS___sysctl   202
 /* int __sysctl(int *name, u_int namelen, void *oldp, size_t *oldlenp, void *newp, size_t newlen); */
 /*               ARG1        ARG2          ARG3         ARG4           ARG5        ARG6 */
@@ -2003,7 +2044,7 @@ PRE(sys___sysctl)
     *    saved to file static variables in that file, so we call
     *    VG_(get_usrstack)() to retrieve them from there.
     */
-   if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
+   if (SARG2 == 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 33) {
          // kern.usrstack
          sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
@@ -2014,10 +2055,23 @@ PRE(sys___sysctl)
    /*
     * 2. kern.ps_strings
     */
-   if (SARG2 >= 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
+   if (SARG2 == 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 32) {
          if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
            SET_STATUS_Success(0);
+         }
+      }
+   }
+
+   /*
+    * 3. kern.proc.pathname
+    */
+   if (SARG2 == 4 && ML_(safe_to_deref)(name, 4*sizeof(int))) {
+      if (name[0] == 1 && name[1] == 14 && name[2] == 12) {
+         vki_pid_t pid = (vki_pid_t)name[3];
+         if (pid == -1 || pid == VG_(getpid)()) {
+            sysctl_kern_proc_pathname((HChar *)ARG3, (SizeT *)ARG4);
+            SET_STATUS_Success(0);
          }
       }
    }
@@ -2039,12 +2093,19 @@ PRE(sys___sysctl)
    // 2. Both are non-NULL
    //    this is a query of oldp, oldlenp will be read and oldp will
    //    be written
+   //
+   // More thoughts on this
+   // if say oldp is a string buffer
+   // oldlenp will point to the length of the buffer
+   //
+   // but on return does oldlenp also get updated?
 
    // is oldlenp is not NULL, can write
    if (ARG4 != (UWord)NULL) {
       if (ARG3 != (UWord)NULL) {
          // case 2 above
          PRE_MEM_READ("sysctl(oldlenp)", (Addr)ARG4, sizeof(vki_size_t));
+         PRE_MEM_WRITE("sysctl(oldlenp)", (Addr)ARG4, sizeof(vki_size_t));
          if (ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(vki_size_t))) {
             PRE_MEM_WRITE("sysctl(oldp)", (Addr)ARG3, *(vki_size_t *)ARG4);
          } else {
@@ -2063,7 +2124,7 @@ POST(sys___sysctl)
 {
    if (ARG4 != (UWord)NULL) {
       if (ARG3 != (UWord)NULL) {
-         //POST_MEM_WRITE((Addr)ARG4, sizeof(vki_size_t));
+         POST_MEM_WRITE((Addr)ARG4, sizeof(vki_size_t));
          POST_MEM_WRITE((Addr)ARG3, *(vki_size_t *)ARG4);
       } else {
          POST_MEM_WRITE((Addr)ARG4, sizeof(vki_size_t));
@@ -4303,8 +4364,9 @@ PRE(sys__umtx_op)
    case VKI_UMTX_OP_WAKE:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, WAKE, %" FMT_REGWORD "u)", ARG1, ARG3);
       PRE_REG_READ3(long, "_umtx_op_wake",
-                    struct umtx *, obj, int, op, unsigned long, val);
-      PRE_MEM_READ( "_umtx_op_wake(mtx)", ARG1, sizeof(struct vki_umtx) );
+                    vki_uintptr_t *, obj, int, op, int, val);
+      // PJF I don't think that the value of obj gets read, the address is being used as a key
+      //PRE_MEM_READ("_umtx_op_wake(obj)", ARG1, sizeof(vki_uintptr_t));
       break;
    case VKI_UMTX_OP_MUTEX_TRYLOCK:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, MUTEX_TRYLOCK, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG3, ARG4, ARG5);
@@ -4428,8 +4490,9 @@ PRE(sys__umtx_op)
    case VKI_UMTX_OP_WAKE_PRIVATE:
       PRINT( "sys__umtx_op ( %#" FMT_REGWORD "x, CV_WAKE_PRIVATE, %" FMT_REGWORD "u)", ARG1, ARG3);
       PRE_REG_READ3(long, "_umtx_op_wake_private",
-                    struct umtx *, obj, int, op, unsigned long, id);
-      PRE_MEM_READ( "_umtx_op_wake_private(mtx)", ARG1, sizeof(struct vki_umtx) );
+                    vki_uintptr_t *, obj, int, op, int, val);
+      // PJF like OP_WAKE contents of obj not read
+      //PRE_MEM_READ("_umtx_op_wake_private(obj)", ARG1, sizeof(vki_uintptr_t));
       break;
    case VKI_UMTX_OP_MUTEX_WAIT:
       // pthread_mutex_lock without prio flags
@@ -4543,7 +4606,7 @@ POST(sys__umtx_op)
    case VKI_UMTX_OP_MUTEX_WAIT:        /* Sets/clears contested bits */
    case VKI_UMTX_OP_MUTEX_WAKE:        /* Sets/clears contested bits */
       if (SUCCESS) {
-         POST_MEM_WRITE( ARG1, sizeof(struct vki_umutex) );
+         POST_MEM_WRITE( ARG1, sizeof(vki_uintptr_t) );
       }
       break;
    case VKI_UMTX_OP_SET_CEILING:
@@ -6429,6 +6492,9 @@ PRE(sys___sysctlbyname)
       sysctl_kern_usrstack((SizeT*)ARG3, (SizeT*)ARG4);
       SET_STATUS_Success(0);
    }
+
+   // @todo PJF kern.proc.pathname
+   // how is that done? jusr a pid or -1 in the string?
 
    // read number of ints specified in ARG2 from mem pointed to by ARG1
    PRE_MEM_READ("__sysctlbyname(name)", (Addr)ARG1, ARG2 * sizeof(int));

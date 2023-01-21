@@ -1354,6 +1354,7 @@
 /memcheck/tests/freebsd/setproctitle
 /memcheck/tests/freebsd/sctp
 /memcheck/tests/freebsd/sctp2
+/memcheck/tests/freebsd/bug464476
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff

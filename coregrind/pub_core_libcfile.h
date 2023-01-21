@@ -110,6 +110,12 @@ extern Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname );
    return if the working directory couldn't be found.  */
 extern void VG_(record_startup_wd) ( void );
 
+#if defined(VGO_freebsd)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+extern Bool VG_(realpath)(const HChar *path, HChar *resolved);
+#endif
+#endif
+
 #endif   // __PUB_CORE_LIBCFILE_H
 
 /*--------------------------------------------------------------------*/

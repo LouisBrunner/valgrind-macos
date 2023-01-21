@@ -105,10 +105,10 @@ typedef  vki_uint64_t   __vki_fsblkcnt_t;
 typedef  vki_uint64_t   __vki_fsfilcnt_t;
 typedef  vki_uint32_t   __vki_gid_t;
 typedef  vki_int64_t __vki_id_t;
-typedef  vki_uint32_t   __vki_ino_t;
+typedef  vki_uint64_t   __vki_ino_t;
 typedef  vki_int32_t __vki_lwpid_t;
 typedef  vki_uint16_t   __vki_mode_t;
-typedef  vki_uint16_t   __vki_nlink_t;
+typedef  vki_uint64_t   __vki_nlink_t;
 typedef  vki_int64_t __vki_off_t;
 typedef  vki_int32_t __vki_pid_t;
 typedef  vki_int64_t __vki_rlim_t;
@@ -119,7 +119,7 @@ typedef  vki_int32_t __vki_useconds_t;
 typedef  __vki_ct_rune_t   __vki_rune_t;
 typedef  __vki_ct_rune_t   __vki_wchar_t;
 typedef  __vki_ct_rune_t   __vki_wint_t;
-typedef  vki_uint32_t   __vki_dev_t;
+typedef  vki_uint64_t   __vki_dev_t;
 typedef  vki_uint32_t   __vki_fixpt_t;
 
 
@@ -331,13 +331,13 @@ struct vki_tms {
 
 /* QQQ 4.x stat layout */
 struct vki_freebsd11_stat {
-   vki_dev_t   st_dev;
-   vki_ino_t   st_ino;
+   vki_uint32_t   st_dev;
+   vki_uint32_t   st_ino;
    vki_mode_t  st_mode;
-   vki_nlink_t st_nlink;
+   vki_uint16_t st_nlink;
    vki_uid_t   st_uid;
    vki_gid_t   st_gid;
-   vki_dev_t   st_rdev;
+   vki_uint32_t   st_rdev;
 #if 0
    struct vki_timespec  st_atimespec;
    struct vki_timespec  st_mtimespec;
@@ -376,19 +376,15 @@ unsigned int :
  */
 
 struct vki_stat {
-   //vki_dev_t     st_dev;
-   vki_uint64_t    st_dev;
-   //vki_ino_t     st_ino;
-   vki_uint64_t    st_ino;
-   //vki_nlink_t   st_nlink;
-   vki_uint64_t    st_nlink;
+   vki_dev_t     st_dev;
+   vki_ino_t     st_ino;
+   vki_nlink_t   st_nlink;
    vki_mode_t   st_mode;
    vki_int16_t st_padding0;
    vki_uid_t    st_uid;
    vki_gid_t    st_gid;
    vki_int32_t st_padding1;
-   //vki_dev_t     st_rdev;
-   vki_uint64_t    st_rdev;
+   vki_dev_t     st_rdev;
 #ifdef   VKI_STAT_TIME_T_EXT
    vki_int32_t st_atim_ext;
 #endif

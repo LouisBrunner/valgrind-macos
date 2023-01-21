@@ -562,8 +562,9 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
 #else
       res = VG_(do_syscall2)(__NR_stat, (UWord)file_name, (UWord)&buf);
 #endif
-      if (!sr_isError(res))
+      if (!sr_isError(res)) {
          TRANSLATE_TO_vg_stat(vgbuf, &buf);
+      }
       return res;
    }
 #  else
@@ -646,6 +647,26 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
 #    error Unknown OS
 #  endif
 }
+
+#if defined(VGO_freebsd)
+/* extend this to other OSes as and when needed */
+SysRes VG_(lstat) ( const HChar* file_name, struct vg_stat* vgbuf )
+{
+   SysRes res;
+   VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
+
+   struct vki_freebsd11_stat buf;
+#if (FREEBSD_VERS >= FREEBSD_12)
+   res = VG_(do_syscall2)(__NR_freebsd11_lstat, (UWord)file_name, (UWord)&buf);
+#else
+   res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
+#endif
+   if (!sr_isError(res)) {
+      TRANSLATE_TO_vg_stat(vgbuf, &buf);
+   }
+   return res;
+}
+#endif
 
 #undef TRANSLATE_TO_vg_stat
 #undef TRANSLATE_statx_TO_vg_stat
@@ -1738,6 +1759,28 @@ const HChar *VG_(dirname)(const HChar *path)
 
    return buf;
 }
+
+#if defined(VGO_freebsd)
+#if (FREEBSD_VERS >= FREEBSD_13_0)
+/*
+ * I did look at nicking this from FreeBSD, it's fairly easy to port
+ * but I was put off by the copyright and 3-clause licence
+ * Then I looked at nicking it from glibc but that is full of
+ * macros private functions and conditions for Windows.
+ * So I gave up as it is only for FreeBSD 11 and 12.
+ *
+ * It is somewhat hard-coded for sysctl_kern_proc_pathname
+ * and PRE(sys___sysctl) assuming resolved has
+ * VKI_PATH_MAX space.
+ */
+Bool VG_(realpath)(const HChar *path, HChar *resolved)
+{
+   vg_assert(path);
+   vg_assert(resolved);
+   return !sr_isError(VG_(do_syscall5)(__NR___realpathat, VKI_AT_FDCWD, (RegWord)path, (RegWord)resolved, VKI_PATH_MAX, 0));
+}
+#endif
+#endif
 
 
 /*--------------------------------------------------------------------*/

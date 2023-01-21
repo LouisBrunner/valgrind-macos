@@ -459,6 +459,7 @@ Addr setup_client_stack( void*  init_sp,
       auxsize += sizeof(*cauxv);
       switch(cauxv->a_type) {
       case VKI_AT_EXECPATH:
+         // @todo PJF this is wrong this will be the name of the execed tool
          stringsize += VG_(strlen)(cauxv->u.a_ptr) + 1;
          break;
       case VKI_AT_CANARYLEN:
@@ -685,6 +686,7 @@ Addr setup_client_stack( void*  init_sp,
          break;
 
       case VKI_AT_EXECPATH:
+         // @todo PJF this is wrong this will be the name of the execed tool
          auxv->u.a_ptr = copy_str(&strtab, orig_auxv->u.a_ptr);
          break;
       case VKI_AT_CANARY:

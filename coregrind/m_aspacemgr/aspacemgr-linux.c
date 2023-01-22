@@ -2744,10 +2744,9 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
 
 /* Really just a wrapper around VG_(am_mmap_anon_float_valgrind). */
 
-void* VG_(am_shadow_alloc)(SizeT size)
+SysRes VG_(am_shadow_alloc)(SizeT size)
 {
-   SysRes sres = VG_(am_mmap_anon_float_valgrind)( size );
-   return sr_isError(sres) ? NULL : (void*)(Addr)sr_Res(sres);
+   return VG_(am_mmap_anon_float_valgrind)( size );
 }
 
 /* Map a file at an unconstrained address for V, and update the

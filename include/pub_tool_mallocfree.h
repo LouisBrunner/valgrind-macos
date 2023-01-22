@@ -46,8 +46,11 @@ extern HChar* VG_(strdup)        ( const HChar* cc, const HChar* s );
 
 // TODO: move somewhere else
 // Call here to bomb the system when out of memory (mmap anon fails)
+// Provide the VKI errno if possible (normally the result of sr_Err),
+// may be zero if unknown.
 __attribute__((noreturn))
-extern void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB );
+extern void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB,
+                                          UWord err );
 
 // VG_(perm_malloc) is for allocating small blocks which are
 // never released. The overhead for such blocks is minimal.

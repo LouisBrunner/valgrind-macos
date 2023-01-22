@@ -37,6 +37,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
 #include "pub_core_threadstate.h"   // For VG_INVALID_THREADID
+#include "pub_core_syscall.h"       // For VG_(strerror)
 #include "pub_core_gdbserver.h"
 #include "pub_core_transtab.h"
 #include "pub_core_tooliface.h"
@@ -749,7 +750,7 @@ void ensure_mm_init ( ArenaId aid )
 /*------------------------------------------------------------*/
 
 __attribute__((noreturn))
-void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
+void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB, UWord err )
 {
    static Int outputTrial = 0;
    // We try once to output the full memory state followed by the below message.
@@ -760,7 +761,7 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
    ULong tot_alloc = VG_(am_get_anonsize_total)();
    const HChar* s1 = 
       "\n"
-      "    Valgrind's memory management: out of memory:\n"
+      "    Valgrind's memory management: out of memory: %s\n"
       "       %s's request for %llu bytes failed.\n"
       "       %'13llu bytes have already been mmap-ed ANONYMOUS.\n"
       "    Valgrind cannot continue.  Sorry.\n\n"
@@ -769,6 +770,9 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
       "      output of 'ulimit -a'.  Is there a limit on the size of\n"
       "      virtual memory or address space?\n"
       "    - You have run out of swap space.\n"
+      "    - You have some policy enabled that denies memory to be\n"
+      "      executable (for example selinux deny_execmem) that causes\n"
+      "      mmap to fail with Permission denied.\n"
       "    - Valgrind has a bug.  If you think this is the case or you are\n"
       "    not sure, please let us know and we'll try to fix it.\n"
       "    Please note that programs can take substantially more memory than\n"
@@ -801,9 +805,15 @@ void VG_(out_of_memory_NORETURN) ( const HChar* who, SizeT szB )
          INNER_REQUEST(VALGRIND_MONITOR_COMMAND("v.info memory aspacemgr"));
       }
       outputTrial++;
-      VG_(message)(Vg_UserMsg, s1, who, (ULong)szB, tot_alloc);
+      VG_(message)(Vg_UserMsg, s1,
+		   ((err == 0 || err == VKI_ENOMEM)
+                    ? "" : VG_(strerror) (err)),
+                   who, (ULong)szB, tot_alloc);
    } else {
-      VG_(debugLog)(0,"mallocfree", s1, who, (ULong)szB, tot_alloc);
+      VG_(debugLog)(0,"mallocfree", s1,
+		    ((err == 0 || err == VKI_ENOMEM)
+                     ? "" : VG_(strerror) (err)),
+                    who, (ULong)szB, tot_alloc);
    }
 
    VG_(exit)(1);
@@ -865,7 +875,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
       // non-client allocation -- abort if it fails
       sres = VG_(am_mmap_anon_float_valgrind)( cszB );
       if (sr_isError(sres)) {
-         VG_(out_of_memory_NORETURN)("newSuperblock", cszB);
+         VG_(out_of_memory_NORETURN)("newSuperblock", cszB, sr_Err(sres));
          /* NOTREACHED */
          sb = NULL; /* keep gcc happy */
       } else {
@@ -1830,7 +1840,8 @@ void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
                                                      a->sblocks_size * 2);
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("arena_init", sizeof(Superblock *) * 
-                                                   a->sblocks_size * 2);
+                                                   a->sblocks_size * 2,
+                                                   sr_Err(sres));
          /* NOTREACHED */
       }
       array = (Superblock**)(Addr)sr_Res(sres);

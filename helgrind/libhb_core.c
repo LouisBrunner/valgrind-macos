@@ -716,10 +716,13 @@ static void* shmem__bigchunk_alloc ( SizeT n )
       if (0)
       VG_(printf)("XXXXX bigchunk: abandoning %d bytes\n",
                   (Int)(shmem__bigchunk_end1 - shmem__bigchunk_next));
-      shmem__bigchunk_next = VG_(am_shadow_alloc)( sHMEM__BIGCHUNK_SIZE );
-      if (shmem__bigchunk_next == NULL)
+      SysRes sres = VG_(am_shadow_alloc)( sHMEM__BIGCHUNK_SIZE );
+      if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)(
-            "helgrind:shmem__bigchunk_alloc", sHMEM__BIGCHUNK_SIZE );
+             "helgrind:shmem__bigchunk_alloc", sHMEM__BIGCHUNK_SIZE,
+             sr_Err(sres));
+      }
+      shmem__bigchunk_next = (void*)(Addr)sr_Res(sres);;
       shmem__bigchunk_end1 = shmem__bigchunk_next + sHMEM__BIGCHUNK_SIZE;
    }
    tl_assert(shmem__bigchunk_next);

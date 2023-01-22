@@ -309,10 +309,11 @@ static SecMap* copy_for_writing ( SecMap* dist_sm )
           || dist_sm == &sm_distinguished[1]
           || dist_sm == &sm_distinguished[2]);
 
-   new_sm = VG_(am_shadow_alloc)(sizeof(SecMap));
-   if (new_sm == NULL)
+   SysRes sres = VG_(am_shadow_alloc)(sizeof(SecMap));
+   if (sr_isError(sres))
       VG_(out_of_memory_NORETURN)( "memcheck:allocate new SecMap",
-                                   sizeof(SecMap) );
+                                   sizeof(SecMap), sr_Err(sres) );
+   new_sm = (void *)(Addr)sr_Res(sres);
    VG_(memcpy)(new_sm, dist_sm, sizeof(SecMap));
    update_SM_counts(dist_sm, new_sm);
    return new_sm;
@@ -2543,11 +2544,12 @@ static void init_OCache ( void )
    UWord line, set;
    tl_assert(MC_(clo_mc_level) >= 3);
    tl_assert(ocacheL1 == NULL);
-   ocacheL1 = VG_(am_shadow_alloc)(sizeof(OCache));
-   if (ocacheL1 == NULL) {
+   SysRes sres = VG_(am_shadow_alloc)(sizeof(OCache));
+   if (sr_isError(sres)) {
       VG_(out_of_memory_NORETURN)( "memcheck:allocating ocacheL1",
-                                   sizeof(OCache) );
+                                   sizeof(OCache), sr_Err(sres) );
    }
+   ocacheL1 = (void *)(Addr)sr_Res(sres);
    tl_assert(ocacheL1 != NULL);
    for (set = 0; set < OC_N_SETS; set++) {
       for (line = 0; line < OC_LINES_PER_SET; line++) {

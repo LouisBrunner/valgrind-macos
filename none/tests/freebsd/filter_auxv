@@ -2,5 +2,5 @@
 
 ./filter_stderr |
 
-sed 's#EXECPATH: .*/valgrind/none/tests/freebsd/auxv#EXECPATH: BASEDIR/valgrind/none/tests/freebsd/auxv#'
+sed 's#EXECPATH: .*/none/tests/freebsd/auxv#EXECPATH: BASEDIR/valgrind/none/tests/freebsd/auxv#'
 

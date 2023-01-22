@@ -127,6 +127,10 @@ extern client__gnu_get_libc_version_type VG_(client__gnu_get_libc_version_addr);
 extern Int* VG_(vfork_fildes_addr);
 #endif
 
+#if defined(VGO_freebsd)
+extern Bool VG_(have_slash_proc);
+#endif
+
 #endif   // __PUB_CORE_CLIENTSTATE_H
 
 /*--------------------------------------------------------------------*/

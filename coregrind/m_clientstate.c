@@ -129,6 +129,10 @@ client__gnu_get_libc_version_type VG_(client__gnu_get_libc_version_addr) = 0;
 Int* VG_(vfork_fildes_addr) = 0;
 #endif
 
+#if defined(VGO_freebsd)
+Bool VG_(have_slash_proc) = False;
+#endif
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -1719,6 +1719,18 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    }
 #endif
 
+#if defined(VGO_freebsd)
+   /* On FreeBSD /proc is optional
+    * Most functionality is accessed through sysctl instead */
+   if (!need_help) {
+      struct vg_stat statbuf;
+      SysRes statres = VG_(stat)("/proc", &statbuf);
+      if (!sr_isError(statres) || VKI_S_ISLNK(statbuf.mode)) {
+         VG_(have_slash_proc) = True;
+      }
+   }
+#endif
+
    //--------------------------------------------------------------
    // Init tool part 1: pre_clo_init
    //   p: setup_client_stack()      [for 'VG_(client_arg[cv]']

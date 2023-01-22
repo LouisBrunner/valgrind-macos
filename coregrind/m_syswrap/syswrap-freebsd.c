@@ -5334,21 +5334,23 @@ PRE(sys_readlinkat)
    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
    PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
 
-   /*
-    * Handle the case where readlinkat is looking at /proc/curproc/file or
-    * /proc/<pid>/file.
-    */
-   VG_(sprintf)(name, "/proc/%d/file", VG_(getpid)());
-   if (ML_(safe_to_deref)((void*)ARG2, 1)
-         && (VG_(strcmp)((HChar *)ARG2, name) == 0
-             || VG_(strcmp)((HChar *)ARG2, "/proc/curproc/file") == 0)) {
-      VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
-      SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, (UWord)name,
-                              ARG3, ARG4));
-   } else {
-      /* Normal case */
-      SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
+   if (VG_(have_slash_proc) == True) {
+      /*
+       * Handle the case where readlinkat is looking at /proc/curproc/file or
+       * /proc/<pid>/file.
+       */
+      VG_(sprintf)(name, "/proc/%d/file", VG_(getpid)());
+      if (ML_(safe_to_deref)((void*)ARG2, 1)
+            && (VG_(strcmp)((HChar *)ARG2, name) == 0
+                || VG_(strcmp)((HChar *)ARG2, "/proc/curproc/file") == 0)) {
+         VG_(sprintf)(name, "/proc/curproc/fd/%d", VG_(cl_exec_fd));
+         SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, (UWord)name,
+                                 ARG3, ARG4));
+         return;
+      }
    }
+   /* Normal case */
+   SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
 }
 
 POST(sys_readlinkat)

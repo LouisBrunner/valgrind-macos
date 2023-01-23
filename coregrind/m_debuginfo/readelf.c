@@ -429,7 +429,8 @@ Bool get_elf_symbol_info (
    }
 #  endif
 
-   if (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL) {
+   if (ELFXX_ST_BIND(sym->st_info) == STB_GLOBAL
+       || ELFXX_ST_BIND(sym->st_info) == STB_WEAK) {
       *is_global_out = True;
    }
 

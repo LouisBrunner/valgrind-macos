@@ -35,7 +35,10 @@ Known Limitations (June 2022)
       to DWARF extensions ised by GCC.
    b) Code that uses OpenMP will generate spurious errors.
 2. vgdb invoker, which uses ptrace, may cause system calls to be
-   interrupted.
+   interrupted. As an example, if the debuggee seems to have be
+   stuck and you press Ctrl-C in gdb the debuggee may execute
+   one more statement before stopping and returning control to
+   gdb.
 
 Notes for Developers
 ~~~~~~~~~~~~~~~~~~~~
@@ -99,9 +102,8 @@ executed with
 PRE_READ_REGX. This macro lets Valgrind know about the number and types of the
 syscall arguments which allows Valgrind to check that they are initialized.
 X is the number of arguments. It is best that the argument names match
-the man page, but the must match the types and number of arguments in
-syscalls.master.
-Occasionally there are differences between the two.
+the man page, but they must match the types and number of arguments in
+syscalls.master. Occasionally there are differences between the two.
 
 If the syscall takes pointers to memory there will be one of the following for
 each pointer argument.

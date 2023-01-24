@@ -260,8 +260,13 @@ SysRes VG_(mknod) ( const HChar* pathname, Int mode, UWord dev )
    SysRes res = VG_(do_syscall3)(__NR_mknod,
                                  (UWord)pathname, mode, dev);
 #  elif defined(VGO_freebsd)
+#if (FREEBSD_VERS < FREEBSD_12)
    SysRes res = VG_(do_syscall3)(__NR_freebsd11_mknod,
                                  (UWord)pathname, mode, dev);
+#else
+   SysRes res = VG_(do_syscall4)(__NR_mknodat, VKI_AT_FDCWD,
+                                 (UWord)pathname, mode, dev);
+#endif
 #  elif defined(VGO_solaris)
    SysRes res = VG_(do_syscall4)(__NR_mknodat,
                                  VKI_AT_FDCWD, (UWord)pathname, mode, dev);
@@ -556,11 +561,12 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
    }
 #  elif defined(VGO_freebsd)
    {
+#if (FREEBSD_VERS < FREEBSD_12)
       struct vki_freebsd11_stat buf;
-#if (FREEBSD_VERS >= FREEBSD_12)
-      res = VG_(do_syscall2)(__NR_freebsd11_stat, (UWord)file_name, (UWord)&buf);
-#else
       res = VG_(do_syscall2)(__NR_stat, (UWord)file_name, (UWord)&buf);
+#else
+      struct vki_stat buf;
+      res = VG_(do_syscall4)(__NR_fstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, 0);
 #endif
       if (!sr_isError(res)) {
          TRANSLATE_TO_vg_stat(vgbuf, &buf);
@@ -632,10 +638,11 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
    }
 #  elif defined(VGO_freebsd)
    {
+#if (FREEBSD_VERS < FREEBSD_12)
      struct vki_freebsd11_stat buf;
-#if (FREEBSD_VERS >= FREEBSD_12)
-     res = VG_(do_syscall2)(__NR_freebsd11_fstat, (RegWord)fd, (RegWord)(Addr)&buf);
+     res = VG_(do_syscall2)(__NR_fstat, (RegWord)fd, (RegWord)(Addr)&buf);
 #else
+      struct vki_stat buf;
      res = VG_(do_syscall2)(__NR_fstat, (RegWord)fd, (RegWord)(Addr)&buf);
 #endif
      if (!sr_isError(res)) {
@@ -655,11 +662,12 @@ SysRes VG_(lstat) ( const HChar* file_name, struct vg_stat* vgbuf )
    SysRes res;
    VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
 
+#if (FREEBSD_VERS < FREEBSD_12)
    struct vki_freebsd11_stat buf;
-#if (FREEBSD_VERS >= FREEBSD_12)
-   res = VG_(do_syscall2)(__NR_freebsd11_lstat, (UWord)file_name, (UWord)&buf);
-#else
    res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
+#else
+   struct vki_stat buf;
+   res = VG_(do_syscall4)(__NR_fstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, VKI_AT_SYMLINK_NOFOLLOW);
 #endif
    if (!sr_isError(res)) {
       TRANSLATE_TO_vg_stat(vgbuf, &buf);

@@ -1558,6 +1558,8 @@ struct vki_dirent {
 #define VKI_O_SEARCH	O_EXEC
 
 #define VKI_AT_FDCWD            AT_FDCWD
+#define VKI_AT_SYMLINK_NOFOLLOW 0x0200
+
 
 #define VKI_F_DUPFD     0  /* dup */
 #define VKI_F_GETFD     1  /* get close_on_exec */

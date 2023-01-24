@@ -136,7 +136,7 @@ A different and possibly easier way is as follows:
 
 (2) In a different shell, do "gdb /proc/<pid>/exe <pid>", where
     <pid> you read from the output printed by (1).  This attaches
-    GDB to the tool executable, which should be in the abovementioned
+    GDB to the tool executable, which should be in the above mentioned
     wait loop.
 
 (3) Do "cont" to continue.  After the loop finishes spinning, startup

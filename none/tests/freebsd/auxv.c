@@ -80,6 +80,7 @@ int main(int argc, char* argv[], char* envp[])
                 fprintf(stderr, "EXECPATH: %s\n", (char*)auxp->a_un.a_val);
             }
             break;
+#if (FREEBSD_VERS >= FREEBSD_13_0)
         case AT_ARGV:
             if (auxp->a_un.a_val != 0)
             {
@@ -104,6 +105,9 @@ int main(int argc, char* argv[], char* envp[])
                 /*fprintf(stderr, "PS_STRINGS ENVV: %s\n", *ppss->ps_envstr);*/
             }
             break;
+#endif
+        default:
+           break;
         }
     }
 }

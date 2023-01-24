@@ -1792,17 +1792,19 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
    HChar tmp[VKI_PATH_MAX];
 
    struct vg_stat statbuf;
-   SysRes res = VG_(lstat)(exe_name, &statbuf);
+   SysRes res = VG_(lstat)(path, &statbuf);
 
    if (sr_isError(res)) {
       return False;
-   } else if (VKI_S_ISLNK(statbuf.mode)) {
-      SizeT link_len = VG_(readlink)(exe_name, tmp, VKI_PATH_MAX);
+   }
+
+   if (VKI_S_ISLNK(statbuf.mode)) {
+      SizeT link_len = VG_(readlink)(path, tmp, VKI_PATH_MAX);
       tmp[link_len] = '\0';
       resolved_name = tmp;
    } else {
       // not a link
-      resolved_name = exe_name;
+      resolved_name = path;
    }
 
    if (resolved_name[0] != '/') {
@@ -1810,10 +1812,12 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
       if (resolved_name[0] == '.' && resolved_name[1] == '/') {
          resolved_name += 2;
       }
-      VG_(snprintf)(out, *len, "%s/%s", VG_(get_startup_wd)(), resolved_name);
+      VG_(snprintf)(resolved, VKI_PATH_MAX, "%s/%s", VG_(get_startup_wd)(), resolved_name);
    } else {
-      VG_(snprintf)(out, *len, "%s", resolved_name);
+      VG_(snprintf)(resolved, VKI_PATH_MAX, "%s", resolved_name);
    }
+
+   return True;
 #endif
 }
 #endif

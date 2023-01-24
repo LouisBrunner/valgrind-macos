@@ -13,14 +13,13 @@ Limitations
 - Hexadecimal floating point is not supported.
 - Transactional memory is not supported. The transactional-execution
   facility is masked off from HWCAP.
+- A full list of unimplemented instructions can be retrieved from
+  `docs/internals/s390-opcodes.csv', by grepping for "not implemented".
 - FP signalling is not accurate. E.g., the "compare and signal"
   instructions behave like their non-signalling counterparts.
-- memcheck, cachegrind, drd, helgrind, massif, lackey, and none are
-  supported. 
 - On machine models predating z10, cachegrind will assume a z10 cache
   architecture. Otherwise, cachegrind will query the hosts cache system
   and use those parameters.
-- callgrind and all experimental tools are currently not supported.
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect
   certain debug messages. For example, memcheck will complain about
   4 one-byte reads/writes instead of just a single read/write.
@@ -38,17 +37,11 @@ may not work. As a consequence, programs that attempt to do so may
 behave differently. It is believed that this is a rare use case.
 
 
-Recommendations
----------------
-Applications should be compiled with -fno-builtin to avoid
-false positives due to builtin string operations when running memcheck.
-
-
 Reading Material
 ----------------
 (1) ELF ABI s390x Supplement
     https://github.com/IBM/s390x-abi/releases
 (2) z/Architecture Principles of Operation
-    http://publibfp.dhe.ibm.com/epubs/pdf/a227832c.pdf
+    https://www.ibm.com/support/pages/zarchitecture-principles-operation
 (3) z/Architecture Reference Summary
-    https://www.ibm.com/support/pages/system/files/2020-07/SA22-7871-10.pdf
+    https://www.ibm.com/support/pages/zarchitecture-reference-summary

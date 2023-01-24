@@ -1134,11 +1134,7 @@ void main_process_cmd_line_options( void )
 
 /* Number of file descriptors that Valgrind tries to reserve for
    its own use - just a small constant. */
-#if defined(VGO_freebsd)
-#define N_RESERVED_FDS (20)
-#else
 #define N_RESERVED_FDS (12)
-#endif
 
 static void setup_file_descriptors(void)
 {

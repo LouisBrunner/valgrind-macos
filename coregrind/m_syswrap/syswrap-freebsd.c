@@ -6468,8 +6468,9 @@ PRE(sys___sysctlbyname)
       SET_STATUS_Success(0);
    }
 
-   // @todo PJF kern.proc.pathname
-   // how is that done? jusr a pid or -1 in the string?
+   // kern.proc.pathname doesn't seem to be handled
+   // makes sense as the pid is variable and using
+   // a MIB is easier than generating a string
 
    // read number of ints specified in ARG2 from mem pointed to by ARG1
    PRE_MEM_READ("__sysctlbyname(name)", (Addr)ARG1, ARG2 * sizeof(int));

@@ -13615,36 +13615,36 @@ s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 static void
 s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 {
-   IRTemp counter = newTemp(Ity_I32);
    IRTemp start = newTemp(Ity_I64);
-   IRTemp addr  = newTemp(Ity_I64);
-
    assign(start,
           binop(Iop_Add64, mkU64(d), b != 0 ? get_gpr_dw0(b) : mkU64(0)));
 
-   if (length < 8) {
-      UInt i;
-
-      for (i = 0; i <= length; ++i) {
+   if (length < 7) {
+      for (UInt i = 0; i <= length; ++i) {
          store(binop(Iop_Add64, mkexpr(start), mkU64(i)), mkU8(0));
       }
    } else {
-     assign(counter, get_counter_w0());
+      if (length < 32) {
+         for (UInt i = 0; i <= length - 7; i += 8) {
+            store(binop(Iop_Add64, mkexpr(start), mkU64(i)), mkU64(0));
+         }
+      } else {
+         IRTemp counter = newTemp(Ity_I64);
+         assign(counter, get_counter_dw0());
+         store(binop(Iop_Add64, mkexpr(start), mkexpr(counter)), mkU64(0));
+         put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(8)));
+         iterate_if(binop(Iop_CmpLE64U, mkexpr(counter), mkU64(length - 15)));
 
-     assign(addr, binop(Iop_Add64, mkexpr(start),
-                        unop(Iop_32Uto64, mkexpr(counter))));
-
-     store(mkexpr(addr), mkU8(0));
-
-     /* Check for end of field */
-     put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-     iterate_if(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)));
-
-     /* Reset counter */
-     put_counter_dw0(mkU64(0));
+         /* Reset counter */
+         put_counter_dw0(mkU64(0));
+      }
+      /* Clear the remaining bytes with backward overlap */
+      if ((length + 1) % 8 != 0) {
+         store(binop(Iop_Add64, mkexpr(start), mkU64(length - 7)), mkU64(0));
+      }
    }
 
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
+   s390_cc_set_val(0);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);

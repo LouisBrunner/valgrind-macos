@@ -6,7 +6,9 @@ dist_noinst_SCRIPTS = filter_stderr   \
 		      filter_helgrind \
 		      filter_xml \
 		      filter_freebsd.awk \
-		      filter_stderr_freebsd
+		      filter_stderr_freebsd \
+		      filter_bug392331
+
 
 EXTRA_DIST = \
 	annotate_hbefore.vgtest annotate_hbefore.stdout.exp \

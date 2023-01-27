@@ -11,6 +11,10 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 
+#ifndef __THROW
+#define __THROW
+#endif
+
 // Since we use vki_unistd.h, we can't include <unistd.h>.  So we have to
 // declare this ourselves.
 extern long int syscall (long int __sysno, ...) __THROW;

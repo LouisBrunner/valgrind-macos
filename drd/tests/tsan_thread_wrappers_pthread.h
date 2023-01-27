@@ -55,6 +55,7 @@
 #define NO_TLS
 #endif
 
+#include <cstdint>
 #include <string>
 using namespace std;
 

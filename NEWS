@@ -91,6 +91,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 462830  WARNING: unhandled amd64-freebsd syscall: 474
 463027  broken check for MPX instruction support in assembler
 464476  Firefox fails to start under Valgrind
+464859  Build failures with GCC-13 (drd tsan_unittest)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

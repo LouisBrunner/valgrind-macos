@@ -37,6 +37,7 @@ $SED -e '/warning: File .*valgrind-monitor.py.*declined.*/d' |
 $SED -e '/warning: Missing auto-load script.*/d' |
 $SED -e '/of file .*vgpreload.*so.*/d' |
 $SED -e '/Use.*info auto-load python-scripts.*/d' |
+$SED -e '/warning: Invalid entry in .debug_gdb_scripts section/d' |
 
 # and filter out any remaining empty lines
 $SED -e '/^$/d'

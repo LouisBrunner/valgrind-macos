@@ -1213,15 +1213,18 @@
 /memcheck/tests/solaris/scalar_frealpathat
 /memcheck/tests/solaris/scalar_getrandom
 /memcheck/tests/solaris/scalar_ioctl
+/memcheck/tests/solaris/scalar_lwp_kill
 /memcheck/tests/solaris/scalar_lwp_name
 /memcheck/tests/solaris/scalar_lwp_sigqueue
 /memcheck/tests/solaris/scalar_lwp_sigqueue_pid
 /memcheck/tests/solaris/scalar_modctl_modnvl
+/memcheck/tests/solaris/scalar_obsolete
 /memcheck/tests/solaris/scalar_shm_new
 /memcheck/tests/solaris/scalar_spawn
 /memcheck/tests/solaris/scalar_system_stats
 /memcheck/tests/solaris/scalar_tsol_clearance
 /memcheck/tests/solaris/scalar_utimensat
+/memcheck/tests/solaris/scalar_utimesys
 /memcheck/tests/solaris/scalar_uuidsys
 /memcheck/tests/solaris/scalar_zone_defunct
 /memcheck/tests/solaris/sendfilev
@@ -1307,6 +1310,7 @@
 /memcheck/tests/x86-solaris/context_sse
 /memcheck/tests/x86-solaris/ldsoexec
 /memcheck/tests/x86-solaris/scalar
+/memcheck/tests/x86-solaris/scalar_obsolete
 
 # /memcheck/tests/freebsd/
 /memcheck/tests/freebsd/*.stderr.diff*
@@ -1657,6 +1661,8 @@
 /none/tests/amd64-solaris/*.stderr.out
 /none/tests/amd64-solaris/*.stdout.diff
 /none/tests/amd64-solaris/*.stdout.out
+/none/tests/amd64-solaris/*.post.diff
+/none/tests/amd64-solaris/*.post.out
 /none/tests/amd64-solaris/.deps
 /none/tests/amd64-solaris/Makefile
 /none/tests/amd64-solaris/Makefile.in
@@ -2051,6 +2057,8 @@
 /none/tests/solaris/*.stderr.out
 /none/tests/solaris/*.stdout.diff
 /none/tests/solaris/*.stdout.out
+/none/tests/solaris/*.post.diff
+/none/tests/solaris/*.post.out
 /none/tests/solaris/.deps
 /none/tests/solaris/Makefile
 /none/tests/solaris/Makefile.in
@@ -2095,9 +2103,9 @@
 
 # /none/tests/x86/
 /none/tests/x86/*.dSYM
-/none/tests/x86/*.stderr.diff
+/none/tests/x86/*.stderr.diff*
 /none/tests/x86/*.stderr.out
-/none/tests/x86/*.stdout.diff
+/none/tests/x86/*.stdout.diff*
 /none/tests/x86/*.stdout.out
 /none/tests/x86/.deps
 /none/tests/x86/aad_aam
@@ -2196,6 +2204,8 @@
 /none/tests/x86-solaris/*.stderr.out
 /none/tests/x86-solaris/*.stdout.diff
 /none/tests/x86-solaris/*.stdout.out
+/none/tests/x86-solaris/*.post.diff
+/none/tests/x86-solaris/*.post.out
 /none/tests/x86-solaris/.deps
 /none/tests/x86-solaris/Makefile
 /none/tests/x86-solaris/Makefile.in

@@ -52,6 +52,8 @@ perl -n -e 'print if !/^(Segmentation fault|Alarm clock|Aborted|Bus error|Killed
 
 # Similar as above, but for ksh on Solaris/illumos.
 perl -n -e 'print if !/^(Memory fault|Killed) $/' |
+# bash on Illumos
+$SED '/sh: [1-9][0-9]*: Memory fault/d' |
 
 # Translate intercepted glibc functions back to their canonical name
 perl -p -e "s/: memcpy\@\@?GLIBC_[.1-9]+ \(vg_replace_strmem.c:.*?\)/: memcpy \(vg_replace_strmem.c:...\)/" |

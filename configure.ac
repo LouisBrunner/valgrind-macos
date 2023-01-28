@@ -50,8 +50,11 @@ CXXFLAGS="$CXXFLAGS"
 #----------------------------------------------------------------------------
 
 AC_PROG_LN_S
-AC_PROG_CC
-AM_PROG_CC_C_O
+m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
+# Make sure we can compile in C99 mode.
+if test "$ac_cv_prog_cc_c99" = "no"; then
+    AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
+fi
 AC_PROG_CPP
 AC_PROG_CXX
 # AC_PROG_OBJC apparently causes problems on older Linux distros (eg. with
@@ -135,12 +138,6 @@ else
     DIFF="diff"
 fi
 rm $tmpfile
-
-# Make sure we can compile in C99 mode.
-AC_PROG_CC_C99
-if test "$ac_cv_prog_cc_c99" = "no"; then
-    AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
-fi
 
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])

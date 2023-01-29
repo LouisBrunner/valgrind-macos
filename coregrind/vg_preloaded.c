@@ -49,6 +49,7 @@
 #include <features.h>
 #endif
 
+#if !defined(VGO_darwin)
 /* Instruct GDB via a .debug_gdb_scripts section to load the valgrind and tool
    front-end commands.  */
 /* Note: The "MS" section flags are to remove duplicates.  */
@@ -61,6 +62,7 @@
 ");
 
 DEFINE_GDB_PY_SCRIPT(VG_LIBDIR "/valgrind-monitor.py")
+#endif
 
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 

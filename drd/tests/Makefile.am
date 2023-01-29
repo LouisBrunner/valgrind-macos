@@ -418,6 +418,7 @@ check_PROGRAMS =      \
   pth_detached3       \
   pth_inconsistent_cond_wait \
   pth_mutex_reinit    \
+  pth_mutex_signal    \
   pth_process_shared_mutex   \
   recursive_mutex     \
   rwlock_race         \
@@ -500,10 +501,6 @@ endif
 
 if HAVE_PTHREAD_CREATE_GLIBC_2_0
 check_PROGRAMS += pth_create_glibc_2_0
-endif
-
-if !VGCONF_OS_IS_DARWIN
-check_PROGRAMS += pth_mutex_signal
 endif
 
 if HAVE_PTHREAD_SPINLOCK

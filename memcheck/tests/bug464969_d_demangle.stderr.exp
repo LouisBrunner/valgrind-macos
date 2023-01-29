@@ -1,0 +1,4 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: test.find(int, const(char)*) (bug464969_d_demangle.cpp:6)
+   by 0x........: main (bug464969_d_demangle.cpp:14)
+

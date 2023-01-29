@@ -114,6 +114,8 @@ EXTRA_DIST = \
 	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
 	bug340392.stderr.exp bug340392.vgtest \
+	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
+		bug464969_d_demangle.stdout.exp \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
 	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
@@ -381,6 +383,7 @@ check_PROGRAMS = \
 	bug155125 \
 	bug287260 \
 	bug340392 \
+	bug464969_d_demangle \
 	calloc-overflow \
 	client-msg \
 	clientperm \
@@ -461,6 +464,8 @@ endif
 if DWARF4
 check_PROGRAMS += dw4
 endif
+
+bug464969_d_demangle_SOURCES = bug464969_d_demangle.cpp
 
 if GZ_ZLIB
 check_PROGRAMS += cdebug_zlib

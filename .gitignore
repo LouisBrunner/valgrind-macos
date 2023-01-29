@@ -839,6 +839,7 @@
 /memcheck/tests/bug155125
 /memcheck/tests/bug287260
 /memcheck/tests/bug340392
+/memcheck/tests/bug464969_d_demangle
 /memcheck/tests/calloc-overflow
 /memcheck/tests/cdebug_zlib
 /memcheck/tests/cdebug_zlib_gnu

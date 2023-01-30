@@ -466,6 +466,7 @@ check_PROGRAMS += dw4
 endif
 
 bug464969_d_demangle_SOURCES = bug464969_d_demangle.cpp
+bug464969_d_demangle_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 if GZ_ZLIB
 check_PROGRAMS += cdebug_zlib
@@ -526,12 +527,12 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.
 accounting_CFLAGS	= $(AM_CFLAGS) -Wno-alloc-size-larger-than
-badfree_CFLAGS		= $(AM_CFLAGS) -Wno-free-nonheap-object
+badfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
 bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result -Wno-alloc-size-larger-than
 mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
 malloc3_CFLAGS		= $(AM_CFLAGS) -Wno-alloc-size-larger-than
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
-strchr_CFLAGS		= $(AM_CFLAGS) -Wno-uninitialized
+strchr_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
 big_debuginfo_symbol_CXXFLAGS = $(AM_CXXFLAGS) -std=c++0x

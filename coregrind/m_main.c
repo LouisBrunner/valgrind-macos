@@ -1724,6 +1724,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       if (!sr_isError(statres) || VKI_S_ISLNK(statbuf.mode)) {
          VG_(have_slash_proc) = True;
       }
+      // each directory contains the following that might get read
+      // file - a symlink to the exe
+      // cmdline - null separate command line
+      // etype - the executable type e.g., FreeBSD ELF64 (same for guest and host)
+      // map - a memory map, tricky to synthesize
+      // rlimit - list of process limits
+      // status - process, pid, ppid pts cty uid gid and some other stuff
    }
 #endif
 

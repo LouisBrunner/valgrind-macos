@@ -90,7 +90,7 @@ DECL_TEMPLATE(freebsd, sys_ioctl) // 54
 DECL_TEMPLATE(freebsd, sys_reboot) // 55
 DECL_TEMPLATE(freebsd, sys_revoke) // 56
 // generic symlink 57
-// generic readlink 58
+DECL_TEMPLATE(freebsd, sys_readlink) // 58
 // generic execve 59
 // generic umask 60
 // generic chroot 61

@@ -35,10 +35,13 @@ EXTRA_DIST = \
 	452275.stderr.exp \
 	usrstack.vgtest \
 	usrstack.stderr.exp \
-	usrstack.stdout.exp
+	usrstack.stdout.exp \
+	proc_pid_file.vgtest \
+	proc_pid_file.stderr.exp
 
 check_PROGRAMS = \
-	auxv osrel swapcontext hello_world fexecve 452275 usrstack
+	auxv osrel swapcontext hello_world fexecve 452275 usrstack \
+	proc_pid_file
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -48,3 +51,5 @@ osrel_CFLAGS = ${AM_CFLAGS}
 swapcontext_CFLAGS = ${AM_CFLAGS}
 
 hello_world_SOURCES = hello_world.cpp
+
+proc_pid_file_SOURCES = proc_pid_file.cpp

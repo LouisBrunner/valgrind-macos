@@ -362,8 +362,7 @@ static HChar *copy_bytes(HChar **tab, const HChar *src, SizeT size)
 
    ---------------------------------------------------------------- */
 
-static
-struct auxv *find_auxv(UWord* sp)
+static struct auxv *find_auxv(UWord* sp)
 {
    sp++;                // skip argc (Nb: is word-sized, not int-sized!)
 
@@ -380,13 +379,12 @@ struct auxv *find_auxv(UWord* sp)
    return (struct auxv *)sp;
 }
 
-static
-Addr setup_client_stack( void*  init_sp,
-                         HChar** orig_envp,
-                         const ExeInfo* info,
-                         UInt** client_auxv,
-                         Addr   clstack_end,
-                         SizeT  clstack_max_size )
+static Addr setup_client_stack(void*  init_sp,
+                               HChar** orig_envp,
+                               const ExeInfo* info,
+                               UInt** client_auxv,
+                               Addr   clstack_end,
+                               SizeT  clstack_max_size )
 {
    SysRes res;
    HChar **cpp;
@@ -690,6 +688,7 @@ Addr setup_client_stack( void*  init_sp,
 
       case VKI_AT_EXECPATH:
          auxv->u.a_ptr = copy_str(&strtab, resolved_name);
+         VG_(resolved_exename) = auxv->u.a_ptr;
          break;
       case VKI_AT_CANARY:
          if (canarylen >= 1) {
@@ -795,6 +794,11 @@ Addr setup_client_stack( void*  init_sp,
    if (0) {
       VG_(printf)("startup SP = %#lx\n", client_SP);
    }
+
+   if (VG_(resolved_exename) == NULL) {
+      VG_(resolved_exename) = VG_(strdup)("initimg-freebsd.sre.1", resolved_name);
+   }
+
    return client_SP;
 }
 

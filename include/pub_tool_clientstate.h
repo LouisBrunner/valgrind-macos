@@ -63,6 +63,7 @@ extern Int VG_(args_for_valgrind_noexecpass);
    line. */
 extern const HChar* VG_(args_the_exename);
 
+extern const HChar* VG_(resolved_exename);
 
 #endif   // __PUB_TOOL_CLIENTSTATE_H
 

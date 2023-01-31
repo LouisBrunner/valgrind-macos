@@ -93,6 +93,10 @@ Int VG_(args_for_valgrind_noexecpass) = 0;
    line. */
 const HChar* VG_(args_the_exename) = NULL;
 
+/* The real name of the executable, with resolved
+ * relative paths and symlinks */
+const HChar* VG_(resolved_exename) = NULL;
+
 // Client's original rlimit data and rlimit stack
 struct vki_rlimit VG_(client_rlimit_data);
 struct vki_rlimit VG_(client_rlimit_stack);

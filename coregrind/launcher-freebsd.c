@@ -45,18 +45,13 @@
 #include <sys/sysctl.h>
 /* #include <sys/user.h> */
 #include <unistd.h>
+#include <limits.h>
 
 #include "pub_core_debuglog.h"
 #include "pub_core_vki.h"       // Avoids warnings from
 // pub_core_libcfile.h
 #include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
 #include "pub_core_ume.h"
-
-
-#if !defined(PATH_MAX)
-#define PATH_MAX 4096 /* POSIX refers to this a lot but I dunno
-                         where it is defined */
-#endif
 
 #ifndef EM_X86_64
 #define EM_X86_64 62    // elf.h doesn't define this on some older systems
@@ -99,8 +94,9 @@ static const char *find_client(const char *clientname)
       strcat(fullname, "/");
       strcat(fullname, clientname);
 
-      if (access(fullname, R_OK|X_OK) == 0)
+      if (access(fullname, R_OK|X_OK) == 0) {
          return fullname;
+      }
    }
 
    return clientname;
@@ -116,11 +112,13 @@ static const char *select_platform(const char *clientname)
 
    VG_(debugLog)(2, "launcher", "selecting platform for '%s'\n", clientname);
 
-   if (strchr(clientname, '/') == NULL)
+   if (strchr(clientname, '/') == NULL) {
       clientname = find_client(clientname);
+   }
 
-   if ((fd = open(clientname, O_RDONLY)) < 0)
+   if ((fd = open(clientname, O_RDONLY)) < 0) {
       return NULL;
+   }
    //   barf("open(%s): %s", clientname, strerror(errno));
 
    n_bytes = read(fd, header, sizeof(header));
@@ -135,19 +133,29 @@ static const char *select_platform(const char *clientname)
 
       // Skip whitespace.
       while (1) {
-         if (i == n_bytes) return NULL;
-         if (' ' != header[i] && '\t' == header[i]) break;
+         if (i == n_bytes) {
+            return NULL;
+         }
+         if (' ' != header[i] && '\t' != header[i]) {
+            break;
+         }
          i++;
       }
 
       // Get the interpreter name.
       interp = &header[i];
       while (1) {
-         if (i == n_bytes) break;
-         if (isspace(header[i])) break;
+         if (i == n_bytes) {
+            break;
+         }
+         if (isspace(header[i])) {
+            break;
+         }
          i++;
       }
-      if (i == n_bytes) return NULL;
+      if (i == n_bytes) {
+         return NULL;
+      }
       header[i] = '\0';
 
       platform = select_platform(interp);
@@ -209,14 +217,17 @@ int main(int argc, char** argv, char** envp)
          break;
       }
       if (0 == strcmp(argv[i], "--")) {
-         if (i+1 < argc)
+         if (i+1 < argc) {
             clientname = argv[i+1];
+         }
          break;
       }
-      if (0 == strcmp(argv[i], "-d"))
+      if (0 == strcmp(argv[i], "-d")) {
          loglevel++;
-      if (0 == strncmp(argv[i], "--tool=", 7))
+      }
+      if (0 == strncmp(argv[i], "--tool=", 7)) {
          toolname = argv[i] + 7;
+      }
    }
 
    /* ... and start the debug logger.  Now we can safely emit logging
@@ -241,12 +252,13 @@ int main(int argc, char** argv, char** envp)
       target, because on most ppc64-linux setups, the basic /bin,
       /usr/bin, etc, stuff is built in 32-bit mode, not 64-bit
       mode. */
-   if (0==strcmp(VG_PLATFORM,"x86-freebsd"))
+   if (0==strcmp(VG_PLATFORM,"x86-freebsd")) {
       default_platform = "x86-freebsd";
-   else if (0==strcmp(VG_PLATFORM,"amd64-freebsd"))
+   } else if (0==strcmp(VG_PLATFORM,"amd64-freebsd")) {
       default_platform = "amd64-freebsd";
-   else
+   } else {
       barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);
+   }
 
    /* Work out what platform to use, or use the default platform if
       not possible. */
@@ -285,19 +297,23 @@ int main(int argc, char** argv, char** envp)
    /* tediously augment the env: VALGRIND_LAUNCHER=launcher_name */
    new_line = malloc(strlen(VALGRIND_LAUNCHER) + 1
                      + strlen(launcher_name) + 1);
-   if (new_line == NULL)
+   if (new_line == NULL) {
       barf("malloc of new_line failed.");
+   }
    strcpy(new_line, VALGRIND_LAUNCHER);
    strcat(new_line, "=");
    strcat(new_line, launcher_name);
 
-   for (j = 0; envp[j]; j++)
-      ;
+   for (j = 0; envp[j]; j++) {
+      // do nothing
+   }
    new_env = malloc((j+2) * sizeof(char*));
-   if (new_env == NULL)
+   if (new_env == NULL) {
       barf("malloc of new_env failed.");
-   for (i = 0; i < j; i++)
+   }
+   for (i = 0; i < j; i++) {
       new_env[i] = envp[i];
+   }
    new_env[i++] = new_line;
    new_env[i++] = NULL;
    assert(i == j+2);
@@ -305,13 +321,15 @@ int main(int argc, char** argv, char** envp)
    /* Establish the correct VALGRIND_LIB. */
    cp = getenv(VALGRIND_LIB);
 
-   if (cp != NULL)
+   if (cp != NULL) {
       valgrind_lib = cp;
+   }
 
    /* Build the stage2 invocation, and execve it.  Bye! */
    toolfile = malloc(strlen(valgrind_lib) + strlen(toolname) + strlen(platform) + 3);
-   if (toolfile == NULL)
+   if (toolfile == NULL) {
       barf("malloc of toolfile failed.");
+   }
    sprintf(toolfile, "%s/%s-%s", valgrind_lib, toolname, platform);
 
    VG_(debugLog)(1, "launcher", "launching %s\n", toolfile);

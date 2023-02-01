@@ -771,6 +771,8 @@ vglib_DATA  += m_gdbserver/valgrind-monitor-def.py
 
 # so as to make sure these get copied into the tarball
 EXTRA_DIST  += $(GDBSERVER_XML_FILES)
+EXTRA_DIST  += m_gdbserver/valgrind-monitor.py
+EXTRA_DIST  += m_gdbserver/valgrind-monitor-def.py
 
 #----------------------------------------------------------------------------
 # General stuff

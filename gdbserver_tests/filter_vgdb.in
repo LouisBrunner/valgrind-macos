@@ -38,6 +38,7 @@ $SED -e '/warning: Missing auto-load script.*/d' |
 $SED -e '/of file .*vgpreload.*so.*/d' |
 $SED -e '/Use.*info auto-load python-scripts.*/d' |
 $SED -e '/warning: Invalid entry in .debug_gdb_scripts section/d' |
+$SED -e "/Use .info auto-load python .REGEXP.. to list them./d" |
 
 # and filter out any remaining empty lines
 $SED -e '/^$/d'

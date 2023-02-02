@@ -1194,12 +1194,16 @@ void VG_(do_atfork_child)(ThreadId tid)
 }
 
 /* ---------------------------------------------------------------------
-   FreeBSD sysctlbyname(), modfind(), etc
+   FreeBSD sysctlbyname, getosreldate, is32on64
    ------------------------------------------------------------------ */
 
 #if defined(VGO_freebsd)
 Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen)
 {
+#if (FREEBSD_VERS >= FREEBSD_12_2)
+   SysRes res = VG_(do_syscall5)(__NR___sysctlbyname, (UWord)name, (UWord)oldp, (UWord)oldlenp, (UWord)newp, (UWord)newlen);
+   return sr_isError(res) ? -1 : sr_Res(res);
+#else
    Int oid[2];
    Int real_oid[10];
    SizeT oidlen;
@@ -1214,6 +1218,7 @@ Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void 
    oidlen /= sizeof(int);
    error = VG_(sysctl)(real_oid, oidlen, oldp, oldlenp, newp, newlen);
    return error;
+ #endif
 }
 
 Int VG_(getosreldate)(void)

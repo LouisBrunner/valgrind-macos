@@ -42,12 +42,12 @@ int main ()
   pthread_mutexattr_t mutex_attr;
   pthread_attr_t thread_attr_contender;
   pthread_t contender;
-  struct sigaction signalAction = { };
+  struct sigaction signalAction;
 
   // install signal handler
   signalAction.sa_sigaction = nullHandler;
   sigfillset(&signalAction.sa_mask);
-  signalAction.sa_flags = 0;
+  signalAction.sa_flags = SA_SIGINFO;
   sigaction(SIGINT, &signalAction, NULL);
 
   // initialize the mutex

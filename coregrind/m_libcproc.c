@@ -1200,8 +1200,9 @@ void VG_(do_atfork_child)(ThreadId tid)
 #if defined(VGO_freebsd)
 Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen)
 {
+   vg_assert(name);
 #if (FREEBSD_VERS >= FREEBSD_12_2)
-   SysRes res = VG_(do_syscall5)(__NR___sysctlbyname, (UWord)name, (UWord)oldp, (UWord)oldlenp, (UWord)newp, (UWord)newlen);
+   SysRes res = VG_(do_syscall6)(__NR___sysctlbyname, (RegWord)name, VG_(strlen)(name), (RegWord)oldp, (RegWord)oldlenp, (RegWord)newp, (RegWord)newlen);
    return sr_isError(res) ? -1 : sr_Res(res);
 #else
    Int oid[2];

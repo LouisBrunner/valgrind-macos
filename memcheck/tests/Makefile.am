@@ -80,8 +80,7 @@ dist_noinst_SCRIPTS = \
 	filter_varinfo3 \
 	filter_memcheck \
 	filter_overlaperror \
-	filter_malloc_free \
-        filter_sized_delete
+	filter_malloc_free
 
 noinst_HEADERS = leak.h
 

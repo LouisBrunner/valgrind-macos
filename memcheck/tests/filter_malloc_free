@@ -2,5 +2,5 @@
 
 ./filter_stderr "$@" |
 ./filter_allocs |
-sed -e '/^malloc/d;/^free/d;/^calloc/d'
+sed -e '/^malloc/d;/^free/d;/^calloc/d;/^zone/d;/^realloc/d'
 

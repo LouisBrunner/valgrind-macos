@@ -2047,10 +2047,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                True   /* executable? */,
                0 /* di_handle: no associated debug info */ );
 
-     /* Clear the running thread indicator */
-     VG_(running_tid) = VG_INVALID_THREADID;
-     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
-
      /* Darwin only: tell the tools where the client's kernel commpage
         is.  It would be better to do this by telling aspacemgr about
         it -- see the now disused record_system_memory() in
@@ -2068,6 +2064,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                True, False, True, /* r-x */
                0 /* di_handle: no associated debug info */ );
 #    endif
+
+     /* Clear the running thread indicator */
+     VG_(running_tid) = VG_INVALID_THREADID;
+     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
    }
 
    //--------------------------------------------------------------

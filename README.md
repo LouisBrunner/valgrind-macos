@@ -43,6 +43,17 @@ Then, install `valgrind`:
 brew install --HEAD LouisBrunner/valgrind/valgrind
 ```
 
+It is possible that Homebrew shows you the following error message afterwards:
+
+```bash
+error: Invalid usage: --HEAD is not supported with HOMEBREW_NO_INSTALL_FROM_API unset! To resolve please run:
+  export HOMEBREW_NO_INSTALL_FROM_API=1
+  brew tap Homebrew/core
+and retry this command.
+```
+
+If so, just execute both commands and retry the installation as mentioned above.
+
 You can now use `valgrind` as normal.
 
 Note: in case of failures during the build, [make sure you have the latest Xcode/CLI tools installed](https://github.com/LouisBrunner/valgrind-macos/issues/6#issuecomment-667587385).

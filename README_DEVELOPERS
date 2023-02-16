@@ -96,6 +96,11 @@ without too much problem by following these steps:
     or for an uninstalled version in a source directory $DIR:
 
       export VALGRIND_LAUNCHER=$DIR/coregrind/valgrind
+      export VALGRIND_LIB=$DIR/.in_place
+
+    VALGRIND_LIB is where the default.supp and vgpreload_ libraries
+    are found (which is under /usr/libexec/valgrind for an installed
+    version).
 
 (2) Run gdb on the tool executable.  Eg:
 

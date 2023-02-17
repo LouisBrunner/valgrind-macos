@@ -621,6 +621,7 @@ std_list_CXXFLAGS           = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@
 
 std_mutex_SOURCES           = std_mutex.cpp
 std_mutex_CXXFLAGS          = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@
+std_mutex_LDFLAGS           = -pthread
 
 std_string_SOURCES          = std_string.cpp
 std_string_CXXFLAGS         = $(AM_CXXFLAGS) -std=c++0x @FLAG_W_NO_SIGN_COMPARE@

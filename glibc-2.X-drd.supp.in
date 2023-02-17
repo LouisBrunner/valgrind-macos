@@ -79,7 +79,21 @@
    ...
    fun:_ZNSo9_M_insertIlEERSoT_
 }
-
+{
+   drd-libstdc++-std::~__shared_count()
+   drd:ConflictingAccess
+   fun:_ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EED1Ev
+}
+{
+   drd-libstdc++-std::thread::~_Impl_base()
+   drd:ConflictingAccess
+   fun:_ZNSt6thread10_Impl_baseD1Ev
+}
+{
+   drd-libstdc++-std::thread::~_Impl()
+   drd:ConflictingAccess
+   fun:_ZNSt6thread5_ImplISt12_Bind_simpleIFZ4mainEUlvE_vEEED1Ev
+}
 
 #
 # Suppression patterns for libpthread.

@@ -525,18 +525,18 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.
-accounting_CFLAGS	= $(AM_CFLAGS) -Wno-alloc-size-larger-than
+accounting_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALOC_SIZE_LARGER_THAN@
 badfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
-bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result -Wno-alloc-size-larger-than
+bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result @FLAG_W_NO_ALOC_SIZE_LARGER_THAN@
 mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
-malloc3_CFLAGS		= $(AM_CFLAGS) -Wno-alloc-size-larger-than
+malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALOC_SIZE_LARGER_THAN@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 strchr_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp
 big_debuginfo_symbol_CXXFLAGS = $(AM_CXXFLAGS) -std=c++0x
 
-bug340392_CFLAGS        = $(AM_CFLAGS) -O3 -Wno-maybe-uninitialized
+bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
@@ -633,7 +633,7 @@ sized_delete_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@
 endif
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow @FLAG_W_NO_STRINGOP_OVERFLOW@ \
-			  -Wno-stringop-truncation \
+			  @FLAG_W_NO_STRINGOP_TRUNCATION@ \
 			  -Wno-fortify-source -Wno-suspicious-bzero \
 			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@ @FLAG_W_NO_STRINGOP_OVERREAD@
 
@@ -691,7 +691,7 @@ else
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared \
 				-Wl,-soname -Wl,varinfo5so.so
 endif
-varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g -Wno-maybe-uninitialized
+varinforestrict_CFLAGS	= $(AM_CFLAGS) -O0 -g @FLAG_W_NO_MAYBE_UNINITIALIZED@
 
 # Build shared object for wrap7
 wrap7_SOURCES           = wrap7.c

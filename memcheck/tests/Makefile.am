@@ -525,11 +525,11 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 
 # Suppress various gcc warnings which are correct, but for things
 # we are actually testing for at runtime.
-accounting_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALOC_SIZE_LARGER_THAN@
+accounting_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 badfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
-bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result @FLAG_W_NO_ALOC_SIZE_LARGER_THAN@
+bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
-malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALOC_SIZE_LARGER_THAN@
+malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 strchr_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

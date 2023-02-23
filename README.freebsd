@@ -32,7 +32,7 @@ Known Limitations (June 2022)
 1. There are some limitations when running Valgrind on code that was compiled
    with clang.  These issues are not present with code compiled with GCC.
    a) There may be missing source information concerning variables due
-      to DWARF extensions ised by GCC.
+      to DWARF extensions used by GCC.
    b) Code that uses OpenMP will generate spurious errors.
 2. vgdb invoker, which uses ptrace, may cause system calls to be
    interrupted. As an example, if the debuggee seems to have be

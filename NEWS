@@ -94,6 +94,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 464476  Firefox fails to start under Valgrind
 464859  Build failures with GCC-13 (drd tsan_unittest)
 464969  D language demangling
+465435  m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

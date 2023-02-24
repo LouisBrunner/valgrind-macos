@@ -57,13 +57,25 @@ Int VG_(safe_fd)(Int oldfd)
    vg_assert(VG_(fd_hard_limit) != -1);
 
    newfd = VG_(fcntl)(oldfd, VKI_F_DUPFD, VG_(fd_hard_limit));
-   if (newfd != -1)
-      VG_(close)(oldfd);
+
+   if (newfd == -1) {
+      VG_(debugLog)(0, "libcfile", "Valgrind: FATAL: "
+                       "Private file creation failed.\n"
+                       "   The current file descriptor limit is %d.\n"
+                       "   If you are running in Docker please consider\n"
+                       "   lowering this limit with the shell built-in limit command.\n",
+                       VG_(fd_hard_limit));
+      VG_(debugLog)(0, "libcfile", "Exiting now.\n");
+      VG_(exit)(1);
+   }
+
+   vg_assert(newfd >= VG_(fd_hard_limit));
+
+   VG_(close)(oldfd);
 
    /* Set the close-on-exec flag for this fd. */
    VG_(fcntl)(newfd, VKI_F_SETFD, VKI_FD_CLOEXEC);
 
-   vg_assert(newfd >= VG_(fd_hard_limit));
    return newfd;
 }
 
@@ -753,7 +765,11 @@ Int VG_(fcntl) ( Int fd, Int cmd, Addr arg )
 #  else
 #    error "Unknown OS"
 #  endif
-   return sr_isError(res) ? -1 : sr_Res(res);
+   if (sr_isError(res)) {
+      VG_(debugLog)(1, "VG_(fcntl)", "fcntl error %lu %s\n", sr_Err(res), VG_(strerror)(sr_Err(res)));
+      return -1;
+   }
+   return (Int)sr_Res(res);
 }
 
 Int VG_(rename) ( const HChar* old_name, const HChar* new_name )

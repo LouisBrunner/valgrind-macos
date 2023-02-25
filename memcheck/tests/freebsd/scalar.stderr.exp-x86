@@ -5249,7 +5249,10 @@ Syscall param mknodat(path) contains uninitialised byte(s)
 Syscall param mknodat(mode) contains uninitialised byte(s)
    ...
 
-Syscall param mknodat(dev) contains uninitialised byte(s)
+Syscall param mknodat(dev_low) contains uninitialised byte(s)
+   ...
+
+Syscall param mknodat(idev_high) contains uninitialised byte(s)
    ...
 
 Syscall param mknodat(pathname) points to unaddressable byte(s)

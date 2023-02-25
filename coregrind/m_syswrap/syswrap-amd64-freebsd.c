@@ -305,12 +305,17 @@ PRE(sys_clock_getcpuclockid2)
 PRE(sys_rfork)
 {
    PRINT("sys_rfork ( %#" FMT_REGWORD "x )", ARG1 );
-   PRE_REG_READ1(long, "rfork", int, flags);
+   PRE_REG_READ1(pid_t, "rfork", int, flags);
 
-   VG_(message)(Vg_UserMsg, "rfork() not implemented");
-   VG_(unimplemented)("Valgrind does not support rfork().");
+   VG_(message)(Vg_UserMsg, "warning: rfork() not implemented\n");
 
-   SET_STATUS_Failure(VKI_ENOSYS);
+   if ((UInt)ARG1 == VKI_RFSPAWN) {
+      // posix_spawn uses RFSPAWN and it will fall back to vfork
+      // if it sees EINVAL
+      SET_STATUS_Failure(VKI_EINVAL);
+   } else {
+      SET_STATUS_Failure(VKI_ENOSYS);
+   }
 }
 
 // SYS_preadv  289

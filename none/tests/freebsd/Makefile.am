@@ -37,7 +37,19 @@ EXTRA_DIST = \
 	usrstack.stderr.exp \
 	usrstack.stdout.exp \
 	proc_pid_file.vgtest \
-	proc_pid_file.stderr.exp
+	proc_pid_file.stderr.exp \
+	bash_test.vgtest \
+	bash_test.sh \
+	bash_test.stderr.exp \
+	bash_test.stdout.exp \
+	csh_test.vgtest \
+	csh_test.csh \
+	csh_test.stderr.exp \
+	csh_test.stdout.exp \
+	ksh_test.vgtest \
+	ksh_test.ksh \
+	ksh_test.stderr.exp \
+	ksh_test.stdout.exp
 
 check_PROGRAMS = \
 	auxv osrel swapcontext hello_world fexecve 452275 usrstack \

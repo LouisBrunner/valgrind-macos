@@ -1608,6 +1608,9 @@ struct vki_dirent {
 #define VKI_W_OK  0x02    /* test for write permission */
 #define VKI_R_OK  0x04    /* test for read permission */
 
+#define VKI_RFSPAWN         (1U<<31U)
+
+
 //----------------------------------------------------------------------
 // From sys/msg.h
 //----------------------------------------------------------------------

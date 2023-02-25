@@ -740,9 +740,14 @@ PRE(sys_rfork)
       *flags |= SfYieldAfter;
    }
 #else
-   VG_(message)(Vg_UserMsg, "rfork() not implemented");
-   VG_(unimplemented)("Valgrind does not support rfork() yet.");
-   SET_STATUS_Failure( VKI_ENOSYS );
+   VG_(message)(Vg_UserMsg, "rfork() not implemented\n");
+   if ((UInt)ARG1 == VKI_RFSPAWN) {
+      // posix_spawn uses RFSPAWN and it will fall back to vfork
+      // if it sees EINVAL
+      SET_STATUS_Failure(VKI_EINVAL);
+   } else {
+      SET_STATUS_Failure(VKI_ENOSYS);
+   }
 #endif
 }
 

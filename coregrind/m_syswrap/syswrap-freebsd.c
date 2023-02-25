@@ -6310,14 +6310,7 @@ POST(sys_fhstatfs)
 }
 
 // SYS_mknodat 559
-// int mknodat(int fd, const char *path, mode_t mode, dev_t dev);
-PRE(sys_mknodat)
-{
-   PRINT("sys_mknodat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1,ARG2,(char*)ARG2,ARG3,ARG4 );
-   PRE_REG_READ4(long, "mknodat",
-                 int, fd, const char *, path, vki_mode_t, mode, vki_dev_t, dev);
-   PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
-}
+// x86 / amd64
 
 // SYS_kevent  560
 // int kevent(int kq, const struct kevent *changelist, int nchanges,

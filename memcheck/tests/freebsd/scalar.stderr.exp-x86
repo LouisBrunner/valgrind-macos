@@ -2030,7 +2030,7 @@ Syscall param lutimes(times) points to unaddressable byte(s)
 Syscall param preadv(fd) contains uninitialised byte(s)
    ...
 
-Syscall param preadv(iovr) contains uninitialised byte(s)
+Syscall param preadv(iov) contains uninitialised byte(s)
    ...
 
 Syscall param preadv(iovcnt) contains uninitialised byte(s)

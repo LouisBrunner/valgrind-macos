@@ -1719,8 +1719,8 @@ extern int *___errno (void) __attribute__((weak));
       if (pszB == 0) \
          pszB = my_getpagesize(); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord) zone);	      \
-      return VG_REPLACE_FUNCTION_EZU(10110,VG_Z_LIBC_SONAME,memalign) \
-                ((SizeT)pszB, size); \
+      return (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, \
+         pszB, size ); \
    }
 
 #if defined(VGO_linux)

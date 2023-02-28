@@ -1743,6 +1743,9 @@ static void futex_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
    }
 
    *flags |= SfMayBlock;
+   if ((ARG2 & (VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_LOCK_PI)) == (VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_LOCK_PI)) {
+      *flags |= SfKernelRestart;
+   }
 
    switch(ARG2 & ~(VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_CLOCK_REALTIME)) {
    case VKI_FUTEX_WAIT:

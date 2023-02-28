@@ -87,6 +87,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
 444488  Use glibc.pthread.stack_cache_size tunable
 444568  drd/tests/pth_barrier_thr_cr fails on Fedora 38
+445743  "The impossible happened: mutex is locked simultaneously by two threads"
+        while using mutexes with priority inheritance and signals
 459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
 460356  s390: Sqrt32Fx4 -- cannot reduce tree
 462830  WARNING: unhandled amd64-freebsd syscall: 474
@@ -95,7 +97,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 464859  Build failures with GCC-13 (drd tsan_unittest)
 464969  D language demangling
 465435  m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
-n-i-bz  FreeBSD rfork syscall fail with EINVAL or EINVAL rather than VG_(unimplemented)
+n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

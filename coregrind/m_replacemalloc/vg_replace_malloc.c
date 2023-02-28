@@ -1817,6 +1817,12 @@ extern int *___errno (void) __attribute__((weak));
 
 /*---------------------- posix_memalign ----------------------*/
 
+#if defined(VGO_solaris)
+#define VG_POSIX_MEMALIGN_SIZE_0_RETURN_NULL 1
+#else
+#define VG_POSIX_MEMALIGN_SIZE_0_RETURN_NULL 0
+#endif
+
 #define POSIX_MEMALIGN(soname, fnname) \
    \
    int VG_REPLACE_FUNCTION_EZU(10160,soname,fnname) \
@@ -1836,6 +1842,12 @@ extern int *___errno (void) __attribute__((weak));
           || alignment % sizeof (void *) != 0 \
           || (alignment & (alignment - 1)) != 0) { \
          return VKI_EINVAL; \
+      } \
+      if (VG_POSIX_MEMALIGN_SIZE_0_RETURN_NULL && \
+          size == 0U) { \
+         /* no allocation for zro size on Solaris/Illumos */ \
+         *memptr = NULL; \
+         return 0; \
       } \
       /* Round up to minimum alignment if necessary. */ \
       if (alignment < VG_MIN_MALLOC_SZB) \
@@ -1861,7 +1873,9 @@ extern int *___errno (void) __attribute__((weak));
  POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
 
 #elif defined(VGO_darwin)
- //POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
+#if (DARWIN_VERSIO >= DARWIN_10_6)
+ POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
+#endif
 
 #elif defined(VGO_solaris)
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);

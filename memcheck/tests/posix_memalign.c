@@ -28,25 +28,33 @@ int main ( void )
 
 #  define PM(a,b,c) posix_memalign((void**)a, b, c)
 
+   // test for size 0
+   res = PM(&p, 64, 0);
+#if defined(VGO_solaris)
+   assert(NULL == p);
+#else
+   assert(0 == res && p && 0 == (long)p % 64);
+#endif
+
    res = PM(&p, -1,100);      assert(EINVAL == res);
    res = PM(&p, 0, 100);      assert(EINVAL == res);
    res = PM(&p, 1, 100);      assert(EINVAL == res);
    res = PM(&p, 2, 100);      assert(EINVAL == res);
    res = PM(&p, 3, 100);      assert(EINVAL == res);
    res = PM(&p, sizeof(void*), 100);
-                              assert(0 == res && 0 == (long)p % sizeof(void*));
+                              assert(0 == res && p && 0 == (long)p % sizeof(void*));
 
    res = PM(&p, 31, 100);     assert(EINVAL == res);
-   res = PM(&p, 32, 100);     assert(0 == res && 0 == (long)p % 32);
+   res = PM(&p, 32, 100);     assert(0 == res && p && 0 == (long)p % 32);
    res = PM(&p, 33, 100);     assert(EINVAL == res);
 
    res = PM(&p, 4095, 100);   assert(EINVAL == res);
-   res = PM(&p, 4096, 100);   assert(0 == res && 0 == (long)p % 4096); 
+   res = PM(&p, 4096, 100);   assert(0 == res && p && 0 == (long)p % 4096);
    res = PM(&p, 4097, 100);   assert(EINVAL == res);
 
-   res = PM(&p, 4 * 1024 * 1024, 100);   assert(0 == res 
+   res = PM(&p, 4 * 1024 * 1024, 100);   assert(0 == res && p
                                                 && 0 == (long)p % (4 * 1024 * 1024));
-   res = PM(&p, 16 * 1024 * 1024, 100);   assert(0 == res 
+   res = PM(&p, 16 * 1024 * 1024, 100);   assert(0 == res &&p
                                                 && 0 == (long)p % (16 * 1024 * 1024));
 #endif
 }

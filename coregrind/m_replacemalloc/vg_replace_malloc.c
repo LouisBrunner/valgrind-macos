@@ -1845,7 +1845,7 @@ extern int *___errno (void) __attribute__((weak));
       } \
       if (VG_POSIX_MEMALIGN_SIZE_0_RETURN_NULL && \
           size == 0U) { \
-         /* no allocation for zro size on Solaris/Illumos */ \
+         /* no allocation for zero size on Solaris/Illumos */ \
          *memptr = NULL; \
          return 0; \
       } \

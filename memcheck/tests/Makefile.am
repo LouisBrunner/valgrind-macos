@@ -217,7 +217,8 @@ EXTRA_DIST = \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
 		memalign_test.stderr.exp-freebsd-clang \
-	memalign2.stderr.exp memalign2.vgtest \
+	memalign_args.vgtest memalign_args.stderr.exp \
+		memalign_args.stderr.exp-glibc \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \
@@ -272,6 +273,7 @@ EXTRA_DIST = \
 	pipe.stderr.exp pipe.vgtest \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp \
+	posix_memalign.stderr.exp posix_memalign.vgtest \
 	post-syscall.stderr.exp post-syscall.vgtest \
 	reach_thread_register.stderr.exp reach_thread_register.vgtest \
 		reach_thread_register.stderr.exp-mips32 \
@@ -417,7 +419,8 @@ check_PROGRAMS = \
 	malloc_free_fill \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
-	memalign_test memalign2 memcmptest mempool mempool2 mmaptest \
+	memalign_test  memcmptest mempool mempool2 mmaptest \
+	memalign_args \
 	memmem \
 	mismatches new_override metadata \
 	nanoleak_supp nanoleak2 new_nothrow \
@@ -429,6 +432,7 @@ check_PROGRAMS = \
 	partiallydefinedeq \
 	partial_load pdb-realloc pdb-realloc2 \
 	pipe pointer-trace \
+	posix_memalign \
 	post-syscall \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \

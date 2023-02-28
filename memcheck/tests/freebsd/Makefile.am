@@ -99,7 +99,8 @@ EXTRA_DIST = \
 	bug464476_abs_symlink.stdout.exp \
 	bug464476_rel_symlink.vgtest \
 	bug464476_rel_symlink.stderr.exp \
-	bug464476_rel_symlink.stdout.exp
+	bug464476_rel_symlink.stdout.exp \
+        memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
@@ -107,7 +108,7 @@ check_PROGRAMS = \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
 	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
-	setproctitle sctp sctp2 bug464476
+	setproctitle sctp sctp2 bug464476 memalign
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

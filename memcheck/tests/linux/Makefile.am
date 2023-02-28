@@ -33,7 +33,8 @@ EXTRA_DIST = \
 	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
-	enomem.vgtest enomem.stderr.exp enomem.stdout.exp
+	enomem.vgtest enomem.stderr.exp enomem.stdout.exp \
+	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
 	brk \
@@ -55,7 +56,8 @@ check_PROGRAMS = \
 	proc-auxv \
 	sys-execveat \
 	check_execveat \
-	enomem
+	enomem \
+	memalign
 
 if HAVE_AT_FDCWD
 check_PROGRAMS += sys-openat

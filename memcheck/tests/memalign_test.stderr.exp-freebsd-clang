@@ -5,6 +5,6 @@ Invalid free() / delete / delete[] / realloc()
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (memalign_test.c:23)
  Block was alloc'd at
-   at 0x........: memalign (vg_replace_malloc.c:...)
+   at 0x........: valloc (vg_replace_malloc.c:...)
    by 0x........: main (memalign_test.c:16)
 

@@ -2239,12 +2239,26 @@ void* VG_(arena_memalign) ( ArenaId aid, const HChar* cc,
    // Check that the requested alignment has a plausible size.
    // Check that the requested alignment seems reasonable; that is, is
    // a power of 2.
-   if (req_alignB < VG_MIN_MALLOC_SZB
-       || req_alignB > 16 * 1024 * 1024
-       || VG_(log2)( req_alignB ) == -1 /* not a power of 2 */) {
+   if (req_alignB < VG_MIN_MALLOC_SZB) {
       VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\n"
                   "bad alignment value %lu\n"
-                  "(it is too small, too big, or not a power of two)",
+                  "(it is too small, below the lower limit of %d)",
+                  a, req_alignB, req_pszB, req_alignB, VG_MIN_MALLOC_SZB );
+      VG_(core_panic)("VG_(arena_memalign)");
+      /*NOTREACHED*/
+   }
+   if (req_alignB > 16 * 1024 * 1024) {
+      VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\n"
+                  "bad alignment value %lu\n"
+                  "(it is too big, larger than the upper limit of %d)",
+                  a, req_alignB, req_pszB, req_alignB, 16 * 1024 * 1024 );
+      VG_(core_panic)("VG_(arena_memalign)");
+      /*NOTREACHED*/
+   }
+   if (VG_(log2)( req_alignB ) == -1 /* not a power of 2 */) {
+      VG_(printf)("VG_(arena_memalign)(%p, %lu, %lu)\n"
+                  "bad alignment value %lu\n"
+                  "(it is not a power of two)",
                   a, req_alignB, req_pszB, req_alignB );
       VG_(core_panic)("VG_(arena_memalign)");
       /*NOTREACHED*/

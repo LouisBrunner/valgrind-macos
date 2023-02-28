@@ -54,7 +54,8 @@ EXTRA_DIST = \
 	supponlyobj.stderr.exp supponlyobj.supp supponlyobj.vgtest \
 	syscall_at.stderr.exp syscall_at.stdout.exp syscall_at.vgtest \
 	thr_daemon_exit_libc.stderr.exp thr_daemon_exit_libc.stdout.exp thr_daemon_exit_libc.vgtest \
-	thr_daemon_exit_standalone.stderr.exp thr_daemon_exit_standalone.stdout.exp thr_daemon_exit_standalone.vgtest
+	thr_daemon_exit_standalone.stderr.exp thr_daemon_exit_standalone.stdout.exp thr_daemon_exit_standalone.vgtest \
+	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
 	brk \
@@ -79,7 +80,8 @@ check_PROGRAMS = \
 	strlcpy \
 	syscall_at \
 	thr_daemon_exit_libc \
-	thr_daemon_exit_standalone
+	thr_daemon_exit_standalone \
+	memalign
 
 if SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS
 check_PROGRAMS += execx

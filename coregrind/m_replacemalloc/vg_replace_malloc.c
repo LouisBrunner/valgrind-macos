@@ -1506,6 +1506,34 @@ extern int *___errno (void) __attribute__((weak));
   *
   */
 
+#define ZONEMEMALIGN(soname, fnname) \
+   \
+   void* VG_REPLACE_FUNCTION_EZU(10100,soname,fnname) \
+            ( void *zone, SizeT alignment, SizeT n ); \
+   void* VG_REPLACE_FUNCTION_EZU(10100,soname,fnname) \
+            ( void *zone, SizeT alignment, SizeT n ) \
+   { \
+      void* v; \
+      \
+      DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord) zone);	\
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
+      MALLOC_TRACE("zone_memalign(%p, al %llu, size %llu)", \
+                   zone, (ULong)alignment, (ULong)n );  \
+      \
+      /* Round up to minimum alignment if necessary. */ \
+      if (alignment < VG_MIN_MALLOC_SZB) \
+         alignment = VG_MIN_MALLOC_SZB; \
+      \
+      /* Round up to nearest power-of-two if necessary (like glibc). */ \
+      while (0 != (alignment & (alignment - 1))) alignment++; \
+      \
+      v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, n ); \
+      MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
+      return v; \
+   }
+
 #if defined(VGO_linux)
 #if !defined(MUSL_LIBC)
 #define MEMALIGN(soname, fnname) \
@@ -1646,6 +1674,10 @@ extern int *___errno (void) __attribute__((weak));
 #elif defined(VGO_freebsd)
  MEMALIGN(VG_Z_LIBC_SONAME, memalign);
  MEMALIGN(SO_SYN_MALLOC,    memalign);
+
+#elif defined(VGO_darwin)
+ ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_zone_memalign);
+ ZONEMEMALIGN(SO_SYN_MALLOC,    malloc_zone_memalign);
 
 #elif defined(VGO_solaris)
  MEMALIGN(VG_Z_LIBC_SONAME,      memalign);

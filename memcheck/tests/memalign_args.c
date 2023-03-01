@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <malloc.h>
 #include <unistd.h>
 #include "../../config.h"
 #include "../memcheck.h"

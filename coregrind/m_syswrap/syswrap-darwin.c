@@ -278,9 +278,15 @@ static void run_a_thread_NORETURN ( Word tidW )
       tst->status = VgTs_Empty;
       // GrP fixme race here! new thread may claim this V thread stack
       // before we get out here!
-      // GrP fixme use bsdthread_terminate for safe cleanup?
       mach_msg(&msg, MACH_SEND_MSG|MACH_MSG_OPTION_NONE,
                sizeof(msg), 0, 0, MACH_MSG_TIMEOUT_NONE, 0);
+
+#  if DARWIN_VERS >= DARWIN_10_14
+      // LB fixme
+      // should we only do bsdthread_terminate?
+      // should we read the pthread internals to add freeaddr/size, the semaphore, etc?
+      VG_(do_syscall4)(__NR_bsdthread_terminate, 0, 0, 0, 0);
+#endif
 
       // DDD: This is reached sometimes on none/tests/manythreads, maybe
       // because of the race above.

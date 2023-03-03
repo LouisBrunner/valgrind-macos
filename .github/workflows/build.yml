@@ -38,7 +38,7 @@ jobs:
       - name: build
         run: make
       - name: try ls -l
-        run: ./vg-in-place ls -l
+        run: ./vg-in-place --gen-suppressions=all ls -l
       - name: build regression tests
         run: make check
       - name: create artifacts folder

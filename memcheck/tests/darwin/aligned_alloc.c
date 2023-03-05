@@ -9,15 +9,12 @@ int main(void)
    // zero size
    p = aligned_alloc(0, 8);
    assert(p == NULL);
-   errno = 0;
    // non multiple of alignment fails on Darwin
    p = aligned_alloc(8, 25);
    assert(p == NULL);
-   errno = 0;
    // align not power of 2
    p = aligned_alloc(40, 160);
    assert(p == NULL);
-   errno = 0;
 
    // @todo PJF this works standalone
    // but for some reason it doesn't fail in arena_memalign

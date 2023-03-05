@@ -61,8 +61,9 @@ int main(void)
    assert(p == NULL && errno == EINVAL);
    errno = 0;
    // non multiple of alignment passes on FreeBSD
-   //p = aligned_alloc(8, 25);
-   //assert(p == NULL && errno == EINVAL);
+   p = aligned_alloc(8, 25);
+   assert(p && ((size_t)p % 8U == 0U));
+   free(p);
    //errno = 0;
    // align not power of 2
    p = aligned_alloc(40, 160);

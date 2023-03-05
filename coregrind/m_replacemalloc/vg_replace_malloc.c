@@ -1892,14 +1892,14 @@ extern int *___errno (void) __attribute__((weak));
   * alignment supported by the implementation the function shall
   * fail by returning a null pointer".
   *
-  * Linux glibc, the man page claims that the alignment must be
+  * Linux glibc. The man page claims that the alignment must be
   * a power of two and that size should be a multiple of alignment.
   * However the only case that returns EINVAL (glibc 2.34)
   * is if the alignement is  > SIZE_MAX / 2 + 1
   * Also this is just a weak alias for memalign so this wrapper
-  * has no effect on Linux.
+  * has no effect on Linux glibc.
   *
-  * Linux musl, the alignment must be a power of 2 else
+  * Linux musl. The alignment must be a power of 2 else
   * returns einval. The value of the alignment is clamped
   * to a minumum of UNIT (16).
   *
@@ -1908,16 +1908,25 @@ extern int *___errno (void) __attribute__((weak));
   * The code checks that the alignment is a power of
   * 2 and not less than the minumum alignment (1)
   *
-  * Solaris: doesn't seem to exist on 11.3
-  * Illumos: invalid if the size is 0, the alignment is 0, the
+  * Solaris. Doesn't seem to exist on 11.3
+  * Illumos. Invalid if the size is 0, the alignment is 0, the
   * alignment is not a multiple of 4 (no power of 2
   * requirement even though the manpage claims is) or the
   * alignment is greater than MAX_ALIGN (whatever that is).
   * Wrapper function that just calls memalign
   *
+  * Darwin. Does enforce size bing an integer multiple of
+  * alignment.
+  *
   */
 
-#if defined (VGO_linux)
+#if defined(VGO_darwin)
+#define VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN 1
+#else
+#define VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN 0
+#endif
+
+#if defined (VGO_linux) && !defined(MUSL_LIBC)
 
  #define ALIGNED_ALLOC(soname, fnname) \
     \
@@ -1928,7 +1937,6 @@ extern int *___errno (void) __attribute__((weak));
     { \
        void *mem; \
        \
-       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(alignment); \
        TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
@@ -1959,11 +1967,15 @@ extern int *___errno (void) __attribute__((weak));
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
        if (alignment == 0 \
-           || size % alignment != 0 \
+           || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && (size % alignment != 0)) \
            || (alignment & (alignment - 1)) != 0) { \
           SET_ERRNO_EINVAL; \
           return 0; \
        } \
+       \
+       /* Round up to minimum alignment if necessary. */ \
+       if (alignment < VG_MIN_MALLOC_SZB) \
+          alignment = VG_MIN_MALLOC_SZB; \
        \
        mem = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, \
                  alignment, size ); \

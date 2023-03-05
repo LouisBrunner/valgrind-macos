@@ -12,6 +12,7 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
+	aligned_alloc.stderr.exp aligned_alloc.vgtest \
 	brk.stderr.exp brk.stdout.exp brk.vgtest \
 	context_stack_die.stderr.exp context_stack_die.stdout.exp context_stack_die.vgtest \
 	door_data.stderr.exp door_data.stdout.exp door_data.vgtest \
@@ -58,6 +59,7 @@ EXTRA_DIST = \
 	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
+	aligned_alloc \
 	brk \
 	context_stack_die \
 	door_data \

@@ -1082,6 +1082,7 @@
 /memcheck/tests/darwin/Makefile
 /memcheck/tests/darwin/Makefile.in
 /memcheck/tests/darwin/aio
+/memcheck/tests/darwin/aligned_alloc
 /memcheck/tests/darwin/deep_badparam
 /memcheck/tests/darwin/env
 /memcheck/tests/darwin/ioctl-tiocsbrk
@@ -1099,6 +1100,7 @@
 /memcheck/tests/linux/*.stdout.diff
 /memcheck/tests/linux/*.stdout.out
 /memcheck/tests/linux/.deps
+/memcheck/tests/linux/aligned_alloc
 /memcheck/tests/linux/brk
 /memcheck/tests/linux/capget
 /memcheck/tests/linux/check_preadv2_pwritev2
@@ -1193,6 +1195,7 @@
 /memcheck/tests/solaris/.deps
 /memcheck/tests/solaris/Makefile
 /memcheck/tests/solaris/Makefile.in
+/memcheck/tests/solaris/aligned_alloc
 /memcheck/tests/solaris/brk
 /memcheck/tests/solaris/context_stack_die
 /memcheck/tests/solaris/door_data

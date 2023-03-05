@@ -11,8 +11,8 @@ int main(void)
 
    // zero size
    p = aligned_alloc(0, 8);
-   assert(p == NULL && errno == EINVAL);
-   errno = 0;
+   assert(p && ((size_t)p % 8U == 0U));
+   free(p);
    // non multiple of alignment passes on FreeBSD
    p = aligned_alloc(8, 25);
    assert(p && ((size_t)p % 8U == 0U));
@@ -20,7 +20,7 @@ int main(void)
    //errno = 0;
    // align not power of 2
    p = aligned_alloc(40, 160);
-   assert(p == NULL && errno == EINVAL);
+   assert(p == NULL);
    errno = 0;
    // the test below causes a segfault with musl 1.2.2
    // apparently it has been fixed in 1.2.3

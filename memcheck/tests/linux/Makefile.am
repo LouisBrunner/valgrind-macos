@@ -38,6 +38,7 @@ EXTRA_DIST = \
 	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
+	aligned_alloc \
 	brk \
 	capget \
 	check_preadv2_pwritev2 \

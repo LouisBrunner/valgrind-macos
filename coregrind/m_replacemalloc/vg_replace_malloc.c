@@ -1990,6 +1990,8 @@ extern int *___errno (void) __attribute__((weak));
        /* Round up to minimum alignment if necessary. */ \
        if (alignment < VG_MIN_MALLOC_SZB) \
           alignment = VG_MIN_MALLOC_SZB; \
+       /* Solaris allows non-power of 2 alignment but not Valgrind. */ \
+       while (0 != (alignment & (alignment - 1))) alignment++; \
        \
        mem = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, \
                  alignment, size ); \

@@ -1941,7 +1941,7 @@ extern int *___errno (void) __attribute__((weak));
 #if defined(MUSL_LIBC)
 #define VG_ALIGNED_ALLOC_SIZE_ZERO 0
 #else
-#define VG_ALIGNED_ALLOC_SIZE_ZERO 1
+#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
 #endif
 
 #if defined (VGO_linux) && !defined(MUSL_LIBC)
@@ -1984,7 +1984,7 @@ extern int *___errno (void) __attribute__((weak));
        \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
-       if ((VG_ALIGNED_ALLOC_SIZE_ZERO && (alignment == 0)) \
+       if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (alignment == 0)) \
            || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && (size % alignment != 0)) \
            || (VG_ALIGNED_ALLOC_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
            || (VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \

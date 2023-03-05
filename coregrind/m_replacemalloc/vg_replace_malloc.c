@@ -1984,7 +1984,7 @@ extern int *___errno (void) __attribute__((weak));
        \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
-       if (VG_ALIGNED_ALLOC_SIZE_ZERO && (alignment == 0) \
+       if ((VG_ALIGNED_ALLOC_SIZE_ZERO && (alignment == 0)) \
            || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && (size % alignment != 0)) \
            || (VG_ALIGNED_ALLOC_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
            || (VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \

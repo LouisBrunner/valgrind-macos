@@ -35,8 +35,8 @@ int main(void)
       p = NULL;
       errno = ENOMEM;
    }
-#endif
    assert(p == NULL && errno == ENOMEM);
+#endif
 #endif
 }
 

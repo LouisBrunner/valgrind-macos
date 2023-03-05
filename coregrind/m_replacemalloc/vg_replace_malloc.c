@@ -1939,7 +1939,7 @@ extern int *___errno (void) __attribute__((weak));
 #endif
 
 #if defined(MUSL_LIBC)
-#define VG_ALIGNED_ALLOC_SIZE_ZERO 0
+#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 0
 #else
 #define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
 #endif

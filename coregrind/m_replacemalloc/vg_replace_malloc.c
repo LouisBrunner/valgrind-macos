@@ -1926,6 +1926,19 @@ extern int *___errno (void) __attribute__((weak));
 #define VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN 0
 #endif
 
+#if defined(VGO_solaris)
+#define VG_ALIGNED_ALLOC_ALIGN_POWER_TWO 0
+#else
+#define VG_ALIGNED_ALLOC_ALIGN_POWER_TWO 1
+#endif
+
+#if defined(VGO_solaris)
+#define VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR 1
+#else
+#define VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR 0
+#endif
+
+
 #if defined (VGO_linux) && !defined(MUSL_LIBC)
 
  #define ALIGNED_ALLOC(soname, fnname) \
@@ -1968,7 +1981,8 @@ extern int *___errno (void) __attribute__((weak));
                 (ULong)alignment, (ULong)size ); \
        if (alignment == 0 \
            || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && (size % alignment != 0)) \
-           || (alignment & (alignment - 1)) != 0) { \
+           || (VG_ALIGNED_ALLOC_ALIGN_POWER_TWO &&  (alignment & (alignment - 1)) != 0) \
+           || (VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR && (size % 4 != 0))) { \
           SET_ERRNO_EINVAL; \
           return 0; \
        } \

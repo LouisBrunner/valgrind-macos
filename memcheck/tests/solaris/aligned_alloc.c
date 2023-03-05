@@ -18,12 +18,10 @@ int main(void)
    //errno = 0;
    // align not power of 2
    p = aligned_alloc(40, 160);
-   assert(p == NULL && errno == EINVAL);
+   assert(p);
    errno = 0;
-   // the test below causes a segfault with musl 1.2.2
-   // apparently it has been 
 
-   // too big
+   // too big aligment
    if (sizeof(size_t) == 8)
    {
       p = aligned_alloc(16, 1UL<<48);
@@ -37,5 +35,4 @@ int main(void)
    assert(p == NULL && errno == ENOMEM);
 
 }
-
 

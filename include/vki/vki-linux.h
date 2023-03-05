@@ -1873,6 +1873,62 @@ struct vki_ppdev_frob_struct {
 #define VKI_PPSETFLAGS	_VKI_IOW(VKI_PP_IOCTL, 0x9b, int)
 
 //----------------------------------------------------------------------
+// From linux-5.2.5/include/uapi/linux/loop.h
+//----------------------------------------------------------------------
+
+#define		VKI_LO_NAME_SIZE		64
+#define		VKI_LO_KEY_SIZE			32
+
+struct vki_loop_info {
+
+	int                 lo_number;              /* ioctl r/o */
+	unsigned short      lo_device;              /* ioctl r/o */
+	unsigned long       lo_inode;               /* ioctl r/o */
+	unsigned short      lo_rdevice;             /* ioctl r/o */
+	int                 lo_offset;
+	int                 lo_encrypt_type;
+	int                 lo_encrypt_key_size;    /* ioctl w/o */
+	int                 lo_flags;               /* ioctl r/o */
+	char                lo_name[VKI_LO_NAME_SIZE];
+	unsigned char       lo_encrypt_key[VKI_LO_KEY_SIZE];/* ioctl w/o */
+	unsigned long       lo_init[2];
+	char                reserved[4];
+};
+
+struct vki_loop_info64 {
+	__vki_u64          lo_device;           /* ioctl r/o */
+	__vki_u64          lo_inode;            /* ioctl r/o */
+	__vki_u64          lo_rdevice;          /* ioctl r/o */
+	__vki_u64          lo_offset;
+	__vki_u64          lo_sizelimit;/* bytes, 0 == max available */
+	__vki_u32          lo_number;           /* ioctl r/o */
+	__vki_u32          lo_encrypt_type;
+	__vki_u32          lo_encrypt_key_size; /* ioctl w/o */
+	__vki_u32          lo_flags;            /* ioctl r/o */
+	__vki_u8           lo_file_name[VKI_LO_NAME_SIZE];
+	__vki_u8           lo_crypt_name[VKI_LO_NAME_SIZE];
+	__vki_u8           lo_encrypt_key[VKI_LO_KEY_SIZE]; /* ioctl w/o */
+	__vki_u64          lo_init[2];
+};
+
+/* loopback device related, e.g. see losetup program options */
+#define VKI_LOOP_SET_FD         0x4C00
+#define VKI_LOOP_CLR_FD         0x4C01
+#define VKI_LOOP_SET_STATUS     0x4C02
+#define VKI_LOOP_GET_STATUS     0x4C03
+#define VKI_LOOP_SET_STATUS64   0x4C04
+#define VKI_LOOP_GET_STATUS64   0x4C05
+#define VKI_LOOP_CHANGE_FD      0x4C06
+#define VKI_LOOP_SET_CAPACITY   0x4C07
+#define VKI_LOOP_SET_DIRECT_IO  0x4C08
+#define VKI_LOOP_SET_BLOCK_SIZE 0x4C09
+
+/* ioctls for loop-control device interface */
+#define VKI_LOOP_CTL_ADD        0x4C80 // adds a new loopback device
+#define VKI_LOOP_CTL_REMOVE     0x4C81 // deletes an existing loopback device
+#define VKI_LOOP_CTL_GET_FREE   0x4C82 // finds a free/available loopback device
+
+//----------------------------------------------------------------------
 // From linux-5.2.5/include/uapi/linux/fs.h
 //----------------------------------------------------------------------
 

@@ -89,6 +89,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 444568  drd/tests/pth_barrier_thr_cr fails on Fedora 38
 445743  "The impossible happened: mutex is locked simultaneously by two threads"
         while using mutexes with priority inheritance and signals
+449309  Missing loopback device ioctl(s) 
 459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
 460356  s390: Sqrt32Fx4 -- cannot reduce tree
 462830  WARNING: unhandled amd64-freebsd syscall: 474

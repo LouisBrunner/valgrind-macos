@@ -7861,6 +7861,32 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(RTC_IRQP_READ)", ARG3, sizeof(unsigned long));
       break;
 
+      /* Loopback control */
+   case VKI_LOOP_CTL_ADD:
+   case VKI_LOOP_CTL_REMOVE:
+   case VKI_LOOP_CTL_GET_FREE:
+      break;
+      /* Loopback device */
+   case VKI_LOOP_SET_FD:
+   case VKI_LOOP_CLR_FD:
+   case VKI_LOOP_CHANGE_FD:
+   case VKI_LOOP_SET_CAPACITY:
+   case VKI_LOOP_SET_DIRECT_IO:
+   case VKI_LOOP_SET_BLOCK_SIZE:
+      break;
+   case VKI_LOOP_SET_STATUS:
+      PRE_MEM_READ("ioctl(LOOP_SET_STATUS)", ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_GET_STATUS:
+      PRE_MEM_WRITE("ioctl(LOOP_GET_STATUS)", ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_SET_STATUS64:
+      PRE_MEM_READ("ioctl(LOOP_SET_STATUS64)", ARG3, sizeof(struct vki_loop_info64));
+      break;
+   case VKI_LOOP_GET_STATUS64:
+      PRE_MEM_WRITE("ioctl(LOOP_GET_STATUS64)", ARG3, sizeof(struct vki_loop_info64));
+      break;
+
       /* Block devices */
    case VKI_BLKROSET:
       PRE_MEM_READ( "ioctl(BLKROSET)", ARG3, sizeof(int));
@@ -10827,6 +10853,33 @@ POST(sys_ioctl)
    case VKI_RTC_IRQP_READ:
       POST_MEM_WRITE(ARG3, sizeof(unsigned long));
       break;
+
+   /* Loopback devices */
+   case VKI_LOOP_CTL_ADD:
+   case VKI_LOOP_CTL_REMOVE:
+   case VKI_LOOP_CTL_GET_FREE:
+      break;
+      /* Loopback device */
+   case VKI_LOOP_SET_FD:
+   case VKI_LOOP_CLR_FD:
+   case VKI_LOOP_CHANGE_FD:
+   case VKI_LOOP_SET_CAPACITY:
+   case VKI_LOOP_SET_DIRECT_IO:
+   case VKI_LOOP_SET_BLOCK_SIZE:
+      break;
+   case VKI_LOOP_SET_STATUS:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_GET_STATUS:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_SET_STATUS64:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info64));
+      break;
+   case VKI_LOOP_GET_STATUS64:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info64));
+      break;
+
 
       /* Block devices */
    case VKI_BLKROSET:

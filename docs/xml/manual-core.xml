@@ -82,6 +82,11 @@ To make it easier to write suppressions, you can use the
 print out a suppression for each reported error, which you can then
 copy into a suppressions file.</para>
 
+<para>Valgrind will try to match the behaviour of applications
+compiled to run on the same OS and libraries that Valgrind was
+built with. If you use different libraries or a different
+OS version there may be some small differences in behaviour.</para>
+
 <para>Different error-checking tools report different kinds of errors.
 The suppression mechanism therefore allows you to say which tool or
 tool(s) each suppression applies to.</para>

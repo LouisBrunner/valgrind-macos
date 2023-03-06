@@ -1506,6 +1506,7 @@ extern int *___errno (void) __attribute__((weak));
   *
   */
 
+ /* @todo PJF exactly what is the behaviour if this? */
 #define ZONEMEMALIGN(soname, fnname) \
    \
    void* VG_REPLACE_FUNCTION_EZU(10100,soname,fnname) \
@@ -1534,8 +1535,34 @@ extern int *___errno (void) __attribute__((weak));
       return v; \
    }
 
-#if defined(VGO_linux)
-#if !defined(MUSL_LIBC)
+#if defined(VGO_freebsd)
+#define VG_MEMALIGN_MAKE_SIZE_MULTIPLE_ALIGN 1
+#else
+#define VG_MEMALIG_MAKE_SIZE_MULTIPLE_ALIGN 0
+#endif
+
+#if defined(VGO_solaris)
+#define VG_MEMALIGN_ALIGN_POWER_TWO 0
+#else
+#define VG_MEMALIGN_ALIGN_POWER_TWO 1
+#endif
+
+#if defined(VGO_solaris)
+#define VG_MEMALIGD_ALIGN_FACTOR_FOUR 1
+#else
+#define VG_MEMALIGN_ALIGN_FACTOR_FOUR 0
+#endif
+
+#if defined(MUSL_LIBC)
+#define VG_MEMALIGN_NO_SIZE_ZERO 0
+#else
+#define VG_MEMALIGN_NO_SIZE_ZERO 1
+#endif
+
+
+
+#if defined(VGO_linux) && !defined(MUSL_LIBC)
+
 #define MEMALIGN(soname, fnname) \
    \
    void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
@@ -1562,7 +1589,9 @@ extern int *___errno (void) __attribute__((weak));
       if (!v) SET_ERRNO_ENOMEM; \
       return v; \
    }
-#else /* MUSL_LIBC */
+
+#else
+
 #define MEMALIGN(soname, fnname) \
    \
    void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
@@ -1573,13 +1602,23 @@ extern int *___errno (void) __attribute__((weak));
       void *mem; \
       \
       DO_INIT; \
-      if ((alignment & (alignment - 1)) != 0) { \
+      MALLOC_TRACE("memalign(alignment %llu, size %llu)", \
+                   (ULong)alignment, (ULong)size ); \
+      if ((VG_MEMALIGN_NO_SIZE_ZERO && (alignment == 0)) \
+          || (VG_MEMALIGN_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
+          || (VG_MEMALIGN_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \
          SET_ERRNO_EINVAL; \
          return 0; \
       } \
-     /* Round up to minimum alignment if necessary. */ \
-     if (alignment < VG_MIN_MALLOC_SZB) \
+      /* Round up to minimum alignment if necessary. */ \
+      if (alignment < VG_MIN_MALLOC_SZB) \
          alignment = VG_MIN_MALLOC_SZB; \
+      /* Solaris allows non-power of 2 alignment but not Valgrind. */ \
+      while (0 != (alignment & (alignment - 1))) alignment++; \
+      \
+      if (VG_MEMALIGN_MAKE_SIZE_MULTIPLE_ALIGN) { \
+         size = ((size + alignment - 1)/alignment)*alignment; \
+      } \
       \
       mem = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, alignment, size ); \
       \
@@ -1587,83 +1626,6 @@ extern int *___errno (void) __attribute__((weak));
       \
       return mem; \
    }
-#endif
-
-#elif defined(VGO_freebsd)
-
-#define MEMALIGN(soname, fnname) \
-   \
-   void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
-          ( SizeT alignment, SizeT size ); \
-   void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
-          ( SizeT alignment, SizeT size ) \
-   { \
-      void *mem; \
-      \
-      DO_INIT; \
-      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
-      MALLOC_TRACE("memalign(al %llu, size %llu)\n", \
-               (ULong)alignment, (ULong)size ); \
-      if ((alignment & (alignment - 1)) != 0) { \
-         SET_ERRNO_EINVAL; \
-         return 0; \
-      } \
-      /* Round up to minimum alignment if necessary. */ \
-        if (alignment < VG_MIN_MALLOC_SZB) \
-            alignment = VG_MIN_MALLOC_SZB; \
-      \
-      mem = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, \
-               alignment, VG_ALIGN_ROUNDUP(size, alignment) ); \
-      \
-      if (!mem) SET_ERRNO_ENOMEM; \
-      \
-      return mem; \
-   }
-
-#elif defined(VGO_solaris)
-
-// In the Illumos source there is a macro MINSIZE
-// which is sizeof (TREE) - sizeof (WORD)
-// struct TREE contains 6 WORDS
-// so MINSIZE is 5 words
-//
-// In gdb I get the impression that sizeof (WORD) is 16
-#define VG_MEMALIGN_MINSIZE (5*VG_WORDSIZE)
-
-#define MEMALIGN(soname, fnname) \
-   \
-   void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
-          ( SizeT alignment, SizeT size ); \
-   void* VG_REPLACE_FUNCTION_EZU(10110,soname,fnname) \
-          ( SizeT alignment, SizeT size ) \
-   { \
-      void *mem; \
-      \
-      DO_INIT; \
-      MALLOC_TRACE("memalign(al %llu, size %llu)\n", \
-               (ULong)alignment, (ULong)size ); \
-      if (alignment == 0 \
-          || (size == 0) \
-          || (alignment & 3)) { \
-         SET_ERRNO_EINVAL; \
-         return 0; \
-      } \
-      size = VG_ALIGN_ROUNDUP(size, VG_WORDSIZE); \
-      if (size < VG_MEMALIGN_MINSIZE) \
-         size = VG_MEMALIGN_MINSIZE; \
-      alignment = VG_ALIGN_ROUNDUP(alignment, VG_WORDSIZE); \
-      while (alignment < VG_MEMALIGN_MINSIZE + VG_WORDSIZE) \
-         alignment <<= 1U; \
-      \
-      mem = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_memalign, \
-               alignment, VG_ALIGN_ROUNDUP(size, alignment) ); \
-      \
-      if (!mem) SET_ERRNO_ENOMEM; \
-      \
-      return mem; \
-   }
-
-// no Darwin
 
 #endif
 
@@ -1955,6 +1917,7 @@ extern int *___errno (void) __attribute__((weak));
     { \
        void *mem; \
        \
+       DO_INIT; \
        TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
@@ -1982,6 +1945,7 @@ extern int *___errno (void) __attribute__((weak));
     { \
        void *mem; \
        \
+       DO_INIT; \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
        if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (alignment == 0)) \

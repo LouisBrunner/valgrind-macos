@@ -932,8 +932,8 @@ extern int *___errno (void) __attribute__((weak));
 
 #define DELETE_SIZED(soname, fnname, vg_replacement) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, size_t size); \
-   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, size_t size)  \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size); \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size)  \
    { \
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
@@ -1008,8 +1008,8 @@ extern int *___errno (void) __attribute__((weak));
 
 #define DELETE_ALIGNED(soname, fnname, vg_replacement) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, size_t alignment); \
-   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, size_t alignment)  \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT alignment); \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT alignment)  \
    { \
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)alignment); \
@@ -1021,8 +1021,8 @@ extern int *___errno (void) __attribute__((weak));
 
 #define DELETE_SIZED_ALIGNED(soname, fnname, vg_replacement) \
    \
-   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, size_t size, size_t alignment); \
-   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, size_t size, size_t alignment)  \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size, SizeT alignment); \
+   void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size, SizeT alignment)  \
    { \
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \

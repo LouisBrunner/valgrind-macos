@@ -139,6 +139,8 @@ EXTRA_DIST = \
 	cxx17_aligned_new.stderr.exp cxx17_aligned_new.vgtest \
 		cxx17_aligned_new.stderr.exp_32 \
 		cxx17_aligned_new.stdout.exp \
+	sized_aligned_new_delete_args.stderr.exp \
+		sized_aligned_new_delete_args.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
@@ -485,7 +487,7 @@ cdebug_zlib_gnu_CFLAGS = $(AM_CFLAGS) -g -gz=zlib-gnu @FLAG_W_NO_UNINITIALIZED@
 endif
 
 if HAVE_ALIGNED_CXX_ALLOC
-check_PROGRAMS += cxx17_aligned_new
+check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args
 endif
 
 if HAVE_PTHREAD_BARRIER
@@ -546,6 +548,8 @@ bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
+sized_aligned_new_delete_args_CXXFLAGS = -std=c++17
 endif
 
 demangle_SOURCES = demangle.cpp

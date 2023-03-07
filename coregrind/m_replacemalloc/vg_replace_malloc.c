@@ -68,7 +68,7 @@
 #include "pub_core_redir.h"         // for VG_REPLACE_FUNCTION_*
 #include "pub_core_replacemalloc.h"
 
-#define VG_ALIGN_ROUNDUP(size, alignment)   ((size + alignment - 1) & ~(alignment - 1))
+#define VG_ALIGN_ROUNDUP(size, alignment)   (((size) + (alignment) - 1) & ~((alignment) - 1))
 
 /* Assignment of behavioural equivalence class tags: 1NNNP is intended
    to be reserved for the Valgrind core.  Current usage:

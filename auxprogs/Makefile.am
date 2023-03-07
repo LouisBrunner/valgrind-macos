@@ -183,9 +183,9 @@ $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
 $(GSL_BUILD_DIR)/gsl-build: $(GSL_SRC_DIR)/gsl-patched
 	mkdir -p $(GSL_BUILD_DIR)
 	(cd $(GSL_BUILD_DIR) && \
-	 $(GSL_SRC_DIR)/configure CFLAGS="$(GSL_CFLAGS)" && \
-	 make -j $(nproc) && \
-	 make check -k || true)
+	 $(GSL_SRC_DIR)/configure CC="${CC}" CXX="${CXX}" CFLAGS="$(GSL_CFLAGS)" && \
+	 ${MAKE} -j $(nproc) && \
+	 ${MAKE} check -k || true)
 	touch $@
 
 # We hope all tests PASS (so don't produce output except for the test names).

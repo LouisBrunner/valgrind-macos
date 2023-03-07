@@ -169,7 +169,7 @@ $(GSL_TAR):
 # We need to autoreconf to make sure to get config.guess, config.sub
 # and libtool for newer architectures.
 $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
-	echo "$(GSL_SHA256_SUM)  $(GSL_TAR)" | sha256sum --check -
+	echo "$(GSL_SHA256_SUM)  $(GSL_TAR)" | @SHA256SUM@ --check -
 	(cd $(AUX_CHECK_DIR) && \
 	 tar zxf $(GSL_TAR_NAME) && \
 	 cd $(GSL_DIR_NAME) && \

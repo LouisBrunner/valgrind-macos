@@ -85,6 +85,11 @@ m4_ifndef([AC_PROG_SED],
                      AC_CHECK_PROGS([SED],[gsed sed])])])
 AC_PROG_SED
 
+AC_DEFUN([AC_PROG_SHA256SUM],
+          [AC_ARG_VAR([SHA256SUM])
+          AC_CHECK_PROGS([SHA256SUM],[gsha256sum sha256sum])])
+AC_PROG_SHA256SUM
+
 # If no AR variable was specified, look up the name of the archiver. Otherwise
 # do not touch the AR variable.
 if test "x$AR" = "x"; then

@@ -1,5 +1,8 @@
 #include <stdlib.h>
 #include <unistd.h>
+#if !defined(VGO_darwin)
+#include <malloc.h>
+#endif
 #include "../../config.h"
 #include "../memcheck.h"
 

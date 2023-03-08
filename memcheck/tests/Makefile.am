@@ -550,7 +550,7 @@ if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
-sized_aligned_new_delete_args_CXXFLAGS = -std=c++17
+sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 endif
 
 demangle_SOURCES = demangle.cpp

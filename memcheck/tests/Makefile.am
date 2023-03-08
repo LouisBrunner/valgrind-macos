@@ -223,6 +223,7 @@ EXTRA_DIST = \
 	memalign_args.vgtest memalign_args.stderr.exp \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-ppc64 \
+		memalign_args.stderr.exp-arm \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \

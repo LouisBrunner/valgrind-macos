@@ -294,12 +294,14 @@ extern int *___errno (void) __attribute__((weak));
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
       MALLOC_TRACE(#fnname "(size %llu, al %llu)", (ULong)n, (ULong)alignment ); \
       \
+      if ((alignment == 0) \
+       || ((alignment & (alignment - 1)) != 0)) { \
+         return 0; \
+      } \
+      \
       /* Round up to minimum alignment if necessary. */ \
       if (alignment < VG_MIN_MALLOC_SZB) \
          alignment = VG_MIN_MALLOC_SZB; \
-      \
-      /* Round up to nearest power-of-two if necessary (like glibc). */ \
-      while (0 != (alignment & (alignment - 1))) alignment++; \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_##vg_replacement, n, alignment ); \
       MALLOC_TRACE(" = %p\n", v ); \
@@ -367,12 +369,18 @@ extern int *___errno (void) __attribute__((weak));
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n);           \
       MALLOC_TRACE(#fnname "(size %llu, al %llu)", (ULong)n, (ULong)alignment ); \
       \
+      if ((alignment == 0) \
+       || ((alignment & (alignment - 1)) != 0)) { \
+         VALGRIND_PRINTF( \
+            "new/new[] aligned failed and should throw an exception, but Valgrind\n"); \
+         VALGRIND_PRINTF_BACKTRACE( \
+            "   cannot throw exceptions and so is aborting instead.  Sorry.\n"); \
+         my_exit(1); \
+      } \
+      \
       /* Round up to minimum alignment if necessary. */ \
       if (alignment < VG_MIN_MALLOC_SZB) \
          alignment = VG_MIN_MALLOC_SZB; \
-      \
-      /* Round up to nearest power-of-two if necessary (like glibc). */ \
-      while (0 != (alignment & (alignment - 1))) alignment++; \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_##vg_replacement, n, alignment ); \
       MALLOC_TRACE(" = %p\n", v ); \

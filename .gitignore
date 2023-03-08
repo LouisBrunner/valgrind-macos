@@ -962,6 +962,7 @@
 /memcheck/tests/sh-mem
 /memcheck/tests/sh-mem-random
 /memcheck/tests/sized_aligned_new_delete_args
+/memcheck/tests/sized_aligned_new_delete_misaligned
 /memcheck/tests/sigaltstack
 /memcheck/tests/sigkill
 /memcheck/tests/signal2

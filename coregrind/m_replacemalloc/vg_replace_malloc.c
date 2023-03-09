@@ -114,6 +114,23 @@
 
    mid-06: could be improved, since we can now intercept in the main
    executable too.
+
+   2023-03:
+
+   There seem to be an ever increasing number of C++ new and delete
+   oveloads.
+
+   See
+   https://en.cppreference.com/w/cpp/memory/new/operator_new
+   https://en.cppreference.com/w/cpp/memory/new/operator_delete
+
+   We need to redirect the "replaceable" versions.
+
+   Anything "user-defined" or "class-specific" we can't know
+   about and the user needs to use memory pool annotation.
+
+   "non-alocating placement" as the name implies does not
+   allocate. Placement deletes are no-ops.
 */
 
 
@@ -938,6 +955,35 @@ extern int *___errno (void) __attribute__((weak));
 
 /*---------------------- delete ----------------------*/
 
+#if defined(VGO_linux)
+ // operator delete(void*), not mangled (for gcc 2.96)
+ FREE(VG_Z_LIBSTDCXX_SONAME,   __builtin_delete,     __builtin_delete );
+ FREE(VG_Z_LIBC_SONAME,        __builtin_delete,     __builtin_delete );
+ // operator delete(void*), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
+ FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+
+#elif defined(VGO_freebsd)
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
+ FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+
+#elif defined(VGO_darwin)
+ // operator delete(void*), GNU mangling
+ //FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
+ //FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
+
+#elif defined(VGO_solaris)
+ // operator delete(void*), GNU mangling
+ FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
+ FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+
+#endif
+
+ /*------------------- C++14 delete sized -------------------*/
+
 #define DELETE_SIZED(soname, fnname, vg_replacement) \
    \
    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size); \
@@ -952,21 +998,13 @@ extern int *___errno (void) __attribute__((weak));
    }
 
 #if defined(VGO_linux)
- // operator delete(void*), not mangled (for gcc 2.96)
- FREE(VG_Z_LIBSTDCXX_SONAME,   __builtin_delete,     __builtin_delete );
- FREE(VG_Z_LIBC_SONAME,        __builtin_delete,     __builtin_delete );
- // operator delete(void*), GNU mangling
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
- // operator delete(void*, unsigned int), C++14, GNU mangling
+ // operator delete(void*, unsigned int)
 #if __SIZEOF_SIZE_T__ == 4
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdlPvj,               __builtin_delete );
  DELETE_SIZED(VG_Z_LIBC_SONAME,       _ZdlPvj,               __builtin_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
- // operator delete(void*, unsigned long), C++14, GNU mangling
+ // operator delete(void*, unsigned long)
 #elif __SIZEOF_SIZE_T__ == 8
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdlPvm,               __builtin_delete );
@@ -974,33 +1012,23 @@ extern int *___errno (void) __attribute__((weak));
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
 #endif
 
-
 #elif defined(VGO_freebsd)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
- // operator delete(void*, unsigned long), C++14, GNU mangling
+ // operator delete(void*, unsigned int)
 #if __SIZEOF_SIZE_T__ == 4
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdlPvj,               __builtin_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
 #elif __SIZEOF_SIZE_T__ == 8
+ // operator delete(void*, unsigned long)
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdlPvm,               __builtin_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
 #endif
 
 #elif defined(VGO_darwin)
- // operator delete(void*), GNU mangling
- //FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- //FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
 
 #elif defined(VGO_solaris)
- // operator delete(void*), GNU mangling
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
-
- // operator delete(void*, unsigned long), C++14, GNU mangling
+ // operator delete(void*, unsigned long)
  #if __SIZEOF_SIZE_T__ == 4
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
@@ -1008,7 +1036,6 @@ extern int *___errno (void) __attribute__((weak));
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
 #endif
-
 
 #endif
 
@@ -1168,35 +1195,11 @@ extern int *___errno (void) __attribute__((weak));
  FREE(VG_Z_LIBC_SONAME,       _ZdaPv,               __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
 
-// operator delete[](void*, unsigned long), C++14, GNU mangling
- #if __SIZEOF_SIZE_T__ == 4
- DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
- DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvj,              __builtin_vec_delete );
- DELETE_SIZED(VG_Z_LIBC_SONAME,       _ZdaPvj,              __builtin_vec_delete );
- DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
-
- #elif __SIZEOF_SIZE_T__ == 8
- DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
- DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvm,              __builtin_vec_delete );
- DELETE_SIZED(VG_Z_LIBC_SONAME,       _ZdaPvm,              __builtin_vec_delete );
- DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
-#endif
-
 #elif defined(VGO_freebsd)
  // operator delete[](void*), GNU mangling
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
  FREE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
- // operator delete[](void*, unsigned long), C++14, GNU mangling
-  #if __SIZEOF_SIZE_T__ == 4
-  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
-  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvj,              __builtin_vec_delete );
-  DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
- #elif __SIZEOF_SIZE_T__ == 8
-  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
-  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvm,              __builtin_vec_delete );
-  DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
- #endif
 
 #elif defined(VGO_darwin)
  // operator delete[](void*), not mangled (for gcc 2.96)
@@ -1211,11 +1214,45 @@ extern int *___errno (void) __attribute__((weak));
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
 
- // operator delete[](void*, unsigned int), C++14, GNU mangling
+#endif
+
+/*---------------------- C++14 delete sized [] ----------------------*/
+
+#if defined(VGO_linux)
+// operator delete[](void*, unsigned int)
+ #if __SIZEOF_SIZE_T__ == 4
+ DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
+ DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvj,              __builtin_vec_delete );
+ DELETE_SIZED(VG_Z_LIBC_SONAME,       _ZdaPvj,              __builtin_vec_delete );
+ DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
+
+ #elif __SIZEOF_SIZE_T__ == 8
+ DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
+ DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvm,              __builtin_vec_delete );
+ DELETE_SIZED(VG_Z_LIBC_SONAME,       _ZdaPvm,              __builtin_vec_delete );
+ DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
+#endif
+
+#elif defined(VGO_freebsd)
+ // operator delete[](void*, unsigned int)
+  #if __SIZEOF_SIZE_T__ == 4
+  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
+  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvj,              __builtin_vec_delete );
+  DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
+ #elif __SIZEOF_SIZE_T__ == 8
+  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
+  DELETE_SIZED(VG_Z_LIBCXX_SONAME,     _ZdaPvm,              __builtin_vec_delete );
+  DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
+ #endif
+
+#elif defined(VGO_darwin)
+
+#elif defined(VGO_solaris)
+ // operator delete[](void*, unsigned int)
  #if __SIZEOF_SIZE_T__ == 4
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
-  // operator delete[](void*, unsigned long), C++14, GNU mangling
+  // operator delete[](void*, unsigned long)
  #elif __SIZEOF_SIZE_T__ == 8
  DELETE_SIZED(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,               __builtin_vec_delete );
  DELETE_SIZED(SO_SYN_MALLOC,          _ZdaPvm,               __builtin_vec_delete );
@@ -1608,7 +1645,6 @@ extern int *___errno (void) __attribute__((weak));
 #endif
 
 
-
 #if defined(VGO_linux) && !defined(MUSL_LIBC)
 
 #define MEMALIGN(soname, fnname) \
@@ -1925,7 +1961,7 @@ extern int *___errno (void) __attribute__((weak));
   * alignment is greater than MAX_ALIGN (whatever that is).
   * Wrapper function that just calls memalign
   *
-  * Darwin. Does enforce size bing an integer multiple of
+  * Darwin. Does enforce size being an integer multiple of
   * alignment.
   *
   */

@@ -29,7 +29,7 @@ Ir                 I1mr       ILmr       Dr                  D1mr       DLmr    
 5,000,000 (100.0%) 0          0          -2,000,000 (100.0%) 0          0          0          0          0           <counts for unidentified lines in a.c>
 
 --------------------------------------------------------------------------------
-Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw 
+Ir         I1mr       ILmr       Dr         D1mr       DLmr       Dw         D1mw       DLmw       
 --------------------------------------------------------------------------------
-.          .          .          .          .          .          .          .          .           events annotated
+0          0          0          0          0          0          0          0          0           events annotated
 

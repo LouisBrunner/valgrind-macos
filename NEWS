@@ -86,6 +86,11 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   - Valgrind now contains python code that defines GDB helgrind
     front end monitor commands. See CORE CHANGES.
 
+* Cachegrind:
+  - `cg_annotate` has been rewritten from Perl into Python. The new
+    version is twice as fast, has more flexible argument parsing, and
+    will make future improvements easier.
+
 * Callgrind:
   - Valgrind now contains python code that defines GDB callgrind
     front end monitor commands. See CORE CHANGES.

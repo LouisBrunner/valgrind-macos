@@ -466,10 +466,8 @@ source</computeroutput>. Use the
 to look for source files if the filenames found from the debugging
 information aren't specific enough.</para>
 
-<para>Beware that cg_annotate can take some time to digest large
-<filename>cachegrind.out.&lt;pid&gt;</filename> files,
-e.g. 30 seconds or more.  Also beware that auto-annotation can
-produce a lot of output if your program is large!</para>
+<para> Beware that auto-annotation can produce a lot of output if your program
+is large.</para>
 
 </sect2>
 
@@ -633,8 +631,7 @@ cg_annotate issues warnings.</para>
 
 </itemizedlist>
 
-<para>This list looks long, but these cases should be fairly
-rare.</para>
+<para>These cases should be rare.</para>
 
 </sect2>
 
@@ -946,7 +943,7 @@ small differences like these;  it works in the same way as
 
   <varlistentry>
     <term>
-      <option><![CDATA[--show-percs=<no|yes> [default: yes] ]]></option>
+      <option><![CDATA[--show-percs, --no-show-percs, --show-percs=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>When enabled, a percentage is printed next to all event counts.
@@ -957,7 +954,7 @@ small differences like these;  it works in the same way as
 
   <varlistentry>
     <term>
-      <option><![CDATA[--auto=<no|yes> [default: yes] ]]></option>
+      <option><![CDATA[--auto, --no-auto, --auto=<no|yes> [default: yes] ]]></option>
     </term>
     <listitem>
       <para>When enabled, automatically annotates every file that
@@ -1442,9 +1439,9 @@ events_line  ::= "events:" ws? (event ws)+
 data_line    ::= file_line | fn_line | count_line
 file_line    ::= "fl=" filename
 fn_line      ::= "fn=" fn_name
-count_line   ::= line_num ws? (count ws)+
-summary_line ::= "summary:" ws? (count ws)+
-count        ::= num | "."]]></programlisting>
+count_line   ::= line_num (ws+ count)* ws*
+summary_line ::= "summary:" ws? count (ws+ count)+ ws*
+count        ::= num]]></programlisting>
 
 <para>Where:</para>
 <itemizedlist>
@@ -1479,11 +1476,8 @@ of the summary.  This is a generic way of providing simulation
 specific information, e.g. for giving the cache configuration for
 cache simulation.</para>
 
-<para>More than one line of info can be presented for each file/fn/line number.
+<para>More than one line of info can be present for each file/fn/line number.
 In such cases, the counts for the named events will be accumulated.</para>
-
-<para>Counts can be "." to represent zero.  This makes the files easier for
-humans to read.</para>
 
 <para>The number of counts in each
 <computeroutput>line</computeroutput> and the
@@ -1491,7 +1485,8 @@ humans to read.</para>
 the number of events in the
 <computeroutput>event_line</computeroutput>.  If the number in
 each <computeroutput>line</computeroutput> is less, cg_annotate
-treats those missing as though they were a "." entry.  This saves space.
+treats those missing as though they were a "0" entry. This can reduce
+file size.
 </para>
 
 <para>A <computeroutput>file_line</computeroutput> changes the
@@ -1504,9 +1499,9 @@ pertain to the current filename/fn_name.  A "fn="
 <computeroutput>count_line</computeroutput>s to give the context
 of the first <computeroutput>count_line</computeroutput>s.</para>
 
-<para>Each <computeroutput>file_line</computeroutput> will normally be
-immediately followed by a <computeroutput>fn_line</computeroutput>.  But it
-doesn't have to be.</para>
+<para>Similarly, each <computeroutput>file_line</computeroutput> must be
+immediately followed by a <computeroutput>fn_line</computeroutput>.
+</para>
 
 <para>The summary line is redundant, because it just holds the total counts
 for each event.  But this serves as a useful sanity check of the data;  if

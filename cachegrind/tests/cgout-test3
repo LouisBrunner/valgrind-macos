@@ -1,0 +1,93 @@
+cmd: ann3
+events: A SomeCount ThisIsAVeryLongEventName
+
+# A file testing various things.
+fl=ann3-basic.rs
+# This one has the counts to get the totals to 100,000/100,000/0.
+fn=f0
+7 70491 90491 0
+fn=f1
+# Different whitespace. Mix of line 0 and other lines.
+0  5000   0         0   
+4                5000 500 0
+5   5000       100     0    
+# Line 0.
+fn=f2
+0 2000 100 0
+# Below the threshold
+fn=f3
+9 10 9 0
+fn=f4
+# Use of implicit zero event counts.
+# Also just at the threshold.
+12 200 0 0
+13 200 0
+14 100
+15 0 0 0
+16 0 0
+17 0
+18
+# Just below the threshold.
+fn=f5
+19 499 2000 0
+fn=f6
+# Repeated line numbers, including ones from other functions.
+# Also the total is identical to f4's total.
+0 100 0 0
+9 100 0 0
+20 100 0 0
+20 100 0 0
+20 50 0 0
+20 50 0 0
+
+# File with source newer than the cgout file.
+fl=ann3-more-recent-than-cgout.rs
+fn=new
+2 1000 0 0
+
+# File with negative and positive values.
+fl=ann3-negatives.rs
+# Various, and the sum is zero.
+fn=neg1
+0 -1000 -1000 -1000
+1 2000 2000 2000
+2 -1000 -1000 0
+fn=neg2
+# Enormous numbers, but the sum is zero or almost zero.
+# Also, because the summary value for `ThisIsAVeryLongEventName` is zero, the
+# percentages here show up as zero.
+5 999000 0 -150000
+6 -1000000 0 150000
+fn=neg3
+# Ditto.
+0 -1000 0 10
+10 -10000 0 10
+11 10000 0 -20
+
+# File with source newer than the cgout file.
+fl=ann3-past-the-end.rs
+# This filename is repeated in ann3-could-not-be-found.rs above.
+fn=f1
+1  200 100 0
+20 300 100 0
+21 300 100 0
+22 200 0 -1000
+
+# File mentioned here, but not present on disk.
+fl=ann3-could-not-be-found.rs
+fn=f1
+100 3000 2000 0
+101    3000     2000        0
+102     3000    2000    0
+
+# File found in ann3-aux/, via -I.
+fl=ann3-via-I.rs
+fn=f1
+1 1000 500 0
+
+# Unknown file
+fl=???
+fn=unknown
+0 1000 0 0
+
+summary: 100000 100000 0

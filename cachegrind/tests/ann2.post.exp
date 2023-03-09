@@ -9,8 +9,8 @@ Events shown:     Dw Dr Ir
 Event sort order: Dr
 Thresholds:       0.1
 Include dirs:     
-User annotated:   
-Auto-annotation:  on
+User annotated:   a.c
+Auto-annotation:  off
 
 --------------------------------------------------------------------------------
 Dw              Dr                 Ir                 
@@ -28,7 +28,7 @@ Dw             Dr                 Ir                  file:function
     0              5,158 ( 0.13%)    25,408 ( 0.49%)  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S:strcmp
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: a.c
+-- User-annotated source: a.c
 --------------------------------------------------------------------------------
 Dw         Dr                 Ir                 
 
@@ -39,14 +39,6 @@ Dw         Dr                 Ir
 .                  .                  .              }
 0                  1 ( 0.00%)         6 ( 0.00%)     return z % 256;
 0                  2 ( 0.00%)         2 ( 0.00%)  }
-
---------------------------------------------------------------------------------
-The following files chosen for auto-annotation could not be found:
---------------------------------------------------------------------------------
-  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
-  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
-  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
-  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
 
 --------------------------------------------------------------------------------
 Dw         Dr                 Ir                 

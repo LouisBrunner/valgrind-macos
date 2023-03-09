@@ -7,6 +7,10 @@ Conditional jump or move depends on uninitialised value(s)
    by 0x........: main (sized_aligned_new_delete_args.cpp:16)
 
 Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete(void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:17)
+
+Conditional jump or move depends on uninitialised value(s)
    at 0x........: operator new[](unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
    by 0x........: main (sized_aligned_new_delete_args.cpp:19)
 

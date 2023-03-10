@@ -69,6 +69,8 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
 // changing it crashes the process outside of main.
 #if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#else
+    #error "This test is not supported on macOS 12.0 or later"
 #endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("hlt");

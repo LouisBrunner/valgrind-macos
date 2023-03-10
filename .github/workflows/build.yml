@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-10.15, macos-11, macos-12]
+        os: [macos-12]
 
     runs-on: ${{ matrix.os }}
 
@@ -39,6 +39,12 @@ jobs:
         run: make
       - name: try ls -l
         run: ./vg-in-place --gen-suppressions=all ls -l
+      - name: build test
+        run: make -C none/tests/amd64-darwin/bug341419
+      - name: test
+        run: none/tests/amd64-darwin/bug341419 || echo $?
+      - name: test 2
+        run: ./vg-in-place none/tests/amd64-darwin/bug341419
       - name: build regression tests
         run: make check
       - name: create artifacts folder

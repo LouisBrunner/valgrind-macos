@@ -1268,6 +1268,20 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    Xecu      old_where;
    Bool      is_ignored = False;
 
+   if (p_old == NULL) {
+      return alloc_and_record_block( tid, new_req_szB, VG_(clo_alignment), /*is_zeroed*/False );
+   }
+
+   if (new_req_szB == 0U) {
+      if (VG_(clo_realloc_zero_bytes_frees) == True) {
+         /* like ms_free */
+         unrecord_block(p_old, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
+         VG_(cli_free)(p_old);
+         return NULL;
+      }
+      new_req_szB = 1U;
+   }
+
    // Remove the old block
    hc = VG_(HT_remove)(malloc_list, (UWord)p_old);
    if (hc == NULL) {

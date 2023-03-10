@@ -4323,11 +4323,30 @@ static void* hg_cli__realloc ( ThreadId tid, void* payloadV, SizeT new_size )
 
    if (((SSizeT)new_size) < 0) return NULL;
 
+   if (payloadV == NULL) {
+      return handle_alloc ( tid, new_size, VG_(clo_alignment),
+                            /*is_zeroed*/False );
+   }
+
    md = (MallocMeta*) VG_(HT_lookup)( hg_mallocmeta_table, (UWord)payload );
    if (!md)
       return NULL; /* apparently realloc-ing a bogus address.  Oh well. */
   
    tl_assert(md->payload == payload);
+
+   if (new_size == 0U ) {
+      if (VG_(clo_realloc_zero_bytes_frees) == True) {
+         md_tmp = VG_(HT_remove)( hg_mallocmeta_table, payload );
+         tl_assert(md_tmp);
+         tl_assert(md_tmp == md);
+
+         VG_(cli_free)((void*)md->payload);
+         delete_MallocMeta(md);
+
+         return NULL;
+      }
+      new_size = 1U;
+   }
 
    if (md->szB == new_size) {
       /* size unchanged */

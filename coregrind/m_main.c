@@ -243,6 +243,10 @@ static void usage_NORETURN ( int need_help )
 "              attempt to avoid expensive address-space-resync operations\n"
 "    --max-threads=<number>    maximum number of threads that valgrind can\n"
 "                              handle [%d]\n"
+"    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]\n"
+"                              should calls to realloc with a size of 0\n"
+"                              free memory and return NULL or\n"
+"                              allocate/resize and return non-NULL\n"
 "\n";
 
    const HChar usage2[] =

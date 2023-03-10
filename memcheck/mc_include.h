@@ -555,6 +555,7 @@ void MC_(record_jump_error)    ( ThreadId tid, Addr a );
 void MC_(record_free_error)            ( ThreadId tid, Addr a ); 
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
 void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
+void MC_(record_realloc_size_zero)     ( ThreadId tid, Addr a );
 
 void MC_(record_overlap_error)  ( ThreadId tid, const HChar* function,
                                   Addr src, Addr dst, SizeT szB );
@@ -726,6 +727,9 @@ extern Int MC_(clo_mc_level);
 
 /* Should we show mismatched frees?  Default: YES */
 extern Bool MC_(clo_show_mismatched_frees);
+
+/* Should we warn about deprecated realloc() of size 0 ? Default : YES */
+extern Bool MC_(clo_show_realloc_size_zero);
 
 /* Indicates the level of detail for Vbit tracking through integer add,
    subtract, and some integer comparison operations. */

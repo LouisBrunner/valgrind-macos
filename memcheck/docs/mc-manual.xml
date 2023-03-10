@@ -52,6 +52,11 @@ problems that are common in C and C++ programs.</para>
   </listitem>
 
   <listitem>
+    <para>Using a <computeroutput>size</computeroutput> value of 0
+    with realloc.</para>
+  </listitem>
+
+  <listitem>
     <para>Memory leaks.</para>
   </listitem>
 </itemizedlist>
@@ -428,6 +433,28 @@ For <function>calloc</function> both arguments are being checked.
 <para>In earlier Valgrind versions those values were being referred to
 as "silly arguments" and no back-trace was included.
 </para>
+
+</sect2>
+
+<sect2 id="mc-manual.realocsizezero"
+       xreflabel="Realloc size zero">
+<title>Realloc size zero</title>
+
+<para>The (ab)use or realloc to also do the job of <function>free</function>
+has been poorly understood for a long time. In the C17 standard
+ISO/IEC 9899:2017] the behaviour of realloc when the size argument
+is zero is specified as implementation defined. Memcheck warns about
+the non-portable use or realloc.</para>
+
+<para>For example:</para>
+<programlisting><![CDATA[
+==77609== realloc() with size 0
+==77609==    at 0x48502B8: realloc (vg_replace_malloc.c:1450)
+==77609==    by 0x201989: main (realloczero.c:8)
+==77609==  Address 0x5464040 is 0 bytes inside a block of size 4 alloc'd
+==77609==    at 0x484CBB4: malloc (vg_replace_malloc.c:397)
+==77609==    by 0x201978: main (realloczero.c:7)
+]]></programlisting>
 
 </sect2>
 

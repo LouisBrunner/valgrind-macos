@@ -152,6 +152,10 @@ usage: valgrind [options] prog-and-args
               attempt to avoid expensive address-space-resync operations
     --max-threads=<number>    maximum number of threads that valgrind can
                               handle [500]
+    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]
+                              should calls to realloc with a size of 0
+                              free memory and return NULL or
+                              allocate/resize and return non-NULL
 
   user options for Nulgrind:
     (none)

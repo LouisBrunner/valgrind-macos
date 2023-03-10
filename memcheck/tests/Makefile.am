@@ -286,6 +286,21 @@ EXTRA_DIST = \
 	reach_thread_register.stderr.exp reach_thread_register.vgtest \
 		reach_thread_register.stderr.exp-mips32 \
 		reach_thread_register.stderr.exp-mips64 \
+	realloc_size_zero.stderr.exp realloc_size_zero.stdout.exp-glibc \
+		realloc_size_zero.stdout.exp-other \
+		realloc_size_zero.vgtest \
+	realloc_size_zero_yes.stderr.exp realloc_size_zero_yes.stdout.exp \
+		realloc_size_zero_yes.vgtest \
+	realloc_size_zero_no.stderr.exp realloc_size_zero_no.stdout.exp \
+		realloc_size_zero_no.vgtest \
+	realloc_size_zero_off.stderr.exp realloc_size_zero_off.stdout.exp \
+		realloc_size_zero_off.vgtest \
+	realloc_size_zero_mismatch.stderr.exp \
+		realloc_size_zero_mismatch.stdout.exp \
+		realloc_size_zero_mismatch.vgtest \
+	realloc_size_zero_supp.stderr.exp realloc_size_zero_supp.stdout.exp \
+		realloc_size_zero_supp.vgtest \
+		realloc_size_zero.supp \
 	realloc1.stderr.exp realloc1.vgtest \
 	realloc2.stderr.exp realloc2.vgtest \
 	realloc3.stderr.exp realloc3.vgtest \
@@ -442,6 +457,7 @@ check_PROGRAMS = \
 	pipe pointer-trace \
 	posix_memalign \
 	post-syscall \
+	realloc_size_zero realloc_size_zero_mismatch \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \
 	resvn_stack \
@@ -635,6 +651,8 @@ overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy \
 partial_load_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
 reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
 reach_thread_register_LDADD	= -lpthread
+
+realloc_size_zero_mismatch_SOURCES = realloc_size_zero_mismatch.cpp
 
 resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

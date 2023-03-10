@@ -1,0 +1,7 @@
+realloc() with size 0
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero.c:11)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero.c:8)
+

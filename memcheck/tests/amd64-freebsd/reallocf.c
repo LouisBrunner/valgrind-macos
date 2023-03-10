@@ -10,6 +10,7 @@ int main(void)
    pi = reallocf(pi, 10*sizeof(int));
    VALGRIND_DO_ADDED_LEAK_CHECK;
    pi = reallocf(pi, 0);
+   free(pi);
    VALGRIND_DO_CHANGED_LEAK_CHECK;
    pi = NULL;
    pi = realloc(pi, 10*sizeof(int));

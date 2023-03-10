@@ -1460,20 +1460,16 @@ extern int *___errno (void) __attribute__((weak));
       void* v; \
       \
       DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(new_size); \
       MALLOC_TRACE("zone_realloc(%p,%p,%llu)", zone, ptrV, (ULong)new_size ); \
-      \
-      if (ptrV == NULL) \
-         /* We need to call a malloc-like function; so let's use \
-            one which we know exists. GrP fixme use zonemalloc instead? */ \
-         return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
-                   (new_size); \
-      if (new_size <= 0) { \
-         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
-         MALLOC_TRACE(" = 0\n"); \
-         return NULL; \
-      } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
+      if (v == NULL) { \
+         if (!(new_size == 0U && info.clo_realloc_zero_bytes_frees == True)) {\
+            SET_ERRNO_ENOMEM; \
+         } \
+      } \
       return v; \
    }
 
@@ -1487,21 +1483,16 @@ extern int *___errno (void) __attribute__((weak));
       void* v; \
       \
       DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(new_size); \
       MALLOC_TRACE("realloc(%p,%llu)", ptrV, (ULong)new_size ); \
-      \
-      if (ptrV == NULL) \
-         /* We need to call a malloc-like function; so let's use \
-            one which we know exists. */ \
-         return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
-                   (new_size); \
-      if (new_size <= 0) { \
-         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
-         MALLOC_TRACE(" = 0\n"); \
-         return NULL; \
-      } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
-      if (!v) SET_ERRNO_ENOMEM; \
+      if (v == NULL) { \
+         if (!(new_size == 0U && info.clo_realloc_zero_bytes_frees == True)) {\
+            SET_ERRNO_ENOMEM; \
+         } \
+      } \
       return v; \
    }
 
@@ -1514,24 +1505,17 @@ extern int *___errno (void) __attribute__((weak));
    { \
       void* v; \
       \
-      if (!init_done) init(); \
+      DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(new_size); \
       MALLOC_TRACE("reallocf(%p,%llu)", ptrV, (ULong)new_size ); \
-      \
-      if (ptrV == NULL) \
-         /* We need to call a malloc-like function; so let's use \
-            one which we know exists. */ \
-         return VG_REPLACE_FUNCTION_EZU(10010,VG_Z_LIBC_SONAME,malloc) \
-                   (new_size); \
-      if (new_size == 0) { \
-         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
-         MALLOC_TRACE(" = 0\n"); \
-         return ptrV; \
-      } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
-      if (v == NULL) {\
-         VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
-         SET_ERRNO_ENOMEM; \
+      if (v == NULL) { \
+         if (!(new_size == 0U && info.clo_realloc_zero_bytes_frees == True)) {\
+            VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
+            SET_ERRNO_ENOMEM; \
+         } \
       } \
       MALLOC_TRACE(" = %p\n", v ); \
       return v; \

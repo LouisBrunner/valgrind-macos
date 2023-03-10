@@ -37,6 +37,25 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
     $3 = 40
     (gdb) monitor who_point_at 0x1130a0 40
 
+* The behaviour of realloc with a size of zero can now
+  be changed for tools that intercept malloc. Those
+  tools are memcheck, helgrind, drd, massif and dhat.
+  Realloc implementations generally do one of two things
+     - free the memory like free() and return NULL
+       (GNU libc and ptmalloc).
+     - either free the memory and then allocate a
+       minumum siized block or just return the
+       original pointer. Return NULL if the
+       allocation of the minimum sized block fails
+       (jemalloc, musl, snmalloc, Solaris, macOS).
+  When Valgrind is configured and built it will
+  try to match the OS and libc behaviour. However
+  if you are using a non-default library to replace
+  malloc and family (e.g., musl on a glibc Linux or
+  tcmalloc on FreeBSD) then you can use a command line
+  option to change the behaviour of Valgrind:
+    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]
+
 * ==================== TOOL CHANGES ===================
 
 * Memcheck:
@@ -50,6 +69,13 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
     the new loss records have a "new" marker.
   - Valgrind now contains python code that defines GDB memcheck
     front end monitor commands. See CORE CHANGES.
+  - Performs checks for the use of realloc with a size of zero.
+    This is non-portable and a source of errors. If memcheck
+    detects such a usage it will generate an error
+      realloc() with size 0
+    followed by the usual callstacks.
+    A switch has been added to allow this to be turned off:
+      --show-realloc-size-zero=yes|no [yes]
 
 * Helgrind:
   - The option ---history-backtrace-size=<number> allows to configure

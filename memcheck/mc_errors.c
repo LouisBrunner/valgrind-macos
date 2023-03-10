@@ -75,6 +75,7 @@ typedef
       Err_Leak,
       Err_IllegalMempool,
       Err_FishyValue,
+      Err_ReallocSizeZero,
    }
    MC_ErrorTag;
 
@@ -158,6 +159,10 @@ struct _MC_Error {
       struct {
          AddrInfo ai;
       } FreeMismatch;
+
+      struct {
+         AddrInfo ai;
+      } ReallocSizeZero;
 
       // Call to strcpy, memcpy, etc, with overlapping blocks.
       struct {
@@ -714,6 +719,21 @@ void MC_(pp_Error) ( const Error* err )
          }
          break;
 
+   case Err_ReallocSizeZero:
+      if (xml) {
+         emit( "  <kind>ReallocSizeZero</kind>\n" );
+         emit( "  <what>realloc() with size 0</what>\n" );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                             &extra->Err.ReallocSizeZero.ai, False);
+      } else {
+         emit( "realloc() with size 0\n" );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                             &extra->Err.ReallocSizeZero.ai, False);
+      }
+      break;
+
       default: 
          VG_(printf)("Error:\n  unknown Memcheck error code %d\n",
                      VG_(get_error_kind)(err));
@@ -867,6 +887,15 @@ void MC_(record_freemismatch_error) ( ThreadId tid, MC_Chunk* mc )
    VG_(maybe_record_error)( tid, Err_FreeMismatch, mc->data, /*s*/NULL,
                             &extra );
 }
+
+void MC_(record_realloc_size_zero) ( ThreadId tid, Addr a )
+{
+   MC_Error extra;
+   tl_assert(VG_INVALID_THREADID != tid);
+   extra.Err.ReallocSizeZero.ai.tag = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_ReallocSizeZero, a, /*s*/NULL, &extra );
+}
+
 
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a ) 
 {
@@ -1231,6 +1260,10 @@ UInt MC_(update_Error_extra)( const Error* err )
                                         &extra->Err.FreeMismatch.ai );
       return sizeof(MC_Error);
    }
+   case Err_ReallocSizeZero:
+      describe_addr ( ep, VG_(get_error_address)(err),
+                      &extra->Err.ReallocSizeZero.ai );
+      return sizeof(MC_Error);
 
    default: VG_(tool_panic)("mc_update_extra: bad errkind");
    }
@@ -1324,6 +1357,7 @@ typedef
       LeakSupp,      // Something to be suppressed in a leak check.
       MempoolSupp,   // Memory pool suppression.
       FishyValueSupp,// Fishy value suppression.
+      ReallocSizeZeroSupp, // realloc size 0 suppression
    } 
    MC_SuppKind;
 
@@ -1354,6 +1388,7 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "Value16")) skind = Value16Supp;
    else if (VG_STREQ(name, "Value32")) skind = Value32Supp;
    else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
+   else if (VG_STREQ(name, "ReallocZero")) skind = ReallocSizeZeroSupp;
    else 
       return False;
 
@@ -1531,6 +1566,11 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
                          supp_extra->argument_name);
       }
 
+      case ReallocSizeZeroSupp: {
+
+         return (ekind == Err_ReallocSizeZero);
+      }
+
       default:
          VG_(printf)("Error:\n"
                      "  unknown suppression type %d\n",
@@ -1543,18 +1583,19 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
 const HChar* MC_(get_error_name) ( const Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
-   case Err_RegParam:       return "Param";
-   case Err_MemParam:       return "Param";
-   case Err_User:           return "User";
-   case Err_FreeMismatch:   return "Free";
-   case Err_IllegalMempool: return "Mempool";
-   case Err_Free:           return "Free";
-   case Err_Jump:           return "Jump";
-   case Err_CoreMem:        return "CoreMem";
-   case Err_Overlap:        return "Overlap";
-   case Err_Leak:           return "Leak";
-   case Err_Cond:           return "Cond";
-   case Err_FishyValue:     return "FishyValue";
+   case Err_RegParam:        return "Param";
+   case Err_MemParam:        return "Param";
+   case Err_User:            return "User";
+   case Err_FreeMismatch:    return "Free";
+   case Err_IllegalMempool:  return "Mempool";
+   case Err_Free:            return "Free";
+   case Err_Jump:            return "Jump";
+   case Err_CoreMem:         return "CoreMem";
+   case Err_Overlap:         return "Overlap";
+   case Err_Leak:            return "Leak";
+   case Err_Cond:            return "Cond";
+   case Err_FishyValue:      return "FishyValue";
+   case Err_ReallocSizeZero: return "ReallocZero";
    case Err_Addr: {
       MC_Error* extra = VG_(get_error_extra)(err);
       switch ( extra->Err.Addr.szB ) {

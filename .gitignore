@@ -947,6 +947,8 @@
 /memcheck/tests/posix_memalign
 /memcheck/tests/post-syscall
 /memcheck/tests/reach_thread_register
+/memcheck/tests/realloc_size_zero
+/memcheck/tests/realloc_size_zero_mismatch
 /memcheck/tests/realloc1
 /memcheck/tests/realloc2
 /memcheck/tests/realloc3

@@ -2109,6 +2109,7 @@ void do_client_request ( ThreadId tid )
 
 	 info->mallinfo                = VG_(mallinfo);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);
+         info->clo_realloc_zero_bytes_frees    = VG_(clo_realloc_zero_bytes_frees);
 
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 

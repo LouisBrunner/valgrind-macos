@@ -6064,6 +6064,7 @@ Int           MC_(clo_free_fill)              = -1;
 KeepStacktraces MC_(clo_keep_stacktraces)     = KS_alloc_and_free;
 Int           MC_(clo_mc_level)               = 2;
 Bool          MC_(clo_show_mismatched_frees)  = True;
+Bool          MC_(clo_show_realloc_size_zero) = True;
 
 ExpensiveDefinednessChecks
               MC_(clo_expensive_definedness_checks) = EdcAUTO;
@@ -6256,6 +6257,8 @@ static Bool mc_process_cmd_line_options(const HChar* arg)
 
    else if VG_BOOL_CLOM(cloPD, arg, "--show-mismatched-frees",
                         MC_(clo_show_mismatched_frees)) {}
+   else if VG_BOOL_CLOM(cloPD, arg, "--show-realloc-size-zero",
+                        MC_(clo_show_realloc_size_zero)) {}
 
    else if VG_XACT_CLO(arg, "--expensive-definedness-checks=no",
                             MC_(clo_expensive_definedness_checks), EdcNO) {}
@@ -6320,6 +6323,7 @@ static void mc_print_usage(void)
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
 "        stack trace(s) to keep for malloc'd/free'd areas       [alloc-and-free]\n"
 "    --show-mismatched-frees=no|yes   show frees that don't match the allocator? [yes]\n"
+"    --show-realloc-size-zero=no|yes  show realocs with a size of zero? [yes]\n"
    );
 }
 

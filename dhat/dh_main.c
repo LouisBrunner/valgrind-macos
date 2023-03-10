@@ -818,8 +818,11 @@ static void* dh_realloc ( ThreadId tid, void* p_old, SizeT new_szB )
       return dh_malloc(tid, new_szB);
    }
    if (new_szB == 0) {
-      dh_free(tid, p_old);
-      return NULL;
+      if (VG_(clo_realloc_zero_bytes_frees) == True) {
+         dh_free(tid, p_old);
+         return NULL;
+      }
+      new_szB = 1;
    }
    return renew_block(tid, p_old, new_szB);
 }

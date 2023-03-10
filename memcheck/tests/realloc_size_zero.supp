@@ -1,0 +1,7 @@
+{
+   Test for realoc zero suppression
+   Memcheck:ReallocZero
+   fun:realloc
+   fun:main
+}
+

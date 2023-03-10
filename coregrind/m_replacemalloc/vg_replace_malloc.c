@@ -1073,7 +1073,7 @@ extern int *___errno (void) __attribute__((weak));
  DELETE_ALIGNED(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
  DELETE_ALIGNED(VG_Z_LIBCXX_SONAME,     _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
  DELETE_ALIGNED(VG_Z_LIBC_SONAME,       _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
- FREE(SO_SYN_MALLOC,          _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
+ DELETE_ALIGNED(SO_SYN_MALLOC,          _ZdlPvSt11align_val_t,               __builtin_delete_aligned );
 
  // operator delete(void*, unsigned int, std::align_val_t), GNU mangling
 #if __SIZEOF_SIZE_T__ == 4

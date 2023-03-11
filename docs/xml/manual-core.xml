@@ -1802,6 +1802,9 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       consider using
       <computeroutput>--realloc-zero-bytes-frees=no</computeroutput>.
       </para>
+      <para>Address Sanitizer has a similar and even wordier option
+      <computeroutput>allocator_frees_and_returns_null_on_realloc_zero</computeroutput>.
+      </para>
     </listitem>
   </varlistentry>
 

@@ -455,9 +455,9 @@ typedef
       SizeT szB;          // Sum of all MC_Chunk.szB values.
       SizeT indirect_szB; // Sum of all LC_Extra.indirect_szB values.
       UInt  num_blocks;   // Number of blocks represented by the record.
+      UInt  old_num_blocks;   // output only the changed/new loss records
       SizeT old_szB;          // old_* values are the values found during the 
       SizeT old_indirect_szB; // previous leak search. old_* values are used to
-      UInt  old_num_blocks;   // output only the changed/new loss records
    }
    LossRecord;
 

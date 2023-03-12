@@ -4898,7 +4898,7 @@ POST(sys_rtprio_thread)
 PRE(sys_sctp_generic_sendmsg)
 {
    *flags |= SfMayBlock;
-   PRINT("sys_sctp_generic_sendmsg ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d )",SARG1,ARG2,ARG3,ARG4,SARG5,ARG6,SARG7);
+   PRINT("sys_sctp_generic_sendmsg ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d )",SARG1,ARG2,SARG3,ARG4,SARG5,ARG6,SARG7);
    PRE_REG_READ7(ssize_t, "sctp_generic_sendmsg",
                  int, s, void *, msg, int, msglen,
                  struct sockaddr *, to, socklen_t, len,

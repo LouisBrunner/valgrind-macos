@@ -143,6 +143,7 @@ EXTRA_DIST = \
 		sized_aligned_new_delete_args.vgtest \
 		sized_aligned_new_delete_args.stderr.exp_32 \
 		sized_aligned_new_delete_args.stderr.exp-gcc \
+		sized_aligned_new_delete_args.stderr.exp-s390 \
 	sized_aligned_new_delete_misaligned.stderr.exp \
 		sized_aligned_new_delete_misaligned.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \

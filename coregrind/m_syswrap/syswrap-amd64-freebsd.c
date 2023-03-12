@@ -962,7 +962,7 @@ POST(sys_wait6)
    }
 
    if (ARG6) {
-      POST_MEM_WRITE(ARG5, sizeof(vki_siginfo_t));
+      POST_MEM_WRITE(ARG6, sizeof(vki_siginfo_t));
    }
 }
 

@@ -83,7 +83,7 @@ static const char *find_client(const char *clientname)
 
    while (path) {
       if ((colon = strchr(path, ':')) == NULL) {
-         strcpy(fullname, path);
+         strlcpy(fullname, path, PATH_MAX);
          path = NULL;
       } else {
          memcpy(fullname, path, colon - path);
@@ -91,8 +91,8 @@ static const char *find_client(const char *clientname)
          path = colon + 1;
       }
 
-      strcat(fullname, "/");
-      strcat(fullname, clientname);
+      strlcat(fullname, "/", PATH_MAX);
+      strlcat(fullname, clientname, PATH_MAX);
 
       if (access(fullname, R_OK|X_OK) == 0) {
          return fullname;

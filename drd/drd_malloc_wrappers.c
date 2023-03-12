@@ -147,7 +147,7 @@ static void* drd_malloc(ThreadId tid, SizeT n)
 }
 
 /** Wrapper for memalign(). */
-static void* drd_memalign(ThreadId tid, SizeT align, SizeT n)
+static void* drd_memalign(ThreadId tid, SizeT align, SizeT orig_alignT, SizeT n)
 {
    return new_block(tid, n, align, /*is_zeroed*/False);
 }
@@ -258,7 +258,7 @@ static void* drd___builtin_new(ThreadId tid, SizeT n)
 }
 
 /** Wrapper for __builtin_new_aligned(). */
-static void* drd___builtin_new_aligned(ThreadId tid, SizeT n, SizeT align)
+static void* drd___builtin_new_aligned(ThreadId tid, SizeT n, SizeT align, SizeT orig_align)
 {
    return new_block(tid, n, align, /*is_zeroed*/False);
 }
@@ -282,7 +282,7 @@ static void* drd___builtin_vec_new(ThreadId tid, SizeT n)
 }
 
 /** Wrapper for __builtin_vec_new_aligned(). */
-static void* drd___builtin_vec_new_aligned(ThreadId tid, SizeT n, SizeT align)
+static void* drd___builtin_vec_new_aligned(ThreadId tid, SizeT n, SizeT align, SizeT orig_align)
 {
    return new_block(tid, n, align, /*is_zeroed*/False);
 }

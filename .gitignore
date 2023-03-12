@@ -866,6 +866,7 @@
 /memcheck/tests/descr_belowsp
 /memcheck/tests/dir
 /memcheck/tests/doublefree
+/memcheck/tests/duplicate_align_size_errors
 /memcheck/tests/dw4
 /memcheck/tests/erringfds
 /memcheck/tests/error_counts
@@ -932,6 +933,7 @@
 /memcheck/tests/nanoleak
 /memcheck/tests/nanoleak2
 /memcheck/tests/nanoleak_supp
+/memcheck/tests/new_delete_mismatch_size
 /memcheck/tests/new_nothrow
 /memcheck/tests/new_override
 /memcheck/tests/noisy_child
@@ -971,7 +973,9 @@
 /memcheck/tests/sh-mem
 /memcheck/tests/sh-mem-random
 /memcheck/tests/sized_aligned_new_delete_args
-/memcheck/tests/sized_aligned_new_delete_misaligned
+/memcheck/tests/sized_aligned_new_delete_misaligned1
+/memcheck/tests/sized_aligned_new_delete_misaligned2
+/memcheck/tests/sized_aligned_new_delete_misaligned3
 /memcheck/tests/sigaltstack
 /memcheck/tests/sigkill
 /memcheck/tests/signal2
@@ -1341,11 +1345,13 @@
 /memcheck/tests/freebsd/Makefile.in
 /memcheck/tests/freebsd/452275
 /memcheck/tests/freebsd/access
+/memcheck/tests/freebsd/aligned_alloc
 /memcheck/tests/freebsd/bug464476
 /memcheck/tests/freebsd/bug470713
 /memcheck/tests/freebsd/capsicum
 /memcheck/tests/freebsd/chflags
 /memcheck/tests/freebsd/chmod_chown
+/memcheck/tests/freebsd/delete_sized_mismatch
 /memcheck/tests/freebsd/errno_aligned_allocs
 /memcheck/tests/freebsd/eventfd1
 /memcheck/tests/freebsd/eventfd2

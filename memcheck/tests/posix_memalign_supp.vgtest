@@ -1,0 +1,3 @@
+prog: posix_memalign
+vgopts: -s --freelist-vol=100000 --freelist-big-blocks=0 --suppressions=./posix_memalign_supp.supp
+stderr_filter: filter_used_supp

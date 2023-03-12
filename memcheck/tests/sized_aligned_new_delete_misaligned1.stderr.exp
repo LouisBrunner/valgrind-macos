@@ -1,0 +1,68 @@
+Invalid alignment value: 0 (should be non-zero and a power of 2)
+   at 0x........: operator new(unsigned long, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:17)
+
+Invalid alignment value: 0 (should be non-zero and a power of 2)
+   at 0x........: operator delete(void*, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:21)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator delete(void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:30)
+
+Mismatched new/delete alignment alloc value: 64 dealloc value: 63
+   at 0x........: operator delete(void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:30)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:29)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator delete[](void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:34)
+
+Mismatched new[]/delete[] alignment alloc value: 64 dealloc value: 63
+   at 0x........: operator delete[](void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:34)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new[](unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:33)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator new(unsigned long, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:39)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator delete(void*, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:40)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator new[](unsigned long, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:43)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator delete[](void*, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:44)
+
+Mismatched new/delete alignment alloc value: 64 dealloc value: 63
+   at 0x........: operator delete(void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:48)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:47)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator delete(void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:48)
+
+Mismatched new[]/delete[] alignment alloc value: 64 dealloc value: 63
+   at 0x........: operator delete[](void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:52)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new[](unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:51)
+
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator delete[](void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned1.cpp:52)
+

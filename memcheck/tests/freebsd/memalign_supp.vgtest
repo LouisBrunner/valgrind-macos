@@ -1,0 +1,2 @@
+prog: memalign
+vgopts: -s --suppressions=memalign_supp.supp

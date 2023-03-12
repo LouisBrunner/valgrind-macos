@@ -1,0 +1,2 @@
+used_suppression:      9 posix_memalign align ./posix_memalign_supp.supp:10
+used_suppression:      1 posix_memalign size ./posix_memalign_supp.supp:3

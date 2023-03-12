@@ -1,0 +1,28 @@
+Mismatched new/delete size value: 33
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:18)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: ...operator new... (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:17)
+
+Mismatched new[][/delete[] size value: 33
+   at 0x........: operator delete[](void*, unsigned long) (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:22)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:21)
+
+Mismatched new/delete size value: 33
+   at 0x........: operator delete(void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:25)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:24)
+
+Mismatched new[]/delete[] size value: 33
+   at 0x........: operator delete[](void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:29)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new[](unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (new_delete_mismatch_size.cpp:28)
+

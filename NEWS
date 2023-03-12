@@ -22,9 +22,20 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * support has been added for FreeBSD 14 and FreeBSD 15.
 
-
 * ==================== TOOL CHANGES ===================
 
+* Memcheck now tests and warns about the values used for
+  alignment and size. These apply to various functions: memalign,
+  posix_memalign and aligned_alloc in C and various overloads
+  of operators new and delete in C++. The kinds of error that can
+  be detected are
+  - invalid alignment, for instance the alignment is usually required
+    to be a power of 2
+  - mismatched alignment between aligned allocation and aligned
+    deallocation
+  - mismatched size when sized delete is used
+  - bad size for functions that have implementation defined behaviour
+    when the requested size is zero
 
 * ==================== FIXED BUGS ====================
 
@@ -35,8 +46,12 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
-426751  Valgrind reports «still reachable» memory using musl (alpine running inside docker)
+426751  Valgrind reports "still reachable" memory using musl (alpine running inside docker)
+433857  Add validation to C++17 aligned new/delete alignment size
+433859  Add mismatched detection to C++ 17 aligned new/delete
 460192  Add epoll_pwait2
+466105  aligned_alloc problems, part 2
+467441  Add mismatched detection to C++ 14 sized delete
 469049  link failure on ppc64 (big endian) valgrind 3.20
 469146  massif --ignore-fn does not ignore inlined functions
 469768  Make it possible to install gdb scripts in a different location

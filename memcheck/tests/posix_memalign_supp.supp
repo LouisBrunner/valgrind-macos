@@ -1,0 +1,14 @@
+
+{
+   posix_memalign size
+   Memcheck:BadSize
+   fun:posix_memalign
+   fun:main
+}
+
+{
+   posix_memalign align
+   Memcheck:BadAlign
+   fun:posix_memalign
+   fun:main
+}

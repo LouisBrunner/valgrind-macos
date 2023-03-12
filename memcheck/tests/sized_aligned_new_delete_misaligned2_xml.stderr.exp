@@ -1,0 +1,108 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>memcheck</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>memcheck</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./sized_aligned_new_delete_misaligned2</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidAlignment</kind>
+  <what>Invalid alignment value: 63 (should be non-zero and a power of 2)</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>operator new(unsigned long, std::align_val_t)</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>sized_aligned_new_delete_misaligned2.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<clientmsg>
+  <tid>...</tid>
+  <text>new/new[] aligned failed and should throw an exception, but Valgrind
+  </text>
+</clientmsg>
+<clientmsg>
+  <tid>...</tid>
+  <text>   cannot throw exceptions and so is aborting instead.  Sorry.
+  </text>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>VALGRIND_PRINTF_BACKTRACE</fn>
+      <dir>...</dir>
+      <file>valgrind.h</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>operator new(unsigned long, std::align_val_t)</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>sized_aligned_new_delete_misaligned2.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</clientmsg>
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

@@ -1,5 +1,7 @@
 #! /bin/sh
 
+# change 32 bit size_t (unsigned int) to 64 bit (unsigned long)
+# also change 32 bit -1 size_t to 64 bit
 
 ./filter_stderr "$@" |
-sed "s/unsigned int/unsigned long/"
+sed "s/unsigned int/unsigned long/;s/4294967295/18446744073709551615/"

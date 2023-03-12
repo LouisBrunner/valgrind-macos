@@ -83,7 +83,9 @@ dist_noinst_SCRIPTS = \
 	filter_malloc_free \
 	filter_size_t \
 	filter_stanza \
-	filter_stanza.awk
+	filter_stanza.awk \
+	filter_used_supp \
+	filter_stanza_and_size_t
 
 noinst_HEADERS = leak.h
 
@@ -145,8 +147,36 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stdout.exp \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \
-	sized_aligned_new_delete_misaligned.stderr.exp \
-		sized_aligned_new_delete_misaligned.vgtest \
+	sized_aligned_new_delete_misaligned1.stderr.exp \
+		sized_aligned_new_delete_misaligned1.vgtest \
+	sized_aligned_new_delete_misaligned2.stderr.exp \
+		sized_aligned_new_delete_misaligned2.vgtest \
+	sized_aligned_new_delete_misaligned3.stderr.exp \
+		sized_aligned_new_delete_misaligned3.vgtest \
+	sized_aligned_new_delete_misaligned1_xml.stderr.exp \
+		sized_aligned_new_delete_misaligned1_xml.vgtest \
+	sized_aligned_new_delete_misaligned2_xml.stderr.exp \
+		sized_aligned_new_delete_misaligned2_xml.vgtest \
+	sized_aligned_new_delete_misaligned3_xml.stderr.exp \
+		sized_aligned_new_delete_misaligned3_xml.vgtest \
+	sized_aligned_new_delete_misaligned1_supp.vgtest \
+		sized_aligned_new_delete_misaligned1_supp.supp \
+		sized_aligned_new_delete_misaligned1_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned1_supp.stderr.exp_32 \
+	sized_aligned_new_delete_misaligned2_supp.vgtest \
+		sized_aligned_new_delete_misaligned2_supp.supp \
+		sized_aligned_new_delete_misaligned2_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned2_supp.stderr.exp_32 \
+	sized_aligned_new_delete_misaligned3_supp.vgtest \
+		sized_aligned_new_delete_misaligned3_supp.supp \
+		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned3_supp.stderr.exp_32 \
+	new_delete_mismatch_size.stderr.exp \
+		new_delete_mismatch_size.vgtest \
+	new_delete_mismatch_size_supp.stderr.exp \
+		new_delete_mismatch_size_supp.stderr.exp_32 \
+		new_delete_mismatch_size_supp.vgtest \
+		new_delete_mismatch_size_supp.supp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
@@ -234,6 +264,9 @@ EXTRA_DIST = \
 	mempool2.stderr.exp mempool2.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	mismatches.stderr.exp mismatches.vgtest \
+		mismatches.stderr.exp2 \
+	mismatches_xml.stderr.exp mismatches_xml.vgtest \
+		mismatches_xml.stderr.exp2 \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
 	nanoleak_dynsupp.stderr.exp nanoleak_dynsupp.vgtest \
@@ -282,6 +315,10 @@ EXTRA_DIST = \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp \
 	posix_memalign.stderr.exp posix_memalign.vgtest \
+		posix_memalign.stderr.exp-darwin \
+	posix_memalign_supp.stderr.exp posix_memalign_supp.vgtest \
+		posix_memalign_supp.supp \
+	posix_memalign_xml.stderr.exp posix_memalign_xml.vgtest \
 	post-syscall.stderr.exp post-syscall.vgtest \
 	reach_thread_register.stderr.exp reach_thread_register.vgtest \
 		reach_thread_register.stderr.exp-mips32 \
@@ -519,7 +556,9 @@ endif
 
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
-	sized_aligned_new_delete_misaligned
+	sized_aligned_new_delete_misaligned1 \
+	sized_aligned_new_delete_misaligned2 \
+	sized_aligned_new_delete_misaligned3
 endif
 
 if HAVE_PTHREAD_BARRIER
@@ -527,7 +566,7 @@ check_PROGRAMS += reach_thread_register
 endif
 
 if HAVE_FSIZED_DEALLOCATION
-check_PROGRAMS += sized_delete
+check_PROGRAMS += sized_delete new_delete_mismatch_size
 endif
 
 if HAVE_GNU_STPNCPY
@@ -583,12 +622,18 @@ cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
 sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
-sized_aligned_new_delete_misaligned_SOURCES = sized_aligned_new_delete_misaligned.cpp
-sized_aligned_new_delete_misaligned_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned1_SOURCES = sized_aligned_new_delete_misaligned1.cpp
+sized_aligned_new_delete_misaligned1_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned2_SOURCES = sized_aligned_new_delete_misaligned2.cpp
+sized_aligned_new_delete_misaligned2_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned3_SOURCES = sized_aligned_new_delete_misaligned3.cpp
+sized_aligned_new_delete_misaligned3_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 if COMPILER_IS_CLANG
 cxx17_aligned_new_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_args_CXXFLAGS += -fsized-deallocation
-sized_aligned_new_delete_misaligned_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned1_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned2_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned3_CXXFLAGS += -fsized-deallocation
 endif
 endif
 
@@ -636,6 +681,11 @@ memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
 
 mismatches_SOURCES	= mismatches.cpp
 mismatches_CXXFLAGS	= $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+
+if HAVE_FSIZED_DEALLOCATION
+new_delete_mismatch_size_SOURCES   = new_delete_mismatch_size.cpp
+new_delete_mismatch_size_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@ -std=c++17
+endif
 
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp

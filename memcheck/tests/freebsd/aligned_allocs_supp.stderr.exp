@@ -1,0 +1,15 @@
+
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 2 allocs, 2 frees, 25 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+used_suppression:      2 aligned_alloc bad alignment aligned_allocs_supp.supp:9
+used_suppression:      1 aligned_alloc bad size aligned_allocs_supp.supp:16
+used_suppression:      3 posix_memalign bad alignment aligned_allocs_supp.supp:2
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

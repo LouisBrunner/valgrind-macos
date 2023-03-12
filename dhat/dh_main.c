@@ -763,7 +763,7 @@ static void* dh___builtin_new ( ThreadId tid, SizeT szB )
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* dh___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* dh___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB, SizeT orig_alignB )
 {
    return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
 }
@@ -773,7 +773,7 @@ static void* dh___builtin_vec_new ( ThreadId tid, SizeT szB )
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* dh___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* dh___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB, SizeT orig_alignB )
 {
    return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
 }
@@ -783,7 +783,7 @@ static void* dh_calloc ( ThreadId tid, SizeT m, SizeT szB )
    return new_block( tid, NULL, m*szB, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-static void *dh_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
+static void *dh_memalign ( ThreadId tid, SizeT alignB, SizeT orig_alignB, SizeT szB)
 {
    return new_block( tid, NULL, szB, alignB, False );
 }

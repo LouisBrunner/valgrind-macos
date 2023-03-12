@@ -6981,6 +6981,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 {
    Int   i;
    Addr  bad_addr;
+   MC_Chunk* mc = NULL;
 
    if (!VG_IS_TOOL_USERREQ('M','C',arg[0])
        && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
@@ -7178,7 +7179,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          UInt rzB       =       arg[3];
          Bool is_zeroed = (Bool)arg[4];
 
-         MC_(new_block) ( tid, p, sizeB, /*ignored*/0, is_zeroed,
+         MC_(new_block) ( tid, p, sizeB, /*ignored*/0U, 0U, is_zeroed,
                           MC_AllocCustom, MC_(malloc_list) );
          if (rzB > 0) {
             MC_(make_mem_noaccess) ( p - rzB, rzB);
@@ -7211,6 +7212,126 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          MC_(record_overlap_error)(tid, s, src, dst, len);
          return True;
       }
+
+   case _VG_USERREQ__MEMCHECK_VERIFY_ALIGNMENT: {
+      struct AlignedAllocInfo *aligned_alloc_info  = (struct AlignedAllocInfo *)arg[1];
+      tl_assert(aligned_alloc_info);
+
+      switch (aligned_alloc_info->alloc_kind) {
+      case AllocKindMemalign:
+         // other platforms just ensure it is a power of 2
+         // ignore Illumos only enforcing multiple of 4 (probably a bug)
+         if (aligned_alloc_info->orig_alignment  == 0U ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be power of 2)" );
+         }
+         // size zero not allowed on all platforms (e.g. Illumos)
+         if (aligned_alloc_info->size == 0) {
+            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "memalign()" );
+         }
+         break;
+      case AllocKindPosixMemalign:
+         // must be power of 2
+         // alignment at least sizeof(size_t)
+         // size of 0 implementation defined
+         if (aligned_alloc_info->orig_alignment < sizeof(SizeT) ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero, a power of 2 and a multiple of sizeof(void*))" );
+         }
+         if (aligned_alloc_info->size == 0) {
+            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "posix_memalign()" );
+         }
+         break;
+      case AllocKindAlignedAlloc:
+         // must be power of 2
+         if ((aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be a power of 2)" );
+         }
+         // size should be integral multiple of alignment
+         if (aligned_alloc_info->orig_alignment &&
+             aligned_alloc_info->size % aligned_alloc_info->orig_alignment != 0U) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , aligned_alloc_info->size, " (size should be a multiple of alignment)" );
+         }
+         if (aligned_alloc_info->size == 0) {
+            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "aligned_alloc()" );
+         }
+         break;
+      case AllocKindDeleteSized:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new/delete" );
+         }
+         break;
+      case AllocKindVecDeleteSized:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new[][/delete[]" );
+         }
+         break;
+      case AllocKindNewAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      case AllocKindVecNewAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      case AllocKindDeleteAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, "new/delete");
+         }
+         break;
+      case AllocKindVecDeleteAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, "new[]/delete[]");
+         }
+         break;
+      case AllocKindDeleteSizedAligned:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new/delete");
+         }
+         if (aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, "new/delete");
+         }
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      case AllocKindVecDeleteSizedAligned:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new[]/delete[]" );
+         }
+         if (aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, "new[]/delete[]");
+         }
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      default:
+         tl_assert (False);
+      }
+
+      return True;
+   }
 
       case VG_USERREQ__CREATE_MEMPOOL: {
          Addr pool      = (Addr)arg[1];

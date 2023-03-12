@@ -80,6 +80,37 @@ extern Bool VG_(replacement_malloc_process_cmd_line_option) ( const HChar* arg )
 // been called.
 extern SizeT VG_(malloc_effective_client_redzone_size)(void);
 
+/* We have 4 different C functions that perform aligned allocation
+ * They all have slightly different error conditions. But we only have
+ * one wrapper - tl_memalign. Rather than split that into four
+ * nearly identical functions (or resort to a lot of client
+ * requests), the following enum and struct add context so that
+ * memcheck can figure out whether to emit an error.
+ * This isn't a problem for the C++ allocators. Even though
+ * there are many of them they all have the same alignment
+ * behaviour. */
+
+typedef enum {
+   AllocKindMemalign,
+   AllocKindPosixMemalign,
+   AllocKindAlignedAlloc,
+   AllocKindDeleteSized,
+   AllocKindVecDeleteSized,
+   AllocKindNewAligned,
+   AllocKindVecNewAligned,
+   AllocKindDeleteAligned,
+   AllocKindVecDeleteAligned,
+   AllocKindDeleteSizedAligned,
+   AllocKindVecDeleteSizedAligned
+} AlignedAllocKind;
+
+struct AlignedAllocInfo {
+   SizeT orig_alignment;
+   SizeT size;
+   void *mem;
+   AlignedAllocKind alloc_kind;
+};
+
 #endif   // __PUB_TOOL_REPLACEMALLOC_H
 
 /*--------------------------------------------------------------------*/

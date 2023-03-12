@@ -1,0 +1,6 @@
+{
+   memalign bad alignment
+   Memcheck:BadAlign
+   fun:memalign
+   fun:main
+}

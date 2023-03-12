@@ -102,7 +102,18 @@ EXTRA_DIST = \
 	bug464476_rel_symlink.stdout.exp \
         memalign.vgtest memalign.stderr.exp \
 	bug470713.vgtest bug470713.stderr.exp \
-		bug470713.stdout.exp
+		bug470713.stdout.exp \
+        aligned_allocs_supp.vgtest \
+	aligned_allocs_supp.stderr.exp \
+	aligned_allocs_supp.supp \
+	memalign_supp.vgtest memalign_supp.stderr.exp \
+	memalign_supp.supp \
+	aligned_alloc.vgtest aligned_alloc.stderr.exp \
+	aligned_alloc_xml.vgtest aligned_alloc_xml.stderr.exp \
+	delete_sized_mismatch.vgtest \
+	delete_sized_mismatch.stderr.exp \
+	delete_sized_mismatch_xml.vgtest \
+	delete_sized_mismatch_xml.stderr.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
@@ -110,7 +121,8 @@ check_PROGRAMS = \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
 	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
-	setproctitle sctp sctp2 bug464476 memalign bug470713
+	setproctitle sctp sctp2 bug464476 memalign bug470713 \
+	aligned_alloc delete_sized_mismatch
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -133,6 +145,11 @@ scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
 endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g
+
+aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+delete_sized_mismatch_CXXFLAGS = ${AM_CXXFLAGS} --std=c++14
+delete_sized_mismatch_SOURCES = delete_sized_mismatch.cpp
 
 errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 

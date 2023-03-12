@@ -4237,7 +4237,7 @@ static void* hg_cli____builtin_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment),
                          /*is_zeroed*/False );
 }
-static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
@@ -4247,12 +4247,12 @@ static void* hg_cli____builtin_vec_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment), 
                          /*is_zeroed*/False );
 }
-static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
 }
-static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT n ) {
+static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT orig_alignT, SizeT n ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align, 
                          /*is_zeroed*/False );

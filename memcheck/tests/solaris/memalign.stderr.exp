@@ -1,0 +1,44 @@
+memalign() invalid size value: 0
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:29)
+
+Invalid alignment value: 0 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:34)
+
+Invalid alignment value: 3 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:49)
+
+Invalid alignment value: 5 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:54)
+
+Invalid alignment value: 7 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:58)
+
+Invalid alignment value: 9 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:64)
+
+Invalid alignment value: 12 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:67)
+
+Invalid alignment value: 31 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:70)
+
+Invalid alignment value: 33 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:76)
+
+Invalid alignment value: 4095 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:80)
+
+Invalid alignment value: 4097 (should be power of 2)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign.c:86)
+

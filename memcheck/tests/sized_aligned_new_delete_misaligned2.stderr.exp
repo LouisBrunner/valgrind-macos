@@ -1,0 +1,9 @@
+Invalid alignment value: 63 (should be non-zero and a power of 2)
+   at 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned2.cpp:7)
+
+new/new[] aligned failed and should throw an exception, but Valgrind
+   cannot throw exceptions and so is aborting instead.  Sorry.
+   ...
+   by 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_misaligned2.cpp:7)

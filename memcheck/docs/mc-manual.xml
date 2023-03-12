@@ -36,6 +36,9 @@ problems that are common in C and C++ programs.</para>
     <function>malloc</function>/<computeroutput>new</computeroutput>/<computeroutput>new[]</computeroutput>
     versus
     <function>free</function>/<computeroutput>delete</computeroutput>/<computeroutput>delete[]</computeroutput></para>
+    <para>Mismatches will also be reported for <computeroutput>sized</computeroutput> and <computeroutput>aligned</computeroutput>
+    allocation and deallocation functions if the deallocation value
+    does not match the allocation value.</para>
   </listitem>
 
   <listitem>
@@ -54,6 +57,11 @@ problems that are common in C and C++ programs.</para>
   <listitem>
     <para>Using a <computeroutput>size</computeroutput> value of 0
     with realloc.</para>
+  </listitem>
+
+  <listitem>
+    <para>Using an <computeroutput>alignment</computeroutput> value that
+    is not a power of two.</para>
   </listitem>
 
   <listitem>
@@ -415,11 +423,13 @@ is checked for being fishy:
 <function>calloc</function>,
 <function>realloc</function>,
 <function>memalign</function>,
+<function>posix_memalign</function>,
+<function>aligned_alloc</function>,
 <function>new</function>,
 <function>new []</function>. 
 <function>__builtin_new</function>,
 <function>__builtin_vec_new</function>,
-For <function>calloc</function> both arguments are being checked.
+For <function>calloc</function> both arguments are checked.
 </para>
 
 <para>For example:</para>
@@ -458,6 +468,52 @@ the non-portable use or realloc.</para>
 
 </sect2>
 
+<sect2 id="mc-manual.alignment"
+       xreflabel="Alignment (and Size) Errors">
+<title>Alignment Errors</title>
+
+<para>C and C++ have several functions that allow the user to obtain aligned memory.
+Typically this is done for performance reasons so that the memory will be cache line
+or memory page aligned. C has the functions <computeroutput>memalign</computeroutput>,
+<computeroutput>posix_memalign</computeroutput> and <computeroutput>aligned_alloc</computeroutput>.
+C++ has numerous overloads of <computeroutput>operator new</computeroutput> and <computeroutput>
+operator delete</computeroutput>. Of these, posix_memalign is quite clearly
+specified, the others vary quite widely between implementations. Valgrind will generate
+errors for values of alignment that are invalid on any platform.</para>
+
+<!-- would like to have a table here -->
+<para><computeroutput>memalign</computeroutput> will produce errors if the alignment
+is zero or not a multiple of two.</para>
+
+<para><computeroutput>posix_memalign</computeroutput> will produce errors if the alignment
+is less than sizeof(size_t), not a multiple of two or if the size is zero.</para>
+
+<para><computeroutput>aligned_alloc</computeroutput> will produce errors if the alignment
+is not a multiple of two , if the size is zero or if the size is not an integral
+multiple of the alignment.</para>
+
+<para><computeroutput>aligned new</computeroutput> will produce errors if the alignment
+is zero or not a multiple of two. The <computeroutput>nothrow</computeroutput> overloads
+will return a NULL pointer. The non-nothrow overloads will abort Valgrind.</para>
+
+<para><computeroutput>aligned delete</computeroutput> will produce errors if the alignment
+is zero or not a multiple of two or if the alignment is not the same as that used by
+<computeroutput>aligned new</computeroutput>.</para>
+
+<para><computeroutput>sized delete</computeroutput> will produce errors if the size
+is not the same as that used by <computeroutput>new</computeroutput>.</para>
+
+<para><computeroutput>sized aligned delete</computeroutput> combines the error conditions
+of the individual sized and aligned delete operators.</para>
+
+<para>Example output:</para>
+<programlisting><![CDATA[
+==65825== Invalid alignment value: 3 (should be power of 2)
+==65825==    at 0x485197E: memalign (vg_replace_malloc.c:1740)
+==65825==    by 0x201CD2: main (memalign.c:39)
+]]></programlisting>
+
+</sect2>
 
 <sect2 id="mc-manual.leaks" xreflabel="Memory leak detection">
 <title>Memory leak detection</title>

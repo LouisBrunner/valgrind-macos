@@ -1,0 +1,4 @@
+prog: aligned_alloc
+vgopts: --xml=yes --xml-fd=2 --log-file=/dev/null
+stderr_filter: ../filter_xml
+

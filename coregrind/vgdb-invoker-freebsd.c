@@ -315,7 +315,7 @@ Bool attach (pid_t pid, const char *msg)
    res = ptrace (PT_ATTACH, pid, 0, 0);
    if (res != 0) {
       if (output_error || debuglevel > 0) {
-         ERROR(errno, "%s PT_ATTACH pid %d %ld\n", msg, pid, res);
+         ERROR(errno, "%s PT_ATTACH pid %d %d\n", msg, pid, res);
          if (initial_attach) {
             output_error = False;
          }

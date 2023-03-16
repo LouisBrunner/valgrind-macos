@@ -61,8 +61,8 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
     /* Set up registers with known values which will be tested in the signal handler */
 // Starting with macOS 12.0, dyld uses r14 for its own purposes,
 // changing it crashes the process outside of main.
-#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
@@ -85,8 +85,8 @@ void this_function_int3s(unsigned long long a0, unsigned long long a1,
     /* Set up registers with known values which will be tested in the signal handler */
 // Starting with macOS 12.0, dyld uses r14 for its own purposes,
 // changing it crashes the process outside of main.
-#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
@@ -156,6 +156,7 @@ handle_signal(int sig, siginfo_t *si, void *vuc)
     ASSERT_GTE(uc->uc_mcontext->__ss.__rip, calling_fn);
     ASSERT_LTE(uc->uc_mcontext->__ss.__rip, calling_fn+400);
 
+#if DARWIN_VERS < DARWIN_12_00
     ASSERT_EQ(uc->uc_mcontext->__ss.__rbx, 0xfeed02020202cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r10, 0xfeed03030303cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r11, 0xfeed04040404cafe);
@@ -163,10 +164,9 @@ handle_signal(int sig, siginfo_t *si, void *vuc)
     ASSERT_EQ(uc->uc_mcontext->__ss.__r13, 0xfeed06060606cafe);
 // Starting with macOS 12.0, dyld uses r14 for its own purposes,
 // changing it crashes the process outside of main.
-#if DARWIN_VERS < DARWIN_12_00
     ASSERT_EQ(uc->uc_mcontext->__ss.__r14, 0xfeed07070707cafe);
-#endif
     ASSERT_EQ(uc->uc_mcontext->__ss.__r15, 0xfeed08080808cafe);
+#endif
     /*
     printf("	    RFLAGS 0x%016llx\n", (unsigned long long)uc->uc_mcontext->__ss.__rflags);
     */

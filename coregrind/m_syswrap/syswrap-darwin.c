@@ -300,9 +300,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          "pushl %%ebx\n"
          "pushl %%ebx\n"
          "pushl %%ebx\n"
-         "pushl %%ebx\n" /* fake return address */
          "int	$0x81\n" /* bsdthread_terminate(0, 0, 0, 0) */
-         "popl %%ebx\n" /* pop fake return address */
          "popl %%ebx\n" /* pop args */
          "popl %%ebx\n"
          "popl %%ebx\n"
@@ -324,7 +322,6 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "n" (VgTs_Empty), "n" (__NR_bsdthread_terminate)
          : "rax", "rdi", "rsi", "rdx", "r10"
       );
-      // VG_(do_syscall4)(__NR_bsdthread_terminate, 0, 0, 0, 0);
 #else
 # error Unknown platform
 #endif

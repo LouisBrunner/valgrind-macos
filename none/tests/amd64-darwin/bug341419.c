@@ -67,9 +67,9 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
 // Starting with macOS 12.0, dyld uses r14 for its own purposes,
 // changing it crashes the process outside of main.
 #if DARWIN_VERS < DARWIN_12_00
-    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
-#endif
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#endif
+    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("hlt");
     ran_after_fault++;
@@ -91,9 +91,9 @@ void this_function_int3s(unsigned long long a0, unsigned long long a1,
 // Starting with macOS 12.0, dyld uses r14 for its own purposes,
 // changing it crashes the process outside of main.
 #if DARWIN_VERS < DARWIN_12_00
-    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
-#endif
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#endif
+    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("int $3");
     ran_after_fault++;
@@ -163,9 +163,9 @@ handle_signal(int sig, siginfo_t *si, void *vuc)
 // Starting with macOS 12.0, dyld uses r14 for its own purposes,
 // changing it crashes the process outside of main.
 #if DARWIN_VERS < DARWIN_12_00
-    ASSERT_EQ(uc->uc_mcontext->__ss.__rbx, 0xfeed02020202cafe);
-#endif
     ASSERT_EQ(uc->uc_mcontext->__ss.__r14, 0xfeed07070707cafe);
+#endif
+    ASSERT_EQ(uc->uc_mcontext->__ss.__rbx, 0xfeed02020202cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r15, 0xfeed08080808cafe);
     /*
     printf("	    RFLAGS 0x%016llx\n", (unsigned long long)uc->uc_mcontext->__ss.__rflags);

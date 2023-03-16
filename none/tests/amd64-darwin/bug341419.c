@@ -63,8 +63,8 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
 // changing it crashes the process outside of main.
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
     __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
-#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
@@ -87,8 +87,8 @@ void this_function_int3s(unsigned long long a0, unsigned long long a1,
 // changing it crashes the process outside of main.
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
     __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
-#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
@@ -157,8 +157,8 @@ handle_signal(int sig, siginfo_t *si, void *vuc)
     ASSERT_LTE(uc->uc_mcontext->__ss.__rip, calling_fn+400);
 
     ASSERT_EQ(uc->uc_mcontext->__ss.__rbx, 0xfeed02020202cafe);
-#if DARWIN_VERS < DARWIN_12_00
     ASSERT_EQ(uc->uc_mcontext->__ss.__r10, 0xfeed03030303cafe);
+#if DARWIN_VERS < DARWIN_12_00
     ASSERT_EQ(uc->uc_mcontext->__ss.__r11, 0xfeed04040404cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r12, 0xfeed05050505cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r13, 0xfeed06060606cafe);

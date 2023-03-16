@@ -59,20 +59,18 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
     bottom_of_stack = &foo;
 
     /* Set up registers with known values which will be tested in the signal handler */
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
     __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
-// Starting with macOS 12.0, dyld uses r14 for its own purposes,
-// changing it crashes the process outside of main.
-#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
-#else
-    #error "This test is not supported on macOS 12.0 or later"
-#endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
+#endif
     __asm__ volatile("hlt");
     ran_after_fault++;
 }
@@ -85,18 +83,18 @@ void this_function_int3s(unsigned long long a0, unsigned long long a1,
     bottom_of_stack = &foo;
 
     /* Set up registers with known values which will be tested in the signal handler */
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
     __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
-// Starting with macOS 12.0, dyld uses r14 for its own purposes,
-// changing it crashes the process outside of main.
-#if DARWIN_VERS < DARWIN_12_00
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
-#endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
+#endif
     __asm__ volatile("int $3");
     ran_after_fault++;
 }

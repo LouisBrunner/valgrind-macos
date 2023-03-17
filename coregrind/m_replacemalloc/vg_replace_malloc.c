@@ -1607,7 +1607,7 @@ extern int *___errno (void) __attribute__((weak));
 #if defined(VGO_freebsd)
 #define VG_MEMALIGN_MAKE_SIZE_MULTIPLE_ALIGN 1
 #else
-#define VG_MEMALIG_MAKE_SIZE_MULTIPLE_ALIGN 0
+#define VG_MEMALIGN_MAKE_SIZE_MULTIPLE_ALIGN 0
 #endif
 
 #if defined(VGO_solaris)

@@ -10,9 +10,6 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
-* Make the address space limit on FreeBSD amd64 128Gbytes
-  (the same as Linux and Solaris, it was 32Gbytes)
-
 * When GDB is used to debug a program running under valgrind using
   the valgrind gdbserver, GDB will automatically load some
   python code provided in valgrind defining GDB front end commands
@@ -55,6 +52,11 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   tcmalloc on FreeBSD) then you can use a command line
   option to change the behaviour of Valgrind:
     --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]
+
+* ================== PLATFORM CHANGES =================
+
+* Make the address space limit on FreeBSD amd64 128Gbytes
+  (the same as Linux and Solaris, it was 32Gbytes)
 
 * ==================== TOOL CHANGES ===================
 
@@ -125,6 +127,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 464969  D language demangling
 465435  m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
 466104  aligned_alloc problems, part 1
+467482  Build failure on aarch64 Alpine
 n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
 
 To see details of a given bug, visit

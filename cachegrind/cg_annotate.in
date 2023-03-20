@@ -456,10 +456,6 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
     return (desc, cmd, events, dict_flfn_cc, dict_fl_dict_line_cc, summary_cc)
 
 
-def safe_perc(m: int, n: int) -> float:
-    return 0 if n == 0 else m * 100 / n
-
-
 class CcPrinter:
     # Note: every `CcPrinter` gets the same `Events` object.
     events: Events
@@ -467,9 +463,14 @@ class CcPrinter:
     # Note: every `CcPrinter` gets the same summary CC.
     summary_cc: Cc
 
-    # The width of each event column. For simplicity, its length matches
-    # `events.events`, even though not all events are necessarily shown.
-    widths: list[int]
+    # The width of each event count column. (This column is also used for event
+    # names.) For simplicity, its length matches `events.events`, even though
+    # not all events are necessarily shown.
+    count_widths: list[int]
+
+    # The width of each percentage column. Zero if --show-percs is disabled.
+    # Its length matches `count_widths`.
+    perc_widths: list[int]
 
     def __init__(self, events: Events, ccs: list[Cc], summary_cc: Cc) -> None:
         self.events = events
@@ -488,61 +489,67 @@ class CcPrinter:
                     min_cc.counts[i] = count
 
         # Find maximum width for each column.
-        self.widths = [0] * len(events.events)
+        self.count_widths = [0] * len(events.events)
+        self.perc_widths = [0] * len(events.events)
         for i, event in enumerate(events.events):
-            # Get widest of the min and max, accounting for commas that will be
-            # added, and a possible percentage.
-            width = max(len(str(min_cc.counts[i])), len(str(max_cc.counts[i])))
-            width += (width - 1) // 3
-            if args.show_percs:
-                width += 9  # e.g. " (12.34%)" is 9 chars.
+            # Get count and perc widths of the min and max CCs.
+            (min_count, min_perc) = self.count_and_perc(min_cc, i)
+            (max_count, max_perc) = self.count_and_perc(max_cc, i)
 
-            # Account for the event name, too.
-            self.widths[i] = max(width, len(event))
+            # The event name goes in the count column.
+            self.count_widths[i] = max(len(min_count), len(max_count), len(event))
+            self.perc_widths[i] = max(len(min_perc), len(max_perc))
 
     def print_events(self, suffix: str) -> None:
         for i in self.events.show_indices:
-            # +1 is for the single space between columns.
-            print(f"{self.events.events[i]:{self.widths[i] + 1}}", end="")
+            # The event name goes in the count column.
+            event = self.events.events[i]
+            nwidth = self.count_widths[i]
+            pwidth = self.perc_widths[i]
+            empty_perc = ""
+            print(f"{event:<{nwidth}}{empty_perc:>{pwidth}} ", end="")
 
         print(suffix)
 
-    def print_count(self, i: int, text: str) -> None:
-        print(f"{text:>{self.widths[i]}}", end=" ")
+    def print_count_and_perc(self, i: int, count: str, perc: str) -> None:
+        nwidth = self.count_widths[i]
+        pwidth = self.perc_widths[i]
+        print(f"{count:>{nwidth}}{perc:>{pwidth}} ", end="")
+
+    def count_and_perc(self, cc: Cc, i: int) -> tuple[str, str]:
+        count = f"{cc.counts[i]:,d}"  # commify
+        if args.show_percs:
+            if cc.counts[i] == 0:
+                # Don't show percentages for "0" entries, it's just clutter.
+                perc = ""
+            else:
+                summary_count = self.summary_cc.counts[i]
+                if summary_count == 0:
+                    perc = " (n/a)"
+                else:
+                    p = cc.counts[i] * 100 / summary_count
+                    # Use just one decimal place for large percentages.
+                    if abs(p) < 100:
+                        w = 2
+                    else:
+                        w = 1
+                    perc = f" ({p:.{w}f}%)"
+        else:
+            perc = ""
+
+        return (count, perc)
 
     def print_cc(self, cc: Cc, suffix: str) -> None:
         for i in self.events.show_indices:
-            nstr = f"{cc.counts[i]:,d}"  # commify
-            if args.show_percs:
-                if cc.counts[i] != 0:
-                    # Try our best to keep the number fitting into 5 chars. This
-                    # requires dropping a digit after the decimal place if it's
-                    # sufficiently negative (e.g. "-10.0") or positive (e.g.
-                    # "100.0"). Thanks to diffs it's possible to have even more
-                    # extreme values, like "-100.0" or "1000.0"; those rare case
-                    # will end up with slightly wrong indenting, oh well.
-                    p = safe_perc(cc.counts[i], self.summary_cc.counts[i])
-                    normal = -9.995 < p < 99.995
-                    perc = f" ({p:5.{2 if normal else 1}f}%)"
-                else:
-                    # Don't show percentages for "0" entries, it's just clutter.
-                    perc = "         "
-            else:
-                perc = ""
-
-            self.print_count(i, nstr + perc)
+            (count, perc) = self.count_and_perc(cc, i)
+            self.print_count_and_perc(i, count, perc)
 
         print("", suffix)
 
     def print_missing_cc(self, suffix: str) -> None:
-        if args.show_percs:
-            # Don't show percentages for "." entries, it's just clutter.
-            text = ".         "
-        else:
-            text = "."
-
+        # Don't show percentages for "." entries, it's just clutter.
         for i in self.events.show_indices:
-            self.print_count(i, text)
+            self.print_count_and_perc(i, ".", "")
 
         print("", suffix)
 

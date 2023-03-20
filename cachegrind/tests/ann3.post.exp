@@ -1,9 +1,9 @@
 --------------------------------------------------------------------------------
 Command:          ann3
 Data file:        cgout-test3
-Events recorded:  A SomeCount ThisIsAVeryLongEventName
-Events shown:     A SomeCount ThisIsAVeryLongEventName
-Event sort order: A SomeCount ThisIsAVeryLongEventName
+Events recorded:  A SomeCount VeryLongEventName
+Events shown:     A SomeCount VeryLongEventName
+Event sort order: A SomeCount VeryLongEventName
 Thresholds:       0.5 100 100
 Include dirs:     ann3-no-such-dir
                   ann3-no-such-dir-2
@@ -13,53 +13,53 @@ User annotated:   ann3-unmentioned.rs
 Auto-annotation:  on
 
 --------------------------------------------------------------------------------
-A                SomeCount        ThisIsAVeryLongEventName 
+A                SomeCount          VeryLongEventName 
 --------------------------------------------------------------------------------
-100,000 (100.0%) 100,000 (100.0%)               0           PROGRAM TOTALS
+100,000 (100.0%)   100,000 (100.0%)                 0  PROGRAM TOTALS
 
 --------------------------------------------------------------------------------
-A               SomeCount       ThisIsAVeryLongEventName  file:function
+A               SomeCount          VeryLongEventName        file:function
 --------------------------------------------------------------------------------
-70,491 (70.49%) 90,491 (90.49%)               0           ann3-basic.rs:f0
-15,000 (15.00%)    600 ( 0.60%)               0           ann3-basic.rs:f1
- 9,000 ( 9.00%)  6,000 ( 6.00%)               0           ann3-could-not-be-found.rs:f1
- 2,000 ( 2.00%)    100 ( 0.10%)               0           ann3-basic.rs:f2
- 1,000 ( 1.00%)    500 ( 0.50%)               0           ann3-via-I.rs:f1
- 1,000 ( 1.00%)    300 ( 0.30%)          -1,000 ( 0.00%)  ann3-past-the-end.rs:f1
--1,000 (-1.00%)      0                        0           ann3-negatives.rs:neg3
--1,000 (-1.00%)      0                        0           ann3-negatives.rs:neg2
- 1,000 ( 1.00%)      0                        0           ann3-more-recent-than-cgout.rs:new
- 1,000 ( 1.00%)      0                        0           ???:unknown
-   500 ( 0.50%)      0                        0           ann3-basic.rs:f6
-   500 ( 0.50%)      0                        0           ann3-basic.rs:f4
+70,491 (70.49%)    90,491 (90.49%)                 0        ann3-basic.rs:f0
+15,000 (15.00%)       600  (0.60%)                 0        ann3-basic.rs:f1
+ 9,000  (9.00%)     6,000  (6.00%)                 0        ann3-could-not-be-found.rs:f1
+ 2,000  (2.00%)       100  (0.10%)                 0        ann3-basic.rs:f2
+ 1,000  (1.00%)       500  (0.50%)                 0        ann3-via-I.rs:f1
+ 1,000  (1.00%)       300  (0.30%)            -1,000 (n/a)  ann3-past-the-end.rs:f1
+-1,000 (-1.00%)         0                          0        ann3-negatives.rs:neg3
+-1,000 (-1.00%)         0                          0        ann3-negatives.rs:neg2
+ 1,000  (1.00%)         0                          0        ann3-more-recent-than-cgout.rs:new
+ 1,000  (1.00%)         0                          0        ???:unknown
+   500  (0.50%)         0                          0        ann3-basic.rs:f6
+   500  (0.50%)         0                          0        ann3-basic.rs:f4
 
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-basic.rs
 --------------------------------------------------------------------------------
-A               SomeCount       ThisIsAVeryLongEventName 
+A               SomeCount          VeryLongEventName 
 
 -- line 2 ----------------------------------------
-     .               .                        .           two
-     .               .                        .           three
- 5,000 ( 5.00%)    500 ( 0.50%)               0           four
- 5,000 ( 5.00%)    100 ( 0.10%)               0           five
-     .               .                        .           six
-70,491 (70.49%) 90,491 (90.49%)               0           seven
-     .               .                        .           eight
-   110 ( 0.11%)      9 ( 0.01%)               0           nine
-     .               .                        .           ten
-     .               .                        .           eleven
-   200 ( 0.20%)      0                        0           twelve
-   200 ( 0.20%)      0                        0           thirteen
-   100 ( 0.10%)      0                        0           fourteen
-     0               0                        0           fifteen
-     0               0                        0           sixteen
-     0               0                        0           seventeen
-     0               0                        0           eighteen
-   499 ( 0.50%)  2,000 ( 2.00%)               0           nineteen
-   300 ( 0.30%)      0                        0           twenty
+     .                  .                          .  two
+     .                  .                          .  three
+ 5,000  (5.00%)       500  (0.50%)                 0  four
+ 5,000  (5.00%)       100  (0.10%)                 0  five
+     .                  .                          .  six
+70,491 (70.49%)    90,491 (90.49%)                 0  seven
+     .                  .                          .  eight
+   110  (0.11%)         9  (0.01%)                 0  nine
+     .                  .                          .  ten
+     .                  .                          .  eleven
+   200  (0.20%)         0                          0  twelve
+   200  (0.20%)         0                          0  thirteen
+   100  (0.10%)         0                          0  fourteen
+     0                  0                          0  fifteen
+     0                  0                          0  sixteen
+     0                  0                          0  seventeen
+     0                  0                          0  eighteen
+   499  (0.50%)     2,000  (2.00%)                 0  nineteen
+   300  (0.30%)         0                          0  twenty
 
- 7,100 ( 7.10%)    100 ( 0.10%)               0           <counts for unidentified lines in ann3-basic.rs>
+ 7,100  (7.10%)       100  (0.10%)                 0  <counts for unidentified lines in ann3-basic.rs>
 
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-more-recent-than-cgout.rs
@@ -71,49 +71,49 @@ A               SomeCount       ThisIsAVeryLongEventName
 @ Annotations may not be correct.
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-A              SomeCount  ThisIsAVeryLongEventName 
+A             SomeCount VeryLongEventName 
 
-    .          .                        .           one
-1,000 ( 1.00%) 0                        0           two
-    .          .                        .           three
-    .          .                        .           four
+    .                 .                 .  one
+1,000 (1.00%)         0                 0  two
+    .                 .                 .  three
+    .                 .                 .  four
 -- line 4 ----------------------------------------
 
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-negatives.rs
 --------------------------------------------------------------------------------
-A                   SomeCount       ThisIsAVeryLongEventName 
+A                     SomeCount          VeryLongEventName       
 
-     2,000 ( 2.00%)  2,000 ( 2.00%)           2,000 ( 0.00%)  one
-    -1,000 (-1.00%) -1,000 (-1.00%)               0           two
-         .               .                        .           three
-         .               .                        .           four
-   999,000 (999.0%)      0                 -150,000 ( 0.00%)  five
--1,000,000 (-1000.0%)      0                  150,000 ( 0.00%)  six
-         .               .                        .           seven
-         .               .                        .           eight
-         .               .                        .           nine
-   -10,000 (-10.0%)      0                       10 ( 0.00%)  ten
-    10,000 (10.00%)      0                      -20 ( 0.00%)  eleven
-         .               .                        .           twelve
-         .               .                        .           thirteen
+     2,000    (2.00%)     2,000  (2.00%)             2,000 (n/a)  one
+    -1,000   (-1.00%)    -1,000 (-1.00%)                 0        two
+         .                    .                          .        three
+         .                    .                          .        four
+   999,000   (999.0%)         0                   -150,000 (n/a)  five
+-1,000,000 (-1000.0%)         0                    150,000 (n/a)  six
+         .                    .                          .        seven
+         .                    .                          .        eight
+         .                    .                          .        nine
+   -10,000  (-10.00%)         0                         10 (n/a)  ten
+    10,000   (10.00%)         0                        -20 (n/a)  eleven
+         .                    .                          .        twelve
+         .                    .                          .        thirteen
 -- line 13 ----------------------------------------
 
-    -2,000 (-2.00%) -1,000 (-1.00%)            -990 ( 0.00%)  <counts for unidentified lines in ann3-negatives.rs>
+    -2,000   (-2.00%)    -1,000 (-1.00%)              -990 (n/a)  <counts for unidentified lines in ann3-negatives.rs>
 
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-past-the-end.rs
 --------------------------------------------------------------------------------
-A            SomeCount    ThisIsAVeryLongEventName 
+A           SomeCount         VeryLongEventName       
 
-200 ( 0.20%) 100 ( 0.10%)               0           one
-  .            .                        .           two
-  .            .                        .           three
+200 (0.20%)       100 (0.10%)                 0        one
+  .                 .                         .        two
+  .                 .                         .        three
 -- line 3 ----------------------------------------
 -- line 18 ----------------------------------------
-300 ( 0.30%) 100 ( 0.10%)               0           <bogus line 20>
-300 ( 0.30%) 100 ( 0.10%)               0           <bogus line 21>
-200 ( 0.20%)   0                   -1,000 ( 0.00%)  <bogus line 22>
+300 (0.30%)       100 (0.10%)                 0        <bogus line 20>
+300 (0.30%)       100 (0.10%)                 0        <bogus line 21>
+200 (0.20%)         0                    -1,000 (n/a)  <bogus line 22>
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
@@ -129,9 +129,9 @@ A            SomeCount    ThisIsAVeryLongEventName
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-aux/ann3-via-I.rs
 --------------------------------------------------------------------------------
-A              SomeCount    ThisIsAVeryLongEventName 
+A             SomeCount         VeryLongEventName 
 
-1,000 ( 1.00%) 500 ( 0.50%)               0           one
+1,000 (1.00%)       500 (0.50%)                 0  one
 
 --------------------------------------------------------------------------------
 The following files chosen for auto-annotation could not be found:
@@ -140,7 +140,7 @@ The following files chosen for auto-annotation could not be found:
   ann3-no-such-file.rs
 
 --------------------------------------------------------------------------------
-A               SomeCount       ThisIsAVeryLongEventName 
+A               SomeCount          VeryLongEventName       
 --------------------------------------------------------------------------------
-84,100 (84.10%) 94,700 (94.70%)           1,990 ( 0.00%)  events annotated
+84,100 (84.10%)    94,700 (94.70%)             1,990 (n/a)  events annotated
 

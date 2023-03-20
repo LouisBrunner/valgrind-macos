@@ -1,5 +1,5 @@
 cmd: ann3
-events: A SomeCount ThisIsAVeryLongEventName
+events: A SomeCount VeryLongEventName
 
 # A file testing various things.
 fl=ann3-basic.rs

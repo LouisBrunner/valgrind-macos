@@ -528,12 +528,7 @@ class CcPrinter:
                     perc = " (n/a)"
                 else:
                     p = cc.counts[i] * 100 / summary_count
-                    # Use just one decimal place for large percentages.
-                    if abs(p) < 100:
-                        w = 2
-                    else:
-                        w = 1
-                    perc = f" ({p:.{w}f}%)"
+                    perc = f" ({p:.1f}%)"
         else:
             perc = ""
 

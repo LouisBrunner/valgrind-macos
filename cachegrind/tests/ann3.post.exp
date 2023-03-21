@@ -4,7 +4,7 @@ Data file:        cgout-test3
 Events recorded:  A SomeCount VeryLongEventName
 Events shown:     A SomeCount VeryLongEventName
 Event sort order: A SomeCount VeryLongEventName
-Thresholds:       0.5 100 100
+Threshold:        0.5
 Include dirs:     ann3-no-such-dir
                   ann3-no-such-dir-2
                   ann3-aux

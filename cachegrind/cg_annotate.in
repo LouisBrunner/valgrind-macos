@@ -233,12 +233,6 @@ class Events:
     # Like `sort_events`, but indices into `events`, rather than names.
     sort_indices: list[int]
 
-    # Threshold percentages, one per sort event. Dictates when we stop printing
-    # functions. Positions correspond to positions in `sort_events`. Only
-    # `thresholds[0]` is actually used for thresholding, for historical
-    # reasons.
-    threshold_percs: list[float]
-
     def __init__(self, text: str) -> None:
         self.events = text.split()
         self.num_events = len(self.events)
@@ -268,11 +262,6 @@ class Events:
             self.sort_events = self.events
 
         self.sort_indices = [event_indices[event] for event in self.sort_events]
-
-        # The primary sort event gets the --threshold value, and all other sort
-        # events get 100% (i.e. ignored).
-        self.threshold_percs = [100] * len(self.sort_events)
-        self.threshold_percs[0] = args.threshold
 
     def mk_cc(self, text: str) -> Cc:
         # This is slightly faster than a list comprehension.
@@ -561,7 +550,7 @@ def print_header(desc: str, cmd: str, events: Events) -> None:
     print("Events recorded: ", *events.events)
     print("Events shown:    ", *events.show_events)
     print("Event sort order:", *events.sort_events)
-    print("Thresholds:      ", *events.threshold_percs)
+    print("Threshold:       ", args.threshold)
 
     if len(args.include) == 0:
         print("Include dirs:     ")
@@ -598,9 +587,7 @@ def print_flfn_ccs(
     threshold_index = events.sort_indices[0]
 
     # Convert the threshold from a percentage to an event count.
-    threshold = (
-        events.threshold_percs[0] * abs(summary_cc.counts[threshold_index]) / 100
-    )
+    threshold = args.threshold * abs(summary_cc.counts[threshold_index]) / 100
 
     def meets_threshold(flfn_and_cc: tuple[Flfn, Cc]) -> bool:
         cc = flfn_and_cc[1]

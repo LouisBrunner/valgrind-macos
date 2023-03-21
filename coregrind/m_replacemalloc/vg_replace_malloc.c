@@ -1617,7 +1617,7 @@ extern int *___errno (void) __attribute__((weak));
 #endif
 
 #if defined(VGO_solaris)
-#define VG_MEMALIGD_ALIGN_FACTOR_FOUR 1
+#define VG_MEMALIGN_ALIGN_FACTOR_FOUR 1
 #else
 #define VG_MEMALIGN_ALIGN_FACTOR_FOUR 0
 #endif

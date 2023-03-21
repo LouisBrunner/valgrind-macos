@@ -44,7 +44,7 @@ Ir        I1mr ILmr
         2    0    0  }
 
 --------------------------------------------------------------------------------
-The following files chosen for auto-annotation could not be found:
+The following files chosen for auto-annotation could not be read:
 --------------------------------------------------------------------------------
   /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
   /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
@@ -57,5 +57,9 @@ The following files chosen for auto-annotation could not be found:
 --------------------------------------------------------------------------------
 Ir        I1mr ILmr 
 --------------------------------------------------------------------------------
-5,000,015    1    1  events annotated
+5,000,015    1    1    annotated: files known & above threshold & readable, line numbers known
+        0    0    0    annotated: files known & above threshold & readable, line numbers unknown
+  179,512  136  134  unannotated: files known & above threshold & unreadable 
+   49,754  770  758  unannotated: files known & below threshold
+      472   45   38  unannotated: files unknown
 

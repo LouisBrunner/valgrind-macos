@@ -20,7 +20,7 @@ A                SomeCount          VeryLongEventName
 --------------------------------------------------------------------------------
 A              SomeCount         VeryLongEventName        file:function
 --------------------------------------------------------------------------------
-70,491 (70.5%)    90,491 (90.5%)                 0        ann3-basic.rs:f0
+70,091 (70.1%)    90,291 (90.3%)                 0        ann3-basic.rs:f0
 15,000 (15.0%)       600  (0.6%)                 0        ann3-basic.rs:f1
  9,000  (9.0%)     6,000  (6.0%)                 0        ann3-could-not-be-found.rs:f1
  2,000  (2.0%)       100  (0.1%)                 0        ann3-basic.rs:f2
@@ -38,13 +38,15 @@ A              SomeCount         VeryLongEventName        file:function
 --------------------------------------------------------------------------------
 A              SomeCount         VeryLongEventName 
 
+ 7,100  (7.1%)       100  (0.1%)                 0  <unknown (line 0)>
+
 -- line 2 ----------------------------------------
      .                 .                         .  two
      .                 .                         .  three
  5,000  (5.0%)       500  (0.5%)                 0  four
  5,000  (5.0%)       100  (0.1%)                 0  five
      .                 .                         .  six
-70,491 (70.5%)    90,491 (90.5%)                 0  seven
+70,091 (70.1%)    90,291 (90.3%)                 0  seven
      .                 .                         .  eight
    110  (0.1%)         9  (0.0%)                 0  nine
      .                 .                         .  ten
@@ -58,8 +60,6 @@ A              SomeCount         VeryLongEventName
      0                 0                         0  eighteen
    499  (0.5%)     2,000  (2.0%)                 0  nineteen
    300  (0.3%)         0                         0  twenty
-
- 7,100  (7.1%)       100  (0.1%)                 0  <counts for unidentified lines in ann3-basic.rs>
 
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-more-recent-than-cgout.rs
@@ -84,6 +84,8 @@ A            SomeCount VeryLongEventName
 --------------------------------------------------------------------------------
 A                     SomeCount         VeryLongEventName       
 
+    -2,000    (-2.0%)    -1,000 (-1.0%)              -990 (n/a)  <unknown (line 0)>
+
      2,000     (2.0%)     2,000  (2.0%)             2,000 (n/a)  one
     -1,000    (-1.0%)    -1,000 (-1.0%)                 0        two
          .                    .                         .        three
@@ -98,8 +100,6 @@ A                     SomeCount         VeryLongEventName
          .                    .                         .        twelve
          .                    .                         .        thirteen
 -- line 13 ----------------------------------------
-
-    -2,000    (-2.0%)    -1,000 (-1.0%)              -990 (n/a)  <counts for unidentified lines in ann3-negatives.rs>
 
 --------------------------------------------------------------------------------
 -- Auto-annotated source: ann3-past-the-end.rs
@@ -134,7 +134,7 @@ A            SomeCount        VeryLongEventName
 1,000 (1.0%)       500 (0.5%)                 0  one
 
 --------------------------------------------------------------------------------
-The following files chosen for auto-annotation could not be found:
+The following files chosen for auto-annotation could not be read:
 --------------------------------------------------------------------------------
   ann3-could-not-be-found.rs
   ann3-no-such-file.rs
@@ -142,5 +142,9 @@ The following files chosen for auto-annotation could not be found:
 --------------------------------------------------------------------------------
 A              SomeCount         VeryLongEventName       
 --------------------------------------------------------------------------------
-84,100 (84.1%)    94,700 (94.7%)             1,990 (n/a)  events annotated
+84,500 (84.5%)    94,700 (94.7%)               990 (n/a)    annotated: files known & above threshold & readable, line numbers known
+ 5,100  (5.1%)      -900 (-0.9%)              -990 (n/a)    annotated: files known & above threshold & readable, line numbers unknown
+ 9,000  (9.0%)     6,000  (6.0%)                 0        unannotated: files known & above threshold & unreadable 
+   400  (0.4%)       200  (0.2%)                 0        unannotated: files known & below threshold
+ 1,000  (1.0%)         0                         0        unannotated: files unknown
 

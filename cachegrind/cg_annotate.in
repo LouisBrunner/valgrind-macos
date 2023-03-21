@@ -436,7 +436,7 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
         total_cc += flfn_cc
     if summary_cc != total_cc:
         msg = (
-            "`summary:` line doesn't match compute total\n"
+            "`summary:` line doesn't match computed total\n"
             f"- summary: {summary_cc}\n"
             f"- total:   {total_cc}"
         )
@@ -622,6 +622,38 @@ def print_flfn_ccs(
     return set(flfn_and_cc[0][0] for flfn_and_cc in sorted_flfns_and_ccs)
 
 
+class AnnotatedCcs:
+    line_nums_known_cc: Cc
+    line_nums_unknown_cc: Cc
+    unreadable_cc: Cc
+    below_threshold_cc: Cc
+    files_unknown_cc: Cc
+
+    labels = [
+        "  annotated: files known & above threshold & readable, line numbers known",
+        "  annotated: files known & above threshold & readable, line numbers unknown",
+        "unannotated: files known & above threshold & unreadable ",
+        "unannotated: files known & below threshold",
+        "unannotated: files unknown",
+    ]
+
+    def __init__(self, events: Events) -> None:
+        self.line_nums_known_cc = events.mk_empty_cc()
+        self.line_nums_unknown_cc = events.mk_empty_cc()
+        self.unreadable_cc = events.mk_empty_cc()
+        self.below_threshold_cc = events.mk_empty_cc()
+        self.files_unknown_cc = events.mk_empty_cc()
+
+    def ccs(self) -> list[Cc]:
+        return [
+            self.line_nums_known_cc,
+            self.line_nums_unknown_cc,
+            self.unreadable_cc,
+            self.below_threshold_cc,
+            self.files_unknown_cc,
+        ]
+
+
 def mk_warning(msg: str) -> str:
     return f"""\
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -649,10 +681,10 @@ def warn_bogus_lines(src_filename: str) -> None:
 
 def print_annotated_src_file(
     events: Events,
-    dict_line_cc: DictLineCc,
+    dict_line_cc: DictLineCc | None,
     ann_type: str,
     src_file: TextIO,
-    annotated_cc: Cc,
+    annotated_ccs: AnnotatedCcs,
     summary_cc: Cc,
 ) -> None:
     print(FANCY)
@@ -674,9 +706,15 @@ def print_annotated_src_file(
     printer.print_events("")
     print()
 
-    # Remove the CC for line 0 if it's present. It gets special treatment
-    # later.
+    # The CC for line 0 is special, holding counts attributed to the source
+    # file but not to any particular line (due to incomplete debug info).
+    # Annotate the start of the file with this info, if present.
     line0_cc = dict_line_cc.pop(0, None)
+    if line0_cc:
+        suffix = "<unknown (line 0)>"
+        printer.print_cc(line0_cc, suffix)
+        annotated_ccs.line_nums_unknown_cc += line0_cc
+        print()
 
     # Find interesting line ranges: all lines with a CC, and all lines within
     # `args.context` lines of a line with a CC.
@@ -716,7 +754,7 @@ def print_annotated_src_file(
                     break
                 if line_nums and line_num == line_nums[0]:
                     printer.print_cc(dict_line_cc[line_num], src_line[:-1])
-                    annotated_cc += dict_line_cc[line_num]
+                    annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
                     del line_nums[0]
                 else:
                     printer.print_missing_cc(src_line[:-1])
@@ -731,36 +769,40 @@ def print_annotated_src_file(
     if line_nums:
         for line_num in line_nums:
             printer.print_cc(dict_line_cc[line_num], f"<bogus line {line_num}>")
+            annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
 
         print()
         warn_bogus_lines(src_file.name)
 
     print()
 
-    # Print summary of counts attributed to the source file but not to any
-    # particular line (due to incomplete debug info).
-    if line0_cc:
-        suffix = f"<counts for unidentified lines in {src_file.name}>"
-        printer.print_cc(line0_cc, suffix)
-        print()
 
-
+# This (partially) consumes `dict_fl_dict_line_cc`.
 def print_annotated_src_files(
     events: Events,
     threshold_src_filenames: set[str],
     dict_fl_dict_line_cc: DictFlDictLineCc,
     summary_cc: Cc,
-) -> tuple[list[str], Cc]:
-    unfound_auto_filenames: list[str] = []
-    annotated_cc = events.mk_empty_cc()
+) -> tuple[list[str], AnnotatedCcs]:
+    unreadable_auto_filenames: list[str] = []
+    annotated_ccs = AnnotatedCcs(events)
 
     def pair_with(label: str) -> Callable[[str], tuple[str, str]]:
         return lambda s: (s, label)
+
+    def add_dict_line_cc_to_cc(dict_line_cc: DictLineCc | None, accum_cc: Cc) -> None:
+        if dict_line_cc:
+            for line_cc in dict_line_cc.values():
+                accum_cc += line_cc
 
     # If auto-annotating, add interesting files (excluding "???").
     all_src_filenames = set(map(pair_with("User"), args.src_filenames))
     if args.auto:
         threshold_src_filenames.discard("???")
+
+        dict_line_cc = dict_fl_dict_line_cc.pop("???", None)
+        add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.files_unknown_cc)
+
         all_src_filenames.update(map(pair_with("Auto"), threshold_src_filenames))
 
     # Prepend "" to the include dirnames so things work in the case where the
@@ -778,12 +820,14 @@ def print_annotated_src_files(
 
             try:
                 with open(full_src_filename, "r", encoding="utf-8") as src_file:
+                    # The pop will fail if it's a user-specified filename that
+                    # isn't mentioned in the cgout file.
                     print_annotated_src_file(
                         events,
-                        dict_fl_dict_line_cc[src_filename],
+                        dict_fl_dict_line_cc.pop(src_filename, None),
                         ann_type,
                         src_file,
-                        annotated_cc,
+                        annotated_ccs,
                         summary_cc,
                     )
                 annotated = True
@@ -792,31 +836,56 @@ def print_annotated_src_files(
                 pass
 
         if not annotated:
-            unfound_auto_filenames.append(src_filename)
+            unreadable_auto_filenames.append(src_filename)
+            dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
+            add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.unreadable_cc)
 
-    return (unfound_auto_filenames, annotated_cc)
+    # Sum the CCs remaining in `dict_fl_dict_line_cc`, which are all in files
+    # below the threshold.
+    for dict_line_cc in dict_fl_dict_line_cc.values():
+        add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.below_threshold_cc)
+
+    return (unreadable_auto_filenames, annotated_ccs)
 
 
-def print_unfound_auto_filenames(unfound_auto_filenames: list[str]) -> None:
-    if unfound_auto_filenames:
+def print_unreadable_auto_filenames(unreadable_auto_filenames: list[str]) -> None:
+    if unreadable_auto_filenames:
         print(FANCY)
-        print("The following files chosen for auto-annotation could not be found:")
+        print("The following files chosen for auto-annotation could not be read:")
         print(FANCY)
-        for filename in sorted(unfound_auto_filenames):
+        for filename in sorted(unreadable_auto_filenames):
             print(" ", filename)
         print()
 
 
-def print_annotated_cc(events: Events, annotated_cc: Cc, summary_cc: Cc) -> None:
+def print_annotated_ccs(
+    events: Events,
+    annotated_ccs: AnnotatedCcs,
+    summary_cc: Cc,
+) -> None:
     # If we did any annotating, show how many events were covered by annotated
     # lines above.
     if args.auto or args.src_filenames:
-        printer = CcPrinter(events, [annotated_cc], summary_cc)
+        printer = CcPrinter(events, annotated_ccs.ccs(), summary_cc)
         print(FANCY)
         printer.print_events("")
         print(FANCY)
-        printer.print_cc(annotated_cc, "events annotated")
+
+        total_cc = events.mk_empty_cc()
+        for (cc, label) in zip(annotated_ccs.ccs(), AnnotatedCcs.labels):
+            printer.print_cc(cc, label)
+            total_cc += cc
+
         print()
+
+        # Internal sanity check.
+        if summary_cc != total_cc:
+            msg = (
+                "`summary:` line doesn't match computed annotated counts\n"
+                f"- summary:   {summary_cc}\n"
+                f"- annotated: {total_cc}"
+            )
+            die(msg)
 
 
 def main() -> None:
@@ -829,7 +898,7 @@ def main() -> None:
         summary_cc,
     ) = read_cgout_file()
 
-    # Each of these calls prints a section of the output.
+    # Each of the following calls prints a section of the output.
 
     print_header(desc, cmd, events)
 
@@ -837,13 +906,13 @@ def main() -> None:
 
     threshold_src_filenames = print_flfn_ccs(events, dict_flfn_cc, summary_cc)
 
-    (unfound_auto_filenames, annotated_cc) = print_annotated_src_files(
+    (unreadable_auto_filenames, annotated_ccs) = print_annotated_src_files(
         events, threshold_src_filenames, dict_fl_dict_line_cc, summary_cc
     )
 
-    print_unfound_auto_filenames(unfound_auto_filenames)
+    print_unreadable_auto_filenames(unreadable_auto_filenames)
 
-    print_annotated_cc(events, annotated_cc, summary_cc)
+    print_annotated_ccs(events, annotated_ccs, summary_cc)
 
 
 if __name__ == "__main__":

@@ -34,6 +34,10 @@ This script reads Cachegrind output files and produces human-readable reports.
 # formatters, type-checkers, and linters on `cg_annotate.in` and then generates
 # `cg_annotate`.
 #
+# Python versions: Currently this script targets Python 3.9 and later versions.
+# Consequences of this:
+# - No use of `TypeAlias` for explicit type aliases, which requires 3.10.
+#
 # The following Python tools are used. All can be installed with `pip3 install
 # $NAME`, except `cProfile` which is built into Python.
 #
@@ -73,7 +77,7 @@ import re
 import sys
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from collections import defaultdict
-from typing import Callable, DefaultDict, NewType, NoReturn, TextIO, TypeAlias
+from typing import Callable, DefaultDict, NewType, NoReturn, TextIO
 
 
 class Args(Namespace):
@@ -323,11 +327,13 @@ class Cc:
 Flfn = NewType("Flfn", tuple[str, str])
 
 # Per-function CCs.
-DictFlfnCc: TypeAlias = DefaultDict[Flfn, Cc]
+# Note: not using `TypeAlias`. See "Python versions" comment above.
+DictFlfnCc = DefaultDict[Flfn, Cc]
 
 # Per-line CCs, organised by filename and line number.
-DictLineCc: TypeAlias = DefaultDict[int, Cc]
-DictFlDictLineCc: TypeAlias = DefaultDict[str, DictLineCc]
+# Note: not using `TypeAlias`. See "Python versions" comment above.
+DictLineCc = DefaultDict[int, Cc]
+DictFlDictLineCc = DefaultDict[str, DictLineCc]
 
 
 def die(msg: str) -> NoReturn:

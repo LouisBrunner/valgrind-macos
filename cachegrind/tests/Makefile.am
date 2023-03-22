@@ -16,6 +16,7 @@ EXTRA_DIST = \
 	cgout-test \
 	ann1.post.exp ann1.stderr.exp ann1.vgtest \
 	ann2.post.exp ann2.stderr.exp ann2.vgtest \
+	ann3.post.exp ann3.stderr.exp ann3.vgtest \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
 	diff.post.exp diff.stderr.exp diff.vgtest \

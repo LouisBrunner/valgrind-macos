@@ -1,4 +1,6 @@
 --------------------------------------------------------------------------------
+-- Cachegrind profile
+--------------------------------------------------------------------------------
 Command:          ann2
 Data file:        ann2.cgout
 Events recorded:  A SomeCount VeryLongEventName
@@ -13,13 +15,17 @@ User annotated:   ann2-unmentioned.rs
 Auto-annotation:  on
 
 --------------------------------------------------------------------------------
-A                SomeCount          VeryLongEventName 
+-- Summary
 --------------------------------------------------------------------------------
+A                SomeCount          VeryLongEventName 
+
 100,000 (100.0%)   100,000 (100.0%)                 0  PROGRAM TOTALS
 
 --------------------------------------------------------------------------------
-A              SomeCount         VeryLongEventName        file:function
+-- Function summary
 --------------------------------------------------------------------------------
+A              SomeCount         VeryLongEventName        file:function
+
 70,091 (70.1%)    90,291 (90.3%)                 0        ann2-basic.rs:f0
 15,000 (15.0%)       600  (0.6%)                 0        ann2-basic.rs:f1
  9,000  (9.0%)     6,000  (6.0%)                 0        ann2-could-not-be-found.rs:f1
@@ -34,7 +40,7 @@ A              SomeCount         VeryLongEventName        file:function
    500  (0.5%)         0                         0        ann2-basic.rs:f4
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: ann2-basic.rs
+-- Auto-annotated source file: ann2-basic.rs
 --------------------------------------------------------------------------------
 A              SomeCount         VeryLongEventName 
 
@@ -62,12 +68,17 @@ A              SomeCount         VeryLongEventName
    300  (0.3%)         0                         0  twenty
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: ann2-more-recent-than-cgout.rs
+-- Auto-annotated source file: ann2-could-not-be-found.rs
+--------------------------------------------------------------------------------
+This file was unreadable
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source file: ann2-more-recent-than-cgout.rs
 --------------------------------------------------------------------------------
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@ Source file 'ann2-more-recent-than-cgout.rs' is more recent than input file 'ann2.cgout'.
+@ Source file 'ann2-more-recent-than-cgout.rs' is newer than data file 'ann2.cgout'.
 @ Annotations may not be correct.
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -80,7 +91,7 @@ A            SomeCount VeryLongEventName
 -- line 4 ----------------------------------------
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: ann2-negatives.rs
+-- Auto-annotated source file: ann2-negatives.rs
 --------------------------------------------------------------------------------
 A                     SomeCount         VeryLongEventName       
 
@@ -102,7 +113,12 @@ A                     SomeCount         VeryLongEventName
 -- line 13 ----------------------------------------
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: ann2-past-the-end.rs
+-- User-annotated source file: ann2-no-such-file.rs
+--------------------------------------------------------------------------------
+This file was unreadable
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source file: ann2-past-the-end.rs
 --------------------------------------------------------------------------------
 A          SomeCount        VeryLongEventName       
 
@@ -122,26 +138,22 @@ A          SomeCount        VeryLongEventName
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 --------------------------------------------------------------------------------
--- User-annotated source: ann2-unmentioned.rs
+-- User-annotated source file: ann2-unmentioned.rs
 --------------------------------------------------------------------------------
-  No information has been collected for ann2-unmentioned.rs
+This file was not mentioned by the data file
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: ann2-aux/ann2-via-I.rs
+-- Auto-annotated source file: ann2-aux/ann2-via-I.rs
 --------------------------------------------------------------------------------
 A            SomeCount        VeryLongEventName 
 
 1,000 (1.0%)       500 (0.5%)                 0  one
 
 --------------------------------------------------------------------------------
-The following files chosen for auto-annotation could not be read:
---------------------------------------------------------------------------------
-  ann2-could-not-be-found.rs
-  ann2-no-such-file.rs
-
+-- Annotation summary
 --------------------------------------------------------------------------------
 A              SomeCount         VeryLongEventName       
---------------------------------------------------------------------------------
+
 84,500 (84.5%)    94,700 (94.7%)               990 (n/a)    annotated: files known & above threshold & readable, line numbers known
  5,100  (5.1%)      -900 (-0.9%)              -990 (n/a)    annotated: files known & above threshold & readable, line numbers unknown
  9,000  (9.0%)     6,000  (6.0%)                 0        unannotated: files known & above threshold & unreadable 

@@ -1,4 +1,6 @@
 --------------------------------------------------------------------------------
+-- Cachegrind profile
+--------------------------------------------------------------------------------
 Files compared:   ann1.cgout; ann1b.cgout
 Command:          ./a.out; ./a.out
 Data file:        ann-diff.cgout
@@ -11,17 +13,21 @@ User annotated:
 Auto-annotation:  on
 
 --------------------------------------------------------------------------------
-Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw 
+-- Summary
 --------------------------------------------------------------------------------
+Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw 
+
 5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0  PROGRAM TOTALS
 
 --------------------------------------------------------------------------------
-Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw  file:function
+-- Function summary
 --------------------------------------------------------------------------------
+Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw  file:function
+
 5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0  a.c:main
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: a.c
+-- Auto-annotated source file: a.c
 --------------------------------------------------------------------------------
 Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw 
 
@@ -29,8 +35,10 @@ Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw
 
 
 --------------------------------------------------------------------------------
-Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw 
+-- Annotation summary
 --------------------------------------------------------------------------------
+Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw 
+
         0             0    0          0             0    0  0    0    0    annotated: files known & above threshold & readable, line numbers known
 5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0    annotated: files known & above threshold & readable, line numbers unknown
         0             0    0          0             0    0  0    0    0  unannotated: files known & above threshold & unreadable 

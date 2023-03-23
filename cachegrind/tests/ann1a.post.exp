@@ -3,7 +3,7 @@ I1 cache:         32768 B, 64 B, 8-way associative
 D1 cache:         32768 B, 64 B, 8-way associative
 LL cache:         19922944 B, 64 B, 19-way associative
 Command:          ./a.out
-Data file:        cgout-test
+Data file:        ann1.cgout
 Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Events shown:     Ir I1mr ILmr
 Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw

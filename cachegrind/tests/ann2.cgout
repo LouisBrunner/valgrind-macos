@@ -1,8 +1,8 @@
-cmd: ann3
+cmd: ann2
 events: A SomeCount VeryLongEventName
 
 # A file testing various things.
-fl=ann3-basic.rs
+fl=ann2-basic.rs
 # This one has the counts to get the totals to 100,000/100,000/0.
 fn=f0
 7 70091 90291 0
@@ -41,12 +41,12 @@ fn=f6
 20 50 0 0
 
 # File with source newer than the cgout file.
-fl=ann3-more-recent-than-cgout.rs
+fl=ann2-more-recent-than-cgout.rs
 fn=new
 2 1000 0 0
 
 # File with negative and positive values.
-fl=ann3-negatives.rs
+fl=ann2-negatives.rs
 # Various, and the sum is zero.
 fn=neg1
 0 -1000 -1000 -1000
@@ -65,8 +65,8 @@ fn=neg3
 11 10000 0 -20
 
 # File with source newer than the cgout file.
-fl=ann3-past-the-end.rs
-# This filename is repeated in ann3-could-not-be-found.rs above.
+fl=ann2-past-the-end.rs
+# This filename is repeated in ann2-could-not-be-found.rs above.
 fn=f1
 1  200 100 0
 20 300 100 0
@@ -74,20 +74,20 @@ fn=f1
 22 200 0 -1000
 
 # File mentioned here, but not present on disk.
-fl=ann3-could-not-be-found.rs
+fl=ann2-could-not-be-found.rs
 fn=f1
 100 3000 2000 0
 101    3000     2000        0
 102     3000    2000    0
 
-# File found in ann3-aux/, via -I.
-fl=ann3-via-I.rs
+# File found in ann2-aux/, via -I.
+fl=ann2-via-I.rs
 fn=f1
 1 1000 500 0
 
 # File below the threshold. (It also doesn't exist, but that doesn't matter. We
 # don't try to open it because it's below the threshold.)
-fl=ann3-below-threshold.rs
+fl=ann2-below-threshold.rs
 fn=below1
 1 100 50 0
 2 100 50 0

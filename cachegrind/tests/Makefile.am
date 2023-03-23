@@ -10,16 +10,15 @@ DIST_SUBDIRS = x86 .
 
 dist_noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 
-# Note that test.c and a.c are not compiled.
-# They just serve as input for cg_annotate in ann1 and ann2.
+# Note that `test.c` and `a.c` are not compiled.
+# They just serve as input for cg_annotate in `ann1a` and `ann1b`.
 EXTRA_DIST = \
-	cgout-test \
-	ann1.post.exp ann1.stderr.exp ann1.vgtest \
-	ann2.post.exp ann2.stderr.exp ann2.vgtest \
-	ann3.post.exp ann3.stderr.exp ann3.vgtest \
+	ann-diff.post.exp ann-diff.stderr.exp ann-diff.vgtest \
+	ann1a.post.exp ann1a.stderr.exp ann1a.vgtest ann1.cgout \
+	ann1b.post.exp ann1b.stderr.exp ann1b.vgtest ann1b.cgout \
+	ann2.post.exp ann2.stderr.exp ann2.vgtest ann2.cgout \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
-	diff.post.exp diff.stderr.exp diff.vgtest \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
 	notpower2.vgtest notpower2.stderr.exp \
 	test.c a.c \

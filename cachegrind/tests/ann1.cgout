@@ -3,6 +3,10 @@ desc: D1 cache:         32768 B, 64 B, 8-way associative
 desc: LL cache:         19922944 B, 64 B, 19-way associative
 cmd: ./a.out
 events: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw 
+
+# Note: this file is called ann1.cgout because it is used by the tests `ann1a`
+# and `ann1b`.
+
 fl=/build/glibc-OTsEL5/glibc-2.27/csu/../csu/init-first.c
 fn=_init
 52 8 1 1 0 0 0 4 0 0

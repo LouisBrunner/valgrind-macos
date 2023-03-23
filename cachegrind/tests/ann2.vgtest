@@ -1,6 +1,13 @@
-# The 'prog' doesn't matter because we don't use its output. Instead we test
-# the post-processing of the cgout-test file.
+# This tests all sorts of edge cases. See the comments in `ann2.cgout` for
+# more details.
+#
+# The `prog` doesn't matter because we don't use its output. Instead we test
+# the post-processing of the `ann2.cgout` file.
 prog: ../../tests/true
 vgopts: --cachegrind-out-file=cachegrind.out
-post: touch cgout-test && python3 ../../cachegrind/cg_annotate --sort=Dr --show=Dw,Dr,Ir --auto=no cgout-test a.c
+
+# The `sleep` is to ensure the mtime of the second touched file is greater than
+# the mtime of the first touched file.
+post: touch ann2.cgout && sleep 0.1 && touch ann2-more-recent-than-cgout.rs && python3 ../../cachegrind/cg_annotate --context 2 --auto --show-percs=yes --threshold=0.5 -Iann2-no-such-dir --include ann2-no-such-dir-2 -I=ann2-aux ann2.cgout ann2-unmentioned.rs ann2-no-such-file.rs
+
 cleanup: rm cachegrind.out

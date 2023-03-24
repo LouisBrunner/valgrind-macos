@@ -30,44 +30,9 @@
 This script reads Cachegrind output files and produces human-readable reports.
 """
 
-# Use `make ann` to "build" this script every time it is changed. This runs the
-# formatters, type-checkers, and linters on `cg_annotate.in` and then generates
-# `cg_annotate`.
-#
-# Python versions: Currently this script targets Python 3.9 and later versions.
-# Consequences of this:
-# - No use of `TypeAlias` for explicit type aliases, which requires 3.10.
-#
-# The following Python tools are used. All can be installed with `pip3 install
-# $NAME`, except `cProfile` which is built into Python.
-#
-# - Formatters:
-#   - `black`, for general formatting. This avoids the need for style checkers
-#     like `flake8`. Note that `black` allows a max line length of 88, which is
-#     a mild but common PEP-8 violation.
-#   - `isort`, for import sorting.
-#
-# - Type-checkers:
-#   - `mypy --strict`. This is the most commonly used Python type checker.
-#   - `pyright`. This is another good type checker. The `pyright: strict`
-#     comment above forces strict checking.
-#   - Sometimes one type-checker will complain about something the other does
-#     not. The goal is to keep both type checkers happy.
-#
-# - Linters:
-#   - `ruff`. Sometimes useful, and very fast to run.
-#   - `pylint`. Sometimes annoying, sometimes useful. The `pylintrc`
-#     modifies/disables the more annoying lints.
-#
-# - Profilers:
-#   - `cProfile` + `snakeviz`: Typically run with
-#     `python3 -m cProfile -o cg.prof cg_annotate $INPUT && snakeviz cg.prof`.
-#   - `scalene`. Typically run with `scalene ./cg_annotate $INPUT`.
-#
-# - Packager:
-#   - `cp` is used for distribution. This is possible because this program is a
-#     single file and only uses the Python Standard Library. This avoids the
-#     needs for any of the million different Python package management tools.
+# Use `make pyann` to "build" this script with `auxprogs/pybuild.rs` every time
+# it is changed. This runs the formatters, type-checkers, and linters on
+# `cg_annotate.in` and then generates `cg_annotate`.
 
 
 from __future__ import annotations
@@ -140,7 +105,7 @@ class Args(Namespace):
                 help=f"(deprecated) same as --no-{name}",
             )
 
-        p = ArgumentParser(description="Process Cachegrind output files.")
+        p = ArgumentParser(description="Process a Cachegrind output file.")
 
         p.add_argument("--version", action="version", version="%(prog)s-@VERSION@")
 
@@ -317,11 +282,9 @@ class Cc:
 Flfn = NewType("Flfn", tuple[str, str])
 
 # Per-function CCs.
-# Note: not using `TypeAlias`. See "Python versions" comment above.
 DictFlfnCc = DefaultDict[Flfn, Cc]
 
 # Per-line CCs, organised by filename and line number.
-# Note: not using `TypeAlias`. See "Python versions" comment above.
 DictLineCc = DefaultDict[int, Cc]
 DictFlDictLineCc = DefaultDict[str, DictLineCc]
 
@@ -376,7 +339,7 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
         curr_fl = ""
         curr_flfn = Flfn(("", ""))
 
-        # Three different places where we accumulate CC data.
+        # Different places where we accumulate CC data.
         dict_flfn_cc: DictFlfnCc = defaultdict(events.mk_empty_cc)
         dict_fl_dict_line_cc: DictFlDictLineCc = defaultdict(mk_empty_dict_line_cc)
         summary_cc = None
@@ -479,8 +442,8 @@ class CcPrinter:
                     min_cc.counts[i] = count
 
         # Find maximum width for each column.
-        self.count_widths = [0] * len(events.events)
-        self.perc_widths = [0] * len(events.events)
+        self.count_widths = [0] * events.num_events
+        self.perc_widths = [0] * events.num_events
         for i, event in enumerate(events.events):
             # Get count and perc widths of the min and max CCs.
             (min_count, min_perc) = self.count_and_perc(min_cc, i)
@@ -757,16 +720,16 @@ def print_annotated_src_file(
             else:
                 break
 
-    # If there was info on lines past the end of the file, warn.
-    if line_nums:
-        for line_num in line_nums:
-            printer.print_cc(dict_line_cc[line_num], f"<bogus line {line_num}>")
-            annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
+        # If there was info on lines past the end of the file, warn.
+        if line_nums:
+            for line_num in line_nums:
+                printer.print_cc(dict_line_cc[line_num], f"<bogus line {line_num}>")
+                annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
+
+            print()
+            warn_bogus_lines(src_file.name)
 
         print()
-        warn_bogus_lines(src_file.name)
-
-    print()
 
 
 # This (partially) consumes `dict_fl_dict_line_cc`.

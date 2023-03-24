@@ -14,6 +14,7 @@ dist_noinst_SCRIPTS = filter_stderr filter_cachesim_discards
 # They just serve as input for cg_annotate in `ann1a` and `ann1b`.
 EXTRA_DIST = \
 	ann-diff1.post.exp ann-diff1.stderr.exp ann-diff1.vgtest \
+		ann-diff2a.cgout ann-diff2b.cgout \
 	ann1a.post.exp ann1a.stderr.exp ann1a.vgtest ann1.cgout \
 	ann1b.post.exp ann1b.stderr.exp ann1b.vgtest ann1b.cgout \
 	ann2.post.exp ann2.stderr.exp ann2.vgtest ann2.cgout \

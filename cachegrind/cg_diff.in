@@ -1,13 +1,14 @@
-#! @PERL@
+#! /usr/bin/env python3
+# pyright: strict
 
-##--------------------------------------------------------------------##
-##--- Cachegrind's differencer.                         cg_diff.in ---##
-##--------------------------------------------------------------------##
+# --------------------------------------------------------------------
+# --- Cachegrind's differencer.                         cg_diff.in ---
+# --------------------------------------------------------------------
 
 #  This file is part of Cachegrind, a Valgrind tool for cache
 #  profiling programs.
 #
-#  Copyright (C) 2002-2017 Nicholas Nethercote
+#  Copyright (C) 2002-2023 Nicholas Nethercote
 #     njn@valgrind.org
 #
 #  This program is free software; you can redistribute it and/or
@@ -25,312 +26,340 @@
 #
 #  The GNU General Public License is contained in the file COPYING.
 
-#----------------------------------------------------------------------------
-# This is a very cut-down and modified version of cg_annotate.
-#----------------------------------------------------------------------------
+"""
+This script diffs Cachegrind output files.
+"""
 
-use warnings;
-use strict;
+# Use `make pydiff` to "build" this script every time it is changed. This runs
+# the formatters, type-checkers, and linters on `cg_diff.in` and then generates
+# `cg_diff`.
+#
+# This is a cut-down version of `cg_annotate.in`.
 
-#----------------------------------------------------------------------------
-# Global variables
-#----------------------------------------------------------------------------
+from __future__ import annotations
 
-# Version number
-my $version = "@VERSION@";
+import re
+import sys
+from argparse import ArgumentParser, Namespace
+from collections import defaultdict
+from typing import Callable, DefaultDict, NewType, NoReturn
 
-# Usage message.
-my $usage = <<END
-usage: cg_diff [options] <cachegrind-out-file1> <cachegrind-out-file2>
+SearchAndReplace = Callable[[str], str]
 
-  options for the user, with defaults in [ ], are:
-    -h --help             show this message
-    -v --version          show version
-    --mod-filename=<expr> a Perl search-and-replace expression that is applied
-                          to filenames, eg. --mod-filename='s/prog[0-9]/projN/'
-    --mod-funcname=<expr> like --mod-filename, but applied to function names
 
-  cg_diff is Copyright (C) 2002-2017 Nicholas Nethercote.
-  and licensed under the GNU General Public License, version 2.
-  Bug reports, feedback, admiration, abuse, etc, to: njn\@valgrind.org.
-                                                
-END
-;
+class Args(Namespace):
+    """
+    A typed wrapper for parsed args.
 
-# --mod-filename expression
-my $mod_filename = undef;
+    None of these fields are modified after arg parsing finishes.
+    """
 
-# --mod-funcname expression
-my $mod_funcname = undef;
+    mod_filename: SearchAndReplace
+    mod_funcname: SearchAndReplace
+    cgout_filename1: str
+    cgout_filename2: str
 
-#-----------------------------------------------------------------------------
-# Argument and option handling
-#-----------------------------------------------------------------------------
-sub process_cmd_line() 
-{
-    my ($file1, $file2) = (undef, undef);
+    @staticmethod
+    def parse() -> Args:
+        # We support Perl-style `s/old/new/flags` search-and-replace
+        # expressions, because that's how this option was implemented in the
+        # old Perl version of `cg_diff`. This requires conversion from
+        # `s/old/new/` style to `re.sub`. The conversion isn't a perfect
+        # emulation of Perl regexps (e.g. Python uses `\1` rather than `$1` for
+        # using captures in the `new` part), but it should be close enough. The
+        # only supported flags are `g` (global) and `i` (ignore case).
+        def search_and_replace(regex: str | None) -> SearchAndReplace:
+            if regex is None:
+                return lambda s: s
 
-    for my $arg (@ARGV) { 
+            # Extract the parts of a `s/old/new/tail` regex. `(?<!\\)/` is an
+            # example of negative lookbehind. It means "match a forward slash
+            # unless preceded by a backslash".
+            m = re.match(r"s/(.*)(?<!\\)/(.*)(?<!\\)/(g|i|gi|ig|)$", regex)
+            if m is None:
+                raise ValueError
 
-        if ($arg =~ /^-/) {
-            # --version
-            if ($arg =~ /^-v$|^--version$/) {
-                die("cg_diff-$version\n");
+            # Forward slashes must be escaped in an `s/old/new/` expression,
+            # but we then must unescape them before using them with `re.sub`
+            pat = m.group(1).replace(r"\/", r"/")
+            repl = m.group(2).replace(r"\/", r"/")
+            tail = m.group(3)
 
-            } elsif ($arg =~ /^--mod-filename=(.*)/) {
-                $mod_filename = $1;
+            if "g" in tail:
+                count = 0  # unlimited
+            else:
+                count = 1
 
-            } elsif ($arg =~ /^--mod-funcname=(.*)/) {
-                $mod_funcname = $1;
+            if "i" in tail:
+                flags = re.IGNORECASE
+            else:
+                flags = re.RegexFlag(0)
 
-            } else {            # -h and --help fall under this case
-                die($usage);
-            }
+            return lambda s: re.sub(re.compile(pat, flags=flags), repl, s, count=count)
 
-        } elsif (not defined($file1)) {
-            $file1 = $arg;
+        p = ArgumentParser(description="Diff two Cachegrind output files.")
 
-        } elsif (not defined($file2)) {
-            $file2 = $arg;
+        p.add_argument("--version", action="version", version="%(prog)s-@VERSION@")
 
-        } else {
-            die($usage);
-        }
-    }
+        p.add_argument(
+            "--mod-filename",
+            type=search_and_replace,
+            metavar="REGEX",
+            default=search_and_replace(None),
+            help="a search-and-replace regex applied to filenames, e.g. "
+            "`s/prog[0-9]/progN/`",
+        )
+        p.add_argument(
+            "--mod-funcname",
+            type=search_and_replace,
+            metavar="REGEX",
+            default=search_and_replace(None),
+            help="like --mod-filename, but for function names",
+        )
 
-    # Must have specified two input files.
-    if (not defined $file1 or not defined $file2) {
-        die($usage);
-    }
+        p.add_argument(
+            "cgout_filename1",
+            nargs=1,
+            metavar="cachegrind-out-file1",
+            help="file produced by Cachegrind",
+        )
+        p.add_argument(
+            "cgout_filename2",
+            nargs=1,
+            metavar="cachegrind-out-file2",
+            help="file produced by Cachegrind",
+        )
 
-    return ($file1, $file2);
-}
+        return p.parse_args(namespace=Args())
 
-#-----------------------------------------------------------------------------
-# Reading of input file
-#-----------------------------------------------------------------------------
-sub max ($$) 
-{
-    my ($x, $y) = @_;
-    return ($x > $y ? $x : $y);
-}
 
-# Add the two arrays;  any '.' entries are ignored.  Two tricky things:
-# 1. If $a2->[$i] is undefined, it defaults to 0 which is what we want; we turn
-#    off warnings to allow this.  This makes things about 10% faster than
-#    checking for definedness ourselves.
-# 2. We don't add an undefined count or a ".", even though it's value is 0,
-#    because we don't want to make an $a2->[$i] that is undef become 0
-#    unnecessarily.
-sub add_array_a_to_b ($$) 
-{
-    my ($a, $b) = @_;
+# Args are stored in a global for easy access.
+args = Args.parse()
 
-    my $n = max(scalar @$a, scalar @$b);
-    $^W = 0;
-    foreach my $i (0 .. $n-1) {
-        $b->[$i] += $a->[$i] if (defined $a->[$i] && "." ne $a->[$i]);
-    }
-    $^W = 1;
-}
+# A single instance of this class is constructed, from `args` and the `events:`
+# line in the cgout file.
+class Events:
+    # The event names.
+    events: list[str]
 
-sub sub_array_b_from_a ($$) 
-{
-    my ($a, $b) = @_;
+    def __init__(self, text: str) -> None:
+        self.events = text.split()
+        self.num_events = len(self.events)
 
-    my $n = max(scalar @$a, scalar @$b);
-    $^W = 0;
-    foreach my $i (0 .. $n-1) {
-        $a->[$i] -= $b->[$i];       # XXX: doesn't handle '.' entries
-    }
-    $^W = 1;
-}
+    def mk_cc(self, text: str) -> Cc:
+        """Raises a `ValueError` exception on syntax error."""
+        # This is slightly faster than a list comprehension.
+        counts = list(map(int, text.split()))
 
-# Add each event count to the CC array.  '.' counts become undef, as do
-# missing entries (implicitly).
-sub line_to_CC ($$)
-{
-    my ($line, $numEvents) = @_;
+        if len(counts) == self.num_events:
+            pass
+        elif len(counts) < self.num_events:
+            # Add zeroes at the end for any missing numbers.
+            counts.extend([0] * (self.num_events - len(counts)))
+        else:
+            raise ValueError
 
-    my @CC = (split /\s+/, $line);
-    (@CC <= $numEvents) or die("Line $.: too many event counts\n");
-    return \@CC;
-}
+        return Cc(counts)
 
-sub read_input_file($) 
-{
-    my ($input_file) = @_;
+    def mk_empty_cc(self) -> Cc:
+        # This is much faster than a list comprehension.
+        return Cc([0] * self.num_events)
 
-    open(INPUTFILE, "< $input_file") 
-         || die "Cannot open $input_file for reading\n";
 
-    # Read "desc:" lines.
-    my $desc;
-    my $line;
-    while ($line = <INPUTFILE>) {
-        if ($line =~ s/desc:\s+//) {
-            $desc .= $line;
-        } else {
-            last;
-        }
-    }
+class Cc:
+    """
+    This is a dumb container for counts.
 
-    # Read "cmd:" line (Nb: will already be in $line from "desc:" loop above).
-    ($line =~ s/^cmd:\s+//) or die("Line $.: missing command line\n");
-    my $cmd = $line;
-    chomp($cmd);    # Remove newline
+    It doesn't know anything about events, i.e. what each count means. It can
+    do basic operations like `__iadd__` and `__eq__`, and anything more must be
+    done elsewhere. `Events.mk_cc` and `Events.mk_empty_cc` are used for
+    construction.
+    """
 
-    # Read "events:" line.  We make a temporary hash in which the Nth event's
-    # value is N, which is useful for handling --show/--sort options below.
-    $line = <INPUTFILE>;
-    (defined $line && $line =~ s/^events:\s+//) 
-        or die("Line $.: missing events line\n");
-    my @events = split(/\s+/, $line);
-    my $numEvents = scalar @events;
+    # Always the same length as `Events.events`.
+    counts: list[int]
 
-    my $currFileName;
-    my $currFileFuncName;
+    def __init__(self, counts: list[int]) -> None:
+        self.counts = counts
 
-    my %CCs;                    # hash("$filename###$funcname" => CC array)
-    my $currCC = undef;         # CC array
+    def __repr__(self) -> str:
+        return str(self.counts)
 
-    my $summaryCC;
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Cc):
+            return NotImplemented
+        return self.counts == other.counts
 
-    # Read body of input file.
-    while (<INPUTFILE>) {
-        # Skip comments and empty lines.
-        next if /^\s*$/ || /^\#/;
+    def __iadd__(self, other: Cc) -> Cc:
+        for i, other_count in enumerate(other.counts):
+            self.counts[i] += other_count
+        return self
 
-        if (s/^(-?\d+)\s+//) {
-            my $CC = line_to_CC($_, $numEvents);
-            defined($currCC) || die;
-            add_array_a_to_b($CC, $currCC);
+    def __isub__(self, other: Cc) -> Cc:
+        for i, other_count in enumerate(other.counts):
+            self.counts[i] -= other_count
+        return self
 
-        } elsif (s/^fn=(.*)$//) {
-            defined($currFileName) || die;
-            my $tmpFuncName = $1;
-            if (defined $mod_funcname) {
-                eval "\$tmpFuncName =~ $mod_funcname";
-            }
-            $currFileFuncName = "$currFileName###$tmpFuncName";
-            $currCC = $CCs{$currFileFuncName};
-            if (not defined $currCC) {
-                $currCC = [];
-                $CCs{$currFileFuncName} = $currCC;
-            }
 
-        } elsif (s/^fl=(.*)$//) {
-            $currFileName = $1;
-            if (defined $mod_filename) {
-                eval "\$currFileName =~ $mod_filename";
-            }
-            # Assume that a "fn=" line is followed by a "fl=" line.
-            $currFileFuncName = undef;  
+# A paired filename and function name.
+Flfn = NewType("Flfn", tuple[str, str])
 
-        } elsif (s/^summary:\s+//) {
-            $summaryCC = line_to_CC($_, $numEvents);
-            (scalar(@$summaryCC) == @events) 
-                or die("Line $.: summary event and total event mismatch\n");
+# Per-function CCs.
+DictFlfnCc = DefaultDict[Flfn, Cc]
 
-        } else {
-            warn("WARNING: line $. malformed, ignoring\n");
-        }
-    }
 
-    # Check if summary line was present
-    if (not defined $summaryCC) {
-        die("missing final summary line, aborting\n");
-    }
+def die(msg: str) -> NoReturn:
+    print("cg_diff: error:", msg, file=sys.stderr)
+    sys.exit(1)
 
-    close(INPUTFILE);
 
-    return ($cmd, \@events, \%CCs, $summaryCC);
-}
+def read_cgout_file(cgout_filename: str) -> tuple[str, Events, DictFlfnCc, Cc]:
+    # The file format is described in Cachegrind's manual.
+    try:
+        cgout_file = open(cgout_filename, "r", encoding="utf-8")
+    except OSError as err:
+        die(f"{err}")
 
-#----------------------------------------------------------------------------
-# "main()"
-#----------------------------------------------------------------------------
-# Commands seen in the files.  Need not match.
-my $cmd1;
-my $cmd2;
+    with cgout_file:
+        cgout_line_num = 0
 
-# Events seen in the files.  They must match.
-my $events1;
-my $events2;
+        def parse_die(msg: str) -> NoReturn:
+            die(f"{cgout_file.name}:{cgout_line_num}: {msg}")
 
-# Individual CCs, organised by filename/funcname/line_num.
-# hashref("$filename###$funcname", CC array)
-my $CCs1;
-my $CCs2;
+        def readline() -> str:
+            nonlocal cgout_line_num
+            cgout_line_num += 1
+            return cgout_file.readline()
 
-# Total counts for summary (an arrayref).
-my $summaryCC1;
-my $summaryCC2;
+        # Read "desc:" lines.
+        while line := readline():
+            if m := re.match(r"desc:\s+(.*)", line):
+                # The "desc:" lines are unused.
+                pass
+            else:
+                break
 
-#----------------------------------------------------------------------------
-# Read the input files
-#----------------------------------------------------------------------------
-my ($file1, $file2) = process_cmd_line();
-($cmd1, $events1, $CCs1, $summaryCC1) = read_input_file($file1);
-($cmd2, $events2, $CCs2, $summaryCC2) = read_input_file($file2);
+        # Read "cmd:" line. (`line` is already set from the "desc:" loop.)
+        if m := re.match(r"cmd:\s+(.*)", line):
+            cmd = m.group(1)
+        else:
+            parse_die("missing a `command:` line")
 
-#----------------------------------------------------------------------------
-# Check the events match
-#----------------------------------------------------------------------------
-my $n = max(scalar @$events1, scalar @$events2);
-$^W = 0;    # turn off warnings, because we might hit undefs
-foreach my $i (0 .. $n-1) {
-    ($events1->[$i] eq $events2->[$i]) || die "events don't match, aborting\n";
-}
-$^W = 1;
+        # Read "events:" line.
+        line = readline()
+        if m := re.match(r"events:\s+(.*)", line):
+            events = Events(m.group(1))
+        else:
+            parse_die("missing an `events:` line")
 
-#----------------------------------------------------------------------------
-# Do the subtraction: CCs2 -= CCs1
-#----------------------------------------------------------------------------
-while (my ($filefuncname, $CC1) = each(%$CCs1)) {
-    my $CC2 = $CCs2->{$filefuncname};
-    if (not defined $CC2) {
-        $CC2 = [];
-        sub_array_b_from_a($CC2, $CC1);     # CC2 -= CC1
-        $CCs2->{$filefuncname} = $CC2;
-    } else {
-        sub_array_b_from_a($CC2, $CC1);     # CC2 -= CC1
-    }
-}
-sub_array_b_from_a($summaryCC2, $summaryCC1);
+        curr_fl = ""
+        curr_flfn = Flfn(("", ""))
 
-#----------------------------------------------------------------------------
-# Print the result, in CCs2
-#----------------------------------------------------------------------------
-print("desc: Files compared:   $file1; $file2\n");
-print("cmd:  $cmd1; $cmd2\n");
-print("events: ");
-for my $e (@$events1) {
-    print(" $e");
-}
-print("\n");
+        # Different places where we accumulate CC data.
+        dict_flfn_cc: DictFlfnCc = defaultdict(events.mk_empty_cc)
+        summary_cc = None
 
-while (my ($filefuncname, $CC) = each(%$CCs2)) {
+        # Compile the one hot regex.
+        count_pat = re.compile(r"(\d+)\s+(.*)")
 
-    my @x = split(/###/, $filefuncname);
-    (scalar @x == 2) || die;
+        # Line matching is done in order of pattern frequency, for speed.
+        while True:
+            line = readline()
 
-    print("fl=$x[0]\n");
-    print("fn=$x[1]\n");
+            if m := count_pat.match(line):
+                # The line_num isn't used.
+                try:
+                    cc = events.mk_cc(m.group(2))
+                except ValueError:
+                    parse_die("malformed or too many event counts")
 
-    print("0");
-    foreach my $n (@$CC) {
-        print(" $n");
-    }
-    print("\n");
-}
+                # Record this CC at the function level.
+                flfn_cc = dict_flfn_cc[curr_flfn]
+                flfn_cc += cc
 
-print("summary:");
-foreach my $n (@$summaryCC2) {
-    print(" $n");
-}
-print("\n");
+            elif line.startswith("fn="):
+                curr_flfn = Flfn((curr_fl, args.mod_funcname(line[3:-1])))
 
-##--------------------------------------------------------------------##
-##--- end                                                          ---##
-##--------------------------------------------------------------------##
+            elif line.startswith("fl="):
+                # A longstanding bug: the use of `--mod-filename` makes it
+                # likely that some files won't be found when annotating. This
+                # doesn't matter much, because we use line number 0 for all
+                # diffs anyway. It just means we get "This file was unreadable"
+                # for modified filenames rather than a single "<unknown (line
+                # 0)>" CC.
+                curr_fl = args.mod_filename(line[3:-1])
+                # A `fn=` line should follow, overwriting the "???".
+                curr_flfn = Flfn((curr_fl, "???"))
+
+            elif m := re.match(r"summary:\s+(.*)", line):
+                try:
+                    summary_cc = events.mk_cc(m.group(1))
+                except ValueError:
+                    parse_die("too many event counts")
+
+            elif line == "":
+                break  # EOF
+
+            elif line == "\n" or line.startswith("#"):
+                # Skip empty lines and comment lines.
+                pass
+
+            else:
+                parse_die(f"malformed line: {line[:-1]}")
+
+    # Check if summary line was present.
+    if not summary_cc:
+        parse_die("missing `summary:` line, aborting")
+
+    # Check summary is correct.
+    total_cc = events.mk_empty_cc()
+    for flfn_cc in dict_flfn_cc.values():
+        total_cc += flfn_cc
+    if summary_cc != total_cc:
+        msg = (
+            "`summary:` line doesn't match computed total\n"
+            f"- summary: {summary_cc}\n"
+            f"- total:   {total_cc}"
+        )
+        parse_die(msg)
+
+    return (cmd, events, dict_flfn_cc, summary_cc)
+
+
+def main() -> None:
+    filename1 = args.cgout_filename1[0]
+    filename2 = args.cgout_filename2[0]
+
+    (cmd1, events1, dict_flfn_cc1, summary_cc1) = read_cgout_file(filename1)
+    (cmd2, events2, dict_flfn_cc2, summary_cc2) = read_cgout_file(filename2)
+
+    if events1.num_events != events2.num_events:
+        die("events don't match")
+
+    # Subtract file 1's CCs from file 2's CCs, at the Flfn level.
+    for flfn, flfn_cc1 in dict_flfn_cc1.items():
+        flfn_cc2 = dict_flfn_cc2[flfn]
+        flfn_cc2 -= flfn_cc1
+    summary_cc2 -= summary_cc1
+
+    print(f"desc: Files compared:   {filename1}; {filename2}")
+    print(f"cmd: {cmd1}; {cmd2}")
+    print("events:", *events1.events, sep=" ")
+
+    # Sort so the output is deterministic.
+    def key(flfn_and_cc: tuple[Flfn, Cc]) -> Flfn:
+        return flfn_and_cc[0]
+
+    for flfn, flfn_cc2 in sorted(dict_flfn_cc2.items(), key=key):
+        # Use `0` for the line number because we don't try to give line-level
+        # CCs, due to the possibility of code changes causing line numbers to
+        # move around.
+        print(f"fl={flfn[0]}")
+        print(f"fn={flfn[1]}")
+        print("0", *flfn_cc2.counts, sep=" ")
+
+    print("summary:", *summary_cc2.counts, sep=" ")
+
+
+if __name__ == "__main__":
+    main()

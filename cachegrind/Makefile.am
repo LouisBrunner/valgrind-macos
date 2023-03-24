@@ -93,28 +93,12 @@ endif
 # Miscellaneous
 #----------------------------------------------------------------------------
 
-# Run the formatters, type checkers, and linters on `cg_annotate.in`, then
-# generate `cg_annotate`.
-#
-# Note: `pyright` refuses to check any file without a `.py` extension, hence
-# the copying to `/tmp/tmp.py`.
-ann:
-	@echo "== black =="
-	@black cg_annotate.in
-	@echo
-	@echo "== isort =="
-	@isort cg_annotate.in
-	@echo
-	@echo "== mypy =="
-	@mypy --strict cg_annotate.in
-	@echo
-	@echo "== pyright =="
-	@cp cg_annotate.in /tmp/tmp.py && pyright /tmp/tmp.py && rm /tmp/tmp.py
-	@echo
-	@echo "== ruff =="
-	@ruff cg_annotate.in
-	@echo
-	@echo "== pylint =="
-	@pylint cg_annotate.in
-	@echo "== config.status =="
-	$(MAKE) cg_annotate
+# "Build" `cg_annotate`. The `+` avoids warnings about the jobserver.
+pyann:
+	+../auxprogs/pybuild.sh cg_annotate.in cg_annotate
+
+# "Build" `cg_diff`. The `+` avoids warnings about the jobserver.
+pydiff:
+	+../auxprogs/pybuild.sh cg_diff.in cg_diff
+
+.PHONY: pyann pydiff

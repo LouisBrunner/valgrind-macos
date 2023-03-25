@@ -80,7 +80,8 @@ dist_noinst_SCRIPTS = \
 	filter_varinfo3 \
 	filter_memcheck \
 	filter_overlaperror \
-	filter_malloc_free
+	filter_malloc_free \
+	filter_size_t
 
 noinst_HEADERS = leak.h
 
@@ -228,6 +229,7 @@ EXTRA_DIST = \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-ppc64 \
 		memalign_args.stderr.exp-arm \
+		memalign_args.stderr.exp-x86 \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \

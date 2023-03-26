@@ -4681,7 +4681,7 @@ POST(sys_ucredsys)
 PRE(sys_sysfs)
 {
    /* Kernel: int sysfs(int opcode, long a1, long a2); */
-   PRINT("sys_sysfs ( %ld, %ld, %lu )", SARG1, SARG2, ARG3);
+   PRINT("sys_sysfs ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
 
    switch (ARG1 /*opcode*/) {
    case VKI_GETFSIND:

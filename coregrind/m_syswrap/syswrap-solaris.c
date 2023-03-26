@@ -627,7 +627,7 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
             VG_(dmsg)("restore_context, sigaltstack: tid %u, "
                       "ss %p{%p,sz=%lu,flags=%#x}\n",
                       tid, &uc->uc_stack, uc->uc_stack.ss_sp,
-                      (SizeT)uc->uc_stack.ss_size, uc->uc_stack.ss_flags);
+                      (SizeT)uc->uc_stack.ss_size, (UInt)uc->uc_stack.ss_flags);
 
          tst->altstack.ss_sp = uc->uc_stack.ss_sp;
          tst->altstack.ss_size = uc->uc_stack.ss_size;
@@ -1745,7 +1745,7 @@ PRE(sys_open)
 
    if (ARG2 & VKI_O_CREAT) {
       /* 3-arg version */
-      PRINT("sys_open ( %#lx(%s), %ld, %ld )", ARG1, (HChar *) ARG1,
+      PRINT("sys_open ( %#lx(%s), %ld, %lu )", ARG1, (HChar *) ARG1,
             SARG2, ARG3);
       PRE_REG_READ3(long, "open", const char *, filename,
                     int, flags, vki_mode_t, mode);
@@ -2032,7 +2032,7 @@ PRE(sys_brk)
 
       if (!VG_(setup_client_dataseg)()) {
          possibly_complain_brk("Cannot map memory to initialize brk segment in "
-                               "thread #%d at %#lx\n", tid, VG_(brk_base));
+                               "thread #%u at %#lx\n", tid, VG_(brk_base));
          SET_STATUS_Failure(VKI_ENOMEM);
          return;
       }
@@ -2174,7 +2174,7 @@ PRE(sys_brk)
          Bool ok = VG_(am_create_reservation)(resvn_start, resvn_size, SmLower,
                                               anon_size);
          if (!ok) {
-            possibly_complain_brk("brk segment overflow in thread #%d: can not "
+            possibly_complain_brk("brk segment overflow in thread #%u: can not "
                                   "grow to %#lx\n", tid, new_brk);
             SET_STATUS_Failure(VKI_ENOMEM);
             return;
@@ -2189,7 +2189,7 @@ PRE(sys_brk)
          sres = VG_(am_mmap_anon_fixed_client)(anon_start, anon_size, prot);
          if (sr_isError(sres)) {
             possibly_complain_brk("Cannot map memory to grow brk segment in "
-                                  "thread #%d to %#lx\n", tid, new_brk);
+                                  "thread #%u to %#lx\n", tid, new_brk);
             SET_STATUS_Failure(VKI_ENOMEM);
             return;
          }
@@ -2247,7 +2247,7 @@ PRE(sys_mount)
    *flags |= SfMayBlock;
    if (ARG3 & VKI_MS_OPTIONSTR) {
       /* 8-argument mount */
-      PRINT("sys_mount ( %#lx(%s), %#lx(%s), %ld, %#lx(%s), %#lx, %ld, "
+      PRINT("sys_mount ( %#lx(%s), %#lx(%s), %ld, %#lx(%s), %#lx, %lu, "
             "%#lx(%s), %ld )", ARG1, (HChar *) ARG1, ARG2, (HChar *) ARG2, SARG3,
             ARG4, (HChar *) ARG4, ARG5, ARG6, ARG7, (HChar *) ARG7, SARG8);
       PRE_REG_READ8(long, "mount", const char *, spec, const char *, dir,
@@ -2352,7 +2352,7 @@ POST(sys_readlinkat)
 PRE(sys_stime)
 {
    /* Kernel: int stime(time_t time); */
-   PRINT("sys_stime ( %ld )", ARG1);
+   PRINT("sys_stime ( %lu )", ARG1);
    PRE_REG_READ1(long, "stime", vki_time_t, time);
 }
 
@@ -2731,7 +2731,7 @@ PRE(sys_shmsys)
 
    case VKI_SHMGET:
       /* Libc: int shmget(key_t key, size_t size, int shmflg); */
-      PRINT("sys_shmsys ( %ld, %ld, %lu, %ld )",
+      PRINT("sys_shmsys ( %ld, %ld, %lu, %lu )",
             SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmget"), int, opcode,
                     vki_key_t, key, vki_size_t, size, int, shmflg);
@@ -3589,7 +3589,7 @@ PRE(sys_fchownat)
       This is different from Linux, for example, where glibc sign-extends it. */
    Int fd = (Int) ARG1;
 
-   PRINT("sys_fchownat ( %d, %#lx(%s), %ld, %ld, %ld )", fd,
+   PRINT("sys_fchownat ( %d, %#lx(%s), %ld, %ld, %lu )", fd,
          ARG2, (HChar *) ARG2, SARG3, SARG4, ARG5);
    PRE_REG_READ5(long, "fchownat", int, fd, const char *, path,
                  vki_uid_t, owner, vki_gid_t, group, int, flag);
@@ -4681,7 +4681,7 @@ POST(sys_ucredsys)
 PRE(sys_sysfs)
 {
    /* Kernel: int sysfs(int opcode, long a1, long a2); */
-   PRINT("sys_sysfs ( %ld, %ld, %ld )", SARG1, SARG2, ARG3);
+   PRINT("sys_sysfs ( %ld, %ld, %lu )", SARG1, SARG2, ARG3);
 
    switch (ARG1 /*opcode*/) {
    case VKI_GETFSIND:
@@ -5216,7 +5216,7 @@ PRE(sys_sigsendsys)
    }
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "sigsendsys: sending signal to process %d\n",
+      VG_(message)(Vg_DebugMsg, "sigsendsys: sending signal to process %u\n",
                    pid);
 
    /* Handle SIGKILL specially. */
@@ -5358,7 +5358,7 @@ PRE(sys_sigresend)
    *flags |= SfPollAfter;
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "sigresend: resending signal %ld\n", ARG1);
+      VG_(message)(Vg_DebugMsg, "sigresend: resending signal %lu\n", ARG1);
 
    /* Handle SIGKILL specially. */
    if (ARG1 == VKI_SIGKILL && ML_(do_sigkill)(tid, -1)) {
@@ -6102,7 +6102,7 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
                                    "mmap failed: addr=%#lx size=%#lx prot=%#x "
                                    "flags=%#x fd=%d file offset=%#llx\n",
                                    (Addr) mrp->mr_addr, file_size,
-                                   prot, flags, fd, file_offset);
+                                   prot, flags, fd, (unsigned long long)file_offset);
                goto mmap_error;
             }
 
@@ -6110,7 +6110,7 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
                              "segment: vaddr=%#lx size=%#lx prot=%#x "
                              "flags=%#x fd=%d file offset=%#llx\n",
                              (Addr) mrp->mr_addr, file_size, mrp->mr_prot,
-                             flags, fd, file_offset);
+                             flags, fd, (unsigned long long)file_offset);
          }
 
          if (zeroed_size > 0) {
@@ -6177,7 +6177,7 @@ static SysRes mmapobj_process_phdrs(ThreadId tid, Int fd,
       VG_(brk_base) = VG_(brk_limit) = elfbrk;
 
       if (!VG_(setup_client_dataseg)()) {
-         VG_(umsg)("Cannot map memory to initialize brk segment in thread #%d "
+         VG_(umsg)("Cannot map memory to initialize brk segment in thread #%u "
                    "at %#lx\n", tid, VG_(brk_base));
          res = VG_(mk_SysRes_Error)(VKI_ENOMEM);
          goto mmap_error;
@@ -6256,7 +6256,7 @@ static SysRes mmapobj_interpret(ThreadId tid, Int fd,
    if (header[VKI_EI_CLASS] != VG_ELF_CLASS) {
       if (VG_(clo_trace_syscalls))
          VG_(debugLog)(3, "syswrap-solaris", "mmapobj_interpret: ELF class "
-                          "mismatch (%u vs %u)\n", header[VKI_EI_CLASS],
+                          "mismatch (%d vs %d)\n", header[VKI_EI_CLASS],
                           VG_ELF_CLASS);
       return VG_(mk_SysRes_Error)(VKI_ENOTSUP);
    }
@@ -6826,7 +6826,7 @@ PRE(sys_modctl)
    switch (ARG1 /*cmd*/) {
    case VKI_MODLOAD:
       /* int modctl_modload(int use_path, char *filename, int *rvp); */
-      PRINT("sys_modctl ( %ld, %ld, %#lx(%s), %#lx )",
+      PRINT("sys_modctl ( %ld, %lu, %#lx(%s), %#lx )",
             SARG1, ARG2, ARG3, (HChar *) ARG3, ARG4);
       PRE_REG_READ4(long, SC2("modctl", "modload"),
                     int, cmd, int, use_path, char *, filename, int *, rvp);
@@ -7031,7 +7031,7 @@ PRE(sys_lwp_create)
    vki_ucontext_t uc;
    Bool tool_informed = False;
 
-   PRINT("sys_lwp_create ( %#lx, %ld, %#lx )", ARG1, ARG2, ARG3);
+   PRINT("sys_lwp_create ( %#lx, %lu, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "lwp_create", ucontext_t *, ucp, int, flags,
                  id_t *, new_lwp);
 
@@ -9585,7 +9585,7 @@ POST(sys_door)
 
                VG_(debugLog)(1, "syswrap-solaris", "POST(sys_door), "
                                 "new segment: vaddr=%#lx, size=%#lx, "
-                                "prot=%#x, flags=%#x, fd=%ld, offset=%#llx\n",
+                                "prot=%#x, flags=%#x, fd=%lu, offset=%#llx\n",
                                 addr, size, prot, flags, (UWord)-1, (ULong)0);
 
                ML_(notify_core_and_tool_of_mmap)(addr, size, prot, flags,
@@ -9823,7 +9823,7 @@ PRE(sys_pset)
 #  endif /* SOLARIS_PSET_GET_NAME */
    case VKI_PSET_SETATTR:
       /* Libc: int pset_setattr(psetid_t pset, uint_t attr); */
-      PRINT("sys_pset ( %ld, %ld, %ld )", SARG1, SARG2, ARG3);
+      PRINT("sys_pset ( %ld, %ld, %lu )", SARG1, SARG2, ARG3);
       PRE_REG_READ3(long, SC2("pset", "setattr"), int, subcode,
                     vki_psetid_t, pset, vki_uint_t, attr);
       break;

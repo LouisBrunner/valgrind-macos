@@ -1,0 +1,5 @@
+#! /bin/sh
+
+
+./filter_stderr "$@" |
+awk -f filter_stanza.awk

@@ -1,3 +1,4 @@
 prog: memalign_args
 vgopts: -q
+stderr_filter: filter_stanza
 

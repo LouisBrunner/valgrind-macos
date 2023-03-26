@@ -1,3 +1,4 @@
 prog: sized_aligned_new_delete_args
 prereq: test -e ./sized_aligned_new_delete_args
 vgopts: -q
+stderr_filter: filter_stanza

@@ -81,7 +81,9 @@ dist_noinst_SCRIPTS = \
 	filter_memcheck \
 	filter_overlaperror \
 	filter_malloc_free \
-	filter_size_t
+	filter_size_t \
+	filter_stanza \
+	filter_stanza.awk
 
 noinst_HEADERS = leak.h
 
@@ -142,9 +144,6 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stdout.exp \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \
-		sized_aligned_new_delete_args.stderr.exp_32 \
-		sized_aligned_new_delete_args.stderr.exp-gcc \
-		sized_aligned_new_delete_args.stderr.exp-s390 \
 	sized_aligned_new_delete_misaligned.stderr.exp \
 		sized_aligned_new_delete_misaligned.vgtest \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
@@ -226,10 +225,6 @@ EXTRA_DIST = \
 	memalign_test.stderr.exp memalign_test.vgtest \
 		memalign_test.stderr.exp-freebsd-clang \
 	memalign_args.vgtest memalign_args.stderr.exp \
-		memalign_args.stderr.exp-glibc \
-		memalign_args.stderr.exp-ppc64 \
-		memalign_args.stderr.exp-arm \
-		memalign_args.stderr.exp-x86 \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \

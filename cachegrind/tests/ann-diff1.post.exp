@@ -3,7 +3,7 @@
 --------------------------------------------------------------------------------
 Files compared:   ann1.cgout; ann1b.cgout
 Command:          ./a.out; ./a.out
-Data file:        ann-diff.cgout
+Data file:        ann-diff1.cgout
 Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Events shown:     Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw

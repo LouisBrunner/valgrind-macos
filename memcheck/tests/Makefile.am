@@ -225,6 +225,7 @@ EXTRA_DIST = \
 	memalign_test.stderr.exp memalign_test.vgtest \
 		memalign_test.stderr.exp-freebsd-clang \
 	memalign_args.vgtest memalign_args.stderr.exp \
+		memalign_args.stderr.exp-glibc \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \

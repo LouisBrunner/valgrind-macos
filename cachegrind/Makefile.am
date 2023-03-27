@@ -10,31 +10,12 @@ EXTRA_DIST = \
 # Headers, etc
 #----------------------------------------------------------------------------
 
-bin_SCRIPTS = cg_annotate cg_diff
+bin_SCRIPTS = cg_annotate cg_diff cg_merge
 
 noinst_HEADERS = \
 	cg_arch.h \
 	cg_branchpred.c \
 	cg_sim.c
-
-#----------------------------------------------------------------------------
-# cg_merge (built for the primary target only)
-#----------------------------------------------------------------------------
-
-bin_PROGRAMS = cg_merge
-
-cg_merge_SOURCES = cg_merge.c
-cg_merge_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-cg_merge_CFLAGS    = $(AM_CFLAGS_PRI)
-cg_merge_CCASFLAGS = $(AM_CCASFLAGS_PRI)
-cg_merge_LDFLAGS   = $(AM_CFLAGS_PRI)
-# If there is no secondary platform, and the platforms include x86-darwin,
-# then the primary platform must be x86-darwin.  Hence:
-if ! VGCONF_HAVE_PLATFORM_SEC
-if VGCONF_PLATFORMS_INCLUDE_X86_DARWIN
-cg_merge_LDFLAGS   += -Wl,-read_only_relocs -Wl,suppress
-endif
-endif
 
 #----------------------------------------------------------------------------
 # cachegrind-<platform>
@@ -101,4 +82,8 @@ pyann:
 pydiff:
 	+../auxprogs/pybuild.sh cg_diff.in cg_diff
 
-.PHONY: pyann pydiff
+# "Build" `cg_merge`. The `+` avoids warnings about the jobserver.
+pymerge:
+	+../auxprogs/pybuild.sh cg_merge.in cg_merge
+
+.PHONY: pyann pydiff pymerge

@@ -5406,6 +5406,7 @@ AC_CONFIG_FILES([
    cachegrind/tests/x86/Makefile
    cachegrind/cg_annotate
    cachegrind/cg_diff
+   cachegrind/cg_merge
    callgrind/Makefile
    callgrind/callgrind_annotate
    callgrind/callgrind_control

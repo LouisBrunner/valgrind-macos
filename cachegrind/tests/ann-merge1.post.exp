@@ -1,0 +1,66 @@
+--------------------------------------------------------------------------------
+-- Cachegrind profile
+--------------------------------------------------------------------------------
+Description 1a
+Description 1b
+Command:          Command 1
+Data file:        ann-merge1c.cgout
+Events recorded:  A B C
+Events shown:     A B C
+Event sort order: A B C
+Threshold:        0.1
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+A           B            C            
+
+86 (100.0%) 113 (100.0%) 145 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- Function summary
+--------------------------------------------------------------------------------
+A          B          C            file:function
+
+40 (46.5%) 80 (70.8%) 120 (82.8%)  ann-merge-x.rs:x1
+20 (23.3%) 10  (8.8%)   5  (3.4%)  ann-merge-x.rs:x3
+16 (18.6%) 18 (15.9%)  20 (13.8%)  ann-merge-y.rs:y1
+10 (11.6%)  5  (4.4%)   0          ann-merge-x.rs:x2
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source file: ann-merge-x.rs
+--------------------------------------------------------------------------------
+A          B          C          
+
+20 (23.3%) 40 (35.4%) 60 (41.4%)  one
+10 (11.6%) 20 (17.7%) 30 (20.7%)  two
+10 (11.6%) 20 (17.7%) 30 (20.7%)  three
+10 (11.6%)  5  (4.4%)  0          four
+20 (23.3%) 10  (8.8%)  5  (3.4%)  five
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source file: ann-merge-y.rs
+--------------------------------------------------------------------------------
+A        B        C         
+
+8 (9.3%) 9 (8.0%) 10 (6.9%)  one
+8 (9.3%) 9 (8.0%) 10 (6.9%)  two
+.        .         .         three
+.        .         .         four
+.        .         .         five
+.        .         .         six
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+A           B            C            
+
+86 (100.0%) 113 (100.0%) 145 (100.0%)    annotated: files known & above threshold & readable, line numbers known
+ 0            0            0             annotated: files known & above threshold & readable, line numbers unknown
+ 0            0            0           unannotated: files known & above threshold & unreadable 
+ 0            0            0           unannotated: files known & below threshold
+ 0            0            0           unannotated: files unknown
+

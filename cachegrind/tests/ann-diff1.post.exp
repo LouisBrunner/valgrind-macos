@@ -9,8 +9,7 @@ Events shown:     Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Threshold:        0.1
 Include dirs:     
-User annotated:   
-Auto-annotation:  on
+Annotation:       on
 
 --------------------------------------------------------------------------------
 -- Summary
@@ -27,7 +26,7 @@ Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw  file:fu
 5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0  a.c:MAIN
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: a.c
+-- Annotated source file: a.c
 --------------------------------------------------------------------------------
 Ir                 I1mr ILmr Dr                  D1mr DLmr Dw D1mw DLmw 
 

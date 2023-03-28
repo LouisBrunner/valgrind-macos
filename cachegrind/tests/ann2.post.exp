@@ -10,9 +10,7 @@ Threshold:        0.5
 Include dirs:     ann2-no-such-dir
                   ann2-no-such-dir-2
                   ann2-aux
-User annotated:   ann2-unmentioned.rs
-                  ann2-no-such-file.rs
-Auto-annotation:  on
+Annotation:       on
 
 --------------------------------------------------------------------------------
 -- Summary
@@ -40,7 +38,7 @@ A              SomeCount         VeryLongEventName        file:function
    500  (0.5%)         0                         0        ann2-basic.rs:f4
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: ann2-basic.rs
+-- Annotated source file: ann2-basic.rs
 --------------------------------------------------------------------------------
 A              SomeCount         VeryLongEventName 
 
@@ -68,12 +66,12 @@ A              SomeCount         VeryLongEventName
    300  (0.3%)         0                         0  twenty
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: ann2-could-not-be-found.rs
+-- Annotated source file: ann2-could-not-be-found.rs
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: ann2-more-recent-than-cgout.rs
+-- Annotated source file: ann2-more-recent-than-cgout.rs
 --------------------------------------------------------------------------------
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
@@ -91,7 +89,7 @@ A            SomeCount VeryLongEventName
 -- line 4 ----------------------------------------
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: ann2-negatives.rs
+-- Annotated source file: ann2-negatives.rs
 --------------------------------------------------------------------------------
 A                     SomeCount         VeryLongEventName       
 
@@ -113,12 +111,7 @@ A                     SomeCount         VeryLongEventName
 -- line 13 ----------------------------------------
 
 --------------------------------------------------------------------------------
--- User-annotated source file: ann2-no-such-file.rs
---------------------------------------------------------------------------------
-This file was unreadable
-
---------------------------------------------------------------------------------
--- Auto-annotated source file: ann2-past-the-end.rs
+-- Annotated source file: ann2-past-the-end.rs
 --------------------------------------------------------------------------------
 A          SomeCount        VeryLongEventName       
 
@@ -138,12 +131,7 @@ A          SomeCount        VeryLongEventName
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 --------------------------------------------------------------------------------
--- User-annotated source file: ann2-unmentioned.rs
---------------------------------------------------------------------------------
-This file was not mentioned by the data file
-
---------------------------------------------------------------------------------
--- Auto-annotated source file: ann2-aux/ann2-via-I.rs
+-- Annotated source file: ann2-aux/ann2-via-I.rs
 --------------------------------------------------------------------------------
 A            SomeCount        VeryLongEventName 
 

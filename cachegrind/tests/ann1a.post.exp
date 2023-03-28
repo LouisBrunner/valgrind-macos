@@ -11,8 +11,7 @@ Events shown:     Ir I1mr ILmr
 Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
 Threshold:        0.1
 Include dirs:     
-User annotated:   
-Auto-annotation:  on
+Annotation:       on
 
 --------------------------------------------------------------------------------
 -- Summary
@@ -37,42 +36,42 @@ Ir        I1mr ILmr  file:function
     6,898    2    2  /build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c:_dl_name_match_p
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.h
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.h
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/do-rel.h
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/do-rel.h
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
 --------------------------------------------------------------------------------
 This file was unreadable
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: a.c
+-- Annotated source file: a.c
 --------------------------------------------------------------------------------
 Ir        I1mr ILmr 
 

@@ -9,8 +9,7 @@ Events shown:     One Two
 Event sort order: One Two
 Threshold:        0.1
 Include dirs:     
-User annotated:   
-Auto-annotation:  on
+Annotation:       on
 
 --------------------------------------------------------------------------------
 -- Summary
@@ -29,7 +28,7 @@ One           Two            file:function
   100  (4.8%)  -100 (-5.3%)  aux/ann-diff2-basic.rs:basic1
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: aux/ann-diff2-basic.rs
+-- Annotated source file: aux/ann-diff2-basic.rs
 --------------------------------------------------------------------------------
 This file was unreadable
 

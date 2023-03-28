@@ -8,6 +8,6 @@ vgopts: --cachegrind-out-file=cachegrind.out
 
 # The `sleep` is to ensure the mtime of the second touched file is greater than
 # the mtime of the first touched file.
-post: touch ann2.cgout && sleep 0.1 && touch ann2-more-recent-than-cgout.rs && python3 ../cg_annotate --context 2 --auto --show-percs=yes --threshold=0.5 -Iann2-no-such-dir --include ann2-no-such-dir-2 -I=ann2-aux ann2.cgout ann2-unmentioned.rs ann2-no-such-file.rs
+post: touch ann2.cgout && sleep 0.1 && touch ann2-more-recent-than-cgout.rs && python3 ../cg_annotate --context 2 --annotate --show-percs=yes --threshold=0.5 -Iann2-no-such-dir --include ann2-no-such-dir-2 -I=ann2-aux ann2.cgout
 
 cleanup: rm cachegrind.out

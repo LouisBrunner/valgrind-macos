@@ -11,8 +11,7 @@ Events shown:     Dw Dr Ir
 Event sort order: Dr
 Threshold:        0.1
 Include dirs:     
-User annotated:   a.c
-Auto-annotation:  off
+Annotation:       off
 
 --------------------------------------------------------------------------------
 -- Summary
@@ -32,28 +31,4 @@ Dw            Dr                Ir                 file:function
     8  (0.0%)     5,521  (0.1%)    28,136  (0.5%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c:__GI___tunables_init
 2,490 (13.8%)     5,219  (0.1%)    21,821  (0.4%)  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h:_dl_relocate_object
     0             5,158  (0.1%)    25,408  (0.5%)  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S:strcmp
-
---------------------------------------------------------------------------------
--- User-annotated source file: a.c
---------------------------------------------------------------------------------
-Dw        Dr                Ir                
-
- 1 (0.0%)         0                 2  (0.0%)  int main(void) {
- 1 (0.0%)         0                 1  (0.0%)     int z = 0;
- 1 (0.0%) 2,000,001 (49.3%) 3,000,004 (57.4%)     for (int i = 0; i < 1000000; i++) {
- 0        2,000,000 (49.3%) 2,000,000 (38.2%)        z += i;
- .                .                 .             }
- 0                1  (0.0%)         6  (0.0%)     return z % 256;
- 0                2  (0.0%)         2  (0.0%)  }
-
---------------------------------------------------------------------------------
--- Annotation summary
---------------------------------------------------------------------------------
-Dw              Dr                Ir                
-
-     3   (0.0%) 4,000,004 (98.6%) 5,000,015 (95.6%)    annotated: files known & above threshold & readable, line numbers known
-     0                  0                 0            annotated: files known & above threshold & readable, line numbers unknown
-     0                  0                 0          unannotated: files known & above threshold & unreadable 
-18,002 (100.0%)    57,951  (1.4%)   229,738  (4.4%)  unannotated: files known & below threshold
-     0                  0                 0          unannotated: files unknown
 

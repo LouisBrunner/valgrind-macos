@@ -42,7 +42,7 @@ import re
 import sys
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from collections import defaultdict
-from typing import Callable, DefaultDict, NewType, NoReturn, TextIO
+from typing import DefaultDict, NewType, NoReturn, TextIO
 
 
 class Args(Namespace):
@@ -56,11 +56,10 @@ class Args(Namespace):
     sort: list[str]
     threshold: float  # a percentage
     show_percs: bool
-    auto: bool
+    annotate: bool
     context: int
     include: list[str]
     cgout_filename: list[str]
-    src_filenames: list[str]
 
     @staticmethod
     def parse() -> Args:
@@ -73,7 +72,9 @@ class Args(Namespace):
                 return f
             raise ValueError
 
-        def add_bool_argument(p: ArgumentParser, name: str, help: str) -> None:
+        def add_bool_argument(
+            p: ArgumentParser, new_name: str, old_name: str, help: str
+        ) -> None:
             """
             Add a bool argument that defaults to true.
 
@@ -81,28 +82,29 @@ class Args(Namespace):
             The latter two were the forms supported by the old Perl version of
             `cg_annotate`, and are now deprecated.
             """
-            flag = "--" + name
-            dest = name.replace("-", "_")
+            new_flag = "--" + new_name
+            old_flag = "--" + old_name
+            dest = new_name.replace("-", "_")
 
             # Note: the default value is always printed with `BooleanOptionalAction`,
             # due to an argparse bug: https://github.com/python/cpython/issues/83137.
             p.add_argument(
-                flag,
+                new_flag,
                 default=True,
                 action=BooleanOptionalAction,
                 help=help,
             )
             p.add_argument(
-                f"{flag}=yes",
+                f"{old_flag}=yes",
                 dest=dest,
                 action="store_true",
-                help=f"(deprecated) same as --{name}",
+                help=f"(deprecated) same as --{new_name}",
             )
             p.add_argument(
-                f"{flag}=no",
+                f"{old_flag}=no",
                 dest=dest,
                 action="store_false",
-                help=f"(deprecated) same as --no-{name}",
+                help=f"(deprecated) same as --no-{new_name}",
             )
 
         p = ArgumentParser(description="Process a Cachegrind output file.")
@@ -134,10 +136,12 @@ class Args(Namespace):
         add_bool_argument(
             p,
             "show-percs",
+            "show-percs",
             "show a percentage for each non-zero count",
         )
         add_bool_argument(
             p,
+            "annotate",
             "auto",
             "annotate all source files containing functions that reached the "
             "event count threshold",
@@ -163,12 +167,6 @@ class Args(Namespace):
             nargs=1,
             metavar="cachegrind-out-file",
             help="file produced by Cachegrind",
-        )
-        p.add_argument(
-            "src_filenames",
-            nargs="*",
-            metavar="source-files",
-            help="source files to annotate (usually not needed due to --auto)",
         )
 
         return p.parse_args(namespace=Args())
@@ -527,14 +525,7 @@ def print_cachegrind_profile(desc: str, cmd: str, events: Events) -> None:
         for include_dirname in args.include[1:]:
             print(f"                  {include_dirname}")
 
-    if len(args.src_filenames) == 0:
-        print("User annotated:   ")
-    else:
-        print(f"User annotated:   {args.src_filenames[0]}")
-        for src_filename in args.src_filenames[1:]:
-            print(f"                  {src_filename}")
-
-    print("Auto-annotation: ", "on" if args.auto else "off")
+    print("Annotation:      ", "on" if args.annotate else "off")
     print()
 
 
@@ -736,39 +727,31 @@ def print_annotated_src_file(
 # This (partially) consumes `dict_fl_dict_line_cc`.
 def print_annotated_src_files(
     events: Events,
-    threshold_src_filenames: set[str],
+    ann_src_filenames: set[str],
     dict_fl_dict_line_cc: DictFlDictLineCc,
     summary_cc: Cc,
 ) -> AnnotatedCcs:
     annotated_ccs = AnnotatedCcs(events)
-
-    def pair_with(label: str) -> Callable[[str], tuple[str, str]]:
-        return lambda s: (s, label)
 
     def add_dict_line_cc_to_cc(dict_line_cc: DictLineCc | None, accum_cc: Cc) -> None:
         if dict_line_cc:
             for line_cc in dict_line_cc.values():
                 accum_cc += line_cc
 
-    # If auto-annotating, add interesting files (excluding "???").
-    all_src_filenames = set(map(pair_with("User"), args.src_filenames))
-    if args.auto:
-        threshold_src_filenames.discard("???")
-
-        dict_line_cc = dict_fl_dict_line_cc.pop("???", None)
-        add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.files_unknown_cc)
-
-        all_src_filenames.update(map(pair_with("Auto"), threshold_src_filenames))
+    # Exclude the unknown ("???") file, which is unannotatable.
+    ann_src_filenames.discard("???")
+    dict_line_cc = dict_fl_dict_line_cc.pop("???", None)
+    add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.files_unknown_cc)
 
     # Prepend "" to the include dirnames so things work in the case where the
     # filename has the full path.
     include_dirnames = args.include.copy()
     include_dirnames.insert(0, "")
 
-    def print_ann_fancy(ann_type: str, src_filename: str) -> None:
-        print_fancy(f"{ann_type}-annotated source file: {src_filename}")
+    def print_ann_fancy(src_filename: str) -> None:
+        print_fancy(f"Annotated source file: {src_filename}")
 
-    for src_filename, ann_type in sorted(all_src_filenames):
+    for src_filename in sorted(ann_src_filenames):
         readable = False
         for include_dirname in include_dirnames:
             if include_dirname == "":
@@ -779,21 +762,15 @@ def print_annotated_src_files(
             try:
                 with open(full_src_filename, "r", encoding="utf-8") as src_file:
                     dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
-                    if dict_line_cc is not None:
-                        print_ann_fancy(ann_type, src_file.name)  # includes full path
-                        print_annotated_src_file(
-                            events,
-                            dict_line_cc,
-                            src_file,
-                            annotated_ccs,
-                            summary_cc,
-                        )
-                    else:
-                        # This only happens for user-specified files that are
-                        # readable but not mentioned in the cgout file.
-                        print_ann_fancy(ann_type, src_filename)
-                        print("This file was not mentioned by the data file")
-                        print()
+                    assert dict_line_cc is not None
+                    print_ann_fancy(src_file.name)  # includes full path
+                    print_annotated_src_file(
+                        events,
+                        dict_line_cc,
+                        src_file,
+                        annotated_ccs,
+                        summary_cc,
+                    )
 
                 readable = True
                 break
@@ -804,7 +781,7 @@ def print_annotated_src_files(
             dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
             add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.unreadable_cc)
 
-            print_ann_fancy(ann_type, src_filename)
+            print_ann_fancy(src_filename)
             print("This file was unreadable")
             print()
 
@@ -821,29 +798,27 @@ def print_annotation_summary(
     annotated_ccs: AnnotatedCcs,
     summary_cc: Cc,
 ) -> None:
-    # If we did any annotating, show how many events were covered by annotated
-    # lines above.
-    if args.auto or args.src_filenames:
-        printer = CcPrinter(events, annotated_ccs.ccs(), summary_cc)
-        print_fancy("Annotation summary")
-        printer.print_events("")
-        print()
+    # Show how many events were covered by annotated lines above.
+    printer = CcPrinter(events, annotated_ccs.ccs(), summary_cc)
+    print_fancy("Annotation summary")
+    printer.print_events("")
+    print()
 
-        total_cc = events.mk_empty_cc()
-        for (cc, label) in zip(annotated_ccs.ccs(), AnnotatedCcs.labels):
-            printer.print_cc(cc, label)
-            total_cc += cc
+    total_cc = events.mk_empty_cc()
+    for (cc, label) in zip(annotated_ccs.ccs(), AnnotatedCcs.labels):
+        printer.print_cc(cc, label)
+        total_cc += cc
 
-        print()
+    print()
 
-        # Internal sanity check.
-        if summary_cc != total_cc:
-            msg = (
-                "`summary:` line doesn't match computed annotated counts\n"
-                f"- summary:   {summary_cc}\n"
-                f"- annotated: {total_cc}"
-            )
-            die(msg)
+    # Internal sanity check.
+    if summary_cc != total_cc:
+        msg = (
+            "`summary:` line doesn't match computed annotated counts\n"
+            f"- summary:   {summary_cc}\n"
+            f"- annotated: {total_cc}"
+        )
+        die(msg)
 
 
 def main() -> None:
@@ -862,13 +837,14 @@ def main() -> None:
 
     print_summary(events, summary_cc)
 
-    threshold_src_filenames = print_function_summary(events, dict_flfn_cc, summary_cc)
+    ann_src_filenames = print_function_summary(events, dict_flfn_cc, summary_cc)
 
-    annotated_ccs = print_annotated_src_files(
-        events, threshold_src_filenames, dict_fl_dict_line_cc, summary_cc
-    )
+    if args.annotate:
+        annotated_ccs = print_annotated_src_files(
+            events, ann_src_filenames, dict_fl_dict_line_cc, summary_cc
+        )
 
-    print_annotation_summary(events, annotated_ccs, summary_cc)
+        print_annotation_summary(events, annotated_ccs, summary_cc)
 
 
 if __name__ == "__main__":

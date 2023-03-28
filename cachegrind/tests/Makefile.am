@@ -24,7 +24,7 @@ EXTRA_DIST = \
 	ann2.post.exp ann2.stderr.exp ann2.vgtest ann2.cgout \
 		ann2-basic.rs ann2-more-recent-than-cgout.rs \
 		ann2-negatives.rs ann2-past-the-end.rs \
-		ann2-unmentioned.rs ann2-aux/ann2-via-I.rs \
+		ann2-aux/ann2-via-I.rs \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \

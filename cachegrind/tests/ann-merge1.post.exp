@@ -10,8 +10,7 @@ Events shown:     A B C
 Event sort order: A B C
 Threshold:        0.1
 Include dirs:     
-User annotated:   
-Auto-annotation:  on
+Annotation:       on
 
 --------------------------------------------------------------------------------
 -- Summary
@@ -31,7 +30,7 @@ A          B          C            file:function
 10 (11.6%)  5  (4.4%)   0          ann-merge-x.rs:x2
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: ann-merge-x.rs
+-- Annotated source file: ann-merge-x.rs
 --------------------------------------------------------------------------------
 A          B          C          
 
@@ -42,7 +41,7 @@ A          B          C
 20 (23.3%) 10  (8.8%)  5  (3.4%)  five
 
 --------------------------------------------------------------------------------
--- Auto-annotated source file: ann-merge-y.rs
+-- Annotated source file: ann-merge-y.rs
 --------------------------------------------------------------------------------
 A        B        C         
 

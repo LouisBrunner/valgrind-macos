@@ -2,5 +2,5 @@
 # the post-processing of the `ann1.cgout` file.
 prog: ../../tests/true
 vgopts: --cachegrind-out-file=cachegrind.out
-post: touch ann1.cgout && python3 ../../cachegrind/cg_annotate --sort=Dr --show=Dw,Dr,Ir --auto=no ann1.cgout a.c
+post: touch ann1.cgout && python3 ../cg_annotate --sort=Dr --show=Dw,Dr,Ir --auto=no ann1.cgout a.c
 cleanup: rm cachegrind.out

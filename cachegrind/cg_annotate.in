@@ -686,18 +686,17 @@ def print_annotated_src_file(
         pairs.append((lo, hi))
         i += 1
 
-    # Annotate chosen lines, tracking total annotated counts.
-    line_num = 0
-    if pairs:
+    def print_lines(pairs: list[tuple[int, int]]) -> None:
+        line_num = 0
         while pairs:
+            src_line = ""
             (lo, hi) = pairs.pop(0)
             while line_num < lo - 1:
-                tmp = src_file.readline()
+                src_line = src_file.readline()
                 line_num += 1
-                if not tmp:
-                    break  # EOF
+                if not src_line:
+                    return  # EOF
 
-            src_line = ""
             # Print line number, unless start of file.
             if lo != 1:
                 print("-- line", lo, "-" * 40)
@@ -706,7 +705,7 @@ def print_annotated_src_file(
                 src_line = src_file.readline()
                 line_num += 1
                 if not src_line:
-                    break
+                    return  # EOF
                 if line_nums and line_num == line_nums[0]:
                     printer.print_cc(dict_line_cc[line_num], src_line[:-1])
                     annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
@@ -714,14 +713,16 @@ def print_annotated_src_file(
                 else:
                     printer.print_missing_cc(src_line[:-1])
 
-            # Print line number, unless EOF.
-            if src_line:
-                print("-- line", hi, "-" * 40)
-            else:
-                break
+            # Print line number.
+            print("-- line", hi, "-" * 40)
+
+    # Annotate chosen lines, tracking total annotated counts.
+    if pairs:
+        print_lines(pairs)
 
         # If there was info on lines past the end of the file, warn.
         if line_nums:
+            print()
             for line_num in line_nums:
                 printer.print_cc(dict_line_cc[line_num], f"<bogus line {line_num}>")
                 annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]

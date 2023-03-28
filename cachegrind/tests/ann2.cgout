@@ -82,7 +82,7 @@ fn=f1
 
 # File found in ann2-aux/, via -I.
 fl=ann2-via-I.rs
-fn=f1
+# No `fn=` line, so the function name falls back to `<unspecified>`.
 1 1000 500 0
 
 # File below the threshold. (It also doesn't exist, but that doesn't matter. We

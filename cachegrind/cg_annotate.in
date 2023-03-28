@@ -371,8 +371,8 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
 
             elif line.startswith("fl="):
                 curr_fl = line[3:-1]
-                # A `fn=` line should follow, overwriting the "???".
-                curr_flfn = Flfn((curr_fl, "???"))
+                # A `fn=` line should follow, overwriting the function name.
+                curr_flfn = Flfn((curr_fl, "<unspecified>"))
 
             elif m := re.match(r"summary:\s+(.*)", line):
                 try:

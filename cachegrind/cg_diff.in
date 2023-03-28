@@ -26,10 +26,8 @@
 #
 #  The GNU General Public License is contained in the file COPYING.
 
-"""
-This script diffs Cachegrind output files.
-"""
-
+# This script diffs Cachegrind output files.
+#
 # Use `make pydiff` to "build" this script every time it is changed. This runs
 # the formatters, type-checkers, and linters on `cg_diff.in` and then generates
 # `cg_diff`.
@@ -47,13 +45,9 @@ from typing import Callable, DefaultDict, NewType, NoReturn
 SearchAndReplace = Callable[[str], str]
 
 
+# A typed wrapper for parsed args.
 class Args(Namespace):
-    """
-    A typed wrapper for parsed args.
-
-    None of these fields are modified after arg parsing finishes.
-    """
-
+    # None of these fields are modified after arg parsing finishes.
     mod_filename: SearchAndReplace
     mod_funcname: SearchAndReplace
     cgout_filename1: str
@@ -146,10 +140,10 @@ class Events:
         self.events = text.split()
         self.num_events = len(self.events)
 
-    def mk_cc(self, text: str) -> Cc:
-        """Raises a `ValueError` exception on syntax error."""
+    # Raises a `ValueError` exception on syntax error.
+    def mk_cc(self, str_counts: list[str]) -> Cc:
         # This is slightly faster than a list comprehension.
-        counts = list(map(int, text.split()))
+        counts = list(map(int, str_counts))
 
         if len(counts) == self.num_events:
             pass
@@ -159,46 +153,31 @@ class Events:
         else:
             raise ValueError
 
-        return Cc(counts)
+        return counts
 
     def mk_empty_cc(self) -> Cc:
         # This is much faster than a list comprehension.
-        return Cc([0] * self.num_events)
+        return [0] * self.num_events
 
 
-class Cc:
-    """
-    This is a dumb container for counts.
+# A "cost centre", which is a dumb container for counts. Always the same length
+# as `Events.events`, but it doesn't even know event names. `Events.mk_cc` and
+# `Events.mk_empty_cc` are used for construction.
+#
+# This used to be a class with a single field `counts: list[int]`, but this
+# type is very hot and just using a type alias is much faster.
+Cc = list[int]
 
-    It doesn't know anything about events, i.e. what each count means. It can
-    do basic operations like `__iadd__` and `__eq__`, and anything more must be
-    done elsewhere. `Events.mk_cc` and `Events.mk_empty_cc` are used for
-    construction.
-    """
+# Add the counts in `a_cc` to `b_cc`.
+def add_cc_to_cc(a_cc: Cc, b_cc: Cc) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc[i] += a_count
 
-    # Always the same length as `Events.events`.
-    counts: list[int]
 
-    def __init__(self, counts: list[int]) -> None:
-        self.counts = counts
-
-    def __repr__(self) -> str:
-        return str(self.counts)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Cc):
-            return NotImplemented
-        return self.counts == other.counts
-
-    def __iadd__(self, other: Cc) -> Cc:
-        for i, other_count in enumerate(other.counts):
-            self.counts[i] += other_count
-        return self
-
-    def __isub__(self, other: Cc) -> Cc:
-        for i, other_count in enumerate(other.counts):
-            self.counts[i] -= other_count
-        return self
+# Subtract the counts in `a_cc` from `b_cc`.
+def sub_cc_from_cc(a_cc: Cc, b_cc: Cc) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc[i] -= a_count
 
 
 # A paired filename and function name.
@@ -252,33 +231,28 @@ def read_cgout_file(cgout_filename: str) -> tuple[str, Events, DictFlfnCc, Cc]:
         else:
             parse_die("missing an `events:` line")
 
-        curr_fl = ""
-        curr_flfn = Flfn(("", ""))
+        fl = ""
+        flfn = Flfn(("", ""))
 
         # Different places where we accumulate CC data.
         dict_flfn_cc: DictFlfnCc = defaultdict(events.mk_empty_cc)
         summary_cc = None
 
-        # Compile the one hot regex.
-        count_pat = re.compile(r"(\d+)\s+(.*)")
-
         # Line matching is done in order of pattern frequency, for speed.
-        while True:
-            line = readline()
-
-            if m := count_pat.match(line):
-                # The line_num isn't used.
+        while line := readline():
+            if line[0].isdigit():
+                split_line = line.split()
                 try:
-                    cc = events.mk_cc(m.group(2))
+                    # The line_num isn't used.
+                    cc = events.mk_cc(split_line[1:])
                 except ValueError:
                     parse_die("malformed or too many event counts")
 
                 # Record this CC at the function level.
-                flfn_cc = dict_flfn_cc[curr_flfn]
-                flfn_cc += cc
+                add_cc_to_cc(cc, dict_flfn_cc[flfn])
 
             elif line.startswith("fn="):
-                curr_flfn = Flfn((curr_fl, args.mod_funcname(line[3:-1])))
+                flfn = Flfn((fl, args.mod_funcname(line[3:-1])))
 
             elif line.startswith("fl="):
                 # A longstanding bug: the use of `--mod-filename` makes it
@@ -287,18 +261,15 @@ def read_cgout_file(cgout_filename: str) -> tuple[str, Events, DictFlfnCc, Cc]:
                 # diffs anyway. It just means we get "This file was unreadable"
                 # for modified filenames rather than a single "<unknown (line
                 # 0)>" CC.
-                curr_fl = args.mod_filename(line[3:-1])
+                fl = args.mod_filename(line[3:-1])
                 # A `fn=` line should follow, overwriting the "???".
-                curr_flfn = Flfn((curr_fl, "???"))
+                flfn = Flfn((fl, "???"))
 
             elif m := re.match(r"summary:\s+(.*)", line):
                 try:
-                    summary_cc = events.mk_cc(m.group(1))
+                    summary_cc = events.mk_cc(m.group(1).split())
                 except ValueError:
-                    parse_die("too many event counts")
-
-            elif line == "":
-                break  # EOF
+                    parse_die("malformed or too many event counts")
 
             elif line == "\n" or line.startswith("#"):
                 # Skip empty lines and comment lines.
@@ -314,7 +285,7 @@ def read_cgout_file(cgout_filename: str) -> tuple[str, Events, DictFlfnCc, Cc]:
     # Check summary is correct.
     total_cc = events.mk_empty_cc()
     for flfn_cc in dict_flfn_cc.values():
-        total_cc += flfn_cc
+        add_cc_to_cc(flfn_cc, total_cc)
     if summary_cc != total_cc:
         msg = (
             "`summary:` line doesn't match computed total\n"
@@ -339,8 +310,8 @@ def main() -> None:
     # Subtract file 1's CCs from file 2's CCs, at the Flfn level.
     for flfn, flfn_cc1 in dict_flfn_cc1.items():
         flfn_cc2 = dict_flfn_cc2[flfn]
-        flfn_cc2 -= flfn_cc1
-    summary_cc2 -= summary_cc1
+        sub_cc_from_cc(flfn_cc1, flfn_cc2)
+    sub_cc_from_cc(summary_cc1, summary_cc2)
 
     print(f"desc: Files compared:   {filename1}; {filename2}")
     print(f"cmd: {cmd1}; {cmd2}")
@@ -356,9 +327,9 @@ def main() -> None:
         # move around.
         print(f"fl={flfn[0]}")
         print(f"fn={flfn[1]}")
-        print("0", *flfn_cc2.counts, sep=" ")
+        print("0", *flfn_cc2, sep=" ")
 
-    print("summary:", *summary_cc2.counts, sep=" ")
+    print("summary:", *summary_cc2, sep=" ")
 
 
 if __name__ == "__main__":

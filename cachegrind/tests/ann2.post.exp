@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
--- Cachegrind profile
+-- Metadata
 --------------------------------------------------------------------------------
 Command:          ann2
 Data file:        ann2.cgout
@@ -15,55 +15,94 @@ Annotation:       on
 --------------------------------------------------------------------------------
 -- Summary
 --------------------------------------------------------------------------------
-A                SomeCount          VeryLongEventName 
+A_______________ SomeCount_______ VeryLongEventName 
 
-100,000 (100.0%)   100,000 (100.0%)                 0  PROGRAM TOTALS
+100,000 (100.0%) 100,000 (100.0%)                 0  PROGRAM TOTALS
 
 --------------------------------------------------------------------------------
--- Function summary
+-- File:function summary
 --------------------------------------------------------------------------------
-A              SomeCount         VeryLongEventName        file:function
+  A___________________________ SomeCount____________ VeryLongEventName__  file:function
 
-70,091 (70.1%)    90,291 (90.3%)                 0        ann2-basic.rs:f0
-15,000 (15.0%)       600  (0.6%)                 0        ann2-basic.rs:f1
- 9,000  (9.0%)     6,000  (6.0%)                 0        ann2-could-not-be-found.rs:f1
- 2,000  (2.0%)       100  (0.1%)                 0        ann2-basic.rs:f2
- 1,000  (1.0%)       500  (0.5%)                 0        ann2-via-I.rs:<unspecified>
- 1,000  (1.0%)       300  (0.3%)            -1,000 (n/a)  ann2-past-the-end.rs:f1
--1,000 (-1.0%)         0                         0        ann2-negatives.rs:neg3
--1,000 (-1.0%)         0                         0        ann2-negatives.rs:neg2
- 1,000  (1.0%)         0                         0        ann2-more-recent-than-cgout.rs:new
- 1,000  (1.0%)         0                         0        ???:unknown
-   500  (0.5%)         0                         0        ann2-basic.rs:f6
-   500  (0.5%)         0                         0        ann2-basic.rs:f4
+>     86,590    (86.6%, 86.6%) 93,000 (93.0%, 93.0%)        0 (n/a, n/a)  ann2-basic.rs:
+      68,081    (68.1%)        90,291 (90.3%)               0               f0
+      15,000    (15.0%)           600  (0.6%)               0               f1
+       2,000     (2.0%)           100  (0.1%)               0               f2
+         500     (0.5%)             0                       0               f6
+         500     (0.5%)             0                       0               f4
+
+>      9,000     (9.0%, 95.6%)  6,000  (6.0%, 99.0%)        0 (n/a, n/a)  ann2-could-not-be-found.rs:f1
+
+>      1,000     (1.0%, 96.6%)    500  (0.5%, 99.5%)        0 (n/a, n/a)  ann2-via-I.rs:<unspecified>
+
+>      1,000     (1.0%, 97.6%)    300  (0.3%, 99.8%)   -1,000 (n/a, n/a)  ann2-past-the-end.rs:f1
+
+>      1,000     (1.0%, 98.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ann2-more-recent-than-cgout.rs:new
+
+>      1,000     (1.0%, 99.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ???:unknown
+
+>         10     (0.0%, 99.6%)      0  (0.0%, 99.8%)    1,000 (n/a, n/a)  ann2-negatives.rs:
+  -1,000,000 (-1000.0%)             0                 150,000 (n/a)         neg3
+     500,000   (500.0%)             0                -150,000 (n/a)         neg2a
+     499,999   (500.0%)             0                       0               neg2b
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  A______________________________ SomeCount____________ VeryLongEventName__  function:file
+
+> -1,000,000 (-1000.0%, -1000.0%)      0  (0.0%,  0.0%)  150,000 (n/a, n/a)  neg3:ann2-negatives.rs
+
+>    500,000   (500.0%,  -500.0%)      0  (0.0%,  0.0%) -150,000 (n/a, n/a)  neg2a:ann2-negatives.rs
+
+>    499,999   (500.0%,    -0.0%)      0  (0.0%,  0.0%)        0 (n/a, n/a)  neg2b:ann2-negatives.rs
+
+>     68,081    (68.1%,    68.1%) 90,291 (90.3%, 90.3%)        0 (n/a, n/a)  f0:ann2-basic.rs
+
+>     25,000    (25.0%,    93.1%)  6,900  (6.9%, 97.2%)   -1,000 (n/a, n/a)  f1:
+      15,000    (15.0%)              600  (0.6%)               0               ann2-basic.rs
+       9,000     (9.0%)            6,000  (6.0%)               0               ann2-could-not-be-found.rs
+       1,000     (1.0%)              300  (0.3%)          -1,000 (n/a)         ann2-past-the-end.rs
+
+>      2,000     (2.0%,    95.1%)    100  (0.1%, 97.3%)        0 (n/a, n/a)  f2:ann2-basic.rs
+
+>      1,000     (1.0%,    96.1%)    500  (0.5%, 97.8%)        0 (n/a, n/a)  <unspecified>:ann2-via-I.rs
+
+>      1,000     (1.0%,    97.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  unknown:???
+
+>      1,000     (1.0%,    98.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  new:ann2-more-recent-than-cgout.rs
+
+>        500     (0.5%,    98.6%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  f6:ann2-basic.rs
+
+>        500     (0.5%,    99.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  f4:ann2-basic.rs
 
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-basic.rs
 --------------------------------------------------------------------------------
-A              SomeCount         VeryLongEventName 
+A_____________ SomeCount_____ VeryLongEventName 
 
- 7,100  (7.1%)       100  (0.1%)                 0  <unknown (line 0)>
+ 7,100  (7.1%)    100  (0.1%)                 0  <unknown (line 0)>
 
 -- line 2 ----------------------------------------
-     .                 .                         .  two
-     .                 .                         .  three
- 5,000  (5.0%)       500  (0.5%)                 0  four
- 5,000  (5.0%)       100  (0.1%)                 0  five
-     .                 .                         .  six
-70,091 (70.1%)    90,291 (90.3%)                 0  seven
-     .                 .                         .  eight
-   110  (0.1%)         9  (0.0%)                 0  nine
-     .                 .                         .  ten
-     .                 .                         .  eleven
-   200  (0.2%)         0                         0  twelve
-   200  (0.2%)         0                         0  thirteen
-   100  (0.1%)         0                         0  fourteen
-     0                 0                         0  fifteen
-     0                 0                         0  sixteen
-     0                 0                         0  seventeen
-     0                 0                         0  eighteen
-   499  (0.5%)     2,000  (2.0%)                 0  nineteen
-   300  (0.3%)         0                         0  twenty
+     .              .                         .  two
+     .              .                         .  three
+ 5,000  (5.0%)    500  (0.5%)                 0  four
+ 5,000  (5.0%)    100  (0.1%)                 0  five
+     .              .                         .  six
+68,081 (68.1%) 90,291 (90.3%)                 0  seven
+     .              .                         .  eight
+   110  (0.1%)      9  (0.0%)                 0  nine
+     .              .                         .  ten
+     .              .                         .  eleven
+   200  (0.2%)      0                         0  twelve
+   200  (0.2%)      0                         0  thirteen
+   100  (0.1%)      0                         0  fourteen
+     0              0                         0  fifteen
+     0              0                         0  sixteen
+     0              0                         0  seventeen
+     0              0                         0  eighteen
+   499  (0.5%)  2,000  (2.0%)                 0  nineteen
+   300  (0.3%)      0                         0  twenty
 
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-could-not-be-found.rs
@@ -80,7 +119,7 @@ This file was unreadable
 @ Annotations may not be correct.
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-A            SomeCount VeryLongEventName 
+A___________ SomeCount VeryLongEventName 
 
     .                .                 .  one
 1,000 (1.0%)         0                 0  two
@@ -91,38 +130,40 @@ A            SomeCount VeryLongEventName
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-negatives.rs
 --------------------------------------------------------------------------------
-A                     SomeCount         VeryLongEventName       
+A____________________ SomeCount_____ VeryLongEventName 
 
-    -2,000    (-2.0%)    -1,000 (-1.0%)              -990 (n/a)  <unknown (line 0)>
+    -2,000    (-2.0%) -1,000 (-1.0%)        -990 (n/a)  <unknown (line 0)>
 
-     2,000     (2.0%)     2,000  (2.0%)             2,000 (n/a)  one
-    -1,000    (-1.0%)    -1,000 (-1.0%)                 0        two
-         .                    .                         .        three
-         .                    .                         .        four
-   999,000   (999.0%)         0                  -150,000 (n/a)  five
--1,000,000 (-1000.0%)         0                   150,000 (n/a)  six
-         .                    .                         .        seven
-         .                    .                         .        eight
-         .                    .                         .        nine
-   -10,000   (-10.0%)         0                        10 (n/a)  ten
-    10,000    (10.0%)         0                       -20 (n/a)  eleven
-         .                    .                         .        twelve
-         .                    .                         .        thirteen
--- line 13 ----------------------------------------
+     2,000     (2.0%)  2,000  (2.0%)       2,000 (n/a)  one
+    -1,000    (-1.0%) -1,000 (-1.0%)           0        two
+         .                 .                   .        three
+         .                 .                   .        four
+   500,000   (500.0%)      0            -150,000 (n/a)  five
+   499,999   (500.0%)      0                   0        six
+         .                 .                   .        seven
+-1,000,000 (-1000.0%)      0             150,000 (n/a)  eight
+         .                 .                   .        nine
+    -8,000    (-8.0%)      0                  10 (n/a)  ten
+     9,000     (9.0%)      0                 -20 (n/a)  eleven
+         .                 .                   .        twelve
+        11     (0.0%)      0                   0        thirteen
+         .                 .                   .        fourteen
+         .                 .                   .        fifteen
+-- line 15 ----------------------------------------
 
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-past-the-end.rs
 --------------------------------------------------------------------------------
-A          SomeCount        VeryLongEventName       
+A_________ SomeCount_ VeryLongEventName 
 
-200 (0.2%)       100 (0.1%)                 0        one
-  .                .                        .        two
-  .                .                        .        three
+200 (0.2%) 100 (0.1%)           0        one
+  .          .                  .        two
+  .          .                  .        three
 -- line 3 ----------------------------------------
 
-300 (0.3%)       100 (0.1%)                 0        <bogus line 20>
-300 (0.3%)       100 (0.1%)                 0        <bogus line 21>
-200 (0.2%)         0                   -1,000 (n/a)  <bogus line 22>
+300 (0.3%) 100 (0.1%)           0        <bogus line 20>
+300 (0.3%) 100 (0.1%)           0        <bogus line 21>
+200 (0.2%)   0             -1,000 (n/a)  <bogus line 22>
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
@@ -133,18 +174,18 @@ A          SomeCount        VeryLongEventName
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-aux/ann2-via-I.rs
 --------------------------------------------------------------------------------
-A            SomeCount        VeryLongEventName 
+A___________ SomeCount_ VeryLongEventName 
 
-1,000 (1.0%)       500 (0.5%)                 0  one
+1,000 (1.0%) 500 (0.5%)                 0  one
 
 --------------------------------------------------------------------------------
 -- Annotation summary
 --------------------------------------------------------------------------------
-A              SomeCount         VeryLongEventName       
+A_____________ SomeCount_____ VeryLongEventName 
 
-84,500 (84.5%)    94,700 (94.7%)               990 (n/a)    annotated: files known & above threshold & readable, line numbers known
- 5,100  (5.1%)      -900 (-0.9%)              -990 (n/a)    annotated: files known & above threshold & readable, line numbers unknown
- 9,000  (9.0%)     6,000  (6.0%)                 0        unannotated: files known & above threshold & unreadable 
-   400  (0.4%)       200  (0.2%)                 0        unannotated: files known & below threshold
- 1,000  (1.0%)         0                         0        unannotated: files unknown
+84,500 (84.5%) 94,700 (94.7%)         990 (n/a)    annotated: files known & above threshold & readable, line numbers known
+ 5,100  (5.1%)   -900 (-0.9%)        -990 (n/a)    annotated: files known & above threshold & readable, line numbers unknown
+ 9,000  (9.0%)  6,000  (6.0%)           0        unannotated: files known & above threshold & unreadable 
+   400  (0.4%)    200  (0.2%)           0        unannotated: files known & below threshold
+ 1,000  (1.0%)      0                   0        unannotated: files unknown
 

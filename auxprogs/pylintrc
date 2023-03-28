@@ -12,10 +12,12 @@
 [MESSAGES CONTROL]
 
 disable=
-    # We don't care about having docstrings for all functions/classes.
+    # We don't care about having docstrings everywhere.
     missing-class-docstring, missing-function-docstring,
-    # We don't care about large functions, sometimes it's necessary.
-    too-many-branches, too-many-locals, too-many-statements,
+    missing-module-docstring,
+    # We don't care about these, sometimes they are necessary.
+    too-many-arguments, too-many-branches, too-many-lines, too-many-locals,
+    too-many-statements,
     # Zero or one public methods in a class is fine.
     too-few-public-methods,
 

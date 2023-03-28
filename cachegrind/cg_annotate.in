@@ -26,14 +26,11 @@
 #
 # The GNU General Public License is contained in the file COPYING.
 
-"""
-This script reads Cachegrind output files and produces human-readable reports.
-"""
-
+# This script reads Cachegrind output files and produces human-readable output.
+#
 # Use `make pyann` to "build" this script with `auxprogs/pybuild.rs` every time
 # it is changed. This runs the formatters, type-checkers, and linters on
 # `cg_annotate.in` and then generates `cg_annotate`.
-
 
 from __future__ import annotations
 
@@ -42,16 +39,12 @@ import re
 import sys
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from collections import defaultdict
-from typing import DefaultDict, NewType, NoReturn, TextIO
+from typing import DefaultDict, NoReturn, TextIO
 
 
+# A typed wrapper for parsed args.
 class Args(Namespace):
-    """
-    A typed wrapper for parsed args.
-
-    None of these fields are modified after arg parsing finishes.
-    """
-
+    # None of these fields are modified after arg parsing finishes.
     show: list[str]
     sort: list[str]
     threshold: float  # a percentage
@@ -72,16 +65,14 @@ class Args(Namespace):
                 return f
             raise ValueError
 
+        # Add a bool argument that defaults to true.
+        #
+        # Supports these forms: `--foo`, `--no-foo`, `--foo=yes`, `--foo=no`.
+        # The latter two were the forms supported by the old Perl version of
+        # `cg_annotate`, and are now deprecated.
         def add_bool_argument(
             p: ArgumentParser, new_name: str, old_name: str, help_: str
         ) -> None:
-            """
-            Add a bool argument that defaults to true.
-
-            Supports these forms: `--foo`, `--no-foo`, `--foo=yes`, `--foo=no`.
-            The latter two were the forms supported by the old Perl version of
-            `cg_annotate`, and are now deprecated.
-            """
             new_flag = "--" + new_name
             old_flag = "--" + old_name
             dest = new_name.replace("-", "_")
@@ -110,28 +101,25 @@ class Args(Namespace):
         p = ArgumentParser(description="Process a Cachegrind output file.")
 
         p.add_argument("--version", action="version", version="%(prog)s-@VERSION@")
-
         p.add_argument(
             "--show",
             type=comma_separated_list,
             metavar="A,B,C",
             help="only show figures for events A,B,C (default: all events)",
         )
-
         p.add_argument(
             "--sort",
             type=comma_separated_list,
             metavar="A,B,C",
             help="sort functions by events A,B,C (default: event column order)",
         )
-
         p.add_argument(
             "--threshold",
             type=threshold,
             default=0.1,
             metavar="N:[0,20]",
-            help="only show functions with more than N%% of primary sort event "
-            "counts (default: %(default)s)",
+            help="only show file:function/function:file pairs with more than "
+            "N%% of primary sort event counts (default: %(default)s)",
         )
         add_bool_argument(
             p,
@@ -182,6 +170,9 @@ class Events:
     # The event names.
     events: list[str]
 
+    # Equal to `len(self.events)`.
+    num_events: int
+
     # The order in which we must traverse events for --show. Can be shorter
     # than `events`.
     show_events: list[str]
@@ -226,10 +217,10 @@ class Events:
 
         self.sort_indices = [event_indices[event] for event in self.sort_events]
 
-    def mk_cc(self, text: str) -> Cc:
-        """Raises a `ValueError` exception on syntax error."""
+    # Raises a `ValueError` exception on syntax error.
+    def mk_cc(self, str_counts: list[str]) -> Cc:
         # This is slightly faster than a list comprehension.
-        counts = list(map(int, text.split()))
+        counts = list(map(int, str_counts))
 
         if len(counts) == self.num_events:
             pass
@@ -239,48 +230,81 @@ class Events:
         else:
             raise ValueError
 
-        return Cc(counts)
+        return counts
 
     def mk_empty_cc(self) -> Cc:
         # This is much faster than a list comprehension.
-        return Cc([0] * self.num_events)
+        return [0] * self.num_events
+
+    def mk_empty_dcc(self) -> Dcc:
+        return Dcc(self.mk_empty_cc(), defaultdict(self.mk_empty_cc))
 
 
-class Cc:
-    """
-    This is a dumb container for counts.
+# A "cost centre", which is a dumb container for counts. Always the same length
+# as `Events.events`, but it doesn't even know event names. `Events.mk_cc` and
+# `Events.mk_empty_cc` are used for construction.
+#
+# This used to be a class with a single field `counts: list[int]`, but this
+# type is very hot and just using a type alias is much faster.
+Cc = list[int]
 
-    It doesn't know anything about events, i.e. what each count means. It can
-    do basic operations like `__iadd__` and `__eq__`, and anything more must be
-    done elsewhere. `Events.mk_cc` and `Events.mk_empty_cc` are used for
-    construction.
-    """
-
-    # Always the same length as `Events.events`.
-    counts: list[int]
-
-    def __init__(self, counts: list[int]) -> None:
-        self.counts = counts
-
-    def __repr__(self) -> str:
-        return str(self.counts)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Cc):
-            return NotImplemented
-        return self.counts == other.counts
-
-    def __iadd__(self, other: Cc) -> Cc:
-        for i, other_count in enumerate(other.counts):
-            self.counts[i] += other_count
-        return self
+# Add the counts in `a_cc` to `b_cc`.
+def add_cc_to_cc(a_cc: Cc, b_cc: Cc) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc[i] += a_count
 
 
-# A paired filename and function name.
-Flfn = NewType("Flfn", tuple[str, str])
+# Unrolled version of `add_cc_to_cc`, for speed.
+def add_cc_to_ccs(
+    a_cc: Cc, b_cc1: Cc, b_cc2: Cc, b_cc3: Cc, b_cc4: Cc, b_cc5: Cc
+) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc1[i] += a_count
+        b_cc2[i] += a_count
+        b_cc3[i] += a_count
+        b_cc4[i] += a_count
+        b_cc5[i] += a_count
 
-# Per-function CCs.
-DictFlfnCc = DefaultDict[Flfn, Cc]
+
+# Update `min_cc` and `max_cc` with `self`.
+def update_cc_extremes(self: Cc, min_cc: Cc, max_cc: Cc) -> None:
+    for i, count in enumerate(self):
+        if count > max_cc[i]:
+            max_cc[i] = count
+        elif count < min_cc[i]:
+            min_cc[i] = count
+
+
+# A deep cost centre with a dict for the inner names and CCs.
+class Dcc:
+    outer_cc: Cc
+    inner_dict_name_cc: DictNameCc
+
+    def __init__(self, outer_cc: Cc, inner_dict_name_cc: DictNameCc) -> None:
+        self.outer_cc = outer_cc
+        self.inner_dict_name_cc = inner_dict_name_cc
+
+
+# A deep cost centre with a list for the inner names and CCs. Used during
+# filtering and sorting.
+class Lcc:
+    outer_cc: Cc
+    inner_list_name_cc: ListNameCc
+
+    def __init__(self, outer_cc: Cc, inner_list_name_cc: ListNameCc) -> None:
+        self.outer_cc = outer_cc
+        self.inner_list_name_cc = inner_list_name_cc
+
+
+# Per-file/function CCs. The list version is used during filtering and sorting.
+DictNameCc = DefaultDict[str, Cc]
+ListNameCc = list[tuple[str, Cc]]
+
+# Per-file/function DCCs. The outer names are filenames and the inner names are
+# function names, or vice versa. The list version is used during filtering and
+# sorting.
+DictNameDcc = DefaultDict[str, Dcc]
+ListNameLcc = list[tuple[str, Lcc]]
 
 # Per-line CCs, organised by filename and line number.
 DictLineCc = DefaultDict[int, Cc]
@@ -292,7 +316,15 @@ def die(msg: str) -> NoReturn:
     sys.exit(1)
 
 
-def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, Cc]:
+def read_cgout_file() -> tuple[
+    str,
+    str,
+    Events,
+    DictNameDcc,
+    DictNameDcc,
+    DictFlDictLineCc,
+    Cc,
+]:
     # The file format is described in Cachegrind's manual.
     try:
         cgout_file = open(args.cgout_filename[0], "r", encoding="utf-8")
@@ -334,52 +366,67 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
         def mk_empty_dict_line_cc() -> DictLineCc:
             return defaultdict(events.mk_empty_cc)
 
-        curr_fl = ""
-        curr_flfn = Flfn(("", ""))
+        # The current filename and function name.
+        fl = ""
+        fn = ""
 
         # Different places where we accumulate CC data.
-        dict_flfn_cc: DictFlfnCc = defaultdict(events.mk_empty_cc)
+        dict_fl_dcc: DictNameDcc = defaultdict(events.mk_empty_dcc)
+        dict_fn_dcc: DictNameDcc = defaultdict(events.mk_empty_dcc)
         dict_fl_dict_line_cc: DictFlDictLineCc = defaultdict(mk_empty_dict_line_cc)
         summary_cc = None
 
-        # Compile the one hot regex.
-        count_pat = re.compile(r"(\d+)\s+(.*)")
+        # These are refs into the dicts above, used to avoid repeated lookups.
+        # They are all overwritten before first use.
+        fl_dcc = events.mk_empty_dcc()
+        fn_dcc = events.mk_empty_dcc()
+        fl_dcc_inner_fn_cc = events.mk_empty_cc()
+        fn_dcc_inner_fl_cc = events.mk_empty_cc()
+        dict_line_cc = mk_empty_dict_line_cc()
 
         # Line matching is done in order of pattern frequency, for speed.
-        while True:
-            line = readline()
-
-            if m := count_pat.match(line):
-                line_num = int(m.group(1))
+        while line := readline():
+            if line[0].isdigit():
+                split_line = line.split()
                 try:
-                    cc = events.mk_cc(m.group(2))
+                    line_num = int(split_line[0])
+                    cc = events.mk_cc(split_line[1:])
                 except ValueError:
                     parse_die("malformed or too many event counts")
 
-                # Record this CC at the function level.
-                flfn_cc = dict_flfn_cc[curr_flfn]
-                flfn_cc += cc
-
-                # Record this CC at the file/line level.
-                line_cc = dict_fl_dict_line_cc[curr_fl][line_num]
-                line_cc += cc
+                # Record this CC at the file:function level, the function:file
+                # level, and the file/line level.
+                add_cc_to_ccs(
+                    cc,
+                    fl_dcc.outer_cc,
+                    fn_dcc.outer_cc,
+                    fl_dcc_inner_fn_cc,
+                    fn_dcc_inner_fl_cc,
+                    dict_line_cc[line_num],
+                )
 
             elif line.startswith("fn="):
-                curr_flfn = Flfn((curr_fl, line[3:-1]))
+                fn = line[3:-1]
+                # `fl_dcc` is unchanged.
+                fn_dcc = dict_fn_dcc[fn]
+                fl_dcc_inner_fn_cc = fl_dcc.inner_dict_name_cc[fn]
+                fn_dcc_inner_fl_cc = fn_dcc.inner_dict_name_cc[fl]
 
             elif line.startswith("fl="):
-                curr_fl = line[3:-1]
+                fl = line[3:-1]
                 # A `fn=` line should follow, overwriting the function name.
-                curr_flfn = Flfn((curr_fl, "<unspecified>"))
+                fn = "<unspecified>"
+                fl_dcc = dict_fl_dcc[fl]
+                fn_dcc = dict_fn_dcc[fn]
+                fl_dcc_inner_fn_cc = fl_dcc.inner_dict_name_cc[fn]
+                fn_dcc_inner_fl_cc = fn_dcc.inner_dict_name_cc[fl]
+                dict_line_cc = dict_fl_dict_line_cc[fl]
 
             elif m := re.match(r"summary:\s+(.*)", line):
                 try:
-                    summary_cc = events.mk_cc(m.group(1))
+                    summary_cc = events.mk_cc(m.group(1).split())
                 except ValueError:
-                    parse_die("too many event counts")
-
-            elif line == "":
-                break  # EOF
+                    parse_die("malformed or too many event counts")
 
             elif line == "\n" or line.startswith("#"):
                 # Skip empty lines and comment lines.
@@ -392,10 +439,10 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
     if not summary_cc:
         parse_die("missing `summary:` line, aborting")
 
-    # Check summary is correct.
+    # Check summary is correct. (Only using the outer CCs.)
     total_cc = events.mk_empty_cc()
-    for flfn_cc in dict_flfn_cc.values():
-        total_cc += flfn_cc
+    for dcc in dict_fl_dcc.values():
+        add_cc_to_cc(dcc.outer_cc, total_cc)
     if summary_cc != total_cc:
         msg = (
             "`summary:` line doesn't match computed total\n"
@@ -404,7 +451,32 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
         )
         parse_die(msg)
 
-    return (desc, cmd, events, dict_flfn_cc, dict_fl_dict_line_cc, summary_cc)
+    return (
+        desc,
+        cmd,
+        events,
+        dict_fl_dcc,
+        dict_fn_dcc,
+        dict_fl_dict_line_cc,
+        summary_cc,
+    )
+
+
+# The width of a column, in three parts.
+class Width:
+    # Width of the widest commified event count.
+    count: int
+
+    # Width of the widest first percentage, of the form ` (n.n%)` or ` (n.n%,`.
+    perc1: int
+
+    # Width of the widest second percentage, of the form ` n.n%)`.
+    perc2: int
+
+    def __init__(self, count: int, perc1: int, perc2: int) -> None:
+        self.count = count
+        self.perc1 = perc1
+        self.perc2 = perc2
 
 
 class CcPrinter:
@@ -414,90 +486,164 @@ class CcPrinter:
     # Note: every `CcPrinter` gets the same summary CC.
     summary_cc: Cc
 
-    # The width of each event count column. (This column is also used for event
-    # names.) For simplicity, its length matches `events.events`, even though
-    # not all events are necessarily shown.
-    count_widths: list[int]
+    # String to print before the event names.
+    events_prefix: str
 
-    # The width of each percentage column. Zero if --show-percs is disabled.
-    # Its length matches `count_widths`.
-    perc_widths: list[int]
+    # The widths of each event column. For simplicity, its length matches
+    # `events.events`, even though not all events are necessarily shown.
+    widths: list[Width]
 
-    def __init__(self, events: Events, ccs: list[Cc], summary_cc: Cc) -> None:
+    # Text of a missing CC, which can be computed in advance.
+    missing_cc_str: str
+
+    # Must call `init_ccs` or `init_list_name_lcc` after this.
+    def __init__(self, events: Events, summary_cc: Cc) -> None:
         self.events = events
         self.summary_cc = summary_cc
+        # Other fields initialized in `init_*`.
 
-        # Find min and max value for each event. One of them will be the
-        # widest value.
-        min_cc = events.mk_empty_cc()
-        max_cc = events.mk_empty_cc()
+    def init_ccs(self, ccs: list[Cc]) -> None:
+        self.events_prefix = ""
+
+        # Find min and max count for each event. One of them will be the widest
+        # value.
+        min_cc = self.events.mk_empty_cc()
+        max_cc = self.events.mk_empty_cc()
         for cc in ccs:
-            for i, _ in enumerate(events.events):
-                count = cc.counts[i]
-                if count > max_cc.counts[i]:
-                    max_cc.counts[i] = count
-                elif count < min_cc.counts[i]:
-                    min_cc.counts[i] = count
+            update_cc_extremes(cc, min_cc, max_cc)
 
-        # Find maximum width for each column.
-        self.count_widths = [0] * events.num_events
-        self.perc_widths = [0] * events.num_events
-        for i, event in enumerate(events.events):
-            # Get count and perc widths of the min and max CCs.
-            (min_count, min_perc) = self.count_and_perc(min_cc, i)
-            (max_count, max_perc) = self.count_and_perc(max_cc, i)
+        self.init_widths(min_cc, max_cc, None, None)
 
-            # The event name goes in the count column.
-            self.count_widths[i] = max(len(min_count), len(max_count), len(event))
-            self.perc_widths[i] = max(len(min_perc), len(max_perc))
+    def init_list_name_lcc(self, list_name_lcc: ListNameLcc) -> None:
+        self.events_prefix = "  "
+
+        cumul_cc = self.events.mk_empty_cc()
+
+        # Find min and max value for each event. One of them will be the widest
+        # value. Likewise for the cumulative counts.
+        min_cc = self.events.mk_empty_cc()
+        max_cc = self.events.mk_empty_cc()
+        min_cumul_cc = self.events.mk_empty_cc()
+        max_cumul_cc = self.events.mk_empty_cc()
+        for _, lcc in list_name_lcc:
+            # Consider both outer and inner CCs for `count` and `perc1`.
+            update_cc_extremes(lcc.outer_cc, min_cc, max_cc)
+            for _, inner_cc in lcc.inner_list_name_cc:
+                update_cc_extremes(inner_cc, min_cc, max_cc)
+
+            # Consider only outer CCs for `perc2`.
+            add_cc_to_cc(lcc.outer_cc, cumul_cc)
+            update_cc_extremes(cumul_cc, min_cumul_cc, max_cumul_cc)
+
+        self.init_widths(min_cc, max_cc, min_cumul_cc, max_cumul_cc)
+
+    def init_widths(
+        self, min_cc1: Cc, max_cc1: Cc, min_cc2: Cc | None, max_cc2: Cc | None
+    ) -> None:
+        self.widths = [Width(0, 0, 0)] * self.events.num_events
+        for i in range(len(self.events.events)):
+            # Get count and percs widths of the min and max CCs.
+            (min_count, min_perc1, min_perc2) = self.count_and_percs_strs(
+                min_cc1, min_cc2, i
+            )
+            (max_count, max_perc1, max_perc2) = self.count_and_percs_strs(
+                max_cc1, max_cc2, i
+            )
+            self.widths[i] = Width(
+                max(len(min_count), len(max_count)),
+                max(len(min_perc1), len(max_perc1)),
+                max(len(min_perc2), len(max_perc2)),
+            )
+
+        self.missing_cc_str = ""
+        for i in self.events.show_indices:
+            self.missing_cc_str += self.count_and_percs_str(i, ".", "", "")
+
+    # Get the count and perc string for `cc1[i]` and the perc string for
+    # `cc2[i]`. (Unless `cc2` is `None`, in which case `perc2` will be "".)
+    def count_and_percs_strs(
+        self, cc1: Cc, cc2: Cc | None, i: int
+    ) -> tuple[str, str, str]:
+        count = f"{cc1[i]:,d}"  # commify
+        if args.show_percs:
+            summary_count = self.summary_cc[i]
+            if cc2 is None:
+                # A plain or inner CC, with a single percentage.
+                if cc1[i] == 0:
+                    # Don't show percentages for "0" entries, it's just clutter.
+                    perc1 = ""
+                elif summary_count == 0:
+                    # Avoid dividing by zero.
+                    perc1 = " (n/a)"
+                else:
+                    perc1 = f" ({cc1[i] * 100 / summary_count:.1f}%)"
+                perc2 = ""
+            else:
+                # An outer CC, with two percentages.
+                if summary_count == 0:
+                    # Avoid dividing by zero.
+                    perc1 = " (n/a,"
+                    perc2 = " n/a)"
+                else:
+                    perc1 = f" ({cc1[i] * 100 / summary_count:.1f}%,"
+                    perc2 = f" {cc2[i] * 100 / summary_count:.1f}%)"
+        else:
+            perc1 = ""
+            perc2 = ""
+
+        return (count, perc1, perc2)
+
+    def count_and_percs_str(self, i: int, count: str, perc1: str, perc2: str) -> str:
+        event_w = len(self.events.events[i])
+        count_w = self.widths[i].count
+        perc1_w = self.widths[i].perc1
+        perc2_w = self.widths[i].perc2
+        pre_w = max(0, event_w - count_w - perc1_w - perc2_w)
+        return f"{'':>{pre_w}}{count:>{count_w}}{perc1:>{perc1_w}}{perc2:>{perc2_w}} "
 
     def print_events(self, suffix: str) -> None:
+        print(self.events_prefix, end="")
         for i in self.events.show_indices:
-            # The event name goes in the count column.
             event = self.events.events[i]
-            nwidth = self.count_widths[i]
-            pwidth = self.perc_widths[i]
-            empty_perc = ""
-            print(f"{event:<{nwidth}}{empty_perc:>{pwidth}} ", end="")
+            event_w = len(event)
+            count_w = self.widths[i].count
+            perc1_w = self.widths[i].perc1
+            perc2_w = self.widths[i].perc2
+            print(f"{event:_<{max(event_w, count_w + perc1_w + perc2_w)}} ", end="")
 
         print(suffix)
 
-    def print_count_and_perc(self, i: int, count: str, perc: str) -> None:
-        nwidth = self.count_widths[i]
-        pwidth = self.perc_widths[i]
-        print(f"{count:>{nwidth}}{perc:>{pwidth}} ", end="")
-
-    def count_and_perc(self, cc: Cc, i: int) -> tuple[str, str]:
-        count = f"{cc.counts[i]:,d}"  # commify
-        if args.show_percs:
-            if cc.counts[i] == 0:
-                # Don't show percentages for "0" entries, it's just clutter.
-                perc = ""
-            else:
-                summary_count = self.summary_cc.counts[i]
-                if summary_count == 0:
-                    perc = " (n/a)"
-                else:
-                    p = cc.counts[i] * 100 / summary_count
-                    perc = f" ({p:.1f}%)"
+    def print_lcc(self, lcc: Lcc, outer_name: str, cumul_cc: Cc) -> None:
+        print("> ", end="")
+        if (
+            len(lcc.inner_list_name_cc) == 1
+            and lcc.outer_cc == lcc.inner_list_name_cc[0][1]
+        ):
+            # There is only one inner CC, it met the threshold, and it is equal
+            # to the outer CC. Print the inner CC and outer CC in a single
+            # line, because they are the same.
+            inner_name = lcc.inner_list_name_cc[0][0]
+            self.print_cc(lcc.outer_cc, cumul_cc, f"{outer_name}:{inner_name}")
         else:
-            perc = ""
+            # There are multiple inner CCs, and at least one met the threshold.
+            # Print the outer CC and then the inner CCs, indented.
+            self.print_cc(lcc.outer_cc, cumul_cc, f"{outer_name}:")
+            for inner_name, inner_cc in lcc.inner_list_name_cc:
+                print("  ", end="")
+                self.print_cc(inner_cc, None, f"  {inner_name}")
+        print()
 
-        return (count, perc)
-
-    def print_cc(self, cc: Cc, suffix: str) -> None:
+    # If `cc2` is `None`, it's a vanilla CC or inner CC. Otherwise, it's an
+    # outer CC.
+    def print_cc(self, cc: Cc, cc2: Cc | None, suffix: str) -> None:
         for i in self.events.show_indices:
-            (count, perc) = self.count_and_perc(cc, i)
-            self.print_count_and_perc(i, count, perc)
+            (count, perc1, perc2) = self.count_and_percs_strs(cc, cc2, i)
+            print(self.count_and_percs_str(i, count, perc1, perc2), end="")
 
         print("", suffix)
 
     def print_missing_cc(self, suffix: str) -> None:
-        # Don't show percentages for "." entries, it's just clutter.
-        for i in self.events.show_indices:
-            self.print_count_and_perc(i, ".", "")
-
-        print("", suffix)
+        print(self.missing_cc_str, suffix)
 
 
 # Used in various places in the output.
@@ -508,8 +654,8 @@ def print_fancy(text: str) -> None:
     print(fancy)
 
 
-def print_cachegrind_profile(desc: str, cmd: str, events: Events) -> None:
-    print_fancy("Cachegrind profile")
+def print_metadata(desc: str, cmd: str, events: Events) -> None:
+    print_fancy("Metadata")
     print(desc, end="")
     print("Command:         ", cmd)
     print("Data file:       ", args.cgout_filename[0])
@@ -530,53 +676,79 @@ def print_cachegrind_profile(desc: str, cmd: str, events: Events) -> None:
 
 
 def print_summary(events: Events, summary_cc: Cc) -> None:
-    printer = CcPrinter(events, [summary_cc], summary_cc)
+    printer = CcPrinter(events, summary_cc)
+    printer.init_ccs([summary_cc])
     print_fancy("Summary")
     printer.print_events("")
     print()
-    printer.print_cc(summary_cc, "PROGRAM TOTALS")
+    printer.print_cc(summary_cc, None, "PROGRAM TOTALS")
     print()
 
 
-def print_function_summary(
-    events: Events, dict_flfn_cc: DictFlfnCc, summary_cc: Cc
+def print_name_summary(
+    kind: str, events: Events, dict_name_dcc: DictNameDcc, summary_cc: Cc
 ) -> set[str]:
-    # Only the first threshold percentage is actually used.
+    # The primary sort event is used for the threshold.
     threshold_index = events.sort_indices[0]
 
     # Convert the threshold from a percentage to an event count.
-    threshold = args.threshold * abs(summary_cc.counts[threshold_index]) / 100
+    threshold = args.threshold * abs(summary_cc[threshold_index]) / 100
 
-    def meets_threshold(flfn_and_cc: tuple[Flfn, Cc]) -> bool:
-        cc = flfn_and_cc[1]
-        return abs(cc.counts[threshold_index]) >= threshold
+    def meets_threshold(name_and_cc: tuple[str, Cc]) -> bool:
+        cc = name_and_cc[1]
+        return abs(cc[threshold_index]) >= threshold
 
-    # Create a list with the counts in sort order, so that left-to-right list
-    # comparison does the right thing. Plus the `Flfn` at the end for
-    # deterministic output when all the event counts are identical in two CCs.
-    def key(flfn_and_cc: tuple[Flfn, Cc]) -> tuple[list[int], Flfn]:
-        cc = flfn_and_cc[1]
-        return ([abs(cc.counts[i]) for i in events.sort_indices], flfn_and_cc[0])
+    # Create a list with the outer CC counts in sort order, so that
+    # left-to-right list comparison does the right thing. Plus the outer name
+    # at the end for deterministic output when all the event counts are
+    # identical in two CCs.
+    def key_name_and_lcc(name_and_lcc: tuple[str, Lcc]) -> tuple[list[int], str]:
+        (outer_name, lcc) = name_and_lcc
+        return (
+            [abs(lcc.outer_cc[i]) for i in events.sort_indices],
+            outer_name,
+        )
 
-    # Filter out functions for which the primary sort event count is below the
-    # threshold, and sort the remainder.
-    filtered_flfns_and_ccs = filter(meets_threshold, dict_flfn_cc.items())
-    sorted_flfns_and_ccs = sorted(filtered_flfns_and_ccs, key=key, reverse=True)
-    sorted_ccs = list(map(lambda flfn_and_cc: flfn_and_cc[1], sorted_flfns_and_ccs))
+    # Similar to `key_name_and_lcc`.
+    def key_name_and_cc(name_and_cc: tuple[str, Cc]) -> tuple[list[int], str]:
+        (name, cc) = name_and_cc
+        return ([abs(cc[i]) for i in events.sort_indices], name)
 
-    printer = CcPrinter(events, sorted_ccs, summary_cc)
-    print_fancy("Function summary")
-    printer.print_events(" file:function")
+    # This is a `filter_map` operation, which Python doesn't directly support.
+    list_name_lcc: ListNameLcc = []
+    for outer_name, dcc in dict_name_dcc.items():
+        # Filter out inner CCs for which the primary sort event count is below the
+        # threshold, and sort the remainder.
+        inner_list_name_cc = sorted(
+            filter(meets_threshold, dcc.inner_dict_name_cc.items()),
+            key=key_name_and_cc,
+            reverse=True,
+        )
+
+        # If no inner CCs meet the threshold, ignore the entire DCC, even if
+        # the outer CC meets the threshold.
+        if len(inner_list_name_cc) == 0:
+            continue
+
+        list_name_lcc.append((outer_name, Lcc(dcc.outer_cc, inner_list_name_cc)))
+
+    list_name_lcc = sorted(list_name_lcc, key=key_name_and_lcc, reverse=True)
+
+    printer = CcPrinter(events, summary_cc)
+    printer.init_list_name_lcc(list_name_lcc)
+    print_fancy(kind + " summary")
+    printer.print_events(" " + kind.lower())
     print()
 
-    # Print per-function counts.
-    for flfn, flfn_cc in sorted_flfns_and_ccs:
-        printer.print_cc(flfn_cc, f"{flfn[0]}:{flfn[1]}")
+    # Print LCCs.
+    threshold_names = set([])
+    cumul_cc = events.mk_empty_cc()
+    for name, lcc in list_name_lcc:
+        add_cc_to_cc(lcc.outer_cc, cumul_cc)
+        printer.print_lcc(lcc, name, cumul_cc)
+        threshold_names.add(name)
 
-    print()
-
-    # Files containing a function that met the threshold.
-    return set(flfn_and_cc[0][0] for flfn_and_cc in sorted_flfns_and_ccs)
+    return threshold_names
 
 
 class AnnotatedCcs:
@@ -647,7 +819,8 @@ def print_annotated_src_file(
     if os.stat(src_file.name).st_mtime_ns > os.stat(args.cgout_filename[0]).st_mtime_ns:
         warn_src_file_is_newer(src_file.name, args.cgout_filename[0])
 
-    printer = CcPrinter(events, list(dict_line_cc.values()), summary_cc)
+    printer = CcPrinter(events, summary_cc)
+    printer.init_ccs(list(dict_line_cc.values()))
     # The starting fancy has already been printed by the caller.
     printer.print_events("")
     print()
@@ -658,8 +831,8 @@ def print_annotated_src_file(
     line0_cc = dict_line_cc.pop(0, None)
     if line0_cc:
         suffix = "<unknown (line 0)>"
-        printer.print_cc(line0_cc, suffix)
-        annotated_ccs.line_nums_unknown_cc += line0_cc
+        printer.print_cc(line0_cc, None, suffix)
+        add_cc_to_cc(line0_cc, annotated_ccs.line_nums_unknown_cc)
         print()
 
     # Find interesting line ranges: all lines with a CC, and all lines within
@@ -698,8 +871,10 @@ def print_annotated_src_file(
                 if not src_line:
                     return  # EOF
                 if line_nums and line_num == line_nums[0]:
-                    printer.print_cc(dict_line_cc[line_num], src_line[:-1])
-                    annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
+                    printer.print_cc(dict_line_cc[line_num], None, src_line[:-1])
+                    add_cc_to_cc(
+                        dict_line_cc[line_num], annotated_ccs.line_nums_known_cc
+                    )
                     del line_nums[0]
                 else:
                     printer.print_missing_cc(src_line[:-1])
@@ -715,8 +890,10 @@ def print_annotated_src_file(
         if line_nums:
             print()
             for line_num in line_nums:
-                printer.print_cc(dict_line_cc[line_num], f"<bogus line {line_num}>")
-                annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
+                printer.print_cc(
+                    dict_line_cc[line_num], None, f"<bogus line {line_num}>"
+                )
+                add_cc_to_cc(dict_line_cc[line_num], annotated_ccs.line_nums_known_cc)
 
             print()
             warn_bogus_lines(src_file.name)
@@ -736,7 +913,7 @@ def print_annotated_src_files(
     def add_dict_line_cc_to_cc(dict_line_cc: DictLineCc | None, accum_cc: Cc) -> None:
         if dict_line_cc:
             for line_cc in dict_line_cc.values():
-                accum_cc += line_cc
+                add_cc_to_cc(line_cc, accum_cc)
 
     # Exclude the unknown ("???") file, which is unannotatable.
     ann_src_filenames.discard("???")
@@ -771,7 +948,6 @@ def print_annotated_src_files(
                         annotated_ccs,
                         summary_cc,
                     )
-
                 readable = True
                 break
             except OSError:
@@ -799,15 +975,16 @@ def print_annotation_summary(
     summary_cc: Cc,
 ) -> None:
     # Show how many events were covered by annotated lines above.
-    printer = CcPrinter(events, annotated_ccs.ccs(), summary_cc)
+    printer = CcPrinter(events, summary_cc)
+    printer.init_ccs(annotated_ccs.ccs())
     print_fancy("Annotation summary")
     printer.print_events("")
     print()
 
     total_cc = events.mk_empty_cc()
     for (cc, label) in zip(annotated_ccs.ccs(), AnnotatedCcs.labels):
-        printer.print_cc(cc, label)
-        total_cc += cc
+        printer.print_cc(cc, None, label)
+        add_cc_to_cc(cc, total_cc)
 
     print()
 
@@ -826,19 +1003,19 @@ def main() -> None:
         desc,
         cmd,
         events,
-        dict_flfn_cc,
+        dict_fl_dcc,
+        dict_fn_dcc,
         dict_fl_dict_line_cc,
         summary_cc,
     ) = read_cgout_file()
 
     # Each of the following calls prints a section of the output.
-
-    print_cachegrind_profile(desc, cmd, events)
-
+    print_metadata(desc, cmd, events)
     print_summary(events, summary_cc)
-
-    ann_src_filenames = print_function_summary(events, dict_flfn_cc, summary_cc)
-
+    ann_src_filenames = print_name_summary(
+        "File:function", events, dict_fl_dcc, summary_cc
+    )
+    print_name_summary("Function:file", events, dict_fn_dcc, summary_cc)
     if args.annotate:
         annotated_ccs = print_annotated_src_files(
             events, ann_src_filenames, dict_fl_dict_line_cc, summary_cc

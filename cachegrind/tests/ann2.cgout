@@ -5,7 +5,7 @@ events: A SomeCount VeryLongEventName
 fl=ann2-basic.rs
 # This one has the counts to get the totals to 100,000/100,000/0.
 fn=f0
-7 70091 90291 0
+7 68081 90291 0
 fn=f1
 # Different whitespace. Mix of line 0 and other lines.
 0  5000   0         0   
@@ -45,24 +45,29 @@ fl=ann2-more-recent-than-cgout.rs
 fn=new
 2 1000 0 0
 
-# File with negative and positive values.
+# File with negative and positive values. Some values are very large (much
+# bigger than in the summary). The file total is below the threshold, but it
+# still is printed because the function CCs are above the threshold. Also,
+# because the summary value for `ThisIsAVeryLongEventName` is zero, that events
+# percentages here show up as "n/a".
 fl=ann2-negatives.rs
 # Various, and the sum is zero.
 fn=neg1
 0 -1000 -1000 -1000
 1 2000 2000 2000
 2 -1000 -1000 0
-fn=neg2
-# Enormous numbers, but the sum is zero or almost zero.
-# Also, because the summary value for `ThisIsAVeryLongEventName` is zero, the
-# percentages here show up as zero.
-5 999000 0 -150000
-6 -1000000 0 150000
+fn=neg2a
+5 500000 0 -150000
+fn=neg2b
+6 499999 0 0
 fn=neg3
 # Ditto.
 0 -1000 0 10
-10 -10000 0 10
-11 10000 0 -20
+8 -1000000 0 150000
+10 -8000 0 10
+11 9000 0 -20
+fn=neg4
+13 11 0 0
 
 # File with source newer than the cgout file.
 fl=ann2-past-the-end.rs

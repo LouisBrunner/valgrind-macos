@@ -8,9 +8,14 @@
 #include <assert.h>
 #include <string.h>
 #include <sys/syscall.h>
-#ifndef HAVE_STRUCT_STATX_IN_SYS_STAT_H
+#if defined(MUSL_LIBC)
+/* musl has __NR_statx but not the structs that it needs */
+#undef __NR_statx
+#else
+#if !defined(HAVE_STRUCT_STATX_IN_SYS_STAT_H)
 #include <linux/stat.h>
-#endif
+#endif /* HAVE_STRUCT_STATX_IN_SYS_STAT_H */
+#endif /* MUSL_LIBC */
 #include <errno.h>
 
 int check_stat2;

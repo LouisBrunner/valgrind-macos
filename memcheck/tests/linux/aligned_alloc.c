@@ -7,7 +7,7 @@ int main(void)
 {
 #if defined(MUSL_LIBC)
    char* p = NULL;
-   int res;
+
 
    // zero size
    p = aligned_alloc(0, 8);

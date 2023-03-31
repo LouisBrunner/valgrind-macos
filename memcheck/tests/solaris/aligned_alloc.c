@@ -5,7 +5,7 @@
 int main(void)
 {
    char* p = NULL;
-   int res;
+
 
    // zero size
    p = aligned_alloc(0, 8);

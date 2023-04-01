@@ -269,6 +269,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
       /* tid is now invalid. */
 
+#  if DARWIN_VERS < DARWIN_10_14
       // GrP fixme exit race
       msg.msgh_bits = MACH_MSGH_BITS(17, MACH_MSG_TYPE_MAKE_SEND_ONCE);
       msg.msgh_request_port = VG_(gettid)();
@@ -278,9 +279,53 @@ static void run_a_thread_NORETURN ( Word tidW )
       tst->status = VgTs_Empty;
       // GrP fixme race here! new thread may claim this V thread stack
       // before we get out here!
-      // GrP fixme use bsdthread_terminate for safe cleanup?
       mach_msg(&msg, MACH_SEND_MSG|MACH_MSG_OPTION_NONE,
                sizeof(msg), 0, 0, MACH_MSG_TIMEOUT_NONE, 0);
+
+#else
+      /* We have to use this sequence to terminate the thread to
+         prevent a subtle race.  If VG_(exit_thread)() had left the
+         ThreadState as Empty, then it could have been reallocated,
+         reusing the stack while we're doing these last cleanups.
+         Instead, VG_(exit_thread) leaves it as Zombie to prevent
+         reallocation.  We need to make sure we don't touch the stack
+         between marking it Empty and exiting.  Hence the
+         assembler. */
+#if defined(VGP_x86_darwin)
+      asm volatile (
+         "movl %1, %0\n"	/* set tst->status = VgTs_Empty */
+         "movl %2, %%eax\n" /* set %eax = __NR_bsdthread_terminate */
+         "movl $0, %%ebx\n"
+         "pushl %%ebx\n" /* args on stack */
+         "pushl %%ebx\n"
+         "pushl %%ebx\n"
+         "pushl %%ebx\n"
+         "int	$0x81\n" /* bsdthread_terminate(0, 0, 0, 0) */
+         "popl %%ebx\n" /* pop args */
+         "popl %%ebx\n"
+         "popl %%ebx\n"
+         "popl %%ebx\n"
+         : "=m" (tst->status)
+         : "n" (VgTs_Empty), "n" (__NR_bsdthread_terminate)
+         : "eax", "ebx"
+      );
+#elif defined(VGP_amd64_darwin)
+      asm volatile (
+         "movl %1, %0\n"	/* set tst->status = VgTs_Empty */
+         "movq %2, %%rax\n"    /* set %rax = __NR_bsdthread_terminate */
+         "movq $0, %%rdi\n"
+         "movq $0, %%rsi\n"
+         "movq $0, %%rdx\n"
+         "movq $0, %%r10\n"
+         "syscall\n"		/* bsdthread_terminate(0, 0, 0, 0) */
+         : "=m" (tst->status)
+         : "n" (VgTs_Empty), "n" (__NR_bsdthread_terminate)
+         : "rax", "rdi", "rsi", "rdx", "r10"
+      );
+#else
+# error Unknown platform
+#endif
+#endif
 
       // DDD: This is reached sometimes on none/tests/manythreads, maybe
       // because of the race above.

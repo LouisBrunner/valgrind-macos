@@ -8,8 +8,8 @@ Conditional jump or move depends on uninitialised value(s)
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: memalign (vg_replace_malloc.c:...)
-   by 0x........: main (memalign_args.c:26)
+   by 0x........: main (memalign_args.c:27)
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: valloc (vg_replace_malloc.c:...)
-   by 0x........: main (memalign_args.c:29)
+   by 0x........: main (memalign_args.c:31)

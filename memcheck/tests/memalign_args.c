@@ -23,8 +23,10 @@ int main(void)
    res = posix_memalign((void **)&mem,align,size);
    free(mem);
    
+#if !defined(VGO_darwin)
    p = aligned_alloc(align, size);
    free(p);
+#endif
    
    p = valloc(size);
    free(p);

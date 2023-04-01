@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <assert.h>
+#include "../../../config.h"
 
 int main(void)
 {
+   // @todo PJF this is a placeholder for 10.15 and later support
+#if !defined(VGO_darwin)
    char* p = NULL;
 
    // zero size
@@ -14,6 +17,7 @@ int main(void)
    // align not power of 2
    p = aligned_alloc(40, 160);
    assert(p == NULL);
+#endif
 
    // @todo PJF this works standalone
    // but for some reason it doesn't fail in arena_memalign

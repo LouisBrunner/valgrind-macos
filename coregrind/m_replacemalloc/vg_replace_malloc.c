@@ -1575,7 +1575,8 @@ extern int *___errno (void) __attribute__((weak));
   *
   */
 
- /* @todo PJF exactly what is the behaviour if this? */
+ /* Probably in the wrong place, this is the function
+ called by posix_memalign, at least on macOS 10.13 */
 #define ZONEMEMALIGN(soname, fnname) \
    \
    void* VG_REPLACE_FUNCTION_EZU(10100,soname,fnname) \
@@ -1591,6 +1592,12 @@ extern int *___errno (void) __attribute__((weak));
       MALLOC_TRACE("zone_memalign(%p, al %llu, size %llu)", \
                    zone, (ULong)alignment, (ULong)n );  \
       \
+      if (alignment == 0 \
+          || alignment % sizeof (void *) != 0 \
+          || (alignment & (alignment - 1)) != 0) { \
+         SET_ERRNO_EINVAL; \
+         return NULL; \
+      } \
       /* Round up to minimum alignment if necessary. */ \
       if (alignment < VG_MIN_MALLOC_SZB) \
          alignment = VG_MIN_MALLOC_SZB; \

@@ -293,6 +293,7 @@ static inline void my_exit ( int x )
   /* _platform_strchr$VARIANT$Haswell */
   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Haswell)
 # endif
+ STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Base)
 
 #elif defined(VGO_solaris)
  STRCHR(VG_Z_LIBC_SONAME,          strchr)

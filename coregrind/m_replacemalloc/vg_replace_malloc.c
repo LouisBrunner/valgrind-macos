@@ -234,6 +234,13 @@ extern int *___errno (void) __attribute__((weak));
       (*___errno ()) = VKI_ENOMEM;
 #define SET_ERRNO_EINVAL if (___errno)        \
       (*___errno ()) = VKI_EINVAL;
+#elif defined(VGO_darwin)
+extern int * __error(void) __attribute__((weak));
+#define SET_ERRNO_ENOMEM if (__error)        \
+      (*__error ()) = VKI_ENOMEM;
+#define SET_ERRNO_EINVAL if (__error)        \
+      (*__error ()) = VKI_EINVAL;
+
 #else
 #define SET_ERRNO_ENOMEM {}
 #define SET_ERRNO_EINVAL {}

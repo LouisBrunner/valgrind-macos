@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------------
-Profile data file '../../cachegrind/tests/cgout-test'
+Profile data file '../../cachegrind/tests/ann1.cgout'
 --------------------------------------------------------------------------------
 I1 cache:         32768 B, 64 B, 8-way associative
 D1 cache:         32768 B, 64 B, 8-way associative

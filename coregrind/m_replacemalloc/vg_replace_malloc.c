@@ -1034,15 +1034,6 @@ extern int * __error(void) __attribute__((weak));
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
  FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
  FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
-#if __SIZEOF_SIZE_T__ == 4
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvj,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvj,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPvj,               __builtin_delete );
-#elif __SIZEOF_SIZE_T__ == 8
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPvm,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPvm,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPvm,               __builtin_delete );
-#endif
 
 #elif defined(VGO_solaris)
  // operator delete(void*)
@@ -1307,17 +1298,6 @@ extern int * __error(void) __attribute__((weak));
  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
  FREE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete );
  FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
- #if __SIZEOF_SIZE_T__ == 4
-  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvj,              __builtin_vec_delete );
-  FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvj,              __builtin_vec_delete );
-  FREE(SO_SYN_MALLOC,          _ZdaPvj,              __builtin_vec_delete );
-
- #elif __SIZEOF_SIZE_T__ == 8
-  FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvm,              __builtin_vec_delete );
-  FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvm,              __builtin_vec_delete );
-  FREE(SO_SYN_MALLOC,          _ZdaPvm,              __builtin_vec_delete );
- #endif
-
 
 #elif defined(VGO_solaris)
  // operator delete[](void*)

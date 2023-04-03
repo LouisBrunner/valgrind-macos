@@ -3,6 +3,7 @@ Building and installing it
 To build/install from the GIT repository or from a distribution
 tarball, refer to the section with the same name in README.
 
+
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To run Valgrind without having to install it, run coregrind/valgrind
@@ -91,12 +92,12 @@ to a try branch will be build by the buildbot at builder.sourceware.org
 https://builder.sourceware.org/buildbot/#/builders?tags=valgrind-try
 
 If you want to try a commit you can push to a special named try branch
-(users/<your-user-name>/try-<topic>) as follows: 
+(users/<your-user-name>/try-<your-branch>) as follows: 
 
-  git checkout -b frob
+  git checkout -b <your-branch>
   ...hack, hack, hack... OK, looks good to submit
   git commit -a -m "Awesome hack"
-  git push origin frob:users/username/try-frob
+  git push origin <your-branch>:users/<your-user-name>/try-<your-branch>
 
 When all builders have build your patch the buildbot will sent you (or
 actually the patch author) an email telling you if any builds failed and
@@ -105,7 +106,8 @@ https://builder.sourceware.org/buildbot/#/builders?tags=valgrind-try
 
 Afterwards you can delete the branch again:
 
-    git push origin :users/username/try-frob 
+    git push origin :users/username/try-<your-branch>
+
 
 Debugging Valgrind with GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -178,7 +180,7 @@ A different and possibly easier way is as follows:
 
 Self-hosting
 ~~~~~~~~~~~~
-This section explains :
+This section explains:
   (A) How to configure Valgrind to run under Valgrind.
       Such a setup is called self hosting, or outer/inner setup.
   (B) How to run Valgrind regression tests in a 'self-hosting' mode,
@@ -272,7 +274,7 @@ it contains the detected race conditions.
 The file tests/outer_inner.supp contains suppressions for 
 the irrelevant or benign errors found in the inner.
 
-An regression test running in the inner (e.g. memcheck/tests/badrw) will
+A regression test running in the inner (e.g. memcheck/tests/badrw) will
 cause the inner to report an error, which is expected and checked
 as usual when running the regtests in an outer/inner setup.
 However, the outer will often also observe an error, e.g. a jump

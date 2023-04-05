@@ -76,14 +76,14 @@ endif
 
 # "Build" `cg_annotate`. The `+` avoids warnings about the jobserver.
 pyann:
-	+../auxprogs/pybuild.sh cg_annotate.in cg_annotate
+	+../auxprogs/pybuild.sh ../auxprogs cg_annotate.in cg_annotate
 
 # "Build" `cg_diff`. The `+` avoids warnings about the jobserver.
 pydiff:
-	+../auxprogs/pybuild.sh cg_diff.in cg_diff
+	+../auxprogs/pybuild.sh ../auxprogs cg_diff.in cg_diff
 
 # "Build" `cg_merge`. The `+` avoids warnings about the jobserver.
 pymerge:
-	+../auxprogs/pybuild.sh cg_merge.in cg_merge
+	+../auxprogs/pybuild.sh ../auxprogs cg_merge.in cg_merge
 
 .PHONY: pyann pydiff pymerge

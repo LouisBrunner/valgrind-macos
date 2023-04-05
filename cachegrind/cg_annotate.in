@@ -73,7 +73,7 @@ class Args(Namespace):
             raise ValueError
 
         def add_bool_argument(
-            p: ArgumentParser, new_name: str, old_name: str, help: str
+            p: ArgumentParser, new_name: str, old_name: str, help_: str
         ) -> None:
             """
             Add a bool argument that defaults to true.
@@ -92,7 +92,7 @@ class Args(Namespace):
                 new_flag,
                 default=True,
                 action=BooleanOptionalAction,
-                help=help,
+                help=help_,
             )
             p.add_argument(
                 f"{old_flag}=yes",

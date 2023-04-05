@@ -44,8 +44,9 @@ set -e
 ver=3.9
 pyver=py39
 
-infile=$1
-outfile=$2
+auxprogs=$1
+infile=$2
+outfile=$3
 if [ -z "$outfile" ] ; then
     exit 1
 fi
@@ -80,7 +81,7 @@ ruff check --target-version $pyver $infile
 echo
 
 echo "== pylint =="
-pylint --py-version $ver $infile
+pylint --rcfile=$auxprogs/pylintrc --py-version $ver $infile
 
 echo "== config.status =="
 make $outfile

@@ -4,7 +4,7 @@
 
 int main(void)
 {
-   int i;
+
    char* p = malloc(1024);
    p[0] = '\0';
    errno = 0;

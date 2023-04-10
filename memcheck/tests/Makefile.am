@@ -645,12 +645,13 @@ origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
 # Don't allow GCC to inline memcpy() and strcpy(),
 # because then we can't intercept it
 overlap_CFLAGS		= $(AM_CFLAGS) -fno-builtin-memcpy -fno-builtin-strcpy \
-			  -Wno-fortify-source @FLAG_W_NO_STRINGOP_OVERFLOW@
+			  @FLAG_W_NO_FORTIFY_SOURCE@ @FLAG_W_NO_STRINGOP_OVERFLOW@ @FLAG_W_NO_BUILTIN_MEMCPY_CHK_SIZE@
 
 partial_load_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
 reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
 reach_thread_register_LDADD	= -lpthread
 
+realloc_size_zero_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_INCOMPATIBLE_POINTER_TYPES_DISCARDS_QUALIFIERS@
 realloc_size_zero_mismatch_SOURCES = realloc_size_zero_mismatch.cpp
 
 resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
@@ -668,8 +669,9 @@ endif
 
 str_tester_CFLAGS	= $(AM_CFLAGS) -Wno-shadow @FLAG_W_NO_STRINGOP_OVERFLOW@ \
 			  @FLAG_W_NO_STRINGOP_TRUNCATION@ \
-			  -Wno-fortify-source -Wno-suspicious-bzero \
-			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@ @FLAG_W_NO_STRINGOP_OVERREAD@
+			  @FLAG_W_NO_FORTIFY_SOURCE@ @FLAG_W_NO_SUSPICIOUS_BZERO@ \
+			  @FLAG_W_NO_MEMSET_TRANSPOSED_ARGS@ @FLAG_W_NO_STRINGOP_OVERREAD@ \
+			  @FLAG_W_NO_BUILTIN_MEMCPY_CHK_SIZE@
 
 supp_CFLAGS             = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

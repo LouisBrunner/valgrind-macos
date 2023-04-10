@@ -12,7 +12,7 @@ int main(void)
    size_t align = 64U;
    char *mem;
    char *p;
-   int res;
+
    (void)VALGRIND_MAKE_MEM_UNDEFINED(&size, sizeof(size));
    (void)VALGRIND_MAKE_MEM_UNDEFINED(&align, sizeof(align));
 #if !defined(VGO_darwin)
@@ -20,7 +20,7 @@ int main(void)
    free(p);
 #endif
 
-   res = posix_memalign((void **)&mem,align,size);
+   (void)posix_memalign((void **)&mem,align,size);
    free(mem);
    
 #if !defined(VGO_darwin)

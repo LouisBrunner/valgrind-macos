@@ -1,0 +1,216 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:252)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:254)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:256)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:258)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:260)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:262)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:264)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:266)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:268)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:270)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:272)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:300)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:302)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:304)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:306)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:308)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:310)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:312)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:314)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:316)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:318)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:320)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:348)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:349)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:352)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:353)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:354)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:356)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:357)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:360)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:362)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:363)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:364)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:366)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:85)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:367)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (context_integer.c:368)
+ Uninitialised value was created by a heap allocation
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (context_integer.c:89)
+

@@ -893,6 +893,10 @@ static void do_pre_run_checks ( volatile ThreadState* tst )
 #  if defined(VGA_mips32) || defined(VGA_mips64)
    /* no special requirements */
 #  endif
+
+#  if defined(VGA_riscv64)
+   /* no special requirements */
+#  endif
 }
 
 // NO_VGDB_POLL value ensures vgdb is not polled, while
@@ -1006,6 +1010,8 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
       || defined(VGP_nanomips_linux)
    tst->arch.vex.guest_LLaddr = (RegWord)(-1);
 #  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
+   tst->arch.vex.guest_LLSC_SIZE = 0;
+#  elif defined(VGP_riscv64_linux)
    tst->arch.vex.guest_LLSC_SIZE = 0;
 #  endif
 
@@ -1851,6 +1857,9 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
 #  define VG_CLREQ_ARGS       guest_r12
 #  define VG_CLREQ_RET        guest_r11
+#elif defined(VGA_riscv64)
+#  define VG_CLREQ_ARGS       guest_x14
+#  define VG_CLREQ_RET        guest_x13
 #else
 #  error Unknown arch
 #endif

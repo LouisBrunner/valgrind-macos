@@ -910,9 +910,13 @@ Addr setup_client_stack( void*  init_sp,
             && !defined(VGP_ppc64le_linux) \
             && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) \
             && !defined(VGP_nanomips_linux) \
-            && !defined(VGP_s390x_linux)
+            && !defined(VGP_s390x_linux) \
+            && !defined(VGP_riscv64_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
+            /* riscv64-linux: Keep the VDSO mapping on this platform present.
+               It contains __vdso_rt_sigreturn() which the kernel sets the ra
+               register to point to on a signal delivery. */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);
             vg_assert(ehdrseg);
             VG_(am_munmap_valgrind)(ehdrseg->start, ehdrseg->end - ehdrseg->start);
@@ -1340,6 +1344,35 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_r29 = iifii.initial_client_SP;
    arch->vex.guest_PC = iifii.initial_client_IP;
    arch->vex.guest_r31 = iifii.initial_client_SP;
+
+#  elif defined(VGP_riscv64_linux)
+   vg_assert(0 == sizeof(VexGuestRISCV64State) % LibVEX_GUEST_STATE_ALIGN);
+
+   /* Zero out the initial state. */
+   LibVEX_GuestRISCV64_initialise(&arch->vex);
+
+   /* Mark all registers as undefined ... */
+   VG_(memset)(&arch->vex_shadow1, 0xFF, sizeof(VexGuestRISCV64State));
+   VG_(memset)(&arch->vex_shadow2, 0x00, sizeof(VexGuestRISCV64State));
+   /* ... except x2 (sp), pc and fcsr. */
+   arch->vex_shadow1.guest_x2 = 0;
+   arch->vex_shadow1.guest_pc = 0;
+   arch->vex_shadow1.guest_fcsr = 0;
+
+   /* Put essential stuff into the new state. */
+   arch->vex.guest_x2 = iifii.initial_client_SP;
+   arch->vex.guest_pc = iifii.initial_client_IP;
+   /* Initialize fcsr in the same way as done by the Linux kernel:
+      accrued exception flags cleared; round to nearest, ties to even. */
+   arch->vex.guest_fcsr = 0;
+
+   /* Tell the tool about the registers we just wrote. */
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_STACK_PTR, 8);
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_INSTR_PTR, 8);
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1,
+            offsetof(VexGuestRISCV64State, guest_fcsr), 4);
+
+#define PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP 1
 
 #  else
 #    error Unknown platform

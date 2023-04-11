@@ -1585,6 +1585,81 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------- riscv64-linux ----------------*/
+#else
+#if defined(VGP_riscv64_linux)
+
+#	define UD2_4      .word 0
+#	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(riscv64_linux_SUBST_FOR_rt_sigreturn)
+.type   VG_(riscv64_linux_SUBST_FOR_rt_sigreturn), @function
+VG_(riscv64_linux_SUBST_FOR_rt_sigreturn):
+	.cfi_startproc
+	.cfi_signal_frame
+	li a7, __NR_rt_sigreturn
+	ecall
+	.cfi_endproc
+.size VG_(riscv64_linux_SUBST_FOR_rt_sigreturn), \
+	.-VG_(riscv64_linux_SUBST_FOR_rt_sigreturn)
+
+.global VG_(riscv64_linux_REDIR_FOR_strlen)
+.type   VG_(riscv64_linux_REDIR_FOR_strlen), @function
+VG_(riscv64_linux_REDIR_FOR_strlen):
+	mv a1, a0               /* copy the input string pointer to a1 */
+	li a0, 0                /* set the output length to 0 */
+	lbu a2, 0(a1)           /* load the first character */
+	beq a2, zero, 2f        /* check if the end of string is reached */
+1:
+	addi a0, a0, 1          /* increment the output length by 1 */
+	add a2, a1, a0          /* calculate address of the next character */
+	lbu a2, 0(a2)           /* load the next character */
+	bne a2, zero, 1b        /* check if the end of string is reached */
+	ret
+2:
+	ret
+.size VG_(riscv64_linux_REDIR_FOR_strlen), .-VG_(riscv64_linux_REDIR_FOR_strlen)
+
+.global VG_(riscv64_linux_REDIR_FOR_index)
+.type   VG_(riscv64_linux_REDIR_FOR_index), @function
+VG_(riscv64_linux_REDIR_FOR_index):
+	andi a1, a1, 0xff      /* mask the input character value */
+	j 2f                   /* jump into the test loop */
+1:
+	beq a2, zero, 3f       /* check if the end of string is reached */
+	addi a0, a0, 1         /* advance to the next character */
+2:
+	lbu a2, 0(a0)          /* load the next character */
+	bne a2, a1, 1b         /* check if it matches the looked up character */
+	ret
+3:
+	li a0, 0               /* set the result to "not found" */
+	ret
+.size VG_(riscv64_linux_REDIR_FOR_index), .-VG_(riscv64_linux_REDIR_FOR_index)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_4
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 /*---------------- x86-solaris ----------------*/
 #else
 #if defined(VGP_x86_solaris)
@@ -1768,6 +1843,7 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

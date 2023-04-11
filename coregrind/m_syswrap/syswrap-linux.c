@@ -310,6 +310,16 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
          : "memory" , "$t4", "$a0"
       );
+#elif defined(VGP_riscv64_linux)
+      asm volatile (
+         "sw   %1, %0\n"      /* set tst->status = VgTs_Empty */
+         "li   a7, %2\n"      /* set a7 = __NR_exit */
+         "ld   a0, %3\n"      /* set a0 = tst->os_state.exitcode */
+         "ecall\n"            /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_exit), "m" (tst->os_state.exitcode)
+         : "a7", "a0"
+      );
 #else
 # error Unknown platform
 #endif
@@ -535,6 +545,13 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
       (ML_(start_thread_NORETURN), stack, flags, ctst,
        child_tidptr, parent_tidptr, NULL);
    res = VG_ (mk_SysRes_nanomips_linux) (ret);
+#elif defined(VGP_riscv64_linux)
+   ULong a0;
+   ctst->arch.vex.guest_x10 = 0;
+   a0 = do_syscall_clone_riscv64_linux
+      (ML_(start_thread_NORETURN), stack, flags, ctst,
+       child_tidptr, parent_tidptr, NULL);
+   res = VG_(mk_SysRes_riscv64_linux)( a0 );
 #else
 # error Unknown platform
 #endif
@@ -597,6 +614,8 @@ static SysRes setup_child_tls (ThreadId ctid, Addr tlsaddr)
 #elif defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
    ctst->arch.vex.guest_ULR = tlsaddr;
    ctst->arch.vex.guest_r27 = tlsaddr;
+#elif defined(VGP_riscv64_linux)
+   ctst->arch.vex.guest_x4 = tlsaddr;
 #else
 # error Unknown platform
 #endif
@@ -755,7 +774,7 @@ static SysRes ML_(do_fork_clone) ( ThreadId tid, UInt flags,
     || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
     || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
     || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
-    || defined(VGP_nanomips_linux)
+    || defined(VGP_nanomips_linux) || defined(VGP_riscv64_linux)
    res = VG_(do_syscall5)( __NR_clone, flags, 
                            (UWord)NULL, (UWord)parent_tidptr, 
                            (UWord)NULL, (UWord)child_tidptr );
@@ -823,7 +842,7 @@ PRE(sys_clone)
     || defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)	\
     || defined(VGP_arm_linux) || defined(VGP_mips32_linux) \
     || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
-    || defined(VGP_nanomips_linux)
+    || defined(VGP_nanomips_linux) || defined(VGP_riscv64_linux)
 #define ARG_CHILD_TIDPTR ARG5
 #define PRA_CHILD_TIDPTR PRA5
 #define ARG_TLS          ARG4
@@ -4413,9 +4432,13 @@ PRE(sys_sigaction)
       PRE_MEM_READ( "sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
       PRE_MEM_READ( "sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
       PRE_MEM_READ( "sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
+#     if !defined(VGP_riscv64_linux)
+      /* Check the sa_restorer field. More recent Linux platforms completely
+         drop this member. */
       if (ML_(safe_to_deref)(sa,sizeof(struct vki_old_sigaction))
           && (sa->sa_flags & VKI_SA_RESTORER))
          PRE_MEM_READ( "sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
+#     endif
    }
 
    if (ARG3 != 0) {
@@ -4531,9 +4554,11 @@ PRE(sys_rt_sigaction)
       PRE_MEM_READ( "rt_sigaction(act->sa_handler)", (Addr)&sa->ksa_handler, sizeof(sa->ksa_handler));
       PRE_MEM_READ( "rt_sigaction(act->sa_mask)", (Addr)&sa->sa_mask, sizeof(sa->sa_mask));
       PRE_MEM_READ( "rt_sigaction(act->sa_flags)", (Addr)&sa->sa_flags, sizeof(sa->sa_flags));
+#     if !defined(VGP_riscv64_linux)
       if (ML_(safe_to_deref)(sa,sizeof(vki_sigaction_toK_t))
           && (sa->sa_flags & VKI_SA_RESTORER))
          PRE_MEM_READ( "rt_sigaction(act->sa_restorer)", (Addr)&sa->sa_restorer, sizeof(sa->sa_restorer));
+#     endif
    }
    if (ARG3 != 0)
       PRE_MEM_WRITE( "rt_sigaction(oldact)", ARG3, sizeof(vki_sigaction_fromK_t));
@@ -6909,7 +6934,8 @@ POST(sys_lookup_dcookie)
 #endif
 
 #if defined(VGP_amd64_linux) || defined(VGP_s390x_linux)        \
-      || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
+      || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
+      || defined(VGP_riscv64_linux)
 PRE(sys_lookup_dcookie)
 {
    *flags |= SfMayBlock;

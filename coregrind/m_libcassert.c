@@ -264,6 +264,25 @@
         (srP)->misc.MIPS32.r31 = (UInt)ra;                \
         (srP)->misc.MIPS32.r28 = (UInt)gp;                \
       }
+#elif defined(VGP_riscv64_linux)
+#  define GET_STARTREGS(srP)                              \
+      { ULong pc, sp, fp, ra;                             \
+        __asm__ __volatile__(                             \
+           "jal %0, 0f;"                                  \
+           "0:\n"                                         \
+           "mv %1, sp;"                                   \
+           "mv %2, fp;"                                   \
+           "mv %3, ra;"                                   \
+           : "=r" (pc),                                   \
+             "=r" (sp),                                   \
+             "=r" (fp),                                   \
+             "=r" (ra)                                    \
+        );                                                \
+        (srP)->r_pc = pc;                                 \
+        (srP)->r_sp = sp;                                 \
+        (srP)->misc.RISCV64.r_fp = fp;                    \
+        (srP)->misc.RISCV64.r_ra = ra;                    \
+      }
 #else
 #  error Unknown platform
 #endif

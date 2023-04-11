@@ -277,7 +277,7 @@ static void fill_prstatus(const ThreadState *tst,
    prs->pr_sid = VG_(getpgrp)();
 #endif
    
-#if defined(VGP_s390x_linux)
+#if defined(VGP_s390x_linux) || defined(VGP_riscv64_linux)
    /* prs->pr_reg has struct type. Need to take address. */
    regs = (struct vki_user_regs_struct *)&(prs->pr_reg);
 #elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
@@ -489,6 +489,39 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS32_EF_CP0_STATUS] = arch->vex.guest_CP0_status;
    regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
 #  undef DO
+#elif defined(VGP_riscv64_linux)
+   regs->pc = arch->vex.guest_pc;
+   regs->ra = arch->vex.guest_x1;
+   regs->sp = arch->vex.guest_x2;
+   regs->gp = arch->vex.guest_x3;
+   regs->tp = arch->vex.guest_x4;
+   regs->t0 = arch->vex.guest_x5;
+   regs->t1 = arch->vex.guest_x6;
+   regs->t2 = arch->vex.guest_x7;
+   regs->s0 = arch->vex.guest_x8;
+   regs->s1 = arch->vex.guest_x9;
+   regs->a0 = arch->vex.guest_x10;
+   regs->a1 = arch->vex.guest_x11;
+   regs->a2 = arch->vex.guest_x12;
+   regs->a3 = arch->vex.guest_x13;
+   regs->a4 = arch->vex.guest_x14;
+   regs->a5 = arch->vex.guest_x15;
+   regs->a6 = arch->vex.guest_x16;
+   regs->a7 = arch->vex.guest_x17;
+   regs->s2 = arch->vex.guest_x18;
+   regs->s3 = arch->vex.guest_x19;
+   regs->s4 = arch->vex.guest_x20;
+   regs->s5 = arch->vex.guest_x21;
+   regs->s6 = arch->vex.guest_x22;
+   regs->s7 = arch->vex.guest_x23;
+   regs->s8 = arch->vex.guest_x24;
+   regs->s9 = arch->vex.guest_x25;
+   regs->s10 = arch->vex.guest_x26;
+   regs->s11 = arch->vex.guest_x27;
+   regs->t3 = arch->vex.guest_x28;
+   regs->t4 = arch->vex.guest_x29;
+   regs->t5 = arch->vex.guest_x30;
+   regs->t6 = arch->vex.guest_x31;
 #elif defined(VGP_amd64_freebsd)
    regs->rflags = LibVEX_GuestAMD64_get_rflags( &arch->vex );
    regs->rsp    = arch->vex.guest_RSP;
@@ -690,6 +723,41 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(24); DO(25); DO(26); DO(27); DO(28); DO(29); DO(30); DO(31);
 #  undef DO
 #elif defined(VGP_nanomips_linux)
+
+#elif defined(VGP_riscv64_linux)
+   fpu->d.f[0] = arch->vex.guest_f0;
+   fpu->d.f[1] = arch->vex.guest_f1;
+   fpu->d.f[2] = arch->vex.guest_f2;
+   fpu->d.f[3] = arch->vex.guest_f3;
+   fpu->d.f[4] = arch->vex.guest_f4;
+   fpu->d.f[5] = arch->vex.guest_f5;
+   fpu->d.f[6] = arch->vex.guest_f6;
+   fpu->d.f[7] = arch->vex.guest_f7;
+   fpu->d.f[8] = arch->vex.guest_f8;
+   fpu->d.f[9] = arch->vex.guest_f9;
+   fpu->d.f[10] = arch->vex.guest_f10;
+   fpu->d.f[11] = arch->vex.guest_f11;
+   fpu->d.f[12] = arch->vex.guest_f12;
+   fpu->d.f[13] = arch->vex.guest_f13;
+   fpu->d.f[14] = arch->vex.guest_f14;
+   fpu->d.f[15] = arch->vex.guest_f15;
+   fpu->d.f[16] = arch->vex.guest_f16;
+   fpu->d.f[17] = arch->vex.guest_f17;
+   fpu->d.f[18] = arch->vex.guest_f18;
+   fpu->d.f[19] = arch->vex.guest_f19;
+   fpu->d.f[20] = arch->vex.guest_f20;
+   fpu->d.f[21] = arch->vex.guest_f21;
+   fpu->d.f[22] = arch->vex.guest_f22;
+   fpu->d.f[23] = arch->vex.guest_f23;
+   fpu->d.f[24] = arch->vex.guest_f24;
+   fpu->d.f[25] = arch->vex.guest_f25;
+   fpu->d.f[26] = arch->vex.guest_f26;
+   fpu->d.f[27] = arch->vex.guest_f27;
+   fpu->d.f[28] = arch->vex.guest_f28;
+   fpu->d.f[29] = arch->vex.guest_f29;
+   fpu->d.f[30] = arch->vex.guest_f30;
+   fpu->d.f[31] = arch->vex.guest_f31;
+   fpu->d.fcsr = arch->vex.guest_fcsr;
 
 #elif defined(VGP_x86_freebsd)
 

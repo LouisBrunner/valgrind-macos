@@ -2066,6 +2066,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         30
 #  define SP_REG         29
 #  define RA_REG_DEFAULT 31
+#elif defined(VGP_riscv64_linux)
+#  define FP_REG         8
+#  define SP_REG         2
+#  define RA_REG_DEFAULT 1
 #else
 #  error "Unknown platform"
 #endif
@@ -2084,6 +2088,8 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 128
 #elif defined(VGP_s390x_linux)
 # define N_CFI_REGS 66
+#elif defined(VGP_riscv64_linux)
+# define N_CFI_REGS 128
 #else
 # define N_CFI_REGS 20
 #endif
@@ -2310,6 +2316,10 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
          start out as RR_Same. */
       ctx->state[j].reg[29/*FP*/].tag = RR_Same;
       ctx->state[j].reg[30/*LR*/].tag = RR_Same;
+#     elif defined(VGA_riscv64)
+      /* Registers fp and ra start out implicitly as RR_Same. */
+      ctx->state[j].reg[FP_REG].tag = RR_Same;
+      ctx->state[j].reg[RA_REG_DEFAULT].tag = RR_Same;
 #     endif
    }
 }
@@ -2392,7 +2402,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == SP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_nanomips) || defined(VGA_mips64)
+         || defined(VGA_mips32) || defined(VGA_nanomips) \
+         || defined(VGA_mips64) || defined(VGA_riscv64)
       si_m->cfa_how = CFIC_IA_SPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R13REL;
@@ -2406,7 +2417,8 @@ static Bool summarise_context(/*OUT*/Addr* base,
    if (ctxs->cfa_is_regoff && ctxs->cfa_reg == FP_REG) {
       si_m->cfa_off = ctxs->cfa_off;
 #     if defined(VGA_x86) || defined(VGA_amd64) || defined(VGA_s390x) \
-         || defined(VGA_mips32) || defined(VGA_nanomips) || defined(VGA_mips64)
+         || defined(VGA_mips32) || defined(VGA_nanomips) \
+         || defined(VGA_mips64) || defined(VGA_riscv64)
       si_m->cfa_how = CFIC_IA_BPREL;
 #     elif defined(VGA_arm)
       si_m->cfa_how = CFIC_ARM_R12REL;
@@ -2786,6 +2798,30 @@ static Bool summarise_context(/*OUT*/Addr* base,
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* These don't use CFI based unwinding (is that really true?) */
 
+#  elif defined(VGA_riscv64)
+
+   /* --- entire tail of this fn specialised for riscv64 --- */
+
+   SUMMARISE_HOW(si_m->ra_how, si_m->ra_off, ctxs->reg[ctx->ra_reg]);
+   SUMMARISE_HOW(si_m->fp_how, si_m->fp_off, ctxs->reg[FP_REG]);
+
+   /* on riscv64, it seems the old sp value before the call is always
+      the same as the CFA.  Therefore ... */
+   si_m->sp_how = CFIR_CFAREL;
+   si_m->sp_off = 0;
+
+   /* bogus looking range?  Note, we require that the difference is
+      representable in 32 bits. */
+   if (loc_start >= ctx->loc)
+      { why = 4; goto failed; }
+   if (ctx->loc - loc_start > 10000000 /* let's say */)
+      { why = 5; goto failed; }
+
+   *base = loc_start + ctx->initloc;
+   *len  = (UInt)(ctx->loc - loc_start);
+
+   return True;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2884,7 +2920,7 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          if (dwreg == srcuc->ra_reg)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM64_X30 );
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
-            || defined(VGA_ppc64le)
+            || defined(VGA_ppc64le) || defined(VGA_riscv64)
 #        else
 #           error "Unknown arch"
 #        endif

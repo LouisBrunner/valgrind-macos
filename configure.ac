@@ -302,6 +302,11 @@ case "${host_cpu}" in
         ARCH_MAX="nanomips"
         ;;
 
+     riscv64)
+       AC_MSG_RESULT([ok (${host_cpu})])
+       ARCH_MAX="riscv64"
+       ;;
+
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
@@ -874,6 +879,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
+     riscv64-linux)
+        VGCONF_ARCH_PRI="riscv64"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="RISCV64_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x58000000"
+        valt_load_address_pri_inner="0x38000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
      x86-solaris)
         VGCONF_ARCH_PRI="x86"
         VGCONF_ARCH_SEC=""
@@ -967,6 +983,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS64,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ) 
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_NANOMIPS,
                test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_RISCV64,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -997,6 +1015,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_NANOMIPS_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_RISCV64_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_FREEBSD)
@@ -1030,7 +1050,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX)
 AM_CONDITIONAL(VGCONF_OS_IS_FREEBSD,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD \
@@ -5049,7 +5070,8 @@ elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_FREEBSD \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
-       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX ; then
   mflag_primary=$FLAG_M64
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
   mflag_primary="$FLAG_M32 -arch i386"
@@ -5657,6 +5679,7 @@ AC_CONFIG_FILES([
    memcheck/tests/amd64-linux/Makefile
    memcheck/tests/arm64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
+   memcheck/tests/riscv64-linux/Makefile
    memcheck/tests/amd64-solaris/Makefile
    memcheck/tests/x86-solaris/Makefile
    memcheck/tests/amd64-freebsd/Makefile
@@ -5702,6 +5725,7 @@ AC_CONFIG_FILES([
    none/tests/mips32/Makefile
    none/tests/mips64/Makefile
    none/tests/nanomips/Makefile
+   none/tests/riscv64/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/solaris/Makefile

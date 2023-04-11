@@ -1253,6 +1253,7 @@ Bool VG_(is_soname_ld_so) (const HChar *soname)
    if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))   return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_MIPSN8_S0_1))  return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_RISCV64_SO_1)) return True;
 #  elif defined(VGO_freebsd)
    if (VG_STREQ(soname, VG_U_LD_ELF_SO_1))   return True;
    if (VG_STREQ(soname, VG_U_LD_ELF32_SO_1))   return True;
@@ -1697,6 +1698,20 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec(
          "ld.so.1", "index",
          (Addr)&VG_(nanomips_linux_REDIR_FOR_index),
+         complain_about_stripped_glibc_ldso
+      );
+   }
+
+#  elif defined(VGP_riscv64_linux)
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec(
+         "ld-linux-riscv64-lp64d.so.1", "strlen",
+         (Addr)&VG_(riscv64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-riscv64-lp64d.so.1", "index",
+         (Addr)&VG_(riscv64_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
    }

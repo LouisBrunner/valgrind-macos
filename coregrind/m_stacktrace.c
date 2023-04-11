@@ -1529,6 +1529,101 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #endif
 
+/* ------------------------ riscv64 ------------------------- */
+
+#if defined(VGP_riscv64_linux)
+
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               const UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
+{
+   Bool  debug = False;
+   Int   i;
+   Addr  fp_max;
+   UInt  n_found = 0;
+   const Int cmrf = VG_(clo_merge_recursive_frames);
+
+   vg_assert(sizeof(Addr) == sizeof(UWord));
+   vg_assert(sizeof(Addr) == sizeof(void*));
+
+   D3UnwindRegs uregs;
+   uregs.pc = startRegs->r_pc;
+   uregs.sp = startRegs->r_sp;
+   uregs.fp = startRegs->misc.RISCV64.r_fp;
+   uregs.ra = startRegs->misc.RISCV64.r_ra;
+   Addr fp_min = uregs.sp - VG_STACK_REDZONE_SZB;
+
+   /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
+      stopping when the trail goes cold, which we guess to be
+      when FP is not a reasonable stack location. */
+
+   fp_max = fp_max_orig;
+   if (fp_max >= sizeof(Addr))
+      fp_max -= sizeof(Addr);
+
+   if (debug)
+      VG_(printf)("\nmax_n_ips=%u fp_min=0x%lx fp_max_orig=0x%lx, "
+                  "fp_max=0x%lx pc=0x%lx sp=0x%lx fp=0x%lx ra=0x%lx\n",
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+
+   if (sps) sps[0] = uregs.sp;
+   if (fps) fps[0] = uregs.fp;
+   ips[0] = uregs.pc;
+   i = 1;
+
+   /* Loop unwinding the stack, using CFI. */
+   while (True) {
+      if (debug)
+         VG_(printf)("i: %d, pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+                     i, uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+      if (i >= max_n_ips)
+         break;
+
+      if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.fp;
+         ips[i++] = uregs.pc - 1;
+         if (debug)
+            VG_(printf)(
+               "USING CFI: pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+               uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+         uregs.pc = uregs.pc - 1;
+         RECURSIVE_MERGE(cmrf,ips,i);
+         continue;
+      }
+
+      /* A problem on the first frame? Lets assume it was a bad jump.
+         We will use the link register and the current stack and frame
+         pointers and see if we can use the CFI in the next round. */
+      if (i == 1) {
+         uregs.pc = uregs.ra;
+         uregs.ra = 0;
+
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.fp;
+         ips[i++] = uregs.pc - 1;
+         if (debug)
+            VG_(printf)(
+               "USING bad-jump: pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+               uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+         uregs.pc = uregs.pc - 1;
+         RECURSIVE_MERGE(cmrf,ips,i);
+         continue;
+      }
+
+      /* No luck.  We have to give up. */
+      break;
+   }
+
+   n_found = i;
+   return n_found;
+}
+
+#endif
+
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- END platform-dependent unwinder worker functions     ---*/

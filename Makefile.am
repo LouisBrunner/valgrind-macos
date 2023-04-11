@@ -118,6 +118,7 @@ EXTRA_DIST = \
 	README.android_emulator \
 	README.mips \
 	README.aarch64 \
+	README.riscv64 \
 	README.solaris \
 	README.freebsd \
 	NEWS.old \

@@ -314,6 +314,36 @@ UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
    return success;
 }
 
+#elif defined(VGA_riscv64)
+
+// riscv64
+/* return 1 if success, 0 if failure */
+UWord do_acasW ( UWord* addr, UWord expected, UWord nyu )
+{
+  UWord success;
+  UWord block[3] = { (UWord)addr, nyu, expected};
+
+   __asm__ __volatile__(
+      "ld     t0, 0(%1)"         "\n\t"
+      "ld     t2, 16(%1)"        "\n\t"
+      "ld     t3, 8(%1)"         "\n\t"
+      "lr.d   t1, 0(t0)"         "\n\t"
+      "bne    t1, t2, 1f"        "\n\t"
+      "sc.d   t1, t3, 0(t0)"     "\n\t"
+      "xori   %0, t1, 1"         "\n\t"
+      "j 2f"                     "\n\t"
+      "1:"                       "\n\t"
+      "mv     %0, zero"          "\n\t"
+      "2:"                       "\n\t"
+      : /*out*/ "=r"(success)
+      : /*in*/ "r"(&block[0])
+      : /*trash*/ "t0", "t1", "t2", "t3", "memory"
+   );
+
+   assert(success == 0 || success == 1);
+   return success;
+}
+
 #endif
 
 void atomic_incW ( UWord* w )

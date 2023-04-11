@@ -34,6 +34,7 @@ char* all_archs[] = {
    "mips32",
    "mips64",
    "nanomips",
+   "riscv64",
    NULL
 };
 
@@ -79,6 +80,10 @@ static Bool go(char* arch)
 
 #elif defined(VGP_nanomips_linux)
    if ( 0 == strcmp( arch, "nanomips" ) ) return True;
+
+#elif defined(VGP_riscv64_linux)
+   if ( 0 == strcmp( arch, "riscv64" ) ) return True;
+
 #else
 #  error Unknown platform
 #endif   // VGP_*

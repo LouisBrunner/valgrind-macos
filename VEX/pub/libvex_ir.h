@@ -2089,7 +2089,8 @@ typedef
       Irrm_PREPARE_SHORTER      = 5,  // Round to prepare for shorter 
                                       // precision
       Irrm_AWAY_FROM_ZERO       = 6,  // Round to away from 0
-      Irrm_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
+      Irrm_NEAREST_TIE_TOWARD_0 = 7,  // Round to nearest, ties towards 0
+      Irrm_INVALID              = 8   // Invalid mode
    }
    IRRoundingMode;
 

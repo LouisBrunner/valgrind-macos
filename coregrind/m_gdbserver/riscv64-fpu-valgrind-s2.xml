@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2018-2022 Free Software Foundation, Inc.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="org.gnu.gdb.riscv.fpu.valgrind.s2">
+
+  <reg name="ft0s2" bitsize="64" type="int" regnum="171"/>
+  <reg name="ft1s2" bitsize="64" type="int"/>
+  <reg name="ft2s2" bitsize="64" type="int"/>
+  <reg name="ft3s2" bitsize="64" type="int"/>
+  <reg name="ft4s2" bitsize="64" type="int"/>
+  <reg name="ft5s2" bitsize="64" type="int"/>
+  <reg name="ft6s2" bitsize="64" type="int"/>
+  <reg name="ft7s2" bitsize="64" type="int"/>
+  <reg name="fs0s2" bitsize="64" type="int"/>
+  <reg name="fs1s2" bitsize="64" type="int"/>
+  <reg name="fa0s2" bitsize="64" type="int"/>
+  <reg name="fa1s2" bitsize="64" type="int"/>
+  <reg name="fa2s2" bitsize="64" type="int"/>
+  <reg name="fa3s2" bitsize="64" type="int"/>
+  <reg name="fa4s2" bitsize="64" type="int"/>
+  <reg name="fa5s2" bitsize="64" type="int"/>
+  <reg name="fa6s2" bitsize="64" type="int"/>
+  <reg name="fa7s2" bitsize="64" type="int"/>
+  <reg name="fs2s2" bitsize="64" type="int"/>
+  <reg name="fs3s2" bitsize="64" type="int"/>
+  <reg name="fs4s2" bitsize="64" type="int"/>
+  <reg name="fs5s2" bitsize="64" type="int"/>
+  <reg name="fs6s2" bitsize="64" type="int"/>
+  <reg name="fs7s2" bitsize="64" type="int"/>
+  <reg name="fs8s2" bitsize="64" type="int"/>
+  <reg name="fs9s2" bitsize="64" type="int"/>
+  <reg name="fs10s2" bitsize="64" type="int"/>
+  <reg name="fs11s2" bitsize="64" type="int"/>
+  <reg name="ft8s2" bitsize="64" type="int"/>
+  <reg name="ft9s2" bitsize="64" type="int"/>
+  <reg name="ft10s2" bitsize="64" type="int"/>
+  <reg name="ft11s2" bitsize="64" type="int"/>
+
+  <reg name="fflagss2" bitsize="32" type="int" regnum="204"/>
+  <reg name="frms2" bitsize="32" type="int"/>
+  <reg name="fcsrs2" bitsize="32" type="int"/>
+</feature>

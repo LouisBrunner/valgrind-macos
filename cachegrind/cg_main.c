@@ -57,7 +57,7 @@
 /*--- Options                                              ---*/
 /*------------------------------------------------------------*/
 
-static Bool  clo_cache_sim  = True;  /* do cache simulation? */
+static Bool  clo_cache_sim  = False; /* do cache simulation? */
 static Bool  clo_branch_sim = False; /* do branch simulation? */
 static const HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
 
@@ -1391,21 +1391,23 @@ static void fprint_CC_table_and_calc_totals(void)
    if (fp == NULL) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
-      VG_(umsg)("error: can't open cache simulation output file '%s'\n",
+      VG_(umsg)("error: can't open output data file '%s'\n",
                 cachegrind_out_file );
-      VG_(umsg)("       ... so simulation results will be missing.\n");
+      VG_(umsg)("       ... so detailed results will be missing.\n");
       VG_(free)(cachegrind_out_file);
       return;
    } else {
       VG_(free)(cachegrind_out_file);
    }
 
-   // "desc:" lines (giving I1/D1/LL cache configuration).  The spaces after
-   // the 2nd colon makes cg_annotate's output look nicer.
-   VG_(fprintf)(fp,  "desc: I1 cache:         %s\n"
-                     "desc: D1 cache:         %s\n"
-                     "desc: LL cache:         %s\n",
-                     I1.desc_line, D1.desc_line, LL.desc_line);
+   if (clo_cache_sim) {
+      // "desc:" lines (giving I1/D1/LL cache configuration). The spaces after
+      // the 2nd colon makes cg_annotate's output look nicer.
+      VG_(fprintf)(fp,  "desc: I1 cache:         %s\n"
+                        "desc: D1 cache:         %s\n"
+                        "desc: LL cache:         %s\n",
+                        I1.desc_line, D1.desc_line, LL.desc_line);
+   }
 
    // "cmd:" line
    VG_(fprintf)(fp, "cmd: %s", VG_(args_the_exename));

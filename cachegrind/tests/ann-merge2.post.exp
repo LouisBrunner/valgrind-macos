@@ -1,10 +1,15 @@
 --------------------------------------------------------------------------------
 -- Metadata
 --------------------------------------------------------------------------------
-Invocation:       ../cg_annotate ann-merge1c.cgout
+Invocation:       ../cg_annotate ann-merge1a.cgout ann-merge1b.cgout
+Description 1:
 Description 1a
 Description 1b
-Command:          Command 1
+Description 2:
+Description 2a
+Description 2b
+Command 1:        Command 1
+Command 2:        Command 2
 Events recorded:  A
 Events shown:     A
 Event sort order: A

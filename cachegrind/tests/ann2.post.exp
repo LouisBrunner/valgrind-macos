@@ -1,12 +1,12 @@
 --------------------------------------------------------------------------------
 -- Metadata
 --------------------------------------------------------------------------------
+Invocation:       ../cg_annotate --context 2 --annotate --show-percs=yes --threshold=0.5 ann2.cgout
 Command:          ann2
-Data file:        ann2.cgout
 Events recorded:  A SomeCount VeryLongEventName
 Events shown:     A SomeCount VeryLongEventName
 Event sort order: A SomeCount VeryLongEventName
-Threshold:        0.5
+Threshold:        0.5%
 Annotation:       on
 
 --------------------------------------------------------------------------------
@@ -21,24 +21,24 @@ A_______________ SomeCount_______ VeryLongEventName
 --------------------------------------------------------------------------------
   A___________________________ SomeCount____________ VeryLongEventName__  file:function
 
->     86,590    (86.6%, 86.6%) 93,000 (93.0%, 93.0%)        0 (n/a, n/a)  ann2-basic.rs:
+<     86,590    (86.6%, 86.6%) 93,000 (93.0%, 93.0%)        0 (n/a, n/a)  ann2-basic.rs:
       68,081    (68.1%)        90,291 (90.3%)               0               f0
       15,000    (15.0%)           600  (0.6%)               0               f1
        2,000     (2.0%)           100  (0.1%)               0               f2
          500     (0.5%)             0                       0               f6
          500     (0.5%)             0                       0               f4
 
->      9,000     (9.0%, 95.6%)  6,000  (6.0%, 99.0%)        0 (n/a, n/a)  ann2-could-not-be-found.rs:f1
+<      9,000     (9.0%, 95.6%)  6,000  (6.0%, 99.0%)        0 (n/a, n/a)  ann2-could-not-be-found.rs:f1
 
->      2,000     (2.0%, 97.6%)    800  (0.8%, 99.8%)   -1,000 (n/a, n/a)  ann2-past-the-end.rs:
+<      2,000     (2.0%, 97.6%)    800  (0.8%, 99.8%)   -1,000 (n/a, n/a)  ann2-past-the-end.rs:
        1,000     (1.0%)           500  (0.5%)               0               <unspecified>
        1,000     (1.0%)           300  (0.3%)          -1,000 (n/a)         f1
 
->      1,000     (1.0%, 98.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ann2-more-recent-than-cgout.rs:new
+<      1,000     (1.0%, 98.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ann2-more-recent-than-cgout.rs:new
 
->      1,000     (1.0%, 99.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ???:unknown
+<      1,000     (1.0%, 99.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ???:unknown
 
->         10     (0.0%, 99.6%)      0  (0.0%, 99.8%)    1,000 (n/a, n/a)  ann2-negatives.rs:
+<         10     (0.0%, 99.6%)      0  (0.0%, 99.8%)    1,000 (n/a, n/a)  ann2-negatives.rs:
   -1,000,000 (-1000.0%)             0                 150,000 (n/a)         neg3
      500,000   (500.0%)             0                -150,000 (n/a)         neg2a
      499,999   (500.0%)             0                       0               neg2b
@@ -104,7 +104,8 @@ A_____________ SomeCount_____ VeryLongEventName
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-could-not-be-found.rs
 --------------------------------------------------------------------------------
-This file was unreadable
+Unannotated because one or more of these original files are unreadable:
+- ann2-could-not-be-found.rs
 
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-more-recent-than-cgout.rs
@@ -112,7 +113,8 @@ This file was unreadable
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@ Source file 'ann2-more-recent-than-cgout.rs' is newer than data file 'ann2.cgout'.
+@ Original source files are all newer than data file 'ann2.cgout':
+@ - ann2-more-recent-than-cgout.rs
 @ Annotations may not be correct.
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -176,6 +178,7 @@ A_____________ SomeCount_____ VeryLongEventName
 
 84,500 (84.5%) 94,700 (94.7%)         990 (n/a)    annotated: files known & above threshold & readable, line numbers known
  5,100  (5.1%)   -900 (-0.9%)        -990 (n/a)    annotated: files known & above threshold & readable, line numbers unknown
+     0              0                   0        unannotated: files known & above threshold & two or more non-identical
  9,000  (9.0%)  6,000  (6.0%)           0        unannotated: files known & above threshold & unreadable 
    400  (0.4%)    200  (0.2%)           0        unannotated: files known & below threshold
  1,000  (1.0%)      0                   0        unannotated: files unknown

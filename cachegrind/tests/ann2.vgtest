@@ -2,7 +2,7 @@
 # more details.
 #
 # The `prog` doesn't matter because we don't use its output. Instead we test
-# the post-processing of the `ann2.cgout` file.
+# the post-processing of the cgout file.
 prog: ../../tests/true
 vgopts: --cachegrind-out-file=cachegrind.out
 

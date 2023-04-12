@@ -1,0 +1,30 @@
+desc: DescA
+desc: DescB
+desc: DescC
+cmd: my-command
+events: Ir
+
+fl=ann-diff4a-aux/w.rs
+fn=a
+1 1000
+
+fl=ann-diff4a-aux/x.rs
+fn=a
+0 1000
+1 1000
+2 1000
+
+fl=ann-diff4a-aux/y.rs
+fn=b
+4 1000
+5 1000
+
+fl=ann-diff4a-aux/z.rs
+fn=c
+1 1000
+
+fl=ann-diff4a-aux/no-such-file.rs
+fn=f
+0 100
+
+summary: 7100

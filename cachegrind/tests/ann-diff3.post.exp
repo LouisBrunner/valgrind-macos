@@ -1,9 +1,13 @@
 --------------------------------------------------------------------------------
 -- Metadata
 --------------------------------------------------------------------------------
-Invocation:       ../cg_annotate ann-diff2c.cgout
-Files compared:   ann-diff2a.cgout; ann-diff2b.cgout
-Command:          cmd1; cmd2
+Invocation:       ../cg_annotate --diff --mod-filename=s/.*aux\//aux\//i --mod-funcname=s/(f[a-z]*)[0-9]/\1N/g ann-diff2a.cgout ann-diff2b.cgout
+Description 1:
+Description for ann-diff2a.cgout
+Description 2:
+Description for ann-diff2b.cgout
+Command 1:        cmd1
+Command 2:        cmd2
 Events recorded:  One Two
 Events shown:     One Two
 Event sort order: One Two
@@ -42,7 +46,8 @@ One___________ Two___________
 -- Annotated source file: aux/ann-diff2-basic.rs
 --------------------------------------------------------------------------------
 Unannotated because one or more of these original files are unreadable:
-- aux/ann-diff2-basic.rs
+- ann2-diff-AUX/ann-diff2-basic.rs
+- ann2-diff-Aux/ann-diff2-basic.rs
 
 --------------------------------------------------------------------------------
 -- Annotation summary

@@ -16,9 +16,17 @@ EXTRA_DIST = \
 	ann-diff1.post.exp ann-diff1.stderr.exp ann-diff1.vgtest \
 	ann-diff2.post.exp ann-diff2.stderr.exp ann-diff2.vgtest \
 		ann-diff2a.cgout ann-diff2b.cgout \
+		ann-diff2-aux/ann-diff2-basic.rs \
+	ann-diff3.post.exp ann-diff3.stderr.exp ann-diff3.vgtest \
+	ann-diff4.post.exp ann-diff4.stderr.exp ann-diff4.vgtest \
+		ann-diff4a.cgout ann-diff4b.cgout \
+		ann-diff4a-aux/w.rs ann-diff4a-aux/x.rs ann-diff4a-aux/y.rs \
+		ann-diff4a-aux/z.rs \
+		ann-diff4b-aux/w.rs ann-diff4b-aux/x.rs ann-diff4b-aux/y.rs \
 	ann-merge1.post.exp ann-merge1.stderr.exp ann-merge1.vgtest \
 		ann-merge1a.cgout ann-merge1b.cgout \
 		ann-merge-x.rs ann-merge-y.rs \
+	ann-merge2.post.exp ann-merge2.stderr.exp ann-merge2.vgtest \
 	ann1a.post.exp ann1a.stderr.exp ann1a.vgtest ann1.cgout \
 	ann1b.post.exp ann1b.stderr.exp ann1b.vgtest ann1b.cgout \
 	ann2.post.exp ann2.stderr.exp ann2.vgtest ann2.cgout \

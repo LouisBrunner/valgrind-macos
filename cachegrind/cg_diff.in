@@ -66,7 +66,7 @@ class Args(Namespace):
             if regex is None:
                 return lambda s: s
 
-            # Extract the parts of a `s/old/new/tail` regex. `(?<!\\)/` is an
+            # Extract the parts of an `s/old/new/tail` regex. `(?<!\\)/` is an
             # example of negative lookbehind. It means "match a forward slash
             # unless preceded by a backslash".
             m = re.match(r"s/(.*)(?<!\\)/(.*)(?<!\\)/(g|i|gi|ig|)$", regex)
@@ -74,7 +74,7 @@ class Args(Namespace):
                 raise ValueError
 
             # Forward slashes must be escaped in an `s/old/new/` expression,
-            # but we then must unescape them before using them with `re.sub`
+            # but we then must unescape them before using them with `re.sub`.
             pat = m.group(1).replace(r"\/", r"/")
             repl = m.group(2).replace(r"\/", r"/")
             tail = m.group(3)
@@ -91,7 +91,11 @@ class Args(Namespace):
 
             return lambda s: re.sub(re.compile(pat, flags=flags), repl, s, count=count)
 
-        p = ArgumentParser(description="Diff two Cachegrind output files.")
+        desc = (
+            "Diff two Cachegrind output files. Deprecated; use "
+            "`cg_annotate --diff` instead."
+        )
+        p = ArgumentParser(description=desc)
 
         p.add_argument("--version", action="version", version="%(prog)s-@VERSION@")
 
@@ -304,8 +308,8 @@ def main() -> None:
     (cmd1, events1, dict_flfn_cc1, summary_cc1) = read_cgout_file(filename1)
     (cmd2, events2, dict_flfn_cc2, summary_cc2) = read_cgout_file(filename2)
 
-    if events1.num_events != events2.num_events:
-        die("events don't match")
+    if events1.events != events2.events:
+        die("events in data files don't match")
 
     # Subtract file 1's CCs from file 2's CCs, at the Flfn level.
     for flfn, flfn_cc1 in dict_flfn_cc1.items():

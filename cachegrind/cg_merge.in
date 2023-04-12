@@ -51,7 +51,11 @@ class Args(Namespace):
 
     @staticmethod
     def parse() -> Args:
-        p = ArgumentParser(description="Merge multiple Cachegrind output files.")
+        desc = (
+            "Merge multiple Cachegrind output files. Deprecated; use "
+            "`cg_annotate` with multiple Cachegrind output files instead."
+        )
+        p = ArgumentParser(description=desc)
 
         p.add_argument("--version", action="version", version="%(prog)s-@VERSION@")
 
@@ -272,8 +276,8 @@ def main() -> None:
             events1 = events_n
         else:
             assert events1
-            if events1.num_events != events_n.num_events:
-                die("events don't match")
+            if events1.events != events_n.events:
+                die("events in data files don't match")
 
     def write_output(f: TextIO) -> None:
         # These assertions hold because the loop above executes at least twice.

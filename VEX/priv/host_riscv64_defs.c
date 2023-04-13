@@ -564,6 +564,19 @@ RISCV64Instr_FpLdSt(RISCV64FpLdStOp op, HReg reg, HReg base, Int soff12)
 }
 
 RISCV64Instr*
+RISCV64Instr_FpCSEL(IRType ty, HReg dst, HReg iftrue, HReg iffalse, HReg cond)
+{
+   RISCV64Instr* i             = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                      = RISCV64in_FpCSEL;
+   i->RISCV64in.FpCSEL.ty      = ty;
+   i->RISCV64in.FpCSEL.dst     = dst;
+   i->RISCV64in.FpCSEL.iftrue  = iftrue;
+   i->RISCV64in.FpCSEL.iffalse = iffalse;
+   i->RISCV64in.FpCSEL.cond    = cond;
+   return i;
+}
+
+RISCV64Instr*
 RISCV64Instr_CAS(RISCV64CASOp op, HReg old, HReg addr, HReg expd, HReg data)
 {
    RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -783,6 +796,21 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.FpLdSt.base);
       vex_printf(")");
       return;
+   case RISCV64in_FpCSEL: {
+      UChar suffix = i->RISCV64in.FpCSEL.ty == Ity_F32 ? 's' : 'd';
+      vex_printf("(FpCSEL) beq ");
+      ppHRegRISCV64(i->RISCV64in.FpCSEL.cond);
+      vex_printf(", zero, 1f; fmv.%c ", suffix);
+      ppHRegRISCV64(i->RISCV64in.FpCSEL.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.FpCSEL.iftrue);
+      vex_printf("; c.j 2f; 1: fmv.%c ", suffix);
+      ppHRegRISCV64(i->RISCV64in.FpCSEL.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.FpCSEL.iffalse);
+      vex_printf("; 2:");
+      return;
+   }
    case RISCV64in_CAS: {
       vassert(i->RISCV64in.CAS.op == RISCV64op_CAS_D ||
               i->RISCV64in.CAS.op == RISCV64op_CAS_W);
@@ -1055,6 +1083,12 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       }
       addHRegUse(u, HRmRead, i->RISCV64in.FpLdSt.base);
       return;
+   case RISCV64in_FpCSEL:
+      addHRegUse(u, HRmWrite, i->RISCV64in.FpCSEL.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.FpCSEL.iftrue);
+      addHRegUse(u, HRmRead, i->RISCV64in.FpCSEL.iffalse);
+      addHRegUse(u, HRmRead, i->RISCV64in.FpCSEL.cond);
+      return;
    case RISCV64in_CAS:
       addHRegUse(u, HRmWrite, i->RISCV64in.CAS.old);
       addHRegUse(u, HRmRead, i->RISCV64in.CAS.addr);
@@ -1266,6 +1300,12 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    case RISCV64in_FpLdSt:
       mapReg(m, &i->RISCV64in.FpLdSt.reg);
       mapReg(m, &i->RISCV64in.FpLdSt.base);
+      return;
+   case RISCV64in_FpCSEL:
+      mapReg(m, &i->RISCV64in.FpCSEL.dst);
+      mapReg(m, &i->RISCV64in.FpCSEL.iftrue);
+      mapReg(m, &i->RISCV64in.FpCSEL.iffalse);
+      mapReg(m, &i->RISCV64in.FpCSEL.cond);
       return;
    case RISCV64in_CAS:
       mapReg(m, &i->RISCV64in.CAS.old);
@@ -2226,6 +2266,26 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          goto done;
       }
       break;
+   }
+   case RISCV64in_FpCSEL: {
+      /* ty = RISCV64in.FpCSEL.ty == Ity_F32 ? s : d
+
+            beq cond, zero, 1f
+            fmv.{ty} dst, iftrue
+            c.j 2f
+         1: fmv.{ty} dst, iffalse
+         2:
+      */
+      UInt dst     = fregEnc(i->RISCV64in.FpCSEL.dst);
+      UInt iftrue  = fregEnc(i->RISCV64in.FpCSEL.iftrue);
+      UInt iffalse = fregEnc(i->RISCV64in.FpCSEL.iffalse);
+      UInt cond    = iregEnc(i->RISCV64in.FpCSEL.cond);
+      UInt fmt     = i->RISCV64in.FpCSEL.ty == Ity_F32 ? 0b0010000 : 0b0010001;
+      p = emit_B(p, 0b1100011, (10 >> 1) & 0xfff, 0b000, cond, 0 /*x0/zero*/);
+      p = emit_R(p, 0b1010011, dst, 0b000, iftrue, iftrue, fmt);
+      p = emit_CJ(p, 0b01, (6 >> 1) & 0x7ff, 0b101);
+      p = emit_R(p, 0b1010011, dst, 0b000, iffalse, iffalse, fmt);
+      goto done;
    }
    case RISCV64in_CAS: {
       /* 1: lr.<size> old, (addr)

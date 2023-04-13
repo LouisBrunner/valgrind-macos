@@ -1,5 +1,5 @@
 #! /bin/sh
 
 
-./filter_stderr "$@" |
+./filter_size_t "$@" |
 awk -f filter_stanza.awk

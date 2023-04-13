@@ -39,6 +39,13 @@
 // Call this early in Valgrind's main(). It depends on nothing.
 extern void VG_(mach_init)(void);
 
+#if DARWIN_VERS >= DARWIN_11_00
+// Component replicating dyld shared cache checking
+// as system libraries are not provided on disk
+// starting with macOS 11.0 (Big Sur)
+extern void VG_(dyld_cache_init)(void);
+#endif
+
 #endif // __PUB_CORE_MACH_H
 
 #endif // defined(VGO_darwin)

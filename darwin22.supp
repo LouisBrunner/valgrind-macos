@@ -3,437 +3,65 @@
 
 ############################################
 
+# I don't understand how chkstk works so no clue how to properly handle it
 {
-   OSX1300:chkstk
+   OSX1300:chkstk1
    Memcheck:Addr1
    fun:__chkstk_darwin_probe
+   ...
+   fun:_ZN5dyld*
+}
+
+{
+   OSX1300:chkstk2
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
    fun:(below main)
 }
 
+# Due to accessing options.useHaswell, whose value comes from a call to host_info, the options themselves are stack-allocated
+# See https://github.com/apple-oss-distributions/dyld/blob/dyld-1042.1/dyld/SharedCacheRuntime.cpp#L251
 {
-   OSX1300:dyld-config-cond
+   OSX1300:validMagic
    Memcheck:Cond
    ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
+   fun:_ZN5dyld3L10validMagicERKNS_18SharedCacheOptionsEPK15DyldSharedCache
    ...
 }
 
+# Due to reading GradedArchs::_orderedCpuTypes, which are statically allocated,
+# but GradedArchs::forCurrentOS returns the right one based on isHaswell (which also calls host_info)
 {
-   OSX1300:dyld-config-value8
+   OSX1300:GradedArchs::checksOSBinary1
    Memcheck:Value8
    ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
+   fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
    ...
 }
 
 {
-   OSX1300:dyld-config-addr1
-   Memcheck:Addr1
-   ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
-   ...
-}
-
-{
-   OSX1300:dyld-config-addr2
-   Memcheck:Addr2
-   ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
-   ...
-}
-
-{
-   OSX1300:dyld-config-addr4
-   Memcheck:Addr4
-   ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
-   ...
-}
-
-{
-   OSX1300:dyld-config-addr8
-   Memcheck:Addr8
-   ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
-   ...
-}
-
-{
-   OSX1300:dyld-config-addr16
-   Memcheck:Addr16
-   ...
-   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateERN3lsl9AllocatorE
-   ...
-}
-
-{
-   OSX1300:dyld-foreach-cond
+   OSX1300:GradedArchs::checksOSBinary2
    Memcheck:Cond
    ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
+   fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
    ...
 }
 
+# Probably (didn't investigate) from getArchNames which uses GradedArchs::forEachArch, which uses GradedArchs::_orderedCpuTypes
 {
-   OSX1300:dyld-foreach-value8
+   OSX1300:MachOFile::compatibleSlice
    Memcheck:Value8
    ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
+   fun:_ZN5dyld39MachOFile15compatibleSliceER11DiagnosticsPKvmPKcNS_8PlatformEbRKNS_11GradedArchsE
    ...
 }
 
+# No clue
 {
-   OSX1300:dyld-foreach-addr1
-   Memcheck:Addr1
-   ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
-   ...
-}
-
-{
-   OSX1300:dyld-foreach-addr2
-   Memcheck:Addr2
-   ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
-   ...
-}
-
-{
-   OSX1300:dyld-foreach-addr4
-   Memcheck:Addr4
-   ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
-   ...
-}
-
-{
-   OSX1300:dyld-foreach-addr8
-   Memcheck:Addr8
-   ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
-   ...
-}
-
-{
-   OSX1300:dyld-foreach-addr16
-   Memcheck:Addr16
-   ...
-   fun:_ZN5dyld46Loader11forEachPathER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEU13block_pointerFvS6_NS_13ProcessConfig13PathOverrides4TypeERbE
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-cond
+   OSX1300:BadBlockInvoke
    Memcheck:Cond
    ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-value8
-   Memcheck:Value8
-   ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-addr1
-   Memcheck:Addr1
-   ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-addr2
-   Memcheck:Addr2
-   ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-addr4
-   Memcheck:Addr4
-   ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-addr8
-   Memcheck:Addr8
-   ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-fixups-addr16
-   Memcheck:Addr16
-   ...
-   fun:_ZNK5dyld416JustInTimeLoader11applyFixupsER11DiagnosticsRNS_12RuntimeStateERNS_34DyldCacheDataConstLazyScopedWriterEb
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-shreg
-   Memcheck:Param
-   shared_region_check_np(start_address)
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-maplink
-   Memcheck:Param
-   map_with_linking_np(link_info)
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-cond
-   Memcheck:Cond
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-value8
-   Memcheck:Value8
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-addr1
-   Memcheck:Addr1
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-addr2
-   Memcheck:Addr2
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-addr4
-   Memcheck:Addr4
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-addr8
-   Memcheck:Addr8
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-prepare-addr16
-   Memcheck:Addr16
-   ...
-   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-cond
-   Memcheck:Cond
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-value8
-   Memcheck:Value8
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-addr1
-   Memcheck:Addr1
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-addr2
-   Memcheck:Addr2
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-addr4
-   Memcheck:Addr4
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-addr8
-   Memcheck:Addr8
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-vmlayout-addr16
-   Memcheck:Addr16
-   ...
-   fun:_ZNK5dyld313MachOAnalyzer12withVMLayoutER11DiagnosticsU13block_pointerFvRKN6mach_o6LayoutEE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-stat64
-   Memcheck:Param
-   stat64(path)
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-cond
-   Memcheck:Cond
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-value8
-   Memcheck:Value8
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-addr1
-   Memcheck:Addr1
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-addr2
-   Memcheck:Addr2
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-addr4
-   Memcheck:Addr4
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-addr8
-   Memcheck:Addr8
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-makeloader-addr16
-   Memcheck:Addr16
-   ...
-   fun:_ZN5dyld46Loader19makeDyldCacheLoaderER11DiagnosticsRNS_12RuntimeStateEPKcRKNS0_11LoadOptionsEjPKN6mach_o6LayoutE
-   ...
-}
-
-{
-   OSX1300:dyld-sections-cond
-   Memcheck:Cond
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-value8
-   Memcheck:Value8
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-addr1
-   Memcheck:Addr1
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-addr2
-   Memcheck:Addr2
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-addr4
-   Memcheck:Addr4
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-addr8
-   Memcheck:Addr8
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-addr16
-   Memcheck:Addr16
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
-   ...
-}
-
-{
-   OSX1300:dyld-sections-machmsg
-   Memcheck:Param
-   mach_msg2(receive buffer)
-   ...
-   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
    ...
 }

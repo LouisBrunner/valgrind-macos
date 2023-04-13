@@ -1895,6 +1895,15 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(init_Threads)();
 
    //--------------------------------------------------------------
+   // Initialize the dyld cache, which is required with macOS 11 (Big Sur) and onwards
+   // as some system libraries aren't provided on the disk anymore
+   //   p: none
+   //--------------------------------------------------------------
+#  if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+   VG_(dyld_cache_init)();
+#  endif
+
+   //--------------------------------------------------------------
    // Initialise the scheduler (phase 1) [generates tid_main]
    //   p: none, afaics
    //--------------------------------------------------------------

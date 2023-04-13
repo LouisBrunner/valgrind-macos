@@ -398,8 +398,10 @@ case "${host_os}" in
         freebsd_12_2=1220
         AC_DEFINE([FREEBSD_13_0], 1300, [FREEBSD_VERS value for FreeBSD 13.0])
         freebsd_13_0=1300
-        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1+])
+        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1])
         freebsd_13_1=1310
+        AC_DEFINE([FREEBSD_13_2], 1320, [FREEBSD_VERS value for FreeBSD 13.2])
+        freebsd_13_2=1320
         AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
         freebsd_14=1400
 
@@ -438,10 +440,15 @@ case "${host_os}" in
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_0, [FreeBSD version])
               freebsd_vers=$freebsd_13_0
               ;;
-           *)
-              AC_MSG_RESULT([FreeBSD 13.1+ (${kernel})])
+           13.1-*)
+              AC_MSG_RESULT([FreeBSD 13.1 (${kernel})])
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_1, [FreeBSD version])
               freebsd_vers=$freebsd_13_1
+              ;;
+           13.2-*)
+              AC_MSG_RESULT([FreeBSD 13.2 (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
+              freebsd_vers=$freebsd_13_2
               ;;
            esac
            ;;

@@ -742,7 +742,7 @@ static Addr setup_client_stack(void*  init_sp,
       // case AT_KPRELOAD:
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_2)
       case VKI_AT_USRSTACKBASE:
          auxv->u.a_val = VG_(get_usrstack)();
          break;

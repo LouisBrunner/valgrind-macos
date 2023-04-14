@@ -13605,6 +13605,22 @@ POST(sys_openat2)
    }
 }
 
+PRE(sys_pidfd_open)
+{
+  PRINT("sys_pidfd_open ( %ld, %lu )", SARG1, ARG2);
+}
+
+POST(sys_pidfd_open)
+{
+   if (!ML_(fd_allowed)(RES, "pidfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
 #undef PRE
 #undef POST
 

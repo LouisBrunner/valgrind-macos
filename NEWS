@@ -140,6 +140,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 462830  WARNING: unhandled amd64-freebsd syscall: 474
 463027  broken check for MPX instruction support in assembler
 464476  Firefox fails to start under Valgrind
+464609  Valgrind memcheck should support Linux pidfd_open
 464680  Show issues caused by memory policies like selinux deny_execmem
 464859  Build failures with GCC-13 (drd tsan_unittest)
 464969  D language demangling

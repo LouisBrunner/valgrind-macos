@@ -147,10 +147,10 @@ s/in _select ()/in syscall .../
 #             (on 32 bits, we have an int_80, on 64 bits, directly select)
 s/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../
 
-/^   from \/lib\/libc.so.*$/d
-/^   from \/lib64\/libc.so.*$/d
-/^   from \/lib64\/.*\/libc.so.*$/d
-/^   from \/lib64\/.*\/libc-.*.so/d
+/^   from \/lib.*\/libc.so.*$/d
+/^   from \/lib64.*\/libc.so.*$/d
+/^   from \/lib64.*\/.*\/libc.so.*$/d
+/^   from \/lib64.*\/.*\/libc-.*.so/d
 s/ from \/lib\/libc\.so.*//
 
 #       and yet another (gdb 7.0 way) to get a system call

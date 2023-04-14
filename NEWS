@@ -147,6 +147,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 465435  m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
 466104  aligned_alloc problems, part 1
 467482  Build failure on aarch64 Alpine
+467839  Gdbserver: Improve compatibility of library directory name
 n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
 
 To see details of a given bug, visit

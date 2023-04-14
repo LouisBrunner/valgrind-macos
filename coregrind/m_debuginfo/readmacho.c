@@ -890,13 +890,19 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    // We already asserted that ..
    vg_assert(msli.img != NULL && msli.szB > 0);
 
-   if (ML_(cur_is_valid)(sym_cur) && ML_(cur_is_valid)(dysym_cur)) {
+   if (ML_(cur_is_valid)(sym_cur)) {
+      // Some binaries (e.g. Valgrind's tools themselves, like memcheck)
+      // don't have dynamic symbols because they are static binaries.
+      // Let's try to load symbols using a single table.
+      Bool has_dynamic = ML_(cur_is_valid)(dysym_cur);
 
       struct symtab_command   symcmd;
       struct dysymtab_command dysymcmd;
 
       ML_(cur_read_get)(&symcmd,   sym_cur,   sizeof(symcmd));
+      if (has_dynamic) {
       ML_(cur_read_get)(&dysymcmd, dysym_cur, sizeof(dysymcmd));
+      }
 
       /* Read nlist symbol table */
       DiCursor syms = DiCursor_INVALID;
@@ -910,8 +916,9 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          ML_(symerr)(di, False, "Invalid Mach-O file (5 too small).");
          goto fail;
       }   
-      if (dysymcmd.ilocalsym + dysymcmd.nlocalsym > symcmd.nsyms
-          || dysymcmd.iextdefsym + dysymcmd.nextdefsym > symcmd.nsyms) {
+      if (has_dynamic
+          && (dysymcmd.ilocalsym + dysymcmd.nlocalsym > symcmd.nsyms
+          || dysymcmd.iextdefsym + dysymcmd.nextdefsym > symcmd.nsyms)) {
          ML_(symerr)(di, False, "Invalid Mach-O file (bad symbol table).");
          goto fail;
       }
@@ -919,10 +926,17 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       syms = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.symoff);
       strs = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.stroff);
       
-      if (VG_(clo_verbosity) > 1)
+      if (VG_(clo_verbosity) > 1) {
+        if (has_dynamic) {
          VG_(message)(Vg_DebugMsg,
             "   reading syms   from primary file (%d %d)\n",
             dysymcmd.nextdefsym, dysymcmd.nlocalsym );
+        } else {
+          VG_(message)(Vg_DebugMsg,
+              "   reading syms   from primary file (%d)\n",
+              symcmd.nsyms );
+        }
+      }
 
       /* Read candidate symbols into 'candSyms', so we can truncate
          overlapping ends and generally tidy up, before presenting
@@ -932,6 +946,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                     ML_(dinfo_free), sizeof(DiSym)
                  );
 
+      if (has_dynamic) {
       // extern symbols
       read_symtab(candSyms,
                   di,
@@ -944,6 +959,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                   ML_(cur_plus)(syms,
                                 dysymcmd.ilocalsym * sizeof(struct NLIST)),
                   dysymcmd.nlocalsym, strs, symcmd.strsize);
+      } else {
+        read_symtab(candSyms,
+                    di,
+                    syms,
+                    symcmd.nsyms, strs, symcmd.strsize);
+      }
 
       /* tidy up the cand syms -- trim overlapping ends.  May resize
          candSyms. */

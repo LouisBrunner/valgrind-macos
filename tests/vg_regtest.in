@@ -641,6 +641,7 @@ sub test_one_dir($$)
     my @fs = glob "*";
     my $found_tests = (0 != (grep { $_ =~ /\.vgtest$/ } @fs));
 
+    my $tests_start_time = time;
     if ($found_tests) {
         print "-- Running  tests in $full_dir $dashes\n";
     }
@@ -652,7 +653,11 @@ sub test_one_dir($$)
         }
     }
     if ($found_tests) {
-        print "-- Finished tests in $full_dir $dashes\n";
+        my $tests_cost_time = time - $tests_start_time;
+        my $end_time = "(in $tests_cost_time sec)";
+        my $end_dashes = "-" x (50 - (length $full_dir)
+                                   - (length $end_time) - 1);
+        print "-- Finished tests in $full_dir $end_time $end_dashes\n";
     }
 
     chdir("..");

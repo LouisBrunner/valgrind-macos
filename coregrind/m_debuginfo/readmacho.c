@@ -143,12 +143,19 @@ static void unmap_image ( /*MOD*/DiSlice* sli )
    returns DiSlice_INVALID if it fails.  If it succeeds, the returned
    slice is guaranteed to refer to a valid(ish) Mach-O image. */
 static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
-                                  const HChar* filename )
+                                  const HChar* filename,
+                                  const DebugInfoMapping* rx_map )
 {
    DiSlice sli = DiSlice_INVALID;
 
    /* First off, try to map the thing in. */
-   DiImage* mimg = ML_(img_from_local_file)(filename);
+   DiImage* mimg;
+
+   if (rx_map != NULL) {
+     mimg = ML_(img_from_memory)(rx_map->avma, rx_map->size, filename);
+   } else {
+     mimg = ML_(img_from_local_file)(filename);
+   }
    if (mimg == NULL) {
       VG_(message)(Vg_UserMsg, "warning: connection to image %s failed\n",
                                filename );
@@ -703,6 +710,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    DiCursor dysym_cur    = DiCursor_INVALID;
    HChar*   dsymfilename = NULL;
    Bool     have_uuid    = False;
+   Bool     from_memory  = False;
    UChar    uuid[16];
    Word     i;
    const DebugInfoMapping* rx_map = NULL;
@@ -714,7 +722,15 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* This should be ensured by our caller (that we're in the accept
       state). */
    vg_assert(di->fsm.have_rx_map);
+#if DARWIN_VERS >= DARWIN_11_00
+   // FIXME: this is a hack to identify when a DebugInfo is associated with the DSC
+   // (without adding tons of new functions and fields)
+   if (di->fsm.rw_map_count == 0) {
+     from_memory = True;
+   }
+#else
    vg_assert(di->fsm.rw_map_count);
+#endif
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
@@ -722,11 +738,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          rx_map = map;
       if (map->rw && !rw_map)
          rw_map = map;
-      if (rx_map && rw_map)
+      if (rx_map && (rw_map || from_memory))
          break;
    }
    vg_assert(rx_map);
-   vg_assert(rw_map);
+   vg_assert(rw_map || from_memory);
 
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,
@@ -735,7 +751,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    VG_(memset)(&uuid, 0, sizeof(uuid));
 
-   msli = map_image_aboard( di, di->fsm.filename );
+   msli = map_image_aboard( di, di->fsm.filename, from_memory ? rx_map : NULL );
    if (!ML_(sli_is_valid)(msli)) {
       ML_(symerr)(di, False, "Connect to main image failed.");
       goto fail;
@@ -854,7 +870,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->text_debug_bias = di->text_bias;
             }
             /* Try for __DATA */
-            if (!di->data_present
+            if (!from_memory && !di->data_present
                 && 0 == VG_(strcmp)(&seg.segname[0], "__DATA")
                 /* && DDD:seg->fileoff == 0 */ && seg.filesize != 0) {
                di->data_present = True;
@@ -1008,7 +1024,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dSYM= %s\n", dsymfilename);
 
-      dsli = map_image_aboard( di, dsymfilename );
+      dsli = map_image_aboard( di, dsymfilename, NULL );
       if (!ML_(sli_is_valid)(dsli)) {
          ML_(symerr)(di, False, "Connect to debuginfo image failed "
                                 "(first attempt).");
@@ -1078,7 +1094,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dsyms= %s\n", dsymfilename);
 
-      dsli = map_image_aboard( di, dsymfilename );
+      dsli = map_image_aboard( di, dsymfilename, NULL );
       if (!ML_(sli_is_valid)(dsli)) {
          ML_(symerr)(di, False, "Connect to debuginfo image failed "
                                 "(second attempt).");

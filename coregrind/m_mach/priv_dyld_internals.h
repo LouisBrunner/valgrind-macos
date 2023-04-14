@@ -122,4 +122,12 @@ typedef struct {
   uint64_t    cacheVMOffset;      // The offset of this subcache from the main cache base address
 } dyld_subcache_entry_v1;
 
+// From Apple's `dyld/cache-builder/dyld_cache_format.h`
+typedef struct {
+  uuid_t      uuid;
+  uint64_t    loadAddress;            // unslid address of start of __TEXT
+  uint32_t    textSegmentSize;
+  uint32_t    pathOffset;             // offset from start of cache file
+} dyld_cache_image_text_info;
+
 #endif

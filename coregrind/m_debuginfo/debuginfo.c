@@ -1832,6 +1832,60 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 
 #endif /* defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd) */
 
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+// Special version of VG_(di_notify_mmap) specifically to read debug info from the DYLD Shared Cache (DSC)
+// We only use this on macOS 11.0 and later, because Apple stopped shipping dylib on-disk then.
+
+ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
+{
+   DebugInfo* di;
+
+   const Bool       debug = VG_(debugLog_getLevel)() >= 3;
+
+   if (debug)
+      VG_(dmsg)("di_notify_dsc-1: %s\n", filename);
+
+   if (!ML_(is_macho_object_file)( (const void*) header, len ))
+      return 0;
+
+   /* See if we have a DebugInfo for this filename.  If not,
+      create one. */
+   di = find_or_create_DebugInfo_for( filename );
+   vg_assert(di);
+
+   if (di->have_dinfo) {
+      if (debug)
+         VG_(dmsg)("di_notify_dsc-2x: "
+                   "ignoring mapping because we already read debuginfo "
+                   "for DebugInfo* %p\n", di);
+      return 0;
+   }
+
+   if (debug)
+      VG_(dmsg)("di_notify_dsc-2: "
+                "noting details in DebugInfo* at %p\n", di);
+
+   /* Note the details about the mapping. */
+   DebugInfoMapping map;
+   map.avma = header;
+   map.size = len;
+   map.foff = 0;
+   map.rx   = True;
+   map.rw   = False;
+   map.ro   = False;
+   VG_(addToXA)(di->fsm.maps, &map);
+
+   /* Update flags about what kind of mappings we've already seen. */
+   di->fsm.have_rx_map |= True;
+
+   vg_assert(!di->have_dinfo);
+
+   if (debug)
+      VG_(dmsg)("di_notify_dsc-3: "
+                "achieved accept state for %s\n", filename);
+   return di_notify_ACHIEVE_ACCEPT_STATE ( di );
+}
+#endif
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/

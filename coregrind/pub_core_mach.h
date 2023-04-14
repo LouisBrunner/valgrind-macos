@@ -40,10 +40,11 @@
 extern void VG_(mach_init)(void);
 
 #if DARWIN_VERS >= DARWIN_11_00
-// Component replicating dyld shared cache checking
-// as system libraries are not provided on disk
+// Dyld shared cache (DSC) parsing, which is required as system libraries are not provided on disk
 // starting with macOS 11.0 (Big Sur)
 extern void VG_(dyld_cache_init)(void);
+extern int VG_(dyld_cache_might_be_in)(const HChar*);
+extern int VG_(dyld_cache_load_library)(const HChar*);
 #endif
 
 #endif // __PUB_CORE_MACH_H

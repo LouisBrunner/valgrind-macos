@@ -32,7 +32,7 @@
 // as some dylib are not provided in file format anymore
 #if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
 
-#include "pub_core_debuginfo.h"             // VG_(di_notify_mmap)
+#include "pub_core_debuginfo.h"             // VG_(di_notify_dsc)
 #include "pub_core_debuglog.h"              // VG_(debugLog)
 #include "pub_core_mach.h"                  // VG_(dyld_cache_*)
 #include "pub_core_syscall.h"               // VG_(do_syscall1)
@@ -49,6 +49,13 @@
 // FIXME: probably shouldn't include this directly?
 #include "m_syswrap/priv_syswrap-generic.h" // ML_(notify_core_and_tool_of_mmap)
 
+#include <mach-o/loader.h>
+#include <mach-o/fat.h>
+
+// Only supported on macOS 11 onwards which is 64bit only
+# define MACH_HEADER mach_header_64
+# define MAGIC MH_MAGIC_64
+
 static void output_debug_info(const dyld_cache_header* dyld_cache);
 
 typedef struct {
@@ -56,7 +63,10 @@ typedef struct {
   Addr slide;
 } DYLDCache;
 
-static DYLDCache dyld_cache = {};
+static DYLDCache dyld_cache = {
+  .header = NULL,
+  .slide = 0,
+};
 
 static Addr calculate_relative(const dyld_cache_header * header, Addr offset) {
   return (Addr)header + offset;
@@ -200,9 +210,79 @@ void VG_(dyld_cache_init)(void) {
   }
 }
 
-static void output_debug_info(const dyld_cache_header* dyld_cache) {
-  const uint8_t* u1 = dyld_cache->uuid;
-  const uint8_t* u2 = dyld_cache->symbolFileUUID;
+int VG_(dyld_cache_might_be_in)(const HChar* path) {
+  // If not init'd, there is no point
+  if (dyld_cache.header == NULL) {
+    return 0;
+  }
+
+  if (VG_(strncmp)(path, "/usr/lib/", 9) == 0) {
+		return 1;
+  }
+	if (VG_(strncmp)(path, "/System/Library/", 16) == 0) {
+    return 1;
+  }
+  // FIXME: more flexible heuristics around extensions?
+  return 0;
+}
+
+static struct MACH_HEADER* find_image_text(const dyld_cache_header* header, const char* path, SizeT* len) {
+  vg_assert(len);
+  *len = 0;
+
+  const dyld_cache_image_text_info* textInfos = (const dyld_cache_image_text_info*) calculate_relative(header, header->imagesTextOffset);
+
+  for (int i = 0; i < header->imagesTextCount; ++i) {
+    const dyld_cache_image_text_info* textInfo = &textInfos[i];
+    const char* imagePath = (const char*) calculate_relative(header, textInfo->pathOffset);
+
+    if (VG_(strcmp)(imagePath, path) == 0) {
+      *len = textInfo->textSegmentSize;
+      return (struct MACH_HEADER*) calculate_unslid(textInfo->loadAddress);
+    }
+  }
+
+  return NULL;
+}
+
+int VG_(dyld_cache_load_library)(const HChar* path) {
+  struct MACH_HEADER *image = NULL;
+  ULong res = 0;
+  SizeT len = 0;
+
+  // If not init'd, there is no point trying
+  if (dyld_cache.header == NULL) {
+    return 0;
+  }
+
+  VG_(debugLog)(2, "dyld_cache", "potential dylib to check in the cache: %s\n", path);
+
+  image = find_image_text(dyld_cache.header, path, &len);
+  if (image == NULL) {
+    VG_(debugLog)(2, "dyld_cache", "image not found: %s\n", path);
+    return 0;
+  }
+
+  if (image->magic != MAGIC) {
+    VG_(debugLog)(2, "dyld_cache", "image not mach-o (%#x): %s\n", image->magic, path);
+    return 0;
+  }
+
+  VG_(debugLog)(2, "dyld_cache", "image is valid, forwarding to debuginfo: %s\n", path);
+  res = VG_(di_notify_dsc)(path, (Addr)image, &len);
+  if (res == 0) {
+    VG_(debugLog)(2, "dyld_cache", "failed to load debuginfo from: %s\n", path);
+    return 0;
+  }
+
+  VG_(debugLog)(2, "dyld_cache", "image fully loaded: %s\n", path);
+
+  return 1;
+}
+
+static void output_debug_info(const dyld_cache_header* cache) {
+  const uint8_t* u1 = cache->uuid;
+  const uint8_t* u2 = cache->symbolFileUUID;
   VG_(debugLog)(4, "dyld_cache",
     "shared dyld content: {\n"
     "  .magic: %s,\n"
@@ -281,83 +361,83 @@ static void output_debug_info(const dyld_cache_header* dyld_cache) {
     "  .dynamicDataOffset: %#llx,\n"
     "  .dynamicDataMaxSize: %llu,\n"
     "}\n",
-    dyld_cache->magic,
-    dyld_cache->mappingOffset,
-    dyld_cache->mappingCount,
-    dyld_cache->imagesOffsetOld,
-    dyld_cache->imagesCountOld,
-    dyld_cache->dyldBaseAddress,
-    dyld_cache->codeSignatureOffset,
-    dyld_cache->codeSignatureSize,
-    dyld_cache->slideInfoOffsetUnused,
-    dyld_cache->slideInfoSizeUnused,
-    dyld_cache->localSymbolsOffset,
-    dyld_cache->localSymbolsSize,
+    cache->magic,
+    cache->mappingOffset,
+    cache->mappingCount,
+    cache->imagesOffsetOld,
+    cache->imagesCountOld,
+    cache->dyldBaseAddress,
+    cache->codeSignatureOffset,
+    cache->codeSignatureSize,
+    cache->slideInfoOffsetUnused,
+    cache->slideInfoSizeUnused,
+    cache->localSymbolsOffset,
+    cache->localSymbolsSize,
     u1[0], u1[1], u1[2], u1[3], u1[4], u1[5], u1[6], u1[7], u1[8],
     u1[9], u1[10], u1[11], u1[12], u1[13], u1[14], u1[15],
-    dyld_cache->cacheType,
-    dyld_cache->branchPoolsOffset,
-    dyld_cache->branchPoolsCount,
-    dyld_cache->dyldInCacheMH,
-    dyld_cache->dyldInCacheEntry,
-    dyld_cache->imagesTextOffset,
-    dyld_cache->imagesTextCount,
-    dyld_cache->patchInfoAddr,
-    dyld_cache->patchInfoSize,
-    dyld_cache->otherImageGroupAddrUnused,
-    dyld_cache->otherImageGroupSizeUnused,
-    dyld_cache->progClosuresAddr,
-    dyld_cache->progClosuresSize,
-    dyld_cache->progClosuresTrieAddr,
-    dyld_cache->progClosuresTrieSize,
-    dyld_cache->platform,
-    dyld_cache->formatVersion,
-    dyld_cache->dylibsExpectedOnDisk,
-    dyld_cache->simulator,
-    dyld_cache->locallyBuiltCache,
-    dyld_cache->builtFromChainedFixups,
-    dyld_cache->padding,
-    dyld_cache->sharedRegionStart,
-    dyld_cache->sharedRegionSize,
-    dyld_cache->maxSlide,
-    dyld_cache->dylibsImageArrayAddr,
-    dyld_cache->dylibsImageArraySize,
-    dyld_cache->dylibsTrieAddr,
-    dyld_cache->dylibsTrieSize,
-    dyld_cache->otherImageArrayAddr,
-    dyld_cache->otherImageArraySize,
-    dyld_cache->otherTrieAddr,
-    dyld_cache->otherTrieSize,
-    dyld_cache->mappingWithSlideOffset,
-    dyld_cache->mappingWithSlideCount,
-    dyld_cache->dylibsPBLStateArrayAddrUnused,
-    dyld_cache->dylibsPBLSetAddr,
-    dyld_cache->programsPBLSetPoolAddr,
-    dyld_cache->programsPBLSetPoolSize,
-    dyld_cache->programTrieAddr,
-    dyld_cache->programTrieSize,
-    dyld_cache->osVersion,
-    dyld_cache->altPlatform,
-    dyld_cache->altOsVersion,
-    dyld_cache->swiftOptsOffset,
-    dyld_cache->swiftOptsSize,
-    dyld_cache->subCacheArrayOffset,
-    dyld_cache->subCacheArrayCount,
+    cache->cacheType,
+    cache->branchPoolsOffset,
+    cache->branchPoolsCount,
+    cache->dyldInCacheMH,
+    cache->dyldInCacheEntry,
+    cache->imagesTextOffset,
+    cache->imagesTextCount,
+    cache->patchInfoAddr,
+    cache->patchInfoSize,
+    cache->otherImageGroupAddrUnused,
+    cache->otherImageGroupSizeUnused,
+    cache->progClosuresAddr,
+    cache->progClosuresSize,
+    cache->progClosuresTrieAddr,
+    cache->progClosuresTrieSize,
+    cache->platform,
+    cache->formatVersion,
+    cache->dylibsExpectedOnDisk,
+    cache->simulator,
+    cache->locallyBuiltCache,
+    cache->builtFromChainedFixups,
+    cache->padding,
+    cache->sharedRegionStart,
+    cache->sharedRegionSize,
+    cache->maxSlide,
+    cache->dylibsImageArrayAddr,
+    cache->dylibsImageArraySize,
+    cache->dylibsTrieAddr,
+    cache->dylibsTrieSize,
+    cache->otherImageArrayAddr,
+    cache->otherImageArraySize,
+    cache->otherTrieAddr,
+    cache->otherTrieSize,
+    cache->mappingWithSlideOffset,
+    cache->mappingWithSlideCount,
+    cache->dylibsPBLStateArrayAddrUnused,
+    cache->dylibsPBLSetAddr,
+    cache->programsPBLSetPoolAddr,
+    cache->programsPBLSetPoolSize,
+    cache->programTrieAddr,
+    cache->programTrieSize,
+    cache->osVersion,
+    cache->altPlatform,
+    cache->altOsVersion,
+    cache->swiftOptsOffset,
+    cache->swiftOptsSize,
+    cache->subCacheArrayOffset,
+    cache->subCacheArrayCount,
     u2[0], u2[1], u2[2], u2[3], u2[4], u2[5], u2[6], u2[7], u2[8],
     u2[9], u2[10], u2[11], u2[12], u2[13], u2[14], u2[15],
-    dyld_cache->rosettaReadOnlyAddr,
-    dyld_cache->rosettaReadOnlySize,
-    dyld_cache->rosettaReadWriteAddr,
-    dyld_cache->rosettaReadWriteSize,
-    dyld_cache->imagesOffset,
-    dyld_cache->imagesCount,
-    dyld_cache->cacheSubType,
-    dyld_cache->objcOptsOffset,
-    dyld_cache->objcOptsSize,
-    dyld_cache->cacheAtlasOffset,
-    dyld_cache->cacheAtlasSize,
-    dyld_cache->dynamicDataOffset,
-    dyld_cache->dynamicDataMaxSize
+    cache->rosettaReadOnlyAddr,
+    cache->rosettaReadOnlySize,
+    cache->rosettaReadWriteAddr,
+    cache->rosettaReadWriteSize,
+    cache->imagesOffset,
+    cache->imagesCount,
+    cache->cacheSubType,
+    cache->objcOptsOffset,
+    cache->objcOptsSize,
+    cache->cacheAtlasOffset,
+    cache->cacheAtlasSize,
+    cache->dynamicDataOffset,
+    cache->dynamicDataMaxSize
   );
 }
 

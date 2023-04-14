@@ -1660,8 +1660,8 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 /*------------------------------------------------------------*/
 
 #if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
-// Now that we parse the DSC, we might get mmap which are up to 4GB, put 1GB to be safe for now
-#define VA_LARGE_RANGE 1 * 1024 * 1024 * 1024
+// Now that we parse the DSC, we might get mmap which are up to 4GB, put 2GB to be safe for now
+#define VA_LARGE_RANGE ((ULong) 2 * 1024 * 1024 * 1024)
 #else
 #define VA_LARGE_RANGE 256 * 1024 * 1024
 #endif
@@ -1691,7 +1691,7 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    if (lenT == 0)
       return;
 
-   if (lenT > VA_LARGE_RANGE) {
+   if ((ULong) lenT > VA_LARGE_RANGE) {
       if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
          const HChar* s = "unknown???";
          if (vabits16 == VA_BITS16_NOACCESS ) s = "noaccess";

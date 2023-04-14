@@ -11000,6 +11000,24 @@ PRE(shared_region_map_and_slide_np)
     uint32_t, slide, uint64_t*, slide_start, uint32_t, slide_size);
 }
 
+PRE(task_read_for_pid)
+{
+  PRINT("task_read_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), ARG2, ARG3);
+  PRE_REG_READ3(kern_return_t, "task_read_for_pid", mach_port_name_t, target_tport, int, pid, mach_port_name_t*, t);
+
+  if (ARG3 != 0) {
+    PRE_MEM_WRITE("task_read_for_pid(t)", ARG3, sizeof(mach_port_name_t));
+  }
+}
+
+POST(task_read_for_pid)
+{
+  if (RES == 0 && ARG3 != 0) {
+    POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
+    PRINT("-> t:%s", name_for_port(*(mach_port_name_t*)ARG3));
+  }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_11_00 */
 
 
@@ -11699,7 +11717,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_shared_region_map_and_slide_2_np),        // 536
 // _____(__NR_pivot_root),                              // 537
 // _____(__NR_task_inspect_for_pid),                    // 538
-// _____(__NR_task_read_for_pid),                       // 539
+   MACXY(__NR_task_read_for_pid, task_read_for_pid),    // 539
 // _____(__NR_sys_preadv),                              // 540
 // _____(__NR_sys_pwritev),                             // 541
 // _____(__NR_sys_preadv_nocancel),                     // 542

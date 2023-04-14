@@ -677,7 +677,7 @@ DECL_TEMPLATE(darwin, abort_with_payload);          // 521
 // NYI shared_region_map_and_slide_2_np   // 536
 // NYI pivot_root                         // 537
 // NYI task_inspect_for_pid               // 538
-// NYI task_read_for_pid                  // 539
+DECL_TEMPLATE(darwin, task_read_for_pid); // 539
 // NYI sys_preadv                         // 540
 // NYI sys_pwritev                        // 541
 // NYI sys_preadv_nocancel                // 542

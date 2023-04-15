@@ -141,7 +141,7 @@ static int try_to_init(void) {
     }
 
     if (dyld_cache.header->mappingOffset >= __offsetof(dyld_cache_header, subCacheArrayCount)) {
-      Bool sub_cache_v2 = dyld_cache.header->mappingOffset >= __offsetof(dyld_cache_header, cacheSubType);
+      Bool sub_cache_v2 = dyld_cache.header->mappingOffset > __offsetof(dyld_cache_header, cacheSubType);
       Addr sub_caches = calculate_relative(dyld_cache.header, dyld_cache.header->subCacheArrayOffset);
 
       for (int i = 0; i < dyld_cache.header->subCacheArrayCount; ++i) {

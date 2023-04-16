@@ -4820,6 +4820,7 @@ AC_CHECK_FUNCS([     \
         memset       \
         mkdir        \
         mremap       \
+        pipe2	     \
         ppoll        \
         preadv       \
         preadv2      \

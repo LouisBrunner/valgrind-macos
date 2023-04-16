@@ -1142,11 +1142,28 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
    // We will use a pipe to track what the child does,
    // so we can report failure.
    int pipefd[2];
+#ifdef HAVE_PIPE2
    if (pipe2 (pipefd, O_CLOEXEC) == -1) {
       err = errno;
       perror ("pipe2 failed");
       return err;
    }
+#else
+   if (pipe (pipefd) == -1) {
+      err = errno;
+      perror ("pipe failed");
+      return err;
+   } else {
+      if (fcntl (pipefd[0], F_SETFD, FD_CLOEXEC) == -1
+          || fcntl (pipefd[1], F_SETFD, FD_CLOEXEC) == -1) {
+         err = errno;
+         perror ("fcntl failed");
+         close (pipefd[0]);
+         close (pipefd[1]);
+         return err;
+      }
+   }
+#endif
 
    pid_t p = fork ();
    if (p < 0) {

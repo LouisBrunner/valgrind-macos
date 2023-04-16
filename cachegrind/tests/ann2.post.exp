@@ -7,9 +7,6 @@ Events recorded:  A SomeCount VeryLongEventName
 Events shown:     A SomeCount VeryLongEventName
 Event sort order: A SomeCount VeryLongEventName
 Threshold:        0.5
-Include dirs:     ann2-no-such-dir
-                  ann2-no-such-dir-2
-                  ann2-aux
 Annotation:       on
 
 --------------------------------------------------------------------------------
@@ -33,9 +30,9 @@ A_______________ SomeCount_______ VeryLongEventName
 
 >      9,000     (9.0%, 95.6%)  6,000  (6.0%, 99.0%)        0 (n/a, n/a)  ann2-could-not-be-found.rs:f1
 
->      1,000     (1.0%, 96.6%)    500  (0.5%, 99.5%)        0 (n/a, n/a)  ann2-via-I.rs:<unspecified>
-
->      1,000     (1.0%, 97.6%)    300  (0.3%, 99.8%)   -1,000 (n/a, n/a)  ann2-past-the-end.rs:f1
+>      2,000     (2.0%, 97.6%)    800  (0.8%, 99.8%)   -1,000 (n/a, n/a)  ann2-past-the-end.rs:
+       1,000     (1.0%)           500  (0.5%)               0               <unspecified>
+       1,000     (1.0%)           300  (0.3%)          -1,000 (n/a)         f1
 
 >      1,000     (1.0%, 98.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ann2-more-recent-than-cgout.rs:new
 
@@ -66,7 +63,7 @@ A_______________ SomeCount_______ VeryLongEventName
 
 >      2,000     (2.0%,    95.1%)    100  (0.1%, 97.3%)        0 (n/a, n/a)  f2:ann2-basic.rs
 
->      1,000     (1.0%,    96.1%)    500  (0.5%, 97.8%)        0 (n/a, n/a)  <unspecified>:ann2-via-I.rs
+>      1,000     (1.0%,    96.1%)    500  (0.5%, 97.8%)        0 (n/a, n/a)  <unspecified>:ann2-past-the-end.rs
 
 >      1,000     (1.0%,    97.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  unknown:???
 
@@ -154,29 +151,23 @@ A____________________ SomeCount_____ VeryLongEventName
 --------------------------------------------------------------------------------
 -- Annotated source file: ann2-past-the-end.rs
 --------------------------------------------------------------------------------
-A_________ SomeCount_ VeryLongEventName 
+A___________ SomeCount_ VeryLongEventName 
 
-200 (0.2%) 100 (0.1%)           0        one
-  .          .                  .        two
-  .          .                  .        three
--- line 3 ----------------------------------------
+1,000 (1.0%) 500 (0.5%)           0        one
+  200 (0.2%) 100 (0.1%)           0        two
+    .          .                  .        three
+    .          .                  .        four
+-- line 4 ----------------------------------------
 
-300 (0.3%) 100 (0.1%)           0        <bogus line 20>
-300 (0.3%) 100 (0.1%)           0        <bogus line 21>
-200 (0.2%)   0             -1,000 (n/a)  <bogus line 22>
+  300 (0.3%) 100 (0.1%)           0        <bogus line 20>
+  300 (0.3%) 100 (0.1%)           0        <bogus line 21>
+  200 (0.2%)   0             -1,000 (n/a)  <bogus line 22>
 
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@ Information recorded about lines past the end of 'ann2-past-the-end.rs'.
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
---------------------------------------------------------------------------------
--- Annotated source file: ann2-aux/ann2-via-I.rs
---------------------------------------------------------------------------------
-A___________ SomeCount_ VeryLongEventName 
-
-1,000 (1.0%) 500 (0.5%)                 0  one
 
 --------------------------------------------------------------------------------
 -- Annotation summary

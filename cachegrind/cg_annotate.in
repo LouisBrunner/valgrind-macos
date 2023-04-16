@@ -51,7 +51,6 @@ class Args(Namespace):
     show_percs: bool
     annotate: bool
     context: int
-    include: list[str]
     cgout_filename: list[str]
 
     @staticmethod
@@ -141,14 +140,6 @@ class Args(Namespace):
             metavar="N",
             help="print N lines of context before and after annotated lines "
             "(default: %(default)s)",
-        )
-        p.add_argument(
-            "-I",
-            "--include",
-            action="append",
-            default=[],
-            metavar="D",
-            help="add D to the list of searched source file directories",
         )
         p.add_argument(
             "cgout_filename",
@@ -663,14 +654,6 @@ def print_metadata(desc: str, cmd: str, events: Events) -> None:
     print("Events shown:    ", *events.show_events)
     print("Event sort order:", *events.sort_events)
     print("Threshold:       ", args.threshold)
-
-    if len(args.include) == 0:
-        print("Include dirs:     ")
-    else:
-        print(f"Include dirs:     {args.include[0]}")
-        for include_dirname in args.include[1:]:
-            print(f"                  {include_dirname}")
-
     print("Annotation:      ", "on" if args.annotate else "off")
     print()
 
@@ -920,40 +903,23 @@ def print_annotated_src_files(
     dict_line_cc = dict_fl_dict_line_cc.pop("???", None)
     add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.files_unknown_cc)
 
-    # Prepend "" to the include dirnames so things work in the case where the
-    # filename has the full path.
-    include_dirnames = args.include.copy()
-    include_dirnames.insert(0, "")
-
     def print_ann_fancy(src_filename: str) -> None:
         print_fancy(f"Annotated source file: {src_filename}")
 
     for src_filename in sorted(ann_src_filenames):
-        readable = False
-        for include_dirname in include_dirnames:
-            if include_dirname == "":
-                full_src_filename = src_filename
-            else:
-                full_src_filename = os.path.join(include_dirname, src_filename)
-
-            try:
-                with open(full_src_filename, "r", encoding="utf-8") as src_file:
-                    dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
-                    assert dict_line_cc is not None
-                    print_ann_fancy(src_file.name)  # includes full path
-                    print_annotated_src_file(
-                        events,
-                        dict_line_cc,
-                        src_file,
-                        annotated_ccs,
-                        summary_cc,
-                    )
-                readable = True
-                break
-            except OSError:
-                pass
-
-        if not readable:
+        try:
+            with open(src_filename, "r", encoding="utf-8") as src_file:
+                dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
+                assert dict_line_cc is not None
+                print_ann_fancy(src_filename)
+                print_annotated_src_file(
+                    events,
+                    dict_line_cc,
+                    src_file,
+                    annotated_ccs,
+                    summary_cc,
+                )
+        except OSError:
             dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
             add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.unreadable_cc)
 

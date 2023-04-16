@@ -71,9 +71,11 @@ fn=neg4
 
 # File with source newer than the cgout file.
 fl=ann2-past-the-end.rs
-# This filename is repeated in ann2-could-not-be-found.rs above.
+# No `fn=` line yet, so the function name falls back to `<unspecified>`.
+1 1000 500 0
+# This funcname is repeated in ann2-could-not-be-found.rs above.
 fn=f1
-1  200 100 0
+2  200 100 0
 20 300 100 0
 21 300 100 0
 22 200 0 -1000
@@ -84,11 +86,6 @@ fn=f1
 100 3000 2000 0
 101    3000     2000        0
 102     3000    2000    0
-
-# File found in ann2-aux/, via -I.
-fl=ann2-via-I.rs
-# No `fn=` line, so the function name falls back to `<unspecified>`.
-1 1000 500 0
 
 # File below the threshold. (It also doesn't exist, but that doesn't matter. We
 # don't try to open it because it's below the threshold.)

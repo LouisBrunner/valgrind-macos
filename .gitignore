@@ -3,6 +3,7 @@
 # /
 /.in_place
 /.vs
+/.clang-format
 /acinclude.m4
 /aclocal.m4
 /autom4te-*.cache

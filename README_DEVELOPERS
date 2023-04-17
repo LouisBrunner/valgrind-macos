@@ -372,3 +372,21 @@ translated, and that includes the address.
 Then re-run with 999999 changed to the highest bb number shown.
 This will print the one line per block, and also will print a
 disassembly of the block in which the fault occurred.
+
+
+Formatting the code with clang-format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+clang-format is a tool to format C/C++/... code.  The root directory of the
+Valgrind tree contains file .clang-format which is a configuration for this tool
+and specifies a style for Valgrind.  This gives you an option to use
+clang-format to easily format Valgrind code which you are modifying.
+
+The Valgrind codebase is not globally formatted with clang-format.  It means
+that you should not use the tool to format a complete file after making changes
+in it because that would lead to creating unrelated modifications.
+
+The right approach is to format only updated or new code.  By using an
+integration with a text editor, it is possible to reformat arbitrary blocks
+of code with a single keystroke.  Refer to the upstream documentation which
+describes integration with various editors and IDEs:
+https://clang.llvm.org/docs/ClangFormat.html.

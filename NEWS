@@ -152,6 +152,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 467714  fdleak_* and rlimit tests fail when parent process has more than
         64 descriptors opened
 467839  Gdbserver: Improve compatibility of library directory name
+468401  [PATCH] Add a style file for clang-format
 468556  Build failure for vgdb
 n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
 

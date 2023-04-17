@@ -48,6 +48,96 @@ unsigned long current_fpscr;
 struct test_list_t current_test;
 
 #include "isa_3_1_helpers.h"
+#ifdef __powerpc64__
+typedef uint64_t HWord_t;
+
+/* Save and restore all of the registers. Need to ensure the PAD_ORI does not change
+   the other registers.  This really shouldn't be needed but the optimization gets
+   messed up when it inlines the test function.  */
+#define SAVE_REGS(addr)                         \
+   asm volatile(                                \
+   "    std   21, 0(%0)   \n"                   \
+   "    std   22, 8(%0)   \n"                   \
+   "    std   23, 16(%0)  \n"                   \
+   "    std   24, 24(%0)  \n"                   \
+   "    std   25, 32(%0)  \n"                   \
+   "    std   26, 40(%0)  \n"                   \
+   "    std   27, 48(%0)  \n"                   \
+   "    std   29, 64(%0)  \n"                   \
+   "    std   30, 72(%0)  \n"                   \
+   "    std   31, 80(%0)  \n"                   \
+   ::"b"(addr))
+
+#define SAVE_REG_28(addr)                       \
+   asm volatile(                                \
+   "    std   28, 56(%0)  \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REGS(addr)                      \
+   asm volatile(                                \
+   "    ld    21, 0(%0)   \n"                   \
+   "    ld    22, 8(%0)   \n"                   \
+   "    ld    23, 16(%0)  \n"                   \
+   "    ld    24, 24(%0)  \n"                   \
+   "    ld    25, 32(%0)  \n"                   \
+   "    ld    26, 40(%0)  \n"                   \
+   "    ld    27, 48(%0)  \n"                   \
+   "    ld    29, 64(%0)  \n"                   \
+   "    ld    30, 72(%0)  \n"                   \
+   "    ld    31, 80(%0)  \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REG_28(addr)                    \
+   asm volatile(                                \
+   "    ld    28, 56(%0)  \n"                   \
+   ::"b"(addr))
+
+#else /* !__powerpc64__ */
+
+typedef uint32_t HWord_t;
+#define SAVE_REGS(addr)                         \
+   asm volatile(                                \
+   "    stw   21, 0(%0)   \n"                   \
+   "    stw   22, 4(%0)   \n"                   \
+   "    stw   23, 8(%0)   \n"                   \
+   "    stw   24, 12(%0)  \n"                   \
+   "    stw   25, 16(%0)  \n"                   \
+   "    stw   26, 20(%0)  \n"                   \
+   "    stw   27, 24(%0)  \n"                   \
+   "    stw   29, 32(%0)  \n"                   \
+   "    stw   30, 36(%0)  \n"                   \
+   "    stw   31, 40(%0)  \n"                   \
+   ::"b"(addr))
+
+#define SAVE_REG_28(addr)                       \
+   asm volatile(                                \
+   "    stw   28, 28(%0)  \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REGS(addr)                      \
+   asm volatile(                                \
+   "    lwz   21, 0(%0)   \n"                   \
+   "    lwz   22, 4(%0)   \n"                   \
+   "    lwz   23, 8(%0)   \n"                   \
+   "    lwz   24, 12(%0)  \n"                   \
+   "    lwz   25, 16(%0)  \n"                   \
+   "    lwz   26, 20(%0)  \n"                   \
+   "    lwz   27, 24(%0)  \n"                   \
+   "    lwz   29, 32(%0)  \n"                   \
+   "    lwz   30, 36(%0)  \n"                   \
+   "    lwz   31, 400(%0) \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REG_28(addr)                    \
+   asm volatile(                                \
+   "    lwz   28, 28(%0)  \n"                   \
+   ::"b"(addr))
+#endif /* __powerpc64__ */
+
+#define NUM_ENTRIES_SAVE_RESTORE 11
+
+HWord_t temp[NUM_ENTRIES_SAVE_RESTORE];
+
 static void test_pstxvp_off0_R1 (void) {
   __asm__ __volatile__ ("pstxvp 20, -0x1f400+0(0),1");
 }
@@ -61,54 +151,78 @@ static void test_pstxvp_off48_R1 (void) {
   __asm__ __volatile__ ("pstxvp 20, -0x1f400+48(0),1");
 }
 static void test_plfd_64_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfd 28, +64(0), 1");
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfd_32_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfd 28, +32(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfd_16_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfd 28, +16(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfd_8_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfd 28, +8(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfd_4_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfd 28, +4(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfd_0_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfd 28, +0(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfs_64_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfs 28, +64(0), 1");
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfs_32_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfs 28, +32(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfs_16_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfs 28, +16(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfs_8_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfs 28, +8(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfs_4_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfs 28, +4(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plfs_0_R1 (void) {
+  SAVE_REGS(temp);
   __asm__ __volatile__ ("plfs 28, +0(0), 1");
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_pstfd_32_R1 (void) {
   __asm__ __volatile__ ("pstfd 26, -0x1f400+32(0), 1");
@@ -141,54 +255,102 @@ static void test_pstfs_0_R1 (void) {
   __asm__ __volatile__ ("pstfs 26, -0x1f400+0(0), 1");
 }
 static void test_plxsd_64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxsd %0, +64(0), 1" : "=v" (vrt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxsd_32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ (".align 2 ; plxsd %0, +32(0), 1" : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxsd_16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxsd %0, +16(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxsd_8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxsd %0, +8(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxsd_4_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxsd %0, +4(0), 1; pnop;pnop;pnop; "  : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxsd_0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxsd %0, +0(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxssp_64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxssp %0, +64(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxssp_32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxssp %0, +32(0), 1; pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxssp_16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxssp %0, +16(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxssp_8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxssp %0, +8(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxssp_4_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxssp %0, +4(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxssp_0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxssp %0, +0(0), 1; pnop;pnop;pnop; " : "=v" (vrt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 /* Follow the short-range plxv instructions with nop in order to
    pad out subsequent instructions.  When written there are found
@@ -196,20 +358,36 @@ static void test_plxssp_0_R1 (void) {
    into the target variable.  (pla,pstxv...).
    */
 static void test_plxv_16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxv %x0, +16(0), 1; pnop;pnop;pnop;" : "=wa" (vec_xt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxv_8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxv %x0, +8(0), 1; pnop;pnop;pnop;" : "=wa" (vec_xt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxv_4_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxv %x0, +4(0), 1; pnop;pnop;pnop;" : "=wa" (vec_xt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_plxv_0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_28(temp);
   __asm__ __volatile__ ("plxv %x0, +0(0), 1; pnop;pnop;pnop; " : "=wa" (vec_xt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_28(temp);
 }
 static void test_pstxsd_64_R1 (void) {
   __asm__ __volatile__ (".align 2 ; pstxsd 22, -0x1f400+64(0), 1" );

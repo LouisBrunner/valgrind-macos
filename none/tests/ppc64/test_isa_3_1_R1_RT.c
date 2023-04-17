@@ -49,108 +49,304 @@ struct test_list_t current_test;
 
 #include "isa_3_1_helpers.h"
 
+#ifdef __powerpc64__
+typedef uint64_t HWord_t;
+/* Save and restore all of the registers but rt which is the result of the instruction
+   under test. Need to ensure the PAD_ORI does not change the other registers.  This
+   really shouldn't be needed but the optimization gets messed up when it inlines the
+   test function.  */
+#define SAVE_REGS(addr)                         \
+   asm volatile(                                \
+   "    std   21, 0(%0)   \n"                   \
+   "    std   22, 8(%0)   \n"                   \
+   "    std   23, 16(%0)  \n"                   \
+   "    std   24, 24(%0)  \n"                   \
+   "    std   25, 32(%0)  \n"                   \
+   "    std   28, 56(%0)  \n"                   \
+   "    std   29, 64(%0)  \n"                   \
+   "    std   30, 72(%0)  \n"                   \
+   "    std   31, 80(%0)  \n"                   \
+   ::"b"(addr))
+
+#define SAVE_REG_RT(addr)                       \
+   asm volatile(                                \
+   "    std   26, 40(%0)  \n"                   \
+   ::"b"(addr))
+#define SAVE_REG_27(addr)                      \
+   asm volatile(                                \
+   "    std   27, 40(%0)  \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REGS(addr)                      \
+   asm volatile(                                \
+   "    ld    21, 0(%0)   \n"                   \
+   "    ld    22, 8(%0)   \n"                   \
+   "    ld    23, 16(%0)  \n"                   \
+   "    ld    24, 24(%0)  \n"                   \
+   "    ld    25, 32(%0)  \n"                   \
+   "    ld    28, 56(%0)  \n"                   \
+   "    ld    29, 64(%0)  \n"                   \
+   "    ld    30, 72(%0)  \n"                   \
+   "    ld    31, 80(%0)  \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REG_RT(addr)                    \
+   asm volatile(                                \
+   "    ld    26, 40(%0)   \n"                  \
+   ::"b"(addr))
+
+#define RESTORE_REG_27(addr)                   \
+   asm volatile(                                \
+   "    ld    27, 40(%0)   \n"                  \
+   ::"b"(addr))
+
+#else /* !__powerpc64__ */
+
+typedef uint32_t HWord_t;
+#define SAVE_REGS(addr)                         \
+   asm volatile(                                \
+   "    stw   21, 0(%0)   \n"                   \
+   "    stw   22, 4(%0)   \n"                   \
+   "    stw   23, 8(%0)   \n"                   \
+   "    stw   24, 12(%0)  \n"                   \
+   "    stw   25, 16(%0)  \n"                   \
+   "    stw   28, 28(%0)  \n"                   \
+   "    stw   29, 32(%0)  \n"                   \
+   "    stw   30, 36(%0)  \n"                   \
+   "    stw   31, 40(%0)  \n"                   \
+   ::"b"(addr))
+
+#define SAVE_REG_RT(addr)                         \
+   asm volatile(                                \
+   "    stw   26, 20(%0)   \n"                  \
+   ::"b"(addr))
+
+#define SAVE_REG_27(addr)                        \
+   asm volatile(                                \
+   "    stw   27, 20(%0)   \n"                  \
+   ::"b"(addr))
+
+#define RESTORE_REGS(addr)                      \
+   asm volatile(                                \
+   "    lwz   21, 0(%0)   \n"                   \
+   "    lwz   22, 4(%0)   \n"                   \
+   "    lwz   23, 8(%0)   \n"                   \
+   "    lwz   24, 12(%0)  \n"                   \
+   "    lwz   25, 16(%0)  \n"                   \
+   "    lwz   28, 28(%0)  \n"                   \
+   "    lwz   29, 32(%0)  \n"                   \
+   "    lwz   30, 36(%0)  \n"                   \
+   "    lwz   31, 400(%0) \n"                   \
+   ::"b"(addr))
+
+#define RESTORE_REG_RT(addr)                    \
+   asm volatile(                                \
+   "    lwz   26, 40(%0)   \n"                  \
+   ::"b"(addr))
+
+#define RESTORE_REG_27(addr)                   \
+   asm volatile(                                \
+   "    lwz   27, 40(%0)   \n"                  \
+   ::"b"(addr))
+
+#endif /* __powerpc64__ */
+
+#define NUM_ENTRIES_SAVE_RESTORE 11
+
+HWord_t temp[NUM_ENTRIES_SAVE_RESTORE];
+
 static void test_plxvp_off0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_RT(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plxvp 20, +0(0),1"  );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_RT(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plxvp_off8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_RT(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plxvp 20, +8(0),1" );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_RT(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plxvp_off16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_RT(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plxvp 20, +16(0),1" );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_RT(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plxvp_off24_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_RT(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plxvp 20, +24(0),1" );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_RT(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plxvp_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_RT(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plxvp 20, +32(0),1" );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_RT(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plbz_off0_R1 (void) {
-	PAD_ORI
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
+        PAD_ORI
   __asm__ __volatile__ ("plbz %0, +0(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plbz_off8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plbz %0, +8(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plbz_off16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plbz %0, +16(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plbz_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plbz %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plbz_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plbz %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plhz_off0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plhz %0, +0(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plhz_off8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plhz %0, +8(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plhz_off16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plhz %0, +16(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plhz_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plhz %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plhz_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plhz %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plha_off0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plha %0, +0(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plha_off8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plha %0, +8(0), 1" : "=r" (rt)  );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plha_off16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plha %0, +16(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plha_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plha %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plha_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plha %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REG_27(temp);
+  RESTORE_REGS(temp);
 }
 static void test_plwz_off0_R1 (void) {
   __asm__ __volatile__ ("plwz %0, +0(0), 1" : "=r" (rt)  );
@@ -162,15 +358,23 @@ static void test_plwz_off16_R1 (void) {
   __asm__ __volatile__ ("plwz %0, +16(0), 1" : "=r" (rt) );
 }
 static void test_plwz_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plwz %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plwz_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plwz %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plwa_off0_R1 (void) {
   __asm__ __volatile__ ("plwa %0, +0(0), 1" : "=r" (rt)  );
@@ -182,37 +386,69 @@ static void test_plwa_off16_R1 (void) {
   __asm__ __volatile__ ("plwa %0, +16(0), 1" : "=r" (rt) );
 }
 static void test_plwa_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plwa %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_plwa_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("plwa %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_pld_off0_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
+	PAD_ORI
   __asm__ __volatile__ ("pld %0, +0(0), 1" : "=r" (rt)  );
+	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_pld_off8_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
+	PAD_ORI
   __asm__ __volatile__ ("pld %0, +8(0), 1" : "=r" (rt)  );
+	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_pld_off16_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("pld %0, +16(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_pld_off32_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("pld %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_pld_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_27(temp);
 	PAD_ORI
   __asm__ __volatile__ ("pld %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_27(temp);
 }
 static void test_pstb_off0_R1 (void) {
   __asm__ __volatile__ ("pstb %0, -0x1f400+0(0), 1" :: "r" (rs) );
@@ -298,35 +534,49 @@ static void test_paddi_98_R1 (void) {
 	  rt = 0xffff0098;
 }
 static void test_plq_off0_R1 (void) {
+  SAVE_REGS(temp);
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +0(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +0(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plq_off8_R1 (void) {
+  SAVE_REGS(temp);
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +8(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +8(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plq_off16_R1 (void) {
+  SAVE_REGS(temp);
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +16(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +16(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plq_off32_R1 (void) {
+  SAVE_REGS(temp);
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +32(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plq_off48_R1 (void) {
+  SAVE_REGS(temp);
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +48(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +48(0), 1" : "=r" (rt) );
 	PAD_ORI
+  RESTORE_REGS(temp);
 }
 static void test_plq_off64_R1 (void) {
+  SAVE_REGS(temp);
+  SAVE_REG_RT(temp);
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +64(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
+  RESTORE_REGS(temp);
+  RESTORE_REG_RT(temp);
 }
 static void test_pstq_off0_R1 (void) {
   __asm__ __volatile__ ("pstq 24, -0x1f400+0(0), 1"  );

@@ -37,6 +37,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_aspacemgr.h"    /* for mmaping debuginfo files */
+#include "pub_core_mach.h"         /* VG_(dyld_cache_get_slide) */
 #include "pub_core_machine.h"      /* VG_ELF_CLASS */
 #include "pub_core_options.h"
 #include "pub_core_oset.h"
@@ -136,7 +137,6 @@ static void unmap_image ( /*MOD*/DiSlice* sli )
    }
 }
 
-
 /* Open the given file, find the thin part if necessary, do some
    checks, and return a DiSlice containing details of both the thin
    part and (implicitly, via the contained DiImage*) the fat part.
@@ -152,7 +152,11 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
    DiImage* mimg;
 
    if (rx_map != NULL) {
-     mimg = ML_(img_from_memory)(rx_map->avma, rx_map->size, filename);
+     // FIXME: basically, we make a slice from the place where the mach_header is until the end of the memory space
+     // unfortunately, all the data needed for parsing from the DSC is spread across many places in memory
+     // and there is no way to know for sure the size of the DSC perfectly, so this is the best method at the moment
+     // and it's _very_ unsafe
+     mimg = ML_(img_from_memory)(rx_map->avma, MACH_MEMORY_END - rx_map->avma, filename);
    } else {
      mimg = ML_(img_from_local_file)(filename);
    }
@@ -710,9 +714,10 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    DiCursor dysym_cur    = DiCursor_INVALID;
    HChar*   dsymfilename = NULL;
    Bool     have_uuid    = False;
-   Bool     from_memory  = False;
+   Bool     from_memory  = False; // True if we're reading from DSC
    UChar    uuid[16];
    Word     i;
+   struct SEGMENT_COMMAND     link_edit = {.cmd = 0};
    const DebugInfoMapping* rx_map = NULL;
    const DebugInfoMapping* rw_map = NULL;
 
@@ -744,10 +749,17 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    vg_assert(rx_map);
    vg_assert(rw_map || from_memory);
 
-   if (VG_(clo_verbosity) > 1)
+   if (VG_(clo_verbosity) > 1) {
+      if (from_memory) {
+        VG_(message)(Vg_DebugMsg,
+                    "%s (rx at %#lx)\n", di->fsm.filename,
+                    rx_map->avma);
+      } else {
       VG_(message)(Vg_DebugMsg,
                    "%s (rx at %#lx, rw at %#lx)\n", di->fsm.filename,
                    rx_map->avma, rw_map->avma );
+      }
+   }
 
    VG_(memset)(&uuid, 0, sizeof(uuid));
 
@@ -881,6 +893,10 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->data_debug_svma = di->data_svma;
                di->data_debug_bias = di->data_bias;
             }
+            /* Try for __LINKEDIT */
+            if (0 == VG_(strcmp)(&seg.segname[0], "__LINKEDIT")) {
+              link_edit = seg;
+            }
          }
          else if (cmd.cmd == LC_UUID) {
              ML_(cur_read_get)(&uuid, cmd_cur, sizeof(uuid));
@@ -890,6 +906,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          cmd_cur = ML_(cur_plus)(cmd_cur, cmd.cmdsize);
       }
    }
+
+  if (from_memory && link_edit.cmd == 0) {
+    ML_(symerr)(di, False, "Invalid Mach-O file (missing __LINKEDIT).");
+    goto fail;
+  }
 
    if (!di->soname) {
       di->soname = ML_(dinfo_strdup)("di.readmacho.noname", "NONE");
@@ -926,9 +947,14 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       XArray* /* DiSym */ candSyms = NULL;
       Word nCandSyms;
 
-      if (msli.szB < symcmd.stroff + symcmd.strsize
-          || msli.szB < symcmd.symoff + symcmd.nsyms
-                                        * sizeof(struct NLIST)) {
+      // FIXME: there is no real nice way to check this when using DSC
+      // the chunk that msli points to is only the mach_header + load_commands
+      // but not the actual sections (__TEXT, __DATA, __LINKEDIT, etc)
+      // so those checks will always fail because they point to data much further in memory
+      // (as DSC groups all this kind of data together for X amount of images)
+      if (!from_memory
+          && (msli.szB < symcmd.stroff + symcmd.strsize
+          || msli.szB < symcmd.symoff + symcmd.nsyms * sizeof(struct NLIST))) {
          ML_(symerr)(di, False, "Invalid Mach-O file (5 too small).");
          goto fail;
       }   
@@ -939,8 +965,20 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          goto fail;
       }
 
+      if (from_memory) {
+        // First, we calculate the real position of __LINKEDIT in the DSC by adding the slide
+        // Then we get the offset of syms/strings within __LINKEDIT by removing the fileoffset
+        // Then we add the __LINKEDIT address
+        // Finally we calculate the proper offset of those addresses compared to the mach_header slice
+        Addr link_edit_addr = link_edit.vmaddr + VG_(dyld_cache_get_slide)();
+        syms = ML_(cur_from_sli)(msli);
+        syms.ioff = (link_edit_addr + (symcmd.symoff - link_edit.fileoff)) - rx_map->avma;
+        strs = ML_(cur_from_sli)(msli);
+        strs.ioff = (link_edit_addr + (symcmd.stroff - link_edit.fileoff)) - rx_map->avma;
+      } else {
       syms = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.symoff);
       strs = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.stroff);
+      }
       
       if (VG_(clo_verbosity) > 1) {
         if (has_dynamic) {

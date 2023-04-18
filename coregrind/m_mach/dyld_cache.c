@@ -200,6 +200,10 @@ static int try_to_init(void) {
   return 1;
 }
 
+Addr VG_(dyld_cache_get_slide)(void) {
+  return dyld_cache.slide;
+}
+
 void VG_(dyld_cache_init)(void) {
   if (!try_to_init()) {
     VG_(dmsg)(
@@ -269,7 +273,7 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
   }
 
   VG_(debugLog)(2, "dyld_cache", "image is valid, forwarding to debuginfo: %s\n", path);
-  res = VG_(di_notify_dsc)(path, (Addr)image, &len);
+  res = VG_(di_notify_dsc)(path, (Addr)image, len);
   if (res == 0) {
     VG_(debugLog)(2, "dyld_cache", "failed to load debuginfo from: %s\n", path);
     return 0;

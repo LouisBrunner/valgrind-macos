@@ -39,12 +39,21 @@
 // Call this early in Valgrind's main(). It depends on nothing.
 extern void VG_(mach_init)(void);
 
+#if defined(VGP_amd64_darwin)
+#define MACH_MEMORY_END 0x7ffffffff000
+#elif defined(VGP_x86_darwin)
+#define MACH_MEMORY_END 0xfffff000
+#else
+#error "Unsupported platform"
+#endif
+
 #if DARWIN_VERS >= DARWIN_11_00
 // Dyld shared cache (DSC) parsing, which is required as system libraries are not provided on disk
 // starting with macOS 11.0 (Big Sur)
 extern void VG_(dyld_cache_init)(void);
 extern int VG_(dyld_cache_might_be_in)(const HChar*);
 extern int VG_(dyld_cache_load_library)(const HChar*);
+extern Addr VG_(dyld_cache_get_slide)(void);
 #endif
 
 #endif // __PUB_CORE_MACH_H

@@ -683,7 +683,15 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
    vg_assert(di->fsm.have_rx_map);
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+   // not required, in the case of a DSC map we only have r-x
+   // (technically the DSC has multiple mappings but what's the point of adding all of them?)
+   if (di->fsm.have_ro_map) {
+     vg_assert(di->fsm.rw_map_count);
+   }
+#else
    vg_assert(di->fsm.rw_map_count);
+#endif
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       /* We are interested in r-x mappings only */
@@ -1839,7 +1847,6 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
 {
    DebugInfo* di;
-
    const Bool       debug = VG_(debugLog_getLevel)() >= 3;
 
    if (debug)

@@ -715,6 +715,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    HChar*   dsymfilename = NULL;
    Bool     have_uuid    = False;
    Bool     from_memory  = False; // True if we're reading from DSC
+   Addr     kernel_slide = 0; // Used when from_memory is True
    UChar    uuid[16];
    Word     i;
    struct SEGMENT_COMMAND     link_edit = {.cmd = 0};
@@ -732,6 +733,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    // (without adding tons of new functions and fields)
    if (di->fsm.rw_map_count == 0) {
      from_memory = True;
+     kernel_slide = VG_(dyld_cache_get_slide)();
    }
 #else
    vg_assert(di->fsm.rw_map_count);
@@ -970,7 +972,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
         // Then we get the offset of syms/strings within __LINKEDIT by removing the fileoffset
         // Then we add the __LINKEDIT address
         // Finally we calculate the proper offset of those addresses compared to the mach_header slice
-        Addr link_edit_addr = link_edit.vmaddr + VG_(dyld_cache_get_slide)();
+        Addr link_edit_addr = link_edit.vmaddr + kernel_slide;
         syms = ML_(cur_from_sli)(msli);
         syms.ioff = (link_edit_addr + (symcmd.symoff - link_edit.fileoff)) - rx_map->avma;
         strs = ML_(cur_from_sli)(msli);

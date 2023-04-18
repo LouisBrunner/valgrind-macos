@@ -221,9 +221,9 @@ int VG_(dyld_cache_might_be_in)(const HChar* path) {
   }
 
   if (VG_(strncmp)(path, "/usr/lib/", 9) == 0) {
-		return 1;
+    return 1;
   }
-	if (VG_(strncmp)(path, "/System/Library/", 16) == 0) {
+  if (VG_(strncmp)(path, "/System/Library/", 16) == 0) {
     return 1;
   }
   // FIXME: more flexible heuristics around extensions?

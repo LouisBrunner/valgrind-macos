@@ -6,17 +6,16 @@ This repository contains a version of Valgrind including a few patches to improv
 
 | Version                     | x86 | amd64 | arm64  | ppc    |
 | --------------------------- | --- | ----- | ------ | ------ |
-| macOS 10.13 and earlier[^1] | ✅  | ✅    | -      | ❌[^4] |
+| macOS 10.13 and earlier[^1] | ✅  | ✅    | -      | ❌[^3] |
 | macOS 10.14 (Mojave)        | ✅  | ✅    | -      | -      |
 | macOS 10.15 (Catalina)      | ✅  | ✅    | -      | -      |
-| macOS 11 (Big Sur)[^3]      | -   | ✅    | ❌[^2] | -      |
-| macOS 12 (Monterey)[^3]     | -   | ✅    | ❌[^2] | -      |
-| macOS 13 (Ventura)[^3]      | -   | ✅    | ❌[^2] | -      |
+| macOS 11 (Big Sur)          | -   | ✅    | ❌[^2] | -      |
+| macOS 12 (Monterey)         | -   | ✅    | ❌[^2] | -      |
+| macOS 13 (Ventura)          | -   | ✅    | ❌[^2] | -      |
 
 [^1]: Supported as part of upstream Valgrind.
 [^2]: Apple Silicon support in progress ([#56](https://github.com/LouisBrunner/valgrind-macos/issues/56))
-[^3]: macOS 11 and later doesn't track leak correctly ([#19](https://github.com/LouisBrunner/valgrind-macos/issues/19))
-[^4]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
+[^3]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
 
 Note that every version from macOS 10.12 onwards currently has the following issues:
 

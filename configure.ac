@@ -103,12 +103,6 @@ if test "x$LTO_AR" = "x"; then
 fi
 AC_ARG_VAR([LTO_AR],[Archiver command for link time optimisation])
 
-
-# Check for the compiler support
-if test "${GCC}" != "yes" ; then
-   AC_MSG_ERROR([Valgrind relies on GCC to be compiled])
-fi
-
 # figure out where perl lives
 AC_PATH_PROG(PERL, perl)
 

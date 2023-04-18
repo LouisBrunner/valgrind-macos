@@ -154,6 +154,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 467839  Gdbserver: Improve compatibility of library directory name
 468401  [PATCH] Add a style file for clang-format
 468556  Build failure for vgdb
+468606  build: remove "Valgrind relies on GCC" check/output
 n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
 
 To see details of a given bug, visit

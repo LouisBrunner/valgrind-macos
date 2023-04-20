@@ -98,9 +98,31 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
     front end monitor commands. See CORE CHANGES.
 
 * Cachegrind:
-  - `cg_annotate` has been rewritten from Perl into Python. The new
-    version is twice as fast, has more flexible argument parsing, and
-    will make future improvements easier.
+  - `--cache-sim=no` is now the default. The cache simulation is old and
+    unlikely to match any real modern machine. This means only the `Ir`
+    event are gathered by default, but that is by far the most useful
+    event.
+  - `cg_annotate`, `cg_diff`, and `cg_merge` have been rewritten in
+    Python. As a result, they all have more flexible command line
+    argument handling, e.g. supporting `--show-percs` and
+    `--no-show-percs` forms as well as the existing `--show-percs=yes`
+    and `--show-percs=no`.
+  - `cg_annotate` has some functional changes.
+    - It's much faster, e.g. 3-4x on common cases.
+    - It now supports diffing (with `--diff`, `--mod-filename`, and
+      `--mod-funcname`) and merging (by passing multiple data files).
+    - It now provides more information at the file and function level.
+      There are now "File:function" and "Function:file" sections. These
+      are very useful for programs that use inlining a lot.
+    - Support for user-annotated files and the `-I`/`--include` option
+      has been removed, because it was of little use and blocked other
+      improvements.
+    - The `--auto` option is renamed `--annotate`, though the old
+      `--auto=yes`/`--auto=no` forms are still supported.
+  - `cg_diff` and `cg_merge` are now deprecated, because `cg_annotate`
+    now does a better job of diffing and merging.
+  - The Cachegrind output file format has changed very slightly, but in
+    ways nobody is likely to notice.
 
 * Callgrind:
   - Valgrind now contains python code that defines GDB callgrind

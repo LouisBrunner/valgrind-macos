@@ -1004,6 +1004,7 @@
 /memcheck/tests/wcs
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
+/memcheck/tests/wmemcmp
 /memcheck/tests/wrap1
 /memcheck/tests/wrap2
 /memcheck/tests/wrap3

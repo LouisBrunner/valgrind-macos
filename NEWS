@@ -126,6 +126,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 351857  confusing error message about valid command line option
 374596  inconsistent RDTSCP support on x86_64
 392331  Spurious lock not held error from inside pthread_cond_timedwait
+397083  Likely false positive "uninitialised value(s)" for __wmemchr_avx2 and __wmemcmp_avx2_movbe
 400793  pthread_rwlock_timedwrlock false positive
 419054  Unhandled syscall getcpu on arm32
 433873  openat2 syscall unimplemented on Linux

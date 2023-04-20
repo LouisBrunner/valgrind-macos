@@ -278,7 +278,7 @@ static void usage_NORETURN ( int need_help )
 "    --sym-offsets=yes|no      show syms in form 'name+offset'? [no]\n"
 "    --progress-interval=<number>  report progress every <number>\n"
 "                                  CPU seconds [0, meaning disabled]\n"
-"    --command-line-only=no|yes  only use command line options [no]\n"
+"    --command-line-only=no|yes  only use command line options [no]\n\n"
 "  Vex options for all Valgrind tools:\n"
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"

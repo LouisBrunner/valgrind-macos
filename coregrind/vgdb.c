@@ -398,7 +398,14 @@ int read_buf(int fd, char* buf, const char* desc)
 {
    int nrread;
    DEBUG(2, "reading %s\n", desc);
-   nrread = read(fd, buf, PBUFSIZ);
+   /* The file descriptor is on non-blocking mode and read_buf should only
+      be called when poll gave us an POLLIN event signaling the file
+      descriptor is ready for reading from. Still sometimes we do get an
+      occasional EAGAIN. Just do as told in that case and try to read
+      again.  */
+   do {
+      nrread = read(fd, buf, PBUFSIZ);
+   } while (nrread == -1 && errno == EAGAIN);
    if (nrread == -1) {
       ERROR(errno, "error reading %s\n", desc);
       return -1;
@@ -708,7 +715,7 @@ getpkt(char *buf, int fromfd, int ackfd)
      TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
                (c1 << 4) + c2, csum, buf);
      if (write(ackfd, "-", 1) != 1)
-        ERROR(0, "error when writing - (nack)\n");
+        ERROR(errno, "error when writing - (nack)\n");
      else
         add_written(1);
   }

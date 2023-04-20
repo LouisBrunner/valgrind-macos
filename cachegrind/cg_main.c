@@ -1589,7 +1589,7 @@ static void cg_fini(Int exitcode)
    VG_(sprintf)(fmt, "%%s %%,%dllu\n", l1);
 
    /* Always print this */
-   VG_(umsg)(fmt, "I   refs:     ", Ir_total.a);
+   VG_(umsg)(fmt, "I refs:       ", Ir_total.a);
 
    /* If cache profiling is enabled, show D access numbers and all
       miss numbers */
@@ -1614,7 +1614,7 @@ static void cg_fini(Int exitcode)
       VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd   + %%,%dllu wr)\n",
                         l1, l2, l3);
 
-      VG_(umsg)(fmt, "D   refs:     ", 
+      VG_(umsg)(fmt, "D refs:       ", 
                      D_total.a, Dr_total.a, Dw_total.a);
       VG_(umsg)(fmt, "D1  misses:   ",
                      D_total.m1, Dr_total.m1, Dw_total.m1);

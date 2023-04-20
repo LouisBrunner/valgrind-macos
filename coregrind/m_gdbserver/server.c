@@ -1105,7 +1105,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
-   /* Protocol features query.  */
+   /* Protocol features query.  Keep this in sync with coregind/vgdb.c.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
        && (arg_own_buf[10] == ':' || arg_own_buf[10] == '\0')) {
       VG_(sprintf) (arg_own_buf, "PacketSize=%x", (UInt)PBUFSIZ - 1);

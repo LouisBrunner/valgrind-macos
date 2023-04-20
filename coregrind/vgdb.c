@@ -900,8 +900,7 @@ int tohex (int nib)
       return 'a' + nib - 10;
 }
 
-/* Returns an allocated hex-decoded string from the buf starting at offset
-   off. Will update off to where the buf has been decoded. Stops decoding
+/* Returns an allocated hex-decoded string from the buf. Stops decoding
    at end of buf (zero) or when seeing the delim char.  */
 static
 char *decode_hexstring (const char *buf, size_t prefixlen, size_t len)
@@ -947,7 +946,7 @@ write_checksum (const char *str)
   unsigned char csum = 0;
   int i = 0;
   while (str[i] != 0)
-     csum += str[i++];
+    csum += str[i++];
 
   char p[2];
   p[0] = tohex ((csum >> 4) & 0x0f);
@@ -964,7 +963,7 @@ write_reply(const char *reply)
    return write_checksum (reply);
 }
 
-/* Creates a packet from a string message, called needs to free.  */
+/* Creates a packet from a string message, caller needs to free.  */
 static char *
 create_packet(const char *msg)
 {
@@ -995,24 +994,24 @@ static int read_one_char (char *c)
 static Bool
 send_packet(const char *reply, int noackmode)
 {
-    int ret;
-    char c;
+   int ret;
+   char c;
 
 send_packet_start:
    if (!write_reply(reply))
-      return False;
-    if (!noackmode) {
-        // Look for '+' or '-'.
-        // We must wait for "+" if !noackmode.
-        do {
-            ret = read_one_char(&c);
-            if (ret <= 0)
-               return False;
-            // And if in !noackmode if we get "-" we should resent the packet.
-            if (c == '-')
-                goto send_packet_start;
-        } while (c != '+');
-        DEBUG(1, "sent packet to gdb got: %c\n",c);
+     return False;
+   if (!noackmode) {
+     // Look for '+' or '-'.
+     // We must wait for "+" if !noackmode.
+     do {
+       ret = read_one_char(&c);
+       if (ret <= 0)
+	 return False;
+       // And if in !noackmode if we get "-" we should resent the packet.
+       if (c == '-')
+	 goto send_packet_start;
+     } while (c != '+');
+     DEBUG(1, "sent packet to gdb got: %c\n",c);
    }
    return True;
 }
@@ -1023,92 +1022,96 @@ send_packet_start:
 // or -1 if no packet could be read.
 static int receive_packet(char *buf, int noackmode)
 {
-    int bufcnt = 0, ret;
-    char c, c1, c2;
-    unsigned char csum = 0;
+   int bufcnt = 0, ret;
+   char c, c1, c2;
+   unsigned char csum = 0;
 
-    // Look for first '$' (start of packet) or error.
- receive_packet_start:
-    do {
-       ret = read_one_char(&c);
-       if (ret <= 0)
-        return ret;
-    } while (c != '$');
+   // Look for first '$' (start of packet) or error.
+receive_packet_start:
+   do {
+     ret = read_one_char(&c);
+     if (ret <= 0)
+       return ret;
+   } while (c != '$');
 
-    // Found start of packet ('$')
-    while (bufcnt < (PBUFSIZ+1)) {
-       ret = read_one_char(&c);
-       if (ret <= 0)
-          return ret;
-       if (c == '#') {
-          if ((ret = read_one_char(&c1)) <= 0
-              || (ret = read_one_char(&c2)) <= 0) {
-             return ret;
-          }
-          c1 = fromhex(c1);
-          c2 = fromhex(c2);
-          break;
+   // Found start of packet ('$')
+   while (bufcnt < (PBUFSIZ+1)) {
+     ret = read_one_char(&c);
+     if (ret <= 0)
+       return ret;
+     if (c == '#') {
+       if ((ret = read_one_char(&c1)) <= 0
+	   || (ret = read_one_char(&c2)) <= 0) {
+	 return ret;
        }
-       buf[bufcnt] = c;
-       csum += buf[bufcnt];
-       bufcnt++;
-    }
+       c1 = fromhex(c1);
+       c2 = fromhex(c2);
+       break;
+     }
+     buf[bufcnt] = c;
+     csum += buf[bufcnt];
+     bufcnt++;
+   }
 
-    // Packet complete, add terminator.
-    buf[bufcnt] ='\0';
+   // Packet complete, add terminator.
+   buf[bufcnt] ='\0';
 
-    if (!(csum == (c1 << 4) + c2)) {
-        TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-              (c1 << 4) + c2, csum, buf);
-        if (!noackmode)
-           if (!write_to_gdb ("-", 1))
-              return -1;
-        /* Try again, gdb should resend the packet.  */
-        bufcnt = 0;
-        csum = 0;
-        goto receive_packet_start;
-    }
+   if (!(csum == (c1 << 4) + c2)) {
+     TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
+	       (c1 << 4) + c2, csum, buf);
+     if (!noackmode)
+       if (!write_to_gdb ("-", 1))
+	 return -1;
+     /* Try again, gdb should resend the packet.  */
+     bufcnt = 0;
+     csum = 0;
+     goto receive_packet_start;
+   }
 
-    if (!noackmode)
-       if (!write_to_gdb ("+", 1))
-          return -1;
-    return bufcnt;
+   if (!noackmode)
+     if (!write_to_gdb ("+", 1))
+       return -1;
+   return bufcnt;
 }
 
 // Returns a pointer to the char after the next delim char.
 static const char *next_delim_string (const char *buf, char delim)
 {
-    while (*buf) {
-        if (*buf++ == delim)
-            break;
-    }
-    return buf;
+  while (*buf) {
+      if (*buf++ == delim)
+           break;
+   }
+   return buf;
 }
 
-// Throws away the packet name and decodes the hex string, which is placed in
-// decoded_string (the caller owns this and is responsible for freeing it).
+/* buf starts with the packet name followed by the delimiter, for example
+ * vRun;2f62696e2f6c73, ";" is the delimiter here, or
+ * qXfer:features:read:target.xml:0,1000, where the delimiter is ":".
+ * The packet name is thrown away and the hex string is decoded and
+ * is placed in decoded_string (the caller owns this and is responsible
+ * for freeing it). */
 static int split_hexdecode(const char *buf, const char *string,
                            const char *delim, char **decoded_string)
 {
-    const char *next_str = next_delim_string(buf, *delim);
-    if (next_str) {
-        *decoded_string = decode_hexstring (next_str, 0, 0);
-        DEBUG(1, "split_hexdecode decoded %s\n", *decoded_string);
-        return 1;
-    } else {
-        TSFPRINTF(stderr, "%s decoding error: finding the hex string in %s failed!\n", string, buf);
-        return 0;
-    }
+   const char *next_str = next_delim_string(buf, *delim);
+   if (next_str) {
+     *decoded_string = decode_hexstring (next_str, 0, 0);
+     DEBUG(1, "split_hexdecode decoded %s\n", *decoded_string);
+     return 1;
+   } else {
+     TSFPRINTF(stderr, "%s decoding error: finding the hex string in %s failed!\n", string, buf);
+     return 0;
+   }
 }
 
-static int count_delims(char delim, char *buf)
+static size_t count_delims(char delim, char *buf)
 {
-    size_t count = 0;
-    char *ptr = buf;
+   size_t count = 0;
+   char *ptr = buf;
 
-    while (*ptr)
-        count += *ptr++ == delim;
-    return count;
+   while (*ptr)
+       count += *ptr++ == delim;
+   return count;
 }
 
 // Determine the length of the arguments.
@@ -1298,7 +1301,7 @@ void do_multi_mode(void)
           break;
        }
        
-       DEBUG(1, "packet recieved: '%s'\n", buf);
+       DEBUG(1, "packet received: '%s'\n", buf);
 
 #define QSUPPORTED "qSupported:"
 #define STARTNOACKMODE "QStartNoAckMode"
@@ -1403,7 +1406,8 @@ void do_multi_mode(void)
                       if (i < count - 1)
                           next_str = next_delim_string(next_str, *delim);
                   }
-                  DEBUG(1, "vRun decoded: %s, next_str %s, len[%d] %d\n", decoded_string[i], next_str, i, len[i]);
+                  DEBUG(1, "vRun decoded: %s, next_str %s, len[%d] %d\n",
+			decoded_string[i], next_str, i, len[i]);
               }
 
               /* If we didn't get any arguments or the filename is an empty
@@ -1431,8 +1435,9 @@ void do_multi_mode(void)
                  // Lets report we Stopped with SIGTRAP (05).
                  send_packet ("S05", noackmode);
                  prepare_fifos_and_shared_mem(valgrind_pid);
-                 DEBUG(1, "from_gdb_to_pid %s, to_gdb_from_pid %s\n", from_gdb_to_pid, to_gdb_from_pid);
-                 // gdb_rely is an endless loop till valgrind quits.
+                 DEBUG(1, "from_gdb_to_pid %s, to_gdb_from_pid %s\n",
+		       from_gdb_to_pid, to_gdb_from_pid);
+                 // gdb_relay is an endless loop till valgrind quits.
                  shutting_down = False;
 
                  gdb_relay (valgrind_pid, 1, q_buf);
@@ -1451,7 +1456,7 @@ void do_multi_mode(void)
                        DEBUG(1, "valgrind kill by signal %d\n",
                              WTERMSIG(status));
                     else
-                       DEBUG(1, "valgind unexpectedly stopped or continued");
+                       DEBUG(1, "valgrind unexpectedly stopped or continued");
                  }
               } else {
                  send_packet ("E01", noackmode);
@@ -1461,17 +1466,17 @@ void do_multi_mode(void)
 
               free(len);
               for (int i = 0; i < count; i++)
-                  free (decoded_string[i]);
-              free (decoded_string);
-          } else {
-              free(len);
-             send_packet ("E01", noackmode);
-              DEBUG(1, "vRun decoding error: no next_string!\n");
-              continue;
-          }
+		free (decoded_string[i]);
+	      free (decoded_string);
+	  } else {
+	    free(len);
+	    send_packet ("E01", noackmode);
+	    DEBUG(1, "vRun decoding error: no next_string!\n");
+	    continue;
+	  }
       } else if (strncmp(QATTACHED, buf, strlen(QATTACHED)) == 0) {
-         send_packet ("1", noackmode);
-         DEBUG(1, "qAttached sent: '1'\n");
+	send_packet ("1", noackmode);
+	DEBUG(1, "qAttached sent: '1'\n");
          const char *next_str = next_delim_string(buf, ':');
          if (next_str) {
              char *decoded_string = decode_hexstring (next_str, 0, 0);
@@ -1481,9 +1486,10 @@ void do_multi_mode(void)
              DEBUG(1, "qAttached decoding error: strdup of %s failed!\n", buf);
              continue;
          }
-      } /* Reset the state of environment variables in the remote target before starting
-           the inferior. In this context, reset means unsetting all environment variables
-           that were previously set by the user (i.e., were not initially present in the environment). */
+      } /* Reset the state of environment variables in the remote target
+	   before starting the inferior. In this context, reset means
+	   unsetting all environment variables that were previously set
+	   by the user (i.e., were not initially present in the environment). */
       else if (strncmp(QENVIRONMENTRESET, buf,
                          strlen(QENVIRONMENTRESET)) == 0) {
             send_packet ("OK", noackmode);
@@ -1495,7 +1501,7 @@ void do_multi_mode(void)
             if (!split_hexdecode(buf, QENVIRONMENTHEXENCODED, ":", &string))
                 break;
             // TODO Collect all environment strings and add them to environ
-            // before launcing valgrind.
+            // before launching valgrind.
             free (string);
             string = NULL;
       } else if (strncmp(QENVIRONMENTUNSET, buf,
@@ -1507,33 +1513,33 @@ void do_multi_mode(void)
             free (string);
             string = NULL;
       } else if (strncmp(QSETWORKINGDIR, buf,
-                         strlen(QSETWORKINGDIR)) == 0) {
-         // Silly, but we can only reply OK, even if the working directory is
-         // bad. Errors will be reported when we try to execute the actual
-         // process.
-         send_packet ("OK", noackmode);
-         // Free any previously set working_dir
-         free (working_dir);
-         working_dir = NULL;
-         if (!split_hexdecode(buf, QSETWORKINGDIR, ":", &working_dir)) {
-            continue; // We cannot report the error to gdb...
-         }
-         DEBUG(1, "set working dir to: %s\n", working_dir);
+			 strlen(QSETWORKINGDIR)) == 0) {
+	    // Silly, but we can only reply OK, even if the working directory is
+	    // bad. Errors will be reported when we try to execute the actual
+	    // process.
+	    send_packet ("OK", noackmode);
+	    // Free any previously set working_dir
+	    free (working_dir);
+	    working_dir = NULL;
+	    if (!split_hexdecode(buf, QSETWORKINGDIR, ":", &working_dir)) {
+	      continue; // We cannot report the error to gdb...
+	    }
+	    DEBUG(1, "set working dir to: %s\n", working_dir);
       } else if (strncmp(XFER, buf, strlen(XFER)) == 0) {
-          char *buf_dup = strdup(buf);
-          DEBUG(1, "strdup: buf_dup %s\n", buf_dup);
-          if (buf_dup) {
-              const char *delim = ":";
-              size_t count = count_delims(delim[0], buf);
-              if (count < 4) {
-                  strsep(&buf_dup, delim);
-                  strsep(&buf_dup, delim);
-                  strsep(&buf_dup, delim);
-                  char *decoded_string = decode_hexstring (buf_dup, 0, 0);
-                  DEBUG(1, "qXfer decoded: %s, buf_dup %s\n", decoded_string, buf_dup);
-                  free (decoded_string);
-              }
-              free (buf_dup);
+            char *buf_dup = strdup(buf);
+	    DEBUG(1, "strdup: buf_dup %s\n", buf_dup);
+	    if (buf_dup) {
+	      const char *delim = ":";
+	      size_t count = count_delims(delim[0], buf);
+	      if (count < 4) {
+		strsep(&buf_dup, delim);
+		strsep(&buf_dup, delim);
+		strsep(&buf_dup, delim);
+		char *decoded_string = decode_hexstring (buf_dup, 0, 0);
+		DEBUG(1, "qXfer decoded: %s, buf_dup %s\n", decoded_string, buf_dup);
+		free (decoded_string);
+	      }
+	      free (buf_dup);
           } else {
               DEBUG(1, "qXfer decoding error: strdup of %s failed!\n", buf);
               free (buf_dup);
@@ -2220,7 +2226,8 @@ void parse_options(int argc, char** argv,
          /* Compute the absolute path.  */
           valgrind_path = realpath(path, NULL);
           if (!valgrind_path) {
-              TSFPRINTF(stderr, "%s is not a correct path. %s, exiting.\n", path, strerror (errno));
+              TSFPRINTF(stderr, "%s is not a correct path. %s, exiting.\n",
+			path, strerror (errno));
               exit(1);
           }
           DEBUG(2, "valgrind's real path: %s\n", valgrind_path);
@@ -2228,7 +2235,7 @@ void parse_options(int argc, char** argv,
          // Everything that follows now is an argument for valgrind
          // No other options (or commands) can follow
          // argc - i is the number of left over arguments
-         // allocate enough space, but all args in it.
+         // allocate enough space, put all args in it.
          cvargs = argc - i - 1;
          vargs = vmalloc (cvargs * sizeof(vargs));
          i++;

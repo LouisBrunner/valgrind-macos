@@ -1299,8 +1299,8 @@ It has three usage modes:
   </listitem>
 
   <listitem id="manual-core-adv.vgdb-multi" xreflabel="vgdb multi">
-      <para>In the <option>--multi</option> mode, Vgdb uses the extended
-      remote protocol to communicate with Gdb.  This allows you to view
+      <para>In the <option>--multi</option> mode, vgdb uses the extended
+      remote protocol to communicate with GDB.  This allows you to view
       output from both valgrind and GDB in the GDB session. This is
       accomplished via the "target extended-remote | vgdb --multi". In
       this mode you no longer need to start valgrind yourself. vgdb will
@@ -2268,7 +2268,6 @@ almost 300 different wrappers.</para>
 </sect2>
 
 </sect1>
-
 
 
 

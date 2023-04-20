@@ -190,7 +190,6 @@ usage: valgrind [options] prog-and-args
     --progress-interval=<number>  report progress every <number>
                                   CPU seconds [0, meaning disabled]
     --command-line-only=no|yes  only use command line options [no]
-    --launched-with-multi=no|yes  valgrind launched in vgdb multi mode [no]
 
   Vex options for all Valgrind tools:
     --vex-iropt-verbosity=<0..9>           [0]

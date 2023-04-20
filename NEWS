@@ -131,6 +131,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 433873  openat2 syscall unimplemented on Linux
 434057  Add stdio mode to valgrind's gdbserver
 435441  valgrind fails to interpose malloc on musl 1.2.2 due to weak symbol name and no libc soname
+436413  Warn about realloc of size zero
 439685  compiler warning in callgrind/main.c
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
 444487  hginfo test detects an extra lock inside data symbol "_rtld_local"

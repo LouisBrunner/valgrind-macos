@@ -14,7 +14,7 @@
 
 <refnamediv>
   <refname>cg_merge</refname>
-  <refpurpose>merges multiple Cachegrind output files into one</refpurpose>
+  <refpurpose>(deprecated) merges multiple Cachegrind output files into one</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv>
@@ -29,8 +29,10 @@
 <refsect1 id="cg_merge-description">
 <title>Description</title>
 
-<para><command>cg_merge</command> sums together the outputs of multiple
-Cachegrind runs into a single output file.
+<para>
+<command>cg_merge</command> sums together multiple Cachegrind output files into
+a single Cachegrind output file. It is deprecated because
+<command>cg_annotate</command> can now do much the same thing, but better.
 </para>
 
 </refsect1>

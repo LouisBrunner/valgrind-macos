@@ -1,4 +1,4 @@
-#! /usr/bin/env -S perl -w
+#! /usr/bin/env perl
 ##--------------------------------------------------------------------##
 ##--- The cache simulation framework: instrumentation, recording   ---##
 ##--- and results printing.                                        ---##
@@ -59,6 +59,7 @@
 #    commifying (halves the number of commify calls)            1.68s --> 1.47s
 
 use strict;
+use warnings;
 
 #----------------------------------------------------------------------------
 # Overview: the running example in the comments is for:

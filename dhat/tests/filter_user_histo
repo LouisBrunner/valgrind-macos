@@ -5,5 +5,6 @@
 # So we allow 1,000,000..1,009,999 bytes and 1,000..1,099 blocks.
 
 ./filter_stderr "$@" |
-sed -e "s/address for user histogram request not found .*/address for user histogram request not found/"
+sed -e "s/address for user histogram request not found .*/address for user histogram request not found/" |
+grep Warning
 

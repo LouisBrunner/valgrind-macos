@@ -1,8 +1,0 @@
-Warning: request for user histogram of size 500 is smaller than the normal histogram limit, request ignored
-Warning: address for user histogram request not found
-Warning: request for user histogram of size 100000 is larger than the maximum user request limit, request ignored
-Total:     175,204 bytes in 4 blocks
-At t-gmax: 173,204 bytes in 3 blocks
-At t-end:  0 bytes in 0 blocks
-Reads:     1,001 bytes
-Writes:    102,536 bytes

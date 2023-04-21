@@ -13,7 +13,7 @@ EXTRA_DIST = \
 	sig.stderr.exp sig.vgtest \
 	single.stderr.exp single.vgtest \
 	user_histo1.stderr.exp user_histo1.vgtest \
-	user_histo1.stdout.exp user_histo1.stderr.exp-gcc
+	user_histo1.stdout.exp
 
 check_PROGRAMS = \
 	acc \

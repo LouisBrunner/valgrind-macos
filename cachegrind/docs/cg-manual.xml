@@ -1065,8 +1065,6 @@ Cachegrind-specific options are:
 <sect1 id="cg-manual.mergeopts" xreflabel="cg_merge Command-line Options">
 <title>cg_merge Command-line Options</title>
 
-Although cg_merge is deprecated, its options are listed here for completeness.
-
 <!-- start of xi:include in the manpage -->
 <variablelist id="cg_merge.opts.list">
 
@@ -1090,8 +1088,6 @@ Although cg_merge is deprecated, its options are listed here for completeness.
 
 <sect1 id="cg-manual.diffopts" xreflabel="cg_diff Command-line Options">
 <title>cg_diff Command-line Options</title>
-
-Although cg_diff is deprecated, its options are listed here for completeness.
 
 <!-- start of xi:include in the manpage -->
 <variablelist id="cg_diff.opts.list">

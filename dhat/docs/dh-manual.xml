@@ -422,6 +422,30 @@ this example) means "exceeded the maximum tracked count".</para>
 probably have four separate byte-sized fields, followed by a four-byte field,
 and so on.</para>
 
+<para>The size of the blocks that measure and display access counts is limited
+to 1024 bytes. This is done to limit the performance overhead and also to keep
+the size of the generated output reasonable. However, it is possible to override
+this limit using client requests. The use-case for this is to first run DHAT
+normally, and then identify any large blocks that you would like to further
+investigate with access histograms. The client requests are declared in
+<filename>dhat/dhat.h</filename>. There are two versions, <computeroutput>DHAT_HISTOGRAM_MEMORY_INIT</computeroutput> and
+<computeroutput>DHAT_HISTOGRAM_MEMORY_UNINIT</computeroutput>. The
+UNINIT version should be used with allocators that return uninitialized
+memory (like <computeroutput>malloc</computeroutput> and <computeroutput>new</computeroutput>
+without a constructor). The INIT version should be used with allocators
+that initialize memory (like <computeroutput>calloc</computeroutput> and <computeroutput>new</computeroutput>
+with a constructor). The macros should be placed immediately after the
+call to the allocator, and use the pointer returned by the allocator.</para>
+
+<programlisting><![CDATA[
+// LargeStruct bigger than 1024 bytes
+struct LargeStruct* ls = malloc(sizeof(struct LargeStruct));
+DHAT_HISTOGRAM_MEMORY_INIT(ls);
+]]></programlisting>
+
+<para>The memory that can be profiled in this way with user requests
+has a further upper limit of 25kbytes.</para>
+
 <para>Access counts can be useful for identifying data alignment holes or other
 layout inefficiencies.</para>
 

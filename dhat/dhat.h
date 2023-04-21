@@ -56,11 +56,16 @@
    ----------------------------------------------------------------
 */
 
+#if !defined(VALGRIND_DHAT_H)
+#define VALGRIND_DHAT_H
+
 #include "valgrind.h"
 
 typedef
    enum {
       VG_USERREQ__DHAT_AD_HOC_EVENT = VG_USERREQ_TOOL_BASE('D', 'H'),
+      VG_USERREQ__DHAT_HISTOGRAM_MEMORY,
+      VG_USERREQ__DHAT_HISTOGRAM_ARRAY,
 
       // This is just for DHAT's internal use. Don't use it.
       _VG_USERREQ__DHAT_COPY = VG_USERREQ_TOOL_BASE('D','H') + 256
@@ -72,4 +77,22 @@ typedef
 #define DHAT_AD_HOC_EVENT(_qzz_weight) \
     VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DHAT_AD_HOC_EVENT, \
                                     (_qzz_weight), 0, 0, 0, 0)
+
+// for limited histograms of memory larger than 1k
+#define DHAT_HISTOGRAM_MEMORY(_qzz_address,  _qzz_initial_count) \
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DHAT_HISTOGRAM_MEMORY, \
+                                    (_qzz_address), (_qzz_initial_count), 0, 0, 0)
+
+// convenience macro for DHAT_HISTOGRAM_MEMORY
+// for initialized memory (calloc, std::vector with initialization)
+#define DHAT_HISTOGRAM_MEMORY_INIT(_qzz_address) \
+   DHAT_HISTOGRAM_MEMORY(_qzz_address, 1U)
+
+// convenience macro for DHAT_HISTOGRAM_MEMORY
+// for uninitialized memory (malloc, std::vector without initialization)
+#define DHAT_HISTOGRAM_MEMORY_UNINIT(_qzz_address) \
+   DHAT_HISTOGRAM_MEMORY(_qzz_address, 0U)
+
+
+#endif
 

@@ -1,0 +1,3 @@
+prog: user_histo1
+vgopts: --dhat-out-file=dhat.out
+cleanup: rm dhat.out

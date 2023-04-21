@@ -45,6 +45,7 @@
 #include "dhat.h"
 
 #define HISTOGRAM_SIZE_LIMIT 1024
+#define USER_HISTOGRAM_SIZE_LIMIT 25*HISTOGRAM_SIZE_LIMIT
 
 //------------------------------------------------------------//
 //--- Globals                                              ---//
@@ -1226,6 +1227,52 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 
       intro_Block(&bk);
 
+      return True;
+   }
+
+   case VG_USERREQ__DHAT_HISTOGRAM_MEMORY: {
+      Addr address = (Addr)arg[1];
+      UWord initial_count = arg[2];
+
+      Block* bk = find_Block_containing( address );
+      // bogus address
+      if (!bk) {
+         VG_(message)(
+            Vg_UserMsg,
+            "Warning: address for user histogram request not found %llx\n", (ULong)address
+         );
+         return False;
+      }
+
+      // already histogrammed
+      if (bk->req_szB <= HISTOGRAM_SIZE_LIMIT) {
+         VG_(message)(
+            Vg_UserMsg,
+            "Warning: request for user histogram of size %lu is smaller than the normal histogram limit, request ignored\n",
+            bk->req_szB
+         );
+         return False;
+      }
+
+      // already histogrammed
+      if (bk->req_szB > USER_HISTOGRAM_SIZE_LIMIT) {
+         VG_(message)(
+            Vg_UserMsg,
+            "Warning: request for user histogram of size %lu is larger than the maximum user request limit, request ignored\n",
+            bk->req_szB
+         );
+         return False;
+      }
+
+
+      bk->histoW = VG_(malloc)("dh.new_block.3", bk->req_szB * sizeof(UShort));
+      if (initial_count == 0U) {
+         VG_(memset)(bk->histoW, 0, bk->req_szB * sizeof(UShort));
+      } else {
+         for (SizeT i = 0U; i < bk->req_szB; ++i) {
+            bk->histoW[i] = 1U;
+         }
+      }
       return True;
    }
 

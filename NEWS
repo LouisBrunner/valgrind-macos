@@ -167,6 +167,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 460356  s390: Sqrt32Fx4 -- cannot reduce tree
 462830  WARNING: unhandled amd64-freebsd syscall: 474
 463027  broken check for MPX instruction support in assembler
+464103  Enhancement: add a client request to DHAT to mark memory to be histogrammed
 464476  Firefox fails to start under Valgrind
 464609  Valgrind memcheck should support Linux pidfd_open
 464680  Show issues caused by memory policies like selinux deny_execmem

@@ -661,6 +661,7 @@
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test
 /helgrind/tests/free_is_write
+/helgrind/tests/garbage.filtered.out
 /helgrind/tests/hg01_all_ok
 /helgrind/tests/hg02_deadlock
 /helgrind/tests/hg03_inherit

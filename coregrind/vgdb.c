@@ -1225,7 +1225,14 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
          if (chdir (working_dir) != 0) {
             err = errno;
             perror("chdir");
-            write (pipefd[1], &err, sizeof (int));
+            // We try to write the result to the parent, but always exit.
+            int written = 0;
+            while (written < sizeof (int)) {
+               int nrw = write (pipefd[1], &err, sizeof (int) - written);
+               if (nrw == -1)
+                  break;
+               written += nrw;
+            }
             _exit (-1);
          }
       }
@@ -1280,7 +1287,14 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
          perror or printf in this situation since they aren't async-safe.  */
       // perror ("execvp valgrind");
       // printf ("execve returned??? confusing: %d\n", res);
-      write (pipefd[1], &err, sizeof (int));
+      // We try to write the result to the parent, but always exit.
+      int written = 0;
+      while (written < sizeof (int)) {
+         int nrw = write (pipefd[1], &err, sizeof (int) - written);
+         if (nrw == -1)
+            break;
+         written += nrw;
+      }
       _exit (-1);
    }
 
@@ -1329,24 +1343,27 @@ void do_multi_mode(void)
           char *reply;
           strcpy(q_buf, buf);
           // Keep this in sync with coregrind/m_gdbserver/server.c
-          asprintf (&reply,
-                    "PacketSize=%x;"
-                    "QStartNoAckMode+;"
-                    "QPassSignals+;"
-                    "QCatchSyscalls+;"
-                    /* Just report support always. */
-                    "qXfer:auxv:read+;"
-                    /* We'll force --vgdb-shadow-registers=yes */
-                    "qXfer:features:read+;"
-                    "qXfer:exec-file:read+;"
-                    "qXfer:siginfo:read+;"
-                    /* Some extra's vgdb support before valgrind starts up. */
-                    "QEnvironmentHexEncoded+;"
-                    "QEnvironmentReset+;"
-                    "QEnvironmentUnset+;"
-                    "QSetWorkingDir+", (UInt)PBUFSIZ - 1);
-          send_packet(reply, noackmode);
-          free (reply);
+          if (asprintf (&reply,
+                        "PacketSize=%x;"
+                        "QStartNoAckMode+;"
+                        "QPassSignals+;"
+                        "QCatchSyscalls+;"
+                        /* Just report support always. */
+                        "qXfer:auxv:read+;"
+                        /* We'll force --vgdb-shadow-registers=yes */
+                        "qXfer:features:read+;"
+                        "qXfer:exec-file:read+;"
+                        "qXfer:siginfo:read+;"
+                        /* Extra vgdb support before valgrind starts up. */
+                        "QEnvironmentHexEncoded+;"
+                        "QEnvironmentReset+;"
+                        "QEnvironmentUnset+;"
+                        "QSetWorkingDir+", (UInt)PBUFSIZ - 1) != -1) {
+             send_packet(reply, noackmode);
+             free (reply);
+          } else {
+             XERROR(errno, "asprintf failed\n");
+          }
        }
        else if (strncmp(STARTNOACKMODE, buf, strlen(STARTNOACKMODE)) == 0) {
           // We have to ack this one

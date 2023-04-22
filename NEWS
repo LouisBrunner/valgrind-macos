@@ -37,7 +37,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * The vgdb utility now supports extended-remote protocol when
   invoked with --multi. In this mode the GDB run command is
   supported. Which means you don't need to run gdb and valgrind
-  from different terminals. So for example to start you program
+  from different terminals. So for example to start your program
   in gdb and run it under valgrind you can do:
   $ gdb prog
   (gdb) set remote exec-file prog

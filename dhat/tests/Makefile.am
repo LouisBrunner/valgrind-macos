@@ -37,3 +37,4 @@ big_CFLAGS  = $(AM_CFLAGS) -Wno-unused-result
 copy_CFLAGS = $(AM_CFLAGS) -fno-builtin
 
 user_histo1_SOURCES = user_histo1.cpp
+user_histo1_CXXFLAGS = $(AM_CXXFLAGS) -std=c++11

@@ -1742,8 +1742,10 @@ extern int * __error(void) __attribute__((weak));
 
 #if defined(VGO_solaris)
 #define VG_MEMALIGN_ALIGN_POWER_TWO 0
+#define VG_MEMALIGN_NO_ALIGN_ZERO 1
 #else
 #define VG_MEMALIGN_ALIGN_POWER_TWO 1
+#define VG_MEMALIGN_NO_ALIGN_ZERO 0
 #endif
 
 #if defined(VGO_solaris)
@@ -1802,7 +1804,8 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       MALLOC_TRACE("memalign(alignment %llu, size %llu)", \
                    (ULong)alignment, (ULong)size ); \
-      if ((VG_MEMALIGN_NO_SIZE_ZERO && (alignment == 0)) \
+      if ((VG_MEMALIGN_NO_SIZE_ZERO && (size == 0)) \
+          || (VG_MEMALIGN_NO_ALIGN_ZERO && (alignment == 0)) \
           || (VG_MEMALIGN_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
           || (VG_MEMALIGN_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \
          SET_ERRNO_EINVAL; \

@@ -1,11 +1,12 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include "../../config.h"
 
 int main(void)
 {
+#if defined(HAVE_ALIGNED_ALLOC)
    char* p = NULL;
-
 
    // zero size
    p = aligned_alloc(0, 8);
@@ -33,6 +34,6 @@ int main(void)
    }
 
    assert(p == NULL && errno == ENOMEM);
-
+#endif
 }
 

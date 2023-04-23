@@ -23,7 +23,7 @@ int main(void)
    (void)posix_memalign((void **)&mem,align,size);
    free(mem);
    
-#if !defined(VGO_darwin)
+#if defined(HAVE_ALIGNED_ALLOC)
    p = aligned_alloc(align, size);
    free(p);
 #endif

@@ -4803,6 +4803,7 @@ AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_CHECK_FUNCS([     \
+        aligned_alloc \
         clock_gettime\
         copy_file_range \
         epoll_create \

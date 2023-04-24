@@ -17,6 +17,7 @@ EXTRA_DIST = \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	memfd_create.vgtest memfd_create.stderr.exp \
+		memfd_create.stderr.exp-fcntl64 \
 	rfcomm.vgtest rfcomm.stderr.exp \
 	sigqueue.vgtest sigqueue.stderr.exp \
 	stack_changes.stderr.exp stack_changes.stdout.exp \

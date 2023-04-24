@@ -52,7 +52,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
      - free the memory like free() and return NULL
        (GNU libc and ptmalloc).
      - either free the memory and then allocate a
-       minumum siized block or just return the
+       minimum sized block or just return the
        original pointer. Return NULL if the
        allocation of the minimum sized block fails
        (jemalloc, musl, snmalloc, Solaris, macOS).

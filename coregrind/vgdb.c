@@ -178,14 +178,20 @@ void add_written(int nrw)
 
 static int shared_mem_fd = -1;
 static
-void map_vgdbshared(char* shared_mem)
+void map_vgdbshared(char* shared_mem, int check_trials)
 {
    struct stat fdstat;
    void **s;
    int tries = 50;
    int err;
 
-   /* valgrind might still be starting up, give it 5 seconds.  */
+   /* valgrind might still be starting up, give it 5 seconds by
+    * default, or check_trails seconds if it is set by --wait
+    * to more than a second.  */
+   if (check_trials > 1) {
+     DEBUG(1, "check_trials %d\n", check_trials);
+     tries = check_trials * 10;
+   }
    do {
       shared_mem_fd = open(shared_mem, O_RDWR | O_CLOEXEC);
       err = errno;
@@ -581,7 +587,7 @@ void wait_for_gdb_connect(int in_port)
 
 /* prepares the FIFOs filenames, map the shared memory. */
 static
-void prepare_fifos_and_shared_mem(int pid)
+void prepare_fifos_and_shared_mem(int pid, int check_trials)
 {
    const HChar *user, *host;
    unsigned len;
@@ -610,7 +616,7 @@ void prepare_fifos_and_shared_mem(int pid)
    DEBUG(1, "vgdb: using %s %s %s\n",
          from_gdb_to_pid, to_gdb_from_pid, shared_mem);
 
-   map_vgdbshared(shared_mem);
+   map_vgdbshared(shared_mem, check_trials);
 }
 
 static void
@@ -1303,7 +1309,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
 
 /* Do multi stuff.  */
 static
-void do_multi_mode(void)
+void do_multi_mode(int check_trials)
 {
    char *buf = vmalloc(PBUFSIZ+1);
    char *q_buf = vmalloc(PBUFSIZ+1); //save the qSupported packet sent by gdb
@@ -1458,7 +1464,7 @@ void do_multi_mode(void)
              if (res == 0) {
                 // Lets report we Stopped with SIGTRAP (05).
                 send_packet ("S05", noackmode);
-                prepare_fifos_and_shared_mem(valgrind_pid);
+                prepare_fifos_and_shared_mem(valgrind_pid, check_trials);
                 DEBUG(1, "from_gdb_to_pid %s, to_gdb_from_pid %s\n",
                       from_gdb_to_pid, to_gdb_from_pid);
                 // gdb_relay is an endless loop till valgrind quits.
@@ -2392,7 +2398,8 @@ int main(int argc, char** argv)
    if (!multi_mode) {
       pid = search_arg_pid(arg_pid, check_trials, show_list);
 
-      prepare_fifos_and_shared_mem(pid);
+      /* We pass 1 for check_trails here, because search_arg_pid already waited.  */
+      prepare_fifos_and_shared_mem(pid, 1);
    } else {
       pid = 0;
    }
@@ -2413,7 +2420,9 @@ int main(int argc, char** argv)
    }
 
    if (multi_mode) {
-      do_multi_mode ();
+      /* check_trails is the --wait argument in seconds, defaulting to 1
+       * if not given.  */
+      do_multi_mode (check_trials);
    } else if (last_command >= 0) {
       standalone_send_commands(pid, last_command, commands);
    } else {

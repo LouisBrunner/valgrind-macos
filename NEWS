@@ -132,6 +132,12 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   - Valgrind now contains python code that defines GDB massif
     front end monitor commands. See CORE CHANGES.
 
+* DHAT:
+  - A new kind of user request has been added which allows you to
+    override the 1024 byte limit on access count histograms for blocks
+    of memories. Two client requests are available,
+    DHAT_HISTOGRAM_MEMORY_UNINIT and DHAT_HISTOGRAM_MEMORY_INIT.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

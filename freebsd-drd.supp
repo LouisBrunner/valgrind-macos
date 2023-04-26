@@ -31,7 +31,7 @@
 {
    DRD-MANY1
    drd:ConflictingAccess
-   obj:/lib/libthr.so.3
+   obj:*/lib*/libthr.so.3
    obj:/libexec/ld-elf*.so.1
 }
 {
@@ -52,7 +52,7 @@
 {
    DRD-MANY4
    drd:ConflictingAccess
-   obj:/lib/libthr.so.3
+   obj:*/lib*/libthr.so.3
 }
 {
    DRD-UNWIND1
@@ -189,4 +189,54 @@
    DRD-FREEBSD140-GUARD-VARIABLE
    drd:ConflictingAccess
    fun:_ZL11*
+}
+{
+   DRD-FREEBSD131-FOPEN1
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   fun:fopen
+}
+{
+   DRD-FREEBSD131-FOPEN2
+   drd:ConflictingAccess
+   fun:fopen
+   obj:*/lib*/libc.so.7
+}
+{
+   DRD-FREEBSD131-FGETS
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   ...
+   fun:fgets
+}
+{
+   DRD-FREEBSD131-FCLOSE
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   fun:fclose
+}
+{
+   DRD-FREEBSD131-RES-VINIT
+   drd:ConflictingAccess
+   fun:__h_errno_set
+   fun:__res_vinit
+   obj:*/lib*/libc.so.7
+}
+{
+   DRD-FREEBSD131-ERRNO-SET
+   drd:ConflictingAccess
+   fun:__h_errno_set
+   obj:*/lib*/libc.so.7
+}
+{
+   DRD-FREEBSD131-LOCALECONV
+   drd:ConflictingAccess
+   fun:localeconv_l
+   obj:*/lib*/libc.so.7
+}
+{
+   DRD-FREEBSD131-VSPRINTF
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   fun:vsprintf
 }

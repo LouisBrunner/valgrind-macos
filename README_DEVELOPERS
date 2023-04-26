@@ -87,26 +87,21 @@ To get commit access to the valgrind git repository on sourceware
 you will have to ask an existing developer and fill in the following
 form: https://sourceware.org/cgi-bin/pdw/ps_form.cgi
 
-Every developer with commit access can use try branches. Code committed
-to a try branch will be build by the buildbot at builder.sourceware.org
+Every developer with commit access can use try branches. If you want to try a
+branch before pushing you can push to a special named try branch as follows: 
+
+  git push origin $BRANCH:users/$USERNAME/try-$BRANCH
+
+Where $BRANCH is the branch name and $USERNAME is your user name.
+
+You can see the status of the builders here:
 https://builder.sourceware.org/buildbot/#/builders?tags=valgrind-try
 
-If you want to try a commit you can push to a special named try branch
-(users/<your-user-name>/try-<your-branch>) as follows: 
-
-  git checkout -b <your-branch>
-  ...hack, hack, hack... OK, looks good to submit
-  git commit -a -m "Awesome hack"
-  git push origin <your-branch>:users/<your-user-name>/try-<your-branch>
-
-When all builders have build your patch the buildbot will sent you (or
-actually the patch author) an email telling you if any builds failed and
-references to all the logs. You can also find the logs and the builds here:
-https://builder.sourceware.org/buildbot/#/builders?tags=valgrind-try
+The buildbot will also sent the patch author multiple success/failure emails.
 
 Afterwards you can delete the branch again:
 
-    git push origin :users/username/try-<your-branch>
+    git push origin :users/$USERNAME/try-$BRANCH
 
 
 Debugging Valgrind with GDB

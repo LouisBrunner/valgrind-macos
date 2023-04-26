@@ -717,7 +717,7 @@ where HEUR is one of:
 @Vinit("memcheck", "who_points_at", gdb.COMMAND_DATA, gdb.COMPLETE_EXPRESSION, False)
 class Memcheck_Who_Points_At_Command(Valgrind_ADDR_LEN_opt):
     """Show places pointing inside LEN (default 1) bytes at ADDR.
-Usage: memcheck who_points_at ADDR [MEN]
+Usage: memcheck who_points_at ADDR [LEN]
 With LEN 1, only shows "start pointers" pointing exactly to ADDR.
 With LEN > 1, will also show "interior pointers"
 ADDR is an address expression evaluated by GDB.

@@ -135,8 +135,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * DHAT:
   - A new kind of user request has been added which allows you to
     override the 1024 byte limit on access count histograms for blocks
-    of memories. Two client requests are available,
-    DHAT_HISTOGRAM_MEMORY_UNINIT and DHAT_HISTOGRAM_MEMORY_INIT.
+    of memory. The client request is DHAT_HISTOGRAM_MEMORY.
 
 * ==================== FIXED BUGS ====================
 

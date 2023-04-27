@@ -1232,7 +1232,6 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 
    case VG_USERREQ__DHAT_HISTOGRAM_MEMORY: {
       Addr address = (Addr)arg[1];
-      UWord initial_count = arg[2];
 
       Block* bk = find_Block_containing( address );
       // bogus address
@@ -1254,7 +1253,7 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
          return False;
       }
 
-      // already histogrammed
+      // too big
       if (bk->req_szB > USER_HISTOGRAM_SIZE_LIMIT) {
          VG_(message)(
             Vg_UserMsg,
@@ -1266,13 +1265,8 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 
 
       bk->histoW = VG_(malloc)("dh.new_block.3", bk->req_szB * sizeof(UShort));
-      if (initial_count == 0U) {
-         VG_(memset)(bk->histoW, 0, bk->req_szB * sizeof(UShort));
-      } else {
-         for (SizeT i = 0U; i < bk->req_szB; ++i) {
-            bk->histoW[i] = 1U;
-         }
-      }
+      VG_(memset)(bk->histoW, 0, bk->req_szB * sizeof(UShort));
+
       return True;
    }
 

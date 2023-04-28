@@ -195,6 +195,11 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
+* ==================== KNOWN ISSUES ===================
+
+* configure --enable-lto=yes is know to not work in all setups.
+  See bug 469049. Workaround: Build without LTO.
+
 (3.21.0.RC1: 14 Apr 2023)
 (3.21.0.RC2: 21 Apr 2023)
 

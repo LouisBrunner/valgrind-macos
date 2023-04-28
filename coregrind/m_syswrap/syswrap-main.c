@@ -544,11 +544,6 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = gst->guest_syscall_flag;
    canonical->arg8  = 0;
 
-#if defined(VGP_ppc64be_linux)
-   /* The sc instruction is currently only supported on LE systems. */
-   vg_assert(gst->guest_syscall_flag == SC_FLAG);
-#endif
-
 #elif defined(VGP_x86_freebsd)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;

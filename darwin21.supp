@@ -8,5 +8,4 @@
    Memcheck:Addr1
    fun:__chkstk_darwin_probe
    ...
-   fun:(below main)
 }

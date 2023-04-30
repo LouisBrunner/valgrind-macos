@@ -44,6 +44,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_mach.h"         // VG_(dyld_cache_*)
 #include "pub_core_machine.h"      // VG_(get_SP)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -3080,10 +3081,34 @@ PRE(stat64)
    PRE_REG_READ2(long, "stat", const char *,path, struct stat64 *,buf);
    PRE_MEM_RASCIIZ("stat64(path)", ARG1);
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
+
+#if DARWIN_VERS >= DARWIN_11_00
+   // Starting with macOS 11.0, some system libraries are not provided on the disk but only though
+   // shared dyld cache, thus we try to detect if dyld tried (and failed) to load a dylib,
+   // in which case we do the same thing as dyld and load the info from the cache directly
+   //
+   // This is our entry point for checking a particular dylib: if it looks like one,
+   // we want to see the error result, if any, and subsequently check the cache
+   if (VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
+     *flags |= SfPostOnFail;
+   }
+#endif
 }
 POST(stat64)
 {
+   if (SUCCESS) {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+}
+
+#if DARWIN_VERS >= DARWIN_11_00
+   if (SUCCESS || (FAILURE && ERR == VKI_ENOENT)) {
+     // It failed and `SfPostOnFail` was set, thus this is probably a dylib,
+     // try to load it from cache which will call VG_(di_notify_mmap) like the previous versions did
+     if (VG_(dyld_cache_load_library)((HChar *)ARG1)) {
+       ML_(sync_mappings)("after", "stat64", 0);
+     }
+   }
+#endif
 }
 
 PRE(lstat64)

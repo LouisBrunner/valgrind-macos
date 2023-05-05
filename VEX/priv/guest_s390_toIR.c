@@ -12849,11 +12849,28 @@ s390_irgen_TDGXT(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp len = newTemp(Ity_I64);
+   IRType ty;
 
-   assign(len, mkU64(length));
-   s390_irgen_CLC_EX(len, start1, start2);
+   switch (length) {
+   case 0: ty = Ity_I8; break;
+   case 1: ty = Ity_I16; break;
+   case 3: ty = Ity_I32; break;
+   case 7: ty = Ity_I64; break;
+   default: ty = Ity_INVALID;
+   }
+   if (ty != Ity_INVALID) {
+      IRTemp a = newTemp(ty);
+      IRTemp b = newTemp(ty);
 
+      assign(a, load(ty, mkexpr(start1)));
+      assign(b, load(ty, mkexpr(start2)));
+      s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, a, b);
+   } else {
+      IRTemp len = newTemp(Ity_I64);
+
+      assign(len, mkU64(length));
+      s390_irgen_CLC_EX(len, start1, start2);
+   }
    return "clc";
 }
 

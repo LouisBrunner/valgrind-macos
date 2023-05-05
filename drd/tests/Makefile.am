@@ -152,6 +152,8 @@ EXTRA_DIST =                                        \
 	hold_lock_1.vgtest                          \
 	hold_lock_2.stderr.exp                      \
 	hold_lock_2.vgtest                          \
+	getaddrinfo.stderr.exp                      \
+	getaddrinfo.vgtest                          \
 	linuxthreads_det.stderr.exp                 \
 	linuxthreads_det.stderr.exp-linuxthreads    \
 	linuxthreads_det.stdout.exp                 \

@@ -351,3 +351,13 @@
    ...
    fun:_ZN5boost6detail23set_current_thread_dataEPNS0_16thread_data_baseE
 }
+
+#
+# Suppression patterrns for posix functions
+{
+   drd-libc-getaddrinfo
+   drd:ConflictingAccess
+   ...
+   fun:getaddrinfo
+}
+

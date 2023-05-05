@@ -33,6 +33,7 @@ EXTRA_DIST = \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
 		free_is_write.stderr.exp \
+	getaddrinfo.vgtest getaddrinfo.stderr.exp \
 	hg01_all_ok.vgtest hg01_all_ok.stdout.exp hg01_all_ok.stderr.exp \
 	hg02_deadlock.vgtest hg02_deadlock.stdout.exp hg02_deadlock.stderr.exp \
 	hg03_inherit.vgtest hg03_inherit.stdout.exp hg03_inherit.stderr.exp \
@@ -153,6 +154,7 @@ check_PROGRAMS = \
 	cond_timedwait_invalid \
 	cond_timedwait_test \
 	free_is_write \
+	getaddrinfo \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \

@@ -302,3 +302,12 @@
    Helgrind:Race
    fun:gomp_ordered_last
 }
+
+####################################################
+# posix functions that are thread safe
+{
+   helgrind---getaddrinfo
+   Helgrind:Race
+   ...
+   fun:getaddrinfo
+}

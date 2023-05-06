@@ -1,2 +1,3 @@
+prereq: ! ../../tests/os_test freebsd
 prog: tls_threads
 vgopts: -q --sim-hints=no-nptl-pthread-stackcache

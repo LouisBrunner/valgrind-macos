@@ -11,6 +11,7 @@ EXTRA_DIST = \
 	big-alloc.post.exp big-alloc.post.exp-64bit big-alloc.post.exp-ppc64 \
 	big-alloc.stderr.exp big-alloc.vgtest \
 	big-alloc.post.exp-x86-freebsd \
+	bug469146.post.exp bug469146.stderr.exp bug469146.vgtest \
 	deep-A.post.exp deep-A.stderr.exp deep-A.vgtest \
 	deep-B.post.exp deep-B.stderr.exp deep-B.vgtest \
 	deep-C.post.exp deep-C.stderr.exp deep-C.vgtest \
@@ -59,6 +60,7 @@ check_PROGRAMS = \
 	alloc-fns \
 	basic \
 	big-alloc \
+	bug469146 \
 	culling1 culling2 \
 	custom_alloc \
 	deep \
@@ -86,6 +88,8 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # C++ tests
+bug469146_SOURCES	= bug469146.cpp
+bug469146_CXXFLAGS	= $(AM_CFLAGS) -O2
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
 # pre C++11 compilers don't have exception specs

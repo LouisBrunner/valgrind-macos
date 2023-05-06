@@ -2289,6 +2289,32 @@ Bool VG_(get_fnname) ( DiEpoch ep, Addr a, const HChar** buf )
                          /*offsetP*/NULL );
 }
 
+
+Bool VG_(get_fnname_inl) ( DiEpoch ep, Addr a, const HChar** buf,
+                                   const InlIPCursor* iipc )
+{
+   if (iipc) {
+      vg_assert(is_DI_valid_for_epoch(iipc->di, ep));
+   }
+
+   if (is_bottom(iipc)) {
+      return get_sym_name ( /*C++-demangle*/True, /*Z-demangle*/True,
+                            /*below-main-renaming*/True,
+                            ep, a, buf,
+                            /*match_anywhere_in_fun*/True,
+                            /*show offset?*/False,
+                            /*text sym*/True,
+                            /*offsetP*/NULL );
+   } else {
+      const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
+         ? & iipc->di->inltab[iipc->next_inltab]
+         : NULL;
+      vg_assert (next_inl);
+      *buf = next_inl->inlinedfn;
+      return True;
+   }
+}
+
 /* This is available to tools... always demangle C++ names,
    match anywhere in function, and show offset if nonzero.
    NOTE: See IMPORTANT COMMENT above about persistence and ownership

@@ -210,7 +210,9 @@ extern Bool VG_(next_IIPC)(InlIPCursor *iipc);
 /* Free all memory associated with iipc. */
 extern void VG_(delete_IIPC)(InlIPCursor *iipc);
 
-
+/* Similar to  VG_(get_fnname) but uses InlIPCursor and handles inline functions */
+extern Bool VG_(get_fnname_inl)   ( DiEpoch ep, Addr a, const HChar** fnname,
+                                   const InlIPCursor* iipc );
 
 /* Get an XArray of StackBlock which describe the stack (auto) blocks
    for this ip.  The caller is expected to free the XArray at some

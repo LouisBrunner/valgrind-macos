@@ -772,6 +772,7 @@
 /massif/tests/basic
 /massif/tests/basic_malloc
 /massif/tests/big-alloc
+/massif/tests/bug469146
 /massif/tests/culling1
 /massif/tests/culling2
 /massif/tests/custom_alloc

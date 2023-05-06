@@ -760,6 +760,17 @@ various places online.
 <screen><![CDATA[
 --alloc-fn='operator new(unsigned, std::nothrow_t const&)'
 ]]></screen>
+      Arguments of type <computeroutput>size_t</computeroutput> need to be replaced
+      with <computeroutput>unsigned long</computeroutput> on 64bit platforms and <computeroutput>unsigned</computeroutput>
+      on 32bit platforms.
+      </para>
+
+      <para><option>--alloc-fn</option> will work with inline functions.
+      Inline function names are not mangled, which means that you only need
+      to provide the function name and not the argument list.
+      </para>
+
+      <para><option>--alloc-fn</option> does not support wildcards.
       </para>
       </listitem>
   </varlistentry>

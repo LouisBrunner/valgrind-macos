@@ -334,7 +334,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_seqmatch.c \
 	m_signals.c \
 	m_sparsewa.c \
-	m_stacks.c \
 	m_stacktrace.c \
 	m_syscall.c \
 	m_threadstate.c \
@@ -394,7 +393,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-x86-solaris.S \
 	m_dispatch/dispatch-amd64-solaris.S \
 	m_gdbserver/inferiors.c \
-	m_gdbserver/m_gdbserver.c \
 	m_gdbserver/regcache.c \
 	m_gdbserver/remote-utils.c \
 	m_gdbserver/server.c \
@@ -493,7 +491,9 @@ COREGRIND_SOURCES_COMMON = \
 # These objects are added to the libcoregrind library.
 NOLTO_COREGRIND_SOURCES_COMMON = \
 	m_libcsetjmp.c \
-	m_main.c
+	m_main.c \
+	m_stacks.c \
+	m_gdbserver/m_gdbserver.c
 noinst_LIBRARIES = libnolto_coregrind-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
     $(NOLTO_COREGRIND_SOURCES_COMMON)

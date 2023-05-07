@@ -224,7 +224,6 @@ EXTRA_DIST = \
 	manuel3.stderr.exp manuel3.vgtest \
 	match-overrun.stderr.exp match-overrun.vgtest match-overrun.supp \
 	memalign_test.stderr.exp memalign_test.vgtest \
-		memalign_test.stderr.exp-freebsd-clang \
 	memalign_args.vgtest memalign_args.stderr.exp \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-darwin \

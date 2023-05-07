@@ -311,3 +311,9 @@
    ...
    fun:getaddrinfo
 }
+
+{
+   helgrind---_nss_dns_gethostbyname4_r
+   Helgrind:Race
+   fun:_nss_dns_gethostbyname4_r
+}

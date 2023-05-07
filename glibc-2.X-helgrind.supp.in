@@ -282,6 +282,13 @@
    fun:pthread_create@*
 }
 
+{
+   helgrind---_dl_lookup_symbol_x
+   Helgrind:Race
+   ...
+   fun:_dl_lookup_symbol_x
+}
+
 ####################################################
 # To do with GNU libgomp
 #

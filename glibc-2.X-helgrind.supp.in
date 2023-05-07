@@ -319,9 +319,9 @@
    fun:getaddrinfo
 }
 
-# * here for dns and files variants
+# * here for dns and files variants etc.
 {
-   helgrind---_nss_*s_gethostbyname4_r
+   helgrind---_nss_*_gethostbyname4_r
    Helgrind:Race
-   fun:_nss_*s_gethostbyname4_r
+   fun:_nss_*_gethostbyname4_r
 }

@@ -217,3 +217,9 @@
    obj:*/lib*/libc.so.7
    fun:vsprintf
 }
+{
+   HELGRIND-LIBC-GETADDRINFO
+   Helgrind:Race
+   ...
+   fun:getaddrinfo
+}

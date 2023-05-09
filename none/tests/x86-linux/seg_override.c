@@ -3,6 +3,10 @@
 #include <errno.h>
 #include <string.h>
 #include "../../../config.h"
+#if defined(MUSL_LIBC)
+#include <syscall.h>
+#include <unistd.h>
+#endif
 
 
 /* Stuff from Wine. */

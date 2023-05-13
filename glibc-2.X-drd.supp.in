@@ -193,7 +193,7 @@
 {
    drd-libgomp
    drd:ConflictingAccess
-   obj:/usr/lib*/libgomp.so*
+   obj:*/lib*/libgomp.so*
 }
 
 #

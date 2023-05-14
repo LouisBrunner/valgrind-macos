@@ -61,7 +61,9 @@
 .popsection \n\
 ");
 
-DEFINE_GDB_PY_SCRIPT(VG_LIBDIR "/valgrind-monitor.py")
+#ifdef VG_GDBSCRIPTS_DIR
+DEFINE_GDB_PY_SCRIPT(VG_GDBSCRIPTS_DIR "/valgrind-monitor.py")
+#endif
 #endif
 
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)

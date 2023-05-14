@@ -10,6 +10,13 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* A new configure option --with-gdbscripts-dir lets you install
+  the gdb valgrind python monitor scripts in a specific location.
+  For example an distro could use it to install the scripts in a
+  safe load location --with-gdbscripts-dir=%{_datadir}/gdb/auto-load
+  It is also possible to configure --without-gdb-scripts-dir so no
+  .debug_gdb_scripts section is added to the vgpreload library and
+  no valgrind-monitor python scripts are installed at all.
 
 * ================== PLATFORM CHANGES =================
 
@@ -29,6 +36,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 460192  Add epoll_pwait2
 469049  link failure on ppc64 (big endian) valgrind 3.20
 469146  massif --ignore-fn does not ignore inlined functions
+469768  Make it possible to install gdb scripts in a different location
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

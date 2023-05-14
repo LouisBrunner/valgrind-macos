@@ -101,7 +101,7 @@ if VGCONF_OS_IS_FREEBSD
 vgdb_SOURCES += vgdb-invoker-freebsd.c
 endif
 
-vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI) $(GDB_SCRIPTS_DIR)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
@@ -624,9 +624,15 @@ if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(noinst_PROGRAMS)
 endif
 
+if GDBSCRIPTS
+  GDB_SCRIPTS_DIR=-DVG_GDBSCRIPTS_DIR="\"@VG_GDBSCRIPTS_DIR@\""
+else
+  GDB_SCRIPTS_DIR=
+endif
+
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(GDB_SCRIPTS_DIR)
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS = \
 	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@)
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
@@ -634,7 +640,7 @@ vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
 if VGCONF_HAVE_PLATFORM_SEC
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(GDBSCRIPTS_DIR)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS = \
 	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
@@ -766,8 +772,12 @@ GDBSERVER_XML_FILES = \
 # so as to make sure these get copied into the install tree
 vglibdir = $(pkglibexecdir)
 vglib_DATA  = $(GDBSERVER_XML_FILES)
-vglib_DATA  += m_gdbserver/valgrind-monitor.py
-vglib_DATA  += m_gdbserver/valgrind-monitor-def.py
+
+if GDBSCRIPTS
+gdbscriptsdir = @VG_GDBSCRIPTS_DIR@
+gdbscripts_DATA  = m_gdbserver/valgrind-monitor.py
+gdbscripts_DATA += m_gdbserver/valgrind-monitor-def.py
+endif
 
 # so as to make sure these get copied into the tarball
 EXTRA_DIST  += $(GDBSERVER_XML_FILES)

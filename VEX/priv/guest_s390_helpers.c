@@ -2043,6 +2043,29 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
             Because cc == 3 cannot occur the rightmost bit of cond is
             a don't care.
          */
+         if (isC64(cc_dep2)) {
+            /* Avoid memcheck false positives for comparisons like `<= 0x1f',
+               `> 0x1f', `< 0x20', or `>= 0x20', where the lower bits don't
+               matter.  Some compiler optimizations yield such comparisons when
+               testing if any (or none) of the upper bits are set. */
+
+            ULong mask = cc_dep2->Iex.Const.con->Ico.U64;
+            ULong c    = cond & (8 + 4 + 2);
+
+            if ((mask & (mask - 1)) == 0) {
+               /* Transform `<  0x20' to `<= 0x1f' and
+                            `>= 0x20' to `>  0x1f' */
+               mask -= 1;
+               c ^= 8;
+            }
+            if (mask != 0 && (mask + 1) != 0 && (mask & (mask + 1)) == 0 &&
+                (c == 8 + 4 || c == 2)) {
+               IROp cmp = c == 8 + 4 ? Iop_CmpEQ64 : Iop_CmpNE64;
+               return unop(Iop_1Uto32,
+                           binop(cmp, binop(Iop_And64, cc_dep1, mkU64(~mask)),
+                                 mkU64(0)));
+            }
+         }
          if (cond == 8 || cond == 8 + 1) {
             return unop(Iop_1Uto32, binop(Iop_CmpEQ64, cc_dep1, cc_dep2));
          }

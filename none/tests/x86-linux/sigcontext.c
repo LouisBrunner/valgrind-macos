@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/ucontext.h>
-#include <asm/unistd.h>
+#include <syscall.h>
 
 #define VAL1 0x11223344
 #define VAL2 0x44332211

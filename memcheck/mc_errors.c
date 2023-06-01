@@ -1041,6 +1041,7 @@ Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
       case Err_IllegalMempool:
       case Err_Overlap:
       case Err_Cond:
+      case Err_ReallocSizeZero:
          return True;
 
       case Err_FishyValue:

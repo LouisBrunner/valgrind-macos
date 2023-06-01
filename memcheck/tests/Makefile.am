@@ -291,8 +291,14 @@ EXTRA_DIST = \
 		realloc_size_zero.vgtest \
 	realloc_size_zero_yes.stderr.exp realloc_size_zero_yes.stdout.exp \
 		realloc_size_zero_yes.vgtest \
+	realloc_size_zero_again_yes.stderr.exp \
+		realloc_size_zero_again_yes.stdout.exp \
+		realloc_size_zero_again_yes.vgtest \
 	realloc_size_zero_no.stderr.exp realloc_size_zero_no.stdout.exp \
 		realloc_size_zero_no.vgtest \
+	realloc_size_zero_again_no.stderr.exp \
+		realloc_size_zero_again_no.stdout.exp \
+		realloc_size_zero_again_no.vgtest \
 	realloc_size_zero_off.stderr.exp realloc_size_zero_off.stdout.exp \
 		realloc_size_zero_off.vgtest \
 	realloc_size_zero_mismatch.stderr.exp \
@@ -459,6 +465,7 @@ check_PROGRAMS = \
 	posix_memalign \
 	post-syscall \
 	realloc_size_zero realloc_size_zero_mismatch \
+	realloc_size_zero_again \
 	realloc1 realloc2 realloc3 \
 	recursive-merge \
 	resvn_stack \

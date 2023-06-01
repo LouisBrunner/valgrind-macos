@@ -37,6 +37,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 469049  link failure on ppc64 (big endian) valgrind 3.20
 469146  massif --ignore-fn does not ignore inlined functions
 469768  Make it possible to install gdb scripts in a different location
+470520  Multiple realloc zero errors crash in MC_(eq_Error)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

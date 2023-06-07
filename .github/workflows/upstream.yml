@@ -1,7 +1,6 @@
 name: Upstream synchronization
 
 on:
-  push:
   schedule:
     - cron: "0 6 * * 3" # 6am every Wednesday
   workflow_dispatch:
@@ -102,6 +101,8 @@ jobs:
             if [ $NUM -eq ${{ steps.cpr.outputs.pull-request-number }} ]; then
               continue
             fi
+            URL=$(gh pr view $NUM --json url --jq .url)
+            echo "# Closing PR: $NUM ($URL)"
             gh pr close $NUM -d -c 'Stale pull request, see new one here: ${{ steps.cpr.outputs.pull-request-url }}'
           done
         shell: bash

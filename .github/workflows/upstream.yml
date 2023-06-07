@@ -24,6 +24,10 @@ jobs:
           git remote add upstream git://sourceware.org/git/valgrind.git
           git fetch upstream master
         shell: bash
+      - name: Configure git credentials
+        run: |
+          git config --global user.name "upstream-sync[bot]"
+          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
       - name: Rebase local `upstream` branch onto upstream `master`
         run: |
           git rebase upstream/master
@@ -43,6 +47,10 @@ jobs:
           git remote add upstream git://sourceware.org/git/valgrind.git
           git fetch upstream master
         shell: bash
+      - name: Configure git credentials
+        run: |
+          git config --global user.name "upstream-sync[bot]"
+          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
       - name: Create a merge which merge them into us
         id: merge
         run: |

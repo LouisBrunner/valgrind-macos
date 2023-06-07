@@ -16,16 +16,21 @@ jobs:
       - name: Checkout local `upstream` branch (us)
         uses: actions/checkout@v3
         with:
-          ref: upstream2
+          ref: upstream
+          fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git
           git fetch upstream master
         shell: bash
+      - name: Configure git credentials
+        run: |
+          git config --global user.name "upstream-sync[bot]"
+          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
       - name: Rebase local `upstream` branch onto upstream `master`
         run: |
           git rebase upstream/master
-          git push
+          git push -f origin upstream
         shell: bash
   upstream-merge-pr:
     name: Merge upstream changes into main
@@ -35,11 +40,16 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: main
+          fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git
           git fetch upstream master
         shell: bash
+      - name: Configure git credentials
+        run: |
+          git config --global user.name "upstream-sync[bot]"
+          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
       - name: Create a merge which merge them into us
         id: merge
         run: |
@@ -86,10 +96,15 @@ jobs:
           labels: upstream,chore,${{ env.LABEL }}
       - name: Close older pull requests
         run: |
+          echo "New PR: ${{ steps.cpr.outputs.pull-request-number }} (${{ steps.cpr.outputs.pull-request-url }})"
           gh pr list --label ${{ env.LABEL }} --json number --jq '.[].number' | while read -r NUM; do
             if [ $NUM -eq ${{ steps.cpr.outputs.pull-request-number }} ]; then
               continue
             fi
+            URL=$(gh pr view $NUM --json url --jq .url)
+            echo "# Closing PR: $NUM ($URL)"
             gh pr close $NUM -d -c 'Stale pull request, see new one here: ${{ steps.cpr.outputs.pull-request-url }}'
           done
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -1711,7 +1711,7 @@ static
 void collect_time (struct vki_timespec *systime, struct vki_timespec *syscputime)
 {
   switch (CLG_(clo).collect_systime) {
-    case systime_no: tl_assert (0);
+    default: tl_assert (0);
     case systime_msec: {
       UInt ms_timer = VG_(read_millisecond_timer)();
       systime->tv_sec = ms_timer / 1000;

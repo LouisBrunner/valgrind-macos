@@ -1,0 +1,8 @@
+# The `prog` doesn't matter because we don't use its output. Instead we test
+# the post-processing of the cgout file.
+prog: ../../tests/true
+vgopts: --cachegrind-out-file=cachegrind.out
+
+post: touch ann1.cgout && python3 ../cg_annotate --sort=Dr --show=Dw,Dr,Ir --auto=no ann1.cgout
+
+cleanup: rm cachegrind.out

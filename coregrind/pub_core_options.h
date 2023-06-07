@@ -209,6 +209,8 @@ extern Bool  VG_(clo_trace_redir);
 /* Enable fair scheduling on multicore systems? default: NO */
 enum FairSchedType { disable_fair_sched, enable_fair_sched, try_fair_sched };
 extern enum FairSchedType VG_(clo_fair_sched);
+/* thread-scheduling timeslice. */
+extern Word   VG_(clo_scheduling_quantum);
 /* DEBUG: print thread scheduling events?  default: NO */
 extern Bool  VG_(clo_trace_sched);
 /* DEBUG: do heap profiling?  default: NO */

@@ -3,6 +3,7 @@
 # /
 /.in_place
 /.vs
+/.clang-format
 /acinclude.m4
 /aclocal.m4
 /autom4te-*.cache
@@ -297,6 +298,7 @@
 /dhat/tests/empty
 /dhat/tests/sig
 /dhat/tests/single
+/dhat/tests/user_histo1
 
 # /docs/
 /docs/FAQ.txt
@@ -653,10 +655,14 @@
 /helgrind/tests/bar_bad
 /helgrind/tests/bar_trivial
 /helgrind/tests/bug322621
+/helgrind/tests/bug327548
+/helgrind/tests/bug392331
 /helgrind/tests/cond_init_destroy
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test
 /helgrind/tests/free_is_write
+/helgrind/tests/garbage.filtered.out
+/helgrind/tests/getaddrinfo
 /helgrind/tests/hg01_all_ok
 /helgrind/tests/hg02_deadlock
 /helgrind/tests/hg03_inherit
@@ -766,6 +772,7 @@
 /massif/tests/basic
 /massif/tests/basic_malloc
 /massif/tests/big-alloc
+/massif/tests/bug469146
 /massif/tests/culling1
 /massif/tests/culling2
 /massif/tests/custom_alloc
@@ -837,6 +844,7 @@
 /memcheck/tests/bug155125
 /memcheck/tests/bug287260
 /memcheck/tests/bug340392
+/memcheck/tests/bug464969_d_demangle
 /memcheck/tests/calloc-overflow
 /memcheck/tests/cdebug_zlib
 /memcheck/tests/cdebug_zlib_gnu
@@ -911,7 +919,7 @@
 /memcheck/tests/manuel2
 /memcheck/tests/manuel3
 /memcheck/tests/match-overrun
-/memcheck/tests/memalign2
+/memcheck/tests/memalign_args
 /memcheck/tests/memalign_test
 /memcheck/tests/memcmptest
 /memcheck/tests/memmem
@@ -941,8 +949,12 @@
 /memcheck/tests/pdb-realloc2
 /memcheck/tests/pipe
 /memcheck/tests/pointer-trace
+/memcheck/tests/posix_memalign
 /memcheck/tests/post-syscall
 /memcheck/tests/reach_thread_register
+/memcheck/tests/realloc_size_zero
+/memcheck/tests/realloc_size_zero_again
+/memcheck/tests/realloc_size_zero_mismatch
 /memcheck/tests/realloc1
 /memcheck/tests/realloc2
 /memcheck/tests/realloc3
@@ -957,6 +969,8 @@
 /memcheck/tests/sendmsg
 /memcheck/tests/sh-mem
 /memcheck/tests/sh-mem-random
+/memcheck/tests/sized_aligned_new_delete_args
+/memcheck/tests/sized_aligned_new_delete_misaligned
 /memcheck/tests/sigaltstack
 /memcheck/tests/sigkill
 /memcheck/tests/signal2
@@ -995,6 +1009,7 @@
 /memcheck/tests/wcs
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
+/memcheck/tests/wmemcmp
 /memcheck/tests/wrap1
 /memcheck/tests/wrap2
 /memcheck/tests/wrap3
@@ -1078,6 +1093,7 @@
 /memcheck/tests/darwin/Makefile
 /memcheck/tests/darwin/Makefile.in
 /memcheck/tests/darwin/aio
+/memcheck/tests/darwin/aligned_alloc
 /memcheck/tests/darwin/deep_badparam
 /memcheck/tests/darwin/env
 /memcheck/tests/darwin/ioctl-tiocsbrk
@@ -1095,6 +1111,7 @@
 /memcheck/tests/linux/*.stdout.diff
 /memcheck/tests/linux/*.stdout.out
 /memcheck/tests/linux/.deps
+/memcheck/tests/linux/aligned_alloc
 /memcheck/tests/linux/brk
 /memcheck/tests/linux/capget
 /memcheck/tests/linux/check_preadv2_pwritev2
@@ -1106,6 +1123,7 @@
 /memcheck/tests/linux/lsframe2
 /memcheck/tests/linux/Makefile
 /memcheck/tests/linux/Makefile.in
+/memcheck/tests/linux/memalign
 /memcheck/tests/linux/memfd_create
 /memcheck/tests/linux/rfcomm
 /memcheck/tests/linux/sigqueue
@@ -1188,6 +1206,7 @@
 /memcheck/tests/solaris/.deps
 /memcheck/tests/solaris/Makefile
 /memcheck/tests/solaris/Makefile.in
+/memcheck/tests/solaris/aligned_alloc
 /memcheck/tests/solaris/brk
 /memcheck/tests/solaris/context_stack_die
 /memcheck/tests/solaris/door_data
@@ -1202,6 +1221,7 @@
 /memcheck/tests/solaris/ldynsym
 /memcheck/tests/solaris/lsframe1
 /memcheck/tests/solaris/lsframe2
+/memcheck/tests/solaris/memalign
 /memcheck/tests/solaris/mmapobj_bssonly
 /memcheck/tests/solaris/mmapobj_bssonly.so
 /memcheck/tests/solaris/name_service_door
@@ -1211,15 +1231,18 @@
 /memcheck/tests/solaris/scalar_frealpathat
 /memcheck/tests/solaris/scalar_getrandom
 /memcheck/tests/solaris/scalar_ioctl
+/memcheck/tests/solaris/scalar_lwp_kill
 /memcheck/tests/solaris/scalar_lwp_name
 /memcheck/tests/solaris/scalar_lwp_sigqueue
 /memcheck/tests/solaris/scalar_lwp_sigqueue_pid
 /memcheck/tests/solaris/scalar_modctl_modnvl
+/memcheck/tests/solaris/scalar_obsolete
 /memcheck/tests/solaris/scalar_shm_new
 /memcheck/tests/solaris/scalar_spawn
 /memcheck/tests/solaris/scalar_system_stats
 /memcheck/tests/solaris/scalar_tsol_clearance
 /memcheck/tests/solaris/scalar_utimensat
+/memcheck/tests/solaris/scalar_utimesys
 /memcheck/tests/solaris/scalar_uuidsys
 /memcheck/tests/solaris/scalar_zone_defunct
 /memcheck/tests/solaris/sendfilev
@@ -1285,6 +1308,7 @@
 /memcheck/tests/x86-linux/Makefile.in
 /memcheck/tests/x86-linux/scalar
 /memcheck/tests/x86-linux/scalar_exit_group
+/memcheck/tests/x86-linux/scalar_openat2
 /memcheck/tests/x86-linux/scalar_fork
 /memcheck/tests/x86-linux/scalar_supp
 /memcheck/tests/x86-linux/scalar_vfork
@@ -1304,6 +1328,7 @@
 /memcheck/tests/x86-solaris/context_sse
 /memcheck/tests/x86-solaris/ldsoexec
 /memcheck/tests/x86-solaris/scalar
+/memcheck/tests/x86-solaris/scalar_obsolete
 
 # /memcheck/tests/freebsd/
 /memcheck/tests/freebsd/*.stderr.diff*
@@ -1313,42 +1338,46 @@
 /memcheck/tests/freebsd/.deps
 /memcheck/tests/freebsd/Makefile
 /memcheck/tests/freebsd/Makefile.in
-/memcheck/tests/freebsd/statfs
-/memcheck/tests/freebsd/pdfork_pdkill
+/memcheck/tests/freebsd/452275
+/memcheck/tests/freebsd/access
+/memcheck/tests/freebsd/bug464476
+/memcheck/tests/freebsd/capsicum
+/memcheck/tests/freebsd/chflags
+/memcheck/tests/freebsd/chmod_chown
+/memcheck/tests/freebsd/errno_aligned_allocs
+/memcheck/tests/freebsd/eventfd1
+/memcheck/tests/freebsd/eventfd2
+/memcheck/tests/freebsd/extattr
+/memcheck/tests/freebsd/fexecve
+/memcheck/tests/freebsd/file_locking_wait6
+/memcheck/tests/freebsd/get_set_context
+/memcheck/tests/freebsd/get_set_login
+/memcheck/tests/freebsd/getfh
 /memcheck/tests/freebsd/getfsstat
 /memcheck/tests/freebsd/inlinfo
 /memcheck/tests/freebsd/inlinfo_nested.so
-/memcheck/tests/freebsd/extattr
-/memcheck/tests/freebsd/sigwait
-/memcheck/tests/freebsd/chflags
-/memcheck/tests/freebsd/get_set_login
+/memcheck/tests/freebsd/linkat
+/memcheck/tests/freebsd/memalign
+/memcheck/tests/freebsd/misc
+/memcheck/tests/freebsd/pdfork_pdkill
+/memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/revoke
 /memcheck/tests/freebsd/scalar
-/memcheck/tests/freebsd/capsicum
-/memcheck/tests/freebsd/getfh
-/memcheck/tests/freebsd/linkat
-/memcheck/tests/freebsd/scalar_fork
-/memcheck/tests/freebsd/scalar_thr_exit
-/memcheck/tests/freebsd/scalar_abort2
-/memcheck/tests/freebsd/scalar_pdfork
-/memcheck/tests/freebsd/scalar_vfork
-/memcheck/tests/freebsd/stat
-/memcheck/tests/freebsd/file_locking_wait6
-/memcheck/tests/freebsd/utimens
-/memcheck/tests/freebsd/access
-/memcheck/tests/freebsd/chmod_chown
-/memcheck/tests/freebsd/misc
-/memcheck/tests/freebsd/get_set_context
-/memcheck/tests/freebsd/utimes
-/memcheck/tests/freebsd/static_allocs
-/memcheck/tests/freebsd/fexecve
-/memcheck/tests/freebsd/eventfd1
-/memcheck/tests/freebsd/eventfd2
-/memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/scalar_13_plus
-/memcheck/tests/freebsd/452275
-/memcheck/tests/freebsd/errno_aligned_allocs
+/memcheck/tests/freebsd/scalar_abort2
+/memcheck/tests/freebsd/scalar_fork
+/memcheck/tests/freebsd/scalar_pdfork
+/memcheck/tests/freebsd/scalar_thr_exit
+/memcheck/tests/freebsd/scalar_vfork
+/memcheck/tests/freebsd/sctp
+/memcheck/tests/freebsd/sctp2
 /memcheck/tests/freebsd/setproctitle
+/memcheck/tests/freebsd/sigwait
+/memcheck/tests/freebsd/stat
+/memcheck/tests/freebsd/statfs
+/memcheck/tests/freebsd/static_allocs
+/memcheck/tests/freebsd/utimens
+/memcheck/tests/freebsd/utimes
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff
@@ -1651,6 +1680,8 @@
 /none/tests/amd64-solaris/*.stderr.out
 /none/tests/amd64-solaris/*.stdout.diff
 /none/tests/amd64-solaris/*.stdout.out
+/none/tests/amd64-solaris/*.post.diff
+/none/tests/amd64-solaris/*.post.out
 /none/tests/amd64-solaris/.deps
 /none/tests/amd64-solaris/Makefile
 /none/tests/amd64-solaris/Makefile.in
@@ -2027,6 +2058,7 @@
 /none/tests/s390x/vector_float
 /none/tests/s390x/misc3
 /none/tests/s390x/vec2
+/none/tests/s390x/vec2_float
 
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM
@@ -2044,6 +2076,8 @@
 /none/tests/solaris/*.stderr.out
 /none/tests/solaris/*.stdout.diff
 /none/tests/solaris/*.stdout.out
+/none/tests/solaris/*.post.diff
+/none/tests/solaris/*.post.out
 /none/tests/solaris/.deps
 /none/tests/solaris/Makefile
 /none/tests/solaris/Makefile.in
@@ -2085,12 +2119,13 @@
 /none/tests/freebsd/hello_world
 /none/tests/freebsd/452275
 /none/tests/freebsd/usrstack
+/none/tests/freebsd/proc_pid_file
 
 # /none/tests/x86/
 /none/tests/x86/*.dSYM
-/none/tests/x86/*.stderr.diff
+/none/tests/x86/*.stderr.diff*
 /none/tests/x86/*.stderr.out
-/none/tests/x86/*.stdout.diff
+/none/tests/x86/*.stdout.diff*
 /none/tests/x86/*.stdout.out
 /none/tests/x86/.deps
 /none/tests/x86/aad_aam
@@ -2189,6 +2224,8 @@
 /none/tests/x86-solaris/*.stderr.out
 /none/tests/x86-solaris/*.stdout.diff
 /none/tests/x86-solaris/*.stdout.out
+/none/tests/x86-solaris/*.post.diff
+/none/tests/x86-solaris/*.post.out
 /none/tests/x86-solaris/.deps
 /none/tests/x86-solaris/Makefile
 /none/tests/x86-solaris/Makefile.in

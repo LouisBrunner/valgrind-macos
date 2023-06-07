@@ -2153,8 +2153,47 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
       vpanic("Iex_Get with F128 data");
 
       /* --------- 4-ary OP --------- */
-   case Iex_Qop:
-      vpanic("Iex_Qop with F128 data");
+   case Iex_Qop: {
+      IRQop *qop = expr->Iex.Qop.details;
+      s390_vec_triop_t vecop;
+      HReg op1_hi, op1_lo, op2_hi, op2_lo, op3_hi, op3_lo;
+      HReg dst, dstv_lo, op1, op2, op3;
+
+      s390_isel_float128_expr(&op1_hi, &op1_lo, env, qop->arg2);
+      s390_isel_float128_expr(&op2_hi, &op2_lo, env, qop->arg3);
+      s390_isel_float128_expr(&op3_hi, &op3_lo, env, qop->arg4);
+
+      /* Cannot carry out with FPRs; move operands to VRs instead. */
+      op1 = newVRegV(env);
+      op2 = newVRegV(env);
+      op3 = newVRegV(env);
+      dst = newVRegV(env);
+      dstv_lo = newVRegV(env);
+      addInstr(env, s390_insn_vec_binop(8, S390_VEC_INIT_FROM_FPRS,
+                                        op1, op1_hi, op1_lo));
+      addInstr(env, s390_insn_vec_binop(8, S390_VEC_INIT_FROM_FPRS,
+                                        op2, op2_hi, op2_lo));
+      addInstr(env, s390_insn_vec_binop(8, S390_VEC_INIT_FROM_FPRS,
+                                        op3, op3_hi, op3_lo));
+
+      switch (qop->op) {
+      case Iop_MAddF128: vecop = S390_VEC_FLOAT_MADD; break;
+      case Iop_MSubF128: vecop = S390_VEC_FLOAT_MSUB; break;
+      default:
+         goto irreducible;
+      }
+
+      set_bfp_rounding_mode_in_fpc(env, qop->arg1);
+      addInstr(env, s390_insn_vec_triop(16, vecop, dst, op1, op2, op3));
+      addInstr(env, s390_insn_vec_binop(8, S390_VEC_MERGEL, dstv_lo, dst, dst));
+
+      /* Move result to destination FPRs. */
+      *dst_hi = newVRegF(env);
+      *dst_lo = newVRegF(env);
+      addInstr(env, s390_insn_move(8, *dst_hi, dst));
+      addInstr(env, s390_insn_move(8, *dst_lo, dstv_lo));
+      return;
+   }
 
       /* --------- TERNARY OP --------- */
    case Iex_Triop: {
@@ -4552,6 +4591,10 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto Iop_VV_wrk;
       }
 
+      case Iop_Sqrt32Fx4:
+         size = 4;
+         vec_unop = S390_VEC_FLOAT_SQRT;
+         goto Iop_irrm_V_wrk;
       case Iop_Sqrt64Fx2:
          size = 8;
          vec_unop = S390_VEC_FLOAT_SQRT;
@@ -4791,6 +4834,9 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       default:
          goto irreducible;
       }
+   }
+
+   case Iex_Qop: {
    }
 
    /* --------- MULTIPLEX --------- */

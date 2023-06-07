@@ -350,6 +350,10 @@ static void DRD_(sema_up)(DrdSema* sema)
 static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
 {
    /*
+    * Static checkers don't like this as there are repeated branch
+    * but because there is variation between different platforms
+    * it's messy to make something without repetition.
+    *
     * See also PTHREAD_MUTEX_KIND_MASK_NP in glibc source file
     * <nptl/pthreadP.h>.
     */
@@ -363,7 +367,12 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
    else if (kind == PTHREAD_MUTEX_NORMAL)
       return mutex_type_default_mutex;
    else if (kind == PTHREAD_MUTEX_DEFAULT)
+      // @todo PJF what about Solaris?
+#if defined(VGO_freebsd)
+      return mutex_type_errorcheck_mutex;
+#else
       return mutex_type_default_mutex;
+#endif
 #if defined(HAVE_PTHREAD_MUTEX_ADAPTIVE_NP)
    else if (kind == PTHREAD_MUTEX_ADAPTIVE_NP)
       return mutex_type_default_mutex;

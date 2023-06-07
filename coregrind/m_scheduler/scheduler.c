@@ -101,11 +101,6 @@
 
 /* ThreadId and ThreadState are defined elsewhere*/
 
-/* Defines the thread-scheduling timeslice, in terms of the number of
-   basic blocks we attempt to run each thread for.  Smaller values
-   give finer interleaving but much increased scheduling overheads. */
-#define SCHEDULING_QUANTUM   100000
-
 /* If False, a fault is Valgrind-internal (ie, a bug) */
 Bool VG_(in_generated_code) = False;
 
@@ -759,20 +754,20 @@ void VG_(scheduler_init_phase2) ( ThreadId tid_main,
 /* Use gcc's built-in setjmp/longjmp.  longjmp must not restore signal
    mask state, but does need to pass "val" through.  jumped must be a
    volatile UWord. */
-#define SCHEDSETJMP(tid, jumped, stmt)					\
-   do {									\
-      ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid);	\
-									\
-      (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);              \
-      if ((jumped) == ((UWord)0)) {                                     \
-	 vg_assert(!_qq_tst->sched_jmpbuf_valid);			\
-	 _qq_tst->sched_jmpbuf_valid = True;				\
-	 stmt;								\
-      }	else if (VG_(clo_trace_sched))					\
-	 VG_(printf)("SCHEDSETJMP(line %d) tid %u, jumped=%lu\n",       \
-                     __LINE__, tid, jumped);                            \
-      vg_assert(_qq_tst->sched_jmpbuf_valid);				\
-      _qq_tst->sched_jmpbuf_valid = False;				\
+#define SCHEDSETJMP(tid, jumped, stmt)                            \
+   do {                                                           \
+      ThreadState * volatile _qq_tst = VG_(get_ThreadState)(tid); \
+                                                                  \
+      (jumped) = VG_MINIMAL_SETJMP(_qq_tst->sched_jmpbuf);        \
+      if ((jumped) == ((UWord)0)) {                               \
+         vg_assert(!_qq_tst->sched_jmpbuf_valid);                 \
+         _qq_tst->sched_jmpbuf_valid = True;                      \
+         stmt;                                                    \
+      }	else if (VG_(clo_trace_sched))                           \
+         VG_(printf)("SCHEDSETJMP(line %d) tid %u, jumped=%lu\n", \
+                     __LINE__, tid, jumped);                      \
+      vg_assert(_qq_tst->sched_jmpbuf_valid);                     \
+      _qq_tst->sched_jmpbuf_valid = False;                        \
    } while(0)
 
 
@@ -1348,8 +1343,36 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
                to be added without risk of overflow. */
          }
       } else {
-          VG_(debugLog)(0,"sched",
-                        "WARNING: pthread stack cache cannot be disabled!\n");
+          /*
+           * glibc 2.34 no longer has stack_cache_actsize as a visible variable
+           * so we switch to using the GLIBC_TUNABLES env var. Processing for that
+           * is done in initimg-linux.c / setup_client_env  for all glibc
+           *
+           * If we don't detect stack_cache_actsize we want to be able to tell
+           * whether it is an unexpected error or if it is no longer there.
+           * In the latter case we don't print a warning.
+           */
+          Bool print_warning = True;
+          if (VG_(client__gnu_get_libc_version_addr) != NULL) {
+              const HChar* gnu_libc_version = VG_(client__gnu_get_libc_version_addr)();
+              if (gnu_libc_version != NULL) {
+                  HChar* glibc_version_tok = VG_(strdup)("scheduler.1", gnu_libc_version);
+                  const HChar* str_major = VG_(strtok)(glibc_version_tok, ".");
+                  Long major = VG_(strtoll10)(str_major, NULL);
+                  const HChar* str_minor = VG_(strtok)(NULL, ".");
+                  Long minor = VG_(strtoll10)(str_minor, NULL);
+                  if (major >= 2 && minor >= 34) {
+                      print_warning = False;
+                  }
+                  VG_(free)(glibc_version_tok);
+              }
+          } else {
+
+          }
+          if (print_warning) {
+              VG_(debugLog)(0,"sched",
+                            "WARNING: pthread stack cache cannot be disabled!\n");
+          }
           VG_(clo_sim_hints) &= ~SimHint2S(SimHint_no_nptl_pthread_stackcache);
           /* Remove SimHint_no_nptl_pthread_stackcache from VG_(clo_sim_hints)
              to avoid having a msg for all following threads. */
@@ -1361,7 +1384,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
    
    vg_assert(VG_(is_running_thread)(tid));
 
-   dispatch_ctr = SCHEDULING_QUANTUM;
+   dispatch_ctr = VG_(clo_scheduling_quantum);
 
    while (!VG_(is_exiting)(tid)) {
 
@@ -1412,7 +1435,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
 	 n_scheduling_events_MAJOR++;
 
 	 /* Figure out how many bbs to ask vg_run_innerloop to do. */
-         dispatch_ctr = SCHEDULING_QUANTUM;
+         dispatch_ctr = VG_(clo_scheduling_quantum);
 
 	 /* paranoia ... */
 	 vg_assert(tst->tid == tid);
@@ -2086,6 +2109,7 @@ void do_client_request ( ThreadId tid )
 
 	 info->mallinfo                = VG_(mallinfo);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);
+         info->clo_realloc_zero_bytes_frees    = VG_(clo_realloc_zero_bytes_frees);
 
          SET_CLREQ_RETVAL( tid, 0 );     /* return value is meaningless */
 

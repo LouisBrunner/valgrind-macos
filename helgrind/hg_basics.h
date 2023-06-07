@@ -91,6 +91,9 @@ extern Bool HG_(clo_cmp_race_err_addrs);
       very useful). */
 extern UWord HG_(clo_history_level);
 
+/* Controls how many IPs an history stack records. */
+extern UInt HG_(clo_history_backtrace_size);
+
 /* For full history level, determines how the stack trace is computed.
    no : a stacktrace is always computed from scratch, typically
         using the unwind information.

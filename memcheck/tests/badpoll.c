@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
-#include <sys/poll.h>
+#include <poll.h>
 
 // At one point, poll()'s checking was not done accurately.  This test
 // exposes this -- previously Memcheck only found one error, now if finds

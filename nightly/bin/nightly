@@ -146,6 +146,9 @@ for logfile in old new ; do
    # Grab some indicative text for the short log file -- if the regtests
    # succeeded, show their results.  If we didn't make it that far, show the
    # last 20 lines.
+   # Change 68cf3b5dbfecb96c618c371359000daaaf4293b5 added time information to the
+   # logs, which is fairly variable. The sed filter deletes this so that we don't
+   # generate spurious diffs.
    egrep -q '^== [0-9]+ tests' $logfile.verbose && (
       echo >> $logfile.short
       echo "Regression test results follow" >> $logfile.short
@@ -157,7 +160,7 @@ for logfile in old new ; do
          echo >> $logfile.short
          echo "Last 20 lines of verbose log follow" >> $logfile.short \
          echo >> $logfile.short
-         tail -20 $logfile.verbose >> $logfile.short
+         tail -20 $logfile.verbose | sed 's/(in [0-9]* sec) -*//' >> $logfile.short
       fi
    ) || (
       echo >> $logfile.short

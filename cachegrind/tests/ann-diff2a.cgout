@@ -1,0 +1,9 @@
+desc: Description for ann-diff2a.cgout
+cmd: cmd1
+events: One Two
+
+fl=ann2-diff-AUX/ann-diff2-basic.rs
+fn=basic1
+1 1000 1000
+
+summary: 1000 1000

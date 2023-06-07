@@ -1,0 +1,14 @@
+# The `prog` doesn't matter because we don't use its output. Instead we test
+# the post-processing of the cgout files.
+prog: ../../tests/true
+vgopts: --cachegrind-out-file=cachegrind.out
+
+# The `sleep` is to ensure the mtime of the second touched file is greater than
+# the mtime of the first touched file.
+#
+# Because only one of the two x.rs files is newer than the cgout files, we don't
+# get an mtime warning on x.rs. But both w.rs files are new than the cgout
+# files, so we do get an mtime warning on w.rs.
+post: touch ann-diff4a.cgout ann-diff4b.cgout && sleep 0.1 && touch ann-diff4a-aux/x.rs ann-diff4a-aux/w.rs ann-diff4b-aux/w.rs && python3 ../cg_annotate ann-diff4a.cgout ann-diff4b.cgout --mod-filename=s/ann-diff4[ab]/ann-diff4N/ --diff
+
+cleanup: rm cachegrind.out

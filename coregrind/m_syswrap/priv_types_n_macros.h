@@ -180,11 +180,12 @@ typedef
    SyscallArgLayout;
 
 /* Flags describing syscall wrappers */
-#define SfMayBlock      (1 << 1) /* may block                         */
-#define SfPostOnFail    (1 << 2) /* call POST() function on failure   */
-#define SfPollAfter     (1 << 3) /* poll for signals on completion    */
-#define SfYieldAfter    (1 << 4) /* yield on completion               */
-#define SfNoWriteResult (1 << 5) /* don't write result to guest state */
+#define SfMayBlock      (1U << 1U) /* may block                         */
+#define SfPostOnFail    (1U << 2U) /* call POST() function on failure   */
+#define SfPollAfter     (1U << 3U) /* poll for signals on completion    */
+#define SfYieldAfter    (1U << 4U) /* yield on completion               */
+#define SfNoWriteResult (1U << 5U) /* don't write result to guest state */
+#define SfKernelRestart (1U << 6U) /* needs a manual restart            */
 
 
 /* ---------------------------------------------------------------------

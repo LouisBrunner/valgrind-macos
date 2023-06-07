@@ -1,0 +1,4 @@
+# A boolean arg no equals or arg
+# this one for https://bugs.kde.org/show_bug.cgi?id=351857
+prog: ../../tests/true
+vgopts: --trace-children

@@ -4,6 +4,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	aligned_alloc.vgtest aligned_alloc.stderr.exp \
 	brk.stderr.exp brk.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
@@ -16,6 +17,7 @@ EXTRA_DIST = \
 	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
 	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
 	memfd_create.vgtest memfd_create.stderr.exp \
+		memfd_create.stderr.exp-fcntl64 \
 	rfcomm.vgtest rfcomm.stderr.exp \
 	sigqueue.vgtest sigqueue.stderr.exp \
 	stack_changes.stderr.exp stack_changes.stdout.exp \
@@ -33,9 +35,11 @@ EXTRA_DIST = \
 	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
-	enomem.vgtest enomem.stderr.exp enomem.stdout.exp
+	enomem.vgtest enomem.stderr.exp enomem.stdout.exp \
+	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
+	aligned_alloc \
 	brk \
 	capget \
 	check_preadv2_pwritev2 \
@@ -55,7 +59,8 @@ check_PROGRAMS = \
 	proc-auxv \
 	sys-execveat \
 	check_execveat \
-	enomem
+	enomem \
+	memalign
 
 if HAVE_AT_FDCWD
 check_PROGRAMS += sys-openat
@@ -101,3 +106,9 @@ dlclose_leak_DEPENDENCIES     = dlclose_leak_so.so
 dlclose_leak_LDADD            = -ldl
 dlclose_leak_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
                                 -Wl,-rpath,$(top_builddir)/memcheck/tests/linux
+
+enomem_CFLAGS                 = $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+sys_preadv_pwritev_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@ @FLAG_W_NO_STRINGOP_OVERREAD@ \
+                                @FLAG_W_NO_NONNULL@
+sys_preadv2_pwritev2_CFLAGS   = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@ @FLAG_W_NO_STRINGOP_OVERREAD@ \
+                                @FLAG_W_NO_STRINGOP_OVERFLOW@

@@ -1,0 +1,125 @@
+--------------------------------------------------------------------------------
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate ann-diff4a.cgout ann-diff4b.cgout --mod-filename=s/ann-diff4[ab]/ann-diff4N/ --diff
+DescA
+DescB
+DescC
+Command 1:        my-command
+Command 2:        (same as Command 1)
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Threshold:        0.1%
+Annotation:       on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+Ir__________ 
+
+700 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- File:function summary
+--------------------------------------------------------------------------------
+  Ir___________________  file:function
+
+<  600  (85.7%,  85.7%)  ann-diff4N-aux/y.rs:b
+
+<  200  (28.6%, 114.3%)  ann-diff4N-aux/x.rs:a
+
+< -200 (-28.6%,  85.7%)  ann-diff4N-aux/w.rs:a
+
+<  200  (28.6%, 114.3%)  ann-diff4N-aux/no-such-file.rs:f
+
+< -100 (-14.3%, 100.0%)  ann-diff4N-aux/z.rs:c
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  Ir___________________  function:file
+
+>  600  (85.7%,  85.7%)  b:ann-diff4N-aux/y.rs
+
+>  200  (28.6%, 114.3%)  f:ann-diff4N-aux/no-such-file.rs
+
+> -100 (-14.3%, 100.0%)  c:ann-diff4N-aux/z.rs
+
+>    0   (0.0%, 100.0%)  a:
+   200  (28.6%)            ann-diff4N-aux/x.rs
+  -200 (-28.6%)            ann-diff4N-aux/w.rs
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-diff4N-aux/no-such-file.rs
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ann-diff4a-aux/no-such-file.rs
+- ann-diff4b-aux/no-such-file.rs
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-diff4N-aux/w.rs
+--------------------------------------------------------------------------------
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@ Original source files are all newer than data file 'ann-diff4a.cgout':
+@ - ann-diff4a-aux/w.rs
+@ - ann-diff4b-aux/w.rs
+@ Annotations may not be correct.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@ Original source files are all newer than data file 'ann-diff4b.cgout':
+@ - ann-diff4a-aux/w.rs
+@ - ann-diff4b-aux/w.rs
+@ Annotations may not be correct.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Ir___________ 
+
+-200 (-28.6%)  one
+   .           two
+   .           three
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-diff4N-aux/x.rs
+--------------------------------------------------------------------------------
+Ir___________ 
+
+ 100  (14.3%)  <unknown (line 0)>
+
+-200 (-28.6%)  one
+ 300  (42.9%)  two
+   .           three
+   .           four
+   .           five
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-diff4N-aux/y.rs
+--------------------------------------------------------------------------------
+Unannotated because two or more of these original files are not identical:
+- ann-diff4a-aux/y.rs
+- ann-diff4b-aux/y.rs
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-diff4N-aux/z.rs
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ann-diff4a-aux/z.rs
+- ann-diff4b-aux/z.rs
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+Ir___________ 
+
+-100 (-14.3%)    annotated: files known & above threshold & readable, line numbers known
+ 100  (14.3%)    annotated: files known & above threshold & readable, line numbers unknown
+ 600  (85.7%)  unannotated: files known & above threshold & two or more non-identical
+ 100  (14.3%)  unannotated: files known & above threshold & unreadable 
+   0           unannotated: files known & below threshold
+   0           unannotated: files unknown
+

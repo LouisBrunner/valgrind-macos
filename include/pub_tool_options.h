@@ -30,6 +30,8 @@
 #define __PUB_TOOL_OPTIONS_H
 
 #include "pub_tool_basics.h"     // for VG_ macro
+#include "pub_tool_libcbase.h"   // for VG__ str functions
+#include "pub_tool_libcprint.h"  // for VG_(fmsg_bad_option)
 #include "libvex.h"              // for VexControl
 
 // Command line option parsing happens in the following modes:
@@ -118,22 +120,47 @@ extern void VG_(list_clo)(const HChar *qq_option);
     (qq_mode, qq_arg, qq_option,                        \
      VG_STREQ(qq_arg, qq_option)))
 
+static inline
+Bool VG_(bool_clom)(Clo_Mode qq_mode, const HChar* qq_arg, const HChar* qq_option, Bool* qq_var, Bool qq_vareq_arg)
+{
+   Bool res = False;
+   if (VG_(check_clom)(qq_mode, qq_arg, qq_option, qq_vareq_arg))
+   {
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ];
+      if (VG_(strcmp)(val, "yes") == 0)
+      {
+         *qq_var = True;
+         res = True;
+      }
+      else if (VG_(strcmp)(val, "no") == 0)
+      {
+         *qq_var = False;
+         res = True;
+      }
+      else
+      {
+         VG_(fmsg_bad_option)(qq_arg, "Invalid boolean value '%s'"
+                                      " (should be 'yes' or 'no')\n",
+          /* gcc 10 (20200119) complains that |val| could be null here. */
+          /* I think it is wrong, but anyway, to placate it .. */
+                                              (val ? val : "(null)"));
+      }
+   } else if (VG_STREQN(VG_(strlen)(qq_option), qq_arg, qq_option) &&
+              VG_(strlen)(qq_option) == VG_(strlen)(qq_arg))
+   {
+      VG_(fmsg_bad_option)(qq_arg,
+                           "Missing boolean value, did you mean '%s=yes'?\n",
+                           qq_arg);
+   }
+
+   return res;
+}
+
 // String argument, eg. --foo=yes or --foo=no
 #define VG_BOOL_CLOM(qq_mode, qq_arg, qq_option, qq_var)        \
-   (VG_(check_clom)                                                     \
-    (qq_mode, qq_arg, qq_option,                                        \
-     VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) &&      \
-    ({Bool res = True;                                                  \
-      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ];         \
-      if      VG_STREQ(val, "yes") (qq_var) = True;                     \
-      else if VG_STREQ(val, "no")  (qq_var) = False;                    \
-      else {VG_(fmsg_bad_option)(qq_arg, "Invalid boolean value '%s'"   \
-                                        " (should be 'yes' or 'no')\n", \
-       /* gcc 10 (20200119) complains that |val| could be null here. */ \
-       /* I think it is wrong, but anyway, to placate it .. */          \
-                                        (val ? val : "(null)"));        \
-         res = False; }                                                 \
-      res; }))
+   (VG_(bool_clom)((qq_mode), (qq_arg), (qq_option), &(qq_var), \
+   VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"="))   \
+   )
 
 #define VG_BOOL_CLO(qq_arg, qq_option, qq_var) \
    VG_BOOL_CLOM(cloP, qq_arg, qq_option, qq_var)
@@ -304,6 +331,11 @@ extern Bool VG_(clo_stats);
 /* wait for vgdb/gdb after reporting that amount of error.
    Note that this value can be changed dynamically. */
 extern Int VG_(clo_vgdb_error);
+
+/* Set by vgdb in --multi mode when launching valgrind. This suppresses
+   the "TO DEBUG" banner because vgdb will take care of attaching in that
+   case.  */
+extern Bool VG_(clo_launched_with_multi);
 
 /* If user has provided the --vgdb-prefix command line option,
    VG_(arg_vgdb_prefix) points at the provided argument (including the

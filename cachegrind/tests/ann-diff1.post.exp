@@ -1,0 +1,52 @@
+--------------------------------------------------------------------------------
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate --mod-filename=s/a.c/A.c/ --mod-funcname s/MAIN/Main/ ann-diff1.cgout
+Files compared:   ann1.cgout; ann1b.cgout
+Command:          ./a.out; ./a.out
+Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Events shown:     Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Threshold:        0.1%
+Annotation:       on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+Ir________________ I1mr ILmr Dr_________________ D1mr DLmr Dw D1mw DLmw 
+
+5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- File:function summary
+--------------------------------------------------------------------------------
+  Ir________________________ I1mr________ ILmr________ Dr_________________________ D1mr________ DLmr________ Dw__________ D1mw________ DLmw________  file:function
+
+< 5,000,000 (100.0%, 100.0%) 0 (n/a, n/a) 0 (n/a, n/a) -2,000,000 (100.0%, 100.0%) 0 (n/a, n/a) 0 (n/a, n/a) 0 (n/a, n/a) 0 (n/a, n/a) 0 (n/a, n/a)  A.c:Main
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  Ir________________________ I1mr________ ILmr________ Dr_________________________ D1mr________ DLmr________ Dw__________ D1mw________ DLmw________  function:file
+
+> 5,000,000 (100.0%, 100.0%) 0 (n/a, n/a) 0 (n/a, n/a) -2,000,000 (100.0%, 100.0%) 0 (n/a, n/a) 0 (n/a, n/a) 0 (n/a, n/a) 0 (n/a, n/a) 0 (n/a, n/a)  Main:A.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: A.c
+--------------------------------------------------------------------------------
+Ir________________ I1mr ILmr Dr_________________ D1mr DLmr Dw D1mw DLmw 
+
+5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0  <unknown (line 0)>
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+Ir________________ I1mr ILmr Dr_________________ D1mr DLmr Dw D1mw DLmw 
+
+        0             0    0          0             0    0  0    0    0    annotated: files known & above threshold & readable, line numbers known
+5,000,000 (100.0%)    0    0 -2,000,000 (100.0%)    0    0  0    0    0    annotated: files known & above threshold & readable, line numbers unknown
+        0             0    0          0             0    0  0    0    0  unannotated: files known & above threshold & two or more non-identical
+        0             0    0          0             0    0  0    0    0  unannotated: files known & above threshold & unreadable 
+        0             0    0          0             0    0  0    0    0  unannotated: files known & below threshold
+        0             0    0          0             0    0  0    0    0  unannotated: files unknown
+

@@ -1,0 +1,58 @@
+--------------------------------------------------------------------------------
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate ann-diff2c.cgout
+Files compared:   ann-diff2a.cgout; ann-diff2b.cgout
+Command:          cmd1; cmd2
+Events recorded:  One Two
+Events shown:     One Two
+Event sort order: One Two
+Threshold:        0.1%
+Annotation:       on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+One___________ Two___________ 
+
+2,100 (100.0%) 1,900 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- File:function summary
+--------------------------------------------------------------------------------
+  One___________________ Two___________________  file:function
+
+< 2,100 (100.0%, 100.0%) 1,900 (100.0%, 100.0%)  aux/ann-diff2-basic.rs:
+  1,000  (47.6%)         1,000  (52.6%)            groffN
+  1,000  (47.6%)         1,000  (52.6%)            fN_ffN_fooN_F4_g5
+    100   (4.8%)          -100  (-5.3%)            basic1
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  One__________________ Two__________________  function:file
+
+> 1,000 (47.6%,  47.6%) 1,000 (52.6%,  52.6%)  groffN:aux/ann-diff2-basic.rs
+
+> 1,000 (47.6%,  95.2%) 1,000 (52.6%, 105.3%)  fN_ffN_fooN_F4_g5:aux/ann-diff2-basic.rs
+
+>   100  (4.8%, 100.0%)  -100 (-5.3%, 100.0%)  basic1:aux/ann-diff2-basic.rs
+
+--------------------------------------------------------------------------------
+-- Annotated source file: aux/ann-diff2-basic.rs
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- aux/ann-diff2-basic.rs
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+One___________ Two___________ 
+
+    0              0             annotated: files known & above threshold & readable, line numbers known
+    0              0             annotated: files known & above threshold & readable, line numbers unknown
+    0              0           unannotated: files known & above threshold & two or more non-identical
+2,100 (100.0%) 1,900 (100.0%)  unannotated: files known & above threshold & unreadable 
+    0              0           unannotated: files known & below threshold
+    0              0           unannotated: files unknown
+

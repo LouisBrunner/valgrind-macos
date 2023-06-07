@@ -1,0 +1,79 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg04_race.c:82)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   ...
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (hg04_race.c:80)
+
+----------------------------------------------------------------
+
+Possible data race during read of size 4 at 0x........ by thread #x
+Locks held: none
+   at 0x........: th10 (hg04_race.c:11)
+   by 0x........: th9 (hg04_race.c:17)
+   by 0x........: th8 (hg04_race.c:23)
+   by 0x........: th7 (hg04_race.c:29)
+   by 0x........: th6 (hg04_race.c:35)
+   by 0x........: th5 (hg04_race.c:41)
+   by 0x........: th4 (hg04_race.c:47)
+   by 0x........: th3 (hg04_race.c:53)
+   by 0x........: th2 (hg04_race.c:59)
+   by 0x........: th1 (hg04_race.c:66)
+   by 0x........: th (hg04_race.c:71)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
+   at 0x........: th10 (hg04_race.c:11)
+   by 0x........: th9 (hg04_race.c:17)
+   by 0x........: th8 (hg04_race.c:23)
+   by 0x........: th7 (hg04_race.c:29)
+   by 0x........: th6 (hg04_race.c:35)
+   by 0x........: th5 (hg04_race.c:41)
+   by 0x........: th4 (hg04_race.c:47)
+   by 0x........: th3 (hg04_race.c:53)
+   by 0x........: th2 (hg04_race.c:59)
+ Location 0x........ is 0 bytes inside global var "shared"
+ declared at hg04_race.c:6
+
+----------------------------------------------------------------
+
+Possible data race during write of size 4 at 0x........ by thread #x
+Locks held: none
+   at 0x........: th10 (hg04_race.c:11)
+   by 0x........: th9 (hg04_race.c:17)
+   by 0x........: th8 (hg04_race.c:23)
+   by 0x........: th7 (hg04_race.c:29)
+   by 0x........: th6 (hg04_race.c:35)
+   by 0x........: th5 (hg04_race.c:41)
+   by 0x........: th4 (hg04_race.c:47)
+   by 0x........: th3 (hg04_race.c:53)
+   by 0x........: th2 (hg04_race.c:59)
+   by 0x........: th1 (hg04_race.c:66)
+   by 0x........: th (hg04_race.c:71)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+
+This conflicts with a previous write of size 4 by thread #x
+Locks held: none
+   at 0x........: th10 (hg04_race.c:11)
+   by 0x........: th9 (hg04_race.c:17)
+   by 0x........: th8 (hg04_race.c:23)
+   by 0x........: th7 (hg04_race.c:29)
+   by 0x........: th6 (hg04_race.c:35)
+   by 0x........: th5 (hg04_race.c:41)
+   by 0x........: th4 (hg04_race.c:47)
+   by 0x........: th3 (hg04_race.c:53)
+   by 0x........: th2 (hg04_race.c:59)
+ Location 0x........ is 0 bytes inside global var "shared"
+ declared at hg04_race.c:6
+
+
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

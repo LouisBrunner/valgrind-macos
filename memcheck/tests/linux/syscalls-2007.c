@@ -20,9 +20,7 @@
 #if defined(HAVE_SYS_EVENTFD_H)
 #include <sys/eventfd.h>
 #endif
-#if defined(HAVE_SYS_POLL_H)
-#include <sys/poll.h>
-#endif
+#include <poll.h>
 #if defined(HAVE_SYS_SIGNALFD_H)
 #include <sys/signalfd.h>
 #endif

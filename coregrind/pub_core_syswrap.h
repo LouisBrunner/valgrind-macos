@@ -52,6 +52,8 @@ extern void VG_(clear_syscallInfo) ( ThreadId tid );
 // Returns True if the given thread is currently in a system call
 extern Bool VG_(is_in_syscall) ( ThreadId tid );
 
+extern Bool VG_(is_in_kernel_restart_syscall) ( ThreadId tid );
+
 // If VG_(is_in_syscall) (tid), returns the sysno the given thread is in
 extern Word VG_(is_in_syscall_no) (ThreadId tid );
 

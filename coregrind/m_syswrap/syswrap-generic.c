@@ -1121,10 +1121,9 @@ static void check_cmsg_for_fds(ThreadId tid, struct vki_msghdr *msg)
 }
 
 /* GrP kernel ignores sa_len (at least on Darwin); this checks the rest */
-static
-void pre_mem_read_sockaddr ( ThreadId tid,
-                             const HChar *description,
-                             struct vki_sockaddr *sa, UInt salen )
+void ML_(pre_mem_read_sockaddr) ( ThreadId tid,
+                                  const HChar *description,
+                                  struct vki_sockaddr *sa, UInt salen )
 {
    HChar outmsg[VG_(strlen)( description ) + 30]; // large enough
    struct vki_sockaddr_un*  saun = (struct vki_sockaddr_un *)sa;
@@ -1524,7 +1523,7 @@ ML_(generic_PRE_sys_bind) ( ThreadId tid,
 {
    /* int bind(int sockfd, struct sockaddr *my_addr, 
                int addrlen); */
-   pre_mem_read_sockaddr( 
+   ML_(pre_mem_read_sockaddr) (
       tid, "socketcall.bind(my_addr.%s)",
       (struct vki_sockaddr *) arg1, arg2 
    );
@@ -1580,7 +1579,7 @@ ML_(generic_PRE_sys_sendto) ( ThreadId tid,
    PRE_MEM_READ( "socketcall.sendto(msg)",
                  arg1, /* msg */
                  arg2  /* len */ );
-   pre_mem_read_sockaddr( 
+   ML_(pre_mem_read_sockaddr) (
       tid, "socketcall.sendto(to.%s)",
       (struct vki_sockaddr *) arg4, arg5
    );
@@ -1673,7 +1672,7 @@ ML_(generic_PRE_sys_connect) ( ThreadId tid,
 {
    /* int connect(int sockfd, 
                   struct sockaddr *serv_addr, int addrlen ); */
-   pre_mem_read_sockaddr( tid,
+   ML_(pre_mem_read_sockaddr) ( tid,
                           "socketcall.connect(serv_addr.%s)",
                           (struct vki_sockaddr *) arg1, arg2);
 }
@@ -3795,7 +3794,7 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
        * drivers with a large number of strange ioctl
        * commands becomes very tiresome.
        */
-   } else if (/* size == 0 || */ dir == _VKI_IOC_NONE) {
+   } else if (dir == _VKI_IOC_NONE && size > 0) {
       static UWord unknown_ioctl[10];
       static Int moans = sizeof(unknown_ioctl) / sizeof(unknown_ioctl[0]);
 
@@ -3809,7 +3808,7 @@ void ML_(PRE_unknown_ioctl)(ThreadId tid, UWord request, UWord arg)
                unknown_ioctl[i] = request;
                moans--;
                VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                         " with no size/direction hints.\n", request);
+                         " with no direction hints.\n", request);
                VG_(umsg)("   This could cause spurious value errors to appear.\n");
                VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
                          "guidance on writing a proper wrapper.\n" );
@@ -4410,7 +4409,7 @@ PRE(sys_readv)
 {
    Int i;
    struct vki_iovec * vec;
-   char buf[sizeof("writev(vector[])") + 11];
+   char buf[sizeof("readv(vector[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_readv ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
@@ -4426,7 +4425,7 @@ PRE(sys_readv)
       if (ML_(safe_to_deref)((const void*)ARG2, ARG3*sizeof(struct vki_iovec *))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
          for (i = 0; i < (Int)ARG3; i++) {
-            VG_(sprintf)(buf, "writev(vector[%d])", i);
+            VG_(sprintf)(buf, "readv(vector[%d])", i);
             PRE_MEM_WRITE(buf, (Addr)vec[i].iov_base, vec[i].iov_len );
          }
       }

@@ -1,0 +1,21 @@
+L1 topology: separate data and instruction; private
+L1 cache line size data: 256
+L1 cache line size insn: 256
+L1 total cachesize data: 131072
+L1 total cachesize insn: 131072
+L1 set. assoc.     data: 8
+L1 set. assoc.     insn: 8
+L2 topology: unified data and instruction; private
+L2 cache line size data: 256
+L2 cache line size insn: 256
+L2 total cachesize data: 33554432
+L2 total cachesize insn: 33554432
+L2 set. assoc.     data: 16
+L2 set. assoc.     insn: 16
+L3 topology: unified data and instruction; shared
+L3 cache line size data: 256
+L3 cache line size insn: 256
+L3 total cachesize data: 268435456
+L3 total cachesize insn: 268435456
+L3 set. assoc.     data: 128
+L3 set. assoc.     insn: 128

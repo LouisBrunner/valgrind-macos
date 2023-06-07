@@ -71,13 +71,12 @@ int main()
    pthread_attr_destroy(&attr);
 
    int buf = 0;
-   int res = 0;
    for (int i = 0; i < NR_RUNS; i++) {
       std::cerr << "Main at barrier " << i << "\n";
       pthread_barrier_wait(&ls_barrier);
       std::cerr << "Main after barrier " << i << "\n";
       buf = buf ^ 1;
-      res += read_buffer(buf);
+      (void)read_buffer(buf);
    }
 
    pthread_join(ls_thread,NULL);

@@ -11,13 +11,13 @@
 {
    pthread_create
    drd:ConflictingAccess
-   fun:pthread_create@@GLIBC_2.2*
+   fun:pthread_create@@GLIBC_2.*
 }
 {
    pthread_create
    drd:ConflictingAccess
    fun:allocate_stack
-   fun:pthread_create@@GLIBC_2.2*
+   fun:pthread_create@@GLIBC_2.*
 }
 {
    drd-gcc-runtims

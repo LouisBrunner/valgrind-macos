@@ -15,7 +15,7 @@
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [21])
+m4_define([v_minor_ver], [22])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
 m4_define([v_rel_date], ["?? ??? 202?"])
@@ -50,8 +50,11 @@ CXXFLAGS="$CXXFLAGS"
 #----------------------------------------------------------------------------
 
 AC_PROG_LN_S
-AC_PROG_CC
-AM_PROG_CC_C_O
+m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
+# Make sure we can compile in C99 mode.
+if test "$ac_cv_prog_cc_c99" = "no"; then
+    AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
+fi
 AC_PROG_CPP
 AC_PROG_CXX
 # AC_PROG_OBJC apparently causes problems on older Linux distros (eg. with
@@ -82,6 +85,11 @@ m4_ifndef([AC_PROG_SED],
                      AC_CHECK_PROGS([SED],[gsed sed])])])
 AC_PROG_SED
 
+AC_DEFUN([AC_PROG_SHA256SUM],
+          [AC_ARG_VAR([SHA256SUM])
+          AC_CHECK_PROGS([SHA256SUM],[gsha256sum sha256sum])])
+AC_PROG_SHA256SUM
+
 # If no AR variable was specified, look up the name of the archiver. Otherwise
 # do not touch the AR variable.
 if test "x$AR" = "x"; then
@@ -94,12 +102,6 @@ if test "x$LTO_AR" = "x"; then
   AC_PATH_PROGS([LTO_AR], [gcc-ar])
 fi
 AC_ARG_VAR([LTO_AR],[Archiver command for link time optimisation])
-
-
-# Check for the compiler support
-if test "${GCC}" != "yes" ; then
-   AC_MSG_ERROR([Valgrind relies on GCC to be compiled])
-fi
 
 # figure out where perl lives
 AC_PATH_PROG(PERL, perl)
@@ -449,8 +451,10 @@ case "${host_os}" in
         freebsd_12_2=1220
         AC_DEFINE([FREEBSD_13_0], 1300, [FREEBSD_VERS value for FreeBSD 13.0])
         freebsd_13_0=1300
-        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1+])
+        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1])
         freebsd_13_1=1310
+        AC_DEFINE([FREEBSD_13_2], 1320, [FREEBSD_VERS value for FreeBSD 13.2])
+        freebsd_13_2=1320
         AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
         freebsd_14=1400
 
@@ -489,10 +493,15 @@ case "${host_os}" in
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_0, [FreeBSD version])
               freebsd_vers=$freebsd_13_0
               ;;
-           *)
-              AC_MSG_RESULT([FreeBSD 13.1+ (${kernel})])
+           13.1-*)
+              AC_MSG_RESULT([FreeBSD 13.1 (${kernel})])
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_1, [FreeBSD version])
               freebsd_vers=$freebsd_13_1
+              ;;
+           13.2-*)
+              AC_MSG_RESULT([FreeBSD 13.2 (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
+              freebsd_vers=$freebsd_13_2
               ;;
            esac
            ;;
@@ -1294,6 +1303,23 @@ AC_ARG_WITH(tmpdir,
    tmpdir="/tmp")
 AC_DEFINE_UNQUOTED(VG_TMPDIR, "$tmpdir", [Temporary files directory])
 AC_SUBST(VG_TMPDIR, [$tmpdir])
+
+#----------------------------------------------------------------------------
+# Where to install gdb scripts, defaults to VG_LIBDIR (pkglibexecdir)
+#----------------------------------------------------------------------------
+AC_MSG_CHECKING([where gdb scripts are installed])
+AC_ARG_WITH(gdbscripts-dir,
+   [  --with-gdbscripts-dir=PATH  Specify path to install gdb scripts],
+   [gdbscriptsdir=${withval}],
+   [gdbscriptsdir=${libexecdir}/valgrind])
+AC_MSG_RESULT([$gdbscriptsdir])
+if test "x$gdbscriptsdir" != "xno"; then
+  AC_SUBST(VG_GDBSCRIPTS_DIR, [$gdbscriptsdir])
+  AM_CONDITIONAL(GDBSCRIPTS, true)
+else
+  AC_SUBST(VG_GDBSCRIPTS_DIR, [])
+  AM_CONDITIONAL(GDBSCRIPTS, false)
+fi
 
 #----------------------------------------------------------------------------
 # Libc and suppressions
@@ -2109,6 +2135,26 @@ AC_MSG_RESULT([no])
 # clang 3.3 cannot process <thread> from e.g.
 # gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
 
+AC_MSG_CHECKING([that C++ compiler can compile C++17 code])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS=-std=c++17
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+int x;
+])],
+[
+ac_have_cxx_17=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_cxx_17=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(HAVE_CXX17, test x$ac_have_cxx_17 = xyes)
+
 AC_MSG_CHECKING([that C++ compiler can include <thread> header file])
 AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
@@ -2602,6 +2648,20 @@ AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
   CFLAGS=$safe_CFLAGS
 ])
 
+# A variation of the above for arguments that
+# take a value
+AC_DEFUN([AC_GCC_WARNING_SUBST_NO_VAL],[
+  AC_MSG_CHECKING([if gcc accepts -W$1=$2])
+  safe_CFLAGS=$CFLAGS
+  CFLAGS="-W$1=$2 -Werror"
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+  AC_SUBST([$3], [-Wno-$1])
+  AC_MSG_RESULT([yes])], [
+  AC_SUBST([$3], [])
+  AC_MSG_RESULT([no])])
+  CFLAGS=$safe_CFLAGS
+])
+
 # Convenience function. Like AC_GCC_WARNING_SUBST_NO, except it substitutes
 # -W$1  (instead of -Wno-$1).
 AC_DEFUN([AC_GCC_WARNING_SUBST],[
@@ -2621,11 +2681,27 @@ AC_GCC_WARNING_SUBST_NO([nonnull], [FLAG_W_NO_NONNULL])
 AC_GCC_WARNING_SUBST_NO([overflow], [FLAG_W_NO_OVERFLOW])
 AC_GCC_WARNING_SUBST_NO([pointer-sign], [FLAG_W_NO_POINTER_SIGN])
 AC_GCC_WARNING_SUBST_NO([uninitialized], [FLAG_W_NO_UNINITIALIZED])
+AC_GCC_WARNING_SUBST_NO([maybe-uninitialized], [FLAG_W_NO_MAYBE_UNINITIALIZED])
 AC_GCC_WARNING_SUBST_NO([unused-function], [FLAG_W_NO_UNUSED_FUNCTION])
 AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INLINE])
 AC_GCC_WARNING_SUBST_NO([mismatched-new-delete], [FLAG_W_NO_MISMATCHED_NEW_DELETE])
 AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST_NO([expansion-to-defined], [FLAG_W_NO_EXPANSION_TO_DEFINED])
+AC_GCC_WARNING_SUBST_NO([unused-but-set-variable], [FLAG_W_NO_UNUSED_BUT_SET_VARIABLE])
+AC_GCC_WARNING_SUBST_NO([non-power-of-two-alignment], [FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT])
+AC_GCC_WARNING_SUBST_NO([sign-compare], [FLAG_W_NO_SIGN_COMPARE])
+AC_GCC_WARNING_SUBST_NO([stringop-overflow], [FLAG_W_NO_STRINGOP_OVERFLOW])
+AC_GCC_WARNING_SUBST_NO([stringop-overread], [FLAG_W_NO_STRINGOP_OVERREAD])
+AC_GCC_WARNING_SUBST_NO([stringop-truncation], [FLAG_W_NO_STRINGOP_TRUNCATION])
+AC_GCC_WARNING_SUBST_NO([format-overflow], [FLAG_W_NO_FORMAT_OVERFLOW])
+AC_GCC_WARNING_SUBST_NO([use-after-free], [FLAG_W_NO_USE_AFTER_FREE])
+AC_GCC_WARNING_SUBST_NO([free-nonheap-object], [FLAG_W_NO_FREE_NONHEAP_OBJECT])
+AC_GCC_WARNING_SUBST_NO([fortify-source], [FLAG_W_NO_FORTIFY_SOURCE])
+AC_GCC_WARNING_SUBST_NO([builtin-memcpy-chk-size], [FLAG_W_NO_BUILTIN_MEMCPY_CHK_SIZE])
+AC_GCC_WARNING_SUBST_NO([incompatible-pointer-types-discards-qualifiers], [FLAG_W_NO_INCOMPATIBLE_POINTER_TYPES_DISCARDS_QUALIFIERS])
+AC_GCC_WARNING_SUBST_NO([suspicious-bzero], [FLAG_W_NO_SUSPICIOUS_BZERO])
+
+AC_GCC_WARNING_SUBST_NO_VAL([alloc-size-larger-than], [1677216], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
 
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
@@ -3510,9 +3586,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
     asm ("bndmov %bnd0,(%rsp)");
     asm ("bndldx 3(%rbx,%rdx), %bnd2");
     asm ("bnd call foo\n"
-          bnd jmp  end\n"
-          foo: bnd ret\n"
-          end: nop");
+         "bnd jmp  end\n"
+         "foo: bnd ret\n"
+         "end: nop");
   } while (0)
 ]])], [
 ac_have_as_mpx=yes
@@ -4554,11 +4630,11 @@ if test "X$VGCONF_ARCH_PRI" = "Xamd64"; then
 else
   libscf=/usr/lib/libscf.so.1
 fi
-if ! $DIS_PATH -F scf_handle_bind $libscf  | grep -q 0x526570; then
+if ! $DIS_PATH -F scf_handle_bind $libscf  | grep -q -E '0x(4d01)?526570'; then
   AC_MSG_WARN([Function `scf_handle_bind' does not contain repository cache protocol version.])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
 fi
-hex=$( $DIS_PATH -F scf_handle_bind $libscf  | sed -n 's/.*0x526570\(..\).*/\1/p' )
+hex=$( $DIS_PATH -F scf_handle_bind $libscf  | perl -pe '($_) = /0x(?:4d01)?526570(\d{2}),/' )
 if test -z "$hex"; then
   AC_MSG_WARN([Version of the repository cache protocol is empty?!])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
@@ -4852,6 +4928,7 @@ AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_CHECK_FUNCS([     \
+        aligned_alloc \
         clock_gettime\
         copy_file_range \
         epoll_create \
@@ -4863,6 +4940,7 @@ AC_CHECK_FUNCS([     \
         memset       \
         mkdir        \
         mremap       \
+        pipe2	     \
         ppoll        \
         preadv       \
         preadv2      \
@@ -5303,6 +5381,21 @@ AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC64],
                [test x$ac_have_builtin_atomic64 = xyes])
 
 
+AC_MSG_CHECKING([if platform has openat2 syscall])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <sys/syscall.h>
+]], [[
+  return __NR_openat2
+]])], [
+  ac_have_openat2=yes
+], [
+  ac_have_openat2=no
+])
+
+AM_CONDITIONAL([HAVE_OPENAT2],
+               [test x$ac_have_openat2 = xyes])
+
 # does g++ have built-in functions for atomic memory access ?
 AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])
 
@@ -5446,6 +5539,7 @@ AC_CONFIG_FILES([
    cachegrind/tests/x86/Makefile
    cachegrind/cg_annotate
    cachegrind/cg_diff
+   cachegrind/cg_merge
    callgrind/Makefile
    callgrind/callgrind_annotate
    callgrind/callgrind_control

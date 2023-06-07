@@ -184,8 +184,12 @@ static void* drd_realloc(ThreadId tid, void* p_old, SizeT new_size)
 
    if (new_size == 0)
    {
-      drd_free(tid, p_old);
-      return NULL;
+      if (VG_(clo_realloc_zero_bytes_frees) == True)
+      {
+         drd_free(tid, p_old);
+         return NULL;
+      }
+      new_size = 1;
    }
 
    s_cmalloc_n_mallocs++;

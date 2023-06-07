@@ -843,9 +843,18 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       }
    }
 
+   /* Without argument, traditional remote protocol.  */
    if (strcmp ("qAttached", arg_own_buf) == 0) {
       /* tell gdb to always detach, never kill the process */
       arg_own_buf[0] = '1';
+      arg_own_buf[1] = 0;
+      return;
+   }
+
+   /* With argument, extended-remote protocol.  */
+   if (strncmp ("qAttached:", arg_own_buf, strlen ("qAttached:")) == 0) {
+      /* We just created this process */
+      arg_own_buf[0] = '0';
       arg_own_buf[1] = 0;
       return;
    }
@@ -1096,7 +1105,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
-   /* Protocol features query.  */
+   /* Protocol features query.  Keep this in sync with coregind/vgdb.c.  */
    if (strncmp ("qSupported", arg_own_buf, 10) == 0
        && (arg_own_buf[10] == ':' || arg_own_buf[10] == '\0')) {
       VG_(sprintf) (arg_own_buf, "PacketSize=%x", (UInt)PBUFSIZ - 1);

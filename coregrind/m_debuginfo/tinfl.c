@@ -51,7 +51,6 @@ typedef ULong  mz_uint64;
 #define MINIZ_USE_UNALIGNED_LOADS_AND_STORES 1
 #endif
 
-#define MINIZ_LITTLE_ENDIAN       ( defined(VG_LITTLEENDIAN) )
 #define MINIZ_HAS_64BIT_REGISTERS ( VG_WORDSIZE == 8 )
 
 // Works around MSVC's spammy "warning C4127: conditional expression is
@@ -179,7 +178,7 @@ struct tinfl_decompressor_tag
 #define MZ_MIN(a,b) (((a)<(b))?(a):(b))
 #define MZ_CLEAR_OBJ(obj) VG_(memset)(&(obj), 0, sizeof(obj))
 
-#if MINIZ_USE_UNALIGNED_LOADS_AND_STORES && MINIZ_LITTLE_ENDIAN
+#if MINIZ_USE_UNALIGNED_LOADS_AND_STORES && defined(VG_LITTLEENDIAN)
   #define MZ_READ_LE16(p) *((const mz_uint16 *)(p))
   #define MZ_READ_LE32(p) *((const mz_uint32 *)(p))
 #else

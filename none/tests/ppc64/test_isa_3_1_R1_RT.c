@@ -75,7 +75,7 @@ static void test_plxvp_off32_R1 (void) {
 	PAD_ORI
 }
 static void test_plbz_off0_R1 (void) {
-	PAD_ORI
+        PAD_ORI
   __asm__ __volatile__ ("plbz %0, +0(0), 1" : "=r" (rt) );
 	PAD_ORI
 }
@@ -193,10 +193,14 @@ static void test_plwa_off64_R1 (void) {
 	PAD_ORI
 }
 static void test_pld_off0_R1 (void) {
+	PAD_ORI
   __asm__ __volatile__ ("pld %0, +0(0), 1" : "=r" (rt)  );
+	PAD_ORI
 }
 static void test_pld_off8_R1 (void) {
+	PAD_ORI
   __asm__ __volatile__ ("pld %0, +8(0), 1" : "=r" (rt)  );
+	PAD_ORI
 }
 static void test_pld_off16_R1 (void) {
 	PAD_ORI
@@ -299,32 +303,32 @@ static void test_paddi_98_R1 (void) {
 }
 static void test_plq_off0_R1 (void) {
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +0(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +0(0), 1" : "=r" (rt) );
 	PAD_ORI
 }
 static void test_plq_off8_R1 (void) {
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +8(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +8(0), 1" : "=r" (rt) );
 	PAD_ORI
 }
 static void test_plq_off16_R1 (void) {
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +16(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +16(0), 1" : "=r" (rt) );
 	PAD_ORI
 }
 static void test_plq_off32_R1 (void) {
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +32(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +32(0), 1" : "=r" (rt) );
 	PAD_ORI
 }
 static void test_plq_off48_R1 (void) {
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +48(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +48(0), 1" : "=r" (rt) );
 	PAD_ORI
 }
 static void test_plq_off64_R1 (void) {
 	PAD_ORI
-  __asm__ __volatile__ ("plq 26, +64(0), 1"  );
+  __asm__ __volatile__ ("plq %0, +64(0), 1" : "=r" (rt) );
 	PAD_ORI
 	PAD_ORI
 }

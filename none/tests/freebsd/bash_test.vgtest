@@ -1,0 +1,4 @@
+# bash isn't part of base
+prereq: test -e /usr/local/bin/bash
+prog: bash_test.sh
+vgopts: -q

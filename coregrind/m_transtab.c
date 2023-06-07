@@ -1574,7 +1574,7 @@ static void initialiseSector ( SECno sno )
       sres = VG_(am_mmap_anon_float_valgrind)( 8 * tc_sector_szQ );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("initialiseSector(TC)", 
-                                     8 * tc_sector_szQ );
+                                     8 * tc_sector_szQ, sr_Err(sres) );
 	 /*NOTREACHED*/
       }
       sec->tc = (ULong*)(Addr)sr_Res(sres);
@@ -1583,7 +1583,8 @@ static void initialiseSector ( SECno sno )
                 ( N_TTES_PER_SECTOR * sizeof(TTEntryC) );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("initialiseSector(TTC)", 
-                                     N_TTES_PER_SECTOR * sizeof(TTEntryC) );
+                                     N_TTES_PER_SECTOR * sizeof(TTEntryC),
+                                     sr_Err(sres));
 	 /*NOTREACHED*/
       }
       sec->ttC = (TTEntryC*)(Addr)sr_Res(sres);
@@ -1592,7 +1593,8 @@ static void initialiseSector ( SECno sno )
                 ( N_TTES_PER_SECTOR * sizeof(TTEntryH) );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("initialiseSector(TTH)", 
-                                     N_TTES_PER_SECTOR * sizeof(TTEntryH) );
+                                     N_TTES_PER_SECTOR * sizeof(TTEntryH),
+                                     sr_Err(sres));
 	 /*NOTREACHED*/
       }
       sec->ttH = (TTEntryH*)(Addr)sr_Res(sres);
@@ -1608,7 +1610,8 @@ static void initialiseSector ( SECno sno )
                 ( N_HTTES_PER_SECTOR * sizeof(TTEno) );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("initialiseSector(HTT)", 
-                                     N_HTTES_PER_SECTOR * sizeof(TTEno) );
+                                     N_HTTES_PER_SECTOR * sizeof(TTEno),
+                                     sr_Err(sres));
 	 /*NOTREACHED*/
       }
       sec->htt = (TTEno*)(Addr)sr_Res(sres);
@@ -2371,7 +2374,7 @@ static void init_unredir_tt_tc ( void )
                        ( N_UNREDIR_TT * UNREDIR_SZB );
       if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)("init_unredir_tt_tc",
-                                     N_UNREDIR_TT * UNREDIR_SZB);
+                                     N_UNREDIR_TT * UNREDIR_SZB, sr_Err(sres));
          /*NOTREACHED*/
       }
       unredir_tc = (ULong *)(Addr)sr_Res(sres);
@@ -2664,12 +2667,12 @@ static Double safe_idiv( ULong a, ULong b )
    return (b == 0 ? 0 : (Double)a / (Double)b);
 }
 
-UInt VG_(get_bbs_translated) ( void )
+ULong VG_(get_bbs_translated) ( void )
 {
    return n_in_count;
 }
 
-UInt VG_(get_bbs_discarded_or_dumped) ( void )
+ULong VG_(get_bbs_discarded_or_dumped) ( void )
 {
    return n_disc_count + n_dump_count;
 }

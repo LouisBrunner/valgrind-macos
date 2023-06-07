@@ -1,0 +1,29 @@
+-----------------------------------------------------
+437:        __NR_openat2 4s 2m
+-----------------------------------------------------
+Syscall param openat2(dfd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_openat2.c:15)
+
+Syscall param openat2(filename) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_openat2.c:15)
+
+Syscall param openat2(how) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_openat2.c:15)
+
+Syscall param openat2(size) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar_openat2.c:15)
+
+Syscall param openat2(filename) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar_openat2.c:15)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param openat2(how) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar_openat2.c:15)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

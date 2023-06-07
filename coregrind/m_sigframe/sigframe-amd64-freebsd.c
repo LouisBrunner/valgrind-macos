@@ -49,6 +49,8 @@
    on amd64-freebsd.
 */
 
+const UInt MAGIC_PI = 0x31415927U;
+const UInt MAGIC_E = 0x27182818U;
 
 /*------------------------------------------------------------*/
 /*--- Signal frame layouts                                 ---*/
@@ -153,12 +155,12 @@ void synth_ucontext(ThreadId tid, const vki_siginfo_t *si,
       XXX
    */
    SC2(rip,RIP);
-   sc->addr = (UWord)si->si_addr;
-   sc->err = err;
+   sc->addr = (vki_register_t)si->si_addr;
+   sc->err = (vki_register_t)err;
    sc->fpformat = VKI_FPFMT_NODEV;
    sc->ownedfp = VKI_FPOWNED_NONE;
    sc->len = sizeof(*sc);
-   sc->rflags = LibVEX_GuestAMD64_get_rflags(&tst->arch.vex);
+   sc->rflags = (vki_register_t)LibVEX_GuestAMD64_get_rflags(&tst->arch.vex);
    sc->trapno = trapno;
 #  undef SC2
 }
@@ -175,9 +177,10 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
 
    if (VG_(extend_stack)(tid, addr)) {
       stackseg = VG_(am_find_nsegment)(addr);
-      if (0 && stackseg)
+      if (0 && stackseg) {
          VG_(printf)("frame=%#lx seg=%#lx-%#lx\n",
                      addr, stackseg->start, stackseg->end);
+      }
    }
 
    if (stackseg == NULL || !stackseg->hasR || !stackseg->hasW) {
@@ -185,10 +188,11 @@ static Bool extend ( ThreadState *tst, Addr addr, SizeT size )
          Vg_UserMsg,
          "Can't extend stack to %#lx during signal delivery for thread %u:\n",
          addr, tid);
-      if (stackseg == NULL)
+      if (stackseg == NULL) {
          VG_(message)(Vg_UserMsg, "  no stack segment\n");
-      else
+      } else {
          VG_(message)(Vg_UserMsg, "  too small or bad protection modes\n");
+      }
 
       /* set SIGSEGV to default handler */
       VG_(set_default_handler)(VKI_SIGSEGV);
@@ -217,7 +221,7 @@ static void build_vg_sigframe(struct vg_sigframe *frame,
                               Int sigNo)
 {
    frame->sigNo_private = sigNo;
-   frame->magicPI       = 0x31415927;
+   frame->magicPI       = MAGIC_PI;
    frame->vex_shadow1   = tst->arch.vex_shadow1;
    frame->vex_shadow2   = tst->arch.vex_shadow2;
    /* HACK ALERT */
@@ -225,7 +229,7 @@ static void build_vg_sigframe(struct vg_sigframe *frame,
    /* end HACK ALERT */
    frame->mask          = tst->sig_mask;
    frame->handlerflags  = flags;
-   frame->magicE        = 0x27182818;
+   frame->magicE        = MAGIC_E;
 }
 
 static Addr build_sigframe(ThreadState *tst,
@@ -246,8 +250,9 @@ static Addr build_sigframe(ThreadState *tst,
    rsp = VG_ROUNDDN(rsp, 16) - 8;
    frame = (struct sigframe *)rsp;
 
-   if (!extend(tst, rsp, sizeof(*frame)))
+   if (!extend(tst, rsp, sizeof(*frame))) {
       return rsp_top_of_frame;
+   }
 
    /* retaddr, siginfo, uContext fields are to be written */
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler frame",
@@ -265,8 +270,9 @@ static Addr build_sigframe(ThreadState *tst,
 
    VG_(memcpy)(&frame->sigInfo, siginfo, sizeof(vki_siginfo_t));
 
-   if (sigNo == VKI_SIGILL && siginfo->si_code > 0)
+   if (sigNo == VKI_SIGILL && siginfo->si_code > 0) {
       frame->sigInfo.si_addr = (void*)tst->arch.vex.guest_RIP;
+   }
 
    synth_ucontext(tst->tid, siginfo, trapno, err, mask,
                   &frame->uContext, &frame->fpstate);
@@ -333,8 +339,8 @@ static
 Bool restore_vg_sigframe ( ThreadState *tst,
                            struct vg_sigframe *frame, Int *sigNo )
 {
-   if (frame->magicPI != 0x31415927 ||
-         frame->magicE  != 0x27182818) {
+   if (frame->magicPI != MAGIC_PI ||
+         frame->magicE  != MAGIC_E) {
       VG_(message)(Vg_UserMsg, "Thread %u return signal frame "
                    "corrupted.  Killing process.\n",
                    tst->tid);
@@ -392,8 +398,9 @@ static
 SizeT restore_sigframe ( ThreadState *tst,
                          struct sigframe *frame, Int *sigNo )
 {
-   if (restore_vg_sigframe(tst, &frame->vg, sigNo))
+   if (restore_vg_sigframe(tst, &frame->vg, sigNo)) {
       restore_sigcontext(tst, &frame->uContext.uc_mcontext, &frame->fpstate);
+   }
 
    return sizeof(*frame);
 }
@@ -415,11 +422,12 @@ void VG_(sigframe_destroy)( ThreadId tid )
    VG_TRACK( die_mem_stack_signal, rsp - VG_STACK_REDZONE_SZB,
              size + VG_STACK_REDZONE_SZB );
 
-   if (VG_(clo_trace_signals))
+   if (VG_(clo_trace_signals)) {
       VG_(message)(
          Vg_DebugMsg,
          "VG_(signal_return) (thread %u): valid magic; RIP=%#llx\n",
          tid, tst->arch.vex.guest_RIP);
+   }
 
    /* tell the tools */
    VG_TRACK( post_deliver_signal, tid, sigNo );

@@ -118,11 +118,17 @@ extern Addr VG_(get_initial_client_SP)(void);
    It would be much cleaner to have a documented and supported
    way to disable the pthread stack cache. */
 extern SizeT* VG_(client__stack_cache_actsize__addr);
+typedef const HChar* (*client__gnu_get_libc_version_type)(void);
+extern client__gnu_get_libc_version_type VG_(client__gnu_get_libc_version_addr);
 
 #if defined(VGO_solaris)
 /* Address of variable vg_vfork_fildes in vgpreload_core.so.0
    (vg_preloaded.c). */
 extern Int* VG_(vfork_fildes_addr);
+#endif
+
+#if defined(VGO_freebsd)
+extern Bool VG_(have_slash_proc);
 #endif
 
 #endif   // __PUB_CORE_CLIENTSTATE_H

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sched.h>
 #include <signal.h>
-#include <linux/mman.h> // MREMAP_FIXED
+#include <sys/mman.h> // MREMAP_FIXED
 #include <sys/prctl.h>
 
 // Here we are trying to trigger every syscall error (scalar errors and
@@ -269,7 +269,7 @@ int main(void)
    SY(__NR_lock); FAIL;
 
    // __NR_ioctl 54
-   #include <asm/ioctls.h>
+   #include <sys/ioctl.h>
    GO(__NR_ioctl, "3s 1m");
    SY(__NR_ioctl, x0, x0+TCSETS, x0); FAIL;
 

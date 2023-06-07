@@ -1,0 +1,75 @@
+
+Syscall param sctp_generic_sendmsg(s) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:34)
+
+Syscall param sctp_generic_sendmsg(msglen) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:34)
+
+Syscall param sctp_generic_sendmsg(len) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:34)
+
+Syscall param sctp_generic_sendmsg(msg) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:34)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sctp2.c:16)
+
+Syscall param sctp_generic_sendmsg(to) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:34)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sctp2.c:16)
+
+Syscall param sctp_generic_sendmsg(sinfo) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:34)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by sctp_sendmsg (???:)
+
+Syscall param sctp_generic_recvmsg(s) contains uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:41)
+
+Syscall param sctp_generic_recvmsg(iov) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:41)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by sctp_recvmsg (???:)
+
+Syscall param sctp_generic_recvmsg(fromlen_in) points to uninitialised byte(s)
+   ...
+   by 0x........: main (sctp2.c:41)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sctp2.c:16)
+
+Syscall param sctp_generic_recvmsg(from) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sctp2.c:41)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sctp2.c:16)
+
+Syscall param sctp_generic_recvmsg(sinfo) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sctp2.c:41)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sctp2.c:16)
+
+Syscall param sctp_generic_recvmsg(msgflags) points to unaddressable byte(s)
+   ...
+   by 0x........: main (sctp2.c:41)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by main (sctp2.c:16)
+
+
+HEAP SUMMARY:
+    in use at exit: 0 bytes in 0 blocks
+  total heap usage: 0 allocs, 0 frees, 0 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+Use --track-origins=yes to see where uninitialised values come from
+For lists of detected and suppressed errors, rerun with: -s
+ERROR SUMMARY: 14 errors from 12 contexts (suppressed: 0 from 0)

@@ -431,25 +431,6 @@ void DRD_(barrier_post_wait)(const DrdThreadId tid, const Addr barrier,
 
    oset = p->oset[p->post_iteration & 1];
    q = VG_(OSetGen_Lookup)(oset, &word_tid);
-   if (p->pre_iteration - p->post_iteration > 1) {
-      BarrierErrInfo bei = { DRD_(thread_get_running_tid)(), p->a1, 0, 0 };
-      VG_(maybe_record_error)(VG_(get_running_tid)(),
-                              BarrierErr,
-                              VG_(get_IP)(VG_(get_running_tid)()),
-                              "Number of concurrent pthread_barrier_wait()"
-                              " calls exceeds the barrier count",
-                              &bei);
-   } else if (q == NULL) {
-      BarrierErrInfo bei = { DRD_(thread_get_running_tid)(), p->a1, 0, 0 };
-      VG_(maybe_record_error)(VG_(get_running_tid)(),
-                              BarrierErr,
-                              VG_(get_IP)(VG_(get_running_tid)()),
-                              "Error in barrier implementation"
-                              " -- barrier_wait() started before"
-                              " barrier_destroy() and finished after"
-                              " barrier_destroy()",
-                              &bei);
-   }
    if (q == NULL) {
       q = VG_(OSetGen_AllocNode)(oset, sizeof(*q));
       DRD_(barrier_thread_initialize)(q, tid);

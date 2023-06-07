@@ -2448,7 +2448,7 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
                "pthread_cond_{signal,broadcast}: associated lock is a rwlock");
          }
          if (lk->heldBy == NULL) {
-            HG_(record_error_Misc)(thr,
+            HG_(record_error_Dubious)(thr,
                "pthread_cond_{signal,broadcast}: dubious: "
                "associated lock is not held by any thread");
          }
@@ -4323,11 +4323,30 @@ static void* hg_cli__realloc ( ThreadId tid, void* payloadV, SizeT new_size )
 
    if (((SSizeT)new_size) < 0) return NULL;
 
+   if (payloadV == NULL) {
+      return handle_alloc ( tid, new_size, VG_(clo_alignment),
+                            /*is_zeroed*/False );
+   }
+
    md = (MallocMeta*) VG_(HT_lookup)( hg_mallocmeta_table, (UWord)payload );
    if (!md)
       return NULL; /* apparently realloc-ing a bogus address.  Oh well. */
   
    tl_assert(md->payload == payload);
+
+   if (new_size == 0U ) {
+      if (VG_(clo_realloc_zero_bytes_frees) == True) {
+         md_tmp = VG_(HT_remove)( hg_mallocmeta_table, payload );
+         tl_assert(md_tmp);
+         tl_assert(md_tmp == md);
+
+         VG_(cli_free)((void*)md->payload);
+         delete_MallocMeta(md);
+
+         return NULL;
+      }
+      new_size = 1U;
+   }
 
    if (md->szB == new_size) {
       /* size unchanged */
@@ -5756,6 +5775,11 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
    else if VG_XACT_CLO(arg, "--history-level=full",
                             HG_(clo_history_level), 2);
 
+   else if VG_BINT_CLO(arg, "--history-backtrace-size",
+                       HG_(clo_history_backtrace_size), 2, 500) {}
+   // 500 just in case someone with a lot of CPU and memory would like to use
+   // the same value for --num-callers and this.
+
    else if VG_BOOL_CLO(arg, "--delta-stacktrace",
                             HG_(clo_delta_stacktrace)) {}
 
@@ -5765,9 +5789,9 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
    /* "stuvwx" --> stuvwx (binary) */
    else if VG_STR_CLO(arg, "--hg-sanity-flags", tmp_str) {
       Int j;
-   
+
       if (6 != VG_(strlen)(tmp_str)) {
-         VG_(message)(Vg_UserMsg, 
+         VG_(message)(Vg_UserMsg,
                       "--hg-sanity-flags argument must have 6 digits\n");
          return False;
       }
@@ -5798,7 +5822,7 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
    else if VG_BOOL_CLO(arg, "--ignore-thread-creation",
                             HG_(clo_ignore_thread_creation)) {}
 
-   else 
+   else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
    return True;
@@ -5813,6 +5837,8 @@ static void hg_print_usage ( void )
 "       full:   show both stack traces for a data race (can be very slow)\n"
 "       approx: full trace for one thread, approx for the other (faster)\n"
 "       none:   only show trace for one thread in a race (fastest)\n"
+"    --history-backtrace-size=<number>  record <number> callers for full\n"
+"        history level [8]\n"
 "    --delta-stacktrace=no|yes [yes on linux amd64/x86]\n"
 "        no : always compute a full history stacktrace from unwind info\n"
 "        yes : derive a stacktrace from the previous stacktrace\n"

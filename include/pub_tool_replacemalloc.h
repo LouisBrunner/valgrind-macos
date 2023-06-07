@@ -67,6 +67,8 @@ extern Bool VG_(clo_trace_malloc);
 /* Minimum alignment in functions that don't specify alignment explicitly.
    default: VG_MIN_MALLOC_SZB */
 extern UInt VG_(clo_alignment);
+/* Controls the behaviour of realloc(ptr, 0) */
+extern Bool VG_(clo_realloc_zero_bytes_frees);
 
 extern Bool VG_(replacement_malloc_process_cmd_line_option) ( const HChar* arg );
 

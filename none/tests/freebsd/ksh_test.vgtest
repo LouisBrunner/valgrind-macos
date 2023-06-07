@@ -1,0 +1,4 @@
+# ksh isn't part of base
+prereq: test -e /usr/local/bin/ksh93
+prog: ksh_test.ksh
+vgopts: -q

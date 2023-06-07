@@ -22,7 +22,7 @@ $SED "s/checked [0-9,]* bytes./checked ... bytes./" |
 # More leak check filtering.  For systems that do extra libc allocations
 # (eg. Darwin) there may be extra (reachable, and thus not shown) loss
 # records.  So we filter out the loss record numbers.
-perl -p -e "s/in loss record \d+ of \d+/in loss record ... of .../" |
+perl -p -e "s/in (?:new )?loss record \d+ of \d+/in loss record ... of .../" |
 
 # Filter out glibc debuginfo if installed.
 perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |

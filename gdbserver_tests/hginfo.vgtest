@@ -1,7 +1,7 @@
 # test helgrind monitor command
 # test 'v.info location' monitor command
 prog: ../helgrind/tests/hg01_all_ok
-vgopts: --tool=helgrind --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-hginfo -q 
+vgopts: --tool=helgrind  --ignore-thread-creation=yes --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-hginfo -q 
 prereq: test -e gdb.eval
 stdout_filter: filter_make_empty
 stderr_filter: filter_stderr

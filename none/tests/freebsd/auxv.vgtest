@@ -1,3 +1,4 @@
 prog: auxv
 vgopts: -q
+stderr_filter: filter_auxv
 

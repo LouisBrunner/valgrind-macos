@@ -31,7 +31,7 @@ jobs:
       - name: Rebase local `upstream` branch onto upstream `master`
         run: |
           git rebase upstream/master
-          git push
+          git push -f origin upstream2
         shell: bash
   upstream-merge-pr:
     name: Merge upstream changes into main

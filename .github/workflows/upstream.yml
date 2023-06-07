@@ -17,7 +17,7 @@ jobs:
       - name: Checkout local `upstream` branch (us)
         uses: actions/checkout@v3
         with:
-          ref: upstream2 # TODO: FIIIIX
+          ref: upstream
           fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
@@ -31,7 +31,7 @@ jobs:
       - name: Rebase local `upstream` branch onto upstream `master`
         run: |
           git rebase upstream/master
-          git push -f origin upstream2
+          git push -f origin upstream
         shell: bash
   upstream-merge-pr:
     name: Merge upstream changes into main

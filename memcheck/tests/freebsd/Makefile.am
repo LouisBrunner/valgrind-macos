@@ -100,7 +100,7 @@ EXTRA_DIST = \
 	bug464476_rel_symlink.vgtest \
 	bug464476_rel_symlink.stderr.exp \
 	bug464476_rel_symlink.stdout.exp \
-        memalign.vgtest memalign.stderr.exp
+        memalign.vgtest memalign.stderr.exp \
 	bug470713.vgtest bug470713.stderr.exp \
 		bug470713.stdout.exp
 

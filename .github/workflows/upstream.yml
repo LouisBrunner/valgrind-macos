@@ -21,7 +21,7 @@ jobs:
       - name: Checkout upstream `master` branch (them)
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git
-          git fetch upstream master
+          git fetch --tags upstream master
         shell: bash
       - name: Configure git credentials
         run: |
@@ -31,6 +31,7 @@ jobs:
         run: |
           git rebase upstream/master
           git push -f origin upstream
+          git push --tags origin
         shell: bash
   upstream-merge-pr:
     name: Merge upstream changes into main

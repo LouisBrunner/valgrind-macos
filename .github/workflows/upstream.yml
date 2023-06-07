@@ -21,7 +21,7 @@ jobs:
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git
           git fetch upstream master
-        shell: zsh
+        shell: bash
       - name: Rebase local `upstream` branch onto upstream `master`
         run: |
           git rebase upstream/master
@@ -39,7 +39,7 @@ jobs:
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git
           git fetch upstream master
-        shell: zsh
+        shell: bash
       - name: Create a merge which merge them into us
         id: merge
         run: |
@@ -66,7 +66,7 @@ jobs:
           echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
           echo "generated=${NAME}" >> $GITHUB_OUTPUT
           echo "changes=${CHANGES}" >> $GITHUB_OUTPUT
-        shell: zsh
+        shell: bash
       - name: Create pull request
         if: steps.merge.outputs.changed == 'yes'
         id: cpr

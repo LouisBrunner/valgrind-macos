@@ -1,6 +1,7 @@
 name: Upstream synchronization
 
 on:
+  push:
   schedule:
     - cron: "0 6 * * 3" # 6am every Wednesday
   workflow_dispatch:
@@ -16,7 +17,8 @@ jobs:
       - name: Checkout local `upstream` branch (us)
         uses: actions/checkout@v3
         with:
-          ref: upstream2
+          ref: upstream2 # TODO: FIIIIX
+          fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git
@@ -35,6 +37,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: main
+          fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
           git remote add upstream git://sourceware.org/git/valgrind.git

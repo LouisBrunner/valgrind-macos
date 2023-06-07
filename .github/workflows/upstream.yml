@@ -1,0 +1,26 @@
+name: Upstream synchronization
+
+on:
+  schedule:
+    - cron: "0 6 * * 3" # 6am every Wednesday
+    - cron: "5 13 * * *" # TODO: DEBUG
+  workflow_dispatch:
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout local `upstream` branch (us)
+        uses: actions/checkout@v3
+        with:
+          ref: upstream2
+      - name: Checkout upstream `master` branch (them)
+        run: |
+          git remote add upstream git://sourceware.org/git/valgrind.git
+          git fetch upstream master
+        shell: zsh
+      - name: Rebase local `upstream` branch onto upstream `master`
+        run: |
+          git rebase upstream/master
+          git push
+        shell: zsh

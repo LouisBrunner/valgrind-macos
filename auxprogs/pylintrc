@@ -1,0 +1,30 @@
+# How to create this file.
+# - Generate with `pylint --generate-rcfile > pylintrc`. Do this in a directory
+#   that doesn't already contain a `pylintrc` file, because the output is
+#   affected by any existing `pylintrc` file.
+# - Then modify entries resulting in unreasonable warnings.
+#   - If a lint is never interesting, add it to the `disable=` list with an
+#     explanatory comment.
+#   - If a lint is interesting but needs modification, comment out the original
+#     value, add a new value along with an explanatory comment.
+# - Remove all non-modified entries.
+
+[MESSAGES CONTROL]
+
+disable=
+    # We don't care about having docstrings everywhere.
+    missing-class-docstring, missing-function-docstring,
+    missing-module-docstring,
+    # We don't care about these, sometimes they are necessary.
+    too-many-arguments, too-many-branches, too-many-lines, too-many-locals,
+    too-many-statements,
+    # Zero or one public methods in a class is fine.
+    too-few-public-methods,
+
+[BASIC]
+
+# Good variable names regexes, separated by a comma. If names match any regex,
+# they will always be accepted
+#good-names-rgxs=
+# We allow any lower-case variable name of length 1 or 2.
+good-names-rgxs=\b[a-z]\b,\b[a-z][a-z0-9]\b

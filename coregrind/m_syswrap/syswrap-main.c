@@ -544,11 +544,6 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = gst->guest_syscall_flag;
    canonical->arg8  = 0;
 
-#if defined(VGP_ppc64be_linux)
-   /* The sc instruction is currently only supported on LE systems. */
-   vg_assert(gst->guest_syscall_flag == SC_FLAG);
-#endif
-
 #elif defined(VGP_x86_freebsd)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -2000,6 +1995,12 @@ Bool VG_(is_in_syscall) ( ThreadId tid )
    return (syscallInfo && syscallInfo[tid].status.what != SsIdle);
 }
 
+Bool VG_(is_in_kernel_restart_syscall) ( ThreadId tid )
+{
+   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   return (syscallInfo && ((syscallInfo[tid].flags & SfKernelRestart) != 0));
+}
+
 Word VG_(is_in_syscall_no) (ThreadId tid )
 {
    vg_assert(tid >= 0 && tid < VG_N_THREADS);
@@ -2302,7 +2303,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
       /* Check that the given flags are allowable: MayBlock, PollAfter
          and PostOnFail are ok. */
-      vg_assert(0 == (sci->flags & ~(SfMayBlock | SfPostOnFail | SfPollAfter)));
+      vg_assert(0 == (sci->flags & ~(SfMayBlock | SfPostOnFail | SfPollAfter | SfKernelRestart)));
 
       if (sci->flags & SfMayBlock) {
 

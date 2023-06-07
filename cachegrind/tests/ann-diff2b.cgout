@@ -1,0 +1,15 @@
+desc: Description for ann-diff2b.cgout
+cmd: cmd2
+events: One Two
+
+fl=ann2-diff-Aux/ann-diff2-basic.rs
+fn=basic1
+1 1100 900
+
+fn=f1_ff2_foo3_F4_g5
+3 1000 1000
+
+fn=groff5
+5 1000 1000
+
+summary: 3100 2900

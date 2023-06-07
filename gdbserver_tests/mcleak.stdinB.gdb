@@ -70,6 +70,15 @@ continue
 #   fprintf(stderr, "expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable\n"); fflush(stderr); breakme();
 up
 monitor leak_check full reachable changed
+continue
+#   b42_43[0]--;
+#   fprintf(stderr, "expecting details 42 (+42) bytes lost, 43 (+43) bytes reachable\n"); fflush(stderr); breakme();
+up
+monitor leak_check full reachable new
+continue
+#   b42_43[1]--;
+#   fprintf(stderr, "expecting to have NO details\n"); fflush(stderr); breakme();
+monitor leak_check full reachable new
 # output all leak records:
 monitor leak_check full reachable any unlimited
 # output the 2 biggest leak records:

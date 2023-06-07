@@ -22061,9 +22061,15 @@ Long dis_ESC_0F (
          /* This is a Core-i5-2300-like machine */
       }
       else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
-               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16)) {
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDTSCP)) {
          fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;
+      }
+      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16)) {
+         fName = "amd64g_dirtyhelper_CPUID_sse3_and_cx16";
+         fAddr = &amd64g_dirtyhelper_CPUID_sse3_and_cx16;
          /* This is a Core-i5-670-like machine */
       }
       else {

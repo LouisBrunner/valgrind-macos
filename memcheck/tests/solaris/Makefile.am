@@ -12,6 +12,7 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
+	aligned_alloc.stderr.exp aligned_alloc.vgtest \
 	brk.stderr.exp brk.stdout.exp brk.vgtest \
 	context_stack_die.stderr.exp context_stack_die.stdout.exp context_stack_die.vgtest \
 	door_data.stderr.exp door_data.stdout.exp door_data.vgtest \
@@ -54,9 +55,11 @@ EXTRA_DIST = \
 	supponlyobj.stderr.exp supponlyobj.supp supponlyobj.vgtest \
 	syscall_at.stderr.exp syscall_at.stdout.exp syscall_at.vgtest \
 	thr_daemon_exit_libc.stderr.exp thr_daemon_exit_libc.stdout.exp thr_daemon_exit_libc.vgtest \
-	thr_daemon_exit_standalone.stderr.exp thr_daemon_exit_standalone.stdout.exp thr_daemon_exit_standalone.vgtest
+	thr_daemon_exit_standalone.stderr.exp thr_daemon_exit_standalone.stdout.exp thr_daemon_exit_standalone.vgtest \
+	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
+	aligned_alloc \
 	brk \
 	context_stack_die \
 	door_data \
@@ -79,7 +82,8 @@ check_PROGRAMS = \
 	strlcpy \
 	syscall_at \
 	thr_daemon_exit_libc \
-	thr_daemon_exit_standalone
+	thr_daemon_exit_standalone \
+	memalign
 
 if SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS
 check_PROGRAMS += execx

@@ -83,7 +83,7 @@ __asm__( /* Derived from the 32 bit assembly helper */
 );
 
 #elif ENABLE_ASSEMBLY_HELPERS && defined(PERF_FAST_LOADV) \
-      && (defined(VGP_x86_linux) || defined(VGP_x86_solaris))
+      && (defined(VGP_x86_linux) || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd))
 __asm__(
 ".text\n"
 ".align 16\n"

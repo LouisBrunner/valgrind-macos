@@ -1,0 +1,8 @@
+# The `prog` doesn't matter because we don't use its output. Instead we test
+# the post-processing of the cgout files.
+prog: ../../tests/true
+vgopts: --cachegrind-out-file=cachegrind.out
+
+post: python3 ../cg_diff --mod-filename="s/.*aux\//aux\//i" --mod-funcname="s/(f[a-z]*)[0-9]/\1N/g" ann-diff2a.cgout ann-diff2b.cgout > ann-diff2c.cgout && python3 ../cg_annotate ann-diff2c.cgout
+
+cleanup: rm cachegrind.out ann-diff2c.cgout

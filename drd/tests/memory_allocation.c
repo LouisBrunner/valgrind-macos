@@ -25,13 +25,12 @@ int main()
      * glibc returns a NULL pointer when the size argument passed to realloc()
      * is zero, while Darwin's C library returns a non-NULL pointer. Both are
      * allowed by POSIX.
+     *
+     * Other platforms also tend not to free. To make things simpler just
+     * free it if it is not NULL.
      */
-#if defined(VGO_darwin)
     if (p)
       free(p);
-#else
-    assert(! p);
-#endif
   }
 
   return 0;

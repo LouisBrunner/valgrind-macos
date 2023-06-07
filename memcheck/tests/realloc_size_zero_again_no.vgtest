@@ -1,0 +1,2 @@
+prog: realloc_size_zero_again
+vgopts: -q -s --realloc-zero-bytes-frees=no

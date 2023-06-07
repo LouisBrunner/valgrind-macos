@@ -55,6 +55,9 @@
 #define NO_TLS
 #endif
 
+#if __cplusplus >= 201103L
+#include <cstdint>
+#endif
 #include <string>
 using namespace std;
 

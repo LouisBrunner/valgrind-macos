@@ -55,6 +55,7 @@ struct vg_mallocfunc_info {
    SizeT (*tl_malloc_usable_size)  (ThreadId tid, void* payload);
    void  (*mallinfo)               (ThreadId tid, struct vg_mallinfo* mi);
    Bool	clo_trace_malloc;
+   Bool  clo_realloc_zero_bytes_frees;
 };
 
 #endif   // __PUB_CORE_REPLACEMALLOC_H

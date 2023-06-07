@@ -111,6 +111,11 @@ EXTRA_DIST = \
 	cmdline4.stderr.exp cmdline4.vgtest \
 	cmdline5.stderr.exp cmdline5.vgtest \
 	cmdline6.stderr.exp cmdline6.vgtest \
+	cmdline7.stderr.exp cmdline7.vgtest \
+	cmdline8.stderr.exp cmdline8.vgtest \
+	cmdline9.stderr.exp cmdline9.vgtest \
+	cmdline10.stderr.exp cmdline10.vgtest \
+	cmdline11.stderr.exp cmdline11.vgtest \
 	cmd-with-special.stderr.exp cmd-with-special.vgtest \
 	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
@@ -364,6 +369,7 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
+timestamp_CFLAGS	= @FLAG_W_NO_USE_AFTER_FREE@
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so
 tls_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests

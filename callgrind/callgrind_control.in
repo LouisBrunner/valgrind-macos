@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
 ##--------------------------------------------------------------------##
 ##--- Control supervision of applications run with callgrind       ---##
 ##---                                            callgrind_control ---##
@@ -21,6 +21,10 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+
 use File::Basename;
 
 # vgdb_exe will be set to a vgdb found 'near' the callgrind_control file

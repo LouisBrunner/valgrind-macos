@@ -30,8 +30,9 @@
 <refsect1 id="cg_annotate-description">
 <title>Description</title>
 
-<para><command>cg_annotate</command> takes an output file produced by the
-Valgrind tool Cachegrind and prints the information in an easy-to-read form.
+<para>
+<command>cg_annotate</command> takes one or more Cachegrind output files and
+prints data about the profiled program in an easy-to-read form.
 </para>
 
 </refsect1>

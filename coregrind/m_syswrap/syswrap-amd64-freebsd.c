@@ -72,7 +72,7 @@ void ML_(call_on_new_stack_0_1) ( Addr stack,
 // %rsi == retaddr
 // %rdx == f
 // %rcx == arg1
-asm(
+__asm__(
    ".text\n"
    ".globl vgModuleLocal_call_on_new_stack_0_1\n"
    "vgModuleLocal_call_on_new_stack_0_1:\n"
@@ -178,8 +178,6 @@ POST(sys_sysarch)
    case VKI_AMD64_SET_FSBASE:
       break;
    case VKI_AMD64_GET_FSBASE:
-      POST_MEM_WRITE( ARG2, sizeof(void *) );
-      break;
    case VKI_AMD64_GET_XFPUSTATE:
       POST_MEM_WRITE( ARG2, sizeof(void *) );
       break;
@@ -307,12 +305,17 @@ PRE(sys_clock_getcpuclockid2)
 PRE(sys_rfork)
 {
    PRINT("sys_rfork ( %#" FMT_REGWORD "x )", ARG1 );
-   PRE_REG_READ1(long, "rfork", int, flags);
+   PRE_REG_READ1(pid_t, "rfork", int, flags);
 
-   VG_(message)(Vg_UserMsg, "rfork() not implemented");
-   VG_(unimplemented)("Valgrind does not support rfork().");
+   VG_(message)(Vg_UserMsg, "warning: rfork() not implemented\n");
 
-   SET_STATUS_Failure(VKI_ENOSYS);
+   if ((UInt)ARG1 == VKI_RFSPAWN) {
+      // posix_spawn uses RFSPAWN and it will fall back to vfork
+      // if it sees EINVAL
+      SET_STATUS_Failure(VKI_EINVAL);
+   } else {
+      SET_STATUS_Failure(VKI_ENOSYS);
+   }
 }
 
 // SYS_preadv  289
@@ -321,23 +324,26 @@ PRE(sys_preadv)
 {
    Int i;
    struct vki_iovec * vec;
+   char buf[sizeof("preadv(iov[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_preadv ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "d, %" FMT_REGWORD "d )", SARG1, ARG2, SARG3, SARG4);
    PRE_REG_READ4(ssize_t, "preadv",
-                 int, fd, const struct iovec *, iovr,
+                 int, fd, const struct iovec *, iov,
                  int, iovcnt, vki_off_t, offset);
    if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      if ((Int)ARG3 >= 0)
+      if ((Int)ARG3 > 0) {
          PRE_MEM_READ( "preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+      }
 
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_WRITE( "preadv(iov[...])",
-                           (Addr)vec[i].iov_base, vec[i].iov_len );
+         for (i = 0; i < (Int)ARG3; i++) {
+            VG_(sprintf)(buf, "preadv(iov[%d])", i);
+            PRE_MEM_WRITE(buf, (Addr)vec[i].iov_base, vec[i].iov_len);
+         }
       }
    }
 }
@@ -353,10 +359,14 @@ POST(sys_preadv)
       /* RES holds the number of bytes read. */
       for (i = 0; i < (Int)ARG3; i++) {
          Int nReadThisBuf = vec[i].iov_len;
-         if (nReadThisBuf > remains) nReadThisBuf = remains;
+         if (nReadThisBuf > remains) {
+            nReadThisBuf = remains;
+         }
          POST_MEM_WRITE( (Addr)vec[i].iov_base, nReadThisBuf );
          remains -= nReadThisBuf;
-         if (remains < 0) VG_(core_panic)("preadv: remains < 0");
+         if (remains < 0) {
+            VG_(core_panic)("preadv: remains < 0");
+         }
       }
    }
 }
@@ -367,6 +377,7 @@ PRE(sys_pwritev)
 {
    Int i;
    struct vki_iovec * vec;
+   char buf[sizeof("pwritev(iov[])") + 11];
    *flags |= SfMayBlock;
    PRINT("sys_pwritev ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %"
          FMT_REGWORD "d, %" FMT_REGWORD "d )", SARG1, ARG2, SARG3, SARG4);
@@ -378,13 +389,15 @@ PRE(sys_pwritev)
    if (!ML_(fd_allowed)(ARG1, "pwritev", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    } else {
-      if ((Int)ARG3 >= 0)
+      if ((Int)ARG3 >= 0) {
          PRE_MEM_READ( "pwritev(vector)", ARG2, ARG3 * sizeof(struct vki_iovec) );
+      }
       if (ML_(safe_to_deref)((struct vki_iovec *)ARG2, ARG3 * sizeof(struct vki_iovec))) {
          vec = (struct vki_iovec *)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++)
-            PRE_MEM_READ( "pwritev(iov[...])",
-                          (Addr)vec[i].iov_base, vec[i].iov_len );
+         for (i = 0; i < (Int)ARG3; i++) {
+            VG_(sprintf)(buf, "pwritev(iov[%d])", i);
+            PRE_MEM_READ(buf, (Addr)vec[i].iov_base, vec[i].iov_len );
+         }
       }
    }
 }
@@ -402,11 +415,13 @@ PRE(sys_sendfile)
                  int, fd, int, s, vki_off_t, offset, size_t, nbytes,
                  void *, hdtr, vki_off_t *, sbytes, int, flags);
 
-   if (ARG5 != 0)
+   if (ARG5 != 0) {
       PRE_MEM_READ("sendfile(hdtr)", ARG5, sizeof(struct vki_sf_hdtr));
+   }
 
-   if (ARG6 != 0)
+   if (ARG6 != 0) {
       PRE_MEM_WRITE( "sendfile(sbytes)", ARG6, sizeof(vki_off_t) );
+   }
 }
 
 POST(sys_sendfile)
@@ -563,7 +578,8 @@ PRE(sys_setcontext)
 // int swapcontext(ucontext_t *oucp, const ucontext_t *ucp);
 PRE(sys_swapcontext)
 {
-   struct vki_ucontext *ucp, *oucp;
+   struct vki_ucontext *ucp;
+   struct vki_ucontext *oucp;
    ThreadState* tst;
 
    PRINT("sys_swapcontext ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )", ARG1, ARG2);
@@ -619,7 +635,8 @@ PRE(sys_thr_new)
    ThreadState* ptst = VG_(get_ThreadState)(tid);
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
    SysRes       res;
-   vki_sigset_t blockall, savedmask;
+   vki_sigset_t blockall;
+   vki_sigset_t savedmask;
    struct vki_thr_param tp;
    Addr stk;
 
@@ -685,8 +702,9 @@ PRE(sys_thr_new)
       label below, to clean up. */
    VG_TRACK ( pre_thread_ll_create, tid, ctid );
 
-   if (debug)
+   if (debug) {
       VG_(printf)("clone child has SETTLS: tls at %#lx\n", (Addr)tp.tls_base);
+   }
    ctst->arch.vex.guest_FS_CONST = (UWord)tp.tls_base;
    tp.tls_base = 0;  /* Don't have the kernel do it too */
 
@@ -748,10 +766,11 @@ PRE(sys_pread)
                  unsigned int, fd, char *, buf, vki_size_t, count,
                  unsigned long, off);
 
-   if (!ML_(fd_allowed)(ARG1, "read", tid, False))
+   if (!ML_(fd_allowed)(ARG1, "read", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
-   else
+   } else {
       PRE_MEM_WRITE( "pread(buf)", ARG2, ARG3 );
+   }
 }
 
 POST(sys_pread)
@@ -776,10 +795,11 @@ PRE(sys_pwrite)
    if (!ok && ARG1 == 2/*stderr*/
          && SimHintiS(SimHint_enable_outer, VG_(clo_sim_hints)))
       ok = True;
-   if (!ok)
+   if (!ok) {
       SET_STATUS_Failure( VKI_EBADF );
-   else
+   } else {
       PRE_MEM_READ( "pwrite(buf)", ARG2, ARG3 );
+   }
 }
 
 // SYS_mmap 477
@@ -942,7 +962,7 @@ POST(sys_wait6)
    }
 
    if (ARG6) {
-      POST_MEM_WRITE(ARG5, sizeof(vki_siginfo_t));
+      POST_MEM_WRITE(ARG6, sizeof(vki_siginfo_t));
    }
 }
 
@@ -1023,6 +1043,16 @@ POST(sys_procctl)
    }
 }
 
+// SYS_mknodat 559
+// int mknodat(int fd, const char *path, mode_t mode, dev_t dev);
+PRE(sys_mknodat)
+{
+   PRINT("sys_mknodat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1,ARG2,(char*)ARG2,ARG3,ARG4 );
+   PRE_REG_READ4(long, "mknodat",
+                 int, fd, const char *, path, vki_mode_t, mode, vki_dev_t, dev);
+   PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
+}
+
 #if (FREEBSD_VERS >= FREEBSD_12)
 
 // SYS_cpuset_getdomain 561
@@ -1066,7 +1096,7 @@ PRE(sys_fake_sigreturn)
 {
    ThreadState* tst;
    struct vki_ucontext *uc;
-   int rflags;
+   ULong rflags;
 
    PRINT("sys_sigreturn ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "sigreturn",
@@ -1103,7 +1133,7 @@ PRE(sys_fake_sigreturn)
       the guest registers written by VG_(sigframe_destroy). */
    rflags = LibVEX_GuestAMD64_get_rflags(&tst->arch.vex);
    SET_STATUS_from_SysRes( VG_(mk_SysRes_amd64_freebsd)( tst->arch.vex.guest_RAX,
-                           tst->arch.vex.guest_RDX, (rflags & 1) != 0 ? True : False) );
+                           tst->arch.vex.guest_RDX, (rflags & 1U) != 0U ? True : False) );
 
    /*
     * Signal handler might have changed the signal mask.  Respect that.

@@ -1,0 +1,2 @@
+prog: wmemcmp
+vgopts: -q

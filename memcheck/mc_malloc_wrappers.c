@@ -573,6 +573,25 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
    if (MC_(record_fishy_value_error)(tid, "realloc", "size", new_szB))
       return NULL;
 
+   if (p_old == NULL) {
+      return MC_(new_block) ( tid, 0, new_szB, VG_(clo_alignment),
+         /*is_zeroed*/False, MC_AllocMalloc, MC_(malloc_list));
+   }
+
+   if (new_szB == 0U) {
+      if (MC_(clo_show_realloc_size_zero)) {
+         MC_(record_realloc_size_zero)(tid, (Addr)p_old);
+      }
+
+      if (VG_(clo_realloc_zero_bytes_frees) == True) {
+         MC_(handle_free)(
+            tid, (Addr)p_old, MC_(Malloc_Redzone_SzB), MC_AllocMalloc );
+
+         return NULL;
+      }
+      new_szB = 1U;
+   }
+
    cmalloc_n_frees ++;
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += (ULong)new_szB;

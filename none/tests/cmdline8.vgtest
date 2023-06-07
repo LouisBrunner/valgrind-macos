@@ -1,0 +1,3 @@
+# a boolean arg, yes
+prog: ../../tests/true
+vgopts: --trace-children=yes

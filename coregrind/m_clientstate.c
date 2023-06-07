@@ -93,6 +93,10 @@ Int VG_(args_for_valgrind_noexecpass) = 0;
    line. */
 const HChar* VG_(args_the_exename) = NULL;
 
+/* The real name of the executable, with resolved
+ * relative paths and symlinks */
+const HChar* VG_(resolved_exename) = NULL;
+
 // Client's original rlimit data and rlimit stack
 struct vki_rlimit VG_(client_rlimit_data);
 struct vki_rlimit VG_(client_rlimit_stack);
@@ -121,10 +125,16 @@ Addr VG_(client__dl_sysinfo_int80) = 0;
    in nptl/allocatestack.c */
 SizeT* VG_(client__stack_cache_actsize__addr) = 0;
 
+client__gnu_get_libc_version_type VG_(client__gnu_get_libc_version_addr) = 0;
+
 #if defined(VGO_solaris)
 /* Address of variable vg_vfork_fildes in vgpreload_core.so.0
    (vg_preloaded.c). */
 Int* VG_(vfork_fildes_addr) = 0;
+#endif
+
+#if defined(VGO_freebsd)
+Bool VG_(have_slash_proc) = False;
 #endif
 
 /*--------------------------------------------------------------------*/

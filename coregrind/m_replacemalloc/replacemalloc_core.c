@@ -45,6 +45,11 @@
 
 /* DEBUG: print malloc details?  default: NO */
 Bool VG_(clo_trace_malloc)  = False;
+#if defined(VGO_linux) && !defined(MUSL_LIBC)
+Bool   VG_(clo_realloc_zero_bytes_frees) = True;
+#else
+Bool   VG_(clo_realloc_zero_bytes_frees) = False;
+#endif
 
 /* Minimum alignment in functions that don't specify alignment explicitly.
    default: 0, i.e. use VG_MIN_MALLOC_SZB. */
@@ -75,6 +80,7 @@ Bool VG_(replacement_malloc_process_cmd_line_option)(const HChar* arg)
                        VG_(clo_xtree_compress_strings)) {}
 
    else if VG_BOOL_CLO(arg, "--trace-malloc",  VG_(clo_trace_malloc)) {}
+   else if VG_BOOL_CLO(arg, "--realloc-zero-bytes-frees", VG_(clo_realloc_zero_bytes_frees)) {}
    else 
       return False;
 

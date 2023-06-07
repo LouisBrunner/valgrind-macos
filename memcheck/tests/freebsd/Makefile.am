@@ -84,7 +84,23 @@ EXTRA_DIST = \
 	errno_aligned_allocs.stderr.exp \
 	setproctitle.vgtest \
 	setproctitle.stderr.exp \
-	setproctitle.stdout.exp
+	setproctitle.stdout.exp \
+	sctp.vgtest \
+	sctp.stderr.exp \
+	sctp.stdout.exp \
+	sctp2.vgtest \
+	sctp2.stderr.exp \
+	sctp2.stdout.exp \
+	bug464476.vgtest \
+	bug464476.stderr.exp \
+	bug464476.stdout.exp \
+	bug464476_abs_symlink.vgtest \
+	bug464476_abs_symlink.stderr.exp \
+	bug464476_abs_symlink.stdout.exp \
+	bug464476_rel_symlink.vgtest \
+	bug464476_rel_symlink.stderr.exp \
+	bug464476_rel_symlink.stdout.exp \
+        memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
@@ -92,7 +108,7 @@ check_PROGRAMS = \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
 	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
-	setproctitle
+	setproctitle sctp sctp2 bug464476 memalign
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -105,6 +121,8 @@ inlinfo_nested_so_SOURCES = inlinfo_nested.c
 inlinfo_nested_so_CFLAGS = $(AM_CFLAGS) -fPIC @FLAG_W_NO_UNINITIALIZED@
 inlinfo_nested_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/freebsd -shared -fPIC
 
+bug464476_SOURCES = bug464476.cpp
+
 if FREEBSD_VERS_13_PLUS
 check_PROGRAMS += realpathat scalar_13_plus eventfd1 eventfd2
 
@@ -113,4 +131,8 @@ endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g
 
-errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} -Wno-non-power-of-two-alignment
+errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+extattr_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
+
+memalign_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@

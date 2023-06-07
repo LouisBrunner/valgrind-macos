@@ -1203,9 +1203,24 @@ IRExpr* guest_x86_spechelper ( const HChar* function_name,
       /*---------------- SHRL ----------------*/
 
       if (isU32(cc_op, X86G_CC_OP_SHRL) && isU32(cond, X86CondZ)) {
-         /* SHRL, then Z --> test dep1 == 0 */
+         /* SHRL, then Z --> test dep1(result) == 0 */
          return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
       }
+      if (isU32(cc_op, X86G_CC_OP_SHRL) && isU32(cond, X86CondNZ)) {
+         /* SHRL, then NZ --> test dep1(result) != 0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpNE32, cc_dep1, mkU32(0)));
+      }
+
+      /*---------------- SHLL ----------------*/
+
+      if (isU32(cc_op, X86G_CC_OP_SHLL) && isU32(cond, X86CondZ)) {
+         /* SHLL, then Z --> test dep1(result) == 0 */
+         return unop(Iop_1Uto32,binop(Iop_CmpEQ32, cc_dep1, mkU32(0)));
+      }
+      //if (isU32(cc_op, X86G_CC_OP_SHLL) && isU32(cond, X86CondNZ)) {
+      //   /* SHLL, then NZ --> test dep1(result) != 0 */
+      //   vassert(0); // No test case yet observed
+      //}
 
       /*---------------- COPY ----------------*/
       /* This can happen, as a result of x87 FP compares: "fcom ... ;

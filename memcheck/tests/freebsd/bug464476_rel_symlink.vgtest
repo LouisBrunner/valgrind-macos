@@ -1,0 +1,5 @@
+prereq: ln -s bug464476 ./bug464476_rel_symlink
+prog: bug464476_rel_symlink
+vgopts: -q
+args: `pwd`/bug464476
+cleanup: rm bug464476_rel_symlink

@@ -1,0 +1,560 @@
+--------------------------------------------------------------------------------
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate concord.cgout
+Command:          ./concord ../cg_main.c
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Threshold:        0.1%
+Annotation:       on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+Ir________________ 
+
+8,195,056 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- File:function summary
+--------------------------------------------------------------------------------
+  Ir______________________  file:function
+
+< 3,078,746 (37.6%, 37.6%)  /home/njn/grind/ws1/cachegrind/docs/concord.c:
+  1,630,232 (19.9%)           get_word
+    630,918  (7.7%)           hash
+    461,095  (5.6%)           insert
+    130,560  (1.6%)           add_existing
+     91,014  (1.1%)           init_hash_table
+     88,056  (1.1%)           create
+     46,676  (0.6%)           new_word_node
+
+< 1,746,038 (21.3%, 58.9%)  ./malloc/./malloc/malloc.c:
+  1,285,938 (15.7%)           _int_malloc
+    458,225  (5.6%)           malloc
+
+< 1,107,550 (13.5%, 72.4%)  ./libio/./libio/getc.c:getc
+
+<   551,071  (6.7%, 79.1%)  ./string/../sysdeps/x86_64/multiarch/strcmp-avx2.S:__strcmp_avx2
+
+<   521,228  (6.4%, 85.5%)  ./ctype/../include/ctype.h:
+    260,616  (3.2%)           __ctype_tolower_loc
+    260,612  (3.2%)           __ctype_b_loc
+
+<   468,163  (5.7%, 91.2%)  ???:
+    468,151  (5.7%)           ???
+
+<   456,071  (5.6%, 96.8%)  /usr/include/ctype.h:get_word
+
+<    48,344  (0.6%, 97.3%)  ./string/../sysdeps/x86_64/multiarch/strcpy-avx2.S:__strcpy_avx2
+
+<    40,776  (0.5%, 97.8%)  ./elf/./elf/dl-lookup.c:
+     25,623  (0.3%)           do_lookup_x
+      9,515  (0.1%)           _dl_lookup_symbol_x
+
+<    37,412  (0.5%, 98.3%)  ./elf/./elf/dl-tunables.c:
+     36,500  (0.4%)           __GI___tunables_init
+
+<    23,366  (0.3%, 98.6%)  ./string/../sysdeps/x86_64/multiarch/strlen-avx2.S:__strlen_avx2
+
+<    22,107  (0.3%, 98.9%)  ./malloc/./malloc/arena.c:
+     22,023  (0.3%)           malloc
+
+<    16,539  (0.2%, 99.1%)  ./elf/./elf/dl-reloc.c:_dl_relocate_object
+
+<     9,160  (0.1%, 99.2%)  ./elf/../sysdeps/generic/dl-new-hash.h:_dl_lookup_symbol_x
+
+<     8,535  (0.1%, 99.3%)  ./string/../sysdeps/x86_64/multiarch/../multiarch/strcmp-sse2.S:
+      8,503  (0.1%)           strcmp
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  Ir______________________  function:file
+
+> 2,086,303 (25.5%, 25.5%)  get_word:
+  1,630,232 (19.9%)           /home/njn/grind/ws1/cachegrind/docs/concord.c
+    456,071  (5.6%)           /usr/include/ctype.h
+
+> 1,285,938 (15.7%, 41.1%)  _int_malloc:./malloc/./malloc/malloc.c
+
+> 1,107,550 (13.5%, 54.7%)  getc:./libio/./libio/getc.c
+
+>   630,918  (7.7%, 62.4%)  hash:/home/njn/grind/ws1/cachegrind/docs/concord.c
+
+>   551,071  (6.7%, 69.1%)  __strcmp_avx2:./string/../sysdeps/x86_64/multiarch/strcmp-avx2.S
+
+>   480,248  (5.9%, 74.9%)  malloc:
+    458,225  (5.6%)           ./malloc/./malloc/malloc.c
+     22,023  (0.3%)           ./malloc/./malloc/arena.c
+
+>   468,151  (5.7%, 80.7%)  ???:???
+
+>   461,095  (5.6%, 86.3%)  insert:/home/njn/grind/ws1/cachegrind/docs/concord.c
+
+>   260,616  (3.2%, 89.5%)  __ctype_tolower_loc:./ctype/../include/ctype.h
+
+>   260,612  (3.2%, 92.6%)  __ctype_b_loc:./ctype/../include/ctype.h
+
+>   130,560  (1.6%, 94.2%)  add_existing:/home/njn/grind/ws1/cachegrind/docs/concord.c
+
+>    91,014  (1.1%, 95.4%)  init_hash_table:/home/njn/grind/ws1/cachegrind/docs/concord.c
+
+>    88,056  (1.1%, 96.4%)  create:/home/njn/grind/ws1/cachegrind/docs/concord.c
+
+>    50,010  (0.6%, 97.0%)  new_word_node:
+     46,676  (0.6%)           /home/njn/grind/ws1/cachegrind/docs/concord.c
+
+>    48,344  (0.6%, 97.6%)  __strcpy_avx2:./string/../sysdeps/x86_64/multiarch/strcpy-avx2.S
+
+>    42,906  (0.5%, 98.1%)  __GI___tunables_init:
+     36,500  (0.4%)           ./elf/./elf/dl-tunables.c
+
+>    26,514  (0.3%, 98.5%)  do_lookup_x:
+     25,623  (0.3%)           ./elf/./elf/dl-lookup.c
+
+>    25,642  (0.3%, 98.8%)  _dl_relocate_object:
+     16,539  (0.2%)           ./elf/./elf/dl-reloc.c
+
+>    23,366  (0.3%, 99.1%)  __strlen_avx2:./string/../sysdeps/x86_64/multiarch/strlen-avx2.S
+
+>    18,675  (0.2%, 99.3%)  _dl_lookup_symbol_x:
+      9,515  (0.1%)           ./elf/./elf/dl-lookup.c
+      9,160  (0.1%)           ./elf/../sysdeps/generic/dl-new-hash.h
+
+>     8,547  (0.1%, 99.4%)  strcmp:
+      8,503  (0.1%)           ./string/../sysdeps/x86_64/multiarch/../multiarch/strcmp-sse2.S
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./ctype/../include/ctype.h
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./ctype/../include/ctype.h
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./elf/../sysdeps/generic/dl-new-hash.h
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./elf/../sysdeps/generic/dl-new-hash.h
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./elf/./elf/dl-lookup.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./elf/./elf/dl-lookup.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./elf/./elf/dl-reloc.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./elf/./elf/dl-reloc.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./elf/./elf/dl-tunables.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./elf/./elf/dl-tunables.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./libio/./libio/getc.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./libio/./libio/getc.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./malloc/./malloc/arena.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./malloc/./malloc/arena.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./malloc/./malloc/malloc.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./malloc/./malloc/malloc.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./string/../sysdeps/x86_64/multiarch/../multiarch/strcmp-sse2.S
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./string/../sysdeps/x86_64/multiarch/../multiarch/strcmp-sse2.S
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./string/../sysdeps/x86_64/multiarch/strcmp-avx2.S
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./string/../sysdeps/x86_64/multiarch/strcmp-avx2.S
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./string/../sysdeps/x86_64/multiarch/strcpy-avx2.S
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./string/../sysdeps/x86_64/multiarch/strcpy-avx2.S
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ./string/../sysdeps/x86_64/multiarch/strlen-avx2.S
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- ./string/../sysdeps/x86_64/multiarch/strlen-avx2.S
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /home/njn/grind/ws1/cachegrind/docs/concord.c
+--------------------------------------------------------------------------------
+Ir____________ 
+
+-- line 81 ----------------------------------------
+      .         Arg_Node  *append(char *word, Arg_Node *head);
+      .         void       count(Arg_Node *head, Word_Node *table[]);
+      .         void       list_lines(Arg_Node *head, Word_Node *table[]);
+      .         void       intersection(Arg_Node *head);
+      .         void       intersect_array(int master[], int size, Arg_Node *arg_head);
+      .         void       kill_arg_list(Arg_Node *head);
+      .         
+      .         int main(int argc, char *argv[])
+      8 (0.0%)  {
+      .             /* The actual hash table, a fixed-size array of pointers to word nodes */
+      .             Word_Node *table[TABLE_SIZE];
+      .         
+      .             /* Checking command line input for one file name */
+      2 (0.0%)      if (argc != ARGS_NUMBER + 1) {
+      .         	fprintf(stderr, "%s requires %d argument\n", argv[0], ARGS_NUMBER); 
+      .         	exit(EXIT_FAILURE);
+      .             }
+      .         
+      4 (0.0%)      init_hash_table(argv[1], table);
+      2 (0.0%)      interact(table);
+      .         
+      .             /* Nb:  I am not freeing the dynamic memory in the hash table, having been
+      .             ** told this is not necessary. */
+      .             return 0;
+      7 (0.0%)  }
+      .         
+      .         /* General dynamic allocation function that allocates and then checks. */
+      .         void *create(int mem_size)
+ 22,014 (0.3%)  {
+      .             void *dyn_block;
+      .         
+ 22,014 (0.3%)      dyn_block = malloc(mem_size);
+ 22,014 (0.3%)      if (!(dyn_block)) {
+      .                 fprintf(stderr, "Couldn't allocate enough memory to continue.\n");
+      .                 exit(EXIT_FAILURE);
+      .             }
+      .         
+      .             return dyn_block;
+ 22,014 (0.3%)  }
+      .         
+      .         /* Function returns a hash value on a word.  Almost identical to the hash
+      .         ** function presented in Sedgewick.
+      .         */
+      .         int hash(char *word)
+  7,908 (0.1%)  {
+  7,908 (0.1%)      int hash_value = 0;
+      .         
+161,292 (2.0%)      for ( ; *word; word++)
+453,810 (5.5%)          hash_value = (HASH_CONSTANT * hash_value + *word) % TABLE_SIZE;
+      .         
+      .             return hash_value;
+      .         }
+      .         
+      .         /* Function builds the hash table from the given file. */
+      .         void init_hash_table(char *file_name, Word_Node *table[])
+      8 (0.0%)  {
+      .             FILE *file_ptr;
+      .             Word_Info *data;
+      2 (0.0%)      int line = 1, i;
+      .         
+      .             /* Structure used when reading in words and line numbers. */
+      3 (0.0%)      data = (Word_Info *) create(sizeof(Word_Info));
+      .         
+      .             /* Initialise entire table to NULL. */
+  2,993 (0.0%)      for (i = 0; i < TABLE_SIZE; i++)
+    997 (0.0%)          table[i] = NULL;
+      .         
+      .             /* Open file, check it. */
+      4 (0.0%)      file_ptr = fopen(file_name, "r");
+      2 (0.0%)      if (!(file_ptr)) {
+      .                 fprintf(stderr, "Couldn't open '%s'.\n", file_name);
+      .                 exit(EXIT_FAILURE);
+      .             }
+      .         
+      .             /*  'Get' the words and lines one at a time from the file, and insert them
+      .             ** into the table one at a time. */
+ 55,363 (0.7%)      while ((line = get_word(data, line, file_ptr)) != EOF)
+ 31,632 (0.4%)          insert(data->word, data->line, table);
+      .         
+      2 (0.0%)      free(data);
+      2 (0.0%)      fclose(file_ptr);
+      6 (0.0%)  }
+      .         
+      .         /* Function reads the next word, and it's line number, and places them in the 
+      .         ** structure 'data', via a pointer.
+      .         */
+      .         int get_word(Word_Info *data, int line, FILE *file_ptr)
+ 86,999 (1.1%)  {
+ 15,818 (0.2%)      int index = 0, pos = BEFORE_WORD;
+      .         
+      .             /* Only alphabetic characters are read, apostrophes are ignored, and other
+      .             ** characters are considered separators.  'pos' helps keep track whether
+      .             ** the current file position is inside a word or between words.
+      .             */
+529,133 (6.5%)      while ((data->word[index] = tolower(fgetc(file_ptr))) != EOF) {
+      .                 if (data->word[index] == '\n')
+260,608 (3.2%)              line++;
+390,912 (4.8%)          if (islower(data->word[index])) {
+ 64,830 (0.8%)              if (pos == BEFORE_WORD) {
+ 15,816 (0.2%)                  pos = IN_WORD;
+  7,908 (0.1%)                  data->line = line;
+      .                     }
+ 32,415 (0.4%)              index++;
+      .                 }
+146,702 (1.8%)          else if ((pos == IN_WORD) && (data->word[index] != '\'')) {
+      .                     break;
+      .                 }
+      .             }
+      .             /* Signals end of file has been reached. */
+      .             if (data->word[index] == EOF)
+      1 (0.0%)          line = EOF;
+      .         
+      .             /* Adding the null character. */
+ 15,818 (0.2%)      data->word[index] = '\0';
+      .         
+      .             return line;
+ 63,272 (0.8%)  }
+      .         
+      .         /* Function inserts a word and it's line number into the hash table. */
+      .         void insert(char *inword, int in_line, Word_Node *table[])
+102,804 (1.3%)  {
+  7,908 (0.1%)      int position = hash(inword);
+      .             Word_Node *curr, *prev = NULL;
+  7,908 (0.1%)      char dummy_word[DUMMY_WORD_LENGTH] = "A";
+      .         
+      .             /* The case where that hash position hasn't been used before; a new word
+      .             ** node is created. 
+      .             */
+ 31,632 (0.4%)      if (table[position] == NULL)
+  3,185 (0.0%)          table[position] = new_word_node(dummy_word, 0);
+  7,908 (0.1%)      curr = table[position];
+      .         
+      .             /* Traverses that position's list of words until the current word is found
+      .             ** (i.e. it's come up before) or the list end is reached (i.e. it's the
+      .             ** first occurrence of the word).
+      .             */
+118,384 (1.4%)      while ((curr != NULL) && (strcmp(inword, curr->word) > 0)) {
+      .                 prev = curr;
+ 28,366 (0.3%)          curr = curr->next_word;
+      .             }
+      .         
+      .             /* If the word hasn't appeared before, it's inserted alphabetically into
+      .             ** the list.
+      .             */
+ 35,410 (0.4%)      if ((curr == NULL) || (strcmp(curr->word, inword) != 0)) {
+  4,120 (0.1%)          prev->next_word = new_word_node(inword, in_line);
+  1,030 (0.0%)          prev->next_word->next_word = curr;
+      .             }
+      .             /* Otherwise, the word count is incremented, and the line number is added
+      .             ** to the existing list.
+      .             */
+      .             else {
+  6,878 (0.1%)          (curr->number)++;
+ 27,512 (0.3%)          curr->last_line = add_existing(curr->last_line, in_line);
+      .             }
+ 78,050 (1.0%)  }
+      .         
+      .         /* Function creates a new node for when a word is inserted for the first time.
+      .         */
+      .         Word_Node *new_word_node(char *inword, int in_line)
+ 10,002 (0.1%)  {
+      .             Word_Node *new;
+      .         
+  5,001 (0.1%)      new = (Word_Node *) create(sizeof(Word_Node));
+  8,335 (0.1%)      new->word = (char *) create(sizeof(char) * (strlen(inword) + 1));
+  1,667 (0.0%)      new->word = strcpy(new->word, inword);
+      .             /* The word count is set to 1, as this is the first occurrence! */
+  1,667 (0.0%)      new->number = 1;
+  1,667 (0.0%)      new->next_word = NULL;
+      .             /* One line number node is added. */
+  5,001 (0.1%)      new->line_list = (Line_Node *) create(sizeof(Line_Node));
+  1,667 (0.0%)      new->line_list->line = in_line;
+  1,667 (0.0%)      new->line_list->next_line = NULL;
+  1,667 (0.0%)      new->last_line = new->line_list;
+      .         
+      .             return new;
+  8,335 (0.1%)  }
+      .         
+      .         /* Function adds a line number to the line number list of a word that has
+      .         ** already been inserted at least once.  The pointer 'last_line', part of
+      .         ** the word node structure, allows easy appending to the list.
+      .         */
+      .         Line_Node *add_existing(Line_Node *last_line, int in_line)
+ 34,390 (0.4%)  {
+      .             /* Check to see if that line has already occurred - multiple occurrences on
+      .             ** the one line are only recorded once.  (Nb:  They are counted twice, but
+      .             ** only listed once.)
+      .             */
+ 13,756 (0.2%)      if (last_line->line != in_line) {
+ 18,009 (0.2%)          last_line->next_line = (Line_Node *) create(sizeof(Line_Node));
+ 12,006 (0.1%)          last_line = last_line->next_line;
+  6,003 (0.1%)          last_line->line = in_line;
+  6,003 (0.1%)          last_line->next_line = NULL;
+      .             }
+      .         
+      .             return last_line;
+ 40,393 (0.5%)  }
+      .         
+      .         /*  Function controls the interactive command line part of the program. */
+      .         void interact(Word_Node *table[])
+     12 (0.0%)  {
+      .             char args[MAX_WORD_LENGTH];     /* Array to hold command line */
+      .             Arg_Node *arg_list = NULL;      /* List that holds processed arguments */ 
+      .             int not_quitted = TRUE;         /* Quit flag */
+      .         
+      .             /* The prompt (?) is displayed.  Commands are read into an array, and then
+      .             ** individual arguments are placed into a linked list for easy use. 
+      .             ** The first argument (actually the command) is looked at to determine
+      .             ** what action should be performed.  'arg_list->next_arg' is passed to
+      .             ** count() and list_lines(), because the actual 'c' or 'l' is not needed
+      .             ** by them.  Lastly, the argument linked list is freed, by 'kill_arg_list'.  
+      .             */ 
+      .             do {
+      .                 printf("?");		     
+      .                 fgets(args, MAX_WORD_LENGTH - 1, stdin);
+      3 (0.0%)          arg_list = place_args_in_list(args);
+      2 (0.0%)          if (arg_list) {
+      7 (0.0%)              if (strcmp(arg_list->word, "c") == 0)
+      .         		count(arg_list->next_arg, table);
+      6 (0.0%)              else if (strcmp(arg_list->word, "l") == 0)
+      .                        	list_lines(arg_list->next_arg, table); 
+      8 (0.0%)              else if (strcmp(arg_list->word, "q") == 0) {
+      .                        	printf("Quitting concord\n");
+      1 (0.0%)  		not_quitted = FALSE;
+      .         	    }
+      .                     else
+      .                        	printf("Not a valid command.\n");
+      2 (0.0%)  	    kill_arg_list(arg_list);
+      .                 }
+      2 (0.0%)      } while (not_quitted);	/* Quits on flag */
+     11 (0.0%)  }
+      .         
+      .         /* Function takes an array containing a command line, and parses it, placing
+      .         ** actual word into a linked list.
+      .         */
+      .         Arg_Node *place_args_in_list(char command[])
+     10 (0.0%)  {
+      2 (0.0%)      int index1 = 0, index2 = 0, pos = BEFORE_WORD;
+      .             char token[MAX_WORD_LENGTH], c;
+      1 (0.0%)      Arg_Node *head = NULL;
+      .         
+      .             /* Non alphabetic characters are discarded.  Alphabetic characters are
+      .             ** copied into the array 'token'.  Once the current word has been copied
+      .             ** into 'token', 'append' is called, copying 'token' to a new node in the
+      .             ** linked list.
+      .             */
+     12 (0.0%)      while (command[index1] != '\0') {
+      8 (0.0%)          c = tolower(command[index1++]);
+     11 (0.0%)          if (islower(c)) {
+      3 (0.0%)              token[index2++] = c;
+      4 (0.0%)              pos = IN_WORD;
+      .                 }
+      2 (0.0%)          else if (c == '\'')
+      .                     token[index2] = c;
+      2 (0.0%)          else if (pos == IN_WORD) {
+      1 (0.0%)              pos = BEFORE_WORD;
+      2 (0.0%)              token[index2] = '\0';
+      4 (0.0%)              head = append(token, head);
+      2 (0.0%)              index2 = 0;
+      .                 }
+      .             }
+      .         
+      .             return head;
+     11 (0.0%)  }
+      .         
+      .         /* Function takes a word, and appends a new node containing that word to the
+      .         ** list.
+      .         */
+      .         Arg_Node *append(char *word, Arg_Node *head)
+      6 (0.0%)  {
+      .             Arg_Node *curr = head,
+      3 (0.0%)               *new = (Arg_Node *) create(sizeof(Arg_Node));
+      .         
+      6 (0.0%)      new->word = (char *) create(sizeof(char) * (strlen(word) + 1));
+      .             strcpy(new->word, word);
+      1 (0.0%)      new->line_list = NULL;
+      1 (0.0%)      new->next_arg = NULL;
+      .         
+      2 (0.0%)      if (head == NULL)
+      .                 return new;
+      .         
+      .             while (curr->next_arg != NULL)
+      .                 curr = curr->next_arg;
+      .             curr->next_arg = new;
+      .         
+      .             return head;
+      5 (0.0%)  }
+      .         
+      .         
+      .         /* Function displays the number of times a word has occurred. */
+      .         void count(Arg_Node *arg_list, Word_Node *table[])
+      .         {
+      .             int hash_pos = 0;		/* Only initialised to avoid gnuc warnings */
+      .             Word_Node *curr_word = NULL;  
+      .         
+-- line 375 ----------------------------------------
+-- line 514 ----------------------------------------
+      .                     *(master + index) = 0;
+      .         
+      .                 arg_head = arg_head->next_arg;
+      .             }
+      .         }
+      .         
+      .         /*  Function to free dynamic memory used by the arguments linked list. */
+      .         void kill_arg_list(Arg_Node *head)
+      5 (0.0%)  {
+      .             Arg_Node *temp;
+      .         
+      4 (0.0%)      while (head != NULL) {
+      .                 temp = head;
+      2 (0.0%)          head = head->next_arg;
+      2 (0.0%)          free(temp->word);
+      2 (0.0%)          free(temp);
+      .             }
+      4 (0.0%)  }
+      .         
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /usr/include/ctype.h
+--------------------------------------------------------------------------------
+Ir____________ 
+
+-- line 201 ----------------------------------------
+      .         #   define isblank(c)	__isctype((c), _ISblank)
+      .         #  endif
+      .         # endif
+      .         
+      .         # ifdef __USE_EXTERN_INLINES
+      .         __extern_inline int
+      .         __NTH (tolower (int __c))
+      .         {
+456,071 (5.6%)    return __c >= -128 && __c < 256 ? (*__ctype_tolower_loc ())[__c] : __c;
+      .         }
+      .         
+      .         __extern_inline int
+      .         __NTH (toupper (int __c))
+      .         {
+      .           return __c >= -128 && __c < 256 ? (*__ctype_toupper_loc ())[__c] : __c;
+      .         }
+      .         # endif
+-- line 217 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+Ir_______________ 
+
+3,534,817 (43.1%)    annotated: files known & above threshold & readable, line numbers known
+        0            annotated: files known & above threshold & readable, line numbers unknown
+        0          unannotated: files known & above threshold & two or more non-identical
+4,132,126 (50.4%)  unannotated: files known & above threshold & unreadable 
+   59,950  (0.7%)  unannotated: files known & below threshold
+  468,163  (5.7%)  unannotated: files unknown
+

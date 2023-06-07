@@ -46,4 +46,3 @@ extern unsigned long get_vsrhd_vs26();
 extern unsigned long get_vsrhd_vs27();
 extern unsigned long get_vsrhd_vs28();
 extern unsigned long get_vsrhd_vs29();
-

@@ -1,0 +1,25 @@
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
+   at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal (hg_intercepts.c:...)
+   by 0x........: main (bug392331.cpp:47)
+
+---Thread-Announcement------------------------------------------
+
+Thread #x was created
+   by 0x........: pthread_create@* (hg_intercepts.c:...)
+   by 0x........: main (bug392331.cpp:38)
+
+----------------------------------------------------------------
+
+Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
+   at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal (hg_intercepts.c:...)
+   by 0x........: worker_thread() (bug392331.cpp:33)
+   by 0x........: mythread_wrapper (hg_intercepts.c:...)
+

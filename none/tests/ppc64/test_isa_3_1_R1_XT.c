@@ -48,6 +48,7 @@ unsigned long current_fpscr;
 struct test_list_t current_test;
 
 #include "isa_3_1_helpers.h"
+
 static void test_pstxvp_off0_R1 (void) {
   __asm__ __volatile__ ("pstxvp 20, -0x1f400+0(0),1");
 }

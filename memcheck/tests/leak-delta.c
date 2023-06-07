@@ -6,6 +6,7 @@
 char *b10;
 char *b21;
 char *b32_33[2];
+char *b42_43[2];
 static void breakme() {};
 void f(void)
 {
@@ -47,7 +48,18 @@ void f(void)
    b32_33[0]--;
    fprintf(stderr, "expecting details 32 (+32) bytes lost, 33 (-32) bytes reachable\n"); fflush(stderr); breakme();
    VALGRIND_DO_CHANGED_LEAK_CHECK;
-   
+
+   for (i = 0; i < 2; i ++)
+      b42_43[i] = malloc (42+i);
+
+   b42_43[0]--;
+   fprintf(stderr, "expecting details 42 (+42) bytes lost, 43 (+43) bytes reachable\n"); fflush(stderr); breakme();
+   VALGRIND_DO_NEW_LEAK_CHECK;
+
+   b42_43[1]--;
+   fprintf(stderr, "expecting to have NO details\n"); fflush(stderr); breakme();
+   VALGRIND_DO_NEW_LEAK_CHECK;
+
    fprintf(stderr, "finished\n");
 }
 

@@ -1,0 +1,3 @@
+prereq: test -e ../../drd/tests/shared_timed_mutex
+vgopts: --read-var-info=yes
+prog: ../../drd/tests/shared_timed_mutex

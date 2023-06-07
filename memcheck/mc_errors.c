@@ -75,6 +75,7 @@ typedef
       Err_Leak,
       Err_IllegalMempool,
       Err_FishyValue,
+      Err_ReallocSizeZero,
    }
    MC_ErrorTag;
 
@@ -158,6 +159,10 @@ struct _MC_Error {
       struct {
          AddrInfo ai;
       } FreeMismatch;
+
+      struct {
+         AddrInfo ai;
+      } ReallocSizeZero;
 
       // Call to strcpy, memcpy, etc, with overlapping blocks.
       struct {
@@ -329,9 +334,15 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
    HChar d_direct_bytes[31];
    HChar d_indirect_bytes[31];
    HChar d_num_blocks[31];
+   /* A loss record that had an old number of blocks 0 is a new loss record.
+      We mark it as new only when doing any kind of delta leak search. */
+   const HChar *new_loss_record_marker
+      = MC_(detect_memory_leaks_last_delta_mode) != LCD_Any
+      && lr->old_num_blocks == 0
+      ? "new " : "";
 
    MC_(snprintf_delta) (d_bytes, sizeof(d_bytes),
-                        lr->szB + lr->indirect_szB, 
+                        lr->szB + lr->indirect_szB,
                         lr->old_szB + lr->old_indirect_szB,
                         MC_(detect_memory_leaks_last_delta_mode));
    MC_(snprintf_delta) (d_direct_bytes, sizeof(d_direct_bytes),
@@ -353,14 +364,15 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
          emit( "  <xwhat>\n" );
          emit( "    <text>%'lu%s (%'lu%s direct, %'lu%s indirect) bytes "
                "in %'u%s blocks"
-               " are %s in loss record %'u of %'u</text>\n",
+               " are %s in %sloss record %'u of %'u</text>\n",
                lr->szB + lr->indirect_szB, d_bytes,
                lr->szB, d_direct_bytes,
                lr->indirect_szB, d_indirect_bytes,
                lr->num_blocks, d_num_blocks,
                str_leak_lossmode(lr->key.state),
+               new_loss_record_marker,
                n_this_record, n_total_records );
-         // Nb: don't put commas in these XML numbers 
+         // Nb: don't put commas in these XML numbers
          emit( "    <leakedbytes>%lu</leakedbytes>\n",
                lr->szB + lr->indirect_szB );
          emit( "    <leakedblocks>%u</leakedblocks>\n", lr->num_blocks );
@@ -368,10 +380,11 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
       } else {
          emit( "  <xwhat>\n" );
          emit( "    <text>%'lu%s bytes in %'u%s blocks"
-               " are %s in loss record %'u of %'u</text>\n",
+               " are %s in %sloss record %'u of %'u</text>\n",
                lr->szB, d_direct_bytes,
                lr->num_blocks, d_num_blocks,
-               str_leak_lossmode(lr->key.state), 
+               str_leak_lossmode(lr->key.state),
+               new_loss_record_marker,
                n_this_record, n_total_records );
          emit( "    <leakedbytes>%lu</leakedbytes>\n", lr->szB);
          emit( "    <leakedblocks>%u</leakedblocks>\n", lr->num_blocks);
@@ -382,20 +395,22 @@ static void pp_LossRecord(UInt n_this_record, UInt n_total_records,
       if (lr->indirect_szB > 0) {
          emit(
             "%'lu%s (%'lu%s direct, %'lu%s indirect) bytes in %'u%s blocks"
-            " are %s in loss record %'u of %'u\n",
+            " are %s in %sloss record %'u of %'u\n",
             lr->szB + lr->indirect_szB, d_bytes,
             lr->szB, d_direct_bytes,
             lr->indirect_szB, d_indirect_bytes,
             lr->num_blocks, d_num_blocks,
             str_leak_lossmode(lr->key.state),
+            new_loss_record_marker,
             n_this_record, n_total_records
          );
       } else {
          emit(
-            "%'lu%s bytes in %'u%s blocks are %s in loss record %'u of %'u\n",
+            "%'lu%s bytes in %'u%s blocks are %s in %sloss record %'u of %'u\n",
             lr->szB, d_direct_bytes,
             lr->num_blocks, d_num_blocks,
             str_leak_lossmode(lr->key.state),
+            new_loss_record_marker,
             n_this_record, n_total_records
          );
       }
@@ -704,6 +719,21 @@ void MC_(pp_Error) ( const Error* err )
          }
          break;
 
+   case Err_ReallocSizeZero:
+      if (xml) {
+         emit( "  <kind>ReallocSizeZero</kind>\n" );
+         emit( "  <what>realloc() with size 0</what>\n" );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                             &extra->Err.ReallocSizeZero.ai, False);
+      } else {
+         emit( "realloc() with size 0\n" );
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                             &extra->Err.ReallocSizeZero.ai, False);
+      }
+      break;
+
       default: 
          VG_(printf)("Error:\n  unknown Memcheck error code %d\n",
                      VG_(get_error_kind)(err));
@@ -858,6 +888,15 @@ void MC_(record_freemismatch_error) ( ThreadId tid, MC_Chunk* mc )
                             &extra );
 }
 
+void MC_(record_realloc_size_zero) ( ThreadId tid, Addr a )
+{
+   MC_Error extra;
+   tl_assert(VG_INVALID_THREADID != tid);
+   extra.Err.ReallocSizeZero.ai.tag = Addr_Undescribed;
+   VG_(maybe_record_error)( tid, Err_ReallocSizeZero, a, /*s*/NULL, &extra );
+}
+
+
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a ) 
 {
    MC_Error extra;
@@ -1002,6 +1041,7 @@ Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
       case Err_IllegalMempool:
       case Err_Overlap:
       case Err_Cond:
+      case Err_ReallocSizeZero:
          return True;
 
       case Err_FishyValue:
@@ -1221,6 +1261,10 @@ UInt MC_(update_Error_extra)( const Error* err )
                                         &extra->Err.FreeMismatch.ai );
       return sizeof(MC_Error);
    }
+   case Err_ReallocSizeZero:
+      describe_addr ( ep, VG_(get_error_address)(err),
+                      &extra->Err.ReallocSizeZero.ai );
+      return sizeof(MC_Error);
 
    default: VG_(tool_panic)("mc_update_extra: bad errkind");
    }
@@ -1314,6 +1358,7 @@ typedef
       LeakSupp,      // Something to be suppressed in a leak check.
       MempoolSupp,   // Memory pool suppression.
       FishyValueSupp,// Fishy value suppression.
+      ReallocSizeZeroSupp, // realloc size 0 suppression
    } 
    MC_SuppKind;
 
@@ -1344,6 +1389,7 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "Value16")) skind = Value16Supp;
    else if (VG_STREQ(name, "Value32")) skind = Value32Supp;
    else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
+   else if (VG_STREQ(name, "ReallocZero")) skind = ReallocSizeZeroSupp;
    else 
       return False;
 
@@ -1521,6 +1567,11 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
                          supp_extra->argument_name);
       }
 
+      case ReallocSizeZeroSupp: {
+
+         return (ekind == Err_ReallocSizeZero);
+      }
+
       default:
          VG_(printf)("Error:\n"
                      "  unknown suppression type %d\n",
@@ -1533,18 +1584,19 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
 const HChar* MC_(get_error_name) ( const Error* err )
 {
    switch (VG_(get_error_kind)(err)) {
-   case Err_RegParam:       return "Param";
-   case Err_MemParam:       return "Param";
-   case Err_User:           return "User";
-   case Err_FreeMismatch:   return "Free";
-   case Err_IllegalMempool: return "Mempool";
-   case Err_Free:           return "Free";
-   case Err_Jump:           return "Jump";
-   case Err_CoreMem:        return "CoreMem";
-   case Err_Overlap:        return "Overlap";
-   case Err_Leak:           return "Leak";
-   case Err_Cond:           return "Cond";
-   case Err_FishyValue:     return "FishyValue";
+   case Err_RegParam:        return "Param";
+   case Err_MemParam:        return "Param";
+   case Err_User:            return "User";
+   case Err_FreeMismatch:    return "Free";
+   case Err_IllegalMempool:  return "Mempool";
+   case Err_Free:            return "Free";
+   case Err_Jump:            return "Jump";
+   case Err_CoreMem:         return "CoreMem";
+   case Err_Overlap:         return "Overlap";
+   case Err_Leak:            return "Leak";
+   case Err_Cond:            return "Cond";
+   case Err_FishyValue:      return "FishyValue";
+   case Err_ReallocSizeZero: return "ReallocZero";
    case Err_Addr: {
       MC_Error* extra = VG_(get_error_extra)(err);
       switch ( extra->Err.Addr.szB ) {

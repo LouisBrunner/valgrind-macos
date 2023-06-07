@@ -90,7 +90,7 @@ DECL_TEMPLATE(freebsd, sys_ioctl) // 54
 DECL_TEMPLATE(freebsd, sys_reboot) // 55
 DECL_TEMPLATE(freebsd, sys_revoke) // 56
 // generic symlink 57
-// generic readlink 58
+DECL_TEMPLATE(freebsd, sys_readlink) // 58
 // generic execve 59
 // generic umask 60
 // generic chroot 61
@@ -419,6 +419,8 @@ DECL_TEMPLATE(freebsd, sys_abort2) // 463
 DECL_TEMPLATE(freebsd, sys_thr_set_name) // 464
 DECL_TEMPLATE(freebsd, sys_aio_fsync) // 465
 DECL_TEMPLATE(freebsd, sys_rtprio_thread) // 466
+DECL_TEMPLATE(freebsd, sys_sctp_generic_sendmsg) // 472
+DECL_TEMPLATE(freebsd, sys_sctp_generic_recvmsg) // 474
 DECL_TEMPLATE(freebsd, sys_pread) // 475
 DECL_TEMPLATE(freebsd, sys_pwrite) // 476
 DECL_TEMPLATE(freebsd, sys_mmap) // 477

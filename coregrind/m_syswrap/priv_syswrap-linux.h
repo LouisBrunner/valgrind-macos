@@ -105,6 +105,7 @@ DECL_TEMPLATE(linux, sys_epoll_create1);
 DECL_TEMPLATE(linux, sys_epoll_ctl);
 DECL_TEMPLATE(linux, sys_epoll_wait);
 DECL_TEMPLATE(linux, sys_epoll_pwait);
+DECL_TEMPLATE(linux, sys_epoll_pwait2);
 DECL_TEMPLATE(linux, sys_eventfd);
 DECL_TEMPLATE(linux, sys_eventfd2);
 
@@ -320,8 +321,12 @@ DECL_TEMPLATE(linux, sys_io_uring_setup);
 DECL_TEMPLATE(linux, sys_io_uring_enter);
 DECL_TEMPLATE(linux, sys_io_uring_register);
 
+// Linux-specific (new in Linux 5.3)
+DECL_TEMPLATE(linux, sys_pidfd_open);
+
 // Linux-specific (new in Linux 5.9)
 DECL_TEMPLATE(linux, sys_close_range);
+DECL_TEMPLATE(linux, sys_openat2);
 
 // Linux-specific (new in Linux 5.14)
 DECL_TEMPLATE(linux, sys_memfd_secret);

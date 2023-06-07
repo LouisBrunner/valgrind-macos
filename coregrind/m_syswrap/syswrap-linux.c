@@ -1743,6 +1743,9 @@ static void futex_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
    }
 
    *flags |= SfMayBlock;
+   if ((ARG2 & (VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_LOCK_PI)) == (VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_LOCK_PI)) {
+      *flags |= SfKernelRestart;
+   }
 
    switch(ARG2 & ~(VKI_FUTEX_PRIVATE_FLAG|VKI_FUTEX_CLOCK_REALTIME)) {
    case VKI_FUTEX_WAIT:
@@ -2158,6 +2161,29 @@ PRE(sys_epoll_pwait)
       PRE_MEM_READ( "epoll_pwait(sigmask)", ARG5, sizeof(vki_sigset_t) );
 }
 POST(sys_epoll_pwait)
+{
+   epoll_post_helper (tid, arrghs, status);
+}
+
+PRE(sys_epoll_pwait2)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_epoll_pwait2 ( %ld, %#" FMT_REGWORD "x, %ld, %#"
+          FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
+         SARG1, ARG2, SARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(long, "epoll_pwait2",
+                 int, epfd, struct vki_epoll_event *, events,
+                 int, maxevents, const struct timespec64 *, timeout,
+                 vki_sigset_t *, sigmask, vki_size_t, sigsetsize);
+   /* Assume all (maxevents) events records should be (fully) writable. */
+   PRE_MEM_WRITE( "epoll_pwait2(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
+   /* epoll_pwait2 only supports 64bit timespec. */
+   if (ARG4)
+      pre_read_timespec64(tid, "epoll_pwait2(timeout)", ARG4);
+   if (ARG5)
+      PRE_MEM_READ( "epoll_pwait2(sigmask)", ARG5, sizeof(vki_sigset_t) );
+}
+POST(sys_epoll_pwait2)
 {
    epoll_post_helper (tid, arrghs, status);
 }
@@ -7858,6 +7884,32 @@ PRE(sys_ioctl)
       PRE_MEM_WRITE( "ioctl(RTC_IRQP_READ)", ARG3, sizeof(unsigned long));
       break;
 
+      /* Loopback control */
+   case VKI_LOOP_CTL_ADD:
+   case VKI_LOOP_CTL_REMOVE:
+   case VKI_LOOP_CTL_GET_FREE:
+      break;
+      /* Loopback device */
+   case VKI_LOOP_SET_FD:
+   case VKI_LOOP_CLR_FD:
+   case VKI_LOOP_CHANGE_FD:
+   case VKI_LOOP_SET_CAPACITY:
+   case VKI_LOOP_SET_DIRECT_IO:
+   case VKI_LOOP_SET_BLOCK_SIZE:
+      break;
+   case VKI_LOOP_SET_STATUS:
+      PRE_MEM_READ("ioctl(LOOP_SET_STATUS)", ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_GET_STATUS:
+      PRE_MEM_WRITE("ioctl(LOOP_GET_STATUS)", ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_SET_STATUS64:
+      PRE_MEM_READ("ioctl(LOOP_SET_STATUS64)", ARG3, sizeof(struct vki_loop_info64));
+      break;
+   case VKI_LOOP_GET_STATUS64:
+      PRE_MEM_WRITE("ioctl(LOOP_GET_STATUS64)", ARG3, sizeof(struct vki_loop_info64));
+      break;
+
       /* Block devices */
    case VKI_BLKROSET:
       PRE_MEM_READ( "ioctl(BLKROSET)", ARG3, sizeof(int));
@@ -10825,6 +10877,33 @@ POST(sys_ioctl)
       POST_MEM_WRITE(ARG3, sizeof(unsigned long));
       break;
 
+   /* Loopback devices */
+   case VKI_LOOP_CTL_ADD:
+   case VKI_LOOP_CTL_REMOVE:
+   case VKI_LOOP_CTL_GET_FREE:
+      break;
+      /* Loopback device */
+   case VKI_LOOP_SET_FD:
+   case VKI_LOOP_CLR_FD:
+   case VKI_LOOP_CHANGE_FD:
+   case VKI_LOOP_SET_CAPACITY:
+   case VKI_LOOP_SET_DIRECT_IO:
+   case VKI_LOOP_SET_BLOCK_SIZE:
+      break;
+   case VKI_LOOP_SET_STATUS:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_GET_STATUS:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info));
+      break;
+   case VKI_LOOP_SET_STATUS64:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info64));
+      break;
+   case VKI_LOOP_GET_STATUS64:
+      POST_MEM_WRITE(ARG3, sizeof(struct vki_loop_info64));
+      break;
+
+
       /* Block devices */
    case VKI_BLKROSET:
       break;
@@ -13432,6 +13511,137 @@ POST(sys_close_range)
 	  && fd != VG_(log_output_sink).fd
 	  && fd != VG_(xml_output_sink).fd)
       ML_(record_fd_close)(fd);
+}
+
+
+#define VKI_O_DIRECTORY    00200000
+#define VKI___O_TMPFILE    020000000
+#define VKI_O_TMPFILE (VKI___O_TMPFILE | VKI_O_DIRECTORY)
+
+// long syscall(SYS_openat2, int dirfd, const char *pathname,
+//             struct open_how *how, size_t size);
+PRE(sys_openat2)
+{
+   HChar  name[30];   // large enough
+   SysRes sres;
+   struct vki_open_how * how;
+
+   PRINT("sys_openat2 ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %ld )",
+            SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, SARG4);
+   PRE_REG_READ4(long, "openat2",
+                    int, dfd, const char *, filename, struct vki_open_how *, how, vki_size_t, size);
+
+   PRE_MEM_RASCIIZ( "openat2(filename)", ARG2 );
+   PRE_MEM_READ( "openat2(how)", ARG3, sizeof(struct vki_open_how));
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat2", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
+   how = (struct vki_open_how *)ARG3;
+
+   if (how && ML_(safe_to_deref) (how, sizeof(struct vki_open_how))) {
+      if (how->vki_mode) {
+         if (!(how->vki_flags & ((vki_uint64_t)VKI_O_CREAT | VKI_O_TMPFILE))) {
+            SET_STATUS_Failure( VKI_EINVAL );
+         }
+      }
+      if (how->vki_resolve & ~((vki_uint64_t)VKI_RESOLVE_NO_XDEV |
+                            VKI_RESOLVE_NO_MAGICLINKS |
+                            VKI_RESOLVE_NO_SYMLINKS |
+                            VKI_RESOLVE_BENEATH |
+                            VKI_RESOLVE_IN_ROOT |
+                            VKI_RESOLVE_CACHED)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+   }
+
+   /* Handle the case where the open is of /proc/self/cmdline or
+      /proc/<pid>/cmdline, and just give it a copy of the fd for the
+      fake file we cooked up at startup (in m_main).  Also, seek the
+      cloned fd back to the start. */
+
+   VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0
+           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/cmdline") == 0)) {
+      sres = VG_(dup)( VG_(cl_cmdline_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
+   /* Do the same for /proc/self/auxv or /proc/<pid>/auxv case. */
+
+   VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0
+           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/auxv") == 0)) {
+      sres = VG_(dup)( VG_(cl_auxv_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
+   /* And for /proc/self/exe or /proc/<pid>/exe case. */
+
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0
+           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
+      sres = VG_(dup)( VG_(cl_exec_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+
+POST(sys_openat2)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat2", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
+PRE(sys_pidfd_open)
+{
+  PRINT("sys_pidfd_open ( %ld, %lu )", SARG1, ARG2);
+}
+
+POST(sys_pidfd_open)
+{
+   if (!ML_(fd_allowed)(RES, "pidfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
 }
 
 #undef PRE

@@ -282,6 +282,13 @@
    fun:pthread_create@*
 }
 
+{
+   helgrind---_dl_lookup_symbol_x
+   Helgrind:Race
+   ...
+   fun:_dl_lookup_symbol_x
+}
+
 ####################################################
 # To do with GNU libgomp
 #
@@ -301,4 +308,20 @@
    helgrind---libgomp43-1
    Helgrind:Race
    fun:gomp_ordered_last
+}
+
+####################################################
+# posix functions that are thread safe
+{
+   helgrind---getaddrinfo
+   Helgrind:Race
+   ...
+   fun:getaddrinfo
+}
+
+# * here for dns and files variants etc.
+{
+   helgrind---_nss_*_gethostbyname4_r
+   Helgrind:Race
+   fun:_nss_*_gethostbyname4_r
 }

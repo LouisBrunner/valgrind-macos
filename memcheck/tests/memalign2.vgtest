@@ -1,2 +1,0 @@
-prog: memalign2
-vgopts: -q --freelist-vol=100000 --freelist-big-blocks=0

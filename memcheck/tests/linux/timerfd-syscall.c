@@ -35,9 +35,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#if defined(HAVE_SYS_SIGNAL_H)
-#include <sys/signal.h>
-#endif
+#include <signal.h>
 #if defined(HAVE_SYS_SYSCALL_H)
 #include <sys/syscall.h>
 #endif

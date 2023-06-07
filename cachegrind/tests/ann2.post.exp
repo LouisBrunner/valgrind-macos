@@ -1,55 +1,185 @@
 --------------------------------------------------------------------------------
-I1 cache:         32768 B, 64 B, 8-way associative
-D1 cache:         32768 B, 64 B, 8-way associative
-LL cache:         19922944 B, 64 B, 19-way associative
-Command:          ./a.out
-Data file:        cgout-test
-Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
-Events shown:     Dw Dr Ir
-Event sort order: Dr
-Thresholds:       0.1
-Include dirs:     
-User annotated:   
-Auto-annotation:  on
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate --context 2 --annotate --show-percs=yes --threshold=0.5 ann2.cgout
+Command:          ann2
+Events recorded:  A SomeCount VeryLongEventName
+Events shown:     A SomeCount VeryLongEventName
+Event sort order: A SomeCount VeryLongEventName
+Threshold:        0.5%
+Annotation:       on
 
 --------------------------------------------------------------------------------
-Dw              Dr                 Ir                 
+-- Summary
 --------------------------------------------------------------------------------
-18,005 (100.0%) 4,057,955 (100.0%) 5,229,753 (100.0%)  PROGRAM TOTALS
+A_______________ SomeCount_______ VeryLongEventName 
+
+100,000 (100.0%) 100,000 (100.0%)                 0  PROGRAM TOTALS
 
 --------------------------------------------------------------------------------
-Dw             Dr                 Ir                  file:function
+-- File:function summary
 --------------------------------------------------------------------------------
-    3 ( 0.02%) 4,000,004 (98.57%) 5,000,015 (95.61%)  a.c:main
-4,543 (25.23%)    17,566 ( 0.43%)    47,993 ( 0.92%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c:do_lookup_x
-3,083 (17.12%)     5,750 ( 0.14%)    28,534 ( 0.55%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c:_dl_lookup_symbol_x
-    8 ( 0.04%)     5,521 ( 0.14%)    28,136 ( 0.54%)  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c:__GI___tunables_init
-2,490 (13.83%)     5,219 ( 0.13%)    21,821 ( 0.42%)  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h:_dl_relocate_object
-    0              5,158 ( 0.13%)    25,408 ( 0.49%)  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S:strcmp
+  A___________________________ SomeCount____________ VeryLongEventName__  file:function
+
+<     86,590    (86.6%, 86.6%) 93,000 (93.0%, 93.0%)        0 (n/a, n/a)  ann2-basic.rs:
+      68,081    (68.1%)        90,291 (90.3%)               0               f0
+      15,000    (15.0%)           600  (0.6%)               0               f1
+       2,000     (2.0%)           100  (0.1%)               0               f2
+         500     (0.5%)             0                       0               f6
+         500     (0.5%)             0                       0               f4
+
+<      9,000     (9.0%, 95.6%)  6,000  (6.0%, 99.0%)        0 (n/a, n/a)  ann2-could-not-be-found.rs:f1
+
+<      2,000     (2.0%, 97.6%)    800  (0.8%, 99.8%)   -1,000 (n/a, n/a)  ann2-past-the-end.rs:
+       1,000     (1.0%)           500  (0.5%)               0               <unspecified>
+       1,000     (1.0%)           300  (0.3%)          -1,000 (n/a)         f1
+
+<      1,000     (1.0%, 98.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ann2-more-recent-than-cgout.rs:new
+
+<      1,000     (1.0%, 99.6%)      0  (0.0%, 99.8%)        0 (n/a, n/a)  ???:unknown
+
+<         10     (0.0%, 99.6%)      0  (0.0%, 99.8%)    1,000 (n/a, n/a)  ann2-negatives.rs:
+  -1,000,000 (-1000.0%)             0                 150,000 (n/a)         neg3
+     500,000   (500.0%)             0                -150,000 (n/a)         neg2a
+     499,999   (500.0%)             0                       0               neg2b
 
 --------------------------------------------------------------------------------
--- Auto-annotated source: a.c
+-- Function:file summary
 --------------------------------------------------------------------------------
-Dw         Dr                 Ir                 
+  A______________________________ SomeCount____________ VeryLongEventName__  function:file
 
-1 ( 0.01%)         0                  2 ( 0.00%)  int main(void) {
-1 ( 0.01%)         0                  1 ( 0.00%)     int z = 0;
-1 ( 0.01%) 2,000,001 (49.29%) 3,000,004 (57.36%)     for (int i = 0; i < 1000000; i++) {
-0          2,000,000 (49.29%) 2,000,000 (38.24%)        z += i;
-.                  .                  .              }
-0                  1 ( 0.00%)         6 ( 0.00%)     return z % 256;
-0                  2 ( 0.00%)         2 ( 0.00%)  }
+> -1,000,000 (-1000.0%, -1000.0%)      0  (0.0%,  0.0%)  150,000 (n/a, n/a)  neg3:ann2-negatives.rs
+
+>    500,000   (500.0%,  -500.0%)      0  (0.0%,  0.0%) -150,000 (n/a, n/a)  neg2a:ann2-negatives.rs
+
+>    499,999   (500.0%,    -0.0%)      0  (0.0%,  0.0%)        0 (n/a, n/a)  neg2b:ann2-negatives.rs
+
+>     68,081    (68.1%,    68.1%) 90,291 (90.3%, 90.3%)        0 (n/a, n/a)  f0:ann2-basic.rs
+
+>     25,000    (25.0%,    93.1%)  6,900  (6.9%, 97.2%)   -1,000 (n/a, n/a)  f1:
+      15,000    (15.0%)              600  (0.6%)               0               ann2-basic.rs
+       9,000     (9.0%)            6,000  (6.0%)               0               ann2-could-not-be-found.rs
+       1,000     (1.0%)              300  (0.3%)          -1,000 (n/a)         ann2-past-the-end.rs
+
+>      2,000     (2.0%,    95.1%)    100  (0.1%, 97.3%)        0 (n/a, n/a)  f2:ann2-basic.rs
+
+>      1,000     (1.0%,    96.1%)    500  (0.5%, 97.8%)        0 (n/a, n/a)  <unspecified>:ann2-past-the-end.rs
+
+>      1,000     (1.0%,    97.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  unknown:???
+
+>      1,000     (1.0%,    98.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  new:ann2-more-recent-than-cgout.rs
+
+>        500     (0.5%,    98.6%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  f6:ann2-basic.rs
+
+>        500     (0.5%,    99.1%)      0  (0.0%, 97.8%)        0 (n/a, n/a)  f4:ann2-basic.rs
 
 --------------------------------------------------------------------------------
-The following files chosen for auto-annotation could not be found:
+-- Annotated source file: ann2-basic.rs
 --------------------------------------------------------------------------------
-  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
-  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
-  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
-  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
+A_____________ SomeCount_____ VeryLongEventName 
+
+ 7,100  (7.1%)    100  (0.1%)                 0  <unknown (line 0)>
+
+-- line 2 ----------------------------------------
+     .              .                         .  two
+     .              .                         .  three
+ 5,000  (5.0%)    500  (0.5%)                 0  four
+ 5,000  (5.0%)    100  (0.1%)                 0  five
+     .              .                         .  six
+68,081 (68.1%) 90,291 (90.3%)                 0  seven
+     .              .                         .  eight
+   110  (0.1%)      9  (0.0%)                 0  nine
+     .              .                         .  ten
+     .              .                         .  eleven
+   200  (0.2%)      0                         0  twelve
+   200  (0.2%)      0                         0  thirteen
+   100  (0.1%)      0                         0  fourteen
+     0              0                         0  fifteen
+     0              0                         0  sixteen
+     0              0                         0  seventeen
+     0              0                         0  eighteen
+   499  (0.5%)  2,000  (2.0%)                 0  nineteen
+   300  (0.3%)      0                         0  twenty
 
 --------------------------------------------------------------------------------
-Dw         Dr                 Ir                 
+-- Annotated source file: ann2-could-not-be-found.rs
 --------------------------------------------------------------------------------
-3 ( 0.02%) 4,000,004 (98.57%) 5,000,015 (95.61%)  events annotated
+Unannotated because one or more of these original files are unreadable:
+- ann2-could-not-be-found.rs
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann2-more-recent-than-cgout.rs
+--------------------------------------------------------------------------------
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@ Original source files are all newer than data file 'ann2.cgout':
+@ - ann2-more-recent-than-cgout.rs
+@ Annotations may not be correct.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+A___________ SomeCount VeryLongEventName 
+
+    .                .                 .  one
+1,000 (1.0%)         0                 0  two
+    .                .                 .  three
+    .                .                 .  four
+-- line 4 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann2-negatives.rs
+--------------------------------------------------------------------------------
+A____________________ SomeCount_____ VeryLongEventName 
+
+    -2,000    (-2.0%) -1,000 (-1.0%)        -990 (n/a)  <unknown (line 0)>
+
+     2,000     (2.0%)  2,000  (2.0%)       2,000 (n/a)  one
+    -1,000    (-1.0%) -1,000 (-1.0%)           0        two
+         .                 .                   .        three
+         .                 .                   .        four
+   500,000   (500.0%)      0            -150,000 (n/a)  five
+   499,999   (500.0%)      0                   0        six
+         .                 .                   .        seven
+-1,000,000 (-1000.0%)      0             150,000 (n/a)  eight
+         .                 .                   .        nine
+    -8,000    (-8.0%)      0                  10 (n/a)  ten
+     9,000     (9.0%)      0                 -20 (n/a)  eleven
+         .                 .                   .        twelve
+        11     (0.0%)      0                   0        thirteen
+         .                 .                   .        fourteen
+         .                 .                   .        fifteen
+-- line 15 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann2-past-the-end.rs
+--------------------------------------------------------------------------------
+A___________ SomeCount_ VeryLongEventName 
+
+1,000 (1.0%) 500 (0.5%)           0        one
+  200 (0.2%) 100 (0.1%)           0        two
+    .          .                  .        three
+    .          .                  .        four
+-- line 4 ----------------------------------------
+
+  300 (0.3%) 100 (0.1%)           0        <bogus line 20>
+  300 (0.3%) 100 (0.1%)           0        <bogus line 21>
+  200 (0.2%)   0             -1,000 (n/a)  <bogus line 22>
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@ WARNING @@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@ Information recorded about lines past the end of 'ann2-past-the-end.rs'.
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+A_____________ SomeCount_____ VeryLongEventName 
+
+84,500 (84.5%) 94,700 (94.7%)         990 (n/a)    annotated: files known & above threshold & readable, line numbers known
+ 5,100  (5.1%)   -900 (-0.9%)        -990 (n/a)    annotated: files known & above threshold & readable, line numbers unknown
+     0              0                   0        unannotated: files known & above threshold & two or more non-identical
+ 9,000  (9.0%)  6,000  (6.0%)           0        unannotated: files known & above threshold & unreadable 
+   400  (0.4%)    200  (0.2%)           0        unannotated: files known & below threshold
+ 1,000  (1.0%)      0                   0        unannotated: files unknown
 

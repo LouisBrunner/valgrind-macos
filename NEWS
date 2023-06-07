@@ -1,4 +1,4 @@
-Release 3.21.0 (?? Apr 2023)
+Release 3.22.0 (?? Oct 2023)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -10,6 +10,19 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* A new configure option --with-gdbscripts-dir lets you install
+  the gdb valgrind python monitor scripts in a specific location.
+  For example an distro could use it to install the scripts in a
+  safe load location --with-gdbscripts-dir=%{_datadir}/gdb/auto-load
+  It is also possible to configure --without-gdb-scripts-dir so no
+  .debug_gdb_scripts section is added to the vgpreload library and
+  no valgrind-monitor python scripts are installed at all.
+
+* ================== PLATFORM CHANGES =================
+
+
+* ==================== TOOL CHANGES ===================
+
 
 * ==================== FIXED BUGS ====================
 
@@ -20,13 +33,220 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
-444110 priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
+460192  Add epoll_pwait2
+469049  link failure on ppc64 (big endian) valgrind 3.20
+469146  massif --ignore-fn does not ignore inlined functions
+469768  Make it possible to install gdb scripts in a different location
+470520  Multiple realloc zero errors crash in MC_(eq_Error)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
-(3.21.0.RC1: ?? Apr 2023)
+Release 3.21.0 (28 Apr 2023)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
+X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD and
+AMD64/FreeBSD.  There is also preliminary support for X86/macOS 10.13,
+AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* When GDB is used to debug a program running under valgrind using
+  the valgrind gdbserver, GDB will automatically load some
+  python code provided in valgrind defining GDB front end commands
+  corresponding to the valgrind monitor commands.
+  These GDB front end commands accept the same format as
+  the monitor commands directly sent to the Valgrind gdbserver.
+  These GDB front end commands provide a better integration
+  in the GDB command line interface, so as to use for example
+  GDB auto-completion, command specific help, searching for
+  a command or command help matching a regexp, ...
+  For relevant monitor commands, GDB will evaluate arguments
+  to make the use of monitor commands easier.
+  For example, instead of having to print the address of a variable
+  to pass it to a subsequent monitor command, the GDB front end
+  command will evaluate the address argument. It is for example
+  possible to do:
+    (gdb) memcheck who_points_at &some_struct sizeof(some_struct)
+  instead of:
+    (gdb) p &some_struct
+    $2 = (some_struct_type *) 0x1130a0 <some_struct>
+    (gdb) p sizeof(some_struct)
+    $3 = 40
+    (gdb) monitor who_point_at 0x1130a0 40
+
+* The vgdb utility now supports extended-remote protocol when
+  invoked with --multi. In this mode the GDB run command is
+  supported. Which means you don't need to run gdb and valgrind
+  from different terminals. So for example to start your program
+  in gdb and run it under valgrind you can do:
+  $ gdb prog
+  (gdb) set remote exec-file prog
+  (gdb) set sysroot /
+  (gdb) target extended-remote | vgdb --multi
+  (gdb) start
+
+* The behaviour of realloc with a size of zero can now
+  be changed for tools that intercept malloc. Those
+  tools are memcheck, helgrind, drd, massif and dhat.
+  Realloc implementations generally do one of two things
+     - free the memory like free() and return NULL
+       (GNU libc and ptmalloc).
+     - either free the memory and then allocate a
+       minimum sized block or just return the
+       original pointer. Return NULL if the
+       allocation of the minimum sized block fails
+       (jemalloc, musl, snmalloc, Solaris, macOS).
+  When Valgrind is configured and built it will
+  try to match the OS and libc behaviour. However
+  if you are using a non-default library to replace
+  malloc and family (e.g., musl on a glibc Linux or
+  tcmalloc on FreeBSD) then you can use a command line
+  option to change the behaviour of Valgrind:
+    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]
+
+* ================== PLATFORM CHANGES =================
+
+* Make the address space limit on FreeBSD amd64 128Gbytes
+  (the same as Linux and Solaris, it was 32Gbytes)
+
+* ==================== TOOL CHANGES ===================
+
+* Memcheck:
+  - When doing a delta leak_search, it is now possible to only
+    output the new loss records compared to the previous leak search.
+    This is available in the memcheck monitor command 'leak_search'
+    by specifying the "new" keyword or in your program by using
+    the client request VALGRIND_DO_NEW_LEAK_CHECK.
+    Whenever a "delta" leak search is done (i.e. when specifying
+    "new" or "increased" or "changed" in the monitor command),
+    the new loss records have a "new" marker.
+  - Valgrind now contains python code that defines GDB memcheck
+    front end monitor commands. See CORE CHANGES.
+  - Performs checks for the use of realloc with a size of zero.
+    This is non-portable and a source of errors. If memcheck
+    detects such a usage it will generate an error
+      realloc() with size 0
+    followed by the usual callstacks.
+    A switch has been added to allow this to be turned off:
+      --show-realloc-size-zero=yes|no [yes]
+
+* Helgrind:
+  - The option ---history-backtrace-size=<number> allows to configure
+    the number of entries to record in the stack traces of "old"
+    accesses. Previously, this number was hardcoded to 8.
+  - Valgrind now contains python code that defines GDB helgrind
+    front end monitor commands. See CORE CHANGES.
+
+* Cachegrind:
+  - `--cache-sim=no` is now the default. The cache simulation is old and
+    unlikely to match any real modern machine. This means only the `Ir`
+    event are gathered by default, but that is by far the most useful
+    event.
+  - `cg_annotate`, `cg_diff`, and `cg_merge` have been rewritten in
+    Python. As a result, they all have more flexible command line
+    argument handling, e.g. supporting `--show-percs` and
+    `--no-show-percs` forms as well as the existing `--show-percs=yes`
+    and `--show-percs=no`.
+  - `cg_annotate` has some functional changes.
+    - It's much faster, e.g. 3-4x on common cases.
+    - It now supports diffing (with `--diff`, `--mod-filename`, and
+      `--mod-funcname`) and merging (by passing multiple data files).
+    - It now provides more information at the file and function level.
+      There are now "File:function" and "Function:file" sections. These
+      are very useful for programs that use inlining a lot.
+    - Support for user-annotated files and the `-I`/`--include` option
+      has been removed, because it was of little use and blocked other
+      improvements.
+    - The `--auto` option is renamed `--annotate`, though the old
+      `--auto=yes`/`--auto=no` forms are still supported.
+  - `cg_diff` and `cg_merge` are now deprecated, because `cg_annotate`
+    now does a better job of diffing and merging.
+  - The Cachegrind output file format has changed very slightly, but in
+    ways nobody is likely to notice.
+
+* Callgrind:
+  - Valgrind now contains python code that defines GDB callgrind
+    front end monitor commands. See CORE CHANGES.
+
+* Massif:
+  - Valgrind now contains python code that defines GDB massif
+    front end monitor commands. See CORE CHANGES.
+
+* DHAT:
+  - A new kind of user request has been added which allows you to
+    override the 1024 byte limit on access count histograms for blocks
+    of memory. The client request is DHAT_HISTOGRAM_MEMORY.
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+170510  Don't warn about ioctl of size 0 without direction hint
+241072  List tools in --help output
+327548  false positive while destroying mutex
+382034  Testcases build fixes for musl
+351857  confusing error message about valid command line option
+374596  inconsistent RDTSCP support on x86_64
+392331  Spurious lock not held error from inside pthread_cond_timedwait
+397083  Likely false positive "uninitialised value(s)" for __wmemchr_avx2 and __wmemcmp_avx2_movbe
+400793  pthread_rwlock_timedwrlock false positive
+419054  Unhandled syscall getcpu on arm32
+433873  openat2 syscall unimplemented on Linux
+434057  Add stdio mode to valgrind's gdbserver
+435441  valgrind fails to interpose malloc on musl 1.2.2 due to weak symbol name and no libc soname
+436413  Warn about realloc of size zero
+439685  compiler warning in callgrind/main.c
+444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
+444487  hginfo test detects an extra lock inside data symbol "_rtld_local"
+444488  Use glibc.pthread.stack_cache_size tunable
+444568  drd/tests/pth_barrier_thr_cr fails on Fedora 38
+445743  "The impossible happened: mutex is locked simultaneously by two threads"
+        while using mutexes with priority inheritance and signals
+449309  Missing loopback device ioctl(s) 
+459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
+460356  s390: Sqrt32Fx4 -- cannot reduce tree
+462830  WARNING: unhandled amd64-freebsd syscall: 474
+463027  broken check for MPX instruction support in assembler
+464103  Enhancement: add a client request to DHAT to mark memory to be histogrammed
+464476  Firefox fails to start under Valgrind
+464609  Valgrind memcheck should support Linux pidfd_open
+464680  Show issues caused by memory policies like selinux deny_execmem
+464859  Build failures with GCC-13 (drd tsan_unittest)
+464969  D language demangling
+465435  m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
+466104  aligned_alloc problems, part 1
+467036  Add time cost statistics for Regtest
+467482  Build failure on aarch64 Alpine
+467714  fdleak_* and rlimit tests fail when parent process has more than
+        64 descriptors opened
+467839  Gdbserver: Improve compatibility of library directory name
+468401  [PATCH] Add a style file for clang-format
+468556  Build failure for vgdb
+468606  build: remove "Valgrind relies on GCC" check/output
+469097  ppc64(be) doesn't support SCV syscall instruction
+n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed above.
+
+* ==================== KNOWN ISSUES ===================
+
+* configure --enable-lto=yes is know to not work in all setups.
+  See bug 469049. Workaround: Build without LTO.
+
+(3.21.0.RC1: 14 Apr 2023)
+(3.21.0.RC2: 21 Apr 2023)
 
 Release 3.20.0 (24 Oct 2022)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,6 +297,7 @@ n-i-bz  Implement vgdb invoker on FreeBSD
 458915  Remove register cache to fix 458915 gdbserver causes wrong syscall return
 459031  Documentation on --error-exitcode incomplete
 459477  XERROR messages lacks ending '\n' in vgdb
+462007  Implicit int in none/tests/faultstatus.c
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

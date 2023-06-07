@@ -1,0 +1,140 @@
+--------------------------------------------------------------------------------
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate --show=Ir,I1mr,ILmr --show-percs=no ann1.cgout
+I1 cache:         32768 B, 64 B, 8-way associative
+D1 cache:         32768 B, 64 B, 8-way associative
+LL cache:         19922944 B, 64 B, 19-way associative
+Command:          ./a.out
+Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Events shown:     Ir I1mr ILmr
+Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Threshold:        0.1%
+Annotation:       on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+Ir_______ I1mr ILmr 
+
+5,229,753  952  931  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- File:function summary
+--------------------------------------------------------------------------------
+  Ir_______ I1mr ILmr  file:function
+
+< 5,000,015    1    1  a.c:main
+
+<    76,688   32   32  /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c:
+     47,993   19   19    do_lookup_x
+     28,534   11   11    _dl_lookup_symbol_x
+
+<    28,391   11    9  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c:
+     28,136    7    7    __GI___tunables_init
+
+<    25,408   47   47  /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S:strcmp
+
+<    22,214   25   25  /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h:
+     21,821   23   23    _dl_relocate_object
+
+<    11,817   16   16  /build/glibc-OTsEL5/glibc-2.27/elf/do-rel.h:
+     11,521   15   15    _dl_relocate_object
+
+<     8,055    0    0  /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.h:__GI___tunables_init
+
+<     6,939    5    5  /build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c:
+      6,898    2    2    _dl_name_match_p
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  Ir_______ I1mr ILmr  function:file
+
+> 5,000,015    1    1  main:a.c
+
+>    48,347   20   20  do_lookup_x:
+     47,993   19   19    /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
+
+>    36,191    7    7  __GI___tunables_init:
+     28,136    7    7    /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
+      8,055    0    0    /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.h
+
+>    34,576   51   51  _dl_relocate_object:
+     21,821   23   23    /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
+     11,521   15   15    /build/glibc-OTsEL5/glibc-2.27/elf/do-rel.h
+
+>    28,534   11   11  _dl_lookup_symbol_x:/build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
+
+>    25,426   48   48  strcmp:
+     25,408   47   47    /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
+
+>     6,898    2    2  _dl_name_match_p:/build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/elf/../sysdeps/x86_64/dl-machine.h
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/elf/dl-lookup.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/elf/dl-misc.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.c
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.h
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/elf/dl-tunables.h
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/elf/do-rel.h
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/elf/do-rel.h
+
+--------------------------------------------------------------------------------
+-- Annotated source file: /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
+--------------------------------------------------------------------------------
+Unannotated because one or more of these original files are unreadable:
+- /build/glibc-OTsEL5/glibc-2.27/string/../sysdeps/x86_64/strcmp.S
+
+--------------------------------------------------------------------------------
+-- Annotated source file: a.c
+--------------------------------------------------------------------------------
+Ir_______ I1mr ILmr 
+
+        2    0    0  int main(void) {
+        1    1    1     int z = 0;
+3,000,004    0    0     for (int i = 0; i < 1000000; i++) {
+2,000,000    0    0        z += i;
+        .    .    .     }
+        6    0    0     return z % 256;
+        2    0    0  }
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+Ir_______ I1mr ILmr 
+
+5,000,015    1    1    annotated: files known & above threshold & readable, line numbers known
+        0    0    0    annotated: files known & above threshold & readable, line numbers unknown
+        0    0    0  unannotated: files known & above threshold & two or more non-identical
+  179,512  136  134  unannotated: files known & above threshold & unreadable 
+   49,754  770  758  unannotated: files known & below threshold
+      472   45   38  unannotated: files unknown
+

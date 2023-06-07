@@ -1,7 +1,8 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275
+dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275 filter_auxv
+
 EXTRA_DIST = \
 	auxv.vgtest \
 	auxv.stderr.exp \
@@ -34,10 +35,25 @@ EXTRA_DIST = \
 	452275.stderr.exp \
 	usrstack.vgtest \
 	usrstack.stderr.exp \
-	usrstack.stdout.exp
+	usrstack.stdout.exp \
+	proc_pid_file.vgtest \
+	proc_pid_file.stderr.exp \
+	bash_test.vgtest \
+	bash_test.sh \
+	bash_test.stderr.exp \
+	bash_test.stdout.exp \
+	csh_test.vgtest \
+	csh_test.csh \
+	csh_test.stderr.exp \
+	csh_test.stdout.exp \
+	ksh_test.vgtest \
+	ksh_test.ksh \
+	ksh_test.stderr.exp \
+	ksh_test.stdout.exp
 
 check_PROGRAMS = \
-	auxv osrel swapcontext hello_world fexecve 452275 usrstack
+	auxv osrel swapcontext hello_world fexecve 452275 usrstack \
+	proc_pid_file
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -47,3 +63,5 @@ osrel_CFLAGS = ${AM_CFLAGS}
 swapcontext_CFLAGS = ${AM_CFLAGS}
 
 hello_world_SOURCES = hello_world.cpp
+
+proc_pid_file_SOURCES = proc_pid_file.cpp

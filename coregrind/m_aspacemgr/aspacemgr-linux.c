@@ -1662,7 +1662,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
 # else
-   aspacem_maxAddr = (Addr) (Addr)0x800000000UL - 1; // 32G
+   aspacem_maxAddr = (Addr)0x2000000000ULL - 1; // 128G
 #  ifdef ENABLE_INNER
    { Addr cse = VG_PGROUNDDN( sp_at_startup ) - 1;
      if (aspacem_maxAddr > cse)
@@ -2744,10 +2744,9 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
 
 /* Really just a wrapper around VG_(am_mmap_anon_float_valgrind). */
 
-void* VG_(am_shadow_alloc)(SizeT size)
+SysRes VG_(am_shadow_alloc)(SizeT size)
 {
-   SysRes sres = VG_(am_mmap_anon_float_valgrind)( size );
-   return sr_isError(sres) ? NULL : (void*)(Addr)sr_Res(sres);
+   return VG_(am_mmap_anon_float_valgrind)( size );
 }
 
 /* Map a file at an unconstrained address for V, and update the

@@ -1,0 +1,4 @@
+prereq: test -e bug392331
+vgopts: -q
+prog: bug392331
+stderr_filter: filter_bug392331

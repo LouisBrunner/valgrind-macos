@@ -1,0 +1,5 @@
+#! /bin/sh
+
+
+./filter_size_t "$@" |
+awk -f filter_stanza.awk

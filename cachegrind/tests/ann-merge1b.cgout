@@ -1,0 +1,14 @@
+desc: Description 2a
+desc: Description 2b
+cmd: Command 2
+events: A
+
+fl=ann-merge-x.rs
+fn=x1
+1 10
+3 10
+
+fn=x3
+5 20
+
+summary: 40

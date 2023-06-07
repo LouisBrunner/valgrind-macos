@@ -1,0 +1,28 @@
+realloc() with size 0
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:16)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:12)
+
+Mismatched free() / delete / delete []
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:16)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:12)
+
+Mismatched free() / delete / delete []
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:26)
+ Address 0x........ is 0 bytes inside a block of size 1 alloc'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:16)
+
+Mismatched free() / delete / delete []
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:41)
+ Address 0x........ is 0 bytes after a block of size 0 alloc'd
+   at 0x........: realloc (vg_replace_malloc.c:...)
+   by 0x........: main (realloc_size_zero_mismatch.cpp:31)
+

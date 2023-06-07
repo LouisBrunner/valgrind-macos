@@ -1,6 +1,0 @@
-# The 'prog' doesn't matter because we don't use its output. Instead we test
-# the post-processing of the cgout-test file.
-prog: ../../tests/true
-vgopts: --cachegrind-out-file=cachegrind.out
-post: touch cgout-test && perl ../../cachegrind/cg_annotate --show=Ir,I1mr,ILmr --show-percs=no cgout-test
-cleanup: rm cachegrind.out

@@ -105,10 +105,10 @@ typedef  vki_uint64_t   __vki_fsblkcnt_t;
 typedef  vki_uint64_t   __vki_fsfilcnt_t;
 typedef  vki_uint32_t   __vki_gid_t;
 typedef  vki_int64_t __vki_id_t;
-typedef  vki_uint32_t   __vki_ino_t;
+typedef  vki_uint64_t   __vki_ino_t;
 typedef  vki_int32_t __vki_lwpid_t;
 typedef  vki_uint16_t   __vki_mode_t;
-typedef  vki_uint16_t   __vki_nlink_t;
+typedef  vki_uint64_t   __vki_nlink_t;
 typedef  vki_int64_t __vki_off_t;
 typedef  vki_int32_t __vki_pid_t;
 typedef  vki_int64_t __vki_rlim_t;
@@ -119,7 +119,7 @@ typedef  vki_int32_t __vki_useconds_t;
 typedef  __vki_ct_rune_t   __vki_rune_t;
 typedef  __vki_ct_rune_t   __vki_wchar_t;
 typedef  __vki_ct_rune_t   __vki_wint_t;
-typedef  vki_uint32_t   __vki_dev_t;
+typedef  vki_uint64_t   __vki_dev_t;
 typedef  vki_uint32_t   __vki_fixpt_t;
 
 
@@ -331,13 +331,13 @@ struct vki_tms {
 
 /* QQQ 4.x stat layout */
 struct vki_freebsd11_stat {
-   vki_dev_t   st_dev;
-   vki_ino_t   st_ino;
+   vki_uint32_t   st_dev;
+   vki_uint32_t   st_ino;
    vki_mode_t  st_mode;
-   vki_nlink_t st_nlink;
+   vki_uint16_t st_nlink;
    vki_uid_t   st_uid;
    vki_gid_t   st_gid;
-   vki_dev_t   st_rdev;
+   vki_uint32_t   st_rdev;
 #if 0
    struct vki_timespec  st_atimespec;
    struct vki_timespec  st_mtimespec;
@@ -376,19 +376,15 @@ unsigned int :
  */
 
 struct vki_stat {
-   //vki_dev_t     st_dev;
-   vki_uint64_t    st_dev;
-   //vki_ino_t     st_ino;
-   vki_uint64_t    st_ino;
-   //vki_nlink_t   st_nlink;
-   vki_uint64_t    st_nlink;
+   vki_dev_t     st_dev;
+   vki_ino_t     st_ino;
+   vki_nlink_t   st_nlink;
    vki_mode_t   st_mode;
    vki_int16_t st_padding0;
    vki_uid_t    st_uid;
    vki_gid_t    st_gid;
    vki_int32_t st_padding1;
-   //vki_dev_t     st_rdev;
-   vki_uint64_t    st_rdev;
+   vki_dev_t     st_rdev;
 #ifdef   VKI_STAT_TIME_T_EXT
    vki_int32_t st_atim_ext;
 #endif
@@ -772,6 +768,28 @@ struct vki_sockaddr_in6 {
 };
 
 //----------------------------------------------------------------------
+// From netinet/sctp_uio.h
+//----------------------------------------------------------------------
+#define VKI_SCTP_ALIGN_RESV_PAD 92
+
+typedef vki_uint32_t vki_sctp_assoc_t;
+
+struct vki_sctp_sndrcvinfo {
+   vki_uint16_t sinfo_stream;
+   vki_uint16_t sinfo_ssn;
+   vki_uint16_t sinfo_flags;
+   vki_uint32_t sinfo_ppid;
+   vki_uint32_t sinfo_context;
+   vki_uint32_t sinfo_timetolive;
+   vki_uint32_t sinfo_tsn;
+   vki_uint32_t sinfo_cumtsn;
+   vki_sctp_assoc_t sinfo_assoc_id;
+   vki_uint16_t sinfo_keynumber;
+   vki_uint16_t sinfo_keynumber_valid;
+   vki_uint8_t __reserve_pad[VKI_SCTP_ALIGN_RESV_PAD];
+};
+
+//----------------------------------------------------------------------
 // From sys/un.h
 //----------------------------------------------------------------------
 
@@ -937,12 +955,12 @@ struct vki_termios {
  * We actually have a 16 bit "base" ioctl, which may or may not be decoded
  * into number/group
  */
-#define _VKI_IOC_BASEBITS  16
-#define _VKI_IOC_NRBITS    8  /* "num" on freebsd */
-#define _VKI_IOC_TYPEBITS  8  /* "group" on freebsd */
+#define _VKI_IOC_BASEBITS  16U
+#define _VKI_IOC_NRBITS    8U  /* "num" on freebsd */
+#define _VKI_IOC_TYPEBITS  8U  /* "group" on freebsd */
 
-#define _VKI_IOC_SIZEBITS  13
-#define _VKI_IOC_DIRBITS   3
+#define _VKI_IOC_SIZEBITS  13U
+#define _VKI_IOC_DIRBITS   3U
 
 #define _VKI_IOC_BASEMASK  ((1ul << _VKI_IOC_BASEBITS)-1)
 #define _VKI_IOC_NRMASK    ((1ul << _VKI_IOC_NRBITS)-1)
@@ -950,8 +968,8 @@ struct vki_termios {
 #define _VKI_IOC_SIZEMASK  ((1ul << _VKI_IOC_SIZEBITS)-1)
 #define _VKI_IOC_DIRMASK   ((1ul << _VKI_IOC_DIRBITS)-1)
 
-#define  _VKI_IOC_BASESHIFT   0
-#define _VKI_IOC_NRSHIFT   0
+#define  _VKI_IOC_BASESHIFT   0U
+#define _VKI_IOC_NRSHIFT   0U
 #define _VKI_IOC_TYPESHIFT (_VKI_IOC_NRSHIFT+_VKI_IOC_NRBITS)
 #define _VKI_IOC_SIZESHIFT (_VKI_IOC_TYPESHIFT+_VKI_IOC_TYPEBITS)
 #define _VKI_IOC_DIRSHIFT  (_VKI_IOC_SIZESHIFT+_VKI_IOC_SIZEBITS)
@@ -991,7 +1009,7 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 // From sys/random.h
 //----------------------------------------------------------------------
 
-#define VKI_GRND_NONBLOCK 0x1
+#define VKI_GRND_NONBLOCK 0x1U
 
 //----------------------------------------------------------------------
 // From sys/termios.h
@@ -1540,6 +1558,8 @@ struct vki_dirent {
 #define VKI_O_SEARCH	O_EXEC
 
 #define VKI_AT_FDCWD            AT_FDCWD
+#define VKI_AT_SYMLINK_NOFOLLOW 0x0200
+
 
 #define VKI_F_DUPFD     0  /* dup */
 #define VKI_F_GETFD     1  /* get close_on_exec */
@@ -1587,6 +1607,9 @@ struct vki_dirent {
 #define VKI_X_OK  0x01    /* test for execute or search permission */
 #define VKI_W_OK  0x02    /* test for write permission */
 #define VKI_R_OK  0x04    /* test for read permission */
+
+#define VKI_RFSPAWN         (1U<<31U)
+
 
 //----------------------------------------------------------------------
 // From sys/msg.h

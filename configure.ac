@@ -752,7 +752,6 @@ case "$ARCH_MAX-$VGCONF_OS" in
         CFLAGS=$safe_CFLAGS;;
      x86-darwin|amd64-darwin)
         AC_MSG_CHECKING([for 32 bit build support])
-        macos_only_32bit="no"
         if test x$xcodeversion = x10.14.6 -o $XCODE_VERS -ge $XCODE_10_15 ; then
             vg_cv_only64bit="yes"
             AC_MSG_RESULT([no])

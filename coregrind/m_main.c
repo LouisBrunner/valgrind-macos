@@ -2251,12 +2251,14 @@ void shutdown_actions_NORETURN( ThreadId tid,
    /* Final call to gdbserver, if requested. */
    if (VG_(gdbserver_stop_at) (VgdbStopAt_Abexit)
               && tid_exit_code (tid) != 0) {
-      VG_(umsg)("(action at abexit, exit code %d) vgdb me ... \n",
-                tid_exit_code (tid));
+      if (!(VG_(clo_launched_with_multi)))
+         VG_(umsg)("(action at abexit, exit code %d) vgdb me ... \n",
+                   tid_exit_code (tid));
       VG_(gdbserver) (tid);
    } else if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
-      VG_(umsg)("(action at exit, exit code %d) vgdb me ... \n",
-                tid_exit_code (tid));
+      if (!(VG_(clo_launched_with_multi)))
+          VG_(umsg)("(action at exit, exit code %d) vgdb me ... \n",
+                    tid_exit_code (tid));
       VG_(gdbserver) (tid);
    }
    VG_(threads)[tid].status = VgTs_Empty;

@@ -40,7 +40,9 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 470121  Can't run callgrind_control with valgrind 3.21.0 because of perl errors
 470520  Multiple realloc zero errors crash in MC_(eq_Error)
 470713  Failure on the Yosys project: valgrind: m_libcfile.c:1802
-        (Bool vgPlain_realpath(const HChar *, HChar *)): Assertion 'resolved' failed
+        (Bool vgPlain_realpath(const HChar *, HChar *)):
+        Assertion 'resolved' failed
+470830  Don't print actions vgdb me ... continue for vgdb --multi mode
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

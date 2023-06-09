@@ -282,7 +282,8 @@ static void exit_wrk( Int status, Bool gdbserver_call_allowed)
       if (status != 0 
           && VgdbStopAtiS(VgdbStopAt_ValgrindAbExit, VG_(clo_vgdb_stop_at))) {
          if (VG_(gdbserver_init_done)()) {
-            VG_(umsg)("(action at valgrind abnormal exit) vgdb me ... \n");
+            if (!(VG_(clo_launched_with_multi)))
+               VG_(umsg)("(action at valgrind abnormal exit) vgdb me ... \n");
             VG_(gdbserver) (atid);
          } else {
             VG_(umsg)("(action at valgrind abnormal exit)\n"

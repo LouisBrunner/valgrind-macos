@@ -29,6 +29,12 @@ use File::Basename;
 
 # vgdb_exe will be set to a vgdb found 'near' the callgrind_control file
 my $vgdb_exe = "";
+my $vgdbPrefixOption = "";
+my $cmd = "";
+my %cmd;
+my %cmdline;
+my $pid = -1;
+my @pids = ();
 
 sub getCallgrindPids {
 
@@ -49,6 +55,8 @@ sub getCallgrindPids {
   }
   close LIST;
 }
+
+my $headerPrinted = 0;
 
 sub printHeader {
   if ($headerPrinted) { return; }
@@ -95,11 +103,17 @@ sub printHelp {
 # Parts more or less copied from cg_annotate (author: Nicholas Nethercote)
 #
 
+my $event = "";
+my $events = "";
+my %events = ();
+my @events = ();
+my @show_events = ();
+my @show_order = ();
+
 sub prepareEvents {
 
   @events = split(/\s+/, $events);
-  %events = ();
-  $n = 0;
+  my $n = 0;
   foreach $event (@events) {
     $events{$event} = $n;
     $n++;
@@ -178,7 +192,7 @@ sub print_events ($)
 {
     my ($CC_col_widths) = @_;
 
-    foreach my $i (@show_order) { 
+    foreach my $i (@show_order) {
         my $event       = $events[$i];
         my $event_width = length($event);
         my $col_width   = $CC_col_widths->[$i];
@@ -209,7 +223,7 @@ if (-x $controldir . "/vgdb") {
 
 # To find the list of active pids, we need to have
 # the --vgdb-prefix option if given.
-$vgdbPrefixOption = "";
+my $arg = "";
 foreach $arg (@ARGV) {
     if ($arg =~ /^--vgdb-prefix=.*$/) {
         $vgdbPrefixOption=$arg;
@@ -219,15 +233,19 @@ foreach $arg (@ARGV) {
 
 getCallgrindPids;
 
-$requestEvents = 0;
-$requestDump = 0;
-$switchInstr = 0;
-$headerPrinted = 0;
-$dumpHint = "";
+my $requestEvents = 0;
+my $requestDump = 0;
+my $switchInstr = 0;
+my $dumpHint = "";
+my $printBacktrace = 0;
+my $printStatus = 0;
+my $switchInstrMode = "";
+my $requestKill = "";
+my $requestZero = "";
 
-$verbose = 0;
+my $verbose = 0;
 
-%spids = ();
+my %spids = ();
 foreach $arg (@ARGV) {
   if ($arg =~ /^-/) {
     if ($requestDump == 1) { $requestDump = 2; }
@@ -329,8 +347,8 @@ foreach $arg (@ARGV) {
   }
 
   if (defined $cmd{$arg}) { $spids{$arg} = 1; next; }
-  $nameFound = 0;
-  foreach $p (@pids) {
+  my $nameFound = 0;
+  foreach my $p (@pids) {
     if ($cmd{$p} =~ /$arg$/) {
       $nameFound = 1;
       $spids{$p} = 1;
@@ -353,11 +371,11 @@ if (scalar @pids == 0) {
   exit;
 }
 
-@spids = keys %spids;
+my @spids = keys %spids;
 if (scalar @spids >0) { @pids = @spids; }
 
-$vgdbCommand = "";
-$waitForAnswer = 0;
+my $vgdbCommand = "";
+my $waitForAnswer = 0;
 if ($requestDump) {
   $vgdbCommand = "dump";
   if ($dumpHint ne "") { $vgdbCommand .= " ".$dumpHint; }
@@ -371,7 +389,7 @@ if ($printStatus || $printBacktrace || $requestEvents) {
 }
 
 foreach $pid (@pids) {
-  $pidstr = "PID $pid: ";
+  my $pidstr = "PID $pid: ";
   if ($pid >0) { print $pidstr.$cmdline{$pid}; }
 
   if ($vgdbCommand eq "") {
@@ -385,24 +403,24 @@ foreach $pid (@pids) {
   }
   open RESULT, $vgdb_exe . " $vgdbPrefixOption --pid=$pid $vgdbCommand|";
 
-  @tids = ();
-  $ctid = 0;
-  %fcount = ();
-  %func = ();
-  %calls = ();
-  %events = ();
-  @events = ();
-  @threads = ();
-  %totals = ();
+  my @tids = ();
+  my $tid;
+  my $ctid = 0;
+  my %fcount = ();
+  my %func = ();
+  my %calls = ();
+  my @threads = ();
+  my %totals = ();
+  my $totals_width = [];
 
-  $exec_bbs = 0;
-  $dist_bbs = 0;
-  $exec_calls = 0;
-  $dist_calls = 0;
-  $dist_ctxs = 0;
-  $dist_funcs = 0;
-  $threads = "";
-  $events = "";
+  my $exec_bbs = 0;
+  my $dist_bbs = 0;
+  my $exec_calls = 0;
+  my $dist_calls = 0;
+  my $dist_ctxs = 0;
+  my $dist_funcs = 0;
+  my $threads = "";
+  my $instrumentation = "";
 
   while(<RESULT>) {
     if (/function-(\d+)-(\d+): (.+)$/) {
@@ -485,10 +503,10 @@ foreach $pid (@pids) {
       }
       print "Backtrace for Thread $tid\n";
 
-      $i = $fcount{$tid};
-      $c = 0;
+      my $i = $fcount{$tid};
+      my $c = 0;
       while($i>0 && $c<100) {
-	$fc = substr(" $c",-2);
+	my $fc = substr(" $c",-2);
 	print "   [$fc]  ";
 	if ($requestEvents >0) {
 	  print_CC($events{$tid,$i-1}, $totals_width);

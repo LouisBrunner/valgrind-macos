@@ -81,7 +81,7 @@
         __asm__ __volatile__(                                \
            "0: l   0,%[global]\n\t"                          \
            "   cs  0,%[local],%[global]\n\t"                 \
-           "   bne 0b\n\t"                                   \
+           "   jne 0b\n\t"                                   \
            "   lr  %[local],0\n\t"                           \
            : /*out*/ [global]"+m"(_addr), [local]"+d"(_lval) \
            : /*in*/                                          \

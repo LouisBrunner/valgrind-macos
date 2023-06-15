@@ -43,6 +43,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         (Bool vgPlain_realpath(const HChar *, HChar *)):
         Assertion 'resolved' failed
 470830  Don't print actions vgdb me ... continue for vgdb --multi mode
+470978  s390x: Valgrind cannot start qemu-kvm when "sysctl vm.allocate_pgste=0"
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -3096,6 +3096,26 @@ AC_SUBST([FLAG_NO_BUILD_ID], [""])
 fi
 CFLAGS=$safe_CFLAGS
 
+# On s390x, if the linker supports -Wl,--s390-pgste, then we build the
+# tools with that flag.  This enables running programs that need it, such
+# as qemu-kvm.
+if test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX; then
+AC_MSG_CHECKING([if the linker accepts -Wl,--s390-pgste])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wl,--s390-pgste"
+
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([ ], [return 0;])],
+[
+  AC_SUBST([FLAG_S390_PGSTE], ["-Wl,--s390-pgste"])
+  AC_MSG_RESULT([yes])
+], [
+  AC_SUBST([FLAG_S390_PGSTE], [""])
+  AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+fi
+
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
 

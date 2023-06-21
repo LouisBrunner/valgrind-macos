@@ -70,7 +70,6 @@ jobs:
           echo "changes=${CHANGES_JSON}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Create pull request
-        if: steps.merge.outputs.changed == 'yes'
         id: cpr
         uses: peter-evans/create-pull-request@v5
         with:

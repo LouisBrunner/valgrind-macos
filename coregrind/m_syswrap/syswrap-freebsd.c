@@ -1987,6 +1987,19 @@ static Bool sysctl_kern_proc_pathname(HChar *out, SizeT *len)
 {
    const HChar *exe_name = VG_(resolved_exename);
 
+   if (!len) {
+      return False;
+   }
+
+   if (!out) {
+      HChar tmp[VKI_PATH_MAX];
+      if (!VG_(realpath)(exe_name, tmp)) {
+         return False;
+      }
+      *len = VG_(strlen)(tmp)+1;
+      return True;
+   }
+
    if (!VG_(realpath)(exe_name, out)) {
       return False;
    }

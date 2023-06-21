@@ -1,6 +1,7 @@
 name: Upstream synchronization
 
 on:
+  push:
   schedule:
     - cron: "0 6 * * 3" # 6am every Wednesday
   workflow_dispatch:
@@ -9,30 +10,30 @@ env:
   LABEL: automated-upstream-merge
 
 jobs:
-  sync-upstream:
-    name: Sync upstream branch
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout local `upstream` branch (us)
-        uses: actions/checkout@v3
-        with:
-          ref: upstream
-          fetch-depth: 0
-      - name: Checkout upstream `master` branch (them)
-        run: |
-          git remote add upstream git://sourceware.org/git/valgrind.git
-          git fetch --tags upstream master
-        shell: bash
-      - name: Configure git credentials
-        run: |
-          git config --global user.name "upstream-sync[bot]"
-          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
-      - name: Rebase local `upstream` branch onto upstream `master`
-        run: |
-          git rebase upstream/master
-          git push -f origin upstream
-          git push --tags origin
-        shell: bash
+  # sync-upstream:
+  #   name: Sync upstream branch
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout local `upstream` branch (us)
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: upstream
+  #         fetch-depth: 0
+  #     - name: Checkout upstream `master` branch (them)
+  #       run: |
+  #         git remote add upstream git://sourceware.org/git/valgrind.git
+  #         git fetch --tags upstream master
+  #       shell: bash
+  #     - name: Configure git credentials
+  #       run: |
+  #         git config --global user.name "upstream-sync[bot]"
+  #         git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
+  #     - name: Rebase local `upstream` branch onto upstream `master`
+  #       run: |
+  #         git rebase upstream/master
+  #         git push -f origin upstream
+  #         git push --tags origin
+  #       shell: bash
   upstream-merge-pr:
     name: Merge upstream changes into main
     runs-on: ubuntu-latest
@@ -72,11 +73,13 @@ jobs:
             CHANGED=yes
           fi
 
+          CHANGES_JSON=$(echo "${CHANGES}" | jq -cRs 'split("\n")[:-1]')
           echo "Changed: ${CHANGED}"
           echo "Generated: ${NAME}"
+          echo "Changes: ${CHANGES_JSON}"
           echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
           echo "generated=${NAME}" >> $GITHUB_OUTPUT
-          echo "changes=${CHANGES}" >> $GITHUB_OUTPUT
+          echo "changes=${CHANGES_JSON}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Create pull request
         if: steps.merge.outputs.changed == 'yes'
@@ -91,7 +94,7 @@ jobs:
 
             Changes:
             ```
-            ${{ steps.merge.outputs.changes }}
+            ${{ join(fromJSON(steps.merge.outputs.changes), "\n") }}
             ```
           reviewers: LouisBrunner
           labels: upstream,chore,${{ env.LABEL }}

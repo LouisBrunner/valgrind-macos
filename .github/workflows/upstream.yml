@@ -61,13 +61,11 @@ jobs:
 
           git merge upstream/master
 
-          CHANGES_JSON=$(echo "${CHANGES}" | jq -cRs 'split("\n")[:-1]')
           echo "Branch: ${BRANCH}"
           echo "Generated: ${NAME}"
-          echo "Changes: ${CHANGES_JSON}"
           echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
           echo "generated=${NAME}" >> $GITHUB_OUTPUT
-          echo "changes=${CHANGES_JSON}" >> $GITHUB_OUTPUT
+          echo "changes=${CHANGES//$'\n'/'%0A'}" >> $GITHUB_OUTPUT
         shell: bash
       - name: Create pull request
         id: cpr
@@ -81,7 +79,7 @@ jobs:
 
             Changes:
             ```
-            ${{ join(fromJSON(steps.merge.outputs.changes), '\n') }}
+            ${{ steps.merge.outputs.changes }}
             ```
           branch: ${{ steps.merge.outputs.branch }}
           delete-branch: true

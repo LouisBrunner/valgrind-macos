@@ -94,7 +94,7 @@ jobs:
 
             Changes:
             ```
-            ${{ join(fromJSON(steps.merge.outputs.changes), "\n") }}
+            ${{ join(fromJSON(steps.merge.outputs.changes), '\n') }}
             ```
           reviewers: LouisBrunner
           labels: upstream,chore,${{ env.LABEL }}

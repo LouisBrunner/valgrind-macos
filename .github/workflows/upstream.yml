@@ -55,7 +55,7 @@ jobs:
       - name: Create a merge which merge them into us
         id: merge
         run: |
-          NAME=$(date +%Y-%m-%d)
+          NAME=$(date +%Y-%m-%d-%s)
           BRANCH=feature/upstream-${NAME}
           CHANGES=$(git log --oneline main..upstream/master)
 

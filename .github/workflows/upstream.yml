@@ -65,7 +65,7 @@ jobs:
           echo "Generated: ${NAME}"
           echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
           echo "generated=${NAME}" >> $GITHUB_OUTPUT
-          echo "changes=<<EOF" >> $GITHUB_OUTPUT
+          echo "changes<<EOF" >> $GITHUB_OUTPUT
           echo "${CHANGES}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         shell: bash

@@ -57,29 +57,15 @@ jobs:
         run: |
           NAME=$(date +%Y-%m-%d)
           BRANCH=feature/upstream-${NAME}
-          git checkout -b ${BRANCH}
-
           CHANGES=$(git log --oneline main..upstream/master)
 
-          CURRENT=$(git rev-parse HEAD)
           git merge upstream/master
-          AFTER_MERGE=$(git rev-parse HEAD)
-
-          if [ "${CURRENT}" = "${AFTER_MERGE}" ]; then
-            echo "No upstream changes"
-            CHANGED=no
-          else
-            git push -u origin ${BRANCH}
-            CHANGED=yes
-          fi
 
           CHANGES_JSON=$(echo "${CHANGES}" | jq -cRs 'split("\n")[:-1]')
           echo "Branch: ${BRANCH}"
-          echo "Changed: ${CHANGED}"
           echo "Generated: ${NAME}"
           echo "Changes: ${CHANGES_JSON}"
           echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
-          echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
           echo "generated=${NAME}" >> $GITHUB_OUTPUT
           echo "changes=${CHANGES_JSON}" >> $GITHUB_OUTPUT
         shell: bash
@@ -99,7 +85,6 @@ jobs:
             ${{ join(fromJSON(steps.merge.outputs.changes), '\n') }}
             ```
           branch: ${{ steps.merge.outputs.branch }}
-          base: main
           delete-branch: true
           reviewers: LouisBrunner
           labels: upstream,chore,${{ env.LABEL }}
@@ -117,7 +102,3 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Delete dangling branch if failed
-        if: failure() && steps.merge.outputs.changed == 'yes'
-        run: |
-          git push -D origin ${{ steps.merge.outputs.branch }}

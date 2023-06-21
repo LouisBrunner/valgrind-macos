@@ -526,9 +526,11 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    if (VG_(clo_vgdb) != Vg_VgdbNo
        && allow_db_attach 
        && VG_(clo_vgdb_error) <= n_errs_shown) {
-      VG_(umsg)("(action on error) vgdb me ... \n");
+      if (!(VG_(clo_launched_with_multi)))
+         VG_(umsg)("(action on error) vgdb me ... \n");
       VG_(gdbserver)( err->tid );
-      VG_(umsg)("Continuing ...\n");
+      if (!(VG_(clo_launched_with_multi)))
+         VG_(umsg)("Continuing ...\n");
    }
 
    /* Or maybe we want to generate the error's suppression? */

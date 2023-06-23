@@ -972,22 +972,22 @@ __private_extern__ UWord
 do_syscall_unix_WRK ( UWord a1, UWord a2, UWord a3, /* x0, x1, x2 */
                       UWord a4, UWord a5, UWord a6, /* x3, x4, x5 */
                       UWord a7, UWord a8,           /* x6, x7 */
-                      UWord syscall_no,             /* 8(rsp) */
-                      /*OUT*/ULong* errflag,        /* 16(rsp) */
-                      /*OUT*/ULong* res2 );         /* 24(rsp) */
+                      UWord syscall_no,             /* 0(rsp) */
+                      /*OUT*/ULong* errflag,        /* 8(rsp) */
+                      /*OUT*/ULong* res2 );         /* 16(rsp) */
 // Unix syscall: 128-bit return in x1:x0, with LSB in x0
 // error indicated by carry flag: clear=good, set=bad
 asm(".private_extern _do_syscall_unix_WRK\n"
     "_do_syscall_unix_WRK:\n"
-    "        ldr     x8, [sp, #16]    \n"  /* assume syscall success */
+    "        ldr     x8, [sp, #8]     \n"  /* assume syscall success */
     "        str     xzr, [x8]        \n"
-    "        ldr     x16, [sp, #8]    \n"  /* load syscall_no */
+    "        ldr     x16, [sp, #0]    \n"  /* load syscall_no */
     "        svc     0x80             \n"
     "        bcc     1f               \n"  /* jump if success */
-    "        ldr     x9, [sp, #16]    \n"  /* syscall failed - set *errflag */
+    "        ldr     x9, [sp, #8]     \n"  /* syscall failed - set *errflag */
     "        mov     x10, #1          \n"
     "        str     x10, [x9]        \n"
-    "    1:  ldr     x9, [sp, #24]    \n"  /* save 2nd result word */
+    "    1:  ldr     x9, [sp, #16]    \n"  /* save 2nd result word */
     "        str     x1, [x9]         \n"
     "        ret                      \n"  /* return 1st result word */
     );

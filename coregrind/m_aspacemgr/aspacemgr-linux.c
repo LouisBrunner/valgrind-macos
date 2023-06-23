@@ -1635,17 +1635,24 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    // --- Darwin -------------------------------------------
 #if defined(VGO_darwin)
 
-# if VG_WORDSIZE == 4
+#if defined(VGP_x86_darwin)
    aspacem_maxAddr = (Addr) 0xffffffff;
 
    aspacem_cStart = aspacem_minAddr;
    aspacem_vStart = 0xf0000000;  // 0xc0000000..0xf0000000 available
-# else
+#elif defined(VGP_amd64_darwin)
    aspacem_maxAddr = (Addr) 0x7fffffffffff;
 
    aspacem_cStart = aspacem_minAddr;
    aspacem_vStart = 0x700000000000; // 0x7000:00000000..0x7fff:5c000000 avail
    // 0x7fff:5c000000..0x7fff:ffe00000? is stack, dyld, shared cache
+#elif defined(VGP_arm64_darwin)
+    aspacem_maxAddr = (Addr) 0x7fffffffffff;
+
+    aspacem_cStart = aspacem_minAddr;
+    aspacem_vStart = 0x700000000000;
+#else
+#error "Unknown architecture"
 # endif
 
    suggested_clstack_end = -1; // ignored; Mach-O specifies its stack

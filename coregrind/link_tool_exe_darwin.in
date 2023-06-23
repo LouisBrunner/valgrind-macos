@@ -67,6 +67,11 @@
 # "-arch i386".  Fortunately we can figure this out by scanning the
 # gcc invocation, which itself must contain either "-arch x86_64" or
 # "-arch i386".
+#
+# arm64 is a bit different, the kernel doesn't allow running static binaries.
+# So we link statically and then fixup the binary to be dynamic.
+# This means it becomes PIE: the load address is respected but
+# the stack is not. I have yet to see if this will cause issues for us.
 
 use warnings;
 use strict;
@@ -153,7 +158,6 @@ $cmd = "$cmd -arch $archstr";
 $cmd = "$cmd -macosx_version_min 10.6";
 $cmd = "$cmd -o $outname";
 $cmd = "$cmd -u __start -e __start";
-#$cmd = "$cmd -dead_strip_dylibs -lSystem -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib";
 
 my $stack_addr = Math::BigInt->new( $ala ) - $TX_STACK_OFFSET_BEFORE_TEXT;
 my $stack_addr_str = $stack_addr->as_hex();
@@ -179,12 +183,15 @@ if ($r != 0) {
    exit 1;
 }
 
-
 # and now kludge the tool exe
 # see bug 267997
 
 $cmd = "../coregrind/fixup_macho_loadcmds";
 $cmd = "$cmd $stack_addr_str $stack_size_str $outname";
+
+if ($archstr eq "arm64") {
+    $cmd = "python3 ../coregrind/make_binary_dynamic_darwin.py $outname";
+}
 
 print "link_tool_exe_darwin: $cmd\n";
 

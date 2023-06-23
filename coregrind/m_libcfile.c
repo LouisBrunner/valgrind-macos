@@ -557,6 +557,10 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
      return res;
    }
 #  endif
+#  if defined(VGP_riscv64_linux)
+   /* No fallback defined, statx syscall always exists. */
+   return res;
+#  endif
 #  elif defined(VGO_solaris)
    {
 #     if defined(VGP_x86_solaris)

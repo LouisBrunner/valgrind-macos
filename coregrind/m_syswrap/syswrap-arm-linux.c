@@ -957,7 +957,6 @@ static SyscallTableEntry syscall_main_table[] = {
 //   LINX_(__NR_tee,               sys_ni_syscall),       // 315
 //   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 316
    LINXY(__NR_move_pages,        sys_move_pages),       // 317
-//   LINX_(__NR_getcpu,            sys_ni_syscall),       // 318
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 320
    LINXY(__NR_signalfd,          sys_signalfd),         // 321
@@ -981,6 +980,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_pselect6,          sys_pselect6),         // 335
    LINXY(__NR_ppoll,             sys_ppoll),            // 336
 
+   LINXY(__NR_getcpu,            sys_getcpu),           // 345
    LINXY(__NR_epoll_pwait,       sys_epoll_pwait),      // 346
 
    LINX_(__NR_fallocate,         sys_fallocate),        // 352
@@ -1052,10 +1052,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
 
+   LINXY(__NR_pidfd_open,        sys_pidfd_open),        // 434
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
    LINXY(__NR_close_range,       sys_close_range),       // 436
 
    LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
+
+   LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
 };
 
 

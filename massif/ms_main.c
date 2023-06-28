@@ -506,6 +506,8 @@ void filter_IPs (Addr* ips, Int n_ips,
 {
    Int i;
    Bool top_has_fnname = False;
+   Bool is_alloc_fn = False;
+   Bool is_inline_fn = False;
    const HChar *fnname;
 
    *top = 0;
@@ -519,9 +521,21 @@ void filter_IPs (Addr* ips, Int n_ips,
    //    0x1 0x2 0x3 alloc func1 main
    //  became   0x1 0x2 0x3 func1 main
    const DiEpoch ep = VG_(current_DiEpoch)();
-   for (i = *top; i < n_ips; i++) {
-      top_has_fnname = VG_(get_fnname)(ep, ips[*top], &fnname);
-      if (top_has_fnname &&  VG_(strIsMemberXA)(alloc_fns, fnname)) {
+   InlIPCursor *iipc = NULL;
+
+   for (i = *top; i < n_ips; ++i) {
+      iipc = VG_(new_IIPC)(ep, ips[i]);
+      do {
+         top_has_fnname = VG_(get_fnname_inl)(ep, ips[i], &fnname, iipc);
+         is_alloc_fn = top_has_fnname && VG_(strIsMemberXA)(alloc_fns, fnname);
+         is_inline_fn = VG_(next_IIPC)(iipc);
+         if (is_alloc_fn && is_inline_fn) {
+            VERB(4, "filtering inline alloc fn %s\n", fnname);
+         }
+      } while (is_alloc_fn && is_inline_fn);
+      VG_(delete_IIPC)(iipc);
+
+      if (is_alloc_fn) {
          VERB(4, "filtering alloc fn %s\n", fnname);
          (*top)++;
          (*n_ips_sel)--;
@@ -534,8 +548,15 @@ void filter_IPs (Addr* ips, Int n_ips,
    if (*n_ips_sel > 0 && VG_(sizeXA)(ignore_fns) > 0) {
       if (!top_has_fnname) {
          // top has no fnname => search for the first entry that has a fnname
-         for (i = *top; i < n_ips && !top_has_fnname; i++) {
-            top_has_fnname = VG_(get_fnname)(ep, ips[i], &fnname);
+         for (i = *top; i < n_ips && !top_has_fnname; ++i) {
+            iipc = VG_(new_IIPC)(ep, ips[i]);
+            do {
+               top_has_fnname = VG_(get_fnname_inl)(ep, ips[i], &fnname, iipc);
+               if (top_has_fnname) {
+                  break;
+               }
+            } while (VG_(next_IIPC)(iipc));
+            VG_(delete_IIPC)(iipc);
          }
       }
       if (top_has_fnname && VG_(strIsMemberXA)(ignore_fns, fnname)) {
@@ -1267,6 +1288,20 @@ void* realloc_block ( ThreadId tid, void* p_old, SizeT new_req_szB )
    SizeT     old_req_szB, old_slop_szB, new_slop_szB, new_actual_szB;
    Xecu      old_where;
    Bool      is_ignored = False;
+
+   if (p_old == NULL) {
+      return alloc_and_record_block( tid, new_req_szB, VG_(clo_alignment), /*is_zeroed*/False );
+   }
+
+   if (new_req_szB == 0U) {
+      if (VG_(clo_realloc_zero_bytes_frees) == True) {
+         /* like ms_free */
+         unrecord_block(p_old, /*maybe_snapshot*/True, /*exclude_first_entry*/True);
+         VG_(cli_free)(p_old);
+         return NULL;
+      }
+      new_req_szB = 1U;
+   }
 
    // Remove the old block
    hc = VG_(HT_remove)(malloc_list, (UWord)p_old);

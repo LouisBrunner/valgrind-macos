@@ -1,0 +1,47 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:16)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete(void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:17)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator new[](unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:19)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete[](void*, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:20)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator new(unsigned long, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:24)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete(void*, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:25)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator new[](unsigned long, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:27)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete[](void*, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:28)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:31)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete[](void*, unsigned long) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:34)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete(void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:37)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: operator delete[](void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (sized_aligned_new_delete_args.cpp:40)

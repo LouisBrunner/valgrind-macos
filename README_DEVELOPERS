@@ -3,6 +3,7 @@ Building and installing it
 To build/install from the GIT repository or from a distribution
 tarball, refer to the section with the same name in README.
 
+
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To run Valgrind without having to install it, run coregrind/valgrind
@@ -80,6 +81,29 @@ compare them on all the performance tests:
   perl perf/vg_perf --vg=../trunk1 --vg=../trunk2 perf/
 
 
+Commit access and try branches
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To get commit access to the valgrind git repository on sourceware
+you will have to ask an existing developer and fill in the following
+form: https://sourceware.org/cgi-bin/pdw/ps_form.cgi
+
+Every developer with commit access can use try branches. If you want to try a
+branch before pushing you can push to a special named try branch as follows: 
+
+  git push origin $BRANCH:users/$USERNAME/try-$BRANCH
+
+Where $BRANCH is the branch name and $USERNAME is your user name.
+
+You can see the status of the builders here:
+https://builder.sourceware.org/buildbot/#/builders?tags=valgrind-try
+
+The buildbot will also sent the patch author multiple success/failure emails.
+
+Afterwards you can delete the branch again:
+
+    git push origin :users/$USERNAME/try-$BRANCH
+
+
 Debugging Valgrind with GDB
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To debug the valgrind launcher program (<prefix>/bin/valgrind) just
@@ -96,6 +120,11 @@ without too much problem by following these steps:
     or for an uninstalled version in a source directory $DIR:
 
       export VALGRIND_LAUNCHER=$DIR/coregrind/valgrind
+      export VALGRIND_LIB=$DIR/.in_place
+
+    VALGRIND_LIB is where the default.supp and vgpreload_ libraries
+    are found (which is under /usr/libexec/valgrind for an installed
+    version).
 
 (2) Run gdb on the tool executable.  Eg:
 
@@ -136,7 +165,7 @@ A different and possibly easier way is as follows:
 
 (2) In a different shell, do "gdb /proc/<pid>/exe <pid>", where
     <pid> you read from the output printed by (1).  This attaches
-    GDB to the tool executable, which should be in the abovementioned
+    GDB to the tool executable, which should be in the above mentioned
     wait loop.
 
 (3) Do "cont" to continue.  After the loop finishes spinning, startup
@@ -146,7 +175,7 @@ A different and possibly easier way is as follows:
 
 Self-hosting
 ~~~~~~~~~~~~
-This section explains :
+This section explains:
   (A) How to configure Valgrind to run under Valgrind.
       Such a setup is called self hosting, or outer/inner setup.
   (B) How to run Valgrind regression tests in a 'self-hosting' mode,
@@ -240,7 +269,7 @@ it contains the detected race conditions.
 The file tests/outer_inner.supp contains suppressions for 
 the irrelevant or benign errors found in the inner.
 
-An regression test running in the inner (e.g. memcheck/tests/badrw) will
+A regression test running in the inner (e.g. memcheck/tests/badrw) will
 cause the inner to report an error, which is expected and checked
 as usual when running the regtests in an outer/inner setup.
 However, the outer will often also observe an error, e.g. a jump
@@ -338,3 +367,21 @@ translated, and that includes the address.
 Then re-run with 999999 changed to the highest bb number shown.
 This will print the one line per block, and also will print a
 disassembly of the block in which the fault occurred.
+
+
+Formatting the code with clang-format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+clang-format is a tool to format C/C++/... code.  The root directory of the
+Valgrind tree contains file .clang-format which is a configuration for this tool
+and specifies a style for Valgrind.  This gives you an option to use
+clang-format to easily format Valgrind code which you are modifying.
+
+The Valgrind codebase is not globally formatted with clang-format.  It means
+that you should not use the tool to format a complete file after making changes
+in it because that would lead to creating unrelated modifications.
+
+The right approach is to format only updated or new code.  By using an
+integration with a text editor, it is possible to reformat arbitrary blocks
+of code with a single keystroke.  Refer to the upstream documentation which
+describes integration with various editors and IDEs:
+https://clang.llvm.org/docs/ClangFormat.html.

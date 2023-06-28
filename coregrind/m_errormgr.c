@@ -130,9 +130,9 @@ struct _Error {
    // which it can be referred to afterwords.  Currently only used for
    // XML printing.
    UInt unique;
+   Int count;
    // NULL if unsuppressed; or ptr to suppression record.
    Supp* supp;
-   Int count;
 
    // The tool-specific part
    ThreadId tid;           // Initialised by core
@@ -225,8 +225,8 @@ typedef
    (0..)) for 'skind'. */
 struct _Supp {
    struct _Supp* next;
-   Int count;     // The number of times this error has been suppressed.
    HChar* sname;  // The name by which the suppression is referred to.
+   Int count;     // The number of times this error has been suppressed.
 
    // Index in VG_(clo_suppressions) giving filename from which suppression
    // was read, and the lineno in this file where sname was read.

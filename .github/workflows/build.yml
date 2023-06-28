@@ -1,6 +1,9 @@
 name: Build
 
-on: [push, pull_request_target]
+on:
+  push:
+  pull_request_target:
+  workflow_dispatch:
 
 env:
   TEST_FOLDER: .github/test
@@ -10,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, macos-10.15, macos-11, macos-12]
+        os: [ubuntu-20.04, macos-11, macos-12, macos-13]
 
     runs-on: ${{ matrix.os }}
 
@@ -35,24 +38,27 @@ jobs:
       - name: build
         run: make
       - name: try ls -l
-        run: ./vg-in-place ls -l
+        run: ./vg-in-place --gen-suppressions=all ls -l || ./vg-in-place -v -v -v -v -d -d -d -d ls -l
       - name: build regression tests
         run: make check
       - name: create artifacts folder
         run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
-      - name: regression tests
-        run: make regtest || true
-        env:
-          REGTEST_ARGS: --results-to=${{ env.TEST_FOLDER }}/results.txt
-      - name: trim results
-        run: sed '1,2d;$d' ${{ env.TEST_FOLDER }}/results.txt > results-tests.txt
+      - name: build tests
+        run: make check
+      - name: run regression tests
+        run: make regtest | tee raw-results.txt
+      - name: process results
+        if: always()
+        run: awk '/^== [0-9]+ tests, .* ==$/{flag=1;next}/^$/{flag=0}flag' < raw-results.txt > ${{ env.TEST_FOLDER }}/results.txt
       - name: copy failing test outputs
-        run: cat ${{ env.TEST_FOLDER }}/results.txt | sed 1,2d | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
+        if: always()
+        run: cat ${{ env.TEST_FOLDER }}/results.txt | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
       - name: calculate difference between tests
+        if: always()
         uses: LouisBrunner/diff-action@v0.2.0
         with:
           old: .github/${{ matrix.os }}-expected.txt
-          new: results-tests.txt
+          new: ${{ env.TEST_FOLDER }}/results.txt
           mode: deletion
           tolerance: same
           output: ${{ env.TEST_FOLDER }}/results.diff

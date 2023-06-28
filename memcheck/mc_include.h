@@ -430,10 +430,11 @@ typedef
 
 typedef
    enum {
-      LCD_Any,       // output all loss records, whatever the delta
-      LCD_Increased, // output loss records with an increase in size or blocks
-      LCD_Changed,   // output loss records with an increase or 
-                     //decrease in size or blocks
+      LCD_Any,       // Output all loss records, whatever the delta.
+      LCD_Increased, // Output loss records with an increase in size or blocks.
+      LCD_Changed,   // Output loss records with an increase or
+                     // decrease in size or blocks.
+      LCD_New        // Output new loss records.
    }
    LeakCheckDeltaMode;
 
@@ -454,9 +455,9 @@ typedef
       SizeT szB;          // Sum of all MC_Chunk.szB values.
       SizeT indirect_szB; // Sum of all LC_Extra.indirect_szB values.
       UInt  num_blocks;   // Number of blocks represented by the record.
+      UInt  old_num_blocks;   // output only the changed/new loss records
       SizeT old_szB;          // old_* values are the values found during the 
       SizeT old_indirect_szB; // previous leak search. old_* values are used to
-      UInt  old_num_blocks;   // output only the changed/new loss records
    }
    LossRecord;
 
@@ -554,6 +555,7 @@ void MC_(record_jump_error)    ( ThreadId tid, Addr a );
 void MC_(record_free_error)            ( ThreadId tid, Addr a ); 
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
 void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
+void MC_(record_realloc_size_zero)     ( ThreadId tid, Addr a );
 
 void MC_(record_overlap_error)  ( ThreadId tid, const HChar* function,
                                   Addr src, Addr dst, SizeT szB );
@@ -725,6 +727,9 @@ extern Int MC_(clo_mc_level);
 
 /* Should we show mismatched frees?  Default: YES */
 extern Bool MC_(clo_show_mismatched_frees);
+
+/* Should we warn about deprecated realloc() of size 0 ? Default : YES */
+extern Bool MC_(clo_show_realloc_size_zero);
 
 /* Indicates the level of detail for Vbit tracking through integer add,
    subtract, and some integer comparison operations. */

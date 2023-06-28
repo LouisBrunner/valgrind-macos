@@ -1,0 +1,62 @@
+Some general notes on debugging on macOS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Written early 2023, based on macOS 13.1 / Darwin 22.2.0 Intel
+
+If you need to use ssh then you can't use lldb directly because, by default,
+it wants to open a dialog for your password/fingerprint. You can disable this
+with:
+
+sudo DevToolsSecurity --enable
+
+Tracing syscalls looks rather scary and involves rebooting and disabling security.
+
+Launcher and initimg
+~~~~~~~~~~~~~~~~~~~~
+
+Things are a bit different on Darwin. Quick reminder for other platforms:
+
+1. Early command line processing, specifically tool and verbosity
+2. Select the platform by looking at the ELF headers. Default
+   to the build platform if the client is a script and the shebangs
+   don't lead to an ELF binary.
+3. Add VALGRIND_LAUNCHER to the environment. This is based on the path.
+4. Get the tool path. This uses either the path baked into the build
+   by the configure --prefix option (VG_LIBDIR) or the VALGRIND_LIB
+   environment variable (set by the vg-in-place script for running
+   in the build directory).
+5. exec the tool.
+
+On Darwin that is
+
+1. Early command line processing. As above but also the undocumented
+   --arch option.
+2. The client exename can be an app bundle which means expanding
+   "client" to "client.app/Contents/MacOS/client".
+3. Platform detection is complicated by the macOS history of
+   having dual-platform fat binaries. A list of supported platforms
+   is considered and compared against the Valgrind install. Then
+   the mach_header is examined to make the final decision.
+4. The additions to the environment variables are also a bit more
+   complicated. Like on ELF based systems there is VALGRIND_LAUNCHER.
+   Additionally there is
+   VALGRIND_STARTUP_PWD_%PID_XYZZY=current_working_dir
+   which is used to work out the working directory.
+   Darwin doesn't have a cwd syscall? I wonder how 'pwd' works.
+   Looks like it does open(.) fstat to check then fcntl(F_GETPATH).
+   The seems to only matter for %p and %q log filename expansion
+   and reading any .valgrindrc in the working directory. Not
+   big problems for debugging.
+5. Another slight complication is that dylib environment variables need
+   protecting. Maybe because the tool is statically linked? In any
+   case all env vars that start with "DYLD_" get changed to "VYLD_".
+6. The tool path is determined along the same lines as ELF.
+7. exec the tool.
+
+
+In stage2 on Darwin the "VYLD_" munging is undone. DYLD_INSERT_LIBRARIES
+gets set for core and tool preloads (the equivalent of LD_PRELOAD).
+DYLD_SHARED_REGION gets set to "avoid" (but note that for macOS 11
+Big Sur and later "avoid" is no longer an option).
+
+The Darwin calstack is a bit simpler to synthesise than the ones on
+ELF platforms. There is no auxiliary vector (auxv) to construct.

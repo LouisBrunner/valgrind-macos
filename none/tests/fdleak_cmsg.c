@@ -91,8 +91,18 @@ void client (void)
       struct cmsghdr cm;
       char control[CMSG_SPACE(sizeof(int) * 2)];
    } control_un;
-   struct msghdr msg = { NULL, 0, iov, 1, control_un.control,
-                         sizeof(control_un), 0 };
+   struct msghdr msg;
+   /* this was using brace initialization
+    * but that doesn't work on MSL because of padding fields
+    * C99 designated initializers would be nicer
+    * but I'll just do it the simple way */
+   msg.msg_name = NULL;
+   msg.msg_namelen = 0;
+   msg.msg_iov = iov;
+   msg.msg_iovlen = 1;
+   msg.msg_control = control_un.control;
+   msg.msg_controllen = sizeof(control_un);
+   msg.msg_flags = 0;
    struct cmsghdr *cmsg = &control_un.cm;
    char buf[1024];
 

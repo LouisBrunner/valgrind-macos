@@ -1,0 +1,5 @@
+# 2023-04-22: clang-format was run accidentally on a few files.
+bf347551c99313a4af9c38bdeda9b946c9795945
+
+# 2023-04-22: Revert bf347551c99313a4af9c38bdeda9b946c9795945.
+76d6b4591a5a05e43e1a819bf630c0d8ee857a7e

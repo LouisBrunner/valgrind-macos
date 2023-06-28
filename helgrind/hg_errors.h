@@ -78,6 +78,11 @@ void HG_(record_error_Misc_w_aux)     ( Thread*, const HChar* errstr,
                                         ExeContext* auxctx );
 void HG_(record_error_Misc)           ( Thread* thr, const HChar* errstr );
 
+void HG_(record_error_Dubious_w_aux)  ( Thread*, const HChar* errstr,
+                                        const HChar* auxstr,
+                                        ExeContext* auxctx );
+void HG_(record_error_Dubious)        ( Thread* thr, const HChar* errstr );
+
 
 /* Statistics pertaining to error management. */
 extern ULong HG_(stats__LockN_to_P_queries);

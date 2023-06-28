@@ -44,6 +44,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_mach.h"         // VG_(dyld_cache_*)
 #include "pub_core_machine.h"      // VG_(get_SP)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -269,6 +270,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
       /* tid is now invalid. */
 
+#  if DARWIN_VERS < DARWIN_10_14
       // GrP fixme exit race
       msg.msgh_bits = MACH_MSGH_BITS(17, MACH_MSG_TYPE_MAKE_SEND_ONCE);
       msg.msgh_request_port = VG_(gettid)();
@@ -278,9 +280,53 @@ static void run_a_thread_NORETURN ( Word tidW )
       tst->status = VgTs_Empty;
       // GrP fixme race here! new thread may claim this V thread stack
       // before we get out here!
-      // GrP fixme use bsdthread_terminate for safe cleanup?
       mach_msg(&msg, MACH_SEND_MSG|MACH_MSG_OPTION_NONE,
                sizeof(msg), 0, 0, MACH_MSG_TIMEOUT_NONE, 0);
+
+#else
+      /* We have to use this sequence to terminate the thread to
+         prevent a subtle race.  If VG_(exit_thread)() had left the
+         ThreadState as Empty, then it could have been reallocated,
+         reusing the stack while we're doing these last cleanups.
+         Instead, VG_(exit_thread) leaves it as Zombie to prevent
+         reallocation.  We need to make sure we don't touch the stack
+         between marking it Empty and exiting.  Hence the
+         assembler. */
+#if defined(VGP_x86_darwin)
+      asm volatile (
+         "movl %1, %0\n"	/* set tst->status = VgTs_Empty */
+         "movl %2, %%eax\n" /* set %eax = __NR_bsdthread_terminate */
+         "movl $0, %%ebx\n"
+         "pushl %%ebx\n" /* args on stack */
+         "pushl %%ebx\n"
+         "pushl %%ebx\n"
+         "pushl %%ebx\n"
+         "int	$0x81\n" /* bsdthread_terminate(0, 0, 0, 0) */
+         "popl %%ebx\n" /* pop args */
+         "popl %%ebx\n"
+         "popl %%ebx\n"
+         "popl %%ebx\n"
+         : "=m" (tst->status)
+         : "n" (VgTs_Empty), "n" (__NR_bsdthread_terminate)
+         : "eax", "ebx"
+      );
+#elif defined(VGP_amd64_darwin)
+      asm volatile (
+         "movl %1, %0\n"	/* set tst->status = VgTs_Empty */
+         "movq %2, %%rax\n"    /* set %rax = __NR_bsdthread_terminate */
+         "movq $0, %%rdi\n"
+         "movq $0, %%rsi\n"
+         "movq $0, %%rdx\n"
+         "movq $0, %%r10\n"
+         "syscall\n"		/* bsdthread_terminate(0, 0, 0, 0) */
+         : "=m" (tst->status)
+         : "n" (VgTs_Empty), "n" (__NR_bsdthread_terminate)
+         : "rax", "rdi", "rsi", "rdx", "r10"
+      );
+#else
+# error Unknown platform
+#endif
+#endif
 
       // DDD: This is reached sometimes on none/tests/manythreads, maybe
       // because of the race above.
@@ -3035,10 +3081,34 @@ PRE(stat64)
    PRE_REG_READ2(long, "stat", const char *,path, struct stat64 *,buf);
    PRE_MEM_RASCIIZ("stat64(path)", ARG1);
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
+
+#if DARWIN_VERS >= DARWIN_11_00
+   // Starting with macOS 11.0, some system libraries are not provided on the disk but only though
+   // shared dyld cache, thus we try to detect if dyld tried (and failed) to load a dylib,
+   // in which case we do the same thing as dyld and load the info from the cache directly
+   //
+   // This is our entry point for checking a particular dylib: if it looks like one,
+   // we want to see the error result, if any, and subsequently check the cache
+   if (VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
+     *flags |= SfPostOnFail;
+   }
+#endif
 }
 POST(stat64)
 {
+   if (SUCCESS) {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+}
+
+#if DARWIN_VERS >= DARWIN_11_00
+   if (SUCCESS || (FAILURE && ERR == VKI_ENOENT)) {
+     // It failed and `SfPostOnFail` was set, thus this is probably a dylib,
+     // try to load it from cache which will call VG_(di_notify_mmap) like the previous versions did
+     if (VG_(dyld_cache_load_library)((HChar *)ARG1)) {
+       ML_(sync_mappings)("after", "stat64", 0);
+     }
+   }
+#endif
 }
 
 PRE(lstat64)
@@ -8863,7 +8933,7 @@ POST(mach_msg)
    }
 }
 
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
 
 #define MACH64_MSG_VECTOR 0x0000000100000000ull
 
@@ -10967,13 +11037,7 @@ POST(shared_region_check_np)
 
   if (RES == 0) {
     POST_MEM_WRITE(ARG1, sizeof(uint64_t));
-    uint64_t shared_region = *((uint64_t*) ARG1);
-    PRINT("shared dyld cache %#llx", shared_region);
-    // TODO: invalid, take a more granular to allow better dylib mapping too
-    ML_(notify_core_and_tool_of_mmap)(
-      shared_region, VG_PGROUNDUP(0x0FFE00000ULL),
-      VKI_PROT_WRITE | VKI_PROT_EXEC, VKI_MAP_SHARED, -1, 0);
-    // TODO: arm64: 0x100000000ULL
+    PRINT("shared dyld cache %#llx", *((uint64_t*) ARG1));
   }
 }
 
@@ -10983,6 +11047,24 @@ PRE(shared_region_map_and_slide_np)
   PRE_REG_READ6(kern_return_t, "shared_region_map_and_slide_np",
     int, fd, uint32_t, count, const struct shared_file_mapping_np*, mappings,
     uint32_t, slide, uint64_t*, slide_start, uint32_t, slide_size);
+}
+
+PRE(task_read_for_pid)
+{
+  PRINT("task_read_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), ARG2, ARG3);
+  PRE_REG_READ3(kern_return_t, "task_read_for_pid", mach_port_name_t, target_tport, int, pid, mach_port_name_t*, t);
+
+  if (ARG3 != 0) {
+    PRE_MEM_WRITE("task_read_for_pid(t)", ARG3, sizeof(mach_port_name_t));
+  }
+}
+
+POST(task_read_for_pid)
+{
+  if (RES == 0 && ARG3 != 0) {
+    POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
+    PRINT("-> t:%s", name_for_port(*(mach_port_name_t*)ARG3));
+  }
 }
 
 #endif /* DARWIN_VERS >= DARWIN_11_00 */
@@ -11602,7 +11684,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_faccessat,           faccessat),          // 466
    MACXY(__NR_fstatat64,           fstatat64),          // 470
    MACX_(__NR_readlinkat,          readlinkat),         // 473
+#if DARWIN_VERS >= DARWIN_10_15
    MACX_(__NR_mkdirat,             mkdirat),            // 475
+#endif
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
    MACXY(__NR_csrctl,              csrctl),             // 483
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484
@@ -11682,7 +11766,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_shared_region_map_and_slide_2_np),        // 536
 // _____(__NR_pivot_root),                              // 537
 // _____(__NR_task_inspect_for_pid),                    // 538
-// _____(__NR_task_read_for_pid),                       // 539
+   MACXY(__NR_task_read_for_pid, task_read_for_pid),    // 539
 // _____(__NR_sys_preadv),                              // 540
 // _____(__NR_sys_pwritev),                             // 541
 // _____(__NR_sys_preadv_nocancel),                     // 542
@@ -11824,7 +11908,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 // _____(__NR_task_name_for_pid),
    MACXY(__NR_task_for_pid, task_for_pid),
    MACXY(__NR_pid_for_task, pid_for_task),
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
    MACXY(__NR_mach_msg2_trap, mach_msg2),
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(47)),

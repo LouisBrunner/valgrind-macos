@@ -1,0 +1,3 @@
+prog: bug464476
+vgopts: -q
+args: `pwd`/bug464476

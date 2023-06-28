@@ -1792,8 +1792,6 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
 
-     vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
-
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
 
@@ -1804,13 +1802,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
      r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
      vg_assert(r == 0);
-#if defined(VGO_darwin)
-     tmp_sigill_act.ksa_handler = saved_sigill_act.ksa_handler;
-     tmp_sigill_act.sa_mask = saved_sigill_act.sa_mask;
-     tmp_sigill_act.sa_flags = saved_sigill_act.sa_flags;
-#else
-     tmp_sigill_act = saved_sigill_act;
-#endif
+
+     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
 
      /* NODEFER: signal handler does not return (from the kernel's point of
         view), hence if it is to successfully catch a signal more than once,

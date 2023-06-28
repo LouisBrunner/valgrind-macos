@@ -1,0 +1,2 @@
+prog: bug464969_d_demangle
+vgopts: -q

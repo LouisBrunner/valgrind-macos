@@ -1,0 +1,389 @@
+vclfeb
+	16777215 | 0 | 42 | 10000
+	4 | 3 | 42 | 1
+	0 | -1 | 0 | 0
+	0 | 0 | 0 | 0
+wclfeb
+	16777215 | - | - | -
+	4 | - | - | -
+	0 | - | - | -
+	0 | - | - | -
+vcelfb
+	0x1p+32 | 0x1p+31 | 0x1.5p+5 | 0x0p+0
+	0x1.fffffep+30 | 0x1p+0 | 0x1.f4p+9 | 0x1.ff06ap+31
+	0x1.fffffcp+22 | 0x1.cp+30 | 0x1.ffffb2p+31 | 0x1.fffep+15
+	0x1p+31 | 0x1p+27 | 0x0p+0 | 0x1.5p+5
+wcelfb
+	0x1p+32 | - | - | -
+	0x1.fffffep+30 | - | - | -
+	0x1.fffffcp+22 | - | - | -
+	0x1p+31 | - | - | -
+vcfeb
+	16777215 | -16777215 | 42 | 10000
+	4 | 3 | 42 | 1
+	0 | 2147483647 | 0 | -2147483648
+	-2147483648 | -2147483648 | -2147483648 | -2147483648
+wcfeb
+	16777215 | - | - | -
+	4 | - | - | -
+	0 | - | - | -
+	-2147483648 | - | - | -
+vcefb
+	-0x1p+0 | 0x1p+31 | 0x1.5p+5 | 0x0p+0
+	0x1.fffffep+30 | 0x1p+0 | 0x1.f4p+9 | -0x1.f2bff8p+22
+	0x1.fffffcp+22 | 0x1.cp+30 | -0x1.388p+13 | 0x1.fffep+15
+	0x1p+31 | 0x1p+27 | 0x0p+0 | 0x1.5p+5
+wcefb
+	-0x1p+0 | - | - | -
+	0x1.fffffep+30 | - | - | -
+	0x1.fffffcp+22 | - | - | -
+	0x1p+31 | - | - | -
+vldeb
+	0x1.fffffep+23 | 0x1.54p+5
+	0x1p+2 | 0x1.54p+5
+	0x0p+0 | -0x0p+0
+	nan | nan
+wldeb
+	0x1.fffffep+23 | -
+	0x1p+2 | -
+	0x0p+0 | -
+	nan | -
+wflld
+	0x1.ffffffffffffep+51
+	0x1.999999999999ap-4
+	-0x0p+0
+	nan
+vledb
+	0x1p+52 | - | -0x1.fffffep+23 | -
+	0x1.99999ap-4 | - | 0x1.8p+1 | -
+	-0x0p+0 | - | inf | -
+	nan | - | -nan | -
+wledb
+	0x1p+52 | - | - | -
+	0x1.99999ap-4 | - | - | -
+	-0x0p+0 | - | - | -
+	nan | - | - | -
+wflrx
+	0x1.fffffep+23 | -
+	0x1p+2 | -
+	inf | -
+	nan | -
+vfisb
+	0x1.fffffep+23 | -0x1.fffffep+23 | 0x1.5p+5 | 0x1.388p+13
+	0x1p+2 | 0x1.8p+1 | 0x1.5p+5 | 0x1p+0
+	0x0p+0 | inf | -0x0p+0 | -inf
+	nan | -nan | nan | -nan
+wfisb
+	0x1.fffffep+23 | - | - | -
+	0x1p+2 | - | - | -
+	0x0p+0 | - | - | -
+	nan | - | - | -
+wfixb
+	0x1.fffffep+23
+	0x1p+2
+	inf
+	nan
+vflcsb
+	-0x1.fffffep+23 | 0x1.fffffep+23 | -0x1.54p+5 | -0x1.388p+13
+	-0x1p+2 | -0x1.8p+1 | -0x1.54p+5 | -0x1p+0
+	-0x0p+0 | -inf | 0x0p+0 | inf
+	-nan | nan | -nan | nan
+wflcsb
+	-0x1.fffffep+23 | - | - | -
+	-0x1p+2 | - | - | -
+	-0x0p+0 | - | - | -
+	-nan | - | - | -
+wflcxb
+	-0x1.fffffep+23
+	-0x1p+2
+	-inf
+	-nan
+vflnsb
+	-0x1.fffffep+23 | -0x1.fffffep+23 | -0x1.54p+5 | -0x1.388p+13
+	-0x1p+2 | -0x1.8p+1 | -0x1.54p+5 | -0x1p+0
+	-0x0p+0 | -inf | -0x0p+0 | -inf
+	-nan | -nan | -nan | -nan
+wflnsb
+	-0x1.fffffep+23 | - | - | -
+	-0x1p+2 | - | - | -
+	-0x0p+0 | - | - | -
+	-nan | - | - | -
+wflnxb
+	-0x1.fffffep+23
+	-0x1p+2
+	-inf
+	-nan
+vflpsb
+	0x1.fffffep+23 | 0x1.fffffep+23 | 0x1.54p+5 | 0x1.388p+13
+	0x1p+2 | 0x1.8p+1 | 0x1.54p+5 | 0x1p+0
+	0x0p+0 | inf | 0x0p+0 | inf
+	nan | nan | nan | nan
+wflpsb
+	0x1.fffffep+23 | - | - | -
+	0x1p+2 | - | - | -
+	0x0p+0 | - | - | -
+	nan | - | - | -
+wflpxb
+	0x1.fffffep+23
+	0x1p+2
+	inf
+	nan
+vfsqsb
+	0x1.fffffep+11 | nan | 0x1.a13a9cp+2 | 0x1.9p+6
+	0x1p+1 | 0x1.bb67aep+0 | 0x1.a13a9cp+2 | 0x1p+0
+	0x0p+0 | inf | -0x0p+0 | nan
+	nan | -nan | nan | -nan
+wfsqsb
+	0x1.fffffep+11 | - | - | -
+	0x1p+1 | - | - | -
+	0x0p+0 | - | - | -
+	nan | - | - | -
+wfsqxb
+	0x1.fffffeffffffbfffffdfffffecp+11
+	0x1p+1
+	inf
+	nan
+vfssb
+	0x1.fffff6p+23 | -0x1.000002p+24 | 0x0p+0 | 0x1.3878p+13
+	-0x1.fffff6p+23 | 0x1.000002p+24 | 0x0p+0 | -0x1.3878p+13
+	0x1.fffffep+23 | -inf | 0x1.54p+5 | inf
+	nan | -nan | nan | -nan
+wfssb
+	0x1.fffff6p+23 | - | - | -
+	-0x1.fffff6p+23 | - | - | -
+	0x1.fffffep+23 | - | - | -
+	nan | - | - | -
+wfsxb
+	0x1.fffff6p+23
+	-0x1.fffff6p+23
+	-inf
+	nan
+vfasb
+	0x1.000004p+24 | -0x1.fffff8p+23 | 0x1.54p+6 | 0x1.3888p+13
+	0x1.000004p+24 | -0x1.fffff8p+23 | 0x1.54p+6 | 0x1.3888p+13
+	0x1.fffffep+23 | inf | 0x1.54p+5 | -inf
+	nan | -nan | nan | -nan
+wfasb
+	0x1.000004p+24 | - | - | -
+	0x1.000004p+24 | - | - | -
+	0x1.fffffep+23 | - | - | -
+	nan | - | - | -
+wfaxb
+	0x1.000003p+24
+	0x1.000003p+24
+	inf
+	nan
+vfdsb
+	0x1.fffffep+21 | -0x1.555554p+22 | 0x1p+0 | 0x1.388p+13
+	0x1.000002p-22 | -0x1.800002p-23 | 0x1p+0 | 0x1.a36e2ep-14
+	inf | -0x0p+0 | -inf | -0x0p+0
+	nan | -nan | nan | -nan
+wfdsb
+	0x1.fffffep+21 | - | - | -
+	0x1.000002p-22 | - | - | -
+	inf | - | - | -
+	nan | - | - | -
+wfdxb
+	0x1.fffffep+21
+	0x1.000001000001000001000001p-22
+	0x0p+0
+	nan
+vfmsb
+	0x1.fffffep+25 | -0x1.7ffffep+25 | 0x1.c39p+10 | 0x1.388p+13
+	0x1.fffffep+25 | -0x1.7ffffep+25 | 0x1.c39p+10 | 0x1.388p+13
+	0x0p+0 | -inf | -0x0p+0 | -inf
+	nan | -nan | nan | -nan
+wfmsb
+	0x1.fffffep+25 | - | - | -
+	0x1.fffffep+25 | - | - | -
+	0x0p+0 | - | - | -
+	nan | - | - | -
+wfmxb
+	0x1.fffffep+25
+	0x1.fffffep+25
+	inf
+	nan
+vfcesb
+	0 | 0 | -1 | 0
+	0 | 0 | -1 | 0
+	0 | 0 | 0 | 0
+	0 | 0 | 0 | 0
+wfcesb
+	0 | - | - | -
+	0 | - | - | -
+	0 | - | - | -
+	0 | - | - | -
+wfcexb
+	0
+	0
+	0
+	0
+vfcesbs
+	0 | 0 | -1 | 0  cc=1
+	0 | 0 | -1 | 0  cc=1
+	0 | 0 | 0 | 0  cc=3
+	0 | 0 | 0 | 0  cc=3
+wfcesbs
+	0 | - | - | -  cc=3
+	0 | - | - | -  cc=3
+	0 | - | - | -  cc=3
+	0 | - | - | -  cc=3
+wfcexbs
+	0  cc=3
+	0  cc=3
+	0  cc=3
+	0  cc=3
+vfchesb
+	-1 | 0 | -1 | -1
+	0 | -1 | -1 | 0
+	-1 | 0 | -1 | -1
+	0 | 0 | 0 | 0
+wfchesb
+	-1 | - | - | -
+	0 | - | - | -
+	-1 | - | - | -
+	0 | - | - | -
+wfchexb
+	-1
+	0
+	0
+	0
+vfchesbs
+	-1 | 0 | -1 | -1  cc=1
+	0 | -1 | -1 | 0  cc=1
+	-1 | 0 | -1 | -1  cc=1
+	0 | 0 | 0 | 0  cc=3
+wfchesbs
+	-1 | - | - | -
+	0 | - | - | -  cc=3
+	-1 | - | - | -
+	0 | - | - | -  cc=3
+wfchexbs
+	-1
+	0  cc=3
+	0  cc=3
+	0  cc=3
+vfminsb
+	0x1p+2 | -0x1.fffffep+23 | 0x1.54p+5 | 0x1p+0
+	0x1p+2 | -0x1.fffffep+23 | 0x1.54p+5 | 0x1p+0
+	0x0p+0 | -0x1.fffffep+23 | -0x0p+0 | -inf
+	-0x1.fffffcp+23 | 0x1.fffffcp+23 | -0x1.7p+4 | -0x1.3878p+13
+wfminsb
+	0x1p+2 | - | - | -
+	0x1p+2 | - | - | -
+	0x0p+0 | - | - | -
+	-0x1.fffffcp+23 | - | - | -
+wfminxb
+	0x1p+2
+	0x1p+2
+	0x1.fffffep+23
+	-0x1.7p+4
+vfmaxsb
+	0x1.fffffep+23 | 0x1.8p+1 | 0x1.54p+5 | 0x1.388p+13
+	0x1.fffffep+23 | 0x1.8p+1 | 0x1.54p+5 | 0x1.388p+13
+	0x1.fffffep+23 | inf | 0x1.54p+5 | 0x1.388p+13
+	-0x1.fffffcp+23 | 0x1.fffffcp+23 | -0x1.7p+4 | -0x1.3878p+13
+wfmaxsb
+	0x1.fffffep+23 | - | - | -
+	0x1.fffffep+23 | - | - | -
+	0x1.fffffep+23 | - | - | -
+	-0x1.fffffcp+23 | - | - | -
+wfmaxxb
+	0x1.fffffep+23
+	0x1.fffffep+23
+	inf
+	-0x1.7p+4
+vfchsb
+	-1 | 0 | 0 | -1
+	0 | -1 | 0 | 0
+	-1 | 0 | -1 | -1
+	0 | 0 | 0 | 0
+wfchsb
+	-1 | - | - | -
+	0 | - | - | -
+	-1 | - | - | -
+	0 | - | - | -
+wfchxb
+	-1
+	0
+	0
+	0
+vfchsbs
+	-1 | 0 | 0 | -1  cc=1
+	0 | -1 | 0 | 0  cc=1
+	-1 | 0 | -1 | -1  cc=1
+	0 | 0 | 0 | 0  cc=3
+wfchsbs
+	-1 | - | - | -
+	0 | - | - | -  cc=3
+	-1 | - | - | -
+	0 | - | - | -  cc=3
+wfchxbs
+	-1
+	0  cc=3
+	0  cc=3
+	0  cc=3
+vfmssb
+	0x1.fffffep+25 | -inf | 0x1.c39p+10 | inf
+	0x1.3ffffep+26 | -0x1.fffffep+25 | 0x1.c95p+10 | 0x1.387cp+14
+wfmssb
+	0x1.fffffep+25 | - | - | -
+	0x1.3ffffep+26 | - | - | -
+wfmsxb
+	-inf
+	0x1.000004cp+26
+vfmasb
+	0x1.fffffep+25 | inf | 0x1.c39p+10 | -inf
+	0x1.8p+25 | -0x1p+25 | 0x1.bddp+10 | 0x1p+0
+wfmasb
+	0x1.fffffep+25 | - | - | -
+	0x1.8p+25 | - | - | -
+wfmaxb
+	inf
+	0x1.fffff28p+25
+vfnmssb
+	-0x1.fffffep+25 | inf | -0x1.c39p+10 | -inf
+	-0x1.3ffffep+26 | 0x1.fffffep+25 | -0x1.c95p+10 | -0x1.387cp+14
+wfnmssb
+	-0x1.fffffep+25 | - | - | -
+	-0x1.3ffffep+26 | - | - | -
+wfnmsxb
+	inf
+	-0x1.000004cp+26
+vfnmasb
+	-0x1.fffffep+25 | -inf | -0x1.c39p+10 | inf
+	-0x1.8p+25 | 0x1p+25 | -0x1.bddp+10 | -0x1p+0
+wfnmasb
+	-0x1.fffffep+25 | - | - | -
+	-0x1.8p+25 | - | - | -
+wfnmaxb
+	-inf
+	-0x1.fffff28p+25
+wfcsb
+	cc=2
+	cc=1
+	cc=0
+	cc=3
+wfcxb
+	cc=2
+	cc=1
+	cc=0
+	cc=3
+vftcisb
+	0 | 0 | 0 | 0  cc=3
+	0 | 0 | 0 | 0  cc=3
+	-1 | -1 | 0 | 0  cc=1
+	0 | 0 | 0 | 0  cc=3
+	0 | -1 | 0 | -1  cc=1
+wftcisb
+	0 | - | - | -  cc=3
+	0 | - | - | -  cc=3
+	0 | - | - | -  cc=3
+	-1 | - | - | -
+	0 | - | - | -  cc=3
+wftcixb
+	-1
+	-1
+	0  cc=3
+	-1
+	0  cc=3

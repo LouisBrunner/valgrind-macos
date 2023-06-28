@@ -1,0 +1,3 @@
+valgrind: Bad option: --trace-children
+valgrind: Missing boolean value, did you mean '--trace-children=yes'?
+valgrind: Use --help for more information or consult the user manual.

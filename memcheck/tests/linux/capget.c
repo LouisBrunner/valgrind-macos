@@ -1,4 +1,6 @@
-#if defined(linux)
+#include "../../../config.h"
+
+#if defined(linux) && !defined(MUSL_LIBC)
 
 
 #include <stdio.h>            /* printf() */
@@ -45,7 +47,7 @@ int main()
 
 int main()
 {
-  fprintf(stderr, "This program is Linux-specific\n");
+  fprintf(stderr, "This program is Linux with GNU libc specific\n");
   return 0;
 }
 

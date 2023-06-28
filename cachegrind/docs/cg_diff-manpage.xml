@@ -14,7 +14,7 @@
 
 <refnamediv>
   <refname>cg_diff</refname>
-  <refpurpose>compares two Cachegrind output files</refpurpose>
+  <refpurpose>(deprecated) diffs two Cachegrind output files</refpurpose>
 </refnamediv>
 
 <refsynopsisdiv>
@@ -30,9 +30,10 @@
 <refsect1 id="cg_diff-description">
 <title>Description</title>
 
-<para><command>cg_diff</command> takes two output files produced by the
-Valgrind tool Cachegrind, computes the difference and prints the result
-in the same format that Cachegrinds outputs.
+<para>
+<command>cg_diff</command> diffs two Cachegrind output files into a single
+Cachegrind output file. It is deprecated because <command>cg_annotate</command>
+can now do much the same thing, but better.
 </para>
 
 </refsect1>

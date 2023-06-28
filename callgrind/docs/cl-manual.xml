@@ -1133,6 +1133,17 @@ Also see <xref linkend="cl-manual.cycles"/>.</para>
 <title>Callgrind Monitor Commands</title>
 <para>The Callgrind tool provides monitor commands handled by the Valgrind
 gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+Valgrind python code provides GDB front end commands giving an easier usage of
+the callgrind monitor commands (see
+<xref linkend="manual-core-adv.gdbserver-gdbmonitorfrontend"/>).  To launch a
+callgrind monitor command via its GDB front end command, instead of prefixing
+the command with "monitor", you must use the GDB <varname>callgrind</varname>
+command (or the shorter aliases <varname>cg</varname>).  Using the callgrind GDB
+front end command provide a more flexible usage, such as auto-completion of the
+command by GDB. In GDB, you can use <varname>help callgrind</varname> to get
+help about the callgrind front end monitor commands and you can
+use <varname>apropos callgrind</varname> to get all the commands mentionning the
+word "callgrind" in their name or on-line help.
 </para>
 
 <itemizedlist>

@@ -1,0 +1,3 @@
+prereq: test -e ./scalar_openat2
+prog: scalar_openat2
+vgopts: -q

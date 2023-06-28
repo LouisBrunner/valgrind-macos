@@ -760,6 +760,17 @@ various places online.
 <screen><![CDATA[
 --alloc-fn='operator new(unsigned, std::nothrow_t const&)'
 ]]></screen>
+      Arguments of type <computeroutput>size_t</computeroutput> need to be replaced
+      with <computeroutput>unsigned long</computeroutput> on 64bit platforms and <computeroutput>unsigned</computeroutput>
+      on 32bit platforms.
+      </para>
+
+      <para><option>--alloc-fn</option> will work with inline functions.
+      Inline function names are not mangled, which means that you only need
+      to provide the function name and not the argument list.
+      </para>
+
+      <para><option>--alloc-fn</option> does not support wildcards.
       </para>
       </listitem>
   </varlistentry>
@@ -880,6 +891,17 @@ various places online.
 <title>Massif Monitor Commands</title>
 <para>The Massif tool provides monitor commands handled by the Valgrind
 gdbserver (see <xref linkend="manual-core-adv.gdbserver-commandhandling"/>).
+Valgrind python code provides GDB front end commands giving an easier usage of
+the massif monitor commands (see
+<xref linkend="manual-core-adv.gdbserver-gdbmonitorfrontend"/>).  To launch a
+massif monitor command via its GDB front end command, instead of prefixing
+the command with "monitor", you must use the GDB <varname>massif</varname>
+command (or the shorter aliases <varname>ms</varname>).  Using the massif GDB
+front end command provide a more flexible usage, such as auto-completion of the
+command by GDB. In GDB, you can use <varname>help massif</varname> to get
+help about the massif front end monitor commands and you can
+use <varname>apropos massif</varname> to get all the commands mentionning the
+word "massif" in their name or on-line help.
 </para>
 
 <itemizedlist>

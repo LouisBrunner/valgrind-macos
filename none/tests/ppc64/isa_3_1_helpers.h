@@ -67,14 +67,38 @@ extern void initialize_buffer(int);
 #define RELOC_BUFFER_SIZE 0x1000
 extern unsigned long long pcrelative_buff_addr(int);
 #define PAD_ORI	\
-	__asm__ __volatile__ ("ori 21,21,21"); \
-	__asm__ __volatile__ ("ori 22,22,22");\
-	__asm__ __volatile__ ("ori 23,23,23");\
-	__asm__ __volatile__ ("ori 24,24,24");\
-	__asm__ __volatile__ ("ori 25,25,25");\
-	__asm__ __volatile__ ("ori 26,26,26");\
-	__asm__ __volatile__ ("ori 27,27,27");\
-	__asm__ __volatile__ ("ori 28,28,28");
+	__asm__ __volatile__ ("ori 21,21,21"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "21"  /* clobbers register 21 */);         \
+	__asm__ __volatile__ ("ori 22,22,22"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "22"  /* clobbers register 22 */);         \
+	__asm__ __volatile__ ("ori 23,23,23"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "23"  /* clobbers register 23 */);         \
+	__asm__ __volatile__ ("ori 24,24,24"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "24"  /* clobbers register 24 */);         \
+	__asm__ __volatile__ ("ori 25,25,25"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "25"  /* clobbers register 25 */);         \
+	__asm__ __volatile__ ("ori 26,26,26"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "26"  /* clobbers register 26 */);         \
+	__asm__ __volatile__ ("ori 27,27,27"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "27"  /* clobbers register 27 */);         \
+	__asm__ __volatile__ ("ori 28,28,28"         \
+        :  /* empty: no outputs from asm to C   */   \
+        :  /* empty: no inputs  from C   to asm */   \
+        : "28"  /* clobbers register 28 */);
 
 extern int verbose;
 #define debug_printf(X) if (verbose>0) printf(X);

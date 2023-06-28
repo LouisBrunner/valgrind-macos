@@ -583,8 +583,12 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
 
    if (img->source.is_local) {
       // Simple: just read it
+      if (img->source.fd == -1) {
+        VG_(memcpy)(&ce->data[0], ((const char *)img->source.session_id) + off, len);
+      } else {
       SysRes sr = VG_(pread)(img->source.fd, &ce->data[0], (Int)len, off);
       vg_assert(!sr_isError(sr));
+      }
    } else {
       // Not so simple: poke the server
       vg_assert(img->source.session_id > 0);
@@ -916,6 +920,39 @@ DiImage* ML_(img_from_fd)(Int fd, const HChar* fullpath)
    return img;
 }
 
+/* Create an image from a place in memory, this is to support certain use cases (DSC on macOS)
+   where images are already loaded in memory without changing every usage of DiImage. */
+DiImage* ML_(img_from_memory)(Addr a, SizeT size, const HChar* fullpath)
+{
+   if (size == 0 || size == DiOffT_INVALID
+       || /* size is unrepresentable as a SizeT */
+          size != (DiOffT)(SizeT)(size)) {
+      return NULL;
+   }
+
+   DiImage* img = ML_(dinfo_zalloc)("di.image.ML_iflf.1", sizeof(DiImage));
+   img->source.is_local   = True;
+   img->source.fd         = -1;
+   img->source.session_id = a; // FIXME: hacky, but avoids a new variable
+   img->size              = size;
+   img->real_size         = size;
+   img->ces_used          = 0;
+   img->source.name       = ML_(dinfo_strdup)("di.image.ML_iflf.2", fullpath);
+   img->cslc              = NULL;
+   img->cslc_size         = 0;
+   img->cslc_used         = 0;
+
+   /* Force the zeroth entry to be the first chunk of the file.
+      That's likely to be the first part that's requested anyway, and
+      loading it at this point forcing img->cent[0] to always be
+      non-empty, thereby saving us an is-it-empty check on the fast
+      path in get(). */
+   UInt entNo = alloc_CEnt(img, CACHE_ENTRY_SIZE, False/*!fromC*/);
+   vg_assert(entNo == 0);
+   set_CEnt(img, 0, 0);
+
+   return img;
+}
 
 
 /* Create an image from a file on a remote debuginfo server.  This is
@@ -1073,9 +1110,11 @@ void ML_(img_done)(DiImage* img)
 {
    vg_assert(img != NULL);
    if (img->source.is_local) {
+      if (img->source.fd != -1) {
       /* Close the file; nothing else to do. */
       vg_assert(img->source.session_id == 0);
       VG_(close)(img->source.fd);
+      }
    } else {
       /* Close the socket.  The server can detect this and will scrub
          the connection when it happens, so there's no need to tell it

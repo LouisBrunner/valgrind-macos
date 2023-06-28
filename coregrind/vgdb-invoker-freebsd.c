@@ -110,8 +110,9 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
 
    if (debuglevel >= 1) {
       DEBUG (1, "Writing ");
-      for (i = 0; i < len; i++)
+      for (i = 0; i < len; i++) {
          PDEBUG (1, "%02x", ((const unsigned char*)myaddr)[i]);
+      }
       PDEBUG(1, " to %p\n", (void *) memaddr);
    }
 
@@ -139,8 +140,9 @@ int ptrace_write_memory (pid_t inferior_pid, CORE_ADDR memaddr,
       errno = 0;
       ptrace (PT_WRITE_I, inferior_pid,
               (PTRACE_ARG3_TYPE) addr, buffer[i]);
-      if (errno)
+      if (errno) {
          return errno;
+      }
    }
 
    return 0;
@@ -155,20 +157,24 @@ char *status_image (int status)
 
    result[0] = 0;
 
-   if (WIFEXITED(status))
+   if (WIFEXITED(status)) {
       APPEND ("WIFEXITED %d ", WEXITSTATUS(status));
+   }
 
    if (WIFSIGNALED(status)) {
       APPEND ("WIFSIGNALED %d ", WTERMSIG(status));
-      if (WCOREDUMP(status)) APPEND ("WCOREDUMP ");
+      if (WCOREDUMP(status)) {
+         APPEND ("WCOREDUMP ");
+      }
    }
 
    if (WIFSTOPPED(status))
       APPEND ("WIFSTOPPED %d ", WSTOPSIG(status));
 
 #ifdef WIFCONTINUED
-   if (WIFCONTINUED(status))
+   if (WIFCONTINUED(status)) {
       APPEND ("WIFCONTINUED ");
+   }
 #endif
 
    return result;
@@ -212,8 +218,9 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
 
       assert (WIFSTOPPED(status));
       signal_received = WSTOPSIG(status);
-      if (signal_received == signal_expected)
+      if (signal_received == signal_expected) {
          break;
+      }
 
       /* pid received a signal which is not the signal we are waiting for.
          If we have not (yet) changed the registers of the inferior
@@ -252,10 +259,11 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
          if (res != 0) {
             ERROR(errno, "PT_LWPINFO failed: signal lost !!!!\n");
             signal_queue_sz--;
-         } else
+         } else {
             DEBUG(1, "waitstopped PTRACE_CONT, queuing signal %d"
                   " si_signo %d si_pid %d\n",
                   signal_received, newsiginfo->si_signo, newsiginfo->si_pid);
+         }
          res = ptrace (PT_CONTINUE, pid, (caddr_t)1, 0);
       } else {
          DEBUG(1, "waitstopped PT_CONTINUE with signal %d\n", signal_received);
@@ -307,9 +315,10 @@ Bool attach (pid_t pid, const char *msg)
    res = ptrace (PT_ATTACH, pid, 0, 0);
    if (res != 0) {
       if (output_error || debuglevel > 0) {
-         ERROR(errno, "%s PT_ATTACH pid %d %ld\n", msg, pid, res);
-         if (initial_attach)
+         ERROR(errno, "%s PT_ATTACH pid %d %d\n", msg, pid, res);
+         if (initial_attach) {
             output_error = False;
+         }
       }
       return False;
    }
@@ -368,8 +377,9 @@ void restore_and_detach (pid_t pid)
          before resetting the registers. */
       if (pid_of_save_regs_continued) {
          pid_of_save_regs_continued = False;
-         if (!stop(pid_of_save_regs, "sigstop before reset regs"))
+         if (!stop(pid_of_save_regs, "sigstop before reset regs")) {
             DEBUG(0, "Could not sigstop before reset");
+         }
       }
 
       DEBUG(1, "setregs restore registers pid %d\n", pid_of_save_regs);
@@ -386,11 +396,13 @@ void restore_and_detach (pid_t pid)
                   signal_queue[i].si_signo);
             res = ptrace (PT_CONTINUE, pid_of_save_regs, (caddr_t)1,
                           signal_queue[i].si_signo);
-            if (res != 0)
+            if (res != 0) {
                ERROR(errno, "PT_CONTINUE with signal %d\n",
                      signal_queue[i].si_signo);
-            if (!stop(pid_of_save_regs, "sigstop after transmit sig"))
+            }
+            if (!stop(pid_of_save_regs, "sigstop after transmit sig")) {
                DEBUG(0, "Could not sigstop after transmit sig");
+            }
          }
          free (signal_queue);
          signal_queue = NULL;
@@ -400,9 +412,10 @@ void restore_and_detach (pid_t pid)
    } else {
       DEBUG(1, "PTRACE_SETREGS restore registers: no pid\n");
    }
-   if (signal_queue)
+   if (signal_queue) {
       ERROR (0, "One or more signals queued were not delivered. "
              "First signal: %d\n", signal_queue[0].si_signo);
+   }
    detach_from_all_threads(pid);
 }
 
@@ -594,18 +607,18 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       pid_of_save_regs_continued = False;
       restore_and_detach(pid);
       return True;
-   } else {
-      /* Whatever kind of problem happened. We shutdown. */
-      shutting_down = True;
-      return False;
    }
+   /* Whatever kind of problem happened. We shutdown. */
+   shutting_down = True;
+   return False;
 }
 
 void invoker_cleanup_restore_and_detach(void *v_pid)
 {
    DEBUG(1, "invoker_cleanup_restore_and_detach dying: %d\n", dying);
-   if (!dying)
+   if (!dying) {
       restore_and_detach(*(int*)v_pid);
+   }
 }
 
 void invoker_restrictions_msg(void)

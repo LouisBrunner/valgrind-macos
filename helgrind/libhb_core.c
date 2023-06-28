@@ -284,7 +284,8 @@ typedef
 #define N_KWs_N_STACKs_PER_THREAD 62500
 
 
-#define N_FRAMES 8
+UInt HG_(clo_history_backtrace_size) = 8;
+
 // (UInt) `echo "Reference Counted Execution Context" | md5sum`
 #define RCEC_MAGIC 0xab88abb2UL
 
@@ -297,7 +298,9 @@ typedef
       UWord rc;
       UWord rcX; /* used for crosschecking */
       UWord frames_hash;          /* hash of all the frames */
-      UWord frames[N_FRAMES];
+      UWord frames[0];
+      /* Variable-length array.
+         The size depends on HG_(clo_history_backtrace_size). */
    }
    RCEC;
 
@@ -305,7 +308,7 @@ struct _Thr {
    /* Current VTSs for this thread.  They change as we go along.  viR
       is the VTS to be used for reads, viW for writes.  Usually they
       are the same, but can differ when we deal with reader-writer
-      locks.  It is always the case that 
+      locks.  It is always the case that
          VtsID__cmpLEQ(viW,viR) == True
       that is, viW must be the same, or lagging behind, viR. */
    VtsID viR;
@@ -337,19 +340,24 @@ struct _Thr {
       Thread should be merged into a single structure. */
    Thread* hgthread;
 
+   /* The ULongs (scalar Kws) in this accumulate in strictly
+      increasing order, without duplicates.  This is important because
+      we need to be able to find a given scalar Kw in this array
+      later, by binary search. */
+   XArray* /* ULong_n_EC */ local_Kws_n_stacks;
+
    /* cached_rcec maintains the last RCEC that was retrieved for this thread. */
-   RCEC cached_rcec; // cached_rcec value, not ref-counted.
+   RCEC cached_rcec; 
+   // cached_rcec value, not ref-counted.
+   // As the last member of an RCEC is a variable length array, this must be
+   // the last element of the  _Thr struct.
+
    /* The shadow register vex_shadow1 SP register (SP_s1) is used to maintain
       the validity of the cached rcec.
       If SP_s1 is 0, then the cached rcec is invalid (cannot be used).
       If SP_S1 is != 0, then the cached rcec is valid. The valid cached rcec
       can be used to generate a new RCEC by changing just the last frame. */
 
-   /* The ULongs (scalar Kws) in this accumulate in strictly
-      increasing order, without duplicates.  This is important because
-      we need to be able to find a given scalar Kw in this array
-      later, by binary search. */
-   XArray* /* ULong_n_EC */ local_Kws_n_stacks;
 };
 
 
@@ -708,10 +716,13 @@ static void* shmem__bigchunk_alloc ( SizeT n )
       if (0)
       VG_(printf)("XXXXX bigchunk: abandoning %d bytes\n",
                   (Int)(shmem__bigchunk_end1 - shmem__bigchunk_next));
-      shmem__bigchunk_next = VG_(am_shadow_alloc)( sHMEM__BIGCHUNK_SIZE );
-      if (shmem__bigchunk_next == NULL)
+      SysRes sres = VG_(am_shadow_alloc)( sHMEM__BIGCHUNK_SIZE );
+      if (sr_isError(sres)) {
          VG_(out_of_memory_NORETURN)(
-            "helgrind:shmem__bigchunk_alloc", sHMEM__BIGCHUNK_SIZE );
+             "helgrind:shmem__bigchunk_alloc", sHMEM__BIGCHUNK_SIZE,
+             sr_Err(sres));
+      }
+      shmem__bigchunk_next = (void*)(Addr)sr_Res(sres);;
       shmem__bigchunk_end1 = shmem__bigchunk_next + sHMEM__BIGCHUNK_SIZE;
    }
    tl_assert(shmem__bigchunk_next);
@@ -4061,7 +4072,12 @@ static inline void set_cached_rcec_validity(Thr *thr, Bool valid)
 
 static Thr* Thr__new ( void )
 {
-   Thr* thr = HG_(zalloc)( "libhb.Thr__new.1", sizeof(Thr) );
+   Thr* thr = HG_(zalloc)
+      ( "libhb.Thr__new.1", 
+        sizeof(Thr) + HG_(clo_history_backtrace_size) * sizeof(UWord));
+   // We need to add the size of the frames in the cached_rcec (last member of
+   // _Thr).
+
    thr->viR = VtsID_INVALID;
    thr->viW = VtsID_INVALID;
    thr->llexit_done = False;
@@ -4308,7 +4324,7 @@ static Bool RCEC__differs_by_frames ( RCEC* ec1, RCEC* ec2 ) {
       tl_assert(ec2 && ec2->magic == RCEC_MAGIC);
    }
    if (ec1->frames_hash != ec2->frames_hash) return True;
-   for (i = 0; i < N_FRAMES; i++) {
+   for (i = 0; i < HG_(clo_history_backtrace_size); i++) {
       if (ec1->frames[i] != ec2->frames[i]) return True;
    }
    return False;
@@ -4424,6 +4440,8 @@ static RCEC* ctxt__find_or_add ( RCEC* example )
       copy = alloc_RCEC();
       tl_assert(copy != example);
       *copy = *example;
+      for (Word i = 0; i < HG_(clo_history_backtrace_size); i++)
+         copy->frames[i] = example->frames[i];
       copy->next = contextTab[hent];
       contextTab[hent] = copy;
       stats__ctxt_tab_curr++;
@@ -4457,16 +4475,17 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
 {
    Bool  ok = True;
    UInt  i;
-   UWord frames[N_FRAMES];
-   UWord sps[N_FRAMES];
-   UWord fps[N_FRAMES];
+   UWord frames[HG_(clo_history_backtrace_size)];
+   UWord sps[HG_(clo_history_backtrace_size)];
+   UWord fps[HG_(clo_history_backtrace_size)];
    const DiEpoch cur_ep = VG_(current_DiEpoch)();
 
-   for (i = 0; i < N_FRAMES; i++)
+   for (i = 0; i < HG_(clo_history_backtrace_size); i++)
       frames[i] = sps[i] = fps[i] = 0;
-   VG_(get_StackTrace)( thr->hgthread->coretid, &frames[0], N_FRAMES,
+   VG_(get_StackTrace)( thr->hgthread->coretid, &frames[0], 
+                        HG_(clo_history_backtrace_size),
                         &sps[0], &fps[0], 0);
-   for (i = 0; i < N_FRAMES; i++) {
+   for (i = 0; i < HG_(clo_history_backtrace_size); i++) {
       if ( thr->cached_rcec.frames[i] != frames[i] ) {
          /* There are a bunch of "normal" reasons for which a stack
             derived from the cached rcec differs from frames. */
@@ -4506,16 +4525,20 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
             unless asked to show below main. */
          if (reason == NULL) {
             UInt fr_main;
-            Vg_FnNameKind fr_kind;
-            for (fr_main = 0; fr_main < N_FRAMES; fr_main++) {
+            Vg_FnNameKind fr_kind = Vg_FnNameNormal;
+            for (fr_main = 0; 
+                 fr_main < HG_(clo_history_backtrace_size); 
+                 fr_main++) {
                fr_kind = VG_(get_fnname_kind_from_IP)
                                 (cur_ep, frames[fr_main]);
                if (fr_kind == Vg_FnNameMain || fr_kind == Vg_FnNameBelowMain)
                   break;
             }
             UInt kh_main;
-            Vg_FnNameKind kh_kind;
-            for (kh_main = 0; kh_main < N_FRAMES; kh_main++) {
+            Vg_FnNameKind kh_kind = Vg_FnNameNormal;
+            for (kh_main = 0; 
+                 kh_main < HG_(clo_history_backtrace_size); 
+                 kh_main++) {
                kh_kind = VG_(get_fnname_kind_from_IP)
                                 (cur_ep, thr->cached_rcec.frames[kh_main]);
                if (kh_kind == Vg_FnNameMain || kh_kind == Vg_FnNameBelowMain)
@@ -4558,7 +4581,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
          if (reason == NULL) {
             if ((i > 0
                       && sps[i] == sps[i-1] && fps[i] == fps[i-1])
-                || (i < N_FRAMES-1
+                || (i < HG_(clo_history_backtrace_size)-1
                       && sps[i] == sps[i+1] && fps[i] == fps[i+1])) {
                reason = "previous||next frame: identical sp and fp";
             }
@@ -4566,7 +4589,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
          if (reason == NULL) {
             if ((i > 0
                       && fps[i] == fps[i-1])
-                || (i < N_FRAMES-1
+                || (i < HG_(clo_history_backtrace_size)-1
                       && fps[i] == fps[i+1])) {
                reason = "previous||next frame: identical fp";
             }
@@ -4585,7 +4608,7 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
             So, if we find __run_exit_handlers, ignore the difference. */
          if (reason == NULL) {
             const HChar *fnname;
-            for (UInt f = 0; f < N_FRAMES; f++) {
+            for (UInt f = 0; f < HG_(clo_history_backtrace_size); f++) {
                if (VG_(get_fnname)( cur_ep, frames[f], &fnname)
                    && VG_(strcmp) ("__run_exit_handlers", fnname) == 0) {
                   reason = "exit handlers";
@@ -4633,9 +4656,10 @@ static Bool check_cached_rcec_ok (Thr* thr, Addr previous_frame0)
                         (void*)previous_frame0);
             VG_(pp_StackTrace)(cur_ep, &previous_frame0, 1);
             VG_(printf)("resulting cached stack trace:\n");
-            VG_(pp_StackTrace)(cur_ep, thr->cached_rcec.frames, N_FRAMES);
+            VG_(pp_StackTrace)(cur_ep, thr->cached_rcec.frames, 
+                               HG_(clo_history_backtrace_size));
             VG_(printf)("check stack trace:\n");
-            VG_(pp_StackTrace)(cur_ep, frames, N_FRAMES);
+            VG_(pp_StackTrace)(cur_ep, frames, HG_(clo_history_backtrace_size));
 
             VG_(show_sched_status) (False,  // host_stacktrace
                                     False,  // stack_usage
@@ -4697,20 +4721,22 @@ static RCEC* get_RCEC ( Thr* thr )
          stats__cached_rcec_updated++;
    } else {
       /* Compute a fresh stacktrace. */
-      main_get_stacktrace( thr, &thr->cached_rcec.frames[0], N_FRAMES );
+      main_get_stacktrace( thr, &thr->cached_rcec.frames[0], 
+                           HG_(clo_history_backtrace_size) );
       if (DEBUG_CACHED_RCEC) {
          Bool save_show_below_main = VG_(clo_show_below_main);
          VG_(clo_show_below_main) = True;
          VG_(printf)("caching stack trace:\n");
          VG_(pp_StackTrace)(VG_(current_DiEpoch)(),
-                            &thr->cached_rcec.frames[0], N_FRAMES);
+                            &thr->cached_rcec.frames[0], 
+                            HG_(clo_history_backtrace_size));
          VG_(clo_show_below_main) = save_show_below_main;
       }
       stats__cached_rcec_fresh++;
    }
 
    hash = 0;
-   for (i = 0; i < N_FRAMES; i++) {
+   for (i = 0; i < HG_(clo_history_backtrace_size); i++) {
       hash ^= thr->cached_rcec.frames[i];
       hash = ROLW(hash, 19);
    }
@@ -5044,11 +5070,12 @@ Bool libhb_event_map_lookup ( /*OUT*/ExeContext** resEC,
          tl_assert(ref_rcec->magic == RCEC_MAGIC);
          tl_assert(ref_szB >= 1);
          /* Count how many non-zero frames we have. */
-         maxNFrames = min_UInt(N_FRAMES, VG_(clo_backtrace_size));
+         maxNFrames = min_UInt(HG_(clo_history_backtrace_size), 
+                               VG_(clo_backtrace_size));
          for (n = 0; n < maxNFrames; n++) {
             if (0 == ref_rcec->frames[n]) break;
          }
-         *resEC      = VG_(make_ExeContext_from_StackTrace)(ref_rcec->frames,
+         *resEC      = VG_(make_ExeContext_from_StackTrace)(&ref_rcec->frames[0],
                                                             n);
          *resThr     = Thr__from_ThrID(ref->acc.tsw.thrid);
          *resSzB     = ref_szB;
@@ -5072,17 +5099,17 @@ void libhb_event_map_access_history ( Addr a, SizeT szB, Access_t fn )
    OldRef *ref = lru.next;
    SizeT ref_szB;
    Int n;
-      
+
    while (ref != &mru) {
       ref_szB = ref->acc.tsw.szB;
       if (cmp_nonempty_intervals(a, szB, ref->ga, ref_szB) == 0) {
          RCEC* ref_rcec = ref->acc.rcec;
-         for (n = 0; n < N_FRAMES; n++) {
+         for (n = 0; n < HG_(clo_history_backtrace_size); n++) {
             if (0 == ref_rcec->frames[n]) {
                break;
             }
          }
-         (*fn)(ref_rcec->frames, n,
+         (*fn)(&ref_rcec->frames[0], n,
                Thr__from_ThrID(ref->acc.tsw.thrid),
                ref->ga,
                ref_szB,
@@ -5101,13 +5128,14 @@ static void event_map_init ( void )
    Word i;
 
    /* Context (RCEC) pool allocator */
-   rcec_pool_allocator = VG_(newPA) (
-                             sizeof(RCEC),
-                             1000 /* RCECs per pool */,
-                             HG_(zalloc),
-                             "libhb.event_map_init.1 (RCEC pools)",
-                             HG_(free)
-                          );
+   rcec_pool_allocator 
+      = VG_(newPA) (
+         sizeof(RCEC) + 2 * HG_(clo_history_backtrace_size) * sizeof(UWord),
+         1000 /* RCECs per pool */,
+         HG_(zalloc),
+         "libhb.event_map_init.1 (RCEC pools)",
+         HG_(free)
+         );
 
    /* Context table */
    tl_assert(!contextTab);
@@ -6839,25 +6867,20 @@ void libhb_shutdown ( Bool show_stats )
                    stats__ctxt_tab_qs,
                    stats__ctxt_tab_cmps );
 #if 0
-      VG_(printf)("sizeof(AvlNode)     = %lu\n", sizeof(AvlNode));
-      VG_(printf)("sizeof(WordBag)     = %lu\n", sizeof(WordBag));
-      VG_(printf)("sizeof(MaybeWord)   = %lu\n", sizeof(MaybeWord));
-      VG_(printf)("sizeof(CacheLine)   = %lu\n", sizeof(CacheLine));
-      VG_(printf)("sizeof(LineZ)       = %lu\n", sizeof(LineZ));
-      VG_(printf)("sizeof(LineF)       = %lu\n", sizeof(LineF));
-      VG_(printf)("sizeof(SecMap)      = %lu\n", sizeof(SecMap));
-      VG_(printf)("sizeof(Cache)       = %lu\n", sizeof(Cache));
-      VG_(printf)("sizeof(SMCacheEnt)  = %lu\n", sizeof(SMCacheEnt));
-      VG_(printf)("sizeof(CountedSVal) = %lu\n", sizeof(CountedSVal));
-      VG_(printf)("sizeof(VTS)         = %lu\n", sizeof(VTS));
-      VG_(printf)("sizeof(ScalarTS)    = %lu\n", sizeof(ScalarTS));
-      VG_(printf)("sizeof(VtsTE)       = %lu\n", sizeof(VtsTE));
-      VG_(printf)("sizeof(MSMInfo)     = %lu\n", sizeof(MSMInfo));
+      VG_(printf)("sizeof(CacheLine)   = %zu\n", sizeof(CacheLine));
+      VG_(printf)("sizeof(LineZ)       = %zu\n", sizeof(LineZ));
+      VG_(printf)("sizeof(LineF)       = %zu\n", sizeof(LineF));
+      VG_(printf)("sizeof(SecMap)      = %zu\n", sizeof(SecMap));
+      VG_(printf)("sizeof(Cache)       = %zu\n", sizeof(Cache));
+      VG_(printf)("sizeof(SMCacheEnt)  = %zu\n", sizeof(SMCacheEnt));
+      VG_(printf)("sizeof(CountedSVal) = %zu\n", sizeof(CountedSVal));
+      VG_(printf)("sizeof(VTS)         = %zu\n", sizeof(VTS));
+      VG_(printf)("sizeof(ScalarTS)    = %zu\n", sizeof(ScalarTS));
+      VG_(printf)("sizeof(VtsTE)       = %zu\n", sizeof(VtsTE));
 
-      VG_(printf)("sizeof(struct _XArray)     = %lu\n", sizeof(struct _XArray));
-      VG_(printf)("sizeof(struct _WordFM)     = %lu\n", sizeof(struct _WordFM));
-      VG_(printf)("sizeof(struct _Thr)     = %lu\n", sizeof(struct _Thr));
-      VG_(printf)("sizeof(struct _SO)     = %lu\n", sizeof(struct _SO));
+      VG_(printf)("sizeof(struct _Thr)     = %zu\n", sizeof(struct _Thr));
+      VG_(printf)("sizeof(RCEC)     = %zu\n", sizeof(RCEC));
+      VG_(printf)("sizeof(struct _SO)     = %zu\n", sizeof(struct _SO));
 #endif
 
       VG_(printf)("%s","<<< END libhb stats >>>\n");

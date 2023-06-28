@@ -79,7 +79,21 @@
    ...
    fun:_ZNSo9_M_insertIlEERSoT_
 }
-
+{
+   drd-libstdc++-std::~__shared_count()
+   drd:ConflictingAccess
+   fun:_ZNSt14__shared_countILN9__gnu_cxx12_Lock_policyE2EED1Ev
+}
+{
+   drd-libstdc++-std::thread::~_Impl_base()
+   drd:ConflictingAccess
+   fun:_ZNSt6thread10_Impl_baseD1Ev
+}
+{
+   drd-libstdc++-std::thread::~_Impl()
+   drd:ConflictingAccess
+   fun:_ZNSt6thread5_ImplISt12_Bind_simpleIFZ4mainEUlvE_vEEED1Ev
+}
 
 #
 # Suppression patterns for libpthread.
@@ -179,7 +193,7 @@
 {
    drd-libgomp
    drd:ConflictingAccess
-   obj:/usr/lib*/libgomp.so*
+   obj:*/lib*/libgomp.so*
 }
 
 #
@@ -337,3 +351,13 @@
    ...
    fun:_ZN5boost6detail23set_current_thread_dataEPNS0_16thread_data_baseE
 }
+
+#
+# Suppression patterrns for posix functions
+{
+   drd-libc-getaddrinfo
+   drd:ConflictingAccess
+   ...
+   fun:getaddrinfo
+}
+

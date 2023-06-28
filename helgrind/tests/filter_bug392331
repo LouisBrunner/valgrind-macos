@@ -1,0 +1,12 @@
+#! /bin/sh
+
+# at least on fedora 3{6|7} the first stanza contains
+#    by 0x........: pthread_cond_signal (hg_intercepts.c:...)
+#   ...
+# but on rhel 7.6 at least there is no ellipsis
+# To make life easier, filter all of them not just the first
+
+./filter_stderr "$@" |
+
+sed '/^   \.\.\./d'
+   

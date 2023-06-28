@@ -395,10 +395,11 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
    }
    return False;
 #  elif defined(VGO_freebsd)
+#if (FREEBSD_VERS < FREEBSD_12)
    struct vki_freebsd11_stat buf;
-#if (FREEBSD_VERS >= FREEBSD_12)
-   SysRes res = VG_(do_syscall2)(__NR_freebsd11_fstat, fd, (UWord)&buf);
+   SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
 #else
+   struct vki_stat buf;
    SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
 #endif
    if (!sr_isError(res)) {

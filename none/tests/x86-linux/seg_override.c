@@ -2,6 +2,12 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include "../../../config.h"
+#if defined(MUSL_LIBC)
+#include <syscall.h>
+#include <unistd.h>
+#endif
+
 
 /* Stuff from Wine. */
 
@@ -52,14 +58,19 @@ inline static unsigned int wine_ldt_get_limit( const LDT_ENTRY *ent )
 /* our copy of the ldt */
 LDT_ENTRY ldt_copy[8192];
 
+#if defined(MUSL_LIBC)
+#define MODIFY_LDT(func, ptr, bytecount) syscall(SYS_modify_ldt, (func), (ptr), (bytecount) );
+#else
+#define MODIFY_LDT(func, ptr, bytecount) __modify_ldt((func), (ptr), (bytecount) );
 /* System call to set LDT entry.  */
 //extern int __modify_ldt (int, struct modify_ldt_ldt_s *, size_t);
 extern int __modify_ldt (int, void *, size_t);
+#endif
 
 void print_ldt ( void )
 {
    int res;
-   res = __modify_ldt( 0, ldt_copy, 8192*sizeof(LDT_ENTRY) );
+   res = MODIFY_LDT( 0, ldt_copy, 8192*sizeof(LDT_ENTRY) );
    printf("got %d bytes\n", res );   
    perror("error is");
 }
@@ -102,7 +113,7 @@ void set_ldt1 ( void* base )
   ldt_entry.read_exec_only = 0;
   ldt_entry.limit_in_pages = 0;
   ldt_entry.seg_not_present = 0;
-  stat = __modify_ldt (1, &ldt_entry, sizeof (ldt_entry));
+  stat = MODIFY_LDT (1, &ldt_entry, sizeof (ldt_entry));
   printf("stat = %d\n", stat);
 }
 

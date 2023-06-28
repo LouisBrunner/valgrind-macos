@@ -169,7 +169,7 @@ $(GSL_TAR):
 # We need to autoreconf to make sure to get config.guess, config.sub
 # and libtool for newer architectures.
 $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
-	echo "$(GSL_SHA256_SUM)  $(GSL_TAR)" | sha256sum --check -
+	echo "$(GSL_SHA256_SUM)  $(GSL_TAR)" | @SHA256SUM@ --check -
 	(cd $(AUX_CHECK_DIR) && \
 	 tar zxf $(GSL_TAR_NAME) && \
 	 cd $(GSL_DIR_NAME) && \
@@ -183,9 +183,9 @@ $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
 $(GSL_BUILD_DIR)/gsl-build: $(GSL_SRC_DIR)/gsl-patched
 	mkdir -p $(GSL_BUILD_DIR)
 	(cd $(GSL_BUILD_DIR) && \
-	 $(GSL_SRC_DIR)/configure CFLAGS="$(GSL_CFLAGS)" && \
-	 make -j $(nproc) && \
-	 make check -k || true)
+	 $(GSL_SRC_DIR)/configure CC="${CC}" CXX="${CXX}" CFLAGS="$(GSL_CFLAGS)" && \
+	 ${MAKE} -j $(nproc) && \
+	 ${MAKE} check -k || true)
 	touch $@
 
 # We hope all tests PASS (so don't produce output except for the test names).

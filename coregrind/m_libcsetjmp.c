@@ -36,9 +36,9 @@
 
 /* See include/pub_tool_libcsetjmp.h for background and rationale. */
 
-/* The alternative implementations are for ppc{32,64}-linux,
-   {amd64,x86}-{linux,darwin,solaris,freebsd} and arm64-darwin.
-   See #259977.  That leaves only {arm,s390x}-linux using the gcc builtins now.
+/* The alternative implementations are for s390x-linux, ppc{32,64}-linux, and
+   {amd64,x86}-{linux,darwin,solaris,freebsd} and arm64-darwin.  See #259977.
+   That leaves only arm-linux using the gcc builtins now.
 */
 
 /* ------------ ppc32-linux ------------ */
@@ -795,6 +795,46 @@ __asm__(
 ".previous                      \n\t"
 );
 #endif  /* VGP_nanomips_linux */
+
+/* ------------ s390x-linux ------------ */
+
+#if defined(VGP_s390x_linux)
+__asm__(
+".text"                                "\n"
+".align 4"                             "\n"
+".globl VG_MINIMAL_SETJMP"             "\n"
+".type VG_MINIMAL_SETJMP, @function"   "\n"
+"VG_MINIMAL_SETJMP:"                   "\n"
+"        stmg    6,15,0(2)"            "\n"
+"        std     8,80(2)"              "\n"
+"        std     9,88(2)"              "\n"
+"        std     10,96(2)"             "\n"
+"        std     11,104(2)"            "\n"
+"        std     12,112(2)"            "\n"
+"        std     13,120(2)"            "\n"
+"        std     14,128(2)"            "\n"
+"        std     15,136(2)"            "\n"
+// return zero
+"        lghi    2,0"                  "\n"
+"        br      14"                   "\n"
+
+".align 4"                             "\n"
+".globl VG_MINIMAL_LONGJMP"            "\n"
+".type VG_MINIMAL_LONGJMP, @function"  "\n"
+"VG_MINIMAL_LONGJMP:"                  "\n"
+"        lmg     6,15,0(2)"            "\n"
+"        ld      8,80(2)"              "\n"
+"        ld      9,88(2)"              "\n"
+"        ld      10,96(2)"             "\n"
+"        ld      11,104(2)"            "\n"
+"        ld      12,112(2)"            "\n"
+"        ld      13,120(2)"            "\n"
+"        ld      14,128(2)"            "\n"
+"        ld      15,136(2)"            "\n"
+// return the argument (nonzero)
+"        br      14"                   "\n"
+);
+#endif /* VGP_s390x_linux */
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

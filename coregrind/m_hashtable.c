@@ -45,8 +45,8 @@ struct _VgHashTable {
    UInt         n_elements;
    VgHashNode*  iterNode;   // current iterator node
    UInt         iterChain;  // next chain to be traversed by the iterator
-   VgHashNode** chains;     // expanding array of hash chains
    Bool         iterOK;     // table safe to iterate over?
+   VgHashNode** chains;     // expanding array of hash chains
    const HChar* name;       // name of table (for debugging only)
 };
 

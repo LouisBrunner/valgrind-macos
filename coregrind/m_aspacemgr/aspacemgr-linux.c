@@ -1670,7 +1670,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    aspacem_maxAddr = VG_PGROUNDDN( sp_at_startup ) - 1;
 # else
-   aspacem_maxAddr = (Addr) (Addr)0x800000000UL - 1; // 32G
+   aspacem_maxAddr = (Addr)0x2000000000ULL - 1; // 128G
 #  ifdef ENABLE_INNER
    { Addr cse = VG_PGROUNDDN( sp_at_startup ) - 1;
      if (aspacem_maxAddr > cse)
@@ -2751,10 +2751,9 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
 
 /* Really just a wrapper around VG_(am_mmap_anon_float_valgrind). */
 
-void* VG_(am_shadow_alloc)(SizeT size)
+SysRes VG_(am_shadow_alloc)(SizeT size)
 {
-   SysRes sres = VG_(am_mmap_anon_float_valgrind)( size );
-   return sr_isError(sres) ? NULL : (void*)(Addr)sr_Res(sres);
+   return VG_(am_mmap_anon_float_valgrind)( size );
 }
 
 /* Map a file at an unconstrained address for V, and update the
@@ -3661,6 +3660,7 @@ static void parse_procselfmaps (
 #elif defined(VGO_darwin)
 #include <mach/mach.h>
 #include <mach/mach_vm.h>
+#include <libproc.h>
 
 static unsigned int mach2vki(unsigned int vm_prot)
 {
@@ -3668,6 +3668,25 @@ static unsigned int mach2vki(unsigned int vm_prot)
       ((vm_prot & VM_PROT_READ)    ? VKI_PROT_READ    : 0) |
       ((vm_prot & VM_PROT_WRITE)   ? VKI_PROT_WRITE   : 0) |
       ((vm_prot & VM_PROT_EXECUTE) ? VKI_PROT_EXEC    : 0) ;
+}
+
+static int get_filename_for_region(int pid, Addr addr, HChar* path, SizeT path_len) {
+  int ret;
+  SizeT len;
+  struct proc_regionwithpathinfo info;
+  ret = sr_Res(VG_(do_syscall6)(__NR_proc_info, 2, pid, PROC_PIDREGIONPATHINFO, addr, (Addr)&info, sizeof(info)));
+  if (ret == -1) {
+    return 0;
+  }
+  len = VG_(strlen)(&info.prp_vip.vip_path[0]);
+  if (len == 0) {
+    return 0;
+  }
+  if (len > MAXPATHLEN) {
+    len = MAXPATHLEN;
+  }
+  VG_(strncpy)(path, info.prp_vip.vip_path, len);
+  return len;
 }
 
 static UInt stats_machcalls = 0;
@@ -3682,6 +3701,9 @@ static void parse_procselfmaps (
    vm_address_t iter;
    unsigned int depth;
    vm_address_t last;
+   HChar name[MAXPATHLEN];
+   int ret;
+   int pid = sr_Res(VG_(do_syscall0)(__NR_getpid));
 
    iter = 0;
    depth = 0;
@@ -3712,8 +3734,9 @@ static void parse_procselfmaps (
          (*record_gap)(last, addr - last);
       }
       if (record_mapping) {
+         ret = get_filename_for_region(pid, addr, name, sizeof(name));
          (*record_mapping)(addr, size, mach2vki(info.protection),
-                           0, 0, info.offset, NULL);
+                           0, 0, info.offset, ret ? name : NULL);
       }
       last = addr + size;
    }

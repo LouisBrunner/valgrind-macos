@@ -317,7 +317,7 @@ void VG_(print_cache_clo_opts)()
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"
 "    --D1=<size>,<assoc>,<line_size>  set D1 cache manually\n"
 "    --LL=<size>,<assoc>,<line_size>  set LL cache manually\n"
-               );
+   );
 }
 
 

@@ -1,0 +1,3 @@
+prereq: ./supported_libpthread
+vgopts: -q
+prog: ../../helgrind/tests/getaddrinfo

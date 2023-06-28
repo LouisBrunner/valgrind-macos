@@ -27,7 +27,7 @@
 #define VKI_AMD64_FREEBSD_H
 
 /* PAGE_SHIFT determines the page size. */
-#define VKI_PAGE_SHIFT  12
+#define VKI_PAGE_SHIFT  12UL
 #define VKI_PAGE_SIZE   (1UL << VKI_PAGE_SHIFT)
 #define VKI_MAX_PAGE_SHIFT      VKI_PAGE_SHIFT
 #define VKI_MAX_PAGE_SIZE       VKI_PAGE_SIZE

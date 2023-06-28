@@ -87,6 +87,9 @@ static void usage_NORETURN ( int need_help )
 "\n"
 "  tool-selection option, with default in [ ]:\n"
 "    --tool=<name>             use the Valgrind tool named <name> [memcheck]\n"
+"                              available tools are:\n"
+"                              memcheck cachegrind callgrind helgrind drd\n"
+"                              massif dhat lackey none exp-bbv\n"
 "\n"
 "  basic user options for all Valgrind tools, with defaults in [ ]:\n"
 "    -h --help                 show this message\n"
@@ -202,6 +205,8 @@ static void usage_NORETURN ( int need_help )
 "         where hint is one of:\n"
 "           lax-ioctls lax-doors fuse-compatible enable-outer\n"
 "           no-inner-prefix no-nptl-pthread-stackcache fallback-llsc none\n"
+"    --scheduling-quantum=<number>  thread-scheduling timeslice in number of\n"
+"           basic blocks [100000]\n"
 "    --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]\n"
 "    --kernel-variant=variant1,variant2,...\n"
 "         handle non-standard kernel variants [none]\n"
@@ -238,6 +243,10 @@ static void usage_NORETURN ( int need_help )
 "              attempt to avoid expensive address-space-resync operations\n"
 "    --max-threads=<number>    maximum number of threads that valgrind can\n"
 "                              handle [%d]\n"
+"    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]\n"
+"                              should calls to realloc with a size of 0\n"
+"                              free memory and return NULL or\n"
+"                              allocate/resize and return non-NULL\n"
 "\n";
 
    const HChar usage2[] =
@@ -269,8 +278,7 @@ static void usage_NORETURN ( int need_help )
 "    --sym-offsets=yes|no      show syms in form 'name+offset'? [no]\n"
 "    --progress-interval=<number>  report progress every <number>\n"
 "                                  CPU seconds [0, meaning disabled]\n"
-"    --command-line-only=no|yes  only use command line options [no]\n"
-"\n"
+"    --command-line-only=no|yes  only use command line options [no]\n\n"
 "  Vex options for all Valgrind tools:\n"
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"
@@ -553,6 +561,10 @@ static void process_option (Clo_Mode mode,
    }
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-poll",      VG_(clo_vgdb_poll)) {}
    else if VG_INT_CLOM (cloPD, arg, "--vgdb-error", VG_(clo_vgdb_error)) {}
+   /* --launched-with-multi is an internal option used by vgdb to suppress
+      some output that valgrind normally shows when using --vgdb-error.  */
+   else if VG_BOOL_CLO (arg, "--launched-with-multi",
+                        VG_(clo_launched_with_multi)) {}
    else if VG_USET_CLOM (cloPD, arg, "--vgdb-stop-at",
                          "startup,exit,abexit,valgrindabexit",
                          VG_(clo_vgdb_stop_at)) {}
@@ -622,6 +634,8 @@ static void process_option (Clo_Mode mode,
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",
                         VG_(clo_child_silent_after_fork)) {}
+else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum", 
+                    VG_(clo_scheduling_quantum)) {}
    else if VG_STR_CLO(arg, "--fair-sched",        tmp_str) {
       if (VG_(Clo_Mode)() != cloP)
          ;
@@ -889,9 +903,9 @@ static void process_option (Clo_Mode mode,
 
 void VG_(process_dynamic_option) (Clo_Mode mode, HChar *value)
 {
-   process_option (mode, value, NULL);
-   // This is not supposed to change values in process_option_state,
-   // so we can give a NULL.
+   struct process_option_state dummy;
+   process_option (mode, value, &dummy);
+   // No need to handle a process_option_state once valgrind has started.
 }
 
 /* Peer at previously set up VG_(args_for_valgrind) and do some
@@ -1127,11 +1141,7 @@ void main_process_cmd_line_options( void )
 
 /* Number of file descriptors that Valgrind tries to reserve for
    its own use - just a small constant. */
-#if defined(VGO_freebsd)
-#define N_RESERVED_FDS (20)
-#else
 #define N_RESERVED_FDS (12)
-#endif
 
 static void setup_file_descriptors(void)
 {
@@ -1714,6 +1724,25 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    }
 #endif
 
+#if defined(VGO_freebsd)
+   /* On FreeBSD /proc is optional
+    * Most functionality is accessed through sysctl instead */
+   if (!need_help) {
+      struct vg_stat statbuf;
+      SysRes statres = VG_(stat)("/proc", &statbuf);
+      if (!sr_isError(statres) || VKI_S_ISLNK(statbuf.mode)) {
+         VG_(have_slash_proc) = True;
+      }
+      // each directory contains the following that might get read
+      // file - a symlink to the exe
+      // cmdline - null separate command line
+      // etype - the executable type e.g., FreeBSD ELF64 (same for guest and host)
+      // map - a memory map, tricky to synthesize
+      // rlimit - list of process limits
+      // status - process, pid, ppid pts cty uid gid and some other stuff
+   }
+#endif
+
    //--------------------------------------------------------------
    // Init tool part 1: pre_clo_init
    //   p: setup_client_stack()      [for 'VG_(client_arg[cv]']
@@ -1897,6 +1926,15 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    VG_(init_Threads)();
 
    //--------------------------------------------------------------
+   // Initialize the dyld cache, which is required with macOS 11 (Big Sur) and onwards
+   // as some system libraries aren't provided on the disk anymore
+   //   p: none
+   //--------------------------------------------------------------
+#  if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+   VG_(dyld_cache_init)();
+#  endif
+
+   //--------------------------------------------------------------
    // Initialise the scheduler (phase 1) [generates tid_main]
    //   p: none, afaics
    //--------------------------------------------------------------
@@ -2011,10 +2049,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                True   /* executable? */,
                0 /* di_handle: no associated debug info */ );
 
-     /* Clear the running thread indicator */
-     VG_(running_tid) = VG_INVALID_THREADID;
-     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
-
      /* Darwin only: tell the tools where the client's kernel commpage
         is.  It would be better to do this by telling aspacemgr about
         it -- see the now disused record_system_memory() in
@@ -2032,6 +2066,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                True, False, True, /* r-x */
                0 /* di_handle: no associated debug info */ );
 #    endif
+
+     /* Clear the running thread indicator */
+     VG_(running_tid) = VG_INVALID_THREADID;
+     vg_assert(VG_(running_tid) == VG_INVALID_THREADID);
    }
 
    //--------------------------------------------------------------

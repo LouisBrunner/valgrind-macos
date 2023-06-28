@@ -29,7 +29,7 @@
 <title>Description</title>
 
 <para><command>vgdb</command> ("Valgrind to GDB") is used as an
-intermediary between Valgrind and GDB or a shell.  It has two usage modes:
+intermediary between Valgrind and GDB or a shell.  It has three usage modes:
 </para>
 
 <xi:include href="../../docs/xml/manual-core-adv.xml"

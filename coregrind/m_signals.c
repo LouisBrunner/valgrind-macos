@@ -2668,7 +2668,7 @@ void async_signalhandler ( Int sigNo,
       tid, 
       VG_UCONTEXT_INSTR_PTR(uc), 
       sres,  
-      !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART),
+      !!(scss.scss_per_sig[sigNo].scss_flags & VKI_SA_RESTART) || VG_(is_in_kernel_restart_syscall)(tid),
       uc
    );
 

@@ -1684,6 +1684,19 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                            mkU64(0)));
       }
 
+      // Verified
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondS)) {
+         /* long long and/or/xor, then S --> (ULong)result[63] */
+         return binop(Iop_Shr64, cc_dep1, mkU8(63));
+      }
+      // Verified
+      if (isU64(cc_op, AMD64G_CC_OP_LOGICQ) && isU64(cond, AMD64CondNS)) {
+         /* long long and/or/xor, then S --> (ULong) ~ result[63] */
+         return binop(Iop_Xor64,
+                      binop(Iop_Shr64, cc_dep1, mkU8(63)),
+                      mkU64(1));
+      }
+
       /*---------------- LOGICL ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_LOGICL) && isU64(cond, AMD64CondZ)) {
@@ -1932,10 +1945,12 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                      binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
       }
 
-      //if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondS)) {
-      //   /* SHLQ, then S --> (ULong)result[63] */
-      //   vassert(0);
-      //}
+      // Verified
+      if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondS)) {
+         /* SHLQ, then S --> (ULong)result[63] */
+         return binop(Iop_Shr64, cc_dep1, mkU8(63));
+      }
+      // No known test case
       //if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondNS)) {
       //   /* SHLQ, then NS --> (ULong) ~ result[63] */
       //   vassert(0);
@@ -1949,10 +1964,13 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                      binop(Iop_CmpEQ32, unop(Iop_64to32, cc_dep1),
                            mkU32(0)));
       }
-      //if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondNZ)) {
-      //   /* SHLL, then NZ --> test dep1 != 0 */
-      //   vassert(0);
-      //}
+      // Verified
+      if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondNZ)) {
+         /* SHLL, then NZ --> test dep1 != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE32, unop(Iop_64to32, cc_dep1),
+                           mkU32(0)));
+      }
 
       if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondS)) {
          /* SHLL, then S --> (ULong)result[31] */
@@ -1960,6 +1978,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                       binop(Iop_Shr64, cc_dep1, mkU8(31)),
                       mkU64(1));
       }
+      // No known test case
       //if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondNS)) {
       //   /* SHLL, then NS --> (ULong) ~ result[31] */
       //   vassert(0);

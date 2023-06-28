@@ -1,0 +1,80 @@
+--------------------------------------------------------------------------------
+-- Metadata
+--------------------------------------------------------------------------------
+Invocation:       ../cg_annotate ann-merge1c.cgout
+Description 1a
+Description 1b
+Command:          Command 1
+Events recorded:  A
+Events shown:     A
+Event sort order: A
+Threshold:        0.1%
+Annotation:       on
+
+--------------------------------------------------------------------------------
+-- Summary
+--------------------------------------------------------------------------------
+A__________ 
+
+86 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+-- File:function summary
+--------------------------------------------------------------------------------
+  A_________________  file:function
+
+< 70 (81.4%,  81.4%)  ann-merge-x.rs:
+  40 (46.5%)            x1
+  20 (23.3%)            x3
+  10 (11.6%)            x2
+
+< 16 (18.6%, 100.0%)  ann-merge-y.rs:y1
+
+--------------------------------------------------------------------------------
+-- Function:file summary
+--------------------------------------------------------------------------------
+  A_________________  function:file
+
+> 40 (46.5%,  46.5%)  x1:ann-merge-x.rs
+
+> 20 (23.3%,  69.8%)  x3:ann-merge-x.rs
+
+> 16 (18.6%,  88.4%)  y1:ann-merge-y.rs
+
+> 10 (11.6%, 100.0%)  x2:ann-merge-x.rs
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-merge-x.rs
+--------------------------------------------------------------------------------
+A_________ 
+
+20 (23.3%)  one
+10 (11.6%)  two
+10 (11.6%)  three
+10 (11.6%)  four
+20 (23.3%)  five
+
+--------------------------------------------------------------------------------
+-- Annotated source file: ann-merge-y.rs
+--------------------------------------------------------------------------------
+A_______ 
+
+8 (9.3%)  one
+8 (9.3%)  two
+.         three
+.         four
+.         five
+.         six
+
+--------------------------------------------------------------------------------
+-- Annotation summary
+--------------------------------------------------------------------------------
+A__________ 
+
+86 (100.0%)    annotated: files known & above threshold & readable, line numbers known
+ 0             annotated: files known & above threshold & readable, line numbers unknown
+ 0           unannotated: files known & above threshold & two or more non-identical
+ 0           unannotated: files known & above threshold & unreadable 
+ 0           unannotated: files known & below threshold
+ 0           unannotated: files unknown
+

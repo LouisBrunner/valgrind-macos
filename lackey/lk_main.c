@@ -408,8 +408,8 @@ typedef
 
 typedef
    struct {
-      EventKind  ekind;
       IRAtom*    addr;
+      EventKind  ekind;
       Int        size;
       IRAtom*    guard; /* :: Ity_I1, or NULL=="always True" */
    }

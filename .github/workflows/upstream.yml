@@ -1,0 +1,111 @@
+name: Upstream synchronization
+
+on:
+  schedule:
+    - cron: "0 6 * * 3" # 6am every Wednesday
+  workflow_dispatch:
+
+env:
+  LABEL: automated-upstream-merge
+
+jobs:
+  sync-upstream:
+    name: Sync upstream branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout local `upstream` branch (us)
+        uses: actions/checkout@v3
+        with:
+          ref: upstream
+          fetch-depth: 0
+      - name: Checkout upstream `master` branch (them)
+        run: |
+          git remote add upstream git://sourceware.org/git/valgrind.git
+          git fetch --tags upstream master
+        shell: bash
+      - name: Configure git credentials
+        run: |
+          git config --global user.name "upstream-sync[bot]"
+          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
+      - name: Rebase local `upstream` branch onto upstream `master`
+        run: |
+          git rebase upstream/master
+          git push -f origin upstream
+          git push --tags origin
+        shell: bash
+  upstream-merge-pr:
+    name: Merge upstream changes into main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout local `main` branch (us)
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Checkout upstream `master` branch (them)
+        run: |
+          git remote add upstream git://sourceware.org/git/valgrind.git
+          git fetch upstream master
+        shell: bash
+      - name: Configure git credentials
+        run: |
+          git config --global user.name "upstream-sync[bot]"
+          git config --global user.email "upstream-sync[bot]@users.noreply.github.com"
+      - name: Create a merge which merge them into us
+        id: merge
+        run: |
+          NAME=$(date +%Y-%m-%d)
+          BRANCH=feature/upstream-${NAME}
+          git checkout -b ${BRANCH}
+
+          CHANGES=$(git log --oneline main..upstream/master)
+
+          CURRENT=$(git rev-parse HEAD)
+          git merge upstream/master
+          AFTER_MERGE=$(git rev-parse HEAD)
+
+          if [ "${CURRENT}" = "${AFTER_MERGE}" ]; then
+            echo "No upstream changes"
+            CHANGED=no
+          else
+            git push -u origin ${BRANCH}
+            CHANGED=yes
+          fi
+
+          echo "Changed: ${CHANGED}"
+          echo "Generated: ${NAME}"
+          echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
+          echo "generated=${NAME}" >> $GITHUB_OUTPUT
+          echo "changes=${CHANGES}" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Create pull request
+        if: steps.merge.outputs.changed == 'yes'
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "chore(upstream): merge upstream changes into main"
+          body: |
+            This is an automated PR merging upstream changes into main.
+
+            Generated on: ${{ steps.merge.outputs.generated }}
+
+            Changes:
+            ```
+            ${{ steps.merge.outputs.changes }}
+            ```
+          reviewers: LouisBrunner
+          labels: upstream,chore,${{ env.LABEL }}
+      - name: Close older pull requests
+        run: |
+          echo "New PR: ${{ steps.cpr.outputs.pull-request-number }} (${{ steps.cpr.outputs.pull-request-url }})"
+          gh pr list --label ${{ env.LABEL }} --json number --jq '.[].number' | while read -r NUM; do
+            if [ $NUM -eq ${{ steps.cpr.outputs.pull-request-number }} ]; then
+              continue
+            fi
+            URL=$(gh pr view $NUM --json url --jq .url)
+            echo "# Closing PR: $NUM ($URL)"
+            gh pr close $NUM -d -c 'Stale pull request, see new one here: ${{ steps.cpr.outputs.pull-request-url }}'
+          done
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}

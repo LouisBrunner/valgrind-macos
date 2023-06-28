@@ -12849,11 +12849,28 @@ s390_irgen_TDGXT(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_CLC(UChar length, IRTemp start1, IRTemp start2)
 {
-   IRTemp len = newTemp(Ity_I64);
+   IRType ty;
 
-   assign(len, mkU64(length));
-   s390_irgen_CLC_EX(len, start1, start2);
+   switch (length) {
+   case 0: ty = Ity_I8; break;
+   case 1: ty = Ity_I16; break;
+   case 3: ty = Ity_I32; break;
+   case 7: ty = Ity_I64; break;
+   default: ty = Ity_INVALID;
+   }
+   if (ty != Ity_INVALID) {
+      IRTemp a = newTemp(ty);
+      IRTemp b = newTemp(ty);
 
+      assign(a, load(ty, mkexpr(start1)));
+      assign(b, load(ty, mkexpr(start2)));
+      s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_COMPARE, a, b);
+   } else {
+      IRTemp len = newTemp(Ity_I64);
+
+      assign(len, mkU64(length));
+      s390_irgen_CLC_EX(len, start1, start2);
+   }
    return "clc";
 }
 
@@ -13598,36 +13615,36 @@ s390_irgen_XC(UChar length, IRTemp start1, IRTemp start2)
 static void
 s390_irgen_XC_sameloc(UChar length, UChar b, UShort d)
 {
-   IRTemp counter = newTemp(Ity_I32);
    IRTemp start = newTemp(Ity_I64);
-   IRTemp addr  = newTemp(Ity_I64);
-
    assign(start,
           binop(Iop_Add64, mkU64(d), b != 0 ? get_gpr_dw0(b) : mkU64(0)));
 
-   if (length < 8) {
-      UInt i;
-
-      for (i = 0; i <= length; ++i) {
+   if (length < 7) {
+      for (UInt i = 0; i <= length; ++i) {
          store(binop(Iop_Add64, mkexpr(start), mkU64(i)), mkU8(0));
       }
    } else {
-     assign(counter, get_counter_w0());
+      if (length < 32) {
+         for (UInt i = 0; i <= length - 7; i += 8) {
+            store(binop(Iop_Add64, mkexpr(start), mkU64(i)), mkU64(0));
+         }
+      } else {
+         IRTemp counter = newTemp(Ity_I64);
+         assign(counter, get_counter_dw0());
+         store(binop(Iop_Add64, mkexpr(start), mkexpr(counter)), mkU64(0));
+         put_counter_dw0(binop(Iop_Add64, mkexpr(counter), mkU64(8)));
+         iterate_if(binop(Iop_CmpLE64U, mkexpr(counter), mkU64(length - 15)));
 
-     assign(addr, binop(Iop_Add64, mkexpr(start),
-                        unop(Iop_32Uto64, mkexpr(counter))));
-
-     store(mkexpr(addr), mkU8(0));
-
-     /* Check for end of field */
-     put_counter_w0(binop(Iop_Add32, mkexpr(counter), mkU32(1)));
-     iterate_if(binop(Iop_CmpNE32, mkexpr(counter), mkU32(length)));
-
-     /* Reset counter */
-     put_counter_dw0(mkU64(0));
+         /* Reset counter */
+         put_counter_dw0(mkU64(0));
+      }
+      /* Clear the remaining bytes with backward overlap */
+      if ((length + 1) % 8 != 0) {
+         store(binop(Iop_Add64, mkexpr(start), mkU64(length - 7)), mkU64(0));
+      }
    }
 
-   s390_cc_thunk_put1(S390_CC_OP_BITWISE, mktemp(Ity_I32, mkU32(0)), False);
+   s390_cc_set_val(0);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC3(MNM, UDLB, UDXB), "xc", d, length, b, d, 0, b);
@@ -19382,7 +19399,6 @@ s390_irgen_VFMIN(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
 
    Bool isSingleElementOp = s390_vr_is_single_element_control_set(m5);
    IRDirty* d;
-   IRTemp cc = newTemp(Ity_I64);
 
    s390x_vec_op_details_t details = { .serialized = 0ULL };
    details.op = S390_VEC_OP_VFMIN;
@@ -19393,7 +19409,7 @@ s390_irgen_VFMIN(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    details.m5 = m5;
    details.m6 = m6;
 
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_vec_op",
+   d = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_vec_op",
                          &s390x_dirtyhelper_vec_op,
                          mkIRExprVec_2(IRExpr_GSPTR(),
                                        mkU64(details.serialized)));
@@ -19413,7 +19429,6 @@ s390_irgen_VFMIN(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    d->fxState[2].size = sizeof(V128);
 
    stmt(IRStmt_Dirty(d));
-   s390_cc_set(cc);
    return "vfmin";
 }
 
@@ -19425,7 +19440,6 @@ s390_irgen_VFMAX(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
 
    Bool isSingleElementOp = s390_vr_is_single_element_control_set(m5);
    IRDirty* d;
-   IRTemp cc = newTemp(Ity_I64);
 
    s390x_vec_op_details_t details = { .serialized = 0ULL };
    details.op = S390_VEC_OP_VFMAX;
@@ -19436,7 +19450,7 @@ s390_irgen_VFMAX(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    details.m5 = m5;
    details.m6 = m6;
 
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_vec_op",
+   d = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_vec_op",
                          &s390x_dirtyhelper_vec_op,
                          mkIRExprVec_2(IRExpr_GSPTR(),
                                        mkU64(details.serialized)));
@@ -19456,7 +19470,6 @@ s390_irgen_VFMAX(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar m6)
    d->fxState[2].size = sizeof(V128);
 
    stmt(IRStmt_Dirty(d));
-   s390_cc_set(cc);
    return "vfmax";
 }
 

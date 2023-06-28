@@ -15,6 +15,9 @@ continue
 # put a read watchpoint on mem
 # we expect that the read watchpoint is not triggered in the child
 # (as we expect it will be cleared at fork).
+# On FreeBSD directly calling rwatch mem causes an error
+# calling print first fixes that as a workaround
+p mem
 rwatch mem
 #
 continue

@@ -87,6 +87,9 @@ extern void
 ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot );
 
 extern void
+ML_(pre_mem_read_sockaddr) ( ThreadId tid, const HChar *description,
+                             struct vki_sockaddr *sa, UInt salen );
+extern void
 ML_(buf_and_len_pre_check) ( ThreadId tid, Addr buf_p, Addr buflen_p,
                              const HChar* buf_s, const HChar* buflen_s );
 extern void

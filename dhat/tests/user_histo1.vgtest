@@ -1,0 +1,4 @@
+prog: user_histo1
+vgopts: --dhat-out-file=dhat.out
+stderr_filter: filter_user_histo
+cleanup: rm dhat.out

@@ -60,6 +60,9 @@ $SED \
 # Some arches return ENOSYS instead of EINVAL for undefined futex operations.
 $SED -e "s/with error code 38 (ENOSYS: Function not implemented)/with error code 22 (EINVAL: Invalid argument)/" |
 
+# filter differences in pthread_cond_signal
+$SED -e "s/pthread_cond_signal@\*/pthread_cond_signal/" |
+
 $dir/../../helgrind/tests/filter_helgrind "$@"
 
 exit 0

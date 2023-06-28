@@ -104,6 +104,7 @@
    20440 WCSNLEN
    20450 WSTRNCMP
    20460 MEMMEM
+   20470 WMEMCMP
 */
 
 #if defined(VGO_solaris)
@@ -293,6 +294,7 @@ static inline void my_exit ( int x )
   /* _platform_strchr$VARIANT$Haswell */
   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Haswell)
 # endif
+ STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Base)
 
 #elif defined(VGO_solaris)
  STRCHR(VG_Z_LIBC_SONAME,          strchr)
@@ -2270,6 +2272,26 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #if defined(VGO_freebsd)
  WMEMCHR(VG_Z_LIBC_SONAME, wmemchr)
 #endif
+
+
+#define WMEMCMP(soname, fnname) \
+   int VG_REPLACE_FUNCTION_EZU(20470,soname,fnname)       \
+          ( const Int *b1, const Int *b2, SizeT n ); \
+   int VG_REPLACE_FUNCTION_EZU(20470,soname,fnname)       \
+          ( const Int *b1, const Int *b2, SizeT n )  \
+   { \
+      for (SizeT i = 0U; i < n; ++i) { \
+         if (b1[i] != b2[i]) \
+            return b1[i] > b2[i] ? 1 : -1; \
+      } \
+      return 0; \
+   }
+
+#if defined(VGO_linux)
+ WMEMCMP(VG_Z_LIBC_SONAME, wmemcmp)
+#endif
+
+
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/
 /*------------------------------------------------------------*/

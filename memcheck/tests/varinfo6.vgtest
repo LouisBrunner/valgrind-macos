@@ -1,2 +1,3 @@
+prereq: ! ../../tests/os_test freebsd
 prog: varinfo6
 vgopts: --read-var-info=yes -q

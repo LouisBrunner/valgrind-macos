@@ -2,6 +2,9 @@ usage: valgrind [options] prog-and-args
 
   tool-selection option, with default in [ ]:
     --tool=<name>             use the Valgrind tool named <name> [memcheck]
+                              available tools are:
+                              memcheck cachegrind callgrind helgrind drd
+                              massif dhat lackey none exp-bbv
 
   basic user options for all Valgrind tools, with defaults in [ ]:
     -h --help                 show this message
@@ -115,6 +118,8 @@ usage: valgrind [options] prog-and-args
          where hint is one of:
            lax-ioctls lax-doors fuse-compatible enable-outer
            no-inner-prefix no-nptl-pthread-stackcache fallback-llsc none
+    --scheduling-quantum=<number>  thread-scheduling timeslice in number of
+           basic blocks [100000]
     --fair-sched=no|yes|try   schedule threads fairly on multicore systems [no]
     --kernel-variant=variant1,variant2,...
          handle non-standard kernel variants [none]
@@ -149,6 +154,10 @@ usage: valgrind [options] prog-and-args
               attempt to avoid expensive address-space-resync operations
     --max-threads=<number>    maximum number of threads that valgrind can
                               handle [500]
+    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]
+                              should calls to realloc with a size of 0
+                              free memory and return NULL or
+                              allocate/resize and return non-NULL
 
   user options for Nulgrind:
     (none)

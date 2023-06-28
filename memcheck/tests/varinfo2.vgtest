@@ -1,3 +1,4 @@
+prereq: ! ../../tests/os_test freebsd
 prog: varinfo2
 vgopts: --read-var-info=yes -q
 stderr_filter: filter_varinfo3

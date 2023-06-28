@@ -439,7 +439,7 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
    ULong __res;
 
    __asm__ __volatile__ (
-      "svc %b1\n"
+      "svc %c1\n"
       : "=d" (r2_res)
       : "i" (__NR_write),
         "0" (r2),
@@ -459,7 +459,7 @@ static UInt local_sys_getpid ( void )
    ULong __res;
 
    __asm__ __volatile__ (
-      "svc %b1\n"
+      "svc %c1\n"
       : "=d" (r2)
       : "i" (__NR_getpid)
       : "cc", "memory");

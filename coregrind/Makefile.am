@@ -101,7 +101,7 @@ if VGCONF_OS_IS_FREEBSD
 vgdb_SOURCES += vgdb-invoker-freebsd.c
 endif
 
-vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
+vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI) $(GDB_SCRIPTS_DIR)
 vgdb_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS)
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
@@ -334,7 +334,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_seqmatch.c \
 	m_signals.c \
 	m_sparsewa.c \
-	m_stacks.c \
 	m_stacktrace.c \
 	m_syscall.c \
 	m_threadstate.c \
@@ -395,7 +394,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-x86-solaris.S \
 	m_dispatch/dispatch-amd64-solaris.S \
 	m_gdbserver/inferiors.c \
-	m_gdbserver/m_gdbserver.c \
 	m_gdbserver/regcache.c \
 	m_gdbserver/remote-utils.c \
 	m_gdbserver/server.c \
@@ -423,6 +421,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_mach/mach_traps-amd64-darwin.S \
 	m_mach/mach_traps-arm64-darwin.S \
 	m_mach/mig_strncpy.c \
+	m_mach/dyld_cache.c \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/sched-lock.c \
 	m_scheduler/sched-lock-generic.c \
@@ -498,7 +497,9 @@ COREGRIND_SOURCES_COMMON = \
 # These objects are added to the libcoregrind library.
 NOLTO_COREGRIND_SOURCES_COMMON = \
 	m_libcsetjmp.c \
-	m_main.c
+	m_main.c \
+	m_stacks.c \
+	m_gdbserver/m_gdbserver.c
 noinst_LIBRARIES = libnolto_coregrind-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 libnolto_coregrind_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \
     $(NOLTO_COREGRIND_SOURCES_COMMON)
@@ -629,9 +630,15 @@ if VGCONF_OS_IS_DARWIN
 noinst_DSYMS = $(noinst_PROGRAMS)
 endif
 
+if GDBSCRIPTS
+  GDB_SCRIPTS_DIR=-DVG_GDBSCRIPTS_DIR="\"@VG_GDBSCRIPTS_DIR@\""
+else
+  GDB_SCRIPTS_DIR=
+endif
+
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(GDB_SCRIPTS_DIR)
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS = \
 	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_PRI_CAPS@)
 vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
@@ -639,7 +646,7 @@ vgpreload_core_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS = \
 if VGCONF_HAVE_PLATFORM_SEC
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES = vg_preloaded.c
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS = \
-	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
+	$(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(GDBSCRIPTS_DIR)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS = \
 	$(AM_CFLAGS_PSO_@VGCONF_PLATFORM_SEC_CAPS@)
 vgpreload_core_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS = \
@@ -772,8 +779,16 @@ GDBSERVER_XML_FILES = \
 vglibdir = $(pkglibexecdir)
 vglib_DATA  = $(GDBSERVER_XML_FILES)
 
+if GDBSCRIPTS
+gdbscriptsdir = @VG_GDBSCRIPTS_DIR@
+gdbscripts_DATA  = m_gdbserver/valgrind-monitor.py
+gdbscripts_DATA += m_gdbserver/valgrind-monitor-def.py
+endif
+
 # so as to make sure these get copied into the tarball
 EXTRA_DIST  += $(GDBSERVER_XML_FILES)
+EXTRA_DIST  += m_gdbserver/valgrind-monitor.py
+EXTRA_DIST  += m_gdbserver/valgrind-monitor-def.py
 
 #----------------------------------------------------------------------------
 # General stuff

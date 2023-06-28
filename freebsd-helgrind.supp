@@ -3,7 +3,7 @@
 {
    HELGRIND-LIBTHR1
    Helgrind:Race
-   obj:*/lib*/libthr.so.3*
+   obj:*/lib*/libthr.so.3
 }
 {
    HELGRIND-LIB-RTLD1
@@ -99,7 +99,7 @@
    HELGRIND-PTHREAD-SELF1
    Helgrind:Race
    fun:mythread_wrapper
-   obj:*/lib*/libthr.so.3*
+   obj:*/lib*/libthr.so.3
 }
 {
    HELGRIND-SEM-CLOCKWAIT1
@@ -145,15 +145,81 @@
 {
    HELGRIND-CXX-UNWIND
    Helgrind:Race
-   obj:/lib/libcxxrt.so.1
-   obj:/lib/libthr.so.3
-   obj:/lib/libthr.so.3
-   obj:/lib/libthr.so.3
-   obj:/lib/libgcc_s.so.1
+   obj:*/lib*/libcxxrt.so.1
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libthr.so.3
+   obj:*/lib*/libgcc_s.so.1
    fun:_Unwind_ForcedUnwind
 }
 {
    HELGRIND-GUARD-VARIABLE
    Helgrind:Race
    fun:_ZL11*
+}
+{
+   HELGRIND-CXX-TLS1
+   Helgrind:Race
+   fun:_ZNSt3__121__thread_specific_ptrINS_15__thread_structEE11set_pointerEPS1_
+}
+{
+   HELGRIND-CXX-TLS2
+   Helgrind:Race
+   fun:_ZNSt3__119__thread_local_dataEv
+}
+{
+   HELGRIND-LIBC-FOPEN1
+   Helgrind:Race
+   obj:*/lib*/libc.so.7
+   fun:fopen
+}
+{
+   HELGRIND-LIBC-FOPEN2
+   Helgrind:Race
+   fun:fopen
+   obj:*/lib*/libc.so.7
+}
+{
+   HELGRIND-LIBC-FGETS
+   Helgrind:Race
+   obj:*/lib*/libc.so.7
+   ...
+   fun:fgets
+}
+{
+   HELGRIND-LIBC-FCLOSE
+   Helgrind:Race
+   obj:*/lib*/libc.so.7
+   fun:fclose
+}
+{
+   HELGRIND-LIBC-RES-STATE
+   Helgrind:Race
+   fun:__res_state
+   obj:*/lib*/libc.so.7
+}
+{
+   HELGRIND-LIBC-ERRNO-SET
+   Helgrind:Race
+   fun:__h_errno_set
+   ...
+   obj:*/lib*/libc.so.7
+}
+{
+   HELGRIND-LIBC-LOCALECONV-L
+   Helgrind:Race
+   fun:localeconv_l
+   obj:*/lib*/libc.so.7
+}
+{
+   HELGRIND-LIBC-VSPRINTF
+   Helgrind:Race
+   obj:*/lib*/libc.so.7
+   fun:vsprintf
+}
+{
+   HELGRIND-LIBC-GETADDRINFO
+   Helgrind:Race
+   ...
+   fun:getaddrinfo
 }

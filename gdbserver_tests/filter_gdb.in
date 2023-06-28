@@ -15,6 +15,21 @@ cat > $PATTERNFILE <<EOF
 #       general way to delete uninteresting and varying lines.
 /filter_gdb BEGIN drop/,/filter_gdb END drop/d
 
+#       delete messages produced by valgrind python code loading.
+/Loaded.*valgrind-monitor.py$/d
+/Type "help valgrind" for more info\.$/d
+#       and remove loading error messages when python scripts haven't
+#       been installed yet (running against vg-in-place)
+/warning: Missing auto-load script.*/d
+/of file .*vgpreload.*so.*/d
+/Use.*info auto-load python-scripts.*/d
+
+#       delete messages produced when GDB auto-load denies loading python code.
+#       Note that the first pattern is also present in filter_vgdb.in
+#       as this line is output on stderr.
+/warning: File .*valgrind-monitor.py.*declined.*/d
+/To enable execution of this file add/,/info "(gdb)Auto-loading safe path"/d
+
 #       initial tty control character sent by gdb 7.0
 s/^\[?1034hReading symbols/Reading symbols/
 
@@ -132,10 +147,10 @@ s/in _select ()/in syscall .../
 #             (on 32 bits, we have an int_80, on 64 bits, directly select)
 s/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../
 
-/^   from \/lib\/libc.so.*$/d
-/^   from \/lib64\/libc.so.*$/d
-/^   from \/lib64\/.*\/libc.so.*$/d
-/^   from \/lib64\/.*\/libc-.*.so/d
+/^   from \/lib.*\/libc.so.*$/d
+/^   from \/lib64.*\/libc.so.*$/d
+/^   from \/lib64.*\/.*\/libc.so.*$/d
+/^   from \/lib64.*\/.*\/libc-.*.so/d
 s/ from \/lib\/libc\.so.*//
 
 #       and yet another (gdb 7.0 way) to get a system call

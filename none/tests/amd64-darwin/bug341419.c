@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <valgrind.h>
+#include "config.h"
 
 #define offsetof(type, fld)	((unsigned long)&((type *)0)->fld)
 #define stringify(x)		#x
@@ -59,12 +60,17 @@ void this_function_halts(unsigned long long a0, unsigned long long a1,
 
     /* Set up registers with known values which will be tested in the signal handler */
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
-    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+// FIXME: Suddenly, rbx stopped working but only in the Github GI on macOS 12.0
+#if DARWIN_VERS < DARWIN_12_00
+    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("hlt");
     ran_after_fault++;
@@ -79,12 +85,17 @@ void this_function_int3s(unsigned long long a0, unsigned long long a1,
 
     /* Set up registers with known values which will be tested in the signal handler */
     __asm__ volatile("movq $0xfeed01010101cafe,%rax");
-    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed03030303cafe,%r10");
     __asm__ volatile("movq $0xfeed04040404cafe,%r11");
     __asm__ volatile("movq $0xfeed05050505cafe,%r12");
     __asm__ volatile("movq $0xfeed06060606cafe,%r13");
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+// FIXME: Suddenly, rbx stopped working but only in the Github GI on macOS 12.0
+#if DARWIN_VERS < DARWIN_12_00
+    __asm__ volatile("movq $0xfeed02020202cafe,%rbx");
     __asm__ volatile("movq $0xfeed07070707cafe,%r14");
+#endif
     __asm__ volatile("movq $0xfeed08080808cafe,%r15");
     __asm__ volatile("int $3");
     ran_after_fault++;
@@ -147,12 +158,17 @@ handle_signal(int sig, siginfo_t *si, void *vuc)
     ASSERT_GTE(uc->uc_mcontext->__ss.__rip, calling_fn);
     ASSERT_LTE(uc->uc_mcontext->__ss.__rip, calling_fn+400);
 
-    ASSERT_EQ(uc->uc_mcontext->__ss.__rbx, 0xfeed02020202cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r10, 0xfeed03030303cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r11, 0xfeed04040404cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r12, 0xfeed05050505cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r13, 0xfeed06060606cafe);
+// Starting with macOS 12.0, dyld uses r14 for its own purposes,
+// changing it crashes the process outside of main.
+// FIXME: Suddenly, rbx stopped working but only in the Github GI on macOS 12.0
+#if DARWIN_VERS < DARWIN_12_00
+    ASSERT_EQ(uc->uc_mcontext->__ss.__rbx, 0xfeed02020202cafe);
     ASSERT_EQ(uc->uc_mcontext->__ss.__r14, 0xfeed07070707cafe);
+#endif
     ASSERT_EQ(uc->uc_mcontext->__ss.__r15, 0xfeed08080808cafe);
     /*
     printf("	    RFLAGS 0x%016llx\n", (unsigned long long)uc->uc_mcontext->__ss.__rflags);

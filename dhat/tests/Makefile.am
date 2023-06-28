@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr filter_copy
+dist_noinst_SCRIPTS = filter_stderr filter_copy filter_user_histo
 
 EXTRA_DIST = \
 	acc.stderr.exp acc.vgtest \
@@ -11,7 +11,9 @@ EXTRA_DIST = \
 	copy.stderr.exp copy.vgtest \
 	empty.stderr.exp empty.vgtest \
 	sig.stderr.exp sig.vgtest \
-	single.stderr.exp single.vgtest
+	single.stderr.exp single.vgtest \
+	user_histo1.stderr.exp user_histo1.vgtest \
+	user_histo1.stdout.exp
 
 check_PROGRAMS = \
 	acc \
@@ -21,7 +23,8 @@ check_PROGRAMS = \
 	copy \
 	empty \
 	sig \
-	single
+	single \
+	user_histo1
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -32,3 +35,6 @@ big_CFLAGS  = $(AM_CFLAGS) -Wno-unused-result
 
 # Prevent the copying functions from being inlined
 copy_CFLAGS = $(AM_CFLAGS) -fno-builtin
+
+user_histo1_SOURCES = user_histo1.cpp
+user_histo1_CXXFLAGS = $(AM_CXXFLAGS) -std=c++11

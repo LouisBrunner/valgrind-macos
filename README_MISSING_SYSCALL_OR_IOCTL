@@ -19,7 +19,7 @@ What are syscall/ioctl wrappers?  What do they do?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Valgrind does what it does, in part, by keeping track of everything your
 program does.  When a system call happens, for example a request to read
-part of a file, control passes to the Linux kernel, which fulfills the
+part of a file, control passes to the Linux kernel, which fulfils the
 request, and returns control to your program.  The problem is that the
 kernel will often change the status of some part of your program's memory
 as a result, and tools (instrumentation plug-ins) may need to know about
@@ -29,7 +29,7 @@ Syscall and ioctl wrappers have two jobs:
 
 1. Tell a tool what's about to happen, before the syscall takes place.  A
    tool could perform checks beforehand, eg. if memory about to be written
-   is actually writeable.  This part is useful, but not strictly
+   is actually writable.  This part is useful, but not strictly
    essential.
 
 2. Tell a tool what just happened, after a syscall takes place.  This is

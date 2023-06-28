@@ -124,7 +124,7 @@ Thread #x's call to pthread_cond_wait failed
 
 Thread #x: pthread_cond_{signal,broadcast}: dubious: associated lock is not held by any thread
    at 0x........: pthread_cond_signal_WRK (hg_intercepts.c:...)
-   by 0x........: pthread_cond_signal@* (hg_intercepts.c:...)
+   by 0x........: pthread_cond_signal (hg_intercepts.c:...)
    by 0x........: main (tc20_verifywrap.c:167)
 
 

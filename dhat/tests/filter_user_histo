@@ -1,0 +1,10 @@
+#! /bin/sh
+
+# It's impossible to get exact matches for copy counts because even trivial C
+# programs do a few memcpy/strcpy calls. So we allow some fuzzy matching.
+# So we allow 1,000,000..1,009,999 bytes and 1,000..1,099 blocks.
+
+./filter_stderr "$@" |
+sed -e "s/address for user histogram request not found .*/address for user histogram request not found/" |
+grep Warning
+

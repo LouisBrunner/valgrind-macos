@@ -20,6 +20,8 @@
 // From Apple's `dyld/dyld/SharedCacheRuntime.cpp`
 #define CACHE_MAGIC_x86_64         "dyld_v1  x86_64"
 #define CACHE_MAGIC_x86_64_HASWELL "dyld_v1 x86_64h"
+#define CACHE_MAGIC_arm64          "dyld_v1   arm64"
+#define CACHE_MAGIC_arm64e         "dyld_v1  arm64e"
 
 // From Apple's `dyld/cache-builder/dyld_cache_format.h`
 typedef struct {

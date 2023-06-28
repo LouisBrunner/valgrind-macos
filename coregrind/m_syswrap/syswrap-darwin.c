@@ -324,7 +324,19 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "rax", "rdi", "rsi", "rdx", "r10"
       );
 #else
-# error Unknown platform
+      asm volatile (
+         "str %w1, %0\n" /* set tst->status = VgTs_Empty */
+         "movz x16, %2\n"         /* set x16[00:15] (syscall no) = __NR_bsdthread_terminate & 0xFFFF */
+         "movk x16, %3, lsl 16\n" /* set x16[16:32] (syscall no) = __NR_bsdthread_terminate >> 16 */
+         "mov x0, xzr\n"
+         "mov x1, xzr\n"
+         "mov x2, xzr\n"
+         "mov x3, xzr\n"
+         "svc 0x80\n"	   /* bsdthread_terminate(0, 0, 0, 0) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_bsdthread_terminate & 0xffff), "n" ((__NR_bsdthread_terminate >> 16) & 0xffff)
+         : "x0", "x1", "x2", "x3", "x16"
+      );
 #endif
 #endif
 

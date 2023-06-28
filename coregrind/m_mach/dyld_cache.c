@@ -83,6 +83,9 @@ static int try_to_init_header(Addr address) {
 #if defined(VGA_amd64)
     VG_(strcmp)(header->magic, CACHE_MAGIC_x86_64) != 0
     && VG_(strcmp)(header->magic, CACHE_MAGIC_x86_64_HASWELL) != 0
+#elif defined(VGA_arm64)
+    VG_(strcmp)(header->magic, CACHE_MAGIC_arm64) != 0
+    && VG_(strcmp)(header->magic, CACHE_MAGIC_arm64e) != 0
 #else
     0
 #error "unknown architecture

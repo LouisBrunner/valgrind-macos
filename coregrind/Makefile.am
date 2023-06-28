@@ -173,7 +173,7 @@ endif
 
 # Be careful w.r.t. parallel builds.  See section 27.9 of the automake info
 # page, "Handling Tools that Produce many Outputs".
-$(abs_builddir)/m_mach: 
+$(abs_builddir)/m_mach:
 	mkdir -p $@
 $(mach_user_srcs): $(mach_defs) $(abs_builddir)/m_mach
 	(cd m_mach && mig -I@XCODE_INC_DIR@ $(mach_defs))
@@ -458,6 +458,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-x86-freebsd.S \
 	m_syswrap/syscall-amd64-freebsd.S \
 	m_syswrap/syscall-x86-darwin.S \
+  m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syscall-arm64-darwin.S \
 	m_syswrap/syscall-x86-solaris.S \
 	m_syswrap/syscall-amd64-solaris.S \

@@ -825,7 +825,7 @@ case "$ARCH_MAX-$VGCONF_OS" in
         AC_MSG_RESULT([no])
         ])
         CFLAGS=$safe_CFLAGS;;
-     x86-darwin|amd64-darwin|arm-darwin|arm64-darwin)
+     x86-darwin|amd64-darwin|arm64-darwin)
         AC_MSG_CHECKING([for 32 bit build support])
         # Currently, we assume nothing is 32bit only as all versions which are, are unsupported
         # Full breakdown:

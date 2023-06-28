@@ -2,8 +2,6 @@
 
 This repository contains a version of Valgrind including a few patches to improve support for the macOS platform. It is maintained by [Louis Brunner](https://github.com/LouisBrunner).
 
-Basic iOS support is in progress based on: https://github.com/tyrael9/valgrind-ios.
-
 ## Status
 
 | Version                     | x86 | amd64 | arm64  | ppc    |
@@ -105,3 +103,7 @@ memcheck/tests/linux/sys-preadv2_pwritev2 (stderr)
 ### macOS
 
 See `.github/macos-VERSION-expected.txt` for more details about which tests pass on which version.
+
+## Acknowledgements
+
+- [tyrael9](https://github.com/tyrael9): for their work around porting Valgrind to iOS armv7 which was used as part of the port to M1 (see [here](https://github.com/tyrael9/valgrind-ios))

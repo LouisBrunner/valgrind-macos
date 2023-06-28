@@ -121,7 +121,6 @@
 
 #ifdef PLAT_arm64_darwin
 #include <mach/arm/thread_status.h>
-#error "this tool is not used with arm64"
 #else
 #include <mach/i386/thread_status.h>
 #endif
@@ -633,6 +632,10 @@ int main ( int argc, char** argv )
    if (argc != 4)
       fail("args: -stack_addr-arg -stack_size-arg "
            "name-of-tool-executable-to-modify");
+
+#ifdef PLAT_arm64_darwin
+    fail("this tool is not used on arm64");
+#endif
 
    r= sscanf(argv[1], "0x%llx", &req_stack_addr);
    if (r != 1) fail("invalid stack_addr arg");

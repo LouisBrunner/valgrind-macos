@@ -394,6 +394,7 @@ load_unixthread(struct thread_command *threadcmd, load_info_t *out_info)
       vm_address_t stackbase = VG_PGROUNDDN(out_info->stack_end+1-stacksize);
       SysRes res;
         
+      // TODO: will break on arm64
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
       check_mmap(res, stackbase, stacksize, "load_unixthread1");
       out_info->stack_start = (vki_uint8_t *)stackbase;
@@ -424,6 +425,7 @@ handle_lcmain ( vki_size_t requested_size,
    const vki_size_t HACK = 64 * 1024 * 1024;
    requested_size += HACK;
 
+   // TODO: will break on arm64
    SysRes res = VG_(am_mmap_anon_float_client)(requested_size,
                    VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
    check_mmap_float(res, requested_size, "handle_lcmain");

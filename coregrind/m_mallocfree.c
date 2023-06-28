@@ -875,6 +875,7 @@ Superblock* newSuperblock ( Arena* a, SizeT cszB )
    vg_assert(NULL != sb);
    INNER_REQUEST(VALGRIND_MAKE_MEM_UNDEFINED(sb, cszB));
    vg_assert(0 == (Addr)sb % VG_MIN_MALLOC_SZB);
+   ALLOW_RWX_WRITE();
    sb->n_payload_bytes = cszB - sizeof(Superblock);
    sb->unsplittable = (unsplittable ? sb : NULL);
    a->stats__bytes_mmaped += cszB;
@@ -2679,6 +2680,31 @@ void* VG_(perm_malloc) ( SizeT size, Int align  )
 {
    return VG_(arena_perm_malloc) ( VG_AR_CORE, size, align );
 }
+
+#if defined(VGP_arm64_darwin)
+#define JIT_PERM_REG "S3_6_c15_c1_5"
+#define JIT_PERM_RW_ADDR 0xfffffc110
+#define JIT_PERM_RX_ADDR 0xfffffc118
+
+__attribute__((always_inline))
+__inline__
+void enable_thread_to_jit_write(int enable) {
+  Addr addr = enable ? JIT_PERM_RW_ADDR : JIT_PERM_RX_ADDR;
+  __asm__ __volatile__(
+    "movz x0, %0\n"
+    "movk x0, %1, lsl 16\n"
+    "movk x0, %2, lsl 32\n"
+    "movk x0, %3, lsl 48\n"
+    "ldr x0, [x0]\n"
+    "msr " JIT_PERM_REG ", x0\n"
+    "isb sy\n"
+    :
+    : "i"((addr & 0xffff)), "i"((addr >> 16) & 0xffff),
+      "i"((addr >> 32) & 0xffff), "i"((addr >> 48) & 0xffff)
+    :
+  );
+}
+#endif
 
 
 /*--------------------------------------------------------------------*/

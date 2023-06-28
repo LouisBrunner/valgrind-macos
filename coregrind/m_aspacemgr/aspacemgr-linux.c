@@ -1647,6 +1647,7 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_vStart = 0x700000000000; // 0x7000:00000000..0x7fff:5c000000 avail
    // 0x7fff:5c000000..0x7fff:ffe00000? is stack, dyld, shared cache
 #elif defined(VGP_arm64_darwin)
+    // TODO: this is _EXTREMELY_ wrong
     aspacem_maxAddr = (Addr) 0x7fffffffffff;
 
     aspacem_cStart = aspacem_minAddr;
@@ -2655,7 +2656,6 @@ SysRes VG_(am_mmap_anon_float_client) ( SizeT length, Int prot )
 /* Map anonymously at an unconstrained address for V, and update the
    segment array accordingly.  This is fundamentally how V allocates
    itself more address space when needed. */
-
 SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
 {
    SysRes     sres;

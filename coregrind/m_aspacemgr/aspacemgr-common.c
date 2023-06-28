@@ -137,7 +137,6 @@ UInt ML_(am_sprintf) ( HChar* buf, const HChar *format, ... )
 // YOU ARE DOING.
 
 /* --- Pertaining to mappings --- */
-
 /* Note: this is VG_, not ML_. */
 SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot, 
                                   UInt flags, Int fd, Off64T offset)
@@ -175,6 +174,10 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
 #  elif defined(VGP_arm64_darwin)
    if (fd == 0  &&  (flags & VKI_MAP_ANONYMOUS)) {
        fd = -1;  // MAP_ANON with fd==0 is EINVAL
+   }
+   if (prot == (VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC)) {
+      /* On arm64, we need to set the JIT flag for writable and executable mappings. */
+       flags |= VKI_MAP_JIT;
    }
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
                           prot, flags, (UInt)fd, offset);

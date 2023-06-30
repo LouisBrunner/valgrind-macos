@@ -1812,7 +1812,8 @@ Bool VG_(machine_get_hwcaps)( void )
      tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
      tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
      tmp_sigill_act.ksa_handler = handler_unsup_insn;
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
 
      /* Does reading ID_AA64ISAR0_EL1 register throw SIGILL on base v8.0? */
      if (VG_MINIMAL_SETJMP(env_unsup_insn))
@@ -1821,8 +1822,10 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__("mrs x0, ID_AA64ISAR0_EL1");
 
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
+     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     vg_assert(r == 0);
 
      va = VexArchARM64;
      vai.endness = VexEndnessLE;
@@ -1843,8 +1846,38 @@ Bool VG_(machine_get_hwcaps)( void )
         after being set that is, is 2 though 17 inclusive. */
      vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
      vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
+
+     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
+     vg_assert(r == 0);
+
+     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
+     vg_assert(r == 0);
+
+     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
+
+     /* NODEFER: signal handler does not return (from the kernel's point of
+        view), hence if it is to successfully catch a signal more than once,
+        we need the NODEFER flag. */
+     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
+     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
+     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
+     tmp_sigill_act.ksa_handler = handler_unsup_insn;
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
+
      ULong ctr_el0;
+     /* Does reading ctr_el0 register throw SIGILL? */
+     if (VG_MINIMAL_SETJMP(env_unsup_insn))
+        ctr_el0 = 0;
+     else
      __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
+
+     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
+     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     vg_assert(r == 0);
+
      vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;
      vai.arm64_iMinLine_lg2_szB = ((ctr_el0 >>  0) & 0xF) + 2;
      VG_(debugLog)(1, "machine", "ARM64: ctr_el0.dMinLine_szB = %d, "

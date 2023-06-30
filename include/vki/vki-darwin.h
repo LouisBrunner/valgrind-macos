@@ -439,7 +439,12 @@ typedef struct {
 typedef
    struct {
       void* ksa_handler;
+#if defined(VGP_arm64_darwin)
+      // arm64 adds a token argument which needs to be passed to sigreturn
+      void (*sa_tramp)(void*,UWord,UWord,void*,void*,void*);
+#else
       void (*sa_tramp)(void*,UWord,UWord,void*,void*);
+#endif
       vki_sigset_t sa_mask;
       int sa_flags;
    }

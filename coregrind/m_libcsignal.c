@@ -241,7 +241,11 @@ Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 #if defined(VGO_darwin)
 /* A helper function for sigaction on Darwin. */
 static 
-void darwin_signal_demux(void* a1, UWord a2, UWord a3, void* a4, void* a5) {
+void darwin_signal_demux(void* a1, UWord a2, UWord a3, void* a4, void* a5
+# if defined(VGA_arm64)
+, void* a6
+# endif
+) {
    VG_(debugLog)(2, "libcsignal",
                     "PRE  demux sig, a2 = %lu, signo = %lu\n", a2, a3);
    if (a2 == 1)
@@ -250,11 +254,13 @@ void darwin_signal_demux(void* a1, UWord a2, UWord a3, void* a4, void* a5) {
       ((void(*)(int,void*,void*))a1) (a3,a4,a5);
    VG_(debugLog)(2, "libcsignal",
                     "POST demux sig, a2 = %lu, signo = %lu\n", a2, a3);
-   VG_(do_syscall2)(__NR_sigreturn, (UWord)a5, 0x1E);
-   /* NOTREACHED */
 # if defined(VGA_arm64)
+   VG_(do_syscall3)(__NR_sigreturn, (UWord)a5, 0x1E, (UWord)a6);
+   /* NOTREACHED */
    __asm__ __volatile__("udf #0");
 # else
+   VG_(do_syscall2)(__NR_sigreturn, (UWord)a5, 0x1E);
+   /* NOTREACHED */
    __asm__ __volatile__("ud2");
 # endif
 }

@@ -397,9 +397,7 @@ __asm__(
 "        stp             d10, d11,       [x0, #0x80]\n"
 "        stp             d12, d13,       [x0, #0x90]\n"
 "        stp             d14, d15,       [x0, #0xA0]\n"
-"        mov             x0, sp\n"
-"        str             x0,             [x0, #0xB0]\n"
-"        mov             x0, #0\n"
+"        mov             x0, #0\n" // return 0 on the first return
 "        ret\n"
 
 ".globl _VG_MINIMAL_LONGJMP"  "\n"
@@ -410,23 +408,14 @@ __asm__(
 "        ldp             x25, x26,       [x0, #0x30]\n"
 "        ldp             x27, x28,       [x0, #0x40]\n"
 "        ldp             x29, lr,        [x0, #0x50]\n"
-"        ldp             fp, x2,         [x0, #0x60]\n"
+"        ldp             fp, x1,         [x0, #0x60]\n"
 "        ldp             d8, d9,         [x0, #0x70]\n"
 "        ldp             d10, d11,       [x0, #0x80]\n"
 "        ldp             d12, d13,       [x0, #0x90]\n"
 "        ldp             d14, d15,       [x0, #0xA0]\n"
-"        mov             sp, x2\n"
-"        ldr             x0,             [x0, #0xB0]\n"
-         // make sp look like we really did a return
-"        add             sp, sp, 8\n"
-         // continue at RA of original call.  Note: this is a
-         // nasty trick.  We assume that %rax is nonzero, and so the
-         // caller can differentiate this case from the normal _SETJMP
-         // return case.  If the return address ever is zero, then
-         // we're hosed; but that seems pretty unlikely given that it
-         // would mean we'd be executing at the wraparound point of the
-         // address space.
-"        br              x0\n"
+"        mov             sp, x1\n"
+"        mov             x0, #1\n" // return non-zero on the second return
+"        ret\n"
 );
 
 #endif /* VGP_arm64_darwin */

@@ -523,7 +523,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 {
    VG_(debugLog)(1, "ume", "load_thin_file: begin:   %s\n", filename);
    struct MACH_HEADER mh;
-   vki_uint8_t *headers;
+  //  vki_uint8_t *headers;
    vki_uint8_t *headers_end;
    struct load_command *lc;
    struct load_command *lcend;
@@ -565,7 +565,9 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       return -1;
    }
 
-   headers = VG_(malloc)("ume.macho.headers", len);
+   vki_uint8_t headers[10000];
+  //  headers = VG_(malloc)("ume.macho.headers", len);
+  //  headers = VG_(malloc)("ume.macho.headers", 1000);
    res = VG_(pread)(fd, headers, len, offset);
    if (sr_isError(res)) {
       print("couldn't read load commands from executable\n");

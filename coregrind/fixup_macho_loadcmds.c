@@ -634,7 +634,7 @@ int main ( int argc, char** argv )
            "name-of-tool-executable-to-modify");
 
 #ifdef PLAT_arm64_darwin
-    fail("this tool is not used on arm64");
+    fail("this tool is not used on arm64 yet");
 #endif
 
    r= sscanf(argv[1], "0x%llx", &req_stack_addr);

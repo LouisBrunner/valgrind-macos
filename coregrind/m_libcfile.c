@@ -529,7 +529,7 @@ SysRes VG_(stat) ( const HChar* file_name, struct vg_stat* vgbuf )
    /* Try with stat64. This is the second candidate on Linux, and the first
       one on Darwin. If that doesn't work out, fall back to vanilla version.
     */
-#  if defined(__NR_stat64) && !defined(VGP_arm64_darwin)
+#  if defined(__NR_stat64)
    { struct vki_stat64 buf64;
      res = VG_(do_syscall2)(__NR_stat64, (UWord)file_name, (UWord)&buf64);
      if (!(sr_isError(res) && sr_Err(res) == VKI_ENOSYS)) {
@@ -614,7 +614,7 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
    /* Try with fstat64. This is the second candidate on Linux, and the first
       one on Darwin. If that doesn't work out, fall back to vanilla version.
     */
-#  if defined(__NR_fstat64) && !defined(VGP_arm64_darwin)
+#  if defined(__NR_fstat64)
    { struct vki_stat64 buf64;
      res = VG_(do_syscall2)(__NR_fstat64, (UWord)fd, (UWord)&buf64);
      if (!(sr_isError(res) && sr_Err(res) == VKI_ENOSYS)) {

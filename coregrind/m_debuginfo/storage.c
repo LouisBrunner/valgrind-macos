@@ -1297,8 +1297,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       that those extra sections have the same bias as .text, but that
       seems a reasonable assumption to me. */
    /* This is assured us by top level steering logic in debuginfo.c,
-      and it is re-checked at the start of
-      ML_(read_elf_debug_info). */
+      and it is re-checked at the start of ML_(read_elf_object). */
    vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
       if (VG_(clo_verbosity) > 1) {
@@ -1725,7 +1724,6 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    for (i = 0; i < di->symtab_used; i++) {
       DiSym* sym = &di->symtab[i];
       vg_assert(sym->pri_name);
-      vg_assert(!sym->sec_names);
    }
 
    /* Sort by address. */
@@ -2383,6 +2381,9 @@ void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di )
    vg_assert (f_holes == n_holes);
    vg_assert (pos == new_used);
 
+   if (di->deferred)
+      return;
+
    di->cfsi_used = new_used;
    di->cfsi_size = new_used;
    ML_(dinfo_free) (di->cfsi_rd);
@@ -2398,9 +2399,13 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    canonicaliseLoctab ( di );
    canonicaliseInltab ( di );
    ML_(canonicaliseCFI) ( di );
+   canonicaliseVarInfo ( di );
+
+   if (di->deferred)
+      return;
+
    if (di->cfsi_m_pool)
       VG_(freezeDedupPA) (di->cfsi_m_pool, ML_(dinfo_shrink_block));
-   canonicaliseVarInfo ( di );
    if (di->strpool)
       VG_(freezeDedupPA) (di->strpool, ML_(dinfo_shrink_block));
    if (di->fndnpool)

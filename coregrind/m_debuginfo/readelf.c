@@ -1836,6 +1836,44 @@ static HChar* readlink_path (const HChar *path)
   return buf;
 }
 
+#define FINDX_MIMG(_sec_name, _sec_escn, _post_fx) \
+   do { \
+      ElfXX_Shdr a_shdr; \
+      ML_(img_get)(&a_shdr, mimg, \
+                   INDEX_BIS(shdr_mioff, i, shdr_ment_szB), \
+                   sizeof(a_shdr)); \
+      if (0 == ML_(img_strcmp_c)(mimg, shdr_strtab_mioff \
+                                        + a_shdr.sh_name, _sec_name)) { \
+         Bool nobits; \
+         _sec_escn.img  = mimg; \
+         _sec_escn.ioff = (DiOffT)a_shdr.sh_offset; \
+         _sec_escn.szB  = a_shdr.sh_size; \
+         if (!check_compression(&a_shdr, &_sec_escn)) { \
+            ML_(symerr)(di, True, "   Compression type is unsupported"); \
+            goto out; \
+         } \
+         nobits         = a_shdr.sh_type == SHT_NOBITS; \
+         vg_assert(_sec_escn.img  != NULL); \
+         vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
+         TRACE_SYMTAB( "%-18s:  ioff %llu .. %llu\n", \
+                       _sec_name, (ULong)a_shdr.sh_offset, \
+                       ((ULong)a_shdr.sh_offset) + a_shdr.sh_size - 1); \
+         /* SHT_NOBITS sections have zero size in the file. */ \
+         if (!nobits && \
+             a_shdr.sh_offset + \
+                a_shdr.sh_size > ML_(img_real_size)(mimg)) { \
+            ML_(symerr)(di, True, \
+                        "   section beyond image end?!"); \
+            goto out; \
+         } \
+         _post_fx; \
+      } \
+   } while (0);
+
+/* Version with no post-effects */
+#define FIND_MIMG(_sec_name, _sec_escn) \
+   FINDX_MIMG(_sec_name, _sec_escn, /**/)
+
 /* The central function for reading ELF debug info.  For the
    object/exe specified by the DebugInfo, find ELF sections, then read
    the symbols, line number info, file name info, CFA (stack-unwind
@@ -1843,7 +1881,7 @@ static HChar* readlink_path (const HChar *path)
    supplied DebugInfo.
 */
 
-Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
+Bool ML_(read_elf_object) ( struct _DebugInfo* di )
 {
    /* This function is long and complex.  That, and the presence of
       nested scopes, means it's not always easy to see which parts are
@@ -1874,19 +1912,13 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 
 
    /* TOPLEVEL */
-   Bool     res, ok;
+   Bool     ok;
    Word     i, j;
    Bool     dynbss_present = False;
    Bool     sdynbss_present = False;
 
    /* Image for the main ELF file we're working with. */
    DiImage* mimg = NULL;
-
-   /* Ditto for any ELF debuginfo file that we might happen to load. */
-   DiImage* dimg = NULL;
-
-   /* Ditto for alternate ELF debuginfo file that we might happen to load. */
-   DiImage* aimg = NULL;
 
    /* ELF header offset for the main file.  Should be zero since the
       ELF header is at start of file. */
@@ -1969,8 +2001,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       about, that should have been mapped: text, data, sdata, bss,
       got, plt, and toc.
       ---------------------------------------------------------- */
-
-   res = False;
 
    if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
       VG_(message)(Vg_DebugMsg, "Reading syms from %s\n",
@@ -2056,7 +2086,7 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
      shdr_strtab_mioff
         = ehdr_mioff /* isn't this always zero? */ + a_shdr.sh_offset;
 
-     if (!ML_(img_valid)(mimg, shdr_strtab_mioff, 
+     if (!ML_(img_valid)(mimg, shdr_strtab_mioff,
                          1/*bogus, but we don't know the real size*/ )) {
         ML_(symerr)(di, True, "Invalid ELF Section Header String Table");
         goto out;
@@ -2798,10 +2828,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
                                 di->text_avma - di->text_bias,
                                 di->text_avma );
 
-   TRACE_SYMTAB("\n");
-   TRACE_SYMTAB("------ Finding image addresses "
-                "for debug-info sections ------\n");
-
    /* TOPLEVEL */
    /* Find interesting sections, read the symbol table(s), read any
       debug information.  Each section is located either in the main,
@@ -2821,27 +2847,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
 #     if defined(VGO_solaris)
       DiSlice ldynsym_escn        = DiSlice_INVALID; // .SUNW_ldynsym
 #     endif
-      DiSlice debuglink_escn      = DiSlice_INVALID; // .gnu_debuglink
-      DiSlice debugaltlink_escn   = DiSlice_INVALID; // .gnu_debugaltlink
-      DiSlice debug_line_escn     = DiSlice_INVALID; // .debug_line   (dwarf2)
-      DiSlice debug_info_escn     = DiSlice_INVALID; // .debug_info   (dwarf2)
-      DiSlice debug_types_escn    = DiSlice_INVALID; // .debug_types  (dwarf4)
-      DiSlice debug_abbv_escn     = DiSlice_INVALID; // .debug_abbrev (dwarf2)
-      DiSlice debug_str_escn      = DiSlice_INVALID; // .debug_str    (dwarf2)
-      DiSlice debug_line_str_escn = DiSlice_INVALID; // .debug_line_str(dwarf5)
-      DiSlice debug_ranges_escn   = DiSlice_INVALID; // .debug_ranges (dwarf2)
-      DiSlice debug_rnglists_escn = DiSlice_INVALID; // .debug_rnglists(dwarf5)
-      DiSlice debug_loclists_escn = DiSlice_INVALID; // .debug_loclists(dwarf5)
-      DiSlice debug_addr_escn     = DiSlice_INVALID; // .debug_addr   (dwarf5)
-      DiSlice debug_str_offsets_escn = DiSlice_INVALID; // .debug_str_offsets (dwarf5)
-      DiSlice debug_loc_escn      = DiSlice_INVALID; // .debug_loc    (dwarf2)
-      DiSlice debug_frame_escn    = DiSlice_INVALID; // .debug_frame  (dwarf2)
-      DiSlice debug_line_alt_escn = DiSlice_INVALID; // .debug_line   (alt)
-      DiSlice debug_info_alt_escn = DiSlice_INVALID; // .debug_info   (alt)
-      DiSlice debug_abbv_alt_escn = DiSlice_INVALID; // .debug_abbrev (alt)
-      DiSlice debug_str_alt_escn  = DiSlice_INVALID; // .debug_str    (alt)
-      DiSlice dwarf1d_escn        = DiSlice_INVALID; // .debug        (dwarf1)
-      DiSlice dwarf1l_escn        = DiSlice_INVALID; // .line         (dwarf1)
       DiSlice opd_escn            = DiSlice_INVALID; // .opd (dwarf2, 
                                                      //       ppc64be-linux)
       DiSlice ehframe_escn[N_EHFRAME_SECTS];         // .eh_frame (dwarf2)
@@ -2868,115 +2873,16 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       /* TOPLEVEL */
       /* Iterate over section headers (again) */
       for (i = 0; i < ehdr_m.e_shnum; i++) {
-
-#        define FINDX(_sec_name, _sec_escn, _post_fx) \
-         do { \
-            ElfXX_Shdr a_shdr; \
-            ML_(img_get)(&a_shdr, mimg, \
-                         INDEX_BIS(shdr_mioff, i, shdr_ment_szB), \
-                         sizeof(a_shdr)); \
-            if (0 == ML_(img_strcmp_c)(mimg, shdr_strtab_mioff \
-                                              + a_shdr.sh_name, _sec_name)) { \
-               Bool nobits; \
-               _sec_escn.img  = mimg; \
-               _sec_escn.ioff = (DiOffT)a_shdr.sh_offset; \
-               _sec_escn.szB  = a_shdr.sh_size; \
-               if (!check_compression(&a_shdr, &_sec_escn)) { \
-                  ML_(symerr)(di, True, "   Compression type is unsupported"); \
-                  goto out; \
-               } \
-               nobits         = a_shdr.sh_type == SHT_NOBITS; \
-               vg_assert(_sec_escn.img  != NULL); \
-               vg_assert(_sec_escn.ioff != DiOffT_INVALID); \
-               TRACE_SYMTAB( "%-18s:  ioff %llu .. %llu\n", \
-                             _sec_name, (ULong)a_shdr.sh_offset, \
-                             ((ULong)a_shdr.sh_offset) + a_shdr.sh_size - 1); \
-               /* SHT_NOBITS sections have zero size in the file. */ \
-               if (!nobits && \
-                   a_shdr.sh_offset + \
-                      a_shdr.sh_size > ML_(img_real_size)(mimg)) { \
-                  ML_(symerr)(di, True, \
-                              "   section beyond image end?!"); \
-                  goto out; \
-               } \
-               _post_fx; \
-            } \
-         } while (0);
-
-         /* Version with no post-effects */
-#        define FIND(_sec_name, _sec_escn) \
-            FINDX(_sec_name, _sec_escn, /**/)
-
          /*      NAME                  ElfSec */
-         FIND(   ".dynsym",            dynsym_escn)
-         FIND(   ".dynstr",            dynstr_escn)
-         FIND(   ".symtab",            symtab_escn)
-         FIND(   ".strtab",            strtab_escn)
+         FIND_MIMG(   ".dynsym",            dynsym_escn)
+         FIND_MIMG(   ".dynstr",            dynstr_escn)
+         FIND_MIMG(   ".symtab",            symtab_escn)
+         FIND_MIMG(   ".strtab",            strtab_escn)
 #        if defined(VGO_solaris)
-         FIND(   ".SUNW_ldynsym",      ldynsym_escn)
+         FIND_MIMG(   ".SUNW_ldynsym",      ldynsym_escn)
 #        endif
 
-         FIND(   ".gnu_debuglink",     debuglink_escn)
-         FIND(   ".gnu_debugaltlink",  debugaltlink_escn)
-
-         FIND(   ".debug_line",        debug_line_escn)
-         if (!ML_(sli_is_valid)(debug_line_escn))
-            FIND(".zdebug_line",       debug_line_escn)
-
-         FIND(   ".debug_info",        debug_info_escn)
-         if (!ML_(sli_is_valid)(debug_info_escn))
-            FIND(".zdebug_info",       debug_info_escn)
-
-         FIND(   ".debug_types",       debug_types_escn)
-         if (!ML_(sli_is_valid)(debug_types_escn))
-            FIND(".zdebug_types",      debug_types_escn)
-
-         FIND(   ".debug_abbrev",      debug_abbv_escn)
-         if (!ML_(sli_is_valid)(debug_abbv_escn))
-            FIND(".zdebug_abbrev",     debug_abbv_escn)
-
-         FIND(   ".debug_str",         debug_str_escn)
-         if (!ML_(sli_is_valid)(debug_str_escn))
-            FIND(".zdebug_str",        debug_str_escn)
-
-         FIND(   ".debug_line_str",    debug_line_str_escn)
-         if (!ML_(sli_is_valid)(debug_line_str_escn))
-            FIND(".zdebug_str",        debug_line_str_escn)
-
-         FIND(   ".debug_ranges",      debug_ranges_escn)
-         if (!ML_(sli_is_valid)(debug_ranges_escn))
-            FIND(".zdebug_ranges",     debug_ranges_escn)
-
-         FIND(   ".debug_rnglists",    debug_rnglists_escn)
-         if (!ML_(sli_is_valid)(debug_rnglists_escn))
-            FIND(".zdebug_rnglists",   debug_rnglists_escn)
-
-         FIND(   ".debug_loclists",    debug_loclists_escn)
-         if (!ML_(sli_is_valid)(debug_loclists_escn))
-            FIND(".zdebug_loclists",   debug_loclists_escn)
-
-         FIND(   ".debug_loc",         debug_loc_escn)
-         if (!ML_(sli_is_valid)(debug_loc_escn))
-            FIND(".zdebug_loc",    debug_loc_escn)
-
-         FIND(   ".debug_frame",       debug_frame_escn)
-         if (!ML_(sli_is_valid)(debug_frame_escn))
-            FIND(".zdebug_frame",      debug_frame_escn)
-
-         FIND(   ".debug_addr",        debug_addr_escn)
-         if (!ML_(sli_is_valid)(debug_addr_escn))
-            FIND(".zdebug_addr",       debug_addr_escn)
-
-         FIND(   ".debug_str_offsets", debug_str_offsets_escn)
-         if (!ML_(sli_is_valid)(debug_str_offsets_escn))
-            FIND(".zdebug_str_offsets", debug_str_offsets_escn)
-
-         FIND(   ".debug",             dwarf1d_escn)
-         FIND(   ".line",              dwarf1l_escn)
-
-         FIND(   ".opd",               opd_escn)
-
-         FINDX(  ".eh_frame",          ehframe_escn[ehframe_mix],
+         FINDX_MIMG(  ".eh_frame",          ehframe_escn[ehframe_mix],
                do { ehframe_mix++; vg_assert(ehframe_mix <= N_EHFRAME_SECTS);
                } while (0)
          )
@@ -2990,9 +2896,270 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
             previous one) encounter the .eh_frame entries in the same
             order and so fill in these arrays in a consistent order.
          */
+      } /* Iterate over section headers (again) */
 
-#        undef FINDX
-#        undef FIND
+      /* Check some sizes */
+      vg_assert((dynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
+      vg_assert((symtab_escn.szB % sizeof(ElfXX_Sym)) == 0);
+#     if defined(VGO_solaris)
+      vg_assert((ldynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
+#     endif
+
+      /* Read symbols */
+      {
+         void (*read_elf_symtab)(struct _DebugInfo*, const HChar*,
+                                 DiSlice*, DiSlice*, DiSlice*, Bool);
+#        if defined(VGP_ppc64be_linux)
+         read_elf_symtab = read_elf_symtab__ppc64be_linux;
+#        else
+         read_elf_symtab = read_elf_symtab__normal;
+#        endif
+         if (symtab_escn.img != NULL)
+            read_elf_symtab(di, "symbol table",
+                            &symtab_escn, &strtab_escn, &opd_escn,
+                            False);
+         read_elf_symtab(di, "dynamic symbol table",
+                         &dynsym_escn, &dynstr_escn, &opd_escn,
+                         False);
+#        if defined(VGO_solaris)
+         read_elf_symtab(di, "local dynamic symbol table",
+                         &ldynsym_escn, &dynstr_escn, &opd_escn,
+                         False);
+#        endif
+      }
+
+      /* TOPLEVEL */
+      /* Read .eh_frame and .debug_frame (call-frame-info) if any.  Do
+         the .eh_frame section(s) first. */
+      vg_assert(di->n_ehframe >= 0 && di->n_ehframe <= N_EHFRAME_SECTS);
+      for (i = 0; i < di->n_ehframe; i++) {
+         /* see Comment_on_EH_FRAME_MULTIPLE_INSTANCES above for why
+            this next assertion should hold. */
+         vg_assert(ML_(sli_is_valid)(ehframe_escn[i]));
+         vg_assert(ehframe_escn[i].szB == di->ehframe_size[i]);
+         ML_(read_callframe_info_dwarf3)( di,
+                                          ehframe_escn[i],
+                                          di->ehframe_avma[i],
+                                          True/*is_ehframe*/ );
+      }
+   }
+
+  return True;
+
+  out:
+   {
+      /* Last, but not least, detach from the image. */
+      if (mimg) ML_(img_done)(mimg);
+
+      if (svma_ranges) VG_(deleteXA)(svma_ranges);
+
+      return False;
+   } /* out: */
+
+   /* NOTREACHED */
+}
+
+Bool ML_(read_elf_debug) ( struct _DebugInfo* di )
+{
+   Word     i, j;
+   Bool     res = True;
+   Bool     ok;
+
+   /* Image for the main ELF file we're working with. */
+   DiImage* mimg = NULL;
+
+   /* Ditto for any ELF debuginfo file that we might happen to load. */
+   DiImage* dimg = NULL;
+
+   /* Ditto for alternate ELF debuginfo file that we might happen to load. */
+   DiImage* aimg = NULL;
+
+   /* Section header image addr, # entries, entry size.  Also the
+      associated string table. */
+   DiOffT   shdr_mioff        = 0;
+   UWord    shdr_mnent        = 0;
+   UWord    shdr_ment_szB     = 0;
+   DiOffT   shdr_strtab_mioff = 0;
+
+   DiOffT   ehdr_mioff = 0;
+
+   /* Connect to the primary object image, so that we can read symbols
+      and line number info out of it.  It will be disconnected
+      immediately thereafter; it is only connected transiently. */
+   mimg = ML_(img_from_local_file)(di->fsm.filename);
+   if (mimg == NULL) {
+      VG_(message)(Vg_UserMsg, "warning: connection to image %s failed\n",
+                               di->fsm.filename );
+      VG_(message)(Vg_UserMsg, "         no debug info loaded\n" );
+      return False;
+   }
+
+ /* Ok, the object image is available.  Now verify that it is a
+      valid ELF .so or executable image. */
+   ok = is_elf_object_file_by_DiImage(mimg, False);
+   if (!ok) {
+      ML_(symerr)(di, True, "Invalid ELF Header");
+      goto out;
+   }
+
+   /* Find where the program and section header tables are, and give
+      up if either is missing or outside the image (bogus). */
+   ElfXX_Ehdr ehdr_m;
+   vg_assert(ehdr_mioff == 0); // ensured by its initialisation
+   ok = ML_(img_valid)(mimg, ehdr_mioff, sizeof(ehdr_m));
+   vg_assert(ok); // ML_(is_elf_object_file) should ensure this
+   ML_(img_get)(&ehdr_m, mimg, ehdr_mioff, sizeof(ehdr_m));
+
+   shdr_mioff    = ehdr_mioff + ehdr_m.e_shoff;
+   shdr_mnent    = ehdr_m.e_shnum;
+   shdr_ment_szB = ehdr_m.e_shentsize;
+
+   if (shdr_mnent == 0
+       || !ML_(img_valid)(mimg, shdr_mioff, shdr_mnent * shdr_ment_szB)) {
+      ML_(symerr)(di, True, "Missing or invalid ELF Section Header Table");
+      goto out;
+   }
+
+   /* Also find the section header's string table, and validate. */
+   /* checked previously by is_elf_object_file: */
+   vg_assert(ehdr_m.e_shstrndx != SHN_UNDEF);
+
+   // shdr_mioff is the offset of the section header table
+   // and we need the ehdr_m.e_shstrndx'th entry
+   { ElfXX_Shdr a_shdr;
+     ML_(img_get)(&a_shdr, mimg,
+                  INDEX_BIS(shdr_mioff, ehdr_m.e_shstrndx, shdr_ment_szB),
+                  sizeof(a_shdr));
+     shdr_strtab_mioff
+        = ehdr_mioff /* isn't this always zero? */ + a_shdr.sh_offset;
+
+     if (!ML_(img_valid)(mimg, shdr_strtab_mioff,
+                         1/*bogus, but we don't know the real size*/ )) {
+        ML_(symerr)(di, True, "Invalid ELF Section Header String Table");
+        goto out;
+     }
+   }
+
+   TRACE_SYMTAB("\n");
+   TRACE_SYMTAB("------ Finding image addresses "
+                "for debug-info sections ------\n");
+   /* TOPLEVEL */
+   /* Find interesting sections, read the symbol table(s), read any
+      debug information.  Each section is located either in the main,
+      debug or alt-debug files, but only in one.  For each section,
+      |section_escn| records which of |mimg|, |dimg| or |aimg| we
+      found it in, along with the section's image offset and its size.
+      The triples (section_img, section_ioff, section_szB) are
+      consistent, in that they are always either (NULL,
+      DiOffT_INVALID, 0), or refer to the same image, and are all
+      assigned together. */
+
+   {
+      /* TOPLEVEL */
+      DiSlice strtab_escn         = DiSlice_INVALID; // .strtab
+      DiSlice symtab_escn         = DiSlice_INVALID; // .symtab
+      DiSlice debuglink_escn      = DiSlice_INVALID; // .gnu_debuglink
+      DiSlice debugaltlink_escn   = DiSlice_INVALID; // .gnu_debugaltlink
+      DiSlice debug_line_escn     = DiSlice_INVALID; // .debug_line   (dwarf2)
+      DiSlice debug_info_escn     = DiSlice_INVALID; // .debug_info   (dwarf2)
+      DiSlice debug_types_escn    = DiSlice_INVALID; // .debug_types  (dwarf4)
+      DiSlice debug_abbv_escn     = DiSlice_INVALID; // .debug_abbrev (dwarf2)
+      DiSlice debug_str_escn      = DiSlice_INVALID; // .debug_str    (dwarf2)
+      DiSlice debug_line_str_escn = DiSlice_INVALID; // .debug_line_str(dwarf5)
+      DiSlice debug_ranges_escn   = DiSlice_INVALID; // .debug_ranges (dwarf2)
+      DiSlice debug_rnglists_escn = DiSlice_INVALID; // .debug_rnglists(dwarf5)
+      DiSlice debug_loclists_escn = DiSlice_INVALID; // .debug_loclists(dwarf5)
+      DiSlice debug_addr_escn     = DiSlice_INVALID; // .debug_addr   (dwarf5)
+      DiSlice debug_str_offsets_escn = DiSlice_INVALID; // .debug_str_offsets (dwarf5)
+      DiSlice debug_loc_escn      = DiSlice_INVALID; // .debug_loc    (dwarf2)
+      DiSlice debug_frame_escn    = DiSlice_INVALID; // .debug_frame  (dwarf2)
+      DiSlice debug_line_alt_escn = DiSlice_INVALID; // .debug_line   (alt)
+      DiSlice debug_info_alt_escn = DiSlice_INVALID; // .debug_info   (alt)
+      DiSlice debug_abbv_alt_escn = DiSlice_INVALID; // .debug_abbrev (alt)
+      DiSlice debug_str_alt_escn  = DiSlice_INVALID; // .debug_str    (alt)
+      DiSlice dwarf1d_escn        = DiSlice_INVALID; // .debug        (dwarf1)
+      DiSlice dwarf1l_escn        = DiSlice_INVALID; // .line         (dwarf1)
+      DiSlice opd_escn            = DiSlice_INVALID; // .opd (dwarf2,
+                                                     //       ppc64be-linux)
+
+      /* TOPLEVEL */
+      /* Iterate over section headers (again) */
+      for (i = 0; i < ehdr_m.e_shnum; i++) {
+
+         /*      NAME                  ElfSec */
+         FIND_MIMG(   ".symtab",            symtab_escn)
+         FIND_MIMG(   ".strtab",            strtab_escn)
+         FIND_MIMG(   ".gnu_debuglink",     debuglink_escn)
+         FIND_MIMG(   ".gnu_debugaltlink",  debugaltlink_escn)
+
+         FIND_MIMG(   ".debug_line",        debug_line_escn)
+         if (!ML_(sli_is_valid)(debug_line_escn))
+            FIND_MIMG(".zdebug_line",       debug_line_escn)
+
+         FIND_MIMG(   ".debug_info",        debug_info_escn)
+         if (!ML_(sli_is_valid)(debug_info_escn))
+            FIND_MIMG(".zdebug_info",       debug_info_escn)
+
+         FIND_MIMG(   ".debug_types",       debug_types_escn)
+         if (!ML_(sli_is_valid)(debug_types_escn))
+            FIND_MIMG(".zdebug_types",      debug_types_escn)
+
+         FIND_MIMG(   ".debug_abbrev",      debug_abbv_escn)
+         if (!ML_(sli_is_valid)(debug_abbv_escn))
+            FIND_MIMG(".zdebug_abbrev",     debug_abbv_escn)
+
+         FIND_MIMG(   ".debug_str",         debug_str_escn)
+         if (!ML_(sli_is_valid)(debug_str_escn))
+            FIND_MIMG(".zdebug_str",        debug_str_escn)
+
+         FIND_MIMG(   ".debug_line_str",    debug_line_str_escn)
+         if (!ML_(sli_is_valid)(debug_line_str_escn))
+            FIND_MIMG(".zdebug_str",        debug_line_str_escn)
+
+         FIND_MIMG(   ".debug_ranges",      debug_ranges_escn)
+         if (!ML_(sli_is_valid)(debug_ranges_escn))
+            FIND_MIMG(".zdebug_ranges",     debug_ranges_escn)
+
+         FIND_MIMG(   ".debug_rnglists",    debug_rnglists_escn)
+         if (!ML_(sli_is_valid)(debug_rnglists_escn))
+            FIND_MIMG(".zdebug_rnglists",   debug_rnglists_escn)
+
+         FIND_MIMG(   ".debug_loclists",    debug_loclists_escn)
+         if (!ML_(sli_is_valid)(debug_loclists_escn))
+            FIND_MIMG(".zdebug_loclists",   debug_loclists_escn)
+
+         FIND_MIMG(   ".debug_loc",         debug_loc_escn)
+         if (!ML_(sli_is_valid)(debug_loc_escn))
+            FIND_MIMG(".zdebug_loc",    debug_loc_escn)
+
+         FIND_MIMG(   ".debug_frame",       debug_frame_escn)
+         if (!ML_(sli_is_valid)(debug_frame_escn))
+            FIND_MIMG(".zdebug_frame",      debug_frame_escn)
+
+         FIND_MIMG(   ".debug_addr",        debug_addr_escn)
+         if (!ML_(sli_is_valid)(debug_addr_escn))
+            FIND_MIMG(".zdebug_addr",       debug_addr_escn)
+
+         FIND_MIMG(   ".debug_str_offsets", debug_str_offsets_escn)
+         if (!ML_(sli_is_valid)(debug_str_offsets_escn))
+            FIND_MIMG(".zdebug_str_offsets", debug_str_offsets_escn)
+
+         FIND_MIMG(   ".debug",             dwarf1d_escn)
+         FIND_MIMG(   ".line",              dwarf1l_escn)
+
+	 FIND_MIMG(   ".opd",               opd_escn)
+
+         /* Comment_on_EH_FRAME_MULTIPLE_INSTANCES: w.r.t. .eh_frame
+            multi-instance kludgery, how are we assured that the order
+            in which we fill in ehframe_escn[] is consistent with the
+            order in which we previously filled in di->ehframe_avma[]
+            and di->ehframe_size[] ?  By the fact that in both cases,
+            these arrays were filled in by iterating over the section
+            headers top-to-bottom.  So both loops (this one and the
+            previous one) encounter the .eh_frame entries in the same
+            order and so fill in these arrays in a consistent order.
+         */
+
       } /* Iterate over section headers (again) */
 
       /* TOPLEVEL */
@@ -3465,53 +3632,23 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
          } /* Find all interesting sections */
       } /* do we have a debug image? */
 
-
       /* TOPLEVEL */
-      /* Check some sizes */
-      vg_assert((dynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
       vg_assert((symtab_escn.szB % sizeof(ElfXX_Sym)) == 0);
-#     if defined(VGO_solaris)
-      vg_assert((ldynsym_escn.szB % sizeof(ElfXX_Sym)) == 0);
-#     endif
 
       /* TOPLEVEL */
       /* Read symbols */
       {
          void (*read_elf_symtab)(struct _DebugInfo*, const HChar*,
                                  DiSlice*, DiSlice*, DiSlice*, Bool);
-         Bool symtab_in_debug;
 #        if defined(VGP_ppc64be_linux)
          read_elf_symtab = read_elf_symtab__ppc64be_linux;
 #        else
          read_elf_symtab = read_elf_symtab__normal;
 #        endif
-         symtab_in_debug = symtab_escn.img == dimg;
-         read_elf_symtab(di, "symbol table",
-                         &symtab_escn, &strtab_escn, &opd_escn,
-                         symtab_in_debug);
-         read_elf_symtab(di, "dynamic symbol table",
-                         &dynsym_escn, &dynstr_escn, &opd_escn,
-                         False);
-#        if defined(VGO_solaris)
-         read_elf_symtab(di, "local dynamic symbol table",
-                         &ldynsym_escn, &dynstr_escn, &opd_escn,
-                         False);
-#        endif
-      }
-
-      /* TOPLEVEL */
-      /* Read .eh_frame and .debug_frame (call-frame-info) if any.  Do
-         the .eh_frame section(s) first. */
-      vg_assert(di->n_ehframe >= 0 && di->n_ehframe <= N_EHFRAME_SECTS);
-      for (i = 0; i < di->n_ehframe; i++) {
-         /* see Comment_on_EH_FRAME_MULTIPLE_INSTANCES above for why
-            this next assertion should hold. */
-         vg_assert(ML_(sli_is_valid)(ehframe_escn[i]));
-         vg_assert(ehframe_escn[i].szB == di->ehframe_size[i]);
-         ML_(read_callframe_info_dwarf3)( di,
-                                          ehframe_escn[i],
-                                          di->ehframe_avma[i],
-                                          True/*is_ehframe*/ );
+         if (symtab_escn.img != NULL)
+            read_elf_symtab(di, "symbol table",
+                            &symtab_escn, &strtab_escn, &opd_escn,
+                            True);
       }
       if (ML_(sli_is_valid)(debug_frame_escn)) {
          ML_(read_callframe_info_dwarf3)( di,
@@ -3642,8 +3779,6 @@ Bool ML_(read_elf_debug_info) ( struct _DebugInfo* di )
       if (mimg) ML_(img_done)(mimg);
       if (dimg) ML_(img_done)(dimg);
       if (aimg) ML_(img_done)(aimg);
-
-      if (svma_ranges) VG_(deleteXA)(svma_ranges);
 
       return res;
    } /* out: */ 

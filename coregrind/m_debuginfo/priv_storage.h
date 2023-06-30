@@ -678,6 +678,13 @@ struct _DebugInfo {
       invalid and should not be consulted. */
    Bool  have_dinfo; /* initially False */
 
+   /* If true then the reading of .debug_* section has been deferred
+      until it this information is required (such as when printing
+      a stacktrace).  Additionally, if true then the reading of any
+      separate debuginfo files associated with this object has also
+      been deferred. */
+   Bool deferred;
+
    /* All the rest of the fields in this structure are filled in once
       we have committed to reading the symbols and debug info (that
       is, at the point where .have_dinfo is set to True). */

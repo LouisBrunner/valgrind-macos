@@ -44,13 +44,23 @@
 extern Bool ML_(is_elf_object_file)( const void* image, SizeT n_image,
                                      Bool rel_ok );
 
-/* The central function for reading ELF debug info.  For the
-   object/exe specified by the SegInfo, find ELF sections, then read
-   the symbols, line number info, file name info, CFA (stack-unwind
-   info) and anything else we want, into the tables within the
-   supplied SegInfo.
-*/
-extern Bool ML_(read_elf_debug_info) ( DebugInfo* di );
+/* Read the ELF binary specified by DI.  For the object/exe specified
+   by the SegInfo, find ELF sections, then read the symbols, line number
+   info, file name info, CFA (stack-unwind info) and anything else we
+   want, into the tables within the supplied SegInfo.
+
+   .debug_* sections as well as any separate debuginfo files are not
+   loaded by this function but instead by ML_(read_elf_debug).  This
+   separation facilitates lazy loading of debuginfo.  */
+extern Bool ML_(read_elf_object) ( DebugInfo* di );
+
+/* Read .debug_* sections from the ELF binary specified by DI.  Also
+   attempt to load any separate debuginfo files associated with the
+   object.
+
+   ML_(read_elf_object) should be called on DI before calling this
+   function.  */
+extern Bool ML_(read_elf_debug) ( DebugInfo* di );
 
 extern Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_load_count );
 

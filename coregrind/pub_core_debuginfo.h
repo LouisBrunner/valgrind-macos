@@ -76,6 +76,10 @@ extern void VG_(di_notify_pdb_debuginfo)( Int fd, Addr avma,
 extern void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot );
 #endif
 
+extern void VG_(addr_load_di)( Addr a );
+
+extern void VG_(load_di)( DebugInfo *di, Addr a );
+
 extern void VG_(di_discard_ALL_debuginfo)( void );
 
 /* Like VG_(get_fnname), but it does not do C++ demangling nor Z-demangling

@@ -959,14 +959,16 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    discard_DebugInfos_which_overlap_with( di );
 
    /* The DebugInfoMappings that now exist in the FSM may involve
-      overlaps.  This confuses ML_(read_elf_debug_info), and may cause
+      overlaps.  This confuses ML_(read_elf_*), and may cause
       it to compute wrong biases.  So de-overlap them now.
       See http://bugzilla.mozilla.org/show_bug.cgi?id=788974 */
    truncate_DebugInfoMapping_overlaps( di, di->fsm.maps );
 
    /* And acquire new info. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
-   ok = ML_(read_elf_debug_info)( di );
+   ok = ML_(read_elf_object)( di );
+   if (ok)
+      di->deferred = True;
 #  elif defined(VGO_darwin)
    ok = ML_(read_macho_debug_info)( di );
 #  else
@@ -1443,6 +1445,50 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 }
 
+/* Load DI if it has a text segment containing A and DI hasn't already
+   been loaded.  */
+
+void VG_(load_di)( DebugInfo *di, Addr a)
+{
+   if (!di->deferred
+       || !di->text_present
+       || di->text_size <= 0
+       || di->text_avma > a
+       || a >= di->text_avma + di->text_size)
+      return;
+
+   di->deferred = False;
+   ML_(read_elf_debug) (di);
+   ML_(canonicaliseTables)( di );
+
+   /* Check invariants listed in
+      Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
+      priv_storage.h. */
+   check_CFSI_related_invariants(di);
+   ML_(finish_CFSI_arrays)(di);
+}
+
+/* Attempt to load DebugInfo with a text segment containing A,
+   if such a debuginfo hasn't already been loaded.  */
+
+void VG_(addr_load_di)( Addr a )
+{
+   DebugInfo *di;
+
+   di = VG_(find_DebugInfo)(VG_(current_DiEpoch)(), a);
+   if (di != NULL)
+      if (di->deferred) {
+         di->deferred = False;
+         ML_(read_elf_debug) (di);
+         ML_(canonicaliseTables)( di );
+
+         /* Check invariants listed in
+            Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
+            priv_storage.h. */
+         check_CFSI_related_invariants(di);
+         ML_(finish_CFSI_arrays)(di);
+      }
+}
 
 /* Unmap is simpler - throw away any SegInfos intersecting 
    [a, a+len).  */
@@ -2746,6 +2792,11 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
    Bool  know_objname;
    Bool  know_srcloc;
 
+   if (iipc && iipc->di)
+      VG_(load_di) (iipc->di, eip);
+   else
+      VG_(addr_load_di) (eip);
+
    if (is_bottom(iipc)) {
       // At the bottom (towards main), we describe the fn at eip.
       know_fnname = VG_(clo_sym_offsets)
@@ -3089,6 +3140,8 @@ static void find_DiCfSI ( /*OUT*/DebugInfo** diP,
 
       if (!is_DI_valid_for_epoch(di, curr_epoch))
          continue;
+
+      VG_(load_di)(di, ip);
 
       /* Use the per-DebugInfo summary address ranges to skip
          inapplicable DebugInfos quickly. */

@@ -145,7 +145,11 @@ die "Can't find '-arch archstr' in command line"
 # build the command line
 my $cmd = "/usr/bin/ld";
 
-$cmd = "$cmd -static";
+if ($archstr eq "arm64") {
+    $cmd = "$cmd -L@XCODE_LIB_DIR@ -lSystem";
+} else {
+    $cmd = "$cmd -static";
+}
 
 # If we're building with clang (viz, the C compiler as specified
 # by the 2nd arg ends in "clang"), we also need -new_linker.  See
@@ -186,20 +190,17 @@ if ($r != 0) {
 # and now kludge the tool exe
 # see bug 267997
 
-$cmd = "../coregrind/fixup_macho_loadcmds";
-$cmd = "$cmd $stack_addr_str $stack_size_str $outname";
+# TODO: temp
+# $cmd = "../coregrind/fixup_macho_loadcmds";
+# $cmd = "$cmd $stack_addr_str $stack_size_str $outname";
 
-if ($archstr eq "arm64") {
-    $cmd = "python3 ../coregrind/make_binary_dynamic_darwin.py $outname";
-}
+# print "link_tool_exe_darwin: $cmd\n";
 
-print "link_tool_exe_darwin: $cmd\n";
+# $r = system("$cmd");
 
-$r = system("$cmd");
-
-if ($r != 0) {
-   exit 1;
-}
+# if ($r != 0) {
+#    exit 1;
+# }
 
 
 

@@ -193,13 +193,14 @@ AM_COND_IF([VGCONF_OS_IS_DARWIN],
   AC_ARG_VAR([DEVELOPER_DIR],[Overrides the active developer directory (used in gcc, xcrun, etc)])
   AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
 
-  AC_MSG_CHECKING([for Xcode SDK and includes])
+  AC_MSG_CHECKING([for Xcode SDK])
   AC_ARG_WITH([xcode-path],
   [  --with-xcode-path=PATH      Specify path for Xcode SDK],
   [
       # Set defaults in case `xcrun` fails
       xcodedir="$withval"
       xcodedir_inc="$xcodedir/usr/include"
+      xcodedir_lib="$xcodedir/usr/lib"
       # Defining DEVELOPER_DIR will override which version of gcc, xcrun, etc is being used
       export DEVELOPER_DIR="$xcodedir"
   ],
@@ -207,6 +208,7 @@ AM_COND_IF([VGCONF_OS_IS_DARWIN],
       # Use system defaults, in case `xcrun` fails
       xcodedir="active developer directory"
       xcodedir_inc="/usr/include"
+      xcodedir_lib="/usr/lib"
   ])
 
   darwin_sdk="$darwin_platform$darwin_version"
@@ -221,11 +223,12 @@ AM_COND_IF([VGCONF_OS_IS_DARWIN],
     if test ! -z "$xcrundir"; then
         xcodedir="$xcrundir"
         xcodedir_inc="$xcodedir/usr/include"
+        xcodedir_lib="$xcodedir/usr/lib"
     fi
   else
     AC_MSG_WARN([Couldn't find xcrun, most Xcode-related autodetection will be disabled and the build might fail])
   fi
-  AC_MSG_RESULT([$xcodedir (includes: $xcodedir_inc)])
+  AC_MSG_RESULT([$xcodedir])
 ])
 
 # We don't want gcc < 3.0
@@ -584,6 +587,7 @@ case "${host_os}" in
 
         # Substitute the Xcode include path detected earlier
         AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
+        AC_SUBST(XCODE_LIB_DIR, [$xcodedir_lib])
 
 
         AC_MSG_CHECKING([for the Darwin platform])

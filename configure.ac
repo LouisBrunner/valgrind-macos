@@ -444,6 +444,10 @@ case "${host_os}" in
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
               freebsd_vers=$freebsd_13_2
               ;;
+           *)
+              AC_MSG_RESULT([unsupported (${kernel})])
+              AC_MSG_ERROR([Valgrind works on FreeBSD 10.x to 14.x])
+              ;;
            esac
            ;;
         14.*)

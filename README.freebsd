@@ -21,6 +21,10 @@ $ ./configure --prefix=/where/ever
 $ gmake
 $ gmake install
 
+If you are using a jail for building, make sure that it is configured so that
+"uname -r" returns a string that matches the pattern "XX.Y-*" where XX is the
+major version (12, 13, 14 ...) and Y is the minor version (0, 1, 2, 3).
+
 Known Limitations (June 2022)
 
 0. Be aware that if you use a wrapper script and run Valgrind on the wrapper

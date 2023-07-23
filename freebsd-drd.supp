@@ -240,3 +240,12 @@
    obj:*/lib*/libc.so.7
    fun:vsprintf
 }
+{
+   DRD-FREEBSD132-GETADDRINFO
+   drd:ConflictingAccess
+   ...
+   obj:*/lib*/libc.so.7
+   fun:nsdispatch
+   obj:*/lib*/libc.so.7
+   fun:getaddrinfo
+}

@@ -154,7 +154,6 @@ check_PROGRAMS = \
 	cond_timedwait_invalid \
 	cond_timedwait_test \
 	free_is_write \
-	getaddrinfo \
 	hg01_all_ok \
 	hg02_deadlock \
 	hg03_inherit \
@@ -237,6 +236,10 @@ endif
 if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS += annotate_rwlock
 annotate_rwlock_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
+endif
+
+if HAVE_GETADDRINFO
+check_PROGRAMS += getaddrinfo
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

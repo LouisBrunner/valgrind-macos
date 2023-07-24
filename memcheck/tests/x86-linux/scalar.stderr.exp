@@ -2122,11 +2122,6 @@ Syscall param poll(ufds.fd) points to unaddressable byte(s)
    by 0x........: main (scalar.c:761)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param poll(ufds.events) points to unaddressable byte(s)
-   ...
-   by 0x........: main (scalar.c:761)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
 Syscall param poll(ufds.revents) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c:761)

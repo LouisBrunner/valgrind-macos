@@ -7831,8 +7831,9 @@ PRE(sys_pollsys)
    for (i = 0; i < ARG2; i++) {
       vki_pollfd_t *u = &ufds[i];
       PRE_FIELD_READ("poll(ufds.fd)", u->fd);
-      /* XXX Check if it's valid? */
-      PRE_FIELD_READ("poll(ufds.events)", u->events);
+      if (ML_(safe_to_deref)(&ufds[i].fd, sizeof(ufds[i].fd)) && ufds[i].fd >= 0) {
+         PRE_FIELD_READ("poll(ufds.events)", u->events);
+      }
       PRE_FIELD_WRITE("poll(ufds.revents)", u->revents);
    }
 

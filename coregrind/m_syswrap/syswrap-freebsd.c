@@ -6124,15 +6124,15 @@ PRE(sys_ppoll)
                  struct vki_pollfd *, fds, unsigned int, nfds,
                  struct vki_timespec *, timeout, vki_sigset_t *, newsigmask);
 
-   if (ML_(safe_to_deref)(fds, ARG2*sizeof(struct vki_pollfd))) {
-      for (i = 0; i < ARG2; i++) {
-         PRE_MEM_READ( "ppoll(fds.fd)",
-                       (Addr)(&fds[i].fd), sizeof(fds[i].fd) );
+   for (i = 0; i < ARG2; i++) {
+      PRE_MEM_READ( "ppoll(fds.fd)",
+                    (Addr)(&fds[i].fd), sizeof(fds[i].fd) );
+      if (ML_(safe_to_deref)(&fds[i].fd, sizeof(fds[i].fd)) && fds[i].fd >= 0) {
          PRE_MEM_READ( "ppoll(fds.events)",
                        (Addr)(&fds[i].events), sizeof(fds[i].events) );
-         PRE_MEM_WRITE( "ppoll(fds.revents)",
-                        (Addr)(&fds[i].revents), sizeof(fds[i].revents) );
       }
+      PRE_MEM_WRITE( "ppoll(fds.revents)",
+                     (Addr)(&fds[i].revents), sizeof(fds[i].revents) );
    }
 
    if (ARG3) {

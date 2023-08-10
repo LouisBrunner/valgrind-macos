@@ -8,7 +8,7 @@
    This file is part of Cachegrind, a high-precision tracing profiler
    built with Valgrind.
 
-   Copyright (C) 2002-2017 Nicholas Nethercote
+   Copyright (C) 2002-2023 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -38,10 +38,12 @@
 #include "pub_tool_options.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_transtab.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_clientstate.h"
 #include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 
+#include "cachegrind.h"
 #include "cg_arch.h"
 #include "cg_sim.c"
 #include "cg_branchpred.c"
@@ -59,6 +61,7 @@
 
 static Bool  clo_cache_sim  = False; /* do cache simulation? */
 static Bool  clo_branch_sim = False; /* do branch simulation? */
+static Bool  clo_instr_at_start = True; /* instrument at startup? */
 static const HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
 
 /*------------------------------------------------------------*/
@@ -176,6 +179,10 @@ static Int  full_debugs         = 0;
 static Int  file_line_debugs    = 0;
 static Int  fn_debugs           = 0;
 static Int  no_debugs           = 0;
+
+//------------------------------------------------------------
+// Instrumentation control
+static Bool instr_enabled = True;
 
 /*------------------------------------------------------------*/
 /*--- String table operations                              ---*/
@@ -1061,6 +1068,10 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
       VG_(tool_panic)("host/guest word size mismatch");
    }
 
+   if (!instr_enabled) {
+      return sbIn;
+   }
+
    // Set up new SB
    cgs.sbOut = deepCopyIRSBExceptStmts(sbIn);
 
@@ -1722,8 +1733,7 @@ static void cg_fini(Int exitcode)
 static
 void cg_discard_superblock_info ( Addr orig_addr64, VexGuestExtents vge )
 {
-   SB_info* sbInfo;
-   Addr     orig_addr = vge.base[0];
+   Addr orig_addr = vge.base[0];
 
    tl_assert(vge.n_used > 0);
 
@@ -1732,11 +1742,17 @@ void cg_discard_superblock_info ( Addr orig_addr64, VexGuestExtents vge )
                    (void*)orig_addr,
                    (void*)vge.base[0], (ULong)vge.len[0]);
 
-   // Get BB info, remove from table, free BB info.  Simple!  Note that we
-   // use orig_addr, not the first instruction address in vge.
-   sbInfo = VG_(OSetGen_Remove)(instrInfoTable, &orig_addr);
-   tl_assert(NULL != sbInfo);
-   VG_(OSetGen_FreeNode)(instrInfoTable, sbInfo);
+   // Get SB info, remove from table, free SB info. Simple! Unless
+   // instrumentation is currently disabled, in which case we won't have an SB
+   // info. Note that we use orig_addr, not the first instruction address in
+   // `vge`.
+   SB_info* sbInfo = VG_(OSetGen_Remove)(instrInfoTable, &orig_addr);
+   if (sbInfo) {
+      tl_assert(instr_enabled);
+      VG_(OSetGen_FreeNode)(instrInfoTable, sbInfo);
+   } else {
+      tl_assert(!instr_enabled);
+   }
 }
 
 /*--------------------------------------------------------------------*/
@@ -1753,6 +1769,7 @@ static Bool cg_process_cmd_line_option(const HChar* arg)
    else if VG_STR_CLO( arg, "--cachegrind-out-file", clo_cachegrind_out_file) {}
    else if VG_BOOL_CLO(arg, "--cache-sim",  clo_cache_sim)  {}
    else if VG_BOOL_CLO(arg, "--branch-sim", clo_branch_sim) {}
+   else if VG_BOOL_CLO(arg, "--instr-at-start", clo_instr_at_start) {}
    else
       return False;
 
@@ -1765,6 +1782,7 @@ static void cg_print_usage(void)
 "    --cachegrind-out-file=<file>     output file name [cachegrind.out.%%p]\n"
 "    --cache-sim=yes|no               collect cache stats? [no]\n"
 "    --branch-sim=yes|no              collect branch prediction stats? [no]\n"
+"    --instr-at-start=yes|no          instrument at start? [yes]\n"
    );
    VG_(print_cache_clo_opts)();
 }
@@ -1774,6 +1792,59 @@ static void cg_print_debug_usage(void)
    VG_(printf)(
 "    (none)\n"
    );
+}
+
+/*--------------------------------------------------------------------*/
+/*--- Client requests                                              ---*/
+/*--------------------------------------------------------------------*/
+
+static void set_instr_enabled(Bool enable)
+{
+   if (enable) {
+      // Enable instrumentation.
+      if (!instr_enabled) {
+         // Discard first, then update `instr_enabled`;
+         // `cg_discard_superblock_info` relies on that.
+         VG_(discard_translations_safely)((Addr)0x1000, ~(SizeT)0xfff, "cachegrind");
+         instr_enabled = True;
+      } else {
+         VG_(dmsg)("warning: CACHEGRIND_START_INSTRUMENTATION called,\n");
+         VG_(dmsg)("         but instrumentation is already enabled\n");
+      }
+   } else {
+      // Disable instrumentation.
+      if (instr_enabled) {
+         // Discard first, then update `instr_enabled`;
+         // `cg_discard_superblock_info` relies on that.
+         VG_(discard_translations_safely)((Addr)0x1000, ~(SizeT)0xfff, "cachegrind");
+         instr_enabled = False;
+      } else {
+         VG_(dmsg)("warning: CACHEGRIND_STOP_INSTRUMENTATION called,\n");
+         VG_(dmsg)("         but instrumentation is already disabled\n");
+      }
+   }
+}
+
+static Bool cg_handle_client_request(ThreadId tid, UWord *args, UWord *ret)
+{
+   if (!VG_IS_TOOL_USERREQ('C', 'G', args[0])
+       && VG_USERREQ__GDB_MONITOR_COMMAND != args[0])
+      return False;
+
+   switch(args[0]) {
+   case VG_USERREQ__CG_START_INSTRUMENTATION:
+      set_instr_enabled(True);
+      *ret = 0;
+      return True;
+
+   case VG_USERREQ__CG_STOP_INSTRUMENTATION:
+      set_instr_enabled(False);
+      *ret = 0;
+      return True;
+
+   default:
+      return False;
+   }
 }
 
 /*--------------------------------------------------------------------*/
@@ -1804,6 +1875,7 @@ static void cg_pre_clo_init(void)
    VG_(needs_command_line_options)(cg_process_cmd_line_option,
                                    cg_print_usage,
                                    cg_print_debug_usage);
+   VG_(needs_client_requests)(cg_handle_client_request);
 }
 
 static void cg_post_clo_init(void)
@@ -1853,6 +1925,12 @@ static void cg_post_clo_init(void)
       }
 
       cachesim_initcaches(I1c, D1c, LLc);
+   }
+
+   // When instrumentation client requests are enabled, we start with
+   // instrumentation off.
+   if (!clo_instr_at_start) {
+      instr_enabled = False;
    }
 }
 

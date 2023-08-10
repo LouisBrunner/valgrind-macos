@@ -38,6 +38,12 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   - bad size for functions that have implementation defined behaviour
     when the requested size is zero
 
+* Cachegrind:
+  - You can now profile part of a program's execution using the new
+    `CACHEGRIND_START_INSTRUMENTATION` and `CACHEGRIND_STOP_INSTRUMENTATION`
+    client requests, along with the new `--instr-at-start` option. The
+    behaviour is the same as Callgrind's equivalent functionality.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

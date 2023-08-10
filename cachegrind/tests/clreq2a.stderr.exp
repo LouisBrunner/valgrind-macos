@@ -1,0 +1,6 @@
+warning: CACHEGRIND_START_INSTRUMENTATION called,
+         but instrumentation is already enabled
+warning: CACHEGRIND_START_INSTRUMENTATION called,
+         but instrumentation is already enabled
+warning: CACHEGRIND_STOP_INSTRUMENTATION called,
+         but instrumentation is already disabled

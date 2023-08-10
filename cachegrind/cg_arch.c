@@ -3,8 +3,8 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Cachegrind, a Valgrind tool for cache
-   profiling programs.
+   This file is part of Cachegrind, a high-precision tracing profiler
+   built with Valgrind.
 
    Copyright (C) 2011-2017 Nicholas Nethercote
       njn@valgrind.org

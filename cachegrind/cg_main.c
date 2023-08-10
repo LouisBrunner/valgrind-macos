@@ -5,8 +5,8 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Cachegrind, a Valgrind tool for cache
-   profiling programs.
+   This file is part of Cachegrind, a high-precision tracing profiler
+   built with Valgrind.
 
    Copyright (C) 2002-2017 Nicholas Nethercote
       njn@valgrind.org
@@ -1786,7 +1786,7 @@ static void cg_pre_clo_init(void)
 {
    VG_(details_name)            ("Cachegrind");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("a cache and branch-prediction profiler");
+   VG_(details_description)     ("a high-precision tracing profiler");
    VG_(details_copyright_author)(
       "Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);

@@ -45,6 +45,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         Assertion 'resolved' failed
 470830  Don't print actions vgdb me ... continue for vgdb --multi mode
 470978  s390x: Valgrind cannot start qemu-kvm when "sysctl vm.allocate_pgste=0"
+471311  gdb --multi mode stdout redirecting to stderr
 471807  Add support for lazy reading and downloading of DWARF debuginfo
 472219  Syscall param ppoll(ufds.events) points to uninitialised byte(s)
 472963  Broken regular expression in configure.ac

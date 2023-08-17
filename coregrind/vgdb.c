@@ -1159,7 +1159,7 @@ static void gdb_relay(int pid, int send_noack_mode, char *q_buf);
    or the errno from the child on failure.  */
 static
 int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
-                            pid_t *pid)
+                            int in_port, pid_t *pid)
 {
    int err = 0;
    // We will use a pipe to track what the child does,
@@ -1243,6 +1243,19 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
          }
       }
 
+      /* When in stdio mode (talking to gdb through stdin/stdout, not
+         through a socket), redirect stdout to stderr and close stdin
+         for the inferior. That way at least some output can be seen,
+         but there will be no input.  */
+      if (in_port <= 0) {
+         /* close stdin */
+         close (0);
+         /* open /dev/null as new stdin */
+         open ("/dev/null", O_RDONLY);
+         /* redirect stdout as stderr */
+         dup2 (2, 1);
+      }
+
       /* Try to launch valgrind. Add --vgdb-error=0 to stop immediately so we
          can attach and --launched-with-multi to let valgrind know it doesn't
          need to show a banner how to connect to gdb, we will do that
@@ -1309,7 +1322,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
 
 /* Do multi stuff.  */
 static
-void do_multi_mode(int check_trials)
+void do_multi_mode(int check_trials, int in_port)
 {
    char *buf = vmalloc(PBUFSIZ+1);
    char *q_buf = vmalloc(PBUFSIZ+1); //save the qSupported packet sent by gdb
@@ -1459,6 +1472,7 @@ void do_multi_mode(int check_trials)
              int res = fork_and_exec_valgrind (count,
                                                decoded_string,
                                                working_dir,
+                                               in_port,
                                                &valgrind_pid);
 
              if (res == 0) {
@@ -2427,7 +2441,7 @@ int main(int argc, char** argv)
    if (multi_mode) {
       /* check_trails is the --wait argument in seconds, defaulting to 1
        * if not given.  */
-      do_multi_mode (check_trials);
+      do_multi_mode (check_trials, in_port);
    } else if (last_command >= 0) {
       standalone_send_commands(pid, last_command, commands);
    } else {

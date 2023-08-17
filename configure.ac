@@ -4552,7 +4552,7 @@ if ! $DIS_PATH -F scf_handle_bind $libscf  | grep -q -E '0x(4d01)?526570'; then
   AC_MSG_WARN([Function `scf_handle_bind' does not contain repository cache protocol version.])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
 fi
-hex=$( $DIS_PATH -F scf_handle_bind $libscf  | perl -pe '($_) = /0x(?:4d01)?526570(\d{2}),/' )
+hex=$( $DIS_PATH -F scf_handle_bind $libscf  | grep 526570 | sed 's/.*526570//;s/,.*//' )
 if test -z "$hex"; then
   AC_MSG_WARN([Version of the repository cache protocol is empty?!])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])

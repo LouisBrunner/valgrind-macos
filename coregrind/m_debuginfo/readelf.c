@@ -1916,6 +1916,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
    Word     i, j;
    Bool     dynbss_present = False;
    Bool     sdynbss_present = False;
+   Bool     retval = False;
 
    /* Image for the main ELF file we're working with. */
    DiImage* mimg = NULL;
@@ -2944,19 +2945,16 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
       }
    }
 
-  return True;
+   retval = True;
 
-  out:
-   {
-      /* Last, but not least, detach from the image. */
-      if (mimg) ML_(img_done)(mimg);
+ out:
 
-      if (svma_ranges) VG_(deleteXA)(svma_ranges);
+   /* Last, but not least, detach from the image. */
+   if (mimg) ML_(img_done)(mimg);
 
-      return False;
-   } /* out: */
+   if (svma_ranges) VG_(deleteXA)(svma_ranges);
 
-   /* NOTREACHED */
+   return retval;
 }
 
 Bool ML_(read_elf_debug) ( struct _DebugInfo* di )

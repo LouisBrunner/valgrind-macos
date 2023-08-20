@@ -5102,6 +5102,21 @@ static void caches__invalidate ( void ) {
    debuginfo_generation++;
 }
 
+#if defined(VGO_freebsd)
+void VG_(load_all_debuginfo) (void)
+{
+   for (DebugInfo* di = debugInfo_list; di; di = di->next) {
+      if (di->deferred == True) {
+         di->deferred = False;
+         ML_(read_elf_debug)( di );
+         ML_(canonicaliseTables)( di );
+         check_CFSI_related_invariants(di);
+         ML_(finish_CFSI_arrays)(di);
+      }
+   }
+}
+#endif
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

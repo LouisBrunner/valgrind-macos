@@ -5645,6 +5645,8 @@ PRE(sys_cap_enter)
          "         Please consider disabling capability by using the RUNNING_ON_VALGRIND mechanism.\n"
          "         See http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.clientreq\n");
    }
+   /* now complete loading debuginfo since it is not allowed after entering cap mode */
+   VG_(load_all_debuginfo)();
 }
 
 // SYS_cap_getmode   517

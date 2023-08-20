@@ -150,6 +150,13 @@ extern Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregs,
    info (e.g. CFI info or FPO info or ...). */
 extern UInt VG_(debuginfo_generation) (void);
 
+#if defined(VGO_freebsd)
+/* Force completion of loading all debuginfo.
+    Needed on FreeBSD when entering capability mode since
+    we can't open executable files to get the debuginfo after
+    entering capability mode. */
+extern void VG_(load_all_debuginfo) (void);
+#endif
 
 
 /* True if some FPO information is loaded.

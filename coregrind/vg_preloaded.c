@@ -76,7 +76,7 @@ DEFINE_GDB_PY_SCRIPT(VG_GDBSCRIPTS_DIR "/valgrind-monitor.py")
 void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run);
 void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run)
 {
-#  if !defined(__UCLIBC__) && !defined(MUSL_LIBC) \
+#  if !defined(__UCLIBC__) \
       && !defined(VGPV_arm_linux_android) \
       && !defined(VGPV_x86_linux_android) \
       && !defined(VGPV_mips32_linux_android) \
@@ -88,6 +88,14 @@ void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run)
        (_ZN9__gnu_cxx9__freeresEv != NULL)) {
       _ZN9__gnu_cxx9__freeresEv();
    }
+
+#  endif
+
+#  if !defined(__UCLIBC__) && !defined(MUSL_LIBC) \
+      && !defined(VGPV_arm_linux_android) \
+      && !defined(VGPV_x86_linux_android) \
+      && !defined(VGPV_mips32_linux_android) \
+      && !defined(VGPV_arm64_linux_android)
 
    extern void __libc_freeres(void) __attribute__((weak));
    if (((to_run & VG_RUN__LIBC_FREERES) != 0) &&

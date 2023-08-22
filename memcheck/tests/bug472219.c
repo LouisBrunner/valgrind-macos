@@ -1,3 +1,4 @@
+#define _GNU_SOURCE /* for ppoll */
 #include <poll.h>
 #include <stdlib.h>
 #include "../../config.h"

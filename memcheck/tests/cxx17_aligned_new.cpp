@@ -28,10 +28,16 @@ int main() {
     operator delete [](myClass5, 320U, std::align_val_t(64U));
 
     MyClass* myClassNt = new (std::nothrow) MyClass;
-    operator delete(myClassNt, std::align_val_t(64U),  std::nothrow);
+    operator delete(myClassNt, std::align_val_t(64U));
 
     MyClass* myClass5Nt = new (std::nothrow) MyClass[5];
-    operator delete [](myClass5Nt, std::align_val_t(64U), std::nothrow);
+    operator delete [](myClass5Nt, std::align_val_t(64U));
+
+    myClassNt = new (std::nothrow) MyClass;
+    operator delete(myClassNt, sizeof(MyClass), std::align_val_t(64U));
+
+    myClass5Nt = new (std::nothrow) MyClass[5];
+    operator delete [](myClass5Nt, sizeof(MyClass)*5, std::align_val_t(64U));
 
     OrdinaryClass* oClass = new OrdinaryClass;
     // this is a limitation, VG does not use enough bits
@@ -48,4 +54,3 @@ int main() {
     oClass = new (std::nothrow) OrdinaryClass[5];
     delete [] oClass;
 }
-

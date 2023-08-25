@@ -1554,7 +1554,6 @@ static ULong DEBUG_SnarfLinetab(
     */
    pnt.c = linetab;
    nfile = *pnt.s++;
-   nseg  = *pnt.s++;
 
    filetab = pnt.ui;
 

@@ -67,10 +67,10 @@ void DRD_(vc_cleanup)(VectorClock* const vc)
    DRD_(vc_reserve)(vc, 0);
 }
 
-/** Copy constructor -- initializes *new. */
-void DRD_(vc_copy)(VectorClock* const new, const VectorClock* const rhs)
+/** Copy constructor -- initializes *obj. */
+void DRD_(vc_copy)(VectorClock* const obj, const VectorClock* const rhs)
 {
-   DRD_(vc_init)(new, rhs->vc, rhs->size);
+   DRD_(vc_init)(obj, rhs->vc, rhs->size);
 }
 
 /** Assignment operator -- *lhs is already a valid vector clock. */

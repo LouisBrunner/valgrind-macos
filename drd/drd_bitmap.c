@@ -64,7 +64,7 @@ void DRD_(bm_module_cleanup)(void)
    s_bm2_set_template = NULL;
 }
 
-struct bitmap* DRD_(bm_new)()
+struct bitmap* DRD_(bm_new)(void)
 {
    struct bitmap* bm;
 

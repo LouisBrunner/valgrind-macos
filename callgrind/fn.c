@@ -300,7 +300,7 @@ static Bool search_runtime_resolve(obj_node* obj)
 /* Object hash table, fixed */
 static obj_node* obj_table[N_OBJ_ENTRIES];
 
-void CLG_(init_obj_table)()
+void CLG_(init_obj_table)(void)
 {
     Int i;
     for (i = 0; i < N_OBJ_ENTRIES; i++)
@@ -741,7 +741,7 @@ void CLG_(copy_current_fn_array)(fn_array* dst)
   dst->array = current_fn_active.array;
 }
 
-fn_array* CLG_(get_current_fn_array)()
+fn_array* CLG_(get_current_fn_array)(void)
 {
   return &current_fn_active;
 }

@@ -1593,7 +1593,7 @@ void cachesim_printstat(Int l1, Int l2, Int l3)
 
 struct event_sets CLG_(sets);
 
-void CLG_(init_eventsets)()
+void CLG_(init_eventsets)(void)
 {
     // Event groups from which the event sets are composed
     // the "Use" group only is used with "cacheuse" simulation

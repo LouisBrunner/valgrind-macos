@@ -311,7 +311,7 @@ void VG_(post_clo_init_configure_caches)(cache_t* I1c,
 #undef DEFINED
 }
 
-void VG_(print_cache_clo_opts)()
+void VG_(print_cache_clo_opts)(void)
 {
    VG_(printf)(
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"

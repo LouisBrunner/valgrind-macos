@@ -586,6 +586,11 @@ sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
 sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_misaligned_SOURCES = sized_aligned_new_delete_misaligned.cpp
 sized_aligned_new_delete_misaligned_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+if COMPILER_IS_CLANG
+cxx17_aligned_new_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_args_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned_CXXFLAGS += -fsized-deallocation
+endif
 endif
 
 demangle_SOURCES = demangle.cpp

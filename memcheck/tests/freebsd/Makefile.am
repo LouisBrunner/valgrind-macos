@@ -2,7 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
-	filter_scalar filter_realpathat filter_fstat
+	filter_scalar filter_realpathat filter_fstat filter_eventfd2
 
 EXTRA_DIST = \
 	scalar.h \
@@ -79,7 +79,7 @@ EXTRA_DIST = \
 	eventfd1.vgtest \
 	eventfd1.stderr.exp eventfd1.stdout.exp \
 	eventfd2.vgtest \
-	eventfd2.stderr.exp eventfd2.stdout.exp \
+	eventfd2.stderr.exp \
 	errno_aligned_allocs.vgtest \
 	errno_aligned_allocs.stderr.exp \
 	setproctitle.vgtest \

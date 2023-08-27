@@ -1,0 +1,5 @@
+prereq: echo "--log-file='file with spaces.log'" > .valgrindrc
+vgopts: --command-line-only=no
+prog: ../../tests/true
+post: test -f "./file with spaces.log"
+cleanup: rm -f "./file with spaces.log" ./.valgrindrc

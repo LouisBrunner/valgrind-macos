@@ -49,7 +49,9 @@ EXTRA_DIST = \
 	ksh_test.vgtest \
 	ksh_test.ksh \
 	ksh_test.stderr.exp \
-	ksh_test.stdout.exp
+	ksh_test.stdout.exp \
+	umtx_op_timeout.vgtest \
+	umtx_op_timeout.stderr.exp
 
 check_PROGRAMS = \
 	auxv osrel swapcontext hello_world fexecve 452275 usrstack \

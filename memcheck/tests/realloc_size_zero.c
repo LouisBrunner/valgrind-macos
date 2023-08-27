@@ -22,7 +22,7 @@ int main(void)
    }
 
    errno = 0;
-   volatile void *ptr = NULL;
+   void *ptr = NULL;
    volatile size_t size = 0U;
    char *p2 = realloc(ptr, size);
    if (p2) {

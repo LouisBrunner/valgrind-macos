@@ -4695,7 +4695,7 @@ POST(sys__umtx_op)
    case VKI_UMTX_OP_SHM:
    case VKI_UMTX_OP_ROBUST_LISTS:
       break;
-#if (FREEBSD_VERS >= FREEBSD_14 || 1)
+#if (FREEBSD_VERS >= FREEBSD_14)
    case VKI_UMTX_OP_GET_MIN_TIMEOUT:
       POST_MEM_WRITE( ARG4, sizeof(long int) );
       break;

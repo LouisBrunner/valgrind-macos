@@ -43,12 +43,21 @@
    fun:posix_fallocate
 }
 {
-   MEMCHECK-LIBX-REACHABLE-2
+   MEMCHECK-LIBC-REACHABLE-2
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
-   obj:/lib/libc.so.7
-   obj:/lib/libc.so.7
-   obj:/lib/libc.so.7
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
    fun:fwrite
+}
+# when calling std::locale::facet::_S_create_c_locale
+{
+   MEMCHECK-LIBC-REACHABLE-3
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:newlocale
 }

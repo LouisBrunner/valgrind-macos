@@ -238,7 +238,27 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
 
 #elif defined(VGO_freebsd)
 
-// nothing specific currently
+#if (FREEBSD_VERS >= FREEBSD_14)
+
+void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void);
+void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
+{
+    OrigFn fn;
+    Addr result = 0;
+    Addr fnentry;
+
+    /* Call the original indirect function and get it's result */
+    VALGRIND_GET_ORIG_FN(fn);
+    CALL_FN_W_v(result, fn);
+
+    fnentry = result;
+
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__ADD_IFUNC_TARGET,
+                                    fn.nraddr, fnentry, 0, 0, 0);
+    return (void*)result;
+}
+
+#endif
 
 #elif defined(VGO_solaris)
 

@@ -255,7 +255,7 @@ typedef
 typedef
    struct _TopSpec {
       struct _TopSpec* next; /* linked list */
-      const DebugInfo* seginfo;    /* symbols etc */
+      DebugInfo* seginfo;    /* symbols etc */
       Spec*      specs;      /* specs pulled out of seginfo */
       Bool       mark; /* transient temporary used during deletion */
    }
@@ -312,7 +312,7 @@ static void   show_active ( const HChar* left, const Active* act );
 static void   handle_maybe_load_notifier( const HChar* soname, 
                                           const HChar* symbol, Addr addr );
 
-static void   handle_require_text_symbols ( const DebugInfo* );
+static void   handle_require_text_symbols ( DebugInfo* );
 
 /*------------------------------------------------------------*/
 /*--- NOTIFICATIONS                                        ---*/
@@ -324,7 +324,7 @@ void generate_and_add_actives (
         Spec*    specs, 
         TopSpec* parent_spec,
 	/* debuginfo and the owning TopSpec */
-        const DebugInfo* di,
+        DebugInfo* di,
         TopSpec* parent_sym 
      );
 
@@ -385,7 +385,7 @@ static HChar const* advance_to_comma ( HChar const* c ) {
    topspecs list, and (2) figure out what new binding are now active,
    and, as a result, add them to the actives mapping. */
 
-void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
+void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 {
    Bool         ok, isWrap, isGlobal;
    Int          i, nsyms, becTag, becPrio;
@@ -420,6 +420,12 @@ void VG_(redir_notify_new_DebugInfo)( const DebugInfo* newdi )
    vg_assert(newdi);
    newdi_soname = VG_(DebugInfo_get_soname)(newdi);
    vg_assert(newdi_soname != NULL);
+
+   /* libc is special, because it contains some of the core redirects.
+      Make sure it is fully loaded.  */
+   if (0 == VG_(strcmp)(newdi_soname, libc_soname) ||
+       0 == VG_(strcmp)(newdi_soname, pthread_soname))
+      VG_(di_load_di)(newdi);
 
 #ifdef ENABLE_INNER
    {
@@ -814,7 +820,7 @@ void generate_and_add_actives (
         Spec*    specs, 
         TopSpec* parent_spec,
 	/* seginfo and the owning TopSpec */
-        const DebugInfo* di,
+        DebugInfo* di,
         TopSpec* parent_sym 
      )
 {
@@ -846,6 +852,11 @@ void generate_and_add_actives (
 
       sp->mark = VG_(string_match)( sp->from_sopatt, soname );
       anyMark = anyMark || sp->mark;
+
+      /* The symtab might be in a separate debuginfo file. Make sure the
+        debuginfo is fully loaded.  */
+      if (sp->mark && sp->mandatory)
+         VG_(di_load_di)(di);
    }
 
    /* shortcut: if none of the sonames match, there will be no bindings. */
@@ -1792,7 +1803,7 @@ void handle_maybe_load_notifier( const HChar* soname,
    symbols that satisfy any --require-text-symbol= specifications that
    apply to it, and abort the run with an error message if not.
 */
-static void handle_require_text_symbols ( const DebugInfo* di )
+static void handle_require_text_symbols ( DebugInfo* di )
 {
    /* First thing to do is figure out which, if any,
       --require-text-symbol specification strings apply to this

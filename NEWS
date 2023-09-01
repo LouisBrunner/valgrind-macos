@@ -52,6 +52,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 472963  Broken regular expression in configure.ac
 473604  Fix bug472219.c compile failure with Clang 16
 473677  make check compile failure with Clang 16 based on GCC 13.x
+473745  must-be-redirected function - strlen
 473870  FreeBSD 14 applications fail early at startup
 473944  Handle mold linker split RW PT_LOAD segments correctly
 n-i-bz  Allow arguments with spaces in .valgrindrc files

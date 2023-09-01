@@ -78,6 +78,8 @@ extern void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot );
 
 extern void VG_(addr_load_di)( Addr a );
 
+extern void VG_(di_load_di)( DebugInfo *di );
+
 extern void VG_(load_di)( DebugInfo *di, Addr a );
 
 extern void VG_(di_discard_ALL_debuginfo)( void );

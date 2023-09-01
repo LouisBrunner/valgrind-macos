@@ -130,7 +130,20 @@ These are much easier.
 
 They just contain a POST_MEM_WRITE macro for each output argument.
 
-1. Running regression tests
+1. Frequent causes of problems
+
+- New _umtx_op codes. Valgrind will print "WARNING: _umtx_op unsupported value".
+  See syswrap-freebsd.c and add new cases for the new codes.
+- Additions to auxv. Depending on the entry it may need to be simply copied
+  from the host to the guest, it may need to be modified for the guest or
+  it may need to be ignored. See initimg-freebsd.c.
+- ELF PT_LOAD mappings. Either Valgrind will assert or there will be no source
+  information in error reports. See VG_(di_notify_mmap) in debuginfo.c
+- Because they contain many deliberate errors the regression tests are prone
+  to change with changes of compiler. Liberal use of 'volatile' and
+  '-Wno-warning-flag' can help - see configure.ac
+
+2. Running regression tests
 
 In order to run all of the regression tests you will need to install
 the following packages

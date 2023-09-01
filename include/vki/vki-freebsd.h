@@ -2170,7 +2170,7 @@ struct vki_kinfo_vmentry {
    ULong kve_end;
    ULong   kve_offset;
    ULong   kve_fileid;
-   UInt    kve_fsid_freebsd11;
+   UInt    kve_vn_fsid_freebsd11;
    int   kve_flags;
    int   kve_resident;
    int   kve_private_resident;

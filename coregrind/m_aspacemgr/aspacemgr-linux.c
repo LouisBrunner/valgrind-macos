@@ -3943,7 +3943,7 @@ static void parse_procselfmaps (
        endPlusOne = (UWord)kve->kve_end;
        foffset    = kve->kve_offset;
        filename   = kve->kve_path;
-       dev        = kve->kve_fsid_freebsd11;
+       dev        = kve->kve_vn_fsid_freebsd11;
        ino        = kve->kve_fileid;
        if (filename[0] != '/') {
          filename = NULL;

@@ -32,6 +32,7 @@
 #include "pub_core_basics.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_debuginfo.h"
 #include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
@@ -3793,6 +3794,7 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_l
    DiOffT   phdr_mioff    = 0;
    UWord    phdr_mnent    = 0U;
    UWord    phdr_ment_szB = 0U;
+   ElfXX_Phdr previous_rw_a_phdr;
 
    res = False;
 
@@ -3830,6 +3832,9 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_l
    phdr_mnent    = ehdr_m.e_phnum;
    phdr_ment_szB = ehdr_m.e_phentsize;
 
+   /* Sets p_memsz to 0 to indicate we have not yet a previous a_phdr. */
+   previous_rw_a_phdr.p_memsz = 0;
+
    for (i = 0U; i < phdr_mnent; i++) {
       ElfXX_Phdr a_phdr;
       ML_(img_get)(&a_phdr, mimg,
@@ -3841,22 +3846,59 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_l
             if (((a_phdr.p_flags & (PF_R | PF_W)) == (PF_R | PF_W)) &&
                 ((a_phdr.p_flags & flag_x) == 0)) {
                ++*rw_load_count;
-            }
+               if (VG_(debugLog_getLevel)() > 1)
+                  VG_(message)(Vg_DebugMsg, "check_elf_and_get_rw_loads: "
+                               "++*rw_load_count to %d for %s "
+                               "p_vaddr %#lx p_offset %lu, p_filesz %lu\n",
+                               *rw_load_count, filename,
+                               (UWord)a_phdr.p_vaddr, (UWord)a_phdr.p_offset,
+                               (UWord)a_phdr.p_filesz);
+               /*
+                * Hold your horses
+                * Just because The ELF file contains 2 RW PT_LOAD segments
+                * doesn't mean that Valgrind will also make 2 calls to
+                * VG_(di_notify_mmap): in some cases, the 2 NSegments will get
+                * merged and VG_(di_notify_mmap) only gets called once.
+                * How to detect that the segments will be merged ?
+                * Logically, they will be merged if the first segment ends
+                * at the beginning of the second segment:
+                *   Seg1 virtual address + Seg1 segment_size
+                *                             == Seg2 virtual address.
+                * However, it is not very clear how the file section will be
+                * loaded: the PT_LOAD specifies a file size and a memory size.
+                * Logically, the memory size should be used in the above
+                * condition, but strangely enough, in some cases the file size
+                * can be smaller than the memory size. And that then result in
+                * an "anonymous" mapping done between the 2 segments that
+                * otherwise would be consecutive.
+                * This has been seen in an executable linked by the mold linker
+                * (see bug 473944). In this case, the file segments were loaded
+                * with a "page rounded up" file size (observed on RHEL 8.6,
+                * ld-2.28.so, mold 1.5.1).
+                * However, in FreeBSD with lld (see 452802 and 473944), rounding
+                * up p_filesz in the below condition makes at least one test
+                * fail.
+                * As on the mold case, the below condition correctly ensures
+                * the 2 different segments loaded separately are both counted
+                * here, we use the non rounded up p_filesz.
+                * This is all a nightmare/hack. Something cleaner should be
+                * done than trying to guess here if segments will or will not
+                * be merged later depending on how the loader will load
+                * with or without rounding up.
+                * */
+               if (previous_rw_a_phdr.p_memsz > 0 &&
+                   ehdr_m.e_type == ET_EXEC &&
+                   previous_rw_a_phdr.p_vaddr + previous_rw_a_phdr.p_filesz
+                     == a_phdr.p_vaddr)
+               {
+                 --*rw_load_count;
+                 if (VG_(debugLog_getLevel)() > 1)
+                    VG_(message)(Vg_DebugMsg, "check_elf_and_get_rw_loads: "
+                                 " --*rw_load_count to %d for %s\n",
+                                 *rw_load_count, filename);
+               }
 
-            /*
-             * Hold your horses
-             * Just because The ELF file contains 2 RW PT_LOAD segments it
-             * doesn't mean that Valgrind will also make 2 calls to
-             * VG_(di_notify_mmap). If the stars are all aligned
-             * (which usually means that the ELF file is the client
-             * executable with the segment offset for the
-             * second PT_LOAD falls exactly on 0x1000) then the NSegements
-             * will get merged and VG_(di_notify_mmap) only gets called once. */
-            if (*rw_load_count == 2 &&
-                ehdr_m.e_type == ET_EXEC &&
-                a_phdr.p_offset == VG_PGROUNDDN(a_phdr.p_offset) )
-            {
-               *rw_load_count = 1;
+               previous_rw_a_phdr = a_phdr;
             }
          }
       }

@@ -20,6 +20,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+* support has been added for FreeBSD 14 and FreeBSD 15.
+
 
 * ==================== TOOL CHANGES ===================
 

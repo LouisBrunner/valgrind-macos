@@ -1,1 +1,2 @@
 prog: ../../none/tests/sem
+vgopts: -q

@@ -7305,7 +7305,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          if (mc && mc->szB != aligned_alloc_info->size) {
             MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new/delete");
          }
-         if (aligned_alloc_info->orig_alignment != mc->alignB) {
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
             MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, "new/delete");
          }
          if (aligned_alloc_info->orig_alignment == 0 ||
@@ -7318,7 +7318,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          if (mc && mc->szB != aligned_alloc_info->size) {
             MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new[]/delete[]" );
          }
-         if (aligned_alloc_info->orig_alignment != mc->alignB) {
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
             MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, "new[]/delete[]");
          }
          if (aligned_alloc_info->orig_alignment == 0 ||

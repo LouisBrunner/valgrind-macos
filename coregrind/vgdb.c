@@ -2269,6 +2269,11 @@ void parse_options(int argc, char** argv,
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--vgdb-prefix=")) {
+         if (vgdb_prefix) {
+            // was specified more than once on the command line
+            // ignore earlier uses
+            free(vgdb_prefix);
+         }
          vgdb_prefix = strdup (argv[i] + 14);
       } else if (is_opt(argv[i], "--valgrind=")) {
           char *path = argv[i] + 11;

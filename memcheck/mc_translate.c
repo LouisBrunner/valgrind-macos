@@ -4822,18 +4822,11 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          and_or_ty = Ity_I1; improve = mkImproveOR1; goto do_And_Or;
 
       do_And_Or:
-         return
-         assignNew(
-            'V', mce, 
-            and_or_ty,
-            difd(mce, uifu(mce, vatom1, vatom2),
-                      difd(mce, improve(mce, atom1, vatom1),
-                                improve(mce, atom2, vatom2) ) ) );
-
          return assignNew('V', mce, and_or_ty,
             difd(mce, uifu(mce, vatom1, vatom2),
                       difd(mce, improve(mce, atom1, vatom1),
                                 improve(mce, atom2, vatom2) ) ) );
+
       case Iop_Xor8:
          return mkUifU8(mce, vatom1, vatom2);
       case Iop_Xor16:

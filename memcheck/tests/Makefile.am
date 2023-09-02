@@ -625,9 +625,9 @@ sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_misaligned1_SOURCES = sized_aligned_new_delete_misaligned1.cpp
 sized_aligned_new_delete_misaligned1_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_misaligned2_SOURCES = sized_aligned_new_delete_misaligned2.cpp
-sized_aligned_new_delete_misaligned2_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned2_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_UNUSED_VARIABLE@
 sized_aligned_new_delete_misaligned3_SOURCES = sized_aligned_new_delete_misaligned3.cpp
-sized_aligned_new_delete_misaligned3_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned3_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_UNUSED_VARIABLE@
 if COMPILER_IS_CLANG
 cxx17_aligned_new_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_args_CXXFLAGS += -fsized-deallocation

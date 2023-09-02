@@ -639,10 +639,11 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
       if (tst->os_state.ustack
           && VG_(am_is_valid_for_client)((Addr)tst->os_state.ustack,
                                          sizeof(*tst->os_state.ustack),
-                                         VKI_PROT_WRITE))
+                                         VKI_PROT_WRITE)) {
          *tst->os_state.ustack = uc->uc_stack;
          VG_TRACK(post_mem_write, part, tid, (Addr)&tst->os_state.ustack,
                   sizeof(tst->os_state.ustack));
+      }
    }
 
    /* Restore the architecture-specific part of the context. */

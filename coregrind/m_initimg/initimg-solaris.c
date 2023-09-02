@@ -920,7 +920,7 @@ IIFinaliseImageInfo VG_(ii_create_image)(IICreateImageInfo iicii,
 
       szB = VG_PGROUNDUP(szB);
       VG_(debugLog)(1, "initimg",
-                       "Setup client stack: size will be %ld\n", szB);
+                       "Setup client stack: size will be %lu\n", szB);
 
       iifii.clstack_max_size = szB;
       iifii.initial_client_SP = setup_client_stack(init_sp, env, &info,

@@ -1343,7 +1343,7 @@ DiImage* open_debug_file( const HChar* name, const HChar* buildid, UInt crc,
          if (VG_(clo_verbosity) > 1)
             VG_(message)(Vg_DebugMsg, 
                "  .. build-id mismatch (found %s wanted %s)\n", 
-               debug_buildid, buildid);
+               (debug_buildid ? debug_buildid : "(null)"), buildid);
          ML_(dinfo_free)(debug_buildid);
          return NULL;
       }

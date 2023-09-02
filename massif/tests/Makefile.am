@@ -91,7 +91,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 bug469146_SOURCES	= bug469146.cpp
 # -fno-optimize-sibling-calls because otherwise some platforms will have
 # tail call optimization which messes up --ignore-fn
-bug469146_CXXFLAGS	= $(AM_CXXFLAGS) -O2 -fno-optimize-sibling-calls @FLAG_W_NO_USE_AFTER_FREE@
+bug469146_CXXFLAGS	= $(AM_CXXFLAGS) -O2 -fno-optimize-sibling-calls @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_ATTRIBUTES@
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
 # pre C++11 compilers don't have exception specs

@@ -1,0 +1,11 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign_args.c:19)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: posix_memalign (vg_replace_malloc.c:...)
+   by 0x........: main (memalign_args.c:23)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: valloc (vg_replace_malloc.c:...)
+   by 0x........: main (memalign_args.c:31)

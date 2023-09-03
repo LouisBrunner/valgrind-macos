@@ -1,9 +1,9 @@
 #! /bin/sh
 
-# Solaris libc prints 'Inf' or 'Infinity' instead of 'inf'
+# Solaris libc prints 'Inf' or 'Infinity' or 'infinity' instead of 'inf'
 # and 'NaN' instead of 'nan'. Filter these differences here.
-sed "s/-Infinity/     -inf/g" |
-sed "s/Infinity/     inf/g"   |
+sed "s/-[Ii]nfinity/     -inf/g" |
+sed "s/[Ii]nfinity/     inf/g"   |
 sed "s/Inf/inf/g"             |
 sed "s/NaN/nan/g"
 

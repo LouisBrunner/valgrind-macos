@@ -1035,8 +1035,11 @@ send_packet_start:
 // or -1 if no packet could be read.
 static int receive_packet(char *buf, int noackmode)
 {
-   int bufcnt = 0, ret;
-   char c, c1, c2;
+   int bufcnt = 0;
+   int ret;
+   char c;
+   char c1 = '\0';
+   char c2;
    unsigned char csum = 0;
 
    // Look for first '$' (start of packet) or error.
@@ -1428,12 +1431,12 @@ void do_multi_mode(int check_trials, int in_port)
 
           // Count the lenghts of each substring, init to -1 to compensate for
           // each substring starting with a delim char.
-          for (int i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
              len[i] = -1;
           count_len(';', buf, len);
           if (next_str) {
              DEBUG(1, "vRun: next_str %s\n", next_str);
-             for (int i = 0; i < count; i++) {
+             for (size_t i = 0; i < count; i++) {
                 /* Handle the case when the arguments
                  * was specified to gdb's run command
                  * but no remote exec-file was set,
@@ -1449,16 +1452,16 @@ void do_multi_mode(int check_trials, int in_port)
                    if (i < count - 1)
                       next_str = next_delim_string(next_str, *delim);
                 }
-                DEBUG(1, "vRun decoded: %s, next_str %s, len[%d] %d\n",
+                DEBUG(1, "vRun decoded: %s, next_str %s, len[%zu] %zu\n",
                       decoded_string[i], next_str, i, len[i]);
              }
 
              /* If we didn't get any arguments or the filename is an empty
                 string, valgrind won't know which program to run.  */
-             DEBUG (1, "count: %d, len[0]: %d\n", count, len[0]);
+             DEBUG (1, "count: %zu, len[0]: %zu\n", count, len[0]);
              if (! count || len[0] == 0) {
                 free(len);
-                for (int i = 0; i < count; i++)
+                for (size_t i = 0; i < count; i++)
                    free (decoded_string[i]);
                 free (decoded_string);
                 send_packet ("E01", noackmode);
@@ -1469,7 +1472,7 @@ void do_multi_mode(int check_trials, int in_port)
                 launch valgrind with the correct arguments... We then use the
                 valgrind pid to start relaying packets.  */
              pid_t valgrind_pid = -1;
-             int res = fork_and_exec_valgrind (count,
+             int res = fork_and_exec_valgrind ((int)count,
                                                decoded_string,
                                                working_dir,
                                                in_port,
@@ -1706,7 +1709,7 @@ void gdb_relay(int pid, int send_noack_mode, char *q_buf)
                   buflen = getpkt(buf, from_pid, to_pid);
                   if (buflen != 2 || strcmp(buf, "OK") != 0) {
                      if (buflen != 2)
-                        ERROR(0, "no ack mode: unexpected buflen %d, buf %s\n",
+                        ERROR(0, "no ack mode: unexpected buflen %zu, buf %s\n",
                               buflen, buf);
                      else
                         ERROR(0, "no ack mode: unexpected packet %s\n", buf);
@@ -1729,7 +1732,7 @@ void gdb_relay(int pid, int send_noack_mode, char *q_buf)
                   if (buflen > 0) {
                      waiting_for_qsupported = False;
                   } else {
-                     ERROR(0, "Unexpected getpkt for qSupported reply: %d\n",
+                     ERROR(0, "Unexpected getpkt for qSupported reply: %zu\n",
                            buflen);
                   }
                } else if (!read_from_pid_write_to_gdb(from_pid))

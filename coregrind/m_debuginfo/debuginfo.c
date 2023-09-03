@@ -2828,7 +2828,7 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
                      );
       know_dirinfo = buf_dirname[0] != '\0';
    } else {
-      const DiInlLoc *cur_inl = iipc && iipc->cur_inltab >= 0
+      const DiInlLoc *cur_inl = iipc && iipc->di && iipc->cur_inltab >= 0
          ? & iipc->di->inltab[iipc->cur_inltab]
          : NULL;
       vg_assert (cur_inl);

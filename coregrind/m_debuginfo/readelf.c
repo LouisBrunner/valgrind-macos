@@ -2933,7 +2933,8 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
       /* TOPLEVEL */
       /* Read .eh_frame and .debug_frame (call-frame-info) if any.  Do
          the .eh_frame section(s) first. */
-      vg_assert(di->n_ehframe >= 0 && di->n_ehframe <= N_EHFRAME_SECTS);
+      /* i->n_ehframe is unsigned and cannot be negative */
+      vg_assert(di->n_ehframe <= N_EHFRAME_SECTS);
       for (i = 0; i < di->n_ehframe; i++) {
          /* see Comment_on_EH_FRAME_MULTIPLE_INSTANCES above for why
             this next assertion should hold. */

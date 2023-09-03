@@ -156,7 +156,7 @@ and "gmake regtest".  Again, more details can be seen in
 README_DEVELOPERS.
 
 If you want to run the 'nightly' script (see nightly/README.txt)
-you will need to install gcp and coreutils and modify the
+you will need to install coreutils (for GNU cp) and modify the
 nightly/conf/freebsd.* files. The default configuration
 sends an e-mail to the valgrind-testresults mailing list.
 

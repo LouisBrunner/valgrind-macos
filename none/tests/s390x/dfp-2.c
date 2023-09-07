@@ -1,378 +1,291 @@
-#include <stdio.h>
-#include <stdint.h>
 #include "dfp_utils.h"
+#include <stdint.h>
+#include <stdio.h>
 
-/* Test various DFP ops:
-   - extract biased exponent 64/128 bit
-   - extract significance 64/128 bit
-   - insert biased exponent 64/128 bit
-   - load and test 64/128 bit
-   - shift left/right 64/128 bit
-   - reround 64/128 bit
-*/
+#define ITERATE_0_15(x)                                                        \
+   x(0);                                                                       \
+   x(1);                                                                       \
+   x(2);                                                                       \
+   x(3);                                                                       \
+   x(4);                                                                       \
+   x(5);                                                                       \
+   x(6);                                                                       \
+   x(7);                                                                       \
+   x(8);                                                                       \
+   x(9);                                                                       \
+   x(10);                                                                      \
+   x(11);                                                                      \
+   x(12);                                                                      \
+   x(13);                                                                      \
+   x(14);                                                                      \
+   x(15);
 
-void eedtr(_Decimal64 in)
+/* Extract biased exponent; extract significance */
+
+#define MAKE_EXTRACT(fun, name, opcode, type)                                  \
+   static void fun(type in)                                                    \
+   {                                                                           \
+      long out;                                                                \
+      asm(".insn rre," #opcode "0000, %[out], %[in]"                           \
+          : [out] "=d"(out)                                                    \
+          : [in] "f"(in.f));                                                   \
+      printf("%s ", #name);                                                    \
+      DFP_VAL_PRINT(in, type);                                                 \
+      printf(" -> %ld\n", out);                                                \
+   }
+
+MAKE_EXTRACT(eedtr, EEDTR, 0xb3e5, pun_d64)
+MAKE_EXTRACT(eextr, EEXTR, 0xb3ed, pun_d128)
+MAKE_EXTRACT(esdtr, ESDTR, 0xb3e7, pun_d64)
+MAKE_EXTRACT(esxtr, ESXTR, 0xb3ef, pun_d128)
+
+/* Insert biased exponent */
+
+#define MAKE_INSERT(fun, name, opcode, type)                                   \
+   static void fun(type in, long amount)                                       \
+   {                                                                           \
+      type out;                                                                \
+      asm(".insn rrf," #opcode "0000, %[out], %[amount], %[in], 0"             \
+          : [out] "=f"(out.f)                                                  \
+          : [in] "f"(in.f), [amount] "d"(amount));                             \
+      printf("%s ", #name);                                                    \
+      DFP_VAL_PRINT(in, type);                                                 \
+      printf(", %ld -> ", amount);                                             \
+      DFP_VAL_PRINT(out, type);                                                \
+      printf("\n");                                                            \
+   }
+
+MAKE_INSERT(iedtr, IEDTR, 0xb3f6, pun_d64)
+MAKE_INSERT(iextr, IEXTR, 0xb3fe, pun_d128)
+
+/* Load and test */
+
+#define MAKE_LOAD_AND_TEST(fun, name, opcode, type)                            \
+   static void fun(type in)                                                    \
+   {                                                                           \
+      type out;                                                                \
+      int  cc;                                                                 \
+      asm(".insn rre," #opcode "0000, %[out], %[in]\n\t"                       \
+          "ipm %[cc]\n\t"                                                      \
+          "srl %[cc],28"                                                       \
+          : [out] "=f"(out.f), [cc] "=d"(cc)                                   \
+          : [in] "f"(in.f));                                                   \
+      printf("%s ", #name);                                                    \
+      DFP_VAL_PRINT(in, type);                                                 \
+      printf(" -> %d\n", cc);                                                  \
+   }
+
+MAKE_LOAD_AND_TEST(ltdtr, LTDTR, 0xb3d6, pun_d64)
+MAKE_LOAD_AND_TEST(ltxtr, LTXTR, 0xb3de, pun_d128)
+
+/* Quantize */
+
+#define MAKE_QUANTIZE(fun, name, opcode, type, rm)                             \
+   static void fun##rm(type op, type quan)                                     \
+   {                                                                           \
+      type out;                                                                \
+      asm(".insn rrf," #opcode "0000, %[out], %[quan], %[op], %[m]"            \
+          : [out] "=f"(out.f)                                                  \
+          : [op] "f"(op.f), [quan] "f"(quan.f), [m] "i"(rm));                  \
+      printf("%s ", #name);                                                    \
+      DFP_VAL_PRINT(op, type);                                                 \
+      printf(", ");                                                            \
+      DFP_VAL_PRINT(quan, type);                                               \
+      printf(", %x -> ", rm);                                                  \
+      DFP_VAL_PRINT(out, type);                                                \
+      printf("\n");                                                            \
+   }
+
+#define MAKE_QADTR(rm) MAKE_QUANTIZE(qadtr, QADTR, 0xb3f5, pun_d64, rm)
+#define CALL_QADTR(rm) qadtr##rm(op, quan)
+
+ITERATE_0_15(MAKE_QADTR)
+
+void quantize64(pun_d64 op, pun_d64 quan) { ITERATE_0_15(CALL_QADTR); }
+
+#define MAKE_QAXTR(rm) MAKE_QUANTIZE(qaxtr, QAXTR, 0xb3fd, pun_d128, rm)
+#define CALL_QAXTR(rm) qaxtr##rm(op, quan)
+
+ITERATE_0_15(MAKE_QAXTR)
+
+void quantize128(pun_d128 op, pun_d128 quan) { ITERATE_0_15(CALL_QAXTR); }
+
+/* Reround */
+
+#define MAKE_REROUND(fun, name, opcode, type, rm)                              \
+   static void fun##rm(type op, uint8_t sig)                                   \
+   {                                                                           \
+      type out;                                                                \
+      asm(".insn rrf," #opcode "0000, %[out], %[sig], %[op], %[m]"             \
+          : [out] "=f"(out.f)                                                  \
+          : [op] "f"(op.f), [sig] "d"(sig), [m] "i"(rm));                      \
+      printf("%s ", #name);                                                    \
+      DFP_VAL_PRINT(op, type);                                                 \
+      printf(", %d, %x -> ", sig, rm);                                         \
+      DFP_VAL_PRINT(out, type);                                                \
+      printf("\n");                                                            \
+   }
+
+#define MAKE_RRDTR(rm) MAKE_REROUND(rrdtr, RRDTR, 0xb3f7, pun_d64, rm)
+#define CALL_RRDTR(rm) rrdtr##rm(op, sig)
+
+ITERATE_0_15(MAKE_RRDTR)
+
+void reround64(pun_d64 op, uint8_t sig) { ITERATE_0_15(CALL_RRDTR); }
+
+#define MAKE_RRXTR(rm) MAKE_REROUND(rrxtr, RRXTR, 0xb3ff, pun_d128, rm)
+#define CALL_RRXTR(rm) rrxtr##rm(op, sig)
+
+ITERATE_0_15(MAKE_RRXTR)
+
+void reround128(pun_d128 op, uint8_t sig) { ITERATE_0_15(CALL_RRXTR); }
+
+/* Shift significand left/right */
+
+#define MAKE_SHIFT(fun, name, opcode, type)                                    \
+   static void fun(type in, unsigned long amount)                              \
+   {                                                                           \
+      type out;                                                                \
+      int* shift = (int*)amount;                                               \
+      asm(".insn rxf, " #opcode ", %[out], %[in], 0(%[amount])"                \
+          : [out] "=f"(out.f)                                                  \
+          : [in] "f"(in.f), [amount] "a"(shift));                              \
+      printf("%s ", #name);                                                    \
+      DFP_VAL_PRINT(in, type);                                                 \
+      printf(" -> ");                                                          \
+      DFP_VAL_PRINT(out, type);                                                \
+      printf("\n");                                                            \
+   }
+
+MAKE_SHIFT(sldt, SLDT, 0xed0000000040, pun_d64)
+MAKE_SHIFT(slxt, SLXT, 0xed0000000048, pun_d128)
+MAKE_SHIFT(srdt, SRDT, 0xed0000000041, pun_d64)
+MAKE_SHIFT(srxt, SRXT, 0xed0000000049, pun_d128)
+
+/* 64-bit decimal constants */
+static const pun_d64 dd_0  = {0x2238000000000000}; /* 0.DD */
+static const pun_d64 dd_00 = {0x2234000000000000}; /* 0.0DD */
+static const pun_d64 dd_m0 = {0xa238000000000000}; /* -0.DD */
+static const pun_d64 dd_1  = {0x2238000000000001}; /* 1.DD */
+static const pun_d64 dd_A  = {0x22280000000a0005}; /* 50.0005DD */
+static const pun_d64 dd_mA = {0xa2280000000a0005}; /* -50.0005DD */
+static const pun_d64 dd_B  = {0x2224014d2e7971a1}; /* 12345678.54321DD */
+static const pun_d64 dd_mB = {0xa224014d2e7971a1}; /* -12345678.54321DD */
+static const pun_d64 dd_C  = {0x2220000000500005}; /* 5.000005DD */
+static const pun_d64 dd_mC = {0xa220000000500005}; /* -5.000005DD */
+static const pun_d64 dd_D  = {0x222000000023c534}; /* 2.171234DD */
+static const pun_d64 dd_mD = {0xa22000000023c534}; /* -2.171234DD */
+static const pun_d64 dd_DQ = {0x222c000000000001}; /* 0.001DD */
+static const pun_d64 dd_E  = {0x222000000023d2de}; /* 2.174598DD */
+static const pun_d64 dd_mE = {0xa22000000023d2de}; /* -2.174598DD */
+
+/* 128-bit versions of the same constants, except:
+   dl_D  = 26365343648.171234DL
+   dl_DQ = 230.01DL */
+static const pun_d128 dl_0  = {{0x2208000000000000, 0x0000000000000000}};
+static const pun_d128 dl_00 = {{0x2207c00000000000, 0x0000000000000000}};
+static const pun_d128 dl_m0 = {{0xa208000000000000, 0x0000000000000000}};
+static const pun_d128 dl_1  = {{0x2208000000000000, 0x0000000000000001}};
+static const pun_d128 dl_A  = {{0x2207000000000000, 0x00000000000a0005}};
+static const pun_d128 dl_mA = {{0xa207000000000000, 0x00000000000a0005}};
+static const pun_d128 dl_B  = {{0x2206c00000000000, 0x0000014d2e7971a1}};
+static const pun_d128 dl_mB = {{0xa206c00000000000, 0x0000014d2e7971a1}};
+static const pun_d128 dl_C  = {{0x2206800000000000, 0x0000000000500005}};
+static const pun_d128 dl_mC = {{0xa206800000000000, 0x0000000000500005}};
+static const pun_d128 dl_D  = {{0x2206800000000000, 0x0099e570f483c534}};
+static const pun_d128 dl_mD = {{0xa206800000000000, 0x0099e570f483c534}};
+static const pun_d128 dl_DQ = {{0x2207800000000000, 0x0000000000008c01}};
+static const pun_d128 dl_E  = {{0x2206800000000000, 0x000000000023d2de}};
+static const pun_d128 dl_mE = {{0xa206800000000000, 0x000000000023d2de}};
+
+int main()
 {
-  long out;
-  asm volatile(".insn rre, 0xb3e50000, %[out], %[in]\n\t"
-               :[out] "=d" (out) :[in] "f" (in));
-  printf("EEDTR ");
-  DFP_VAL_PRINT(in, _Decimal64);
-  printf(" -> %ld\n", out);
-}
+   eedtr(dd_A);
+   eedtr(dd_mA);
+   eedtr(dd_0);
+   eextr(dl_A);
+   eextr(dl_mA);
+   eextr(dl_0);
 
-void eextr(_Decimal128 in)
-{
-  long out;
-  asm volatile(".insn rre, 0xb3ed0000, %[out], %[in]\n\t"
-               :[out] "=d" (out) :[in] "f" (in));
-  printf("EEXTR ");
-  DFP_VAL_PRINT(in, _Decimal128);
-  printf(" -> %ld\n", out);
-}
+   esdtr(dd_A);
+   esdtr(dd_mA);
+   esdtr(dd_0);
+   esxtr(dl_A);
+   esxtr(dl_mA);
+   esxtr(dl_0);
 
-void esdtr(_Decimal64 in)
-{
-  long out;
-  asm volatile(".insn rre, 0xb3e70000, %[out], %[in]\n\t"
-               :[out] "=d" (out) :[in] "f" (in));
-  printf("ESDTR ");
-  DFP_VAL_PRINT(in, _Decimal64);
-  printf(" -> %ld\n", out);
-}
+   ltdtr(dd_A);
+   ltdtr(dd_mA);
+   ltdtr(dd_00);
+   ltxtr(dl_A);
+   ltxtr(dl_mA);
+   ltxtr(dl_00);
 
-void esxtr(_Decimal128 in)
-{
-  long out;
-  asm volatile(".insn rre, 0xb3ef0000, %[out], %[in]\n\t"
-               :[out] "=d" (out) :[in] "f" (in));
-  printf("ESXTR ");
-  DFP_VAL_PRINT(in, _Decimal128);
-  printf(" -> %ld\n", out);
-}
+   sldt(dd_B, 10);
+   sldt(dd_mB, 2);
+   sldt(dd_0, 2);
+   sldt(dd_m0, 2);
 
-void iedtr(_Decimal64 in, long amount)
-{
-  _Decimal64 out;
+   srdt(dd_B, 5);
+   srdt(dd_mB, 2);
+   srdt(dd_0, 2);
+   srdt(dd_m0, 2);
 
-  asm volatile (".insn rrf, 0xb3f60000, %[out], %[amount], %[in], 0\n\t"
-                :[out]"=f"(out)
-                :[in]"f"(in), [amount]"d"(amount));
+   slxt(dl_B, 10);
+   slxt(dl_mB, 2);
+   slxt(dl_0, 2);
+   slxt(dl_m0, 2);
 
-  printf("IEDTR ");
-  DFP_VAL_PRINT(in, _Decimal64);
-  printf(", %ld -> ", amount);
-  DFP_VAL_PRINT(out, _Decimal64);
-  printf("\n");
-}
+   srxt(dl_B, 10);
+   srxt(dl_mB, 2);
+   srxt(dl_0, 2);
+   srxt(dl_m0, 2);
 
-void iextr(_Decimal128 in, long amount)
-{
-  _Decimal128 out;
+   iedtr(dd_C, 391);
+   iedtr(dd_C, 392);
+   iedtr(dd_C, 393);
+   iedtr(dd_mC, 391);
+   iedtr(dd_mC, 392);
+   iedtr(dd_mC, 393);
+   iedtr(dd_0, 393);
+   iedtr(dd_m0, 393);
+   iedtr(dd_1, 393);
 
-  asm volatile (".insn rrf, 0xb3fe0000, %[out], %[amount], %[in], 0\n\t"
-                :[out]"=f"(out)
-                :[in]"f"(in), [amount]"d"(amount));
+   iextr(dl_C, 6169);
+   iextr(dl_C, 6170);
+   iextr(dl_C, 6171);
+   iextr(dl_mC, 6169);
+   iextr(dl_mC, 6170);
+   iextr(dl_mC, 6171);
+   iextr(dl_0, 6171);
+   iextr(dl_m0, 6171);
+   iextr(dl_1, 6171);
 
-  printf("IEXTR ");
-  DFP_VAL_PRINT(in, _Decimal128);
-  printf(", %ld -> ", amount);
-  DFP_VAL_PRINT(out, _Decimal128);
-  printf("\n");
-}
+   quantize64(dd_D, dd_DQ);
+   quantize64(dd_mD, dd_DQ);
+   quantize64(dd_mD, dd_0);
+   quantize64(dd_0, dd_DQ);
 
-void ltdtr(_Decimal64 in)
-{
-  _Decimal64 out;
-  int cc;
-  asm volatile(".insn rre, 0xb3d60000, %[out], %[in]\n\t"
-               "ipm %1\n\t"
-               "srl %1,28\n\t"
-               :[out] "=d" (out), "=d" (cc)
-               :[in] "f" (in)
-               :"cc");
-  printf("LTDTR ");
-  DFP_VAL_PRINT(in, _Decimal64);
-  printf(" -> %d\n", cc);
-}
+   quantize128(dl_D, dl_DQ);
+   quantize128(dl_mD, dl_DQ);
+   quantize128(dl_D, dl_0);
+   quantize128(dl_m0, dl_DQ);
 
-void ltxtr(_Decimal128 in)
-{
-  _Decimal128 out;
-  int cc;
-  asm volatile(".insn rre, 0xb3de0000, %[out], %[in]\n\t"
-               "ipm %1\n\t"
-               "srl %1,28\n\t"
-               :[out] "=f" (out), "=d" (cc)
-               :[in] "f" (in)
-               :"cc");
-  printf("LTXTR ");
-  DFP_VAL_PRINT(in, _Decimal128);
-  printf(" -> %d\n", cc);
-}
+   reround64(dd_E, 3);
+   reround64(dd_E, 4);
+   reround64(dd_E, 5);
+   reround64(dd_mE, 3);
+   reround64(dd_mE, 4);
+   reround64(dd_mE, 5);
+   reround64(dd_0, 0);
 
-void qadtr(_Decimal64 op, _Decimal64 quan, uint8_t rm)
-{
-  _Decimal64 out;
+   reround128(dl_E, 3);
+   reround128(dl_E, 4);
+   reround128(dl_E, 5);
+   reround128(dl_mE, 3);
+   reround128(dl_mE, 4);
+   reround128(dl_mE, 5);
+   reround128(dl_0, 0);
 
-  asm volatile (
-                ".insn rrf, 0xb3f50000, %[out], %[quan], %[op], %[rm]\n\t"
-                :[out]"=f"(out)
-                :[op]"f"(op), [quan]"f"(quan), [rm]"d"(rm)
-                );
-  printf("QADTR ");
-  DFP_VAL_PRINT(op, _Decimal64);
-  printf(", ");
-  DFP_VAL_PRINT(quan, _Decimal64);
-  printf(", %x -> ", rm);
-  DFP_VAL_PRINT(out, _Decimal64);
-  printf("\n");
-}
-
-void quantize64(_Decimal64 op, _Decimal64 quan)
-{
-  uint8_t i;
-
-  for (i = 0; i < 16; i++)
-    qadtr(op, quan, i);
-}
-
-void qaxtr(_Decimal128 op, _Decimal128 quan, uint8_t rm)
-{
-  _Decimal128 out;
-
-  asm volatile (
-                ".insn rrf, 0xb3fd0000, %[out], %[quan], %[op], %[rm]\n\t"
-                :[out]"=f"(out)
-                :[op]"f"(op), [quan]"f"(quan), [rm]"d"(rm)
-                );
-  printf("QAXTR ");
-  DFP_VAL_PRINT(op, _Decimal128);
-  printf(", ");
-  DFP_VAL_PRINT(quan, _Decimal128);
-  printf(", %x -> ", rm);
-  DFP_VAL_PRINT(out, _Decimal128);
-  printf("\n");
-}
-
-void quantize128(_Decimal128 op, _Decimal128 quan)
-{
-  uint8_t i;
-
-  for (i = 0; i < 16; i++)
-    qaxtr(op, quan, i);
-}
-
-void rrdtr(_Decimal64 op, uint8_t sig, uint8_t rm)
-{
-  _Decimal64 out;
-
-  asm volatile (
-                ".insn rrf, 0xb3f70000, %[out], %[sig], %[op], %[rm]\n\t"
-                :[out]"=f"(out)
-                :[op]"f"(op), [sig]"d"(sig), [rm]"d"(rm)
-                );
-  printf("RRDTR ");
-  DFP_VAL_PRINT(op, _Decimal64);
-  printf(", %d, %x -> ", sig, rm);
-  DFP_VAL_PRINT(out, _Decimal64);
-  printf("\n");
-}
-
-void reround64(_Decimal64 op, uint8_t sig)
-{
-  uint8_t i;
-
-  for (i = 0; i < 16; i++)
-    rrdtr(op, sig, i);
-}
-
-void rrxtr(_Decimal128 op, uint8_t sig, uint8_t rm)
-{
-  _Decimal128 out;
-
-  asm volatile (
-                ".insn rrf, 0xb3ff0000, %[out], %[sig], %[op], %[rm]\n\t"
-                :[out]"=f"(out)
-                :[op]"f"(op), [sig]"d"(sig), [rm]"d"(rm)
-                );
-  printf("RRXTR ");
-  DFP_VAL_PRINT(op, _Decimal128);
-  printf(", %d, %x -> ", sig, rm);
-  DFP_VAL_PRINT(out, _Decimal128);
-  printf("\n");
-}
-
-void reround128(_Decimal128 op, uint8_t sig)
-{
-  uint8_t i;
-
-  for (i = 0; i < 16; i++)
-    rrxtr(op, sig, i);
-}
-
-void sldt(_Decimal64 in, unsigned long amount)
-{
-  _Decimal64 out;
-  int *shift = (int *) amount;
-
-  asm volatile (".insn rxf, 0xed0000000040, %[out], %[in], 0(%[amount])\n\t"
-                :[out]"=f"(out)
-                :[in]"f"(in),[amount]"a"(shift));
-
-  printf("SLDT ");
-  DFP_VAL_PRINT(in, _Decimal64);
-  printf(" -> ");
-  DFP_VAL_PRINT(out, _Decimal64);
-  printf("\n");
-}
-
-void slxt(_Decimal128 in, unsigned long amount)
-{
-  _Decimal128 out;
-  int *shift = (int *) amount;
-
-  asm volatile (".insn rxf, 0xed0000000048, %[out], %[in], 0(%[amount])\n\t"
-                :[out]"=f"(out)
-                :[in]"f"(in),[amount]"a"(shift));
-
-  printf("SLXT ");
-  DFP_VAL_PRINT(in, _Decimal128);
-  printf(" -> ");
-  DFP_VAL_PRINT(out, _Decimal128);
-  printf("\n");
-}
-
-void srdt(_Decimal64 in, unsigned long amount)
-{
-  _Decimal64 out;
-  int *shift = (int *) amount;
-
-  asm volatile (".insn rxf, 0xed0000000041, %[out], %[in], 0(%[amount])\n\t"
-                :[out]"=f"(out)
-                :[in]"f"(in),[amount]"a"(shift));
-
-  printf("SRDT ");
-  DFP_VAL_PRINT(in, _Decimal64);
-  printf(" -> ");
-  DFP_VAL_PRINT(out, _Decimal64);
-  printf("\n");
-}
-
-void srxt(_Decimal128 in, unsigned long amount)
-{
-  _Decimal128 out;
-  int *shift = (int *) amount;
-
-  asm volatile (".insn rxf, 0xed0000000049, %[out], %[in], 0(%[amount])\n\t"
-                :[out]"=f"(out)
-                :[in]"f"(in),[amount]"a"(shift));
-
-  printf("SRXT ");
-  DFP_VAL_PRINT(in, _Decimal128);
-  printf(" -> ");
-  DFP_VAL_PRINT(out, _Decimal128);
-  printf("\n");
-}
-
-int main() {
-  _Decimal64 d64 = 50.0005DD;
-  _Decimal128 d128 = 50.0005DL;
-
-  eedtr(d64);
-  eedtr(-d64);
-  eedtr(0.DD);
-  eextr(d128);
-  eextr(-d128);
-  eextr(0.DL);
-
-  esdtr(d64);
-  esdtr(-d64);
-  esdtr(0.DD);
-  esxtr(d128);
-  esxtr(-d128);
-  esxtr(0.DL);
-
-  ltdtr(d64);
-  ltdtr(-d64);
-  ltdtr(0.0DD);
-  ltxtr(d128);
-  ltxtr(-d128);
-  ltxtr(0.0DL);
-
-  d64 = 12345678.54321DD;
-  sldt(d64, 10);
-  sldt(-d64, 2);
-  sldt(0.DD, 2);
-  sldt(-0.DD, 2);
-
-  srdt(d64, 5);
-  srdt(-d64, 2);
-  srdt(0.DD, 2);
-  srdt(-0.DD, 2);
-
-  d128 = 12345678.54321DL;
-  slxt(d128, 10);
-  slxt(-d128, 2);
-  slxt(0.DL, 2);
-  slxt(-0.DL, 2);
-
-  srxt(d128, 10);
-  srxt(-d128, 2);
-  srxt(0.DL, 2);
-  srxt(-0.DL, 2);
-
-  d64 = 5.000005DD;
-  iedtr(d64, 391);
-  iedtr(d64, 392);
-  iedtr(d64, 393);
-  iedtr(-d64, 391);
-  iedtr(-d64, 392);
-  iedtr(-d64, 393);
-  iedtr(0.DD, 393);
-  iedtr(-0.DD, 393);
-  iedtr(1.DD, 393);
-
-  d128 = 5.000005DL;
-  iextr(d128, 6169);
-  iextr(d128, 6170);
-  iextr(d128, 6171);
-  iextr(-d128, 6169);
-  iextr(-d128, 6170);
-  iextr(-d128, 6171);
-  iextr(0.DL, 6171);
-  iextr(-0.DL, 6171);
-  iextr(1.DL, 6171);
-
-  d64 = 2.171234DD;
-  quantize64(d64, 0.001DD);
-  quantize64(-d64, 0.001DD);
-  quantize64(-d64, 0.DD);
-  quantize64(0.DD, 0.001DD);
-
-  d128 = 26365343648.171234DL;
-  quantize128(d128, 230.01DL);
-  quantize128(-d128, 230.01DL);
-  quantize128(d128, 0.DL);
-  quantize128(-0.DL, 230.01DL);
-
-  d64 = 2.174598DD;
-  reround64(d64, 3);
-  reround64(d64, 4);
-  reround64(d64, 5);
-  reround64(-d64, 3);
-  reround64(-d64, 4);
-  reround64(-d64, 5);
-  reround64(0.DD, 0);
-
-  d128 = 2.174598DL;
-  reround128(d128, 3);
-  reround128(d128, 4);
-  reround128(d128, 5);
-  reround128(-d128, 3);
-  reround128(-d128, 4);
-  reround128(-d128, 5);
-  reround128(0.DL, 0);
-
-  return 0;
+   return 0;
 }

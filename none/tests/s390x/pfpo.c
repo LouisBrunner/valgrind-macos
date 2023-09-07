@@ -83,7 +83,7 @@ int main()
       /* f32 -> d32 */
       for(j = 0; j < 3; j++) {
         printf("f32 -> d32: round=%x ", i);
-        printf("%f -> ", f32_in[j]);
+        printf("%a -> ", f32_in[j]);
         d32 = PFPO(f32_in[j], float, _Decimal32, PFPO_F32_TO_D32,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d32, _Decimal32);
@@ -93,7 +93,7 @@ int main()
       /* f32 -> d64 */
       for(j = 0; j < 3; j++) {
         printf("f32 -> d64: round=%x ", i);
-        printf("%f -> ", f32_in[j]);
+        printf("%a -> ", f32_in[j]);
         d64 = PFPO(f32_in[j], float, _Decimal64, PFPO_F32_TO_D64,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d64, _Decimal64);
@@ -103,7 +103,7 @@ int main()
       /* f32 -> d128 */
       for(j = 0; j < 3; j++) {
         printf("f32 -> d128: round=%x ", i);
-        printf("%f -> ", f32_in[j]);
+        printf("%a -> ", f32_in[j]);
         d128 = PFPO(f32_in[j], float, _Decimal128, PFPO_F32_TO_D128,
                     i, ret_code, cc);
         DFP_VAL_PRINT(d128, _Decimal128);
@@ -113,7 +113,7 @@ int main()
       /* f64 -> d32 */
       for(j = 0; j < 3; j++) {
         printf("f64 -> d32: round=%x ", i);
-        printf("%lf -> ", f64_in[j]);
+        printf("%a -> ", f64_in[j]);
         d32 = PFPO(f64_in[j], double, _Decimal32, PFPO_F64_TO_D32,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d32, _Decimal32);
@@ -123,7 +123,7 @@ int main()
       /* f64 -> d64 */
       for(j = 0; j < 3; j++) {
         printf("f64 -> d64: round=%x ", i);
-        printf("%lf -> ", f64_in[j]);
+        printf("%a -> ", f64_in[j]);
         d64 = PFPO(f64_in[j], double, _Decimal64, PFPO_F64_TO_D64,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d64, _Decimal64);
@@ -133,7 +133,7 @@ int main()
       /* f64 -> d128 */
       for(j = 0; j < 3; j++) {
         printf("f64 -> d128: round=%x ", i);
-        printf("%lf -> ", f64_in[j]);
+        printf("%a -> ", f64_in[j]);
         d128 = PFPO(f64_in[j], double, _Decimal128, PFPO_F64_TO_D128,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d128, _Decimal128);
@@ -143,7 +143,7 @@ int main()
       /* f128 -> d32 */
       for(j = 0; j < 3; j++) {
         printf("f128 -> d32: round=%x ", i);
-        printf("%Lf -> ", f128_in[j]);
+        printf("%La -> ", f128_in[j]);
         d32 = PFPO(f128_in[j], long double, _Decimal32, PFPO_F128_TO_D32,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d32, _Decimal32);
@@ -153,7 +153,7 @@ int main()
       /* f128 -> d64 */
       for(j = 0; j < 3; j++) {
         printf("f128 -> d6: round=%x ", i);
-        printf("%Lf -> ", f128_in[j]);
+        printf("%La -> ", f128_in[j]);
         d64 = PFPO(f128_in[j], long double, _Decimal64, PFPO_F128_TO_D64,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d64, _Decimal64);
@@ -163,7 +163,7 @@ int main()
       /* f128 -> d128 */
       for(j = 0; j < 3; j++) {
         printf("f128 -> d128: round=%x ", i);
-        printf("%Lf -> ", f128_in[j]);
+        printf("%La -> ", f128_in[j]);
         d128 = PFPO(f128_in[j], long double, _Decimal128, PFPO_F128_TO_D128,
                    i, ret_code, cc);
         DFP_VAL_PRINT(d128, _Decimal128);
@@ -177,7 +177,7 @@ int main()
         printf(" -> ");
         f32 = PFPO(d32_in[j], _Decimal32, float, PFPO_D32_TO_F32,
                    i, ret_code, cc);
-        printf("%f", f32);
+        printf("%a", f32);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -188,7 +188,7 @@ int main()
         printf(" -> ");
         f64 = PFPO(d32_in[j], _Decimal32, double, PFPO_D32_TO_F64,
                    i, ret_code, cc);
-        printf("%lf", f64);
+        printf("%a", f64);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -199,7 +199,7 @@ int main()
         printf(" -> ");
         f128 = PFPO(d32_in[j], _Decimal32, long double, PFPO_D32_TO_F128,
                    i, ret_code, cc);
-        printf("%Lf", f128);
+        printf("%La", f128);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -210,7 +210,7 @@ int main()
         printf(" -> ");
         f32 = PFPO(d64_in[j], _Decimal64, float, PFPO_D64_TO_F32,
                    i, ret_code, cc);
-        printf("%f", f32);
+        printf("%a", f32);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -221,7 +221,7 @@ int main()
         printf(" -> ");
         f64 = PFPO(d64_in[j], _Decimal64, double, PFPO_D64_TO_F64,
                    i, ret_code, cc);
-        printf("%lf", f64);
+        printf("%a", f64);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -232,7 +232,7 @@ int main()
         printf(" -> ");
         f128 = PFPO(d64_in[j], _Decimal64, long double, PFPO_D64_TO_F128,
                    i, ret_code, cc);
-        printf("%Lf", f128);
+        printf("%La", f128);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -243,7 +243,7 @@ int main()
         printf(" -> ");
         f32 = PFPO(d128_in[j], _Decimal128, float, PFPO_D128_TO_F32,
                    i, ret_code, cc);
-        printf("%f", f32);
+        printf("%a", f32);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -254,7 +254,7 @@ int main()
         printf(" -> ");
         f64 = PFPO(d128_in[j], _Decimal128, double, PFPO_D128_TO_F64,
                    i, ret_code, cc);
-        printf("%lf", f64);
+        printf("%a", f64);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
 
@@ -265,7 +265,7 @@ int main()
         printf(" -> ");
         f128 = PFPO(d128_in[j], _Decimal128, long double, PFPO_D128_TO_F128,
                    i, ret_code, cc);
-        printf("%Lf", f128);
+        printf("%La", f128);
         printf(" ret=%d cc=%d\n", ret_code, cc);
       }
     }

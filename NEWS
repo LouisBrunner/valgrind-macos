@@ -66,6 +66,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 471311  gdb --multi mode stdout redirecting to stderr
 471807  Add support for lazy reading and downloading of DWARF debuginfo
 472219  Syscall param ppoll(ufds.events) points to uninitialised byte(s)
+472875  none/tests/s390x/dfp-1 failure 
 472963  Broken regular expression in configure.ac
 473604  Fix bug472219.c compile failure with Clang 16
 473677  make check compile failure with Clang 16 based on GCC 13.x

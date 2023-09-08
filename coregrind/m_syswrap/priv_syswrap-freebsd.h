@@ -541,7 +541,7 @@ DECL_TEMPLATE(freebsd, sys_sigfastblock) // 573
 DECL_TEMPLATE(freebsd, sys___realpathat) // 574
 #endif
 
-// unimpl __NR_close_range         575
+DECL_TEMPLATE(freebsd, sys_close_range)  // 575
 
 #endif
 

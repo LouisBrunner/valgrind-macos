@@ -73,6 +73,18 @@ Syscall param __realpathat(buf) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+575:         SYS_close_range 3s 0m
+---------------------------------------------------------
+Syscall param close_range(lowfd) contains uninitialised byte(s)
+   ...
+
+Syscall param close_range(highfd) contains uninitialised byte(s)
+   ...
+
+Syscall param close_range(flags) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
 577:         SYS___specialfd 3s 1m
 ---------------------------------------------------------
 Syscall param __specialfd(type) contains uninitialised byte(s)

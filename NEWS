@@ -20,7 +20,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
-* support has been added for FreeBSD 14 and FreeBSD 15.
+* Support has been added for FreeBSD 14 and FreeBSD 15.
+* Add support for the FreeBSD close_range system call.
 
 * ==================== TOOL CHANGES ===================
 

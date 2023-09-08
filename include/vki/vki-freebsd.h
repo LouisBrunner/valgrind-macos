@@ -1610,6 +1610,7 @@ struct vki_dirent {
 
 #define VKI_RFSPAWN         (1U<<31U)
 
+#define VKI_CLOSE_RANGE_CLOEXEC     (1<<2)
 
 //----------------------------------------------------------------------
 // From sys/msg.h

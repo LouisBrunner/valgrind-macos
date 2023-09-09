@@ -414,28 +414,28 @@ Bool VG_(thread_stack_next)(/*MOD*/ThreadId* tid,
 
 Addr VG_(thread_get_stack_max)(ThreadId tid)
 {
-   vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
+   vg_assert(tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].status != VgTs_Empty);
    return VG_(threads)[tid].client_stack_highest_byte;
 }
 
 SizeT VG_(thread_get_stack_size)(ThreadId tid)
 {
-   vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
+   vg_assert(tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].status != VgTs_Empty);
    return VG_(threads)[tid].client_stack_szB;
 }
 
 Addr VG_(thread_get_altstack_min)(ThreadId tid)
 {
-   vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
+   vg_assert(tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].status != VgTs_Empty);
    return (Addr)VG_(threads)[tid].altstack.ss_sp;
 }
 
 SizeT VG_(thread_get_altstack_size)(ThreadId tid)
 {
-   vg_assert(0 <= tid && tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
+   vg_assert(tid < VG_N_THREADS && tid != VG_INVALID_THREADID);
    vg_assert(VG_(threads)[tid].status != VgTs_Empty);
    return VG_(threads)[tid].altstack.ss_size;
 }

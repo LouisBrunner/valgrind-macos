@@ -92,10 +92,10 @@ typedef UShort HTTno;
    address range which does not fall cleanly within any specific bin.
    Note that ECLASS_SHIFT + ECLASS_WIDTH must be < 32.
    ECLASS_N must fit in a EclassNo. */
-#define ECLASS_SHIFT 13
-#define ECLASS_WIDTH 9
-#define ECLASS_MISC  (1 << ECLASS_WIDTH)
-#define ECLASS_N     (1 + ECLASS_MISC)
+#define ECLASS_SHIFT 13U
+#define ECLASS_WIDTH 9U
+#define ECLASS_MISC  (1U << ECLASS_WIDTH)
+#define ECLASS_N     (1U + ECLASS_MISC)
 STATIC_ASSERT(ECLASS_SHIFT + ECLASS_WIDTH < 32);
 
 typedef UShort EClassNo;
@@ -1625,11 +1625,11 @@ static void initialiseSector ( SECno sno )
                       sizeof(HostExtent));
 
       /* Add an entry in the sector_search_order */
-      for (i = 0; i < n_sectors; i++) {
+      for (i = 0U; i < n_sectors; i++) {
          if (sector_search_order[i] == INV_SNO)
             break;
       }
-      vg_assert(i >= 0 && i < n_sectors);
+      vg_assert(i < n_sectors);
       sector_search_order[i] = sno;
 
       if (VG_(clo_verbosity) > 2)
@@ -1984,7 +1984,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
 /*-------------------------------------------------------------*/
 
 /* forward */
-static void unredir_discard_translations( Addr, ULong );
+static void unredir_discard_translations( Addr /*guest_start*/, ULong  /*range*/);
 
 /* Stuff for deleting translations which intersect with a given
    address range.  Unfortunately, to make this run at a reasonable
@@ -2237,7 +2237,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
                        "                    FAST, ec = %d\n", ec);
 
       /* Fast scheme */
-      vg_assert(ec >= 0 && ec < ECLASS_MISC);
+      vg_assert(ec < ECLASS_MISC);
 
       for (sno = 0; sno < n_sectors; sno++) {
          sec = &sectors[sno];
@@ -2343,7 +2343,7 @@ void VG_(discard_translations_safely) ( Addr  start, SizeT len,
 #define UNREDIR_SZB   1000
 
 #define N_UNREDIR_TT  500
-#define N_UNREDIR_TCQ (N_UNREDIR_TT * UNREDIR_SZB / sizeof(ULong))
+#define N_UNREDIR_TCQ (N_UNREDIR_TT * UNREDIR_SZB / (Int)sizeof(ULong))
 
 typedef
    struct {

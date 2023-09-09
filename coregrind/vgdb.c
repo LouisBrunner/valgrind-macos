@@ -1039,7 +1039,7 @@ static int receive_packet(char *buf, int noackmode)
    int ret;
    char c;
    char c1 = '\0';
-   char c2;
+   char c2 = '\0';
    unsigned char csum = 0;
 
    // Look for first '$' (start of packet) or error.

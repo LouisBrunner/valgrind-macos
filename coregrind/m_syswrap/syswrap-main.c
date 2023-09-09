@@ -1984,26 +1984,26 @@ SyscallInfo *syscallInfo;
 void VG_(clear_syscallInfo) ( ThreadId tid )
 {
    vg_assert(syscallInfo);
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(tid < VG_N_THREADS);
    VG_(memset)( & syscallInfo[tid], 0, sizeof( syscallInfo[tid] ));
    syscallInfo[tid].status.what = SsIdle;
 }
 
 Bool VG_(is_in_syscall) ( ThreadId tid )
 {
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(tid < VG_N_THREADS);
    return (syscallInfo && syscallInfo[tid].status.what != SsIdle);
 }
 
 Bool VG_(is_in_kernel_restart_syscall) ( ThreadId tid )
 {
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(tid < VG_N_THREADS);
    return (syscallInfo && ((syscallInfo[tid].flags & SfKernelRestart) != 0));
 }
 
 Word VG_(is_in_syscall_no) (ThreadId tid )
 {
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(tid < VG_N_THREADS);
    return syscallInfo[tid].orig_args.sysno;
 }
 

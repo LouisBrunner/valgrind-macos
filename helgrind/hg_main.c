@@ -3328,7 +3328,7 @@ static void evh__HG_PTHREAD_BARRIER_RESIZE_PRE ( ThreadId tid,
          the barrier, so need to mess with dep edges in the same way
          as if the barrier had filled up normally. */
       present = VG_(sizeXA)(bar->waiting);
-      tl_assert(present >= 0 && present <= bar->size);
+      tl_assert(present <= bar->size);
       if (newcount <= present) {
          bar->size = present; /* keep the cross_sync call happy */
          do_barrier_cross_sync_and_empty(bar);

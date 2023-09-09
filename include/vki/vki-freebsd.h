@@ -1321,8 +1321,6 @@ struct vki_semid_ds {
    unsigned short    sem_nsems;     /* no. of semaphores in array */
    vki_time_t     sem_otime;     /* last semop time */
    vki_time_t     sem_ctime;     /* last change time */
-   long        sem_pad2;
-   long        sem_pad3[4];
 };
 
 struct vki_sembuf {

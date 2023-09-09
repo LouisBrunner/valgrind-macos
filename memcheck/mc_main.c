@@ -2984,8 +2984,7 @@ void make_aligned_word64_noaccess ( Addr a )
       if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
          OCacheLine* line;
          UWord lineoff = oc_line_offset(a);
-         tl_assert(lineoff >= 0
-                   && lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
+         tl_assert(lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
          line = find_OCacheLine( a );
          line->u.main.descr[lineoff+0] = 0;
          line->u.main.descr[lineoff+1] = 0;
@@ -6048,8 +6047,8 @@ static Bool mc_expensive_sanity_check ( void )
    --partial-loads-ok needs to be enabled by default on all platforms.
    Not doing so causes lots of false errors. */
 Bool          MC_(clo_partial_loads_ok)       = True;
-Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
-Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
+Long          MC_(clo_freelist_vol)           = 20LL*1000LL*1000LL;
+Long          MC_(clo_freelist_big_blocks)    =  1LL*1000LL*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);

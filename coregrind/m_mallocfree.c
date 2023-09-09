@@ -918,11 +918,11 @@ void reclaimSuperblock ( Arena* a, Superblock* sb)
    cszB = sizeof(Superblock) + sb->n_payload_bytes;
 
    // removes sb from superblock list.
-   for (i = 0; i < a->sblocks_used; i++) {
+   for (i = 0U; i < a->sblocks_used; i++) {
       if (a->sblocks[i] == sb)
          break;
    }
-   vg_assert(i >= 0 && i < a->sblocks_used);
+   vg_assert(i < a->sblocks_used);
    for (j = i; j < a->sblocks_used; j++)
       a->sblocks[j] = a->sblocks[j+1];
    a->sblocks_used--;

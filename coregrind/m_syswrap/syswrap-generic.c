@@ -1830,6 +1830,7 @@ UInt get_sem_count( Int semid )
    if (sr_isError(res))
       return 0;
 
+   // both clang-tidy and coverity complain about this but I think they are both wrong
    return buf.sem_nsems;
 #  elif defined(__NR_semsys) /* Solaris */
    struct vki_semid_ds buf;

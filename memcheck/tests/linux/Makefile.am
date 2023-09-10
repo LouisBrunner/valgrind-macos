@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
 		aligned_alloc.stderr.exp-musl \
+		aligned_alloc.stderr.exp-glibc238 \
 	brk.stderr.exp brk.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \

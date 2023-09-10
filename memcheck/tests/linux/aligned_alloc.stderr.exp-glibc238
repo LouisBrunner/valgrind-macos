@@ -1,0 +1,8 @@
+Invalid size value: 25 alignment value: 8 (size should be a multiple of alignment)
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (aligned_alloc.c:16)
+
+Invalid alignment value: 40 (should be a power of 2)
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (aligned_alloc.c:21)
+

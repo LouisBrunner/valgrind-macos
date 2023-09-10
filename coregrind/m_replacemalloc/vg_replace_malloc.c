@@ -2157,7 +2157,15 @@ extern int * __error(void) __attribute__((weak));
 #define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
 #endif
 
-#if defined (VGO_linux) && !defined(MUSL_LIBC)
+#if defined (VGO_linux) && !defined(MUSL_LIBC) && !defined(HAVE_GNU_LIBC_C17_ALIGNED_ALLOC)
+
+/*
+ * Normally for GNU libc <= 2.37 aligned_alloc is a weak alias for memalign
+ * so this redir is not used.
+ * For libc 2.38 and later it is a separate function but then HAVE_GNU_LIBC_C17_ALIGNED_ALLOC
+ * should be true and this version doesn't get compiled.
+ * Leaving it here to be on the safe side.
+ */
 
  #define ALIGNED_ALLOC(soname, fnname) \
     \
@@ -2175,12 +2183,13 @@ extern int * __error(void) __attribute__((weak));
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
-       /* Test whether the alignment argument is valid.  It must be \
-          a power of two multiple of sizeof (void *).  */ \
-       if (alignment == 0 \
-           || alignment % sizeof (void *) != 0 \
-           || (alignment & (alignment - 1)) != 0) \
-          return 0; \
+       \
+       /* Round up to minimum alignment if necessary. */ \
+       if (alignment < VG_MIN_MALLOC_SZB) \
+          alignment = VG_MIN_MALLOC_SZB; \
+       \
+       /* Round up to nearest power-of-two if necessary (like glibc). */ \
+       while (0 != (alignment & (alignment - 1))) alignment++; \
        \
        mem = (void*)VALGRIND_NON_SIMD_CALL3( info.tl_memalign, \
                  alignment, orig_alignment, size ); \

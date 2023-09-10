@@ -6,6 +6,15 @@
 #include <fcntl.h>
 #include <assert.h>
 
+/* It looks like close_range was initially implemented for FreeBSD 13
+ * but without CLOSE_RANGE_CLOEXEC
+ * That implementation got back ported to FreeBSD 12.2
+ * And then CLOSE_RANGE_CLOEXEC added to 13 but not backported
+ * so 12 has close_range but not CLOSE_RANGE_CLOEXEC */
+#if !defined(CLOSE_RANGE_CLOEXEC)
+#define CLOSE_RANGE_CLOEXEC 1
+#endif
+
 int main(void)
 {
    struct rlimit rl;

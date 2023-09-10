@@ -4911,6 +4911,7 @@ AC_CHECK_FUNCS([     \
         strchrnul    \
         memrchr      \
         strndup      \
+        close_range
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -4938,6 +4939,8 @@ AM_CONDITIONAL([HAVE_MEMFD_CREATE],
                [test x$ac_cv_func_memfd_create = xyes])
 AM_CONDITIONAL([HAVE_GETADDRINFO],
                [test x$ac_cv_func_getaddrinfo = xyes])
+AM_CONDITIONAL([HAVE_CLOSE_RANGE],
+               [test x$ac_cv_func_close_range = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

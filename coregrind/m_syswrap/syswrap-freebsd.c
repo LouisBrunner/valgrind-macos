@@ -6667,6 +6667,15 @@ PRE(sys___realpathat)
    PRE_MEM_WRITE("__realpathat(buf)", (Addr)ARG3, ARG4);
 }
 
+POST(sys___realpathat)
+{
+   POST_MEM_WRITE((Addr)ARG3, ARG4);
+}
+
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_12_2)
+
 // SYS_sys_close_range   575
 // int close_range(close_range(u_int lowfd, u_int highfd, int flags);
 PRE(sys_close_range)
@@ -6735,11 +6744,9 @@ POST(sys_close_range)
           && fd != VG_(xml_output_sink).fd)
          ML_(record_fd_close)(fd);
 }
+#endif
 
-POST(sys___realpathat)
-{
-   POST_MEM_WRITE((Addr)ARG3, ARG4);
-}
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 
 // SYS___specialfd 577
 // syscalls.master

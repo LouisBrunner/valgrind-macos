@@ -5,12 +5,25 @@ dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 	filter_scalar filter_realpathat filter_fstat filter_eventfd2
 
 EXTRA_DIST = \
+	access.vgtest \
+	access.stderr.exp \
+	aligned_alloc.vgtest aligned_alloc.stderr.exp \
+	aligned_alloc_xml.vgtest aligned_alloc_xml.stderr.exp \
+	aligned_allocs_supp.vgtest \
+	aligned_allocs_supp.stderr.exp \
+	aligned_allocs_supp.supp \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
 	chflags.vgtest\
 	chflags.stderr.exp \
 		chflags.stderr.exp-x86 \
+	chmod_chown.vgtest \
+	chmod_chown.stderr.exp \
 	close_range.vgtest close_range.stderr.exp \
+	eventfd1.vgtest \
+	eventfd1.stderr.exp eventfd1.stdout.exp \
+	eventfd2.vgtest \
+	eventfd2.stderr.exp \
 	extattr.vgtest \
 	extattr.stderr.exp \
 	get_set_login.vgtest \
@@ -56,10 +69,6 @@ EXTRA_DIST = \
 	file_locking_wait6.stderr.exp \
 	utimens.vgtest \
 	utimens.stderr.exp \
-	access.vgtest \
-	access.stderr.exp \
-	chmod_chown.vgtest \
-	chmod_chown.stderr.exp \
 	misc.vgtest \
 	misc.stderr.exp \
 	get_set_context.vgtest \
@@ -76,10 +85,6 @@ EXTRA_DIST = \
 	realpathat.stderr.exp \
 	scalar_13_plus.vgtest \
 	scalar_13_plus.stderr.exp \
-	eventfd1.vgtest \
-	eventfd1.stderr.exp eventfd1.stdout.exp \
-	eventfd2.vgtest \
-	eventfd2.stderr.exp \
 	errno_aligned_allocs.vgtest \
 	errno_aligned_allocs.stderr.exp \
 	setproctitle.vgtest \
@@ -103,20 +108,15 @@ EXTRA_DIST = \
         memalign.vgtest memalign.stderr.exp \
 	bug470713.vgtest bug470713.stderr.exp \
 		bug470713.stdout.exp \
-        aligned_allocs_supp.vgtest \
-	aligned_allocs_supp.stderr.exp \
-	aligned_allocs_supp.supp \
 	memalign_supp.vgtest memalign_supp.stderr.exp \
 	memalign_supp.supp \
-	aligned_alloc.vgtest aligned_alloc.stderr.exp \
-	aligned_alloc_xml.vgtest aligned_alloc_xml.stderr.exp \
 	delete_sized_mismatch.vgtest \
 	delete_sized_mismatch.stderr.exp \
 	delete_sized_mismatch_xml.vgtest \
 	delete_sized_mismatch_xml.stderr.exp
 
 check_PROGRAMS = \
-	close_range statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
+	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
 	sigwait chflags get_set_login revoke scalar capsicum getfh \
 	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
 	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
@@ -142,6 +142,10 @@ if FREEBSD_VERS_13_PLUS
 check_PROGRAMS += realpathat scalar_13_plus eventfd1 eventfd2
 
 scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
+endif
+
+if HAVE_CLOSE_RANGE
+check_PROGRAMS += close_range
 endif
 
 scalar_CFLAGS = ${AM_CFLAGS} -g

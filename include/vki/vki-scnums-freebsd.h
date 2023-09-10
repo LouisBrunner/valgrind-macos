@@ -645,10 +645,12 @@
 #define __NR_funlinkat           568
 #define __NR_copy_file_range     569
 #define __NR___sysctlbyname      570
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 #define __NR_shm_open2           571
 #define __NR_shm_rename          572
 #define __NR_sigfastblock        573
 #define __NR___realpathat        574
+#endif
 #define __NR_close_range         575
 
 #endif

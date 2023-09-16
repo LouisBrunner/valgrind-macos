@@ -3308,12 +3308,12 @@ PRE(sys_timerfd_gettime)
 {
    PRINT("sys_timerfd_gettime ( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
    PRE_REG_READ2(long, "timerfd_gettime",
-                 int, ufd,
-                 struct vki_itimerspec*, otmr);
+                 int, fd,
+                 struct vki_itimerspec*, curr_value);
    if (!ML_(fd_allowed)(ARG1, "timerfd_gettime", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
    else
-      PRE_MEM_WRITE("timerfd_gettime(result)",
+      PRE_MEM_WRITE("timerfd_gettime(curr_value)",
                     ARG2, sizeof(struct vki_itimerspec));
 }
 POST(sys_timerfd_gettime)
@@ -3345,19 +3345,19 @@ PRE(sys_timerfd_settime)
    PRINT("sys_timerfd_settime ( %ld, %ld, %#" FMT_REGWORD "x, %#"
          FMT_REGWORD "x )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "timerfd_settime",
-                 int, ufd,
+                 int, fd,
                  int, flags,
-                 const struct vki_itimerspec*, utmr,
-                 struct vki_itimerspec*, otmr);
+                 const struct vki_itimerspec*, new_value,
+                 struct vki_itimerspec*, old_value);
    if (!ML_(fd_allowed)(ARG1, "timerfd_settime", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
    else
    {
-      PRE_MEM_READ("timerfd_settime(result)",
+      PRE_MEM_READ("timerfd_settime(new_value)",
                    ARG3, sizeof(struct vki_itimerspec));
       if (ARG4)
       {
-         PRE_MEM_WRITE("timerfd_settime(result)",
+         PRE_MEM_WRITE("timerfd_settime(old_value)",
                        ARG4, sizeof(struct vki_itimerspec));
       }
    }

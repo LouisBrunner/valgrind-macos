@@ -106,6 +106,7 @@
 /cachegrind/tests/cachegrind.out.*
 /cachegrind/tests/chdir
 /cachegrind/tests/clreq
+/cachegrind/tests/clreq2
 /cachegrind/tests/dlclose
 /cachegrind/tests/wrap5
 

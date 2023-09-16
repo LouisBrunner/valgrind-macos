@@ -6776,6 +6776,86 @@ PRE(sys_swapoff)
 
 #endif
 
+#if (FREEBSD_VERS >= FREEBSD_15)
+
+// SYS_kqueuex 583 unimpl
+
+// SYS_membarrier 584 unimpl
+
+// SYS_timerfd_create 585
+// int timerfd_create(int clockid, int flags);
+PRE(sys_timerfd_create)
+{
+   PRINT("sys_timerfd_create (%ld, %ld )", SARG1, SARG2);
+   PRE_REG_READ2(int, "timerfd_create", int, clockid, int, flags);
+}
+
+POST(sys_timerfd_create)
+{
+   if (!ML_(fd_allowed)(RES, "timerfd_create", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
+// SYS_timerfd_gettime 586
+// int timerfd_gettime(int fd, struct itimerspec *curr_value);
+PRE(sys_timerfd_gettime)
+{
+   PRINT("sys_timerfd_gettime ( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
+   PRE_REG_READ2(int, "timerfd_gettime",
+                 int, fd,
+                 struct vki_itimerspec*, curr_value);
+   if (!ML_(fd_allowed)(ARG1, "timerfd_gettime", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   else
+      PRE_MEM_WRITE("timerfd_gettime(curr_value)",
+                    ARG2, sizeof(struct vki_itimerspec));
+}
+
+POST(sys_timerfd_gettime)
+{
+   if (RES == 0)
+      POST_MEM_WRITE(ARG2, sizeof(struct vki_itimerspec));
+}
+
+// SYS_timerfd_gettime 587
+// int timerfd_settime(int fd, int flags, const struct itimerspec *new_value,
+//                     struct itimerspec *old_value);
+PRE(sys_timerfd_settime)
+{
+   PRINT("sys_timerfd_settime(%" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#"
+         FMT_REGWORD "x )", SARG1, SARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "timerfd_settime",
+                 int, fd,
+                 int, flags,
+                 const struct vki_itimerspec*, new_value,
+                 struct vki_itimerspec*, old_value);
+   if (!ML_(fd_allowed)(ARG1, "timerfd_settime", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   else
+   {
+      PRE_MEM_READ("timerfd_settime(new_value)",
+                   ARG3, sizeof(struct vki_itimerspec));
+      if (ARG4)
+      {
+         PRE_MEM_WRITE("timerfd_settime(old_value)",
+                       ARG4, sizeof(struct vki_itimerspec));
+      }
+   }
+}
+
+POST(sys_timerfd_settime)
+{
+   if (RES == 0 && ARG4 != 0) {
+      POST_MEM_WRITE(ARG4, sizeof(struct vki_itimerspec));
+   }
+}
+#endif
+
 #undef PRE
 #undef POST
 
@@ -7493,6 +7573,15 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // unimpl __NR_sched_getcpu        581
    BSDX_(__NR_swapoff,          sys_swapoff),           // 582
 #endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
+   // unimpl __NR_kqueuex             583
+   // unimpl __NR_kqueuex             584
+   BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
+   BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
+   BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587
+#endif
+
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
 

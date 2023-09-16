@@ -1,0 +1,4 @@
+prereq: test -e ./timerfd
+prog: timerfd
+args: 1 1 3
+vgopts: -q --track-fds=yes

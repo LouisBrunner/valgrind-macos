@@ -20,18 +20,33 @@ EXTRA_DIST = \
 	chmod_chown.vgtest \
 	chmod_chown.stderr.exp \
 	close_range.vgtest close_range.stderr.exp \
+	errno_aligned_allocs.vgtest \
+	errno_aligned_allocs.stderr.exp \
 	eventfd1.vgtest \
 	eventfd1.stderr.exp eventfd1.stdout.exp \
 	eventfd2.vgtest \
 	eventfd2.stderr.exp \
 	extattr.vgtest \
 	extattr.stderr.exp \
+	fexecve.vgtest \
+	fexecve.stderr.exp \
+	file_locking_wait6.vgtest \
+	file_locking_wait6.stderr.exp \
+	get_set_context.vgtest \
+	get_set_context.stderr.exp \
+	get_set_context.stderr.exp-x86 \
 	get_set_login.vgtest \
 	get_set_login.stderr.exp \
+	getfh.vgtest \
+	getfh.stderr.exp \
 	getfsstat.vgtest \
 	getfsstat.stderr.exp \
 	getfsstat.supp \
 		getfsstat.stderr.exp-x86 \
+	linkat.vgtest \
+	linkat.stderr.exp \
+	misc.vgtest \
+	misc.stderr.exp \
 	pdfork_pdkill.vgtest \
 	pdfork_pdkill.stderr.exp \
 	revoke.vgtest \
@@ -58,35 +73,25 @@ EXTRA_DIST = \
 	supponlyobj.vgtest \
 	supponlyobj.stderr.exp \
 	supponlyobj.supp \
-	getfh.vgtest \
-	getfh.stderr.exp \
-	linkat.vgtest \
-	linkat.stderr.exp \
 	stat.vgtest \
 	stat.stderr.exp \
 		stat.stderr.exp-x86 \
-	file_locking_wait6.vgtest \
-	file_locking_wait6.stderr.exp \
+	timerfd.vgtest \
+	timerfd.stderr.exp \
+	timerfd.stdout.exp \
 	utimens.vgtest \
 	utimens.stderr.exp \
-	misc.vgtest \
-	misc.stderr.exp \
-	get_set_context.vgtest \
-	get_set_context.stderr.exp \
-	get_set_context.stderr.exp-x86 \
 	utimes.vgtest \
 	utimes.stderr.exp-x86 \
 	utimes.stderr.exp \
 	static_allocs.vgtest \
 	static_allocs.stderr.exp \
-	fexecve.vgtest \
-	fexecve.stderr.exp \
 	realpathat.vgtest \
 	realpathat.stderr.exp \
 	scalar_13_plus.vgtest \
 	scalar_13_plus.stderr.exp \
-	errno_aligned_allocs.vgtest \
-	errno_aligned_allocs.stderr.exp \
+	scalar_15_plus.vgtest \
+	scalar_15_plus.stderr.exp \
 	setproctitle.vgtest \
 	setproctitle.stderr.exp \
 	setproctitle.stdout.exp \
@@ -140,8 +145,13 @@ bug470713_SOURCES = bug470713.cpp
 
 if FREEBSD_VERS_13_PLUS
 check_PROGRAMS += realpathat scalar_13_plus eventfd1 eventfd2
-
 scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
+endif
+
+if FREEBSD_VERS_15_PLUS
+check_PROGRAMS += scalar_15_plus timerfd
+scalar_15_plus_CFLAGS = ${AM_CFLAGS} -g
+timerfd_LDFLAGS = -lm
 endif
 
 if HAVE_CLOSE_RANGE

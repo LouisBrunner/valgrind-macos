@@ -1373,6 +1373,7 @@
 /memcheck/tests/freebsd/revoke
 /memcheck/tests/freebsd/scalar
 /memcheck/tests/freebsd/scalar_13_plus
+/memcheck/tests/freebsd/scalar_15_plus
 /memcheck/tests/freebsd/scalar_abort2
 /memcheck/tests/freebsd/scalar_fork
 /memcheck/tests/freebsd/scalar_pdfork
@@ -1385,6 +1386,7 @@
 /memcheck/tests/freebsd/stat
 /memcheck/tests/freebsd/statfs
 /memcheck/tests/freebsd/static_allocs
+/memcheck/tests/freebsd/timerfd
 /memcheck/tests/freebsd/utimens
 /memcheck/tests/freebsd/utimes
 

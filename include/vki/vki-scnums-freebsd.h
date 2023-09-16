@@ -672,6 +672,16 @@
 
 #endif
 
+#if (FREEBSD_VERS >= FREEBSD_15)
+
+#define __NR_kqueuex             583
+#define __NR_membarrier          584
+#define __NR_timerfd_create      585
+#define __NR_timerfd_gettime     586
+#define __NR_timerfd_settime     587
+
+#endif
+
 #define __NR_fake_sigreturn      1000
 
 #endif /* VKI_UNISTD_FREEBSD_H */

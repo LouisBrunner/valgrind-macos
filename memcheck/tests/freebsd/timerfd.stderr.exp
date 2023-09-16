@@ -1,0 +1,40 @@
+Syscall param timerfd_create(clockid) contains uninitialised byte(s)
+   at 0x........: timerfd_create (in /...libc...)
+   by 0x........: main (timerfd.c:115)
+
+Syscall param timerfd_create(flags) contains uninitialised byte(s)
+   at 0x........: timerfd_create (in /...libc...)
+   by 0x........: main (timerfd.c:115)
+
+Syscall param timerfd_gettime(curr_value) points to unaddressable byte(s)
+   at 0x........: timerfd_gettime (in /...libc...)
+   by 0x........: main (timerfd.c:124)
+ Address 0x........ is 0 bytes after a block of size 30 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (timerfd.c:108)
+
+Syscall param timerfd_settime(flags) contains uninitialised byte(s)
+   at 0x........: timerfd_settime (in /...libc...)
+   by 0x........: main (timerfd.c:130)
+
+Syscall param timerfd_settime(old_value) points to unaddressable byte(s)
+   at 0x........: timerfd_settime (in /...libc...)
+   by 0x........: main (timerfd.c:134)
+ Address 0x........ is 0 bytes after a block of size 30 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (timerfd.c:109)
+
+Syscall param timerfd_gettime(fd) contains uninitialised byte(s)
+   at 0x........: timerfd_gettime (in /...libc...)
+   by 0x........: main (timerfd.c:139)
+
+Syscall param timerfd_settime(fd) contains uninitialised byte(s)
+   at 0x........: timerfd_settime (in /...libc...)
+   by 0x........: main (timerfd.c:141)
+
+FILE DESCRIPTORS: 4 open (3 std) at exit.
+Open file descriptor 3:
+   at 0x........: timerfd_create (in /...libc...)
+   by 0x........: main (timerfd.c:115)
+
+

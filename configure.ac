@@ -4778,17 +4778,19 @@ fi # test "$VGCONF_OS" = "solaris"
 #----------------------------------------------------------------------------
 
 # Rather than having a large number of feature test as above with Solaris
-# these tests are per-version. This may not be entirely relialable for
+# these tests are per-version. This may not be entirely reliable for
 # FreeBSD development branches (XX.Y-CURRENT) or pre-release branches
 # (XX.Y-STABLE) but it should work for XX-Y-RELEASE
 
 if test "$VGCONF_OS" = "freebsd" ; then
 
 AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13_0)
+AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, test $freebsd_vers -ge $freebsd_15)
 
 else
 
 AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, false)
+AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, false)
 
 fi # test "$VGCONF_OS" = "freebsd"
 

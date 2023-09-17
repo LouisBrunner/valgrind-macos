@@ -77,7 +77,8 @@ my %tool_export_header = (
     "drd/drd.h" => 1,
     "helgrind/helgrind.h" => 1,
     "memcheck/memcheck.h" => 1,
-    "callgrind/callgrind.h" => 1
+    "callgrind/callgrind.h" => 1,
+    "cachegrind/cachegrind.h" => 1
     );
 
 my $usage=<<EOF;

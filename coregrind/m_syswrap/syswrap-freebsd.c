@@ -6798,7 +6798,17 @@ POST(sys_kqueuex)
    }
 }
 
-// SYS_membarrier 584 unimpl
+// SYS_membarrier 584
+// syscalls.master
+// int membarrier(int cmd, unsigned flags, int cpu_id);
+PRE(sys_membarrier)
+{
+   // cmd is signed int but the constants in the headers
+   // are hex so print in hex
+   PRINT("sys_membarrier(%#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "d)",
+         ARG1, ARG2, SARG3);
+   PRE_REG_READ3(int, "membarrier", int, cmd, unsigned, flags, int, cpu_id);
+}
 
 // SYS_timerfd_create 585
 // int timerfd_create(int clockid, int flags);
@@ -7593,8 +7603,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_15)
-   BSDXY( __NR_kqueuex,         sys_kqueuex),           // 583
-   // unimpl __NR_membarrier          584
+   BSDXY(__NR_kqueuex,          sys_kqueuex),           // 583
+   BSDX_(__NR_membarrier,       sys_membarrier),        // 584
    BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587

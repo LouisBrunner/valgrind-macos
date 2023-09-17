@@ -563,7 +563,7 @@ DECL_TEMPLATE(freebsd, sys_swapoff) // 582
 
 #if (FREEBSD_VERS >= FREEBSD_15)
 DECL_TEMPLATE(freebsd, sys_kqueuex); // 583
-// unimpl __NR_membarrier          584
+DECL_TEMPLATE(freebsd, sys_membarrier); // 584
 DECL_TEMPLATE(freebsd, sys_timerfd_create); // 585
 DECL_TEMPLATE(freebsd, sys_timerfd_gettime); // 586
 DECL_TEMPLATE(freebsd, sys_timerfd_settime); // 587

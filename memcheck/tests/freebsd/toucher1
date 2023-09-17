@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# not sure if background tasks can be run from .vgtest
+# this just runs the next script in the background
+
+./toucher2&

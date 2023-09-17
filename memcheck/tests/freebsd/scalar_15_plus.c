@@ -7,7 +7,8 @@ int main(void)
    x0 = px[0];
 
    /* SYS_kqueuex                        583 */
-   /* unimpl */
+   GO(SYS_kqueuex, " 1s 0m");
+   SY(SYS_kqueuex, x0+123); FAIL;
 
    /* SYS_membarrier                     584 */
    /* unimpl */

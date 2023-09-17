@@ -2,7 +2,8 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
-	filter_scalar filter_realpathat filter_fstat filter_eventfd2
+	filter_scalar filter_realpathat filter_fstat filter_eventfd2 \
+	toucher1 toucher2
 
 EXTRA_DIST = \
 	access.vgtest \
@@ -12,6 +13,17 @@ EXTRA_DIST = \
 	aligned_allocs_supp.vgtest \
 	aligned_allocs_supp.stderr.exp \
 	aligned_allocs_supp.supp \
+	bug464476.vgtest \
+	bug464476.stderr.exp \
+	bug464476.stdout.exp \
+	bug464476_abs_symlink.vgtest \
+	bug464476_abs_symlink.stderr.exp \
+	bug464476_abs_symlink.stdout.exp \
+	bug464476_rel_symlink.vgtest \
+	bug464476_rel_symlink.stderr.exp \
+	bug464476_rel_symlink.stdout.exp \
+	bug470713.vgtest bug470713.stderr.exp \
+		bug470713.stdout.exp \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
 	chflags.vgtest\
@@ -20,6 +32,10 @@ EXTRA_DIST = \
 	chmod_chown.vgtest \
 	chmod_chown.stderr.exp \
 	close_range.vgtest close_range.stderr.exp \
+	delete_sized_mismatch.vgtest \
+	delete_sized_mismatch.stderr.exp \
+	delete_sized_mismatch_xml.vgtest \
+	delete_sized_mismatch_xml.stderr.exp \
 	errno_aligned_allocs.vgtest \
 	errno_aligned_allocs.stderr.exp \
 	eventfd1.vgtest \
@@ -43,18 +59,33 @@ EXTRA_DIST = \
 	getfsstat.stderr.exp \
 	getfsstat.supp \
 		getfsstat.stderr.exp-x86 \
+	kqueue.vgtest \
+	kqueue.stderr.exp \
+	kqueue.stdout.exp \
+	kqueuex.vgtest \
+	kqueuex.stderr.exp \
+	kqueuex.stdout.exp \
 	linkat.vgtest \
 	linkat.stderr.exp \
+        memalign.vgtest memalign.stderr.exp \
+	memalign_supp.vgtest memalign_supp.stderr.exp \
+	memalign_supp.supp \
 	misc.vgtest \
 	misc.stderr.exp \
 	pdfork_pdkill.vgtest \
 	pdfork_pdkill.stderr.exp \
+	realpathat.vgtest \
+	realpathat.stderr.exp \
 	revoke.vgtest \
 	revoke.stderr.exp \
 	scalar.h scalar.vgtest \
 	scalar.stderr.exp \
 		scalar.stderr.exp-x86 \
 	scalar_abort2.vgtest \
+	scalar_13_plus.vgtest \
+	scalar_13_plus.stderr.exp \
+	scalar_15_plus.vgtest \
+	scalar_15_plus.stderr.exp \
 	scalar_abort2.stderr.exp \
 	scalar_fork.vgtest \
 	scalar_fork.stderr.exp \
@@ -64,18 +95,29 @@ EXTRA_DIST = \
 	scalar_thr_exit.stderr.exp \
 	scalar_vfork.vgtest \
 	scalar_vfork.stderr.exp \
+	sctp.vgtest \
+	sctp.stderr.exp \
+	sctp.stdout.exp \
+	sctp2.vgtest \
+	sctp2.stderr.exp \
+	sctp2.stdout.exp \
+	setproctitle.vgtest \
+	setproctitle.stderr.exp \
+	setproctitle.stdout.exp \
 	sigwait.vgtest \
 	sigwait.stdout.exp \
 	sigwait.stderr.exp \
 		sigwait.stderr.exp-x86 \
-	statfs.vgtest \
-	statfs.stderr.exp \
-	supponlyobj.vgtest \
-	supponlyobj.stderr.exp \
-	supponlyobj.supp \
 	stat.vgtest \
 	stat.stderr.exp \
 		stat.stderr.exp-x86 \
+	statfs.vgtest \
+	statfs.stderr.exp \
+	static_allocs.vgtest \
+	static_allocs.stderr.exp \
+	supponlyobj.vgtest \
+	supponlyobj.stderr.exp \
+	supponlyobj.supp \
 	timerfd.vgtest \
 	timerfd.stderr.exp \
 	timerfd.stdout.exp \
@@ -83,51 +125,21 @@ EXTRA_DIST = \
 	utimens.stderr.exp \
 	utimes.vgtest \
 	utimes.stderr.exp-x86 \
-	utimes.stderr.exp \
-	static_allocs.vgtest \
-	static_allocs.stderr.exp \
-	realpathat.vgtest \
-	realpathat.stderr.exp \
-	scalar_13_plus.vgtest \
-	scalar_13_plus.stderr.exp \
-	scalar_15_plus.vgtest \
-	scalar_15_plus.stderr.exp \
-	setproctitle.vgtest \
-	setproctitle.stderr.exp \
-	setproctitle.stdout.exp \
-	sctp.vgtest \
-	sctp.stderr.exp \
-	sctp.stdout.exp \
-	sctp2.vgtest \
-	sctp2.stderr.exp \
-	sctp2.stdout.exp \
-	bug464476.vgtest \
-	bug464476.stderr.exp \
-	bug464476.stdout.exp \
-	bug464476_abs_symlink.vgtest \
-	bug464476_abs_symlink.stderr.exp \
-	bug464476_abs_symlink.stdout.exp \
-	bug464476_rel_symlink.vgtest \
-	bug464476_rel_symlink.stderr.exp \
-	bug464476_rel_symlink.stdout.exp \
-        memalign.vgtest memalign.stderr.exp \
-	bug470713.vgtest bug470713.stderr.exp \
-		bug470713.stdout.exp \
-	memalign_supp.vgtest memalign_supp.stderr.exp \
-	memalign_supp.supp \
-	delete_sized_mismatch.vgtest \
-	delete_sized_mismatch.stderr.exp \
-	delete_sized_mismatch_xml.vgtest \
-	delete_sized_mismatch_xml.stderr.exp
+	utimes.stderr.exp
 
 check_PROGRAMS = \
+	access aligned_alloc bug464476 bug470713 capsicum \
+	chflags \
+	chmod_chown delete_sized_mismatch errno_aligned_allocs \
+	fexecve \
+	get_set_context get_set_login getfh \
+	kqueue linkat memalign misc \
 	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
-	sigwait chflags get_set_login revoke scalar capsicum getfh \
-	linkat scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
-	scalar_vfork stat file_locking_wait6 utimens access chmod_chown \
-	misc get_set_context utimes static_allocs fexecve errno_aligned_allocs \
-	setproctitle sctp sctp2 bug464476 memalign bug470713 \
-	aligned_alloc delete_sized_mismatch
+	sigwait revoke scalar \
+	scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
+	scalar_vfork stat file_locking_wait6 utimens \
+	utimes static_allocs \
+	setproctitle sctp sctp2 memalign
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -149,7 +161,7 @@ scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
 endif
 
 if FREEBSD_VERS_15_PLUS
-check_PROGRAMS += scalar_15_plus timerfd
+check_PROGRAMS += kqueuex scalar_15_plus timerfd
 scalar_15_plus_CFLAGS = ${AM_CFLAGS} -g
 timerfd_LDFLAGS = -lm
 endif

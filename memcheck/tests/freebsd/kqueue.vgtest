@@ -1,0 +1,4 @@
+prereq: ./toucher1
+prog: kqueue
+args: /tmp/touch_file
+vgopts: -q

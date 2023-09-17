@@ -1,4 +1,10 @@
 ---------------------------------------------------------
+583:             SYS_kqueuex  1s 0m
+---------------------------------------------------------
+Syscall param kqueuex(flags) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
 585:      SYS_timerfd_create  2s 0m
 ---------------------------------------------------------
 Syscall param timerfd_create(clockid) contains uninitialised byte(s)

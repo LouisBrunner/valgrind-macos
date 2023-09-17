@@ -21,7 +21,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * ================== PLATFORM CHANGES =================
 
 * Support has been added for FreeBSD 14 and FreeBSD 15.
-* Add support for the FreeBSD close_range system call.
+* Add support for the folllowing FreeBSD system calls:
+  close_range, kqueuex, timerfd_create, timerfd_settime and
+  timerfd_gettime (all added in FreeBSD 15).
 
 * ==================== TOOL CHANGES ===================
 

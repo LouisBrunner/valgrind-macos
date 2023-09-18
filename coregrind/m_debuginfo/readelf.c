@@ -2883,6 +2883,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
 #        if defined(VGO_solaris)
          FIND_MIMG(   ".SUNW_ldynsym",      ldynsym_escn)
 #        endif
+         FIND_MIMG(   ".opd",               opd_escn)
 
          FINDX_MIMG(  ".eh_frame",          ehframe_escn[ehframe_mix],
                do { ehframe_mix++; vg_assert(ehframe_mix <= N_EHFRAME_SECTS);

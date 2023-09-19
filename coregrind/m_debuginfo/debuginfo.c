@@ -5100,16 +5100,16 @@ static void caches__invalidate ( void ) {
 }
 
 #if defined(VGO_freebsd)
+/*
+ * Used by FreeBSD if we detect a syscall cap_enter. That
+ * means capability mode, and lots of things won't work any more.
+ * Like opening new file handles. So try to make the most of a bad job
+ * and read all debuginfo in one go.
+ */
 void VG_(load_all_debuginfo) (void)
 {
    for (DebugInfo* di = debugInfo_list; di; di = di->next) {
-      if (di->deferred == True) {
-         di->deferred = False;
-         ML_(read_elf_debug)( di );
-         ML_(canonicaliseTables)( di );
-         check_CFSI_related_invariants(di);
-         ML_(finish_CFSI_arrays)(di);
-      }
+      VG_(di_load_di)(di);
    }
 }
 #endif

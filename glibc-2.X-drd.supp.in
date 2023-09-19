@@ -361,3 +361,11 @@
    fun:getaddrinfo
 }
 
+# s390 libdl
+{
+   drd-libdl-_dl_exception_create_format
+   drd:ConflictingAccess
+   fun:memcpy
+   fun:_dl_exception_create_format
+}
+

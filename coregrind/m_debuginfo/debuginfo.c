@@ -1450,7 +1450,11 @@ void VG_(di_load_di)( DebugInfo *di )
 {
    if (di->deferred) {
       di->deferred = False;
+#if defined(VGO_darwin)
+      ML_(read_macho_debug_info) (di);
+#else
       ML_(read_elf_debug) (di);
+#endif
       ML_(canonicaliseTables)( di );
 
       /* Check invariants listed in

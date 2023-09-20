@@ -2420,9 +2420,10 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
+Word ML_(search_one_symtab) ( DebugInfo* di, Addr ptr,
                               Bool findText )
 {
+   VG_(di_load_di)(di);
    Addr a_mid_lo, a_mid_hi;
    Word mid,
         lo = 0, 
@@ -2449,8 +2450,9 @@ Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr )
+Word ML_(search_one_loctab) ( DebugInfo* di, Addr ptr )
 {
+   VG_(di_load_di)(di);
    Addr a_mid_lo, a_mid_hi;
    Word mid, 
         lo = 0, 
@@ -2473,8 +2475,9 @@ Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr )
 /* Find a CFI-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr )
+Word ML_(search_one_cfitab) ( DebugInfo* di, Addr ptr )
 {
+   VG_(di_load_di)(di);
    Word mid, 
         lo = 0, 
         hi = di->cfsi_used-1;

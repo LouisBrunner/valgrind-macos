@@ -1,0 +1,6 @@
+# The 'prog' doesn't matter because we don't use its output. Instead we test
+# the post-processing of the cgout-test file.
+prog: ../../tests/true
+vgopts: --callgrind-out-file=callgrind.out
+post: grep -q 'tests/true\.c' callgrind.out
+cleanup: rm callgrind.out

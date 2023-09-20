@@ -1162,16 +1162,16 @@ extern void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di );
 
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
+extern Word ML_(search_one_symtab) ( DebugInfo* di, Addr ptr,
                                      Bool findText );
 
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_loctab) ( DebugInfo* di, Addr ptr );
 
 /* Find a CFI-table index containing the specified pointer, or -1 if
    not found.  Binary search.  */
-extern Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_cfitab) ( DebugInfo* di, Addr ptr );
 
 /* Find a FPO-table index containing the specified pointer, or -1
    if not found.  Binary search.  */

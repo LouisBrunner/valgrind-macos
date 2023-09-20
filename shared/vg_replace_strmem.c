@@ -1224,6 +1224,8 @@ static inline void my_exit ( int x )
 #elif defined(VGO_freebsd)
  MEMCMP(VG_Z_LIBC_SONAME,  memcmp)
  MEMCMP(VG_Z_LIBC_SONAME,  bcmp)
+ MEMCMP(VG_Z_LIBC_SONAME,  timingsafe_memcmp)
+ MEMCMP(VG_Z_LIBC_SONAME,  timingsafe_bcmp)
 
 #elif defined(VGO_darwin)
 # if DARWIN_VERS >= DARWIN_10_9

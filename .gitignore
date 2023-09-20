@@ -1392,6 +1392,7 @@
 /memcheck/tests/freebsd/statfs
 /memcheck/tests/freebsd/static_allocs
 /memcheck/tests/freebsd/timerfd
+/memcheck/tests/freebsd/timingsafe
 /memcheck/tests/freebsd/utimens
 /memcheck/tests/freebsd/utimes
 

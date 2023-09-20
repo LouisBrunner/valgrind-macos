@@ -121,6 +121,8 @@ EXTRA_DIST = \
 	timerfd.vgtest \
 	timerfd.stderr.exp \
 	timerfd.stdout.exp \
+	timingsafe.vgtest \
+	timingsafe.stderr.exp \
 	utimens.vgtest \
 	utimens.stderr.exp \
 	utimes.vgtest \
@@ -131,15 +133,24 @@ check_PROGRAMS = \
 	access aligned_alloc bug464476 bug470713 capsicum \
 	chflags \
 	chmod_chown delete_sized_mismatch errno_aligned_allocs \
+	extattr \
 	fexecve \
+	file_locking_wait6 \
 	get_set_context get_set_login getfh \
 	kqueue linkat memalign misc \
-	statfs pdfork_pdkill getfsstat inlinfo inlinfo_nested.so extattr \
-	sigwait revoke scalar \
+	pdfork_pdkill getfsstat inlinfo inlinfo_nested.so \
+	revoke scalar \
 	scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
-	scalar_vfork stat file_locking_wait6 utimens \
-	utimes static_allocs \
-	setproctitle sctp sctp2 memalign
+	scalar_vfork \
+	sctp sctp2 \
+	setproctitle \
+	sigwait \
+	stat \
+	statfs \
+	static_allocs \
+	timingsafe \
+	utimens \
+	utimes
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

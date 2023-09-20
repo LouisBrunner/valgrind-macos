@@ -1,14 +1,21 @@
 Installing from ports or via pkg
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are using FreeBSD 11.3 or later, then you should be able to install
-Valgrind using either
+You can install Valgrind using either
 
 pkg install devel/valgrind
 
 or alternatively from ports (if installed)
 
 cd /usr/ports/devel/valgrind && make install clean
+
+devel/valgrind is updated with official releases of Valgrind, normally
+in April and October each year. There is an alternative port,
+devel/valgrind-devel which occasionally gets updated from the latest
+Valgrind source. If you want to have the latest port, check on
+https://www.freshports.org/ to see which is the most recent. If you
+want to have the very latest version, you will need to build a copy
+from source. See README for instructions on getting the source with git.
 
 
 Building Valgrind

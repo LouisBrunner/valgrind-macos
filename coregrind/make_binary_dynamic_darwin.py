@@ -36,6 +36,7 @@ def main():
 
   # Commit the changes and make the binary executable
   tool.write(toolpath_dyn)
+  os.system(f"cp {toolpath} {toolpath}.orig")
   os.replace(toolpath_dyn, toolpath)
   os.chmod(toolpath, 0o755)
 

@@ -394,8 +394,13 @@ load_unixthread(struct thread_command *threadcmd, load_info_t *out_info)
       vm_address_t stackbase = VG_PGROUNDDN(out_info->stack_end+1-stacksize);
       SysRes res;
         
-      // TODO: will break on arm64
+#if defined(VGA_arm64)
+      // FIXME: due to ASLR, we can't use VKI_MAP_FIXED here as that address space is probably used already,
+      // however, it would be nice to be able to pass `stackbase` as an input to the advisory
+      res = VG_(am_mmap_anon_float_client)(stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+#else
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+#endif
       check_mmap(res, stackbase, stacksize, "load_unixthread1");
       out_info->stack_start = (vki_uint8_t *)stackbase;
    } else {
@@ -425,7 +430,6 @@ handle_lcmain ( vki_size_t requested_size,
    const vki_size_t HACK = 64 * 1024 * 1024;
    requested_size += HACK;
 
-   // TODO: will break on arm64
    SysRes res = VG_(am_mmap_anon_float_client)(requested_size,
                    VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
    check_mmap_float(res, requested_size, "handle_lcmain");
@@ -523,7 +527,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 {
    VG_(debugLog)(1, "ume", "load_thin_file: begin:   %s\n", filename);
    struct MACH_HEADER mh;
-  //  vki_uint8_t *headers;
+   vki_uint8_t *headers;
    vki_uint8_t *headers_end;
    struct load_command *lc;
    struct load_command *lcend;
@@ -565,9 +569,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       return -1;
    }
 
-   vki_uint8_t headers[10000];
-  //  headers = VG_(malloc)("ume.macho.headers", len);
-  //  headers = VG_(malloc)("ume.macho.headers", 1000);
+   headers = VG_(malloc)("ume.macho.headers", len);
    res = VG_(pread)(fd, headers, len, offset);
    if (sr_isError(res)) {
       print("couldn't read load commands from executable\n");
@@ -835,7 +837,7 @@ Bool VG_(match_macho)(const void *hdr, SizeT len)
 
    // GrP fixme check more carefully for matching fat arch?
 
-   return (len >= VKI_PAGE_SIZE  &&  
+   return (len >= sizeof(*magic)  &&
            (*magic == MAGIC  ||  *magic == VG_(ntohl)(FAT_MAGIC))) 
       ? True : False;
 }

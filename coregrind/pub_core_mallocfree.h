@@ -163,12 +163,12 @@ extern void VG_(describe_arena_addr) ( Addr a, /*OUT*/AddrArenaInfo* aai );
 #if defined(VGP_arm64_darwin)
 __attribute__((always_inline))
 __inline__
-void enable_thread_to_jit_write(int enable);
-#define ALLOW_RWX_WRITE() enable_thread_to_jit_write(1)
-#define ALLOW_RWX_EXECUTE() enable_thread_to_jit_write(0)
+void enable_thread_to_jit_write(Addr ptr, SizeT size, Bool enable);
+#define ALLOW_RWX_WRITE(ptr, size) enable_thread_to_jit_write((ptr), (size), 1)
+#define ALLOW_RWX_EXECUTE(ptr, size) enable_thread_to_jit_write((ptr), (size), 0)
 #else
-#define ALLOW_RWX_WRITE()
-#define ALLOW_RWX_EXECUTE()
+#define ALLOW_RWX_WRITE(...)
+#define ALLOW_RWX_EXECUTE(...)
 #endif
 
 #endif   // __PUB_CORE_MALLOCFREE_H

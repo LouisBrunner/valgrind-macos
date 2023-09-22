@@ -1647,10 +1647,54 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    aspacem_vStart = 0x700000000000; // 0x7000:00000000..0x7fff:5c000000 avail
    // 0x7fff:5c000000..0x7fff:ffe00000? is stack, dyld, shared cache
 #elif defined(VGP_arm64_darwin)
-    // TODO: this is _EXTREMELY_ wrong
+/*
+      Intended address space partitioning:
+
+      ,--------------------------------, 0x000000000000
+      |           4 GB page zero       |
+      |--------------------------------| 0x000100000000
+      |          client text           |
+      |--------------------------------| ??? (hopefully less than 0x158000000, same as amd64)
+      |              free              |
+      |--------------------------------| 0x000158000000
+      |            V's text            |
+      |--------------------------------| ??? (hopefully less than 0x16XXXXXXX)
+      |              free              |
+      |--------------------------------| ~0x00016XXXXXXX (ASLR-determined)
+      |           V's stack            |
+      |--------------------------------| ???
+      |              free              |
+      |--------------------------------| 0x00019dacc000
+      |        dyld shared cache       |
+      |--------------------------------| 0x000280000000
+      |  left in case of DSC expansion |
+      |--------------------------------| ~0x000300000000 <- start of client addressable space
+      |       dyld stack (likely,      |
+      |       as it is not fixed)      |
+      |--------------------------------| ~0x0003007fc000
+      |      client stack (likely,     |
+      |       as it is not fixed)      |
+      |--------------------------------| ~0x000304ff7fff
+      |                                |
+      |        Client memory area      |
+      |                                |
+      |--------------------------------| 0x000fc0000000
+      |            reserved            |
+      |--------------------------------| 0x007000000000 <- start of Valgrind addressable space
+      |                                |
+      |       Valgrind memory area     |
+      |                                |
+      |--------------------------------| ~0x7ffff0000000
+      |            reserved            |
+      '--------------------------------'
+
+      */
+
     aspacem_maxAddr = (Addr) 0x7fffffffffff;
 
-    aspacem_cStart = aspacem_minAddr;
+    // we start after the DSC instead of the beginning of the addressable space
+    // because we will need to allocate the stack somewhere
+    aspacem_cStart = 0x000300000000;
     aspacem_vStart = 0x700000000000;
 #else
 #error "Unknown architecture"
@@ -2711,9 +2755,16 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
 #if defined(VGO_darwin) || defined(ENABLE_INNER)
    /* Kludge on Darwin and inner linux if the fixed mmap failed. */
    if (sr_isError(sres)) {
-       /* try again, ignoring the advisory */
        sres = VG_(am_do_mmap_NO_NOTIFY)( 
-             0, length, 
+# if defined(VGP_arm64_darwin)
+             /* on arm64 we might get an address which is within the user's TEXT,
+                so we retain the advisory so the kernel returns something which is somewhere AFTER */
+             advised,
+# else
+             /* try again, ignoring the advisory */
+             0,
+# endif
+             length,
              VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC, 
              /*VKI_MAP_FIXED|*/VKI_MAP_PRIVATE|VKI_MAP_ANONYMOUS, 
              VM_TAG_VALGRIND, 0

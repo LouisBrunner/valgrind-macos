@@ -136,6 +136,8 @@ UInt ML_(am_sprintf) ( HChar* buf, const HChar *format, ... )
 // STRUCTURES (SEGMENT ARRAY).  DO NOT USE THEM UNLESS YOU KNOW WHAT
 // YOU ARE DOING.
 
+static SysRes local_do_mprotect_NO_NOTIFY(Addr start, SizeT length, UInt prot);
+
 /* --- Pertaining to mappings --- */
 /* Note: this is VG_, not ML_. */
 SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot, 
@@ -172,15 +174,40 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
                           prot, flags, (UInt)fd, offset);
 #  elif defined(VGP_arm64_darwin)
+   Bool is_rwx = False;
    if (fd == 0  &&  (flags & VKI_MAP_ANONYMOUS)) {
        fd = -1;  // MAP_ANON with fd==0 is EINVAL
    }
    if (prot == (VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC)) {
-      /* On arm64, we need to set the JIT flag for writable and executable mappings. */
-       flags |= VKI_MAP_JIT;
+       /* On arm64, we need to set the JIT flag for writable and executable mappings.
+          Then you need to call `pthread_jit_write_protect_np` to toggle writing
+          (in which case you can't exec).
+
+          However, we can bypass this whole system by setting the protection to NONE
+          using `mprotect` to set the protection to RW- or R-X depending on what we want to do.
+
+          In all cases, we need an extra function to switch between writing and execute mode.
+
+          See `ALLOW_RWX_WRITE` and its underlying function `enable_thread_to_jit_write`.
+
+          Note: we start from `PROT_NONE` because it avoids having to set `MAP_JIT` which prevents `FIXED` mappings
+          but also because of a macOS bug which prevents using mprotect to go from RWX to anything else.
+          https://patchew.org/QEMU/20210311002156.253711-1-richard.henderson@linaro.org/20210311002156.253711-27-richard.henderson@linaro.org/
+       */
+      // flags |= VKI_MAP_JIT;
+       prot = VKI_PROT_NONE;
+       is_rwx = True;
    }
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
                           prot, flags, (UInt)fd, offset);
+   if (is_rwx && !sr_isError(res)) {
+      SysRes res_protect;
+      // most likely we want to write before executing, so switch the map to RW- right away
+      res_protect = local_do_mprotect_NO_NOTIFY(start, length, VKI_PROT_READ|VKI_PROT_WRITE);
+      if (sr_isError(res_protect)) {
+         res = res_protect;
+      }
+   }
 #  elif defined(VGP_x86_freebsd)
    if (flags & VKI_MAP_ANONYMOUS && fd == 0)
       fd = -1;

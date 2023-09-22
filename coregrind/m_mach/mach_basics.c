@@ -30,6 +30,7 @@
 
 #include "pub_core_basics.h"
 #include "pub_core_mach.h"
+#include "pub_core_libcassert.h" // vg_assert
 
 #include <mach/mach.h>
 #include <mach/machine/ndr_def.h>
@@ -84,11 +85,17 @@ void VG_(mach_init)(void)
     reply = 0;
     mach_task_self_ = task_self_trap();
 
+#if defined(VGA_arm64)
+    vm_page_shift = 14;
+    vm_page_size = 0x4000;
+#else
     // GrP fixme host_page_size(host_self_trap(), &vm_page_size);
-    vm_page_size = 4096;
-
-    // FIXME: stored in COMM_PAGE + 0x025, (1 << 12) = 4096
     vm_page_shift = 12;
+    // FIXME: stored in COMM_PAGE + 0x025, (1 << 12) = 4096
+    vm_page_size = 0x1000;
+#endif
+
+  vg_assert(1 << vm_page_shift == vm_page_size);
 }
 
 #endif // defined(VGO_darwin) 

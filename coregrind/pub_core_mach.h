@@ -40,12 +40,11 @@
 extern void VG_(mach_init)(void);
 
 #if defined(VGP_amd64_darwin)
-#define MACH_MEMORY_END 0x7ffffffff000
+#define MACH_DSC_END 0x7ffffffff000
 #elif defined(VGP_x86_darwin)
-#define MACH_MEMORY_END 0xfffff000
+#define MACH_DSC_END 0xfffff000
 #elif defined(VGP_arm64_darwin)
-// TODO: widely wrong
-#define MACH_MEMORY_END 0x7ffffffff000
+#define MACH_DSC_END 0x280000000
 #else
 #error "Unsupported platform"
 #endif

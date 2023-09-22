@@ -156,7 +156,7 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
      // unfortunately, all the data needed for parsing from the DSC is spread across many places in memory
      // and there is no way to know for sure the size of the DSC perfectly, so this is the best method at the moment
      // and it's _very_ unsafe
-     mimg = ML_(img_from_memory)(rx_map->avma, MACH_MEMORY_END - rx_map->avma, filename);
+     mimg = ML_(img_from_memory)(rx_map->avma, MACH_DSC_END - rx_map->avma, filename);
    } else {
      mimg = ML_(img_from_local_file)(filename);
    }

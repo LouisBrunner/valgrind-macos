@@ -68,10 +68,16 @@
 # gcc invocation, which itself must contain either "-arch x86_64" or
 # "-arch i386".
 #
-# arm64 is a bit different, the kernel doesn't allow running static binaries.
+# arm64 is a bit different as the kernel doesn't allow running static binaries.
 # So we link dynamically and then fixup the binary.
 # This means it becomes PIE: the load address is respected but
-# the stack is not. I have yet to see if this will cause issues for us.
+# the stack is not as it is allocated by the kernel and is subject to ASLR.
+# Overall, that's not a big deal.
+# However, requiring dyld to be present is a problem as it usually appears
+# in the address space where we want to put the client binary.
+# FIXME: We currently have a hardcoded hack to handle this but it should be using `$ala` instead.
+# The biggest challenge of all is fixing up the binary to be dynamic and respect `$ala`.
+# FIXME: This is currently unsolved.
 
 use warnings;
 use strict;

@@ -912,6 +912,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
 
    TTEntryC* from_tteC = index_tteC(from_sNo, from_tteNo);
 
+   ALLOW_RWX_WRITE((Addr) sectors[from_sNo].tc, 8 * tc_sector_szQ);
    /* Get VEX to do the patching itself.  We have to hand it off
       since it is host-dependent. */
    VexInvalRange vir
@@ -923,6 +924,7 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
                         : &VG_(disp_cp_chain_me_to_slowEP)),
            (void*)host_code
         );
+   ALLOW_RWX_EXECUTE((Addr) sectors[from_sNo].tc, 8 * tc_sector_szQ);
    VG_(invalidate_icache)( (void*)vir.start, vir.len );
 
    /* Now do the tricky bit -- update the ch_succs and ch_preds info
@@ -1578,6 +1580,7 @@ static void initialiseSector ( SECno sno )
 	 /*NOTREACHED*/
       }
       sec->tc = (ULong*)(Addr)sr_Res(sres);
+      ALLOW_RWX_EXECUTE((Addr) sec->tc, 8 * tc_sector_szQ);
 
       sres = VG_(am_mmap_anon_float_valgrind)
                 ( N_TTES_PER_SECTOR * sizeof(TTEntryC) );
@@ -1820,7 +1823,9 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
 
    dstP = (UChar*)tcptr;
    srcP = (UChar*)code;
+   ALLOW_RWX_WRITE(sectors[y].tc, 8 * tc_sector_szQ);
    VG_(memcpy)(dstP, srcP, code_len);
+   ALLOW_RWX_EXECUTE(sectors[y].tc, 8 * tc_sector_szQ);
    sectors[y].tc_next += reqdQ;
    sectors[y].tt_n_inuse++;
 

@@ -161,9 +161,45 @@ struct _AddrArenaInfo {
 extern void VG_(describe_arena_addr) ( Addr a, /*OUT*/AddrArenaInfo* aai );
 
 #if defined(VGP_arm64_darwin)
+#include "pub_core_vki.h" // For VKI_PROT_*
+#include "pub_core_vkiscnums.h" // system call numbers
+#include "pub_core_syscall.h" // VG_(do_syscall3)
+#include "pub_core_libcassert.h" // vg_assert
+#include "pub_core_debuglog.h" // VG_(debugLog)
+
 __attribute__((always_inline))
 __inline__
-void enable_thread_to_jit_write(Addr ptr, SizeT size, Bool enable);
+void enable_thread_to_jit_write(Addr ptr, SizeT size, Bool enable) {
+  VG_(debugLog)(2, "mmapjit", "enable_thread_to_jit_write(%#lx, %lu, %d)\n", ptr, size, enable);
+
+  SysRes sres = VG_(do_syscall3)(__NR_mprotect, ptr, size,
+    enable ? VKI_PROT_READ | VKI_PROT_WRITE
+           : VKI_PROT_READ | VKI_PROT_EXEC
+  );
+  vg_assert2(!sr_isError(sres), "mprotect failed: %s (%d)", VG_(strerror)(sr_Res(sres)), sr_Res(sres));
+  return;
+
+  // FIXME: might not even be needed!
+  // reimplementation of pthread_jit_write_protect_np
+#define JIT_PERM_REG "S3_6_c15_c1_5"
+#define JIT_PERM_RW_ADDR 0xfffffc110
+#define JIT_PERM_RX_ADDR 0xfffffc118
+
+  Addr addr = enable ? JIT_PERM_RW_ADDR : JIT_PERM_RX_ADDR;
+  __asm__ __volatile__(
+    "movz x0, %0\n"
+    "movk x0, %1, lsl 16\n"
+    "movk x0, %2, lsl 32\n"
+    "movk x0, %3, lsl 48\n"
+    "ldr x0, [x0]\n"
+    "msr " JIT_PERM_REG ", x0\n"
+    "isb sy\n"
+    :
+    : "i"((addr & 0xffff)), "i"((addr >> 16) & 0xffff),
+      "i"((addr >> 32) & 0xffff), "i"((addr >> 48) & 0xffff)
+    :
+  );
+}
 #define ALLOW_RWX_WRITE(ptr, size) enable_thread_to_jit_write((ptr), (size), 1)
 #define ALLOW_RWX_EXECUTE(ptr, size) enable_thread_to_jit_write((ptr), (size), 0)
 #else

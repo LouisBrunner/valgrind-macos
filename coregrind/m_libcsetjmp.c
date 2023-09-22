@@ -397,7 +397,7 @@ __asm__(
 "        stp             d10, d11,       [x0, #0x80]\n"
 "        stp             d12, d13,       [x0, #0x90]\n"
 "        stp             d14, d15,       [x0, #0xA0]\n"
-"        mov             x0, #1\n" // return 0 on the first return
+"        mov             x0, #0\n" // return 0 on the first return
 "        ret\n"
 
 ".globl _VG_MINIMAL_LONGJMP"  "\n"

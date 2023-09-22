@@ -40,6 +40,7 @@
 #include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL and SIGFPE
 #include "pub_core_debuglog.h"
 
+#define BYPASS_SIGILL 1
 
 #define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
@@ -1816,7 +1817,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
 
      /* Does reading ID_AA64ISAR0_EL1 register throw SIGILL on base v8.0? */
-     if (VG_MINIMAL_SETJMP(env_unsup_insn))
+     if (BYPASS_SIGILL || VG_MINIMAL_SETJMP(env_unsup_insn))
         is_base_v8 = True;
      else
         __asm__ __volatile__("mrs x0, ID_AA64ISAR0_EL1");
@@ -1867,7 +1868,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      ULong ctr_el0;
      /* Does reading ctr_el0 register throw SIGILL? */
-     if (VG_MINIMAL_SETJMP(env_unsup_insn))
+     if (BYPASS_SIGILL || VG_MINIMAL_SETJMP(env_unsup_insn))
         ctr_el0 = 0;
      else
      __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));

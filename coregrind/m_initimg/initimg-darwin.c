@@ -510,7 +510,7 @@ static void record_system_memory(void)
 
 #elif defined(VGA_arm64)
    /* commpage 0xfffffc000+ - not in vm_region */
-   VG_(am_notify_client_mmap)(0xfffffc000, 0xffffff000-0xfffffc000,
+   VG_(am_notify_client_mmap)(0xfffffc000, 0x1000,
                               VKI_PROT_READ|VKI_PROT_EXEC, 0, -1, 0);
 
 #else

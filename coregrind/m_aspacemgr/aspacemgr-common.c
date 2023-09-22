@@ -36,6 +36,7 @@
 
 #include "priv_aspacemgr.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_mallocfree.h" // for ALLOW_RWX_WRITE
 #include "config.h"
 
 
@@ -194,18 +195,15 @@ SysRes VG_(am_do_mmap_NO_NOTIFY)( Addr start, SizeT length, UInt prot,
           https://patchew.org/QEMU/20210311002156.253711-1-richard.henderson@linaro.org/20210311002156.253711-27-richard.henderson@linaro.org/
        */
       // flags |= VKI_MAP_JIT;
+       VG_(debugLog)(2, "mmapjit", "unsupported RWX mmap (%#lx, %lu), using mprotect alternative\n", start, length);
        prot = VKI_PROT_NONE;
        is_rwx = True;
    }
    res = VG_(do_syscall6)(__NR_mmap, (UWord)start, length,
                           prot, flags, (UInt)fd, offset);
    if (is_rwx && !sr_isError(res)) {
-      SysRes res_protect;
       // most likely we want to write before executing, so switch the map to RW- right away
-      res_protect = local_do_mprotect_NO_NOTIFY(start, length, VKI_PROT_READ|VKI_PROT_WRITE);
-      if (sr_isError(res_protect)) {
-         res = res_protect;
-      }
+      ALLOW_RWX_WRITE(start, length);
    }
 #  elif defined(VGP_x86_freebsd)
    if (flags & VKI_MAP_ANONYMOUS && fd == 0)

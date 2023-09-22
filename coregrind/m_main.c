@@ -2065,6 +2065,13 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                0xfffec000, 0xfffff000-0xfffec000,
                True, False, True, /* r-x */
                0 /* di_handle: no associated debug info */ );
+#    elif defined(VGP_arm64_darwin)
+      VG_TRACK( new_mem_startup,
+                0xfffffc000, 0x1000,
+                True, False, True, /* r-x */
+                0 /* di_handle: no associated debug info */ );
+#    elif defined(VGO_darwin)
+#      error "Unknown Darwin architecture"
 #    endif
 
      /* Clear the running thread indicator */

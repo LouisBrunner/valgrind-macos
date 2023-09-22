@@ -92,7 +92,6 @@ Int ML_(am_getpid)( void )
    return sr_Res(sres);
 }
 
-
 //--------------------------------------------------------------
 // A simple sprintf implementation, so as to avoid dependence on
 // m_libcprint.

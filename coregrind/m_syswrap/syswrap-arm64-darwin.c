@@ -369,7 +369,7 @@ asm(
 "   mov    x27, #0\n\t"
 "   mov    x28, #0\n\t"
 "   mov    x29, sp\n\t" /* FP = SP, in the absence of better suggestions */
-"   ret x30\n"                 // jump to f
+"   br     x9\n\t"
 "   udf #0\n"                 // should never get here
 );
 

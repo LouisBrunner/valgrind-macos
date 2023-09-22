@@ -1655,15 +1655,15 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       |--------------------------------| 0x000100000000
       |          client text           |
       |--------------------------------| ??? (hopefully less than 0x158000000, same as amd64)
-      |              free              |
+      |             unused             |
       |--------------------------------| 0x000158000000
       |            V's text            |
       |--------------------------------| ??? (hopefully less than 0x16XXXXXXX)
-      |              free              |
+      |             unused             |
       |--------------------------------| ~0x00016XXXXXXX (ASLR-determined)
       |           V's stack            |
       |--------------------------------| ???
-      |              free              |
+      |             unused             |
       |--------------------------------| 0x00019dacc000
       |        dyld shared cache       |
       |--------------------------------| 0x000280000000
@@ -1679,6 +1679,10 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       |        Client memory area      |
       |                                |
       |--------------------------------| 0x000fc0000000
+      |            reserved            |
+      |--------------------------------| 0x000fffffc000
+      |            comm page           |
+      |--------------------------------| 0x000fffffffff
       |            reserved            |
       |--------------------------------| 0x007000000000 <- start of Valgrind addressable space
       |                                |
@@ -3761,7 +3765,7 @@ static void parse_procselfmaps (
    last = 0;
    while (1) {
       mach_vm_address_t addr = iter;
-      mach_vm_size_t size;
+      mach_vm_size_t size = 0;
       vm_region_submap_short_info_data_64_t info;
       kern_return_t kr;
 
@@ -3781,6 +3785,16 @@ static void parse_procselfmaps (
       }
       iter = addr + size;
 
+#if defined(VGA_arm64)
+      // FIXME: we ignore any mapping before Valgrind's TEXT segment
+      // because they conflict with the binary we want to load
+      // and then Valgrind refuses to load it.
+      // Most likely, this is the where dyld loads itself before loading Valgrind.
+      if (addr < 0x158000000) {
+        VG_(debugLog)(1, "aspacem", "ignoring mapping %p..%p (potential future conflict)\n", addr, addr + size);
+        continue;
+      }
+#endif
       if (addr > last  &&  record_gap) {
          (*record_gap)(last, addr - last);
       }

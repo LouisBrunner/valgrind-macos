@@ -170,7 +170,7 @@ typedef
       ULong guest_LLSC_DATA_HI64; // Original value at _ADDR+8.
 
       /* Padding to make it have an 16-aligned size */
-      /* UInt  pad_end_0; */
+      UInt  pad_end_0;
       /* ULong pad_end_1; */
    }
    VexGuestARM64State;

@@ -112,6 +112,7 @@ typedef
       Bool    isCH;     // True --> is client heap (SkAnonC ONLY)
 #if defined(VGO_freebsd)
       Bool    isFF;     // True --> is a fixed file mapping
+      Bool    ignore_offset; // True --> we can't work out segment offset
 #endif
    }
    NSegment;

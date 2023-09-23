@@ -85,6 +85,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 473944  Handle mold linker split RW PT_LOAD segments correctly
 474332  aligned_alloc under Valgrind returns nullptr when alignment is not a multiple of sizeof(void *)
 n-i-bz  Allow arguments with spaces in .valgrindrc files
+n-i-bz  FreeBSD fixed reading of Valgrind tools own debuginfo
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

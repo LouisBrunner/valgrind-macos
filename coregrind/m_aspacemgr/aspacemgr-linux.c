@@ -348,8 +348,8 @@ static Int  find_nsegment_idx ( Addr a );
 
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
-                              ULong dev, ULong ino, Off64T offset, 
-                              const HChar* filename ),
+                              ULong dev, ULong ino, Off64T offset,
+                              const HChar* filename, Bool ignore_offset ),
       void (*record_gap)( Addr addr, SizeT len )
    );
 
@@ -783,8 +783,8 @@ static Bool preen_nsegments ( void )
 static Bool sync_check_ok = False;
 
 static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
-                                          ULong dev, ULong ino, Off64T offset, 
-                                          const HChar* filename )
+                                          ULong dev, ULong ino, Off64T offset,
+                                          const HChar* filename, Bool ignore_offset )
 {
    Int  iLo, iHi, i;
    Bool sloppyXcheck, sloppyRcheck;
@@ -1502,7 +1502,7 @@ static void init_nsegment ( /*OUT*/NSegment* seg )
    seg->hasR     = seg->hasW = seg->hasX = seg->hasT
                  = seg->isCH = False;
 #if defined(VGO_freebsd)
-   seg->isFF     = False;
+   seg->ignore_offset     = False;
 #endif
 
 }
@@ -1529,7 +1529,7 @@ static void init_resvn ( /*OUT*/NSegment* seg, Addr start, Addr end )
 
 static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
                                  ULong dev, ULong ino, Off64T offset, 
-                                 const HChar* filename )
+                                 const HChar* filename, Bool ignore_offset )
 {
    NSegment seg;
    init_nsegment( &seg );
@@ -1538,6 +1538,9 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    seg.dev    = dev;
    seg.ino    = ino;
    seg.offset = offset;
+#if defined(VGO_freebsd)
+   seg.ignore_offset = ignore_offset;
+#endif
    seg.hasR   = toBool(prot & VKI_PROT_READ);
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
@@ -3442,12 +3445,15 @@ static void read_procselfmaps_into_buf ( void )
       mapped file device and inode
       offset in file, or zero if no file
       filename, zero terminated, or NULL if no file
+      ignore_offset, when the exact offset cannot be
+                     obtained
 
    So the sig of the called fn might be
 
       void (*record_mapping)( Addr start, SizeT size, UInt prot,
 			      UInt dev, UInt info,
-                              ULong foffset, UChar* filename )
+                              ULong foffset, UChar* filename,
+                              Bool ignore_offset )
 
    Note that the supplied filename is transiently stored; record_mapping 
    should make a copy if it wants to keep it.
@@ -3458,7 +3464,7 @@ static void read_procselfmaps_into_buf ( void )
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset, 
-                              const HChar* filename ),
+                              const HChar* filename, Bool ignore_offset ),
       void (*record_gap)( Addr addr, SizeT len )
    )
 {
@@ -3609,7 +3615,7 @@ static void parse_procselfmaps (
       if (record_mapping && start < endPlusOne)
          (*record_mapping) ( start, endPlusOne-start,
                              prot, dev, ino,
-                             foffset, filename );
+                             foffset, filename, False );
 
       if ('\0' != tmp) {
          filename[i_eol - i] = tmp;
@@ -3636,7 +3642,7 @@ static void parse_procselfmaps (
            (*record_mapping)( commpage_start, commpage_end1 - commpage_start,
                               VKI_PROT_READ|VKI_PROT_EXEC,
                               0/*dev*/, 0/*ino*/, 0/*foffset*/,
-                              NULL);
+                              NULL, False);
         gapStart = commpage_end1;
      }
    }
@@ -3667,7 +3673,7 @@ static UInt stats_machcalls = 0;
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset, 
-                              const HChar* filename ),
+                              const HChar* filename, Bool ignore_offset ),
       void (*record_gap)( Addr addr, SizeT len )
    )
 {
@@ -3705,7 +3711,7 @@ static void parse_procselfmaps (
       }
       if (record_mapping) {
          (*record_mapping)(addr, size, mach2vki(info.protection),
-                           0, 0, info.offset, NULL);
+                           0, 0, info.offset, NULL, False);
       }
       last = addr + size;
    }
@@ -3898,6 +3904,60 @@ Bool VG_(get_changed_segments)(
 /*------BEGIN-procmaps-parser-for-Freebsd------------------------*/
 #elif defined(VGO_freebsd)
 
+/*
+ * PJF 2023-09-23
+ *
+ * This function is somewhat badly named for FreeBSD, where the
+ * /proc filesystem is optional so we can't count on users
+ * having it. Instead we use the KERN_PROC_VMMAP syscall.
+ * So far so good.
+ *
+ * This function is used in two contexts. The heaviest use is from
+ * VG_(am_do_sync_check) as a sanity check that the contents of the
+ * global nsegments array is consistent with what the OS reports
+ * as being memory maps. No known problems with that.
+ *
+ * The other use is at startup in order to get the mapping for the
+ * tool itself. In this case we have a fairly big problem. There is
+ * a difference in the mapping used when the kernel loads an exe
+ * and when the link loader ldrt (or Valgrind which does the same
+ * job for the guest exe. In the case of ldrt, all ELF PT_LOAD
+ * sections get mmap'd. The kernel, however, does _not_ mmap
+ * the RW PT_LOAD.
+ *
+ * For instance, objdump -p for memcheck-amd64-freebsd contains
+ *     LOAD off    0x0000000000000000 vaddr 0x0000000038000000 paddr 0x0000000038000000 align 2**12
+ *         filesz 0x00000000000c5124 memsz 0x00000000000c5124 flags r--
+ *    LOAD off    0x00000000000c5130 vaddr 0x00000000380c6130 paddr 0x00000000380c6130 align 2**12
+ *         filesz 0x00000000001b10df memsz 0x00000000001b10df flags r-x
+ *    LOAD off    0x0000000000276210 vaddr 0x0000000038278210 paddr 0x0000000038278210 align 2**12
+ *         filesz 0x0000000000000a90 memsz 0x00000000025dd000 flags rw-
+ *
+ * Running procstat -v on a running instance gives
+ * 44814         0x38000000         0x380c6000 r--  198 2558   2   0 CN--- vn /usr/home/paulf/scratch/valgrind/memcheck/memcheck-amd64-freebsd
+ * 44814         0x380c6000         0x38278000 r-x  434 2558   2   0 CN--- vn /usr/home/paulf/scratch/valgrind/memcheck/memcheck-amd64-freebsd
+ * 44814         0x38278000         0x3a856000 rw- 4590 4590   1   0 ----- df
+ *
+ * Instead of mmap'ing the RW PT_LOAD the kernel has mmap'd anonymous swap and copied from the exe file.
+ * See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=273956
+ *
+ * So what can we do? We can reuse most of the info from the previous 'r-x' mapping.
+ * The filename, dev and ino are all the same. That leaves the offset. We can
+ * make a rough estimate of the value as being previous offset + previous size.
+ * Since the addresses in memory will be page aligned it's not possible to
+ * obtain the original offset. It isn't good enough for ML_(read_elf_object)
+ * in readelf.c
+ *
+ * As a hack of last resort we force ML_(read_elf_object) to accept this
+ * mapping by adding an "ignore offset" flag. We can't be wrong that
+ * there is something mapped roughly there - it's the global data of the
+ * code that is executing on the CPU! Furthermore, this is not frequently
+ * used. The main benefit is for Valgrind developers. Without this hack,
+ * if Valgrind crashes or asserts it will print its own stack without
+ * debuginfo, which is mostly useless. See the above FreeBSD bugzilla item
+ * for an example.
+ */
+
 /* Size of a smallish table used to read /proc/self/map entries. */
 #define M_PROCMAP_BUF 10485760	/* 10M */
 
@@ -3907,67 +3967,95 @@ static char procmap_buf[M_PROCMAP_BUF];
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset,
-                              const HChar* filename ),
+                              const HChar* filename, Bool ignore_offset ),
       void (*record_gap)( Addr addr, SizeT len )
    )
 {
-    Addr   start, endPlusOne, gapStart;
-    char* filename;
-    char   *p;
-    UInt          prot;
-    ULong  foffset, dev, ino;
-    struct vki_kinfo_vmentry *kve;
-    vki_size_t len;
-    Int    oid[4];
-    SysRes sres;
+   Addr   start, endPlusOne, gapStart;
+   char* filename;
+   char   *p;
+   UInt   prot;
+   ULong  foffset, dev, ino;
+   struct vki_kinfo_vmentry *kve;
+   vki_size_t len;
+   Int    oid[4];
+   SysRes sres;
+   Int map_count = 0;
+   // could copy the whole kinfo_vmentry but it is 1160 bytes
+   char   *rx_filename = NULL;
+   ULong  rx_dev = 0U;
+   ULong  rx_ino = 0U;
+   ULong  rx_foffset = 0U;
+   Bool   tool_read_maps = (record_mapping == read_maps_callback);
 
-    foffset = ino = 0; /* keep gcc-4.1.0 happy */
+   foffset = ino = 0; /* keep gcc-4.1.0 happy */
 
-    oid[0] = VKI_CTL_KERN;
-    oid[1] = VKI_KERN_PROC;
-    oid[2] = VKI_KERN_PROC_VMMAP;
-    oid[3] = sr_Res(VG_(do_syscall0)(__NR_getpid));
-    len = sizeof(procmap_buf);
+   oid[0] = VKI_CTL_KERN;
+   oid[1] = VKI_KERN_PROC;
+   oid[2] = VKI_KERN_PROC_VMMAP;
+   oid[3] = sr_Res(VG_(do_syscall0)(__NR_getpid));
+   len = sizeof(procmap_buf);
 
-    sres = VG_(do_syscall6)(__NR___sysctl, (UWord)oid, 4, (UWord)procmap_buf,
-       (UWord)&len, 0, 0);
-    if (sr_isError(sres)) {
-       VG_(debugLog)(0, "procselfmaps", "sysctl %lu\n", sr_Err(sres));
-       ML_(am_exit)(1);
-    }
-    gapStart = Addr_MIN;
-    p = procmap_buf;
-    while (p < (char *)procmap_buf + len) {
-       kve = (struct vki_kinfo_vmentry *)p;
-       start      = (UWord)kve->kve_start;
-       endPlusOne = (UWord)kve->kve_end;
-       foffset    = kve->kve_offset;
-       filename   = kve->kve_path;
-       dev        = kve->kve_vn_fsid_freebsd11;
-       ino        = kve->kve_fileid;
-       if (filename[0] != '/') {
+   sres = VG_(do_syscall6)(__NR___sysctl, (UWord)oid, 4, (UWord)procmap_buf,
+      (UWord)&len, 0, 0);
+   if (sr_isError(sres)) {
+      VG_(debugLog)(0, "procselfmaps", "sysctl %lu\n", sr_Err(sres));
+      ML_(am_exit)(1);
+   }
+   gapStart = Addr_MIN;
+   p = procmap_buf;
+   while (p < (char *)procmap_buf + len) {
+      kve = (struct vki_kinfo_vmentry *)p;
+      start      = (UWord)kve->kve_start;
+      endPlusOne = (UWord)kve->kve_end;
+      foffset    = kve->kve_offset;
+      filename   = kve->kve_path;
+      dev        = kve->kve_vn_fsid_freebsd11;
+      ino        = kve->kve_fileid;
+      if (filename[0] != '/') {
          filename = NULL;
          foffset = 0;
-       }
+      }
  
-       prot = 0;
-       if (kve->kve_protection & VKI_KVME_PROT_READ)  prot |= VKI_PROT_READ;
-       if (kve->kve_protection & VKI_KVME_PROT_WRITE) prot |= VKI_PROT_WRITE;
-       if (kve->kve_protection & VKI_KVME_PROT_EXEC)  prot |= VKI_PROT_EXEC;
+      prot = 0;
+      if (kve->kve_protection & VKI_KVME_PROT_READ)  prot |= VKI_PROT_READ;
+      if (kve->kve_protection & VKI_KVME_PROT_WRITE) prot |= VKI_PROT_WRITE;
+      if (kve->kve_protection & VKI_KVME_PROT_EXEC)  prot |= VKI_PROT_EXEC;
+
+      map_count = (p - (char *)procmap_buf)/kve->kve_structsize;
+
+      if (tool_read_maps && map_count == 2) {
+         aspacem_assert((prot & (VKI_PROT_READ | VKI_PROT_WRITE)) == (VKI_PROT_READ | VKI_PROT_WRITE));
+         filename = rx_filename;
+         dev = rx_dev;
+         ino = rx_ino;
+         foffset = rx_foffset;
+      }
  
-       if (record_gap && gapStart < start)
-          (*record_gap) ( gapStart, start-gapStart );
+      if (record_gap && gapStart < start)
+         (*record_gap) ( gapStart, start-gapStart );
+
+      if (record_mapping && start < endPlusOne) {
+         (*record_mapping) ( start, endPlusOne-start,
+                             prot, dev, ino,
+                           foffset, filename, tool_read_maps && map_count == 2 );
+      }
+
+      if (tool_read_maps && map_count == 1) {
+         aspacem_assert((prot & (VKI_PROT_READ | VKI_PROT_EXEC)) == (VKI_PROT_READ | VKI_PROT_EXEC));
+         rx_filename = filename;
+         rx_dev = dev;
+         rx_ino = ino;
+         /* this is only accurate to the page alignment */
+         rx_foffset = foffset + endPlusOne - start;
+      }
+
+      gapStart = endPlusOne;
+      p += kve->kve_structsize;
+   }
  
-       if (record_mapping && start < endPlusOne)
-          (*record_mapping) ( start, endPlusOne-start,
-                              prot, dev, ino,
-                              foffset, filename );
-       gapStart = endPlusOne;
-       p += kve->kve_structsize;
-    }
- 
-    if (record_gap && gapStart < Addr_MAX)
-       (*record_gap) ( gapStart, Addr_MAX - gapStart + 1 );
+   if (record_gap && gapStart < Addr_MAX)
+      (*record_gap) ( gapStart, Addr_MAX - gapStart + 1 );
 }
 
 /*------END-procmaps-parser-for-Freebsd--------------------------*/
@@ -4135,7 +4223,7 @@ static Mapping *next_rmap(const HChar *buffer, SizeT entries, SizeT *idx,
 static void parse_procselfmaps (
       void (*record_mapping)( Addr addr, SizeT len, UInt prot,
                               ULong dev, ULong ino, Off64T offset,
-                              const HChar *filename ),
+                              const HChar *filename, Bool ignore_offset ),
       void (*record_gap)( Addr addr, SizeT len )
    )
 {
@@ -4201,7 +4289,7 @@ static void parse_procselfmaps (
             (*record_mapping)(xmap->addr, xmap->size, xmap->prot, xmap->dev,
                               xmap->ino, xmap->foffset,
                               (xmap->filename[0] != '\0') ?
-                               xmap->filename : NULL);
+                               xmap->filename : NULL, False);
 
          start = xmap->addr + xmap->size;
          advance_xmap = True;
@@ -4215,7 +4303,7 @@ static void parse_procselfmaps (
             size = xmap->addr - start;
 
          if (record_mapping != NULL)
-            (*record_mapping)(start, size, rmap->prot, 0, 0, 0, NULL);
+            (*record_mapping)(start, size, rmap->prot, 0, 0, 0, NULL, False);
          start += size;
       }
       else {
@@ -4242,7 +4330,7 @@ static UInt found_prot;
 
 /* Reports a new mapping into variables above. */
 static void new_segment_found_callback(Addr addr, SizeT len, UInt prot,
-   ULong dev, ULong ino, Off64T offset, const HChar *filename)
+   ULong dev, ULong ino, Off64T offset, const HChar *filename, Bool ignore_offset)
 {
    aspacem_assert(addr <= addr + len - 1); 
 

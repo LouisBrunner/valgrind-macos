@@ -549,6 +549,31 @@ static Bool ranges_overlap (Addr s1, SizeT len1, Addr s2, SizeT len2 )
    return True;
 }
 
+/*
+ * PJF 2023-09-23
+ *
+ * FreeBSD can perform a temporary mapping when loading exes
+ * and shared libraries. This is seen as a single page mapped
+ * before the ro/rx/rw mappings from the ELF file itself. More
+ * importantly, FreeBSD can reuse that same page when loading
+ * subsequent shared libraries. That means that we see this
+ * page as an overlap. Previously we noted that the mapping
+ * was not fixed and ignored it by returning early from
+ * VG_(di_notify_mmap).
+ *
+ * That works OK in general, but not for the tool itself.
+ * In order to read symbols for the tool, ML_(read_elf_object)
+ * needs to match up the ELF headers with the DebugInfo maps
+ * (populated from the global nsegments array).
+ *
+ * Two possible solutions would be to hack parse_procselfmaps
+ * even more so that it doesn't record the ro segment (is
+ * that info in kve_flags?). The other, which was also my
+ * original fix for this problem, is to just ignore identical
+ * ro mappings for different files on FreeBSD. I'm not certain
+ * that the size is always one page - that could be used to
+ * tighten the check even more.
+ */
 
 /* Do the basic mappings of the two DebugInfos overlap in any way? */
 static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
@@ -560,8 +585,19 @@ static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
       const DebugInfoMapping* map1 = VG_(indexXA)(di1->fsm.maps, i);
       for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
          const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
-         if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size))
+         if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size)) {
+#if defined(VGO_freebsd)
+            if (di1 != di2 && map1->ro && map2->ro &&
+                map1->avma == map2->avma && map1->size == map2->size) {
+               if (VG_(debugLog_getLevel)() >= 3) {
+                   VG_(dmsg)("do_DebugInfos_overlap-0: identical ro mappings from files %s and %s\n",
+                            di1->fsm.filename, di2->fsm.filename);
+               }
+               continue;
+            }
+#endif
             return True;
+         }
       }
    }
 
@@ -1297,8 +1333,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #if defined(VGO_freebsd)
    /* Ignore non-fixed read-only mappings.  The dynamic linker may be
     * mapping something for its own transient purposes. */
-   if (!seg->isFF && is_ro_map)
-      return 0;
+   if (!seg->isFF && is_ro_map && debug) {
+      VG_(dmsg)("di_notify_mmap-4: non-fixed ro map\n");
+   }
 #endif
 
 #if defined(VGO_darwin)
@@ -1411,6 +1448,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    map.avma = seg->start;
    map.size = seg->end + 1 - seg->start;
    map.foff = seg->offset;
+#if defined(VGO_freebsd)
+   map.ignore_foff = seg->ignore_offset;
+#endif
    map.rx   = is_rx_map;
    map.rw   = is_rw_map;
    map.ro   = is_ro_map;

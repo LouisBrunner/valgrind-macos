@@ -577,6 +577,9 @@ typedef struct
    SizeT size; /* and map address of each mapping             */
    OffT  foff;
    Bool  rx, rw, ro;  /* memory access flags for this mapping */
+#if defined(VGO_freebsd)
+   Bool ignore_foff;
+#endif
 } DebugInfoMapping;
 
 struct _DebugInfoFSM

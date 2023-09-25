@@ -3709,6 +3709,33 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       /* fall through */
    }
 
+   /* -------------------- PAC{D,I}{Z}{A,B} -------------------- */
+   /* 31 30 29          20      15v-13 9  4
+      1  1  0 1101 0110 00001   000000 Rn Rd    PACIA <Xd>, <Xn|SP>
+      1  1  0 1101 0110 00001   001000 Rn 11111 PACIZA <Xd>
+      1  1  0 1101 0110 00001   000001 Rn Rd    PACIB <Xd>, <Xn|SP>
+      1  1  0 1101 0110 00001   001001 Rn 11111 PACIZB <Xd>
+      1  1  0 1101 0110 00001   000010 Rn Rd    PACDA <Xd>, <Xn|SP>
+      1  1  0 1101 0110 00001   001010 Rn 11111 PACDZA <Xd>
+      1  1  0 1101 0110 00001   000011 Rn Rd    PACDB <Xd>, <Xn|SP>
+      1  1  0 1101 0110 00001   001011 Rn 11111 PACDZB <Xd>
+      sf    S           opcode2 opcode
+                                  Z
+   */
+   if ((INSN(31,8) & 0xFFFFD0) == 0xDAC100) {
+      Bool isZ = INSN(13,13) == 1;
+      Bool isD = INSN(11,11) == 1;
+      Bool isA = INSN(10,10) == 0;
+      UInt nn = INSN(9,5);
+      UInt dd = INSN(4,0);
+      if (isZ && nn == 31) {
+        DIP("pac%cz%c %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrSP(True, dd));
+      } else {
+        DIP("pac%c%c %s, %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrSP(True, dd), nameIRegOrSP(True, nn));
+      }
+      return True;
+   }
+
    if (sigill_diag) {
       vex_printf("ARM64 front end: data_processing_register\n");
    }
@@ -7878,6 +7905,56 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("clrex #%u\n", mm);
       return True;
    }
+
+   /* ------------------- RETA{A,B} ------------------ */
+   /* 31      24   20    15   10 9     4
+      1101011 0010 11111 000010  11111 11111 RETAA
+      1101011 0010 11111 000011  11111 11111 RETAB
+      class   opc  op2   op3     Rn    op4
+              Z op           AM  Rn    Rm
+
+      Operation:
+        PSTATE.BTYPE = '00'
+        branch(AuthIA/B(X30, SP, TRUE), RET, FALSE)
+   */
+   if ((INSN(31,0) & 0xFFFFFBFF) == 0xD65F0BFF) {
+      Bool isA = INSN(10,10) == 0;
+      putPC(getIReg64orSP(30));
+      dres->whatNext = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Ret;
+      DIP("reta%c (FAKED)\n", isA ? 'a' : 'b');
+      return True;
+   }
+
+   /* ------------------- BLRA{A,B}{Z} ------------------ */
+   /* 31      24   20    15   10 9     4
+      1101011 0001 11111 000010  Rn    11111 BLRAAZ <Xn>
+      1101011 0001 11111 000011  Rn    11111 BLRAAB <Xn>
+      1101011 1001 11111 000010  Rn    Rm    BLRAA <Xn>, <Xm|SP>
+      1101011 1001 11111 000011  Rn    Rm    BLRAB <Xn>, <Xm|SP>
+      class   opc  op2   op3     Rn    op4
+              Z op           AM  Rn    Rm
+   */
+    if ((INSN(31,12) & 0xFEFFF) == 0xD63F0) {
+        Bool isZ = INSN(24,24) == 0;
+        Bool isA = INSN(10,10) == 0;
+        UInt nn  = INSN(9,5);
+        UInt mm  = INSN(4,0);
+
+        IRTemp target = newTemp(Ity_I64);
+        assign(target, getIReg64orSP(nn));
+        putIReg64orZR(30, mkU64(guest_PC_curr_instr + 4));
+        putPC(mkexpr(target));
+        dres->whatNext = Dis_StopHere;
+        dres->jk_StopHere = Ijk_Call; // FIXME: I think?
+        if (isZ && mm == 31) {
+            DIP("blra%cz %s\n", isA ? 'a' : 'b', nameIReg64orSP(nn));
+        } else {
+            DIP("blra%c %s, %s\n", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));
+        }
+        return True;
+    }
+
 
    if (sigill_diag) {
       vex_printf("ARM64 front end: branch_etc\n");

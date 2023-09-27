@@ -1,4 +1,6 @@
 *.o
+.DS_Store
+/*/*.orig
 
 # /
 /.in_place

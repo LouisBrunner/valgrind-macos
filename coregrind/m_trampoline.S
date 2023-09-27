@@ -1274,7 +1274,7 @@ VG_(trampoline_stuff_end):
 #else
 #if defined(VGP_arm64_darwin)
 
-#       define UD2_4      .word 0xFFFFFFFF
+#       define UD2_4      .word 0x00000000
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
@@ -1289,67 +1289,45 @@ VG_(trampoline_stuff_start):
 
 .global VG_(arm64_darwin_SUBST_FOR_sigreturn)
 VG_(arm64_darwin_SUBST_FOR_sigreturn):
-  /* XXX does this need to have any special form? (cf x86-linux version) */
   ldr x16, =__NR_DARWIN_FAKE_SIGRETURN
   svc 0x80
-  .long 0xFFFFFFFF /*illegal insn*/
+  UD2_4
 
 .global VG_(arm64_darwin_REDIR_FOR_strlen)
 VG_(arm64_darwin_REDIR_FOR_strlen):
-// From arm64-linux
 	mov	x2, x0
-	ldrb	w0, [x0]
-	cbz	w0, .L5
+	ldrb	w1, [x0]
 	mov	x0, 0
-.L4:
+	cbz	w1, .L05
+.L04:
 	add	x0, x0, 1
 	ldrb	w1, [x2,x0]
-	cbnz	w1, .L4
-	ret
-.L5:
-	mov	x0, 0
+	cbnz	w1, .L04
+.L05:
 	ret
 
 .globl VG_(arm64_darwin_REDIR_FOR_strcat)
 VG_(arm64_darwin_REDIR_FOR_strcat):
-; 	movq	%rdi, %rdx
-; 	jmp	1f
-; 0:
-; 	incq	%rdx
-; 1:
-; 	cmpb	$0, (%rdx)
-; 	jne	0b
-; 2:
-; 	movzbl	(%rsi), %eax
-; 	incq	%rsi
-; 	movb	%al, (%rdx)
-; 	incq	%rdx
-; 	testb	%al, %al
-; 	jne	2b
-; 	movq	%rdi, %rax
-; 	ret
-  // FIXME: MISSING IMPLEMENTATION
+  mov x2, 0
+  bal .L12
+.L11:
+  add x2, x2, 1
+.L12:
+  ldrb w3, [x0, x2]
+  cbnz w3, .L11
+  add x2, x0, x2
+  mov x4, 0
+  bal .L19
+.L18:
+  add x4, x4, 1
+.L19:
+  ldrb w3, [x1, x4]
+  strb w3, [x2, x4]
+  cbnz w3, .L18
   ret
-
 
 .globl VG_(arm64_darwin_REDIR_FOR_strcmp)
 VG_(arm64_darwin_REDIR_FOR_strcmp):
-; 	jmp	1f
-; 0:
-; 	incq	%rdi
-; 	incq	%rsi
-; 1:
-; 	movzbl	(%rdi), %eax
-; 	testb	%al, %al
-; 	je	2f
-; 	cmpb	(%rsi), %al
-; 	je	0b
-; 2:
-; 	movzbl	(%rsi), %edx
-; 	movzbl	%al, %eax
-; 	subl	%edx, %eax
-; 	ret
-// From arm64-linux
   ldrb    w2, [x0]
   ldrb    w3, [x1]
   cmp     w2, w3
@@ -1373,74 +1351,40 @@ VG_(arm64_darwin_REDIR_FOR_strcmp):
 
 .globl VG_(arm64_darwin_REDIR_FOR_strcpy)
 VG_(arm64_darwin_REDIR_FOR_strcpy):
-; 	pushq	%rbp
-; 	movq	%rdi, %rdx
-; 	movq	%rsp, %rbp
-; 	jmp	1f
-; 0:
-; 	incq	%rsi
-; 	incq	%rdx
-; 1:
-; 	movzbl	(%rsi), %eax
-; 	testb	%al, %al
-; 	movb	%al, (%rdx)
-; 	jne	0b
-; 	leave
-; 	movq	%rdi, %rax
-; 	ret
-  // FIXME: MISSING IMPLEMENTATION
+  mov x2, 0
+  bal .L31
+.L30:
+  add x2, x2, 1
+.L31:
+  ldrb w3, [x1, x2]
+  strb w3, [x0, x2]
+  cbnz w3, .L30
   ret
 
 .globl VG_(arm64_darwin_REDIR_FOR_strlcat)
 VG_(arm64_darwin_REDIR_FOR_strlcat):
-; 	pushq	%rbp
-; 	leaq	(%rdx,%rdi), %rax
-; 	movq	%rdi, %rcx
-; 	movq	%rsp, %rbp
-; 	pushq	%rbx
-; 	subq	$8, %rsp
-; 	jmp	1f
-; 0:
-; 	incq	%rcx
-; 1:
-; 	cmpq	%rcx, %rax
-; 	je	2f
-; 	cmpb	$0, (%rcx)
-; 	jne	0b
-; 2:
-; 	movq	%rcx, %rbx
-; 	subq	%rdi, %rbx
-; 	movq	%rdx, %rdi
-; 	subq	%rbx, %rdi
-; 	je	3f
-; 	movq	%rsi, %rax
-; 	jmp	6f
-; 3:
-; 	movq	%rsi, %rdi
-; 	call	VG_(arm64_darwin_REDIR_FOR_strlen)
-; 	jmp	7f
-; 4:
-; 	cmpq	$1, %rdi
-; 	je	5f
-; 	movb	%dl, (%rcx)
-; 	decq	%rdi
-; 	incq	%rcx
-; 5:
-; 	incq	%rax
-; 6:
-; 	movzbl	(%rax), %edx
-; 	testb	%dl, %dl
-; 	jne	4b
-; 	movb	$0, (%rcx)
-; 	subq	%rsi, %rax
-; 7:
-; 	leaq	(%rbx,%rax), %rax
-; 	addq	$8, %rsp
-; 	popq	%rbx
-; 	leave
-; 	ret
-  // FIXME: MISSING IMPLEMENTATION
-  mov x0, 0
+	ldrb	w3, [x0]
+	mov	x4, 0
+	cbz	w3, .L42
+.L40:
+	add	x4, x4, 1
+	ldrb	w3, [x0, x4]
+	cbnz	w3, .L40
+.L42:
+  mov x5, 0
+.L43:
+  add x6, x4, x5
+  cmp x6, x2
+  bge .L49
+  ldrb w3, [x1, x5]
+  cbz w3, .L49
+  strb w3, [x0, x6]
+  add x5, x5, 1
+  bal .L43
+.L49:
+  mov x4, 0
+  strb w4, [x0, x6]
+  mov x0, x6
   ret
 
 .globl VG_(arm64_darwin_REDIR_FOR_arc4random)
@@ -1451,28 +1395,19 @@ VG_(arm64_darwin_REDIR_FOR_arc4random):
 
 .globl VG_(arm64_darwin_REDIR_FOR_strchr)
 VG_(arm64_darwin_REDIR_FOR_strchr):
-;         pushq   %rbp
-;         movq    %rsp, %rbp
-;         movb    (%rdi), %cl
-;         cmpb    %sil, %cl
-;         jne     1f
-;         movq    %rdi, %rax
-;         popq    %rbp
-;         ret
-; 1:
-;         testb   %cl, %cl
-;         movl    $0, %eax
-;         je      2f
-;         movb    1(%rdi), %cl
-;         incq    %rdi
-;         cmpb    %sil, %cl
-;         movq    %rdi, %rax
-;         jne     1b
-; 2:
-;         popq    %rbp
-;         ret
-  // FIXME: MISSING IMPLEMENTATION
+  mov x2, 0
+  bal .L51
+.L50:
+  add x2, x2, 1
+.L51:
+  ldrb w3, [x0, x2]
+  cmp w3, w1
+  beq .L52
+  cbnz w3, .L50
   mov x0, 0
+  ret
+.L52:
+  add x0, x0, x2
   ret
 
 .global VG_(trampoline_stuff_end)

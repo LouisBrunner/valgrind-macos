@@ -24,17 +24,17 @@ def main():
   # Remove signature if present as it will be invalidated by our modifications
   tool.remove_signature()
   # Remove non-required stuff
-  tool.header.remove(lief._lief.MachO.HEADER_FLAGS.TWOLEVEL)
+  # tool.header.remove(lief._lief.MachO.HEADER_FLAGS.TWOLEVEL)
   tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.LOAD_DYLIB) # libSystem.B.dylib
-  tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.BUILD_VERSION)
-  tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_INFO_ONLY)
-  tool.remove_section("__unwind_info")
-  tool.remove_section("__stubs")
-  tool.remove_section("__stub_helper")
-  tool.remove_section("__got")
-  tool.remove_section("__la_symbol_ptr")
-  tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DATA_IN_CODE)
-  tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.FUNCTION_STARTS)
+  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.BUILD_VERSION)
+  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_INFO_ONLY)
+  # tool.remove_section("__unwind_info")
+  # tool.remove_section("__stubs")
+  # tool.remove_section("__stub_helper")
+  # tool.remove_section("__got")
+  # tool.remove_section("__la_symbol_ptr")
+  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DATA_IN_CODE)
+  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.FUNCTION_STARTS)
   # offset all segments and sections so the load address is correct
   text = tool.get_segment("__TEXT")
   data = tool.get_segment("__DATA")
@@ -43,11 +43,16 @@ def main():
   text.get_section("__text").virtual_address += offset
   text.get_section("__const").virtual_address += offset
   text.get_section("__cstring").virtual_address += offset
+  text.get_section("__unwind_info").virtual_address += offset
+  text.get_section("__stubs").virtual_address += offset
+  text.get_section("__stub_helper").virtual_address += offset
   data.virtual_address += offset
   data.get_section("__const").virtual_address += offset
   data.get_section("__data").virtual_address += offset
   data.get_section("__common").virtual_address += offset
   data.get_section("__bss").virtual_address += offset
+  data.get_section("__got").virtual_address += offset
+  data.get_section("__la_symbol_ptr").virtual_address += offset
   tool.get_segment("__LINKEDIT").virtual_address += offset
 
   # Commit the changes and make the binary executable

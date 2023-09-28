@@ -4480,6 +4480,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_NoDecode:
          case Ijk_NoRedir:
          case Ijk_Sys_syscall:
+         case Ijk_Sys_int128:
          case Ijk_InvalICache:
          case Ijk_FlushDCache:
          case Ijk_SigTRAP:
@@ -4574,6 +4575,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoDecode:
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
+      case Ijk_Sys_int128:
       case Ijk_InvalICache:
       case Ijk_FlushDCache:
       case Ijk_SigTRAP:

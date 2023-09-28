@@ -1274,7 +1274,7 @@ VG_(trampoline_stuff_end):
 #else
 #if defined(VGP_arm64_darwin)
 
-#       define UD2_4      .word 0x00000000
+#       define UD2_4      .word 0xFFFFFFFF
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
 #	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64

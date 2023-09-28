@@ -3736,6 +3736,20 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       return True;
    }
 
+   /* -------------------- PACGA -------------------- */
+   /* 31 30 29          20      15     9  4
+      1  0  0 1101 0110 Rm      001100 Rn Rd    PACGA <Xd>, <Xn>, <Xm|SP>
+      sf    S                   opcode
+   */
+   if ((INSN(31,8) & 0xFFE0FC) == 0x9AC030) {
+      UInt mm = INSN(20,16);
+      UInt nn = INSN(9,5);
+      UInt dd = INSN(4,0);
+      putIReg64orZR(dd, mkU64(0x101010FF00000000));
+      DIP("pacga %s, %s, %s (FAKED)\n", nameIRegOrSP(True, dd), nameIRegOrSP(True, nn), nameIRegOrSP(True, mm));
+      return True;
+   }
+
    if (sigill_diag) {
       vex_printf("ARM64 front end: data_processing_register\n");
    }
@@ -7574,6 +7588,18 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* -------------------- SVC #80 ---------------- */
+   /* 11010100 000 imm16 000 01
+      Some platforms (macOS) use this for software interrupts.
+   */
+   if (INSN(31,0) == 0xD4001001) {
+      putPC(mkU64(guest_PC_curr_instr + 4));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Sys_int128;
+      DIP("svc #80\n");
+      return True;
+   }
+
    /* ------------------ M{SR,RS} ------------------ */
    /* ---- Cases for TPIDR_EL0 ----
       0xD51BD0 010 Rt   MSR tpidr_el0, rT
@@ -7926,8 +7952,12 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
-   /* ------------------- BLRA{A,B}{Z} ------------------ */
+   /* ------------------- B{L}RA{A,B}{Z} ------------------ */
    /* 31      24   20    15   10 9     4
+      1101011 0000 11111 000010  Rn    11111 BRAAZ <Xn>
+      1101011 0000 11111 000011  Rn    11111 BRABZ <Xn>
+      1101011 1000 11111 000010  Rn    Rm    BRAA <Xn>, <Xm|SP>
+      1101011 1000 11111 000011  Rn    Rm    BRAB <Xn>, <Xm|SP>
       1101011 0001 11111 000010  Rn    11111 BLRAAZ <Xn>
       1101011 0001 11111 000011  Rn    11111 BLRAAB <Xn>
       1101011 1001 11111 000010  Rn    Rm    BLRAA <Xn>, <Xm|SP>
@@ -7935,22 +7965,25 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       class   opc  op2   op3     Rn    op4
               Z op           AM  Rn    Rm
    */
-    if ((INSN(31,12) & 0xFEFFF) == 0xD63F0) {
+   if ((INSN(31,12) & 0xFEFFF) == 0xD61F0 || (INSN(31,12) & 0xFEFFF) == 0xD63F0) {
         Bool isZ = INSN(24,24) == 0;
+      Bool isL = INSN(21,21) == 1;
         Bool isA = INSN(10,10) == 0;
         UInt nn  = INSN(9,5);
         UInt mm  = INSN(4,0);
 
         IRTemp target = newTemp(Ity_I64);
         assign(target, getIReg64orSP(nn));
+      if (isL) {
         putIReg64orZR(30, mkU64(guest_PC_curr_instr + 4));
+      }
         putPC(mkexpr(target));
         dres->whatNext = Dis_StopHere;
         dres->jk_StopHere = Ijk_Call; // FIXME: I think?
         if (isZ && mm == 31) {
-            DIP("blra%cz %s\n", isA ? 'a' : 'b', nameIReg64orSP(nn));
+          DIP("b%sra%cz %s\n", isL ? "z" : "", isA ? 'a' : 'b', nameIReg64orSP(nn));
         } else {
-            DIP("blra%c %s, %s\n", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));
+          DIP("b%sra%c %s, %s\n", isL ? "z" : "", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));
         }
         return True;
     }

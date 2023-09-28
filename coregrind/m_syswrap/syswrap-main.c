@@ -823,10 +823,16 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    // no canonical->sysno adjustment needed
 
 #elif defined(VGP_arm64_darwin)
-   vg_assert(trc == VEX_TRC_JMP_SYS_SYSCALL);
+   vg_assert(trc == VEX_TRC_JMP_SYS_SYSCALL || trc == VEX_TRC_JMP_SYS_INT128);
 
    VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
    canonical->sysno = gst->guest_X16;
+   // TODO: need special handling for thread_set_tsd_base (idx 0x80000000)
+   if (canonical->sysno >= 0) {
+     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
+   } else {
+     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);
+   }
    canonical->arg1  = gst->guest_X0;
    canonical->arg2  = gst->guest_X1;
    canonical->arg3  = gst->guest_X2;
@@ -2055,7 +2061,7 @@ static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
          sys = &ML_(mdep_trap_table)[idx];
          break;
    default:
-      vg_assert(0);
+      vg_assert2(0, "invalid syscall class: %d (syscall: %d / %#x)\n", VG_DARWIN_SYSNO_CLASS(syscallno), syscallno, syscallno);
       break;
    }
 

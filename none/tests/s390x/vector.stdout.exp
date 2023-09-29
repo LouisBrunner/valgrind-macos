@@ -434,34 +434,64 @@ insn vlvgp:
   v_result = ffffffffffffffff | ffffffffffffffff
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 1f427f7cf88382ba | 2cad200d9509e187
+  v_arg2   = 20acc9022764afbe | 418aefdf62c385cb
+  v_arg3   = db227d67146fd038 | 8e6312496b5f976f
+  v_result = ffffffffffffffff | 471361c45f8bde95
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 70194b4fd7874ba9 | e57be5f776e3b5c6
+  v_arg2   = 8c153e6a1a7d0156 | e22ff15d10b04cd1
+  v_arg3   = 2863ce806c7f4b91 | c3df7aa12322078c
+  v_result = ffffffffffffffff | 472c4d408f223176
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 34768342275bf3a3 | 4e46db2717824050
+  v_arg2   = cbdffee0732097f5 | 1e496d0d11a45adb
+  v_arg3   = 3e99a00d380a45e7 | 9742e1833e0e275e
+  v_result = ffffffffffffffff | e87bdd944cfba217
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = e5fe25f6d59ca39b | f61204d1a2c21186
+  v_arg2   = 422ed2e3cc26252c | f1d8b47d02f54a65
+  v_arg3   = 7063896bbc270064 | 40acc93377789e7d
+  v_result = ffffffffffffffff | e20a7c3da279a8a2
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = c4a86410f4151a62 | f5f25be4de6d0b66
+  v_arg2   = 9ef13972631676e7 | 5d6a8b7995588c0b
+  v_arg3   = d5ae53f363175313 | 5daa8a166f9f6620
+  v_result = ffffffffffffffff | 73f68c7083ee0fde
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 96756aee7d806d67 | a5c590cef0f92a4e
+  v_arg2   = 90a72ac9dde52c31 | 2bdcedcb53a02745
+  v_arg3   = 0e74c2bd800d6a99 | b1f9136a6e7495dc
+  v_result = ffffffffffffffff | 202624e58458b9f0
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 6735176f0f45c578 | 6afcc73a1a4c3eb8
+  v_arg2   = 921dd02006b87bf3 | a819cdfa5b7f782a
+  v_arg3   = fc7c4c6008e888fc | e441aa1120531165
+  v_result = ffffffffffffffff | 7311d38fa326611a
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 4b47c1aeb038257e | 6c515dd47e7aaffd
+  v_arg2   = a12d4e718fa0f2b3 | 6ad8d20e2242f230
+  v_arg3   = 8b1fdfae5af5c55f | 46d9a8465aca5a4a
+  v_result = ffffffffffffffff | bb7b5c6004f3537e
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 1858f3c58a5d2143 | 598fa302db843814
+  v_arg2   = 027f7932ce5b3358 | 096119493297dce9
+  v_arg3   = 6c009f7bf8b1d1c2 | 8b883e64d35045bc
+  v_result = ffffffffffffffff | cf367809af4836db
   r_result = 0000000000000000
 insn vlvg:
-  v_result = ffffffffffffffff | ffffffffffffffff
+  v_arg1   = 2e212f8dafa6a92d | 2450a2ab4d1aac53
+  v_arg2   = fe49a1158218b7e3 | e747f7edeb4a16c6
+  v_arg3   = d3d2a6564c84afc5 | 904134a4ec0dbb47
+  v_result = ffffffffffffffff | cce497b6545ec34d
   r_result = 0000000000000000
 insn vmrhb:
   v_result = 31a62c11ac495bce | d68eb232bd8c0335

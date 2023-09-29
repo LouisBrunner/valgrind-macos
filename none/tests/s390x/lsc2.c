@@ -98,13 +98,10 @@
 /* load and zero rightmost byte */
 static bool test_lzrf(const uint32_t testedValue)
 {
-   uint32_t after = testedValue;
+   uint32_t after;
    uint32_t expected = testedValue & 0xffffff00;
-   __asm__ volatile("lzrf %%r6, %0\n"
-                    "st %%r6, %0\n"
-                    :
-                    : "g"(after));
 
+   __asm__ volatile("lzrf %0, %1" : "=d"(after) : "T"(testedValue) : );
    SMART_RETURN_R64(lzrf);
 }
 
@@ -114,11 +111,7 @@ static bool test_lzrg(const uint64_t testedValue)
    uint64_t after = testedValue;
    uint64_t expected = testedValue & 0xffffffffffffff00UL;
 
-   __asm__ volatile("lzrg %%r6, %0\n"
-                    "stg %%r6, %0\n"
-                    :
-                    : "g"(after));
-
+   __asm__ volatile("lzrg %0, %1" : "=d"(after) : "T"(testedValue) : );
    SMART_RETURN_R64(lzrg);
 }
 
@@ -126,13 +119,9 @@ static bool test_lzrg(const uint64_t testedValue)
 static bool test_llzrgf(const uint32_t testedValue)
 {
    uint64_t after = 0;
-   uint64_t expected = ((uint64_t)testedValue << 32) & 0xffffff0000000000UL;
+   uint32_t expected = testedValue & 0xffffff00;
 
-   __asm__ volatile("llzrgf %%r6, %0\n"
-                    "st %%r6, %1\n"
-                    :
-                    : "g"(testedValue), "g"(after));
-
+   __asm__ volatile("llzrgf %0, %1" : "=d"(after) : "T"(testedValue) : );
    SMART_RETURN_R64(llzrgf);
 }
 
@@ -159,24 +148,23 @@ static bool test_llzrgf(const uint32_t testedValue)
       __asm__ volatile(                                                        \
           "cr %[testedValue], %[invertedValue]\n" #TESTED_INSTRUCTION          \
           " %[after], %[overrideValue]\n"                                      \
-          : [after] "=r"(after)                                                \
-          : [testedValue] "r"(testedValue),                                    \
-            [invertedValue] "r"(invertedValue),                                \
-            [overrideValue] #ARGUMENT_ASM_TYPE(overrideValue),                 \
-            "[after]"(after)                                                   \
+          : [after] "+d"(after)                                                \
+          : [testedValue] "d"(testedValue),                                    \
+            [invertedValue] "d"(invertedValue),                                \
+            [overrideValue] #ARGUMENT_ASM_TYPE(overrideValue)                  \
           : "cc");                                                             \
                                                                                \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                                    \
    }
 
-declare_load_high_on_condition(locfhre, ==, r)
-declare_load_high_on_condition(locfhrne, !=, r)
-declare_load_high_on_condition(locfhrh, >, r)
-declare_load_high_on_condition(locfhrl, <, r)
-declare_load_high_on_condition(locfhe, ==, m)
-declare_load_high_on_condition(locfhne, !=, m)
-declare_load_high_on_condition(locfhh, >, m)
-declare_load_high_on_condition(locfhl, <, m)
+declare_load_high_on_condition(locfhre, ==, d)
+declare_load_high_on_condition(locfhrne, !=, d)
+declare_load_high_on_condition(locfhrh, >, d)
+declare_load_high_on_condition(locfhrl, <, d)
+declare_load_high_on_condition(locfhe, ==, Q)
+declare_load_high_on_condition(locfhne, !=, Q)
+declare_load_high_on_condition(locfhh, >, Q)
+declare_load_high_on_condition(locfhl, <, Q)
 
 /* store high on condition */
 #define declare_store_high_on_condition(TESTED_INSTRUCTION, CONDITION_SYMBOL,  \
@@ -197,19 +185,19 @@ declare_load_high_on_condition(locfhl, <, m)
       __asm__ volatile(                                                        \
           "cr %[testedValue], %[invertedValue]\n" #TESTED_INSTRUCTION          \
           " %[overrideValue], %[after]\n"                                      \
-          : [after] "=" #ARGUMENT_ASM_TYPE(after)                              \
-          : [testedValue] "r"(testedValue),                                    \
-            [invertedValue] "r"(invertedValue),                                \
-            [overrideValue] "r"(overrideValue)                                 \
+          : [after] "+" #ARGUMENT_ASM_TYPE(after)                              \
+          : [testedValue] "d"(testedValue),                                    \
+            [invertedValue] "d"(invertedValue),                                \
+            [overrideValue] "d"(overrideValue)                                 \
           : "cc");                                                             \
                                                                                \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                                    \
    }
 
-declare_store_high_on_condition(stocfhe, ==, m)
-declare_store_high_on_condition(stocfhne, !=, m)
-declare_store_high_on_condition(stocfhh, >, m)
-declare_store_high_on_condition(stocfhl, <, m)
+declare_store_high_on_condition(stocfhe, ==, Q)
+declare_store_high_on_condition(stocfhne, !=, Q)
+declare_store_high_on_condition(stocfhh, >, Q)
+declare_store_high_on_condition(stocfhl, <, Q)
 
 #define __format_uint32_t "%x"
 #define __format_uint64_t "%lx"
@@ -234,10 +222,9 @@ declare_store_high_on_condition(stocfhl, <, m)
       __asm__ volatile(                                                        \
           "cr %[testedValue], %[invertedValue]\n" #TESTED_INSTRUCTION          \
           " %[after], " IMMEDIATE_VALUE_STR "\n"                               \
-          : [after] "=r"(after)                                                \
-          : [testedValue] "r"(testedValue),                                    \
-            [invertedValue] "r"(invertedValue),                                \
-            "[after]"(after)                                                   \
+          : [after] "+d"(after)                                                \
+          : [testedValue] "d"(testedValue),                                    \
+            [invertedValue] "d"(invertedValue)                                 \
           : "cc");                                                             \
                                                                                \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                                    \
@@ -273,10 +260,9 @@ declare_load_halfword_immediate_on_condition(locghil, uint64_t, <, r)
       __asm__ volatile(                                                   \
           "cr %[testedValue], %[invertedValue]\n" #TESTED_INSTRUCTION     \
           " %[after], " IMMEDIATE_VALUE_STR "\n"                          \
-          : [after] "=r"(after)                                           \
-          : [testedValue] "r"(testedValue),                               \
-            [invertedValue] "r"(invertedValue),                           \
-            "[after]"(after)                                              \
+          : [after] "+d"(after)                                           \
+          : [testedValue] "d"(testedValue),                               \
+            [invertedValue] "d"(invertedValue)                            \
           : "cc");                                                        \
                                                                           \
       SMART_RETURN_R64(TESTED_INSTRUCTION);                               \
@@ -306,7 +292,7 @@ static void test_all_locfh()
 #define declare_load_count_to_block_boundary(M_FIELD)                     \
    bool test_lcbb##M_FIELD(const uint32_t testedValue)                    \
    {                                                                      \
-      const size_t boundary = 64 * pow(2, M_FIELD);                       \
+      const size_t boundary = 64 * (1UL << (M_FIELD));                    \
       const uint32_t *testedPointer =                                     \
           (uint32_t *)(boundary -                                         \
                        ((testedValue < boundary) ? testedValue : 0));     \
@@ -317,8 +303,8 @@ static void test_all_locfh()
                                                                           \
       __asm__ volatile("lcbb %[after], %[testedPointer], " #M_FIELD       \
                        "\n"                                               \
-                       : [after] "=r"(after)                              \
-                       : [testedPointer] "m"(*testedPointer)              \
+                       : [after] "=d"(after)                              \
+                       : [testedPointer] "R"(*testedPointer)              \
                        : "cc");                                           \
                                                                           \
       SMART_RETURN_R64(lcbb##M_FIELD);                                    \
@@ -346,7 +332,7 @@ static bool test_lcbb0_cc(const uint32_t testedValue)
                     "ipm %[cc] \n"
                     "srl %[cc], 28 \n"
                     : [cc] "=d"(after)
-                    : [testedPointer] "m"(*testedPointer)
+                    : [testedPointer] "R"(*testedPointer)
                     : "cc");
    SMART_RETURN_R64(lcbb0_cc);
 }

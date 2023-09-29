@@ -19,7 +19,7 @@ static int clc(char *a1,char *a2, int l)
 			"2: ipm %0\n"
 			"srl %0,28\n"
 		:"=d" (cc)
-		:"a" (a1), "a" (a2), "d" (l): "1", "cc");
+		:"a" (a1), "a" (a2), "a" (l): "1", "cc");
 	return cc;
 }
 

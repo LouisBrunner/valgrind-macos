@@ -8,6 +8,12 @@
 #include <ucontext.h>
 #include <unistd.h>
 
+/* Circumvent bad assembly in system header, so Clang doesn't complain */
+#undef _FPU_SETCW
+#define _FPU_SETCW(cw) __asm__ __volatile__ ("sfpc %0" : : "d" (cw))
+#undef _FPU_GETCW
+#define _FPU_GETCW(cw) __asm__ __volatile__ ("efpc %0" : "=d" (cw))
+
 void handle_SIG(int sig)
 {
    double d;

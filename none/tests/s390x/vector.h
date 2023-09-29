@@ -267,23 +267,20 @@ static void test_##insn##_selective(const s390x_test_usageInfo info) \
        "vst %%v1, %[v_arg1]\n" \
        "vst %%v2, %[v_arg2]\n" \
        "vst %%v3, %[v_arg3]\n" \
-       : [v_result]      "=m" (current.v_result), \
-         [m_result]      "=m" (current.r_result), \
+       : [v_result]      "+R" (current.v_result), \
          [r_result]      "+d" (current.r_result), \
-         [r_arg1]        "+d" (current.r_arg[0]), \
-         [r_arg2]        "+d" (current.r_arg[1]), \
-         [r_arg3]        "+d" (current.r_arg[2]) \
-       : [v_arg1]        "m" (current.v_arg[0]), \
-         [v_arg2]        "m" (current.v_arg[1]), \
-         [v_arg3]        "m" (current.v_arg[2]), \
-         [m_arg1]        "m" (current.r_arg[0]), \
-         [m_arg2]        "m" (current.r_arg[1]), \
-         [m_arg3]        "m" (current.r_arg[2]), \
-         [r_memory_pool] "r" (random_memory_pool), \
-         [m_memory_pool] "m" (random_memory_pool) \
-       : "memory", "cc", \
-         "r1", "r2", "r3", "r5", \
-         "v1", "v2", "v3", "v5"); \
+         [r_arg1]        "+a" (current.r_arg[0]), \
+         [r_arg2]        "+a" (current.r_arg[1]), \
+         [r_arg3]        "+a" (current.r_arg[2]), \
+         [v_arg1]        "+R" (current.v_arg[0]), \
+         [v_arg2]        "+R" (current.v_arg[1]), \
+         [v_arg3]        "+R" (current.v_arg[2]) \
+       : [m_arg1]        "R" (current.r_arg[0]), \
+         [m_arg2]        "R" (current.r_arg[1]), \
+         [m_arg3]        "R" (current.r_arg[2]), \
+         [r_memory_pool] "d" (random_memory_pool), \
+         [m_memory_pool] "R" (random_memory_pool) \
+       : "cc", "v1", "v2", "v3", "v5"); \
     \
    printf("insn %s:\n", #insn); \
    print_results(info, &orig, &current); \

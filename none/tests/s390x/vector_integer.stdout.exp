@@ -1115,16 +1115,16 @@ insn veslb:
   v_result = 74940c700490c8ac | 7814509cb8a8e804
   r_result = 0000000000000000
 insn veslh:
-  v_result = f4182a3065c03910 | cd88f0b88028e510
+  v_result = 0c001800e0008800 | c4005c0014008800
   r_result = 0000000000000000
 insn veslh:
-  v_result = 205858a06b58b518 | d798a34027489d10
+  v_result = 40b0b140d6b06a30 | af3046804e903a20
   r_result = 0000000000000000
 insn veslh:
-  v_result = 79c0b2f0af685eb0 | b918f3f8842096b0
+  v_result = 9c002f00f680eb00 | 91803f8042006b00
   r_result = 0000000000000000
 insn veslh:
-  v_result = 1090ffd0daf84800 | 4738d01013a00178
+  v_result = 9000d000f8000000 | 38001000a0007800
   r_result = 0000000000000000
 insn veslf:
   v_result = 683054fd9c4d4883 | 0f345c90ed85bd7f
@@ -1211,16 +1211,16 @@ insn vesrab:
   v_result = 0000000000ff00ff | ff00ffff000000ff
   r_result = 0000000000000000
 insn vesrah:
-  v_result = 0bc0035efcfe092f | f1200853f8c0023a
+  v_result = 00020000ffff0002 | fffc0002fffe0000
   r_result = 0000000000000000
 insn vesrah:
-  v_result = 09580821f638fe80 | 08d70ff40b030d25
+  v_result = 02560208fd8effa0 | 023503fd02c00349
   r_result = 0000000000000000
 insn vesrah:
-  v_result = f80af07004ee0b5f | 0c69f8c2053803e7
+  v_result = fc05f838027705af | 0634fc61029c01f3
   r_result = 0000000000000000
 insn vesrah:
-  v_result = f4900b3c083bf80d | 0383faa9fca90374
+  v_result = e92016781077f01b | 0707f553f95206e9
   r_result = 0000000000000000
 insn vesraf:
   v_result = fffffff800000017 | 0000001b00000018
@@ -1307,16 +1307,16 @@ insn vesrlb:
   v_result = 3376472e4c18604e | 4d16787d677a704a
   r_result = 0000000000000000
 insn vesrlh:
-  v_result = 148b04a4013c1425 | 03fc1b8c104d1765
+  v_result = 0002000000000002 | 0000000300020002
   r_result = 0000000000000000
 insn vesrlh:
-  v_result = 06a11d88135108f0 | 1ef9041c16501ab3
+  v_result = 03500ec409a80478 | 0f7c020e0b280d59
   r_result = 0000000000000000
 insn vesrlh:
-  v_result = 0ed80cb30be41400 | 02af188d0cfd0067
+  v_result = 0000000000000001 | 0000000100000000
   r_result = 0000000000000000
 insn vesrlh:
-  v_result = 019f191101a815af | 0ea408a201b91daf
+  v_result = 00190191001a015a | 00ea008a001b01da
   r_result = 0000000000000000
 insn vesrlf:
   v_result = 0000506d00006180 | 00006b1500001cb1
@@ -1403,16 +1403,16 @@ insn verllb:
   v_result = cf1b17657aeda68c | 0657478664785bab
   r_result = 0000000000000000
 insn verllh:
-  v_result = 8bd1365783de79f0 | da956b0f21fddcc9
+  v_result = 462f5cd97a0fc1e7 | 576a3dacf4872773
   r_result = 0000000000000000
 insn verllh:
-  v_result = 3f1175c0561f88eb | 7173b8ef9891bf0e
+  v_result = 4fc41d70d587e23a | dc5cee3b6624afc3
   r_result = 0000000000000000
 insn verllh:
-  v_result = 9bcff5ebe02ddf43 | 7612bbcd5834e6b1
+  v_result = 79f3bd7e05bce87b | c24e79b7068bd63c
   r_result = 0000000000000000
 insn verllh:
-  v_result = d4476f71fcfd811f | afa862d3e7cea55e
+  v_result = 23eab8b77efe8fc0 | d45769b1e773af52
   r_result = 0000000000000000
 insn verllf:
   v_result = 79226829d81a5cb3 | fea1e8903de71c9e

@@ -35,8 +35,8 @@ static int bic0(int i)
                 "lg %[table],0(%[i],%[table])\n"
                 "br %[table]\n"
                 TAIL
-                : [i] "+d" (i)
-                , [table] "=d" (table)
+                : [i] "+a" (i)
+                , [table] "=a" (table)
                 :: "cc");
    return i;
 }
@@ -47,8 +47,8 @@ static int bic4(int i)
    asm volatile(HEAD
                 ".insn rxy, 0xe30000000047, 4, 0(%[i],%[table])\n"
                 TAIL
-                : [i] "+d" (i)
-                , [table] "=d" (table)
+                : [i] "+a" (i)
+                , [table] "=a" (table)
                 :: "cc");
    return i;
 }
@@ -60,8 +60,8 @@ static int bic15(int i)
                 "brcl 10, 0f\n"
                 ".insn rxy, 0xe30000000047, 15, 0(%[i],%[table])\n"
                 TAIL
-                : [i] "+d" (i)
-                , [table] "=d" (table)
+                : [i] "+a" (i)
+                , [table] "=a" (table)
                 :: "cc");
    return i;
 }

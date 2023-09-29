@@ -24,10 +24,10 @@ s390_test_generate(vlei_neg, "vleib %%v5, -0x091a, 14\n" \
                              "vleif %%v5, -0x1ccc,  2\n" \
                              "vleig %%v5, -0x1ddd,  0")
 
-s390_test_generate(vlvg, "vlvgb %[r_arg1], %%v1, 12(0)\n" \
-                         "vlvgh %[r_arg2], %%v2,  6(0)\n" \
-                         "vlvgf %[r_arg3], %%v3,  2(0)\n" \
-                         "vlvgg %[r_arg1], %%v5,  1(0)")
+s390_test_generate(vlvg, "vlvgb %%v1, %[r_arg1], 12(0)\n" \
+                         "vlvgh %%v2, %[r_arg2],  6(0)\n" \
+                         "vlvgf %%v3, %[r_arg3],  2(0)\n" \
+                         "vlvgg %%v5, %[r_arg1],  1(0)")
 
 s390_test_generate(vgbm, "vgbm  %%v1, 0xf00f \n" \
                          "vzero %%v2 \n" \

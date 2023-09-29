@@ -13,7 +13,7 @@ typedef struct {
    uint64_t cc;
 } trto_regs;
 
-uint8_t tran_table[40] = {
+uint8_t tran_table[40] __attribute__((aligned(8))) = {
    0xaa,0xbb,0xcc,0xdd,0xff,0xdd,0xbc,0xab,0xca,0xea,0xbb,0xee
 };
 
@@ -39,9 +39,9 @@ trto_regs tr(uint16_t *addr, uint16_t *codepage, uint8_t *dest, uint64_t len,
                 " trto  %1,%2\n"
                 " ipm   %0\n"
                 " srl   %0,28\n"
-                : "=d"(cc),"+&d"(desaddr)
-                : "d" (srcaddr),"d"(test_byte),"d" (codepage2),"d"(length)
-                : "cc", "memory" );
+                : "=d"(cc), "+a"(desaddr),
+                  "+a"(srcaddr), "+d"(test_byte), "+a"(codepage2), "+a"(length)
+                : : "cc", "memory" );
 
    regs.srcaddr = srcaddr;
    regs.len = length;

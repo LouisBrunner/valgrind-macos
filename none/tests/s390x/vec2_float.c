@@ -1,40 +1,75 @@
 #include <stdio.h>
 
-#define VECTOR __attribute__ ((vector_size (16)))
+typedef unsigned char __attribute__((vector_size(16))) charvec;
 
-typedef unsigned int VECTOR u2_v;
-typedef unsigned long VECTOR u3_v;
-typedef unsigned long VECTOR u4_v; /* avoid 128-bit integers */
-typedef float VECTOR f2_v;
-typedef double VECTOR f3_v;
-typedef long double VECTOR f4_v;
+#define TO_CHARVEC(val)                                                        \
+   ({                                                                          \
+      union {                                                                  \
+         typeof(val) x;                                                        \
+         charvec     v;                                                        \
+      } vec_pun = {val};                                                       \
+      vec_pun.v;                                                               \
+   })
+
+#define FROM_CHARVEC(type, vec)                                                \
+   ({                                                                          \
+      union {                                                                  \
+         charvec v;                                                            \
+         type    x;                                                            \
+      } vec_pun = {vec};                                                       \
+      vec_pun.x;                                                               \
+   })
+
+typedef struct {
+   unsigned int x[4];
+} u2_v;
+
+typedef struct {
+   unsigned long x[2];
+} u3_v;
+
+typedef struct {
+   unsigned long x[2]; /* avoid 128-bit integers */
+} u4_v;
+
+typedef struct {
+   float x[4];
+} f2_v;
+
+typedef struct {
+   double x[2];
+} f3_v;
+
+typedef struct {
+   long double x[1];
+} f4_v;
 
 #define INF (1./0.)
 #define NAN (0./0.)
 
-static const u2_v vec_u2_a = { -1, 0x7ffffff0, 42, 0 };
-static const u2_v vec_u2_b = { 0x7fffff80, 1, 1000, -0x7caffe };
-static const u2_v vec_u2_c = { 0x7fffff, 0x70000000, -10000, 0xffff };
-static const u2_v vec_u2_e = { 0x7fffffff, 0x8000000, 0, 42 };
+static const u2_v vec_u2_a = {{-1, 0x7ffffff0, 42, 0}};
+static const u2_v vec_u2_b = {{0x7fffff80, 1, 1000, -0x7caffe}};
+static const u2_v vec_u2_c = {{0x7fffff, 0x70000000, -10000, 0xffff}};
+static const u2_v vec_u2_e = {{0x7fffffff, 0x8000000, 0, 42}};
 
-static const f2_v vec_f2_a = { 16777215., -16777215., 42.5, 10000. };
-static const f2_v vec_f2_b = { 4., 3., 42.5, 1. };
-static const f2_v vec_f2_c = { 0., INF, -0., -INF };
-static const f2_v vec_f2_d = { -16777214., 16777214., -23., -9999. };
-static const f2_v vec_f2_e = { NAN, -NAN, NAN, -NAN };
+static const f2_v vec_f2_a = {{16777215., -16777215., 42.5, 10000.}};
+static const f2_v vec_f2_b = {{4., 3., 42.5, 1.}};
+static const f2_v vec_f2_c = {{0., INF, -0., -INF}};
+static const f2_v vec_f2_d = {{-16777214., 16777214., -23., -9999.}};
+static const f2_v vec_f2_e = {{NAN, -NAN, NAN, -NAN}};
 
-static const f3_v vec_f3_a = { (double) ((1UL << 52) - 1), -16777215. };
-static const f3_v vec_f3_b = { 0.1, 3. };
-static const f3_v vec_f3_c = { -0., INF };
-static const f3_v vec_f3_e = { NAN, -NAN };
+static const f3_v vec_f3_a = {{(double)((1UL << 52) - 1), -16777215.}};
+static const f3_v vec_f3_b = {{0.1, 3.}};
+static const f3_v vec_f3_c = {{-0., INF}};
+static const f3_v vec_f3_e = {{NAN, -NAN}};
 
-static const f4_v vec_f4_a = { 16777215.0L };
-static const f4_v vec_f4_b = { 4.0L };
-static const f4_v vec_f4_c = { INF };
-static const f4_v vec_f4_d = { -23.0 };
-static const f4_v vec_f4_e = { NAN };
+static const f4_v vec_f4_a = {{16777215.0L}};
+static const f4_v vec_f4_b = {{4.0L}};
+static const f4_v vec_f4_c = {{INF}};
+static const f4_v vec_f4_d = {{-23.0}};
+static const f4_v vec_f4_e = {{NAN}};
 
-static const u3_v vec_ini = { 0x0112233445566778, 0x899aabbccddeeff0 };
+static const u3_v vec_ini = {{0x0112233445566778, 0x899aabbccddeeff0}};
 
 /* -- Dump a vector depending on FP format and single-element control -- */
 
@@ -46,55 +81,64 @@ static void dump_cc(int cc)
    putchar('\n');
 }
 
-static void dump_vu2(u2_v u)
+static void dump_vu2(charvec v)
 {
-   printf("\t%d | %d | %d | %d", u[0], u[1], u[2], u[3]);
+   u2_v u = FROM_CHARVEC(u2_v, v);
+   printf("\t%d | %d | %d | %d", u.x[0], u.x[1], u.x[2], u.x[3]);
 }
 
-static void dump_wu2(u2_v u)
+static void dump_wu2(charvec v)
 {
-   printf("\t%d | - | - | -", u[0]);
+   u2_v u = FROM_CHARVEC(u2_v, v);
+   printf("\t%d | - | - | -", u.x[0]);
 }
 
-static void dump_wu4(u4_v u)
+static void dump_wu4(charvec v)
 {
-   if (u[0] == 0) {
-      printf("\t%ld", u[1]);
-   } else if (u[0] == -1) {
-      printf("\t-%ld", -u[1]);
+   u4_v u = FROM_CHARVEC(u4_v, v);
+   if (u.x[0] == 0) {
+      printf("\t%ld", u.x[1]);
+   } else if (u.x[0] == -1UL) {
+      printf("\t-%ld", -u.x[1]);
    } else {
-      printf("\t0x%016lx%016lx", u[0], u[1]);
+      printf("\t0x%016lx%016lx", u.x[0], u.x[1]);
    }
 }
 
-static void dump_vf2(f2_v v)
+static void dump_vf2(charvec v)
 {
-   printf("\t%a | %a | %a | %a", v[0], v[1], v[2], v[3]);
+   f2_v u = FROM_CHARVEC(f2_v, v);
+   printf("\t%a | %a | %a | %a", u.x[0], u.x[1], u.x[2], u.x[3]);
 }
 
-static void dump_ef2(f2_v v)
+static void dump_ef2(charvec v)
 {
-   printf("\t%a | - | %a | -", v[0], v[2]);
+   f2_v u = FROM_CHARVEC(f2_v, v);
+   printf("\t%a | - | %a | -", u.x[0], u.x[2]);
 }
 
-static void dump_vf3(f3_v v)
+static void dump_vf3(charvec v)
 {
-   printf("\t%a | %a", v[0], v[1]);
+   f3_v u = FROM_CHARVEC(f3_v, v);
+   printf("\t%a | %a", u.x[0], u.x[1]);
 }
 
-static void dump_wf3(f3_v v)
+static void dump_wf3(charvec v)
 {
-   printf("\t%a | -", v[0]);
+   f3_v u = FROM_CHARVEC(f3_v, v);
+   printf("\t%a | -", u.x[0]);
 }
 
-static void dump_wf2(f2_v v)
+static void dump_wf2(charvec v)
 {
-   printf("\t%a | - | - | -", v[0]);
+   f2_v u = FROM_CHARVEC(f2_v, v);
+   printf("\t%a | - | - | -", u.x[0]);
 }
 
-static void dump_wf4(f4_v v)
+static void dump_wf4(charvec v)
 {
-   printf("\t%La", v[0]);
+   f4_v u = FROM_CHARVEC(f4_v, v);
+   printf("\t%La", u.x[0]);
 }
 
 /* -- Vector unary operators -- */
@@ -108,22 +152,21 @@ static void dump_wf4(f4_v v)
       test_##insn##_##m3##_##m4##_##m5(vec_##ty2##_e);                  \
    } while (0)
 
-#define TEST_GENERATE(opc1,opc2,fmt,ty1,ty2,insn,m3,m4,m5)              \
-   static void test_##insn##_##m3##_##m4##_##m5(ty2##_v a)              \
-   {                                                                    \
-      ty1##_v out = (ty1##_v) vec_ini;                                  \
-      int cc = -1;                                                      \
-      __asm__(                                                          \
-         "cr 0,0\n\t"                                                   \
-         ".insn vrr,0x" #opc1 "00000000" #opc2 ",%[out],%[a],0,"        \
-         #m3 "," #m4 "," #m5 "\n\t"                                     \
-         "ipm     %[cc]\n\t"                                            \
-         "srl     %[cc],28"                                             \
-         : [cc]"=d" (cc), [out]"+v" (out)                               \
-         : [a]"v" (a)                                                   \
-         : "cc");                                                       \
-      dump_##fmt##ty1(out);                                             \
-      dump_cc(cc);                                                      \
+#define TEST_GENERATE(opc1, opc2, fmt, ty1, ty2, insn, m3, m4, m5)             \
+   static void test_##insn##_##m3##_##m4##_##m5(ty2##_v a)                     \
+   {                                                                           \
+      charvec out = TO_CHARVEC(vec_ini);                                       \
+      int     cc  = -1;                                                        \
+      __asm__("cr 0,0\n\t"                                                     \
+              ".insn vrr,0x" #opc1 "00000000" #opc2 ",%[out],%[a],0," #m3      \
+              "," #m4 "," #m5 "\n\t"                                           \
+              "ipm     %[cc]\n\t"                                              \
+              "srl     %[cc],28"                                               \
+              : [cc] "=d"(cc), [out] "+v"(out)                                 \
+              : [a] "v"(TO_CHARVEC(a))                                         \
+              : "cc");                                                         \
+      dump_##fmt##ty1(out);                                                    \
+      dump_cc(cc);                                                             \
    }
 
 #define INSNS                                         \
@@ -183,22 +226,21 @@ static void test_all_unops()
       test_##insn##_##m4##_##m5##_##m6(vec_f##m4##_d, vec_f##m4##_e);   \
    } while (0)
 
-#define TEST_GENERATE(opc1,opc2,fmt,ty1,insn,m4,m5,m6)                  \
-   static void test_##insn##_##m4##_##m5##_##m6(f##m4##_v a, f##m4##_v b) \
-   {                                                                    \
-      ty1##_v out = (ty1##_v) vec_ini;                                  \
-      int cc = -1;                                                      \
-      __asm__(                                                          \
-         "cr 0,0\n\t"                                                   \
-         ".insn vrr,0x" #opc1 "00000000" #opc2 ",%[out],%[a],%[b],"     \
-         #m4 "," #m5 "," #m6 "\n\t"                                     \
-         "ipm     %[cc]\n\t"                                            \
-         "srl     %[cc],28"                                             \
-         : [cc]"=d" (cc), [out] "+v" (out)                              \
-         : [a] "v" (a), [b] "v" (b)                                     \
-         : "cc");                                                       \
-      dump_##fmt##ty1(out);                                             \
-      dump_cc(cc);                                                      \
+#define TEST_GENERATE(opc1, opc2, fmt, ty1, insn, m4, m5, m6)                  \
+   static void test_##insn##_##m4##_##m5##_##m6(f##m4##_v a, f##m4##_v b)      \
+   {                                                                           \
+      charvec out = TO_CHARVEC(vec_ini);                                       \
+      int     cc  = -1;                                                        \
+      __asm__("cr 0,0\n\t"                                                     \
+              ".insn vrr,0x" #opc1 "00000000" #opc2 ",%[out],%[a],%[b]," #m4   \
+              "," #m5 "," #m6 "\n\t"                                           \
+              "ipm     %[cc]\n\t"                                              \
+              "srl     %[cc],28"                                               \
+              : [cc] "=d"(cc), [out] "+v"(out)                                 \
+              : [a] "v"(TO_CHARVEC(a)), [b] "v"(TO_CHARVEC(b))                 \
+              : "cc");                                                         \
+      dump_##fmt##ty1(out);                                                    \
+      dump_cc(cc);                                                             \
    }
 
 #define INSNS                                     \
@@ -263,23 +305,23 @@ static void test_all_binops()
       test_##insn##_##m5##_##m6(vec_##ty##_b, vec_##ty##_a, vec_##ty##_d); \
    } while (0)
 
-#define TEST_GENERATE(opc1,opc2,fmt,ty,insn,m5,m6)                      \
-   static void test_##insn##_##m5##_##m6(ty##_v a, ty##_v b, ty##_v c)  \
-   {                                                                    \
-      ty##_v out = (ty##_v) vec_ini;                                    \
-      int cc = -1;                                                      \
-      register ty##_v my_c __asm__("v7") = c;                           \
-      __asm__(                                                          \
-         "cr 0,0\n\t"                                                   \
-         ".insn vrr,0x" #opc1 "000" #m6 "0000" #opc2 ",%[out],%[a],"    \
-         "%[b],7," #m5 ",0\n\t"                                         \
-         "ipm     %[cc]\n\t"                                            \
-         "srl     %[cc],28"                                             \
-         : [cc]"=d" (cc), [out] "+v" (out)                              \
-         : [a] "v" (a), [b] "v" (b), [c] "v" (my_c)                     \
-         : "cc");                                                       \
-      dump_##fmt##ty(out);                                              \
-      dump_cc(cc);                                                      \
+#define TEST_GENERATE(opc1, opc2, fmt, ty, insn, m5, m6)                       \
+   static void test_##insn##_##m5##_##m6(ty##_v a, ty##_v b, ty##_v c)         \
+   {                                                                           \
+      charvec          out                = TO_CHARVEC(vec_ini);               \
+      int              cc                 = -1;                                \
+      register charvec my_b __asm__("v6") = TO_CHARVEC(b);                     \
+      register charvec my_c __asm__("v7") = TO_CHARVEC(c);                     \
+      __asm__("cr 0,0\n\t"                                                     \
+              ".insn vri,0x" #opc1 "00000000" #opc2 ",%[out],%[a],0x6" #m6     \
+              "0,7," #m5 "\n\t"                                                \
+              "ipm     %[cc]\n\t"                                              \
+              "srl     %[cc],28"                                               \
+              : [cc] "=d"(cc), [out] "+v"(out)                                 \
+              : [a] "v"(TO_CHARVEC(a)), [b] "v"(my_b), [c] "v"(my_c)           \
+              : "cc");                                                         \
+      dump_##fmt##ty(out);                                                     \
+      dump_cc(cc);                                                             \
    }
 
 #define INSNS                                   \
@@ -322,20 +364,19 @@ static void test_all_ternops()
       test_##insn##_##m3##_##m4(vec_##ty##_a, vec_##ty##_e);            \
    } while (0)
 
-#define TEST_GENERATE(opc1,opc2,ty,insn,m3,m4)                          \
-   static void test_##insn##_##m3##_##m4(ty##_v a, ty##_v b)            \
-   {                                                                    \
-      int cc = -1;                                                      \
-      __asm__(                                                          \
-         "cr 0,0\n\t"                                                   \
-         ".insn vrr,0x" #opc1 "00000000" #opc2 ",%[a],%[b],0,"          \
-         #m3 "," #m4 ",0\n\t"                                           \
-         "ipm     %[cc]\n\t"                                            \
-         "srl     %[cc],28"                                             \
-         : [cc]"=d" (cc)                                                \
-         : [a]"v" (a), [b]"v" (b)                                       \
-         : "cc");                                                       \
-      printf("\tcc=%d\n", cc);                                          \
+#define TEST_GENERATE(opc1, opc2, ty, insn, m3, m4)                            \
+   static void test_##insn##_##m3##_##m4(ty##_v a, ty##_v b)                   \
+   {                                                                           \
+      int cc = -1;                                                             \
+      __asm__("cr 0,0\n\t"                                                     \
+              ".insn vrr,0x" #opc1 "00000000" #opc2 ",%[a],%[b],0," #m3        \
+              "," #m4 ",0\n\t"                                                 \
+              "ipm     %[cc]\n\t"                                              \
+              "srl     %[cc],28"                                               \
+              : [cc] "=d"(cc)                                                  \
+              : [a] "v"(TO_CHARVEC(a)), [b] "v"(TO_CHARVEC(b))                 \
+              : "cc");                                                         \
+      printf("\tcc=%d\n", cc);                                                 \
    }
 
 #define INSNS                                         \
@@ -369,22 +410,21 @@ static void test_all_scalar_compares()
       test_##insn##_##m3##_##m4(vec_##ty2##_e);                         \
    } while (0)
 
-#define TEST_GENERATE(opc1,opc2,fmt,ty1,ty2,insn,i3,m4,m5)              \
-   static void test_##insn##_##m3##_##m4(ty2##_v a)                     \
-   {                                                                    \
-      ty1##_v out = (ty1##_v) vec_ini;                                  \
-      int cc = -1;                                                      \
-      __asm__(                                                          \
-         "cr 0,0\n\t"                                                   \
-         ".insn vri,0x" #opc1 "00000000" #opc2 ",%[out],%[a],"          \
-         #i3 "," #m4 "," #m5 "\n\t"                                     \
-         "ipm     %[cc]\n\t"                                            \
-         "srl     %[cc],28"                                             \
-         : [cc]"=d" (cc), [out]"+v" (out)                               \
-         : [a]"v" (a)                                                   \
-         : "cc");                                                       \
-      dump_##fmt##ty1(out);                                             \
-      dump_cc(cc);                                                      \
+#define TEST_GENERATE(opc1, opc2, fmt, ty1, ty2, insn, i3, m4, m5)             \
+   static void test_##insn##_##m3##_##m4(ty2##_v a)                            \
+   {                                                                           \
+      charvec out = TO_CHARVEC(vec_ini);                                       \
+      int     cc  = -1;                                                        \
+      __asm__("cr 0,0\n\t"                                                     \
+              ".insn vri,0x" #opc1 "00000000" #opc2 ",%[out],%[a]," #i3        \
+              "," #m4 "," #m5 "\n\t"                                           \
+              "ipm     %[cc]\n\t"                                              \
+              "srl     %[cc],28"                                               \
+              : [cc] "=d"(cc), [out] "+v"(out)                                 \
+              : [a] "v"(TO_CHARVEC(a))                                         \
+              : "cc");                                                         \
+      dump_##fmt##ty1(out);                                                    \
+      dump_cc(cc);                                                             \
    }
 
 #define INSNS                                         \

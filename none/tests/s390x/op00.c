@@ -1,7 +1,6 @@
 /* Test for invalid instruction 00. */
 int main(int argc, char *argv[])
 {
-  asm volatile (".hword 0\n");
+  asm volatile (".insn e,0x0000");
   return 0;
 }
-

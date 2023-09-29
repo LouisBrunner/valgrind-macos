@@ -240,7 +240,6 @@ maybe_tweak_LLc(cache_t *LLc)
         power of two.  Then, increase the associativity by that
         factor.  Finally, re-calculate the total size so as to make
         sure it divides exactly between the sets. */
-     tl_assert(old_nSets >= 0);
      UInt new_nSets = floor_power_of_2 ( old_nSets );
      tl_assert(new_nSets > 0 && new_nSets < old_nSets);
      Double factor = (Double)old_nSets / (Double)new_nSets;

@@ -1521,8 +1521,8 @@ void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
 {
    U128* pU128_dst;
 
-   vassert( (acc >= 0) && (acc < 8) );
-   vassert( (reg >= 0) && (reg < 4) );
+   vassert(acc < 8);
+   vassert(reg < 4);
 
    pU128_dst = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
                         + reg*sizeof(U128));

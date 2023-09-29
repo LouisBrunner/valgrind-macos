@@ -4086,8 +4086,8 @@ static void putACC( UInt index, UInt reg, IRExpr* src, Bool ACC_mapped_on_VSR)
 static IRExpr* /* :: Ity_V128 */ getACC ( UInt index, UInt reg,
                                           Bool ACC_mapped_on_VSR)
 {
-   vassert( (index >= 0) && (index < 8) );
-   vassert( (reg >= 0) && (reg < 4) );
+   vassert(index < 8);
+   vassert(reg < 4);
 
    return IRExpr_Get( base_acc_addr( ACC_mapped_on_VSR )
                       + ACC_offset( index, reg), Ity_V128 );
@@ -5656,7 +5656,7 @@ static void setup_fxstate_struct( IRDirty* d, UInt AT, IREffect AT_fx,
    d->fxState[3].fx     = AT_fx;
    d->fxState[3].size   = sizeof(U128);
 
-   vassert( (AT >= 0) && (AT < 8));
+   vassert(AT < 8);
 
    acc_base_address = base_acc_addr( ACC_mapped_on_VSR );
 

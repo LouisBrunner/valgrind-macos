@@ -85,7 +85,6 @@ typedef
       WCache* _cache = &(_zzcache);                                  \
       tl_assert(_cache->dynMax >= 1);                                \
       tl_assert(_cache->dynMax <= N_WCACHE_STAT_MAX);                \
-      tl_assert(_cache->inUse >= 0);                                 \
       tl_assert(_cache->inUse <= _cache->dynMax);                    \
       if (_cache->inUse > 0) {                                       \
          if (_cache->ent[0].arg1 == _arg1                            \
@@ -184,7 +183,6 @@ struct _WordSetU {
 static WordVec* new_WV_of_size ( WordSetU* wsu, UWord sz )
 {
    WordVec* wv;
-   tl_assert(sz >= 0);
    wv = wsu->alloc( wsu->cc, sizeof(WordVec) );
    wv->owner = wsu;
    wv->words = NULL;

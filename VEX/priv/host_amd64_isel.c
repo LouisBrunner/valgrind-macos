@@ -173,7 +173,6 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO, 
                                ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -574,7 +573,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       never see IRExpr_VECRET() at this point, since the return-type
       check above should ensure all those cases use the slow scheme
       instead. */
-   vassert(n_args >= 0 && n_args <= 6);
+   vassert(n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
       if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg))) {

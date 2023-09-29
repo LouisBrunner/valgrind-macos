@@ -553,7 +553,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
    DiOffT off_orig = off;
    vg_assert(img != NULL);
    vg_assert(img->ces_used <= CACHE_N_ENTRIES);
-   vg_assert(entNo >= 0 && entNo < img->ces_used);
+   vg_assert(entNo < img->ces_used);
    vg_assert(off < img->real_size);
    CEnt* ce = img->ces[entNo];
    vg_assert(ce != NULL);

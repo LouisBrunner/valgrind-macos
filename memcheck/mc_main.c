@@ -2704,7 +2704,7 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    UWord setno   = (a >> OC_BITS_PER_LINE) & (OC_N_SETS - 1);
    UWord tagmask = ~((1 << OC_BITS_PER_LINE) - 1);
    UWord tag     = a & tagmask;
-   tl_assert(setno >= 0 && setno < OC_N_SETS);
+   tl_assert(setno < OC_N_SETS);
 
    /* we already tried line == 0; skip therefore. */
    for (line = 1; line < OC_LINES_PER_SET; line++) {

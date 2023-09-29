@@ -1502,7 +1502,8 @@ static void init_nsegment ( /*OUT*/NSegment* seg )
    seg->hasR     = seg->hasW = seg->hasX = seg->hasT
                  = seg->isCH = False;
 #if defined(VGO_freebsd)
-   seg->ignore_offset     = False;
+   seg->isFF     = False;
+   seg->ignore_offset = False;
 #endif
 
 }

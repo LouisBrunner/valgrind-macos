@@ -12266,7 +12266,7 @@ static Long dis_FXRSTOR ( const VexAbiInfo* vbi,
 
 static IRTemp math_PINSRW_128 ( IRTemp v128, IRTemp u16, UInt imm8 )
 {
-   vassert(imm8 >= 0 && imm8 <= 7);
+   vassert(imm8 <= 7);
 
    // Create a V128 value which has the selected word in the
    // specified lane, and zeroes everywhere else.
@@ -18892,7 +18892,7 @@ static Long dis_PCMPxSTRx ( const VexAbiInfo* vbi, Prefix pfx,
 
 static IRTemp math_PINSRB_128 ( IRTemp v128, IRTemp u8, UInt imm8 )
 {
-   vassert(imm8 >= 0 && imm8 <= 15);
+   vassert(imm8 <= 15);
 
    // Create a V128 value which has the selected byte in the
    // specified lane, and zeroes everywhere else.

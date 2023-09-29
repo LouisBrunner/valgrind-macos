@@ -1192,7 +1192,7 @@ void upd_eclasses_after_add ( /*MOD*/Sector* sec, TTEno tteno )
 {
    Int i, r;
    EClassNo eclasses[3];
-   vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
+   vg_assert(tteno < N_TTES_PER_SECTOR);
 
    TTEntryH* tteH = &sec->ttH[tteno];
    r = vexGuestExtents_to_eclasses( eclasses, tteH );
@@ -1530,7 +1530,7 @@ static TTEno get_empty_tt_slot(SECno sNo)
    i = sectors[sNo].empty_tt_list;
    sectors[sNo].empty_tt_list = sectors[sNo].ttC[i].usage.next_empty_tte;
 
-   vg_assert (i >= 0 && i < N_TTES_PER_SECTOR);
+   vg_assert (i < N_TTES_PER_SECTOR);
 
    return i;
 }

@@ -148,7 +148,8 @@ typedef
    }
    RRegLRState;
 
-#define IS_VALID_VREGNO(v) ((v) >= 0 && (v) < n_vregs)
+/* v is always unsigned, wish we could static assert that */
+#define IS_VALID_VREGNO(v) ((v) < n_vregs)
 #define IS_VALID_RREGNO(r) ((r) >= 0 && (r) < n_rregs)
 
 #define FREE_VREG(v)             \

@@ -2434,8 +2434,8 @@ static void VTS__join ( /*OUT*/VTS* out, VTS* a, VTS* b )
          from a and b in order, where thrid is the next ThrID
          occurring in either a or b, and tyma/b are the relevant
          scalar timestamps, taking into account implicit zeroes. */
-      tl_assert(ia >= 0 && ia <= useda);
-      tl_assert(ib >= 0 && ib <= usedb);
+      tl_assert(ia <= useda);
+      tl_assert(ib <= usedb);
 
       if        (ia == useda && ib == usedb) {
          /* both empty - done */
@@ -3056,7 +3056,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       can't set the threshold value smaller than it. */
    tl_assert(nFreed <= nTab);
    nLive = nTab - nFreed;
-   tl_assert(nLive >= 0 && nLive <= nTab);
+   tl_assert(nLive <= nTab);
    vts_next_GC_at = 2 * nLive;
    if (vts_next_GC_at < nTab)
       vts_next_GC_at = nTab;

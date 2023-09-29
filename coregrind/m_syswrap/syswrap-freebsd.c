@@ -130,7 +130,21 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    ------------------------------------------------------------------ */
 
 /* Run a thread all the way to the end, then do appropriate exit actions
-   (this is the last-one-out-turn-off-the-lights bit).  */
+ *   (this is the last-one-out-turn-off-the-lights bit).
+ *
+ * This is marked as __attribute__((noreturn)). That has the effect of
+ * making clang++ no longer emit the function prologue and epilogue
+ * to save the base pointer.
+ *
+ * As far as I can tell clang -O2 does not include -fomit-frame-pointer
+ * However, since from here on the saved base pointer values are
+ * junk tools like FreeBSD pstack that only rely on base pointer
+ * walking will not work. FreeBSD bstack does work, based on GDB and
+ * reading debuginfo.
+ *
+ * If you really need a working base pointer modify Makefile.all.am
+ * and add -fno-omit-frame-pointer to AM_CFLAGS_BASE.
+ */
 __attribute__((noreturn))
 static void run_a_thread_NORETURN ( Word tidW )
 {

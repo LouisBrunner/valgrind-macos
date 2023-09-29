@@ -172,6 +172,13 @@ A different and possibly easier way is as follows:
     will continue as normal.  Note that comment (3) above re passing
     signals applies here too.
 
+The default build of Valgrind uses "-g -O2". This is OK most of the
+time, but with sophisticated optimization it can be difficult to
+see the contents of variables. A quick way to get to see function
+variables is to temporarily add "__attribute__((optnone))" before
+the function definition and rebuild. Alternatively modify
+Makefile.all.am and remove -O2 from AM_CFLAGS_BASE. That will
+require you to reconfigure and rebuild Valgrind.
 
 Self-hosting
 ~~~~~~~~~~~~

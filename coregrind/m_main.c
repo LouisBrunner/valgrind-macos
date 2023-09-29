@@ -3419,6 +3419,11 @@ asm("\n"
 //
 // Maybe on FreeBSD the pointer to argc is 16byte aligned and can be 8 bytes above the
 // start of the stack?
+//
+// Some answers to this mystery here
+// https://forums.freebsd.org/threads/stack-alignment-argc-location-in-assembled-binaries.89302/#post-613119
+// and here
+// https://github.com/freebsd/freebsd-src/blob/releng/5.1/sys/amd64/amd64/machdep.c#LL487C1-L488C42
 
 asm("\n"
     ".text\n"

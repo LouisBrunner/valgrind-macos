@@ -2,5 +2,5 @@
 Emulation warning: unsupported action:
   The specified rounding mode is invalid.
   Continuing using 'round to nearest'. Results may differ!
-   at 0x........: main (srnmb.c:64)
+   at 0x........: main (srnmb.c:61)
 

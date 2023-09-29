@@ -26,7 +26,7 @@
              ".quad 5b\n" \
              "7:\n"
 
-static int bic0(int i)
+static long bic0(long i)
 {
    void *table;
    asm volatile(HEAD
@@ -41,7 +41,7 @@ static int bic0(int i)
    return i;
 }
 
-static int bic4(int i)
+static long bic4(long i)
 {
    void *table;
    asm volatile(HEAD
@@ -53,7 +53,7 @@ static int bic4(int i)
    return i;
 }
 
-static int bic15(int i)
+static long bic15(long i)
 {
    void *table;
    asm volatile(HEAD
@@ -68,11 +68,11 @@ static int bic15(int i)
 
 int main()
 {
-   int i;
+   long i;
 
    for (i = 0; i < 16; i++) {
-      printf("bic0:  %d -> %d\n", i, bic0(i));
-      printf("bic4:  %d -> %d\n", i, bic4(i));
-      printf("bic15: %d -> %d\n", i, bic15(i));
+      printf("bic0:  %ld -> %ld\n", i, bic0(i));
+      printf("bic4:  %ld -> %ld\n", i, bic4(i));
+      printf("bic15: %ld -> %ld\n", i, bic15(i));
    }
 }

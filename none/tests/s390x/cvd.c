@@ -16,12 +16,9 @@ static signed int test[] ={
 
 static unsigned long hex_to_dec(signed int num)
 {
-	unsigned long addr = 0;
-
-	asm volatile(
-	"       cvd %2,%0"
-		: "=m" (addr) : "a" (&addr) , "d" (num) : "memory");
-	return addr;
+	unsigned long dec;
+	asm ("cvd %1,%0" : "=S" (dec) : "d" (num) : );
+	return dec;
 }
 
 int main()

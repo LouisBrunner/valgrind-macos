@@ -1301,21 +1301,21 @@ UTF32:  00000000
   cc = 1
   dst address difference: 4  dst len: 0
   src address difference: 1  src len: 3
-UTF8:   00 01 02 03 c2 80 c2 81
+UTF8:   00 01 02 03
 UTF32:  00000000
   cc = 1
   dst address difference: 4  dst len: 1
-  src address difference: 1  src len: 7
-UTF8:   00 01 02 03 c2 80 c2 81 c2 82 c2 83
+  src address difference: 1  src len: 3
+UTF8:   00 01 02 03
 UTF32:  00000000
   cc = 1
   dst address difference: 4  dst len: 2
-  src address difference: 1  src len: 11
-UTF8:   00 01 02 03 c2 80 c2 81 c2 82 c2 83 e1 80 80 e1
+  src address difference: 1  src len: 3
+UTF8:   00 01 02 03
 UTF32:  00000000
   cc = 1
   dst address difference: 4  dst len: 3
-  src address difference: 1  src len: 15
+  src address difference: 1  src len: 3
 
 ------------- test4 ----------------
 UTF8:   01 c3 80 12 e1 90 93 23 f4 80 90 8a 34 c4 8c e1 91 94 c5 8a f4 80 90 8a c5 8a e1 91 94 f4 80 90 8a e1 91 94

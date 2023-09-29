@@ -9,15 +9,12 @@
                          "srnm " #d "(8)\n\t" ::: "8"); \
    })
 
-unsigned
-get_rounding_mode(void)
-{
-   unsigned fpc;
-
-   __asm__ volatile ("stfpc  %0\n\t" : "=m"(fpc));
-
-   return fpc & 0x7;
-}
+#define get_rounding_mode() \
+   ({ \
+      unsigned fpc; \
+      __asm__ volatile ("stfpc  %0" : "=Q"(fpc)); \
+      fpc & 0x7; \
+   })
 
 int main(void)
 {

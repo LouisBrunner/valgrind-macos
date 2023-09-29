@@ -324,8 +324,9 @@ s390_stfle_range(UInt lo, UInt hi)
 ULong
 s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
 {
-   ULong hoststfle[S390_NUM_FACILITY_DW], cc, num_dw, i;
-   register ULong reg0 asm("0") = guest_state->guest_r0 & 0xF;  /* r0[56:63] */
+   ULong hoststfle[S390_NUM_FACILITY_DW], cc, last_dw, i;
+   register ULong reg0 asm("0") = guest_state->guest_r0;
+   last_dw = reg0 & 0xf;
 
    /* Restrict to facilities that we know about and that we assume to be
       compatible with Valgrind.  Of course, in this way we may reject features
@@ -393,26 +394,31 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
        /* 157-167: unassigned */
        | s390_stfle_range(168, 168)
        /* 168-191: unassigned */ ),
+
+      /* ===  192 .. 255  === */
+      /* 192: vector-packed-decimal, not supported */
+      (s390_stfle_range(193, 194)
+       /* 195: unassigned */
+       | s390_stfle_range(196, 197)),
    };
 
-   /* We cannot store more than S390_NUM_FACILITY_DW
-      (and it makes not much sense to do so anyhow) */
-   if (reg0 > S390_NUM_FACILITY_DW - 1)
-      reg0 = S390_NUM_FACILITY_DW - 1;
-
-   num_dw = reg0 + 1;  /* number of double words written */
-
-   asm volatile(" .insn s,0xb2b00000,%0\n"   /* stfle */
-                "ipm    %2\n"
-                "srl    %2,28\n"
-                : "=m" (hoststfle), "+d"(reg0), "=d"(cc) : : "cc", "memory");
+   asm(".insn s,0xb2b00000,%0\n" /* stfle */
+       "ipm   %2\n"
+       "srl   %2,28\n"
+       : "=Q"(hoststfle), "+d"(reg0), "=d"(cc)
+       :
+       : "cc");
 
    /* Update guest register 0  with what STFLE set r0 to */
    guest_state->guest_r0 = reg0;
 
    /* VM facilities = host facilities, filtered by acceptance */
-   for (i = 0; i < num_dw; ++i)
-      addr[i] = hoststfle[i] & accepted_facility[i];
+   for (i = 0; i <= last_dw; ++i) {
+      if (i < S390_NUM_FACILITY_DW)
+         addr[i] = hoststfle[i] & accepted_facility[i];
+      else
+         addr[i] = 0; /* mask out any excess doublewords */
+   }
 
    return cc;
 }

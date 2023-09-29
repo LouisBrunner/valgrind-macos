@@ -51,6 +51,7 @@ EXTRA_DIST = \
 	dfpext.stderr.exp dfpext.stdout.exp dfpext.vgtest \
 	dfpconv.stderr.exp dfpconv.stdout.exp dfpconv.vgtest \
 	srnmt.stderr.exp srnmt.stdout.exp srnmt.vgtest \
+	stfle.stdout.exp-z16 \
 	pfpo.stderr.exp pfpo.stdout.exp pfpo.vgtest
 
 AM_CFLAGS    += @FLAG_M64@

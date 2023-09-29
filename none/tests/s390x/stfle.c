@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 /* Number of double words needed to store all facility bits. */
-#define S390_NUM_FACILITY_DW 3
+#define S390_NUM_FACILITY_DW 4
 
 
 unsigned long long stfle(unsigned long dw, unsigned bit_to_test)

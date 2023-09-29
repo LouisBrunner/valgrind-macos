@@ -584,6 +584,8 @@ static UInt VG_(get_machine_model)(void)
       { "3907", VEX_S390X_MODEL_Z14_ZR1 },
       { "8561", VEX_S390X_MODEL_Z15 },
       { "8562", VEX_S390X_MODEL_Z15 },
+      { "3931", VEX_S390X_MODEL_Z16 },
+      { "3932", VEX_S390X_MODEL_Z16 },
    };
 
    Int    model, n, fh;
@@ -1541,9 +1543,10 @@ Bool VG_(machine_get_hwcaps)( void )
      } else {
          register ULong reg0 asm("0") = S390_NUM_FACILITY_DW - 1;
 
-         __asm__ __volatile__(" .insn s,0xb2b00000,%0\n"   /* stfle */
-                              : "=m" (hoststfle), "+d"(reg0)
-                              : : "cc", "memory");
+         __asm__(".insn s,0xb2b00000,%0" /* stfle */
+                 : "=Q"(hoststfle), "+d"(reg0)
+                 :
+                 : "cc");
      }
 
      /* Restore signals */

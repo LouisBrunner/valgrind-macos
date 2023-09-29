@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "mul.h"
-#include "opcodes.h"
+
+#define MSFI(x, y) ".insn rilu,0xc20100000000," x "," y "\n"
+#define MSGFI(x, y) ".insn rilu,0xc20000000000," x "," y "\n"
 
 static void do_imm_insns(void)
 {
@@ -23,29 +25,18 @@ static void do_imm_insns(void)
 
 }
 
+#define mhy(x, y) ".insn rxy,0xe3000000007c," x "," y "\n"
+#define mfy(x, y) ".insn rxy,0xe3000000005c," x "," y "\n"
 
 static void do_regmem_insns(unsigned long m2)
 {
-	mhysweep(m2);
-	mfysweep(m2);
+	memsweep(mhy, m2);
+	memsweep(mfy, m2);
 }
 
 int main()
 {
-	do_regmem_insns(0x0ul);
-	do_regmem_insns(0x7ffffffffffffffful);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xfffffffffffffffful);
-	do_regmem_insns(0x7fffffff00000000ul);
-	do_regmem_insns(0x8000000000000000ul);
-	do_regmem_insns(0xffffffff00000000ul);
-	do_regmem_insns(0x000000007ffffffful);
-	do_regmem_insns(0x0000000080000000ul);
-	do_regmem_insns(0x00000000fffffffful);
-	do_regmem_insns(0x000000000000fffful);
-	do_regmem_insns(0x0000000000007ffful);
-	do_regmem_insns(0x0000000000008000ul);
-	do_regmem_insns(0x000000000000fffful);
+	for_each_m2(do_regmem_insns);
 	do_imm_insns();
 	return 0;
 }

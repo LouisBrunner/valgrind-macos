@@ -41,6 +41,16 @@ static void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* LLc,
 // string otherwise.
 static const HChar* check_cache(cache_t* cache)
 {
+   if (cache->line_size == 0)
+   {
+      return "Cache line size is zero.\n";
+   }
+
+   if (cache->assoc == 0)
+   {
+      return "Cache associativity is zero.\n";
+   }
+
    // Simulator requires set count to be a power of two.
    if ((cache->size % (cache->line_size * cache->assoc) != 0) ||
        (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc)))

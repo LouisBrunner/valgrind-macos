@@ -352,7 +352,7 @@ static void resize_ec_htab ( void )
    SizeT        new_size;
    ExeContext** new_ec_htab;
 
-   vg_assert(ec_htab_size_idx >= 0 && ec_htab_size_idx < N_EC_PRIMES);
+   vg_assert(ec_htab_size_idx < N_EC_PRIMES);
    if (ec_htab_size_idx == N_EC_PRIMES-1)
       return; /* out of primes - can't resize further */
 

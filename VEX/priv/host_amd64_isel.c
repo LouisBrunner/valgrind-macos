@@ -619,7 +619,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       addInstr(env, mk_iMOVsd_RR( hregAMD64_RSP(), r_vecRetAddr ));
    }
 
-   vassert(n_args >= 0 && n_args <= 6);
+   vassert(n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
       if (UNLIKELY(arg->tag == Iex_GSPTR)) {
@@ -2610,8 +2610,11 @@ static HReg iselCondCode_R_wrk ( ISelEnv* env, const IRExpr* e )
    addInstr(env, AMD64Instr_Set64(cc, res));
    return res;
 
+   // PJF old debug code? - unreachable
+   /*
    ppIRExpr(e);
    vpanic("iselCondCode_R(amd64)");
+   */
 }
 
 

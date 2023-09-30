@@ -1850,7 +1850,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
 
    // Point an htt entry to the tt slot
    HTTno htti = HASH_TT(entry);
-   vg_assert(htti >= 0 && htti < N_HTTES_PER_SECTOR);
+   vg_assert(htti < N_HTTES_PER_SECTOR);
    while (True) {
       if (sectors[y].htt[htti] == HTT_EMPTY
           || sectors[y].htt[htti] == HTT_DELETED)
@@ -1925,7 +1925,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
       all sectors and avoids multiple expensive % operations. */
    n_full_lookups++;
    kstart = HASH_TT(guest_addr);
-   vg_assert(kstart >= 0 && kstart < N_HTTES_PER_SECTOR);
+   vg_assert(kstart < N_HTTES_PER_SECTOR);
 
    /* Search in all the sectors,using sector_search_order[] as a
       heuristic guide as to what order to visit the sectors. */

@@ -1511,7 +1511,7 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
    if (0)
    VG_(printf)("scache wback line %d\n", (Int)wix);
 
-   tl_assert(wix >= 0 && wix < N_WAY_NENT);
+   tl_assert(wix < N_WAY_NENT);
 
    tag =  cache_shmem.tags0[wix];
    cl  = &cache_shmem.lyns0[wix];
@@ -1650,7 +1650,7 @@ static __attribute__((noinline)) void cacheline_fetch ( UWord wix )
    if (0)
    VG_(printf)("scache fetch line %d\n", (Int)wix);
 
-   tl_assert(wix >= 0 && wix < N_WAY_NENT);
+   tl_assert(wix < N_WAY_NENT);
 
    tag =  cache_shmem.tags0[wix];
    cl  = &cache_shmem.lyns0[wix];
@@ -5338,7 +5338,7 @@ static void record_race_info ( Thr* acc_thr,
    tl_assert(acc_thr);
    tl_assert(acc_thr->hgthread);
    tl_assert(acc_thr->hgthread->hbthr == acc_thr);
-   tl_assert(HG_(clo_history_level) >= 0 && HG_(clo_history_level) <= 2);
+   tl_assert(HG_(clo_history_level) <= 2);
 
    if (HG_(clo_history_level) == 1) {
       Bool found;
@@ -5941,6 +5941,7 @@ static
 void zsm_swrite64 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
    UWord      cloff, tno;
+   SizeT      i;
    //UWord    toff;
    stats__cline_swrite64s++;
    if (UNLIKELY(!aligned64(a))) goto slowcase;

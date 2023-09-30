@@ -1776,6 +1776,8 @@ void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
             else if ( inst == XVI8GER4SPP )
                result[j] = clampS64toS32(sum + acc_word[j]);
 
+            // @todo PJF Coverity complains that if none of the abofe ifs are true
+            // then result gets used uninitialized
          } else {
             result[j] = 0;
          }

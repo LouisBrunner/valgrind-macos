@@ -420,7 +420,6 @@ UWord HG_(cardinalityWS) ( WordSetU* wsu, WordSet ws )
    WordVec* wv;
    tl_assert(wsu);
    wv = do_ix2vec( wsu, ws );
-   tl_assert(wv->size >= 0);
    return wv->size;
 }
 
@@ -447,7 +446,6 @@ void HG_(getPayloadWS) ( /*OUT*/UWord** words, /*OUT*/UWord* nWords,
    if (HG_DEBUG) VG_(printf)("getPayloadWS %s %d\n", wsu->cc, (Int)ws);
    tl_assert(wsu);
    wv = do_ix2vec( wsu, ws );
-   tl_assert(wv->size >= 0);
    *nWords = wv->size;
    *words  = wv->words;
 }

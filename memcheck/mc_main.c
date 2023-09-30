@@ -3711,7 +3711,7 @@ static inline UInt convert_nia_to_ecu ( Addr nia )
 
    stats__nia_cache_queries++;
    i = nia % N_NIA_TO_ECU_CACHE;
-   tl_assert(i >= 0 && i < N_NIA_TO_ECU_CACHE);
+   tl_assert(i < N_NIA_TO_ECU_CACHE);
 
    if (LIKELY( nia_to_ecu_cache[i].nia0 == nia ))
       return nia_to_ecu_cache[i].ecu0;

@@ -417,7 +417,7 @@ void ppARMAModeN ( ARMAModeN* am ) {
 /* --------- Reg or imm-8x4 operands --------- */
 
 static UInt ROR32 ( UInt x, UInt sh ) {
-   vassert(sh >= 0 && sh < 32);
+   vassert(sh < 32);
    if (sh == 0)
       return x;
    else

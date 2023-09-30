@@ -748,7 +748,7 @@ DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos)
 {
    UInt cfsi_m_ix;
 
-   vg_assert(pos >= 0 && pos < di->cfsi_used);
+   vg_assert(pos < di->cfsi_used);
    switch (di->sizeof_cfsi_m_ix) {
       case 1: cfsi_m_ix = ((UChar*)  di->cfsi_m_ix)[pos]; break;
       case 2: cfsi_m_ix = ((UShort*) di->cfsi_m_ix)[pos]; break;

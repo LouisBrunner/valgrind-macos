@@ -971,7 +971,7 @@ Superblock* findSb ( Arena* a, Block* b )
       Superblock * sb; 
       SizeT pos = min + (max - min)/2;
 
-      vg_assert(pos >= 0 && pos < a->sblocks_used);
+      vg_assert(pos < a->sblocks_used);
       sb = a->sblocks[pos];
       if ((Block*)&sb->payload_bytes[0] <= b
           && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])

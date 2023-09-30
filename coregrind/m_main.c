@@ -1945,7 +1945,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise scheduler (phase 1)\n");
    tid_main = VG_(scheduler_init_phase1)();
-   vg_assert(tid_main >= 0 && tid_main < VG_N_THREADS
+   vg_assert(tid_main < VG_N_THREADS
              && tid_main != VG_INVALID_THREADID);
    /* Tell the tool about tid_main */
    VG_TRACK( pre_thread_ll_create, VG_INVALID_THREADID, tid_main );

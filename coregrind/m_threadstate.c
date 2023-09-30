@@ -97,7 +97,7 @@ const HChar* VG_(name_of_VgSchedReturnCode) ( VgSchedReturnCode retcode )
 
 ThreadState *VG_(get_ThreadState)(ThreadId tid)
 {
-   vg_assert(tid >= 0 && tid < VG_N_THREADS);
+   vg_assert(tid < VG_N_THREADS);
    vg_assert(VG_(threads)[tid].tid == tid);
    return &VG_(threads)[tid];
 }

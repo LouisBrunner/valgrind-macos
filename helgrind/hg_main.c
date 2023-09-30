@@ -3625,9 +3625,9 @@ static void univ_laog_do_GC ( void ) {
    links = NULL;
    while (VG_(nextIterFM)( laog, NULL, (UWord*)&links )) {
       tl_assert(links);
-      tl_assert(links->inns >= 0 && links->inns < univ_laog_cardinality);
+      tl_assert(links->inns < univ_laog_cardinality);
       univ_laog_seen[links->inns] = True;
-      tl_assert(links->outs >= 0 && links->outs < univ_laog_cardinality);
+      tl_assert(links->outs < univ_laog_cardinality);
       univ_laog_seen[links->outs] = True;
       links = NULL;
    }

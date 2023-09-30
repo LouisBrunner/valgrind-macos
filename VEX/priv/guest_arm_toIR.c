@@ -1340,7 +1340,7 @@ void setFlags_D1_D2_ND ( UInt cc_op, IRTemp t_dep1,
    vassert(typeOfIRTemp(irsb->tyenv, t_dep1 == Ity_I32));
    vassert(typeOfIRTemp(irsb->tyenv, t_dep2 == Ity_I32));
    vassert(typeOfIRTemp(irsb->tyenv, t_ndep == Ity_I32));
-   // strictly unsigned cc_op must always be >= 0,  keeong for readability
+   // strictly unsigned cc_op must always be >= 0,  keeping for readability
    vassert(cc_op >= ARMG_CC_OP_COPY && cc_op < ARMG_CC_OP_NUMBER);
    if (guardT == IRTemp_INVALID) {
       /* unconditional */

@@ -1322,7 +1322,7 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       DiOffT img_szB  = ML_(img_size)(img);
       DiOffT curr_off = 0;
       while (1) {
-         vg_assert(curr_off >= 0 && curr_off <= img_szB);
+         vg_assert(curr_off <= img_szB);
          if (curr_off == img_szB) break;
          DiOffT avail = img_szB - curr_off;
          vg_assert(avail > 0 && avail <= img_szB);

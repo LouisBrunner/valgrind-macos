@@ -155,7 +155,7 @@ static jCC* new_jcc(BBCC* from, UInt jmp, BBCC* to)
 
    if (from) {
        /* Prohibit corruption by array overrun */
-       CLG_ASSERT((0 <= jmp) && (jmp <= from->bb->cjmp_count));
+       CLG_ASSERT(jmp <= from->bb->cjmp_count);
        jcc->next_from = from->jmp[jmp].jcc_list;
        from->jmp[jmp].jcc_list = jcc;
    }

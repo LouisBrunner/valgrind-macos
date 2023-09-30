@@ -148,9 +148,9 @@ typedef
    }
    RRegLRState;
 
-/* v is always unsigned, wish we could static assert that */
+/* v and r are always unsigned, wish we could static assert that */
 #define IS_VALID_VREGNO(v) ((v) < n_vregs)
-#define IS_VALID_RREGNO(r) ((r) >= 0 && (r) < n_rregs)
+#define IS_VALID_RREGNO(r) ((r) < n_rregs)
 
 #define FREE_VREG(v)             \
    do {                          \

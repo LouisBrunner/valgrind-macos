@@ -2747,7 +2747,7 @@ Bool dis_ARM64_data_processing_immediate(/*MB_OUT*/DisResult* dres,
              nameIRegOrZR(is64, dd), nameIRegOrZR(is64, nn), shift);
          return True;
       }
-      if (!is64 && immS >= 0 && immS <= 30
+      if (!is64 && immS <= 30
           && immR == immS + 1 && opc == BITS2(1,0)) {
          // 32-bit shift left
          UInt shift = 32 - immR;
@@ -3690,7 +3690,7 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
                vassert(0);
          }
 
-         vassert(ix >= 0 && ix <= 7);
+         vassert(ix <= 7);
 
          putIReg64orZR(
             dd,
@@ -8424,7 +8424,7 @@ static IRTemp math_TBL_TBX ( IRTemp tab[4], UInt len, IRTemp src,
 
    UInt tabent;
    for (tabent = 0; tabent <= len; tabent++) {
-      vassert(tabent >= 0 && tabent < 4);
+      vassert(tabent < 4);
       IRTemp bias = newTempV128();
       assign(bias,
              mkexpr(tabent == 0 ? allZero : allXX[tabent-1]));
@@ -10351,7 +10351,7 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
    if (bitU == 1 && (immh & 8) == 8 && opcode == BITS5(0,1,0,1,0)) {
       /* -------- 1,1xxx,01010 SLI d_d_#imm -------- */
       UInt sh = immhb - 64;
-      vassert(sh >= 0 && sh < 64);
+      vassert(sh < 64);
       if (sh == 0) {
          putQReg128(dd, unop(Iop_ZeroHI64ofV128, getQReg128(nn)));
       } else {
@@ -11529,7 +11529,7 @@ Bool dis_AdvSIMD_scalar_x_indexed_element(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS4(0,1,1,1): ks = 2; break;
          default: vassert(0);
       }
-      vassert(ks >= 0 && ks <= 2);
+      vassert(ks <= 2);
       UInt mm  = 32; // invalid
       UInt ix  = 16; // invalid
       switch (size) {
@@ -11736,7 +11736,7 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       Bool isAcc = opcode == BITS5(0,0,1,1,0);
       Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
       if (!ok || (bitQ == 0 && size == X11)) return False;
-      vassert(size >= 0 && size <= 3);
+      vassert(size <= 3);
       UInt lanebits = 8 << size;
       vassert(shift >= 1 && shift <= lanebits);
       IROp    op   = isU ? mkVecRSHU(size) : mkVecRSHS(size);
@@ -12336,7 +12336,7 @@ Bool dis_AdvSIMD_three_different(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS4(1,0,1,1): ks = 2; break;
          default: vassert(0);
       }
-      vassert(ks >= 0 && ks <= 2);
+      vassert(ks <= 2);
       if (size == X00 || size == X11) return False;
       vassert(size <= 2);
       IRTemp vecN, vecM, vecD, res, sat1q, sat1n, sat2q, sat2n;
@@ -14305,7 +14305,7 @@ Bool dis_AdvSIMD_vector_x_indexed_elem(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS4(0,1,1,1): ks = 2; break;
          default: vassert(0);
       }
-      vassert(ks >= 0 && ks <= 2);
+      vassert(ks <= 2);
       Bool is2 = bitQ == 1;
       UInt mm  = 32; // invalid
       UInt ix  = 16; // invalid

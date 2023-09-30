@@ -2385,7 +2385,7 @@ Bool dbm_DecodeBitMasks ( /*OUT*/ULong* wmask, /*OUT*/ULong* tmask,
 
    vassert(len >= 1 && len <= 6);
    ULong levels = // (zeroes(6 - len) << (6-len)) | ones(len);
-                  (1 << len) - 1;
+                  (1U << len) - 1;
    vassert(levels >= 1 && levels <= 63);
 
    if (immediate && ((imms & levels) == levels)) { 
@@ -8045,11 +8045,11 @@ static Bool AdvSIMDExpandImm ( /*OUT*/ULong* res,
       case 0:
          testimm8 = False; imm64 = Replicate32x2(imm8); break;
       case 1:
-         testimm8 = True; imm64 = Replicate32x2(imm8 << 8); break;
+         testimm8 = True; imm64 = Replicate32x2(imm8 << 8UL); break;
       case 2:
-         testimm8 = True; imm64 = Replicate32x2(imm8 << 16); break;
+         testimm8 = True; imm64 = Replicate32x2(imm8 << 16UL); break;
       case 3:
-         testimm8 = True; imm64 = Replicate32x2(imm8 << 24); break;
+         testimm8 = True; imm64 = Replicate32x2(imm8 << 24UL); break;
       case 4:
           testimm8 = False; imm64 = Replicate16x4(imm8); break;
       case 5:

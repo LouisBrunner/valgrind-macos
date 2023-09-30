@@ -23248,6 +23248,8 @@ static ULong dis_AVX_var_shiftV_byE ( const VexAbiInfo* vbi,
                     op == Iop_Sar32 ? binop(op, mkexpr(sVs[i]), mkU8(size-1))
                                     : size == 32 ? mkU32(0) : mkU64(0)
          ));
+      } else {
+         res[i] = IRTemp_INVALID;
       }
    switch (size) {
       case 32:

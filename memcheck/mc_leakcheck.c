@@ -1123,7 +1123,10 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
 #     else
       // On other platforms, just skip one Addr.
       lc_sig_skipped_szB += sizeof(Addr);
+      // PJF asserts are always on
+      // coverity[ASSERT_SIDE_EFFECT:FALSE]
       tl_assert(bad_scanned_addr >= VG_ROUNDUP(start, sizeof(Addr)));
+      // coverity[ASSERT_SIDE_EFFECT:FALSE]
       tl_assert(bad_scanned_addr < VG_ROUNDDN(start+len, sizeof(Addr)));
       ptr = bad_scanned_addr + sizeof(Addr); // Unaddressable, - skip it.
 #endif

@@ -142,7 +142,6 @@ static Bool is_sane_CEnt ( const HChar* who, const DiImage* img, UInt i )
       if (!(ce->used == ce->size || ce->used == 0)) goto fail;
    } else {
       if (!(ce->size == CACHE_ENTRY_SIZE)) goto fail;
-      if (!(ce->off >= 0)) goto fail;
       if (!(ce->off + ce->used <= img->real_size)) goto fail;
    }
    return True;

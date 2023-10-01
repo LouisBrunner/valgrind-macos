@@ -489,7 +489,7 @@ void HG_(dieWS) ( WordSetU* wsu, WordSet ws )
 Bool HG_(plausibleWS) ( WordSetU* wsu, WordSet ws )
 {
    if (wsu == NULL) return False;
-   if (ws < 0 || ws >= wsu->ix2vec_used)
+   if (ws >= wsu->ix2vec_used)
       return False;
    return True;
 }

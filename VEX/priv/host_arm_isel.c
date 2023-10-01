@@ -126,14 +126,12 @@ typedef
 
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmap[tmp];
 }
 
 static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];

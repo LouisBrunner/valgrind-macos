@@ -1152,7 +1152,7 @@ UInt addEClassNo ( /*MOD*/Sector* sec, EClassNo ec, TTEno tteno )
    Int    old_sz, new_sz, i, r;
    TTEno  *old_ar, *new_ar;
 
-   vg_assert(ec >= 0 && ec < ECLASS_N);
+   vg_assert(ec < ECLASS_N);
    vg_assert(tteno < N_TTES_PER_SECTOR);
 
    if (DEBUG_TRANSTAB) VG_(printf)("ec %d  gets %d\n", ec, (Int)tteno);

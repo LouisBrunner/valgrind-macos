@@ -1098,7 +1098,7 @@ void read_elf_symtab__ppc64be_linux(
       disym.isText    = elem->is_text;
       disym.isIFunc   = elem->is_ifunc;
       disym.isGlobal  = elem->is_global;
-      if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
+      ML_(dinfo_free)(cstr);
       vg_assert(disym.pri_name != NULL);
 
       ML_(addSym) ( di, &disym );

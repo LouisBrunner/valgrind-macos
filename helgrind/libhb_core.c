@@ -5941,7 +5941,6 @@ static
 void zsm_swrite64 ( Addr a, SVal svNew ) {
    CacheLine* cl; 
    UWord      cloff, tno;
-   SizeT      i;
    //UWord    toff;
    stats__cline_swrite64s++;
    if (UNLIKELY(!aligned64(a))) goto slowcase;

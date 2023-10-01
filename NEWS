@@ -60,6 +60,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 433857  Add validation to C++17 aligned new/delete alignment size
 433859  Add mismatched detection to C++ 17 aligned new/delete
 460192  Add epoll_pwait2
+461074  DWARF2 CFI reader: unhandled DW_OP_ 0x11 (consts) DW_OP_ 0x92 (bregx)
 466105  aligned_alloc problems, part 2
 467441  Add mismatched detection to C++ 14 sized delete
 469049  link failure on ppc64 (big endian) valgrind 3.20

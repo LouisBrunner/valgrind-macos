@@ -128,11 +128,12 @@ class Args(Namespace):
             help="file produced by Cachegrind",
         )
 
-        return p.parse_args(namespace=Args())
+        return p.parse_args(namespace=Args())  # type: ignore [return-value]
 
 
 # Args are stored in a global for easy access.
 args = Args.parse()
+
 
 # A single instance of this class is constructed, from `args` and the `events:`
 # line in the cgout file.
@@ -171,6 +172,7 @@ class Events:
 # This used to be a class with a single field `counts: list[int]`, but this
 # type is very hot and just using a type alias is much faster.
 Cc = list[int]
+
 
 # Add the counts in `a_cc` to `b_cc`.
 def add_cc_to_cc(a_cc: Cc, b_cc: Cc) -> None:

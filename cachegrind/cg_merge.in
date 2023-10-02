@@ -74,11 +74,12 @@ class Args(Namespace):
             help="file produced by Cachegrind",
         )
 
-        return p.parse_args(namespace=Args())
+        return p.parse_args(namespace=Args())  # type: ignore [return-value]
 
 
 # Args are stored in a global for easy access.
 args = Args.parse()
+
 
 # A single instance of this class is constructed, from `args` and the `events:`
 # line in the cgout file.

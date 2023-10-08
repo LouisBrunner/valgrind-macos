@@ -137,6 +137,7 @@ typedef
 #define INVALID_RREG_NO ((Short)(-1))
 
 #define IS_VALID_VREGNO(_zz) ((_zz) >= 0 && (_zz) < n_vregs)
+#define IS_VALID_UNSIGNED_VREGNO(_zz) ((_zz) < n_vregs)
 #define IS_VALID_RREGNO(_zz) ((_zz) >= 0 && (_zz) < n_rregs)
 
 
@@ -1055,8 +1056,8 @@ HInstrArray* doRegisterAllocation_v2 (
          /* Finally, we can do the coalescing.  It's trivial -- merely
             claim vregS's register for vregD. */
          rreg_state[n].vreg = vregD;
-         vassert(IS_VALID_VREGNO(hregIndex(vregD)));
-         vassert(IS_VALID_VREGNO(hregIndex(vregS)));
+         vassert(IS_VALID_UNSIGNED_VREGNO(hregIndex(vregD)));
+         vassert(IS_VALID_UNSIGNED_VREGNO(hregIndex(vregS)));
          vreg_state[hregIndex(vregD)] = toShort(n);
          vreg_state[hregIndex(vregS)] = INVALID_RREG_NO;
 
@@ -1080,7 +1081,7 @@ HInstrArray* doRegisterAllocation_v2 (
          if (rreg_state[j].disp != Bound)
             continue;
          UInt vregno = hregIndex(rreg_state[j].vreg);
-         vassert(IS_VALID_VREGNO(vregno));
+         vassert(IS_VALID_UNSIGNED_VREGNO(vregno));
          if (vreg_lrs[vregno].dead_before <= ii) {
             rreg_state[j].disp = Free;
             rreg_state[j].eq_spill_slot = False;

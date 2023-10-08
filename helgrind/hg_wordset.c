@@ -111,7 +111,6 @@ typedef
       WCache* _cache = &(_zzcache);                                  \
       tl_assert(_cache->dynMax >= 1);                                \
       tl_assert(_cache->dynMax <= N_WCACHE_STAT_MAX);                \
-      tl_assert(_cache->inUse >= 0);                                 \
       tl_assert(_cache->inUse <= _cache->dynMax);                    \
       if (_cache->inUse < _cache->dynMax)                            \
          _cache->inUse++;                                            \
@@ -666,7 +665,7 @@ WordSet HG_(delFromWS) ( WordSetU* wsu, WordSet ws, UWord w )
    }
    /* So w is present in ws, and the new set will be one element
       smaller. */
-   tl_assert(i >= 0 && i < wv->size);
+   tl_assert(i < wv->size);
    tl_assert(wv->size > 0);
 
    wv_new = new_WV_of_size( wsu, wv->size - 1 );

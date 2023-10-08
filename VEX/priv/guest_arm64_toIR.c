@@ -10377,7 +10377,7 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
       UInt shift = 0;
       Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
       if (!ok) return False;
-      vassert(size >= 0 && size <= 3);
+      vassert(size <= 3);
       /* The shift encoding has opposite sign for the leftwards case.
          Adjust shift to compensate. */
       UInt lanebits = 8 << size;
@@ -11774,7 +11774,7 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       Bool isQ   = bitQ == 1;
       Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
       if (!ok || (bitQ == 0 && size == X11)) return False;
-      vassert(size >= 0 && size <= 3);
+      vassert(size <= 3);
       UInt lanebits = 8 << size;
       vassert(shift >= 1 && shift <= lanebits);
       IRExpr* src = getQReg128(nn);

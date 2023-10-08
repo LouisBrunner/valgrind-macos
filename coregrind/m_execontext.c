@@ -546,7 +546,7 @@ static ExeContext* record_ExeContext_wrk2 ( const Addr* ips, UInt n_ips )
 
    /* Resize the hash table, maybe? */
    if ( ((ULong)ec_totstored) > ((ULong)ec_htab_size) ) {
-      vg_assert(ec_htab_size_idx >= 0 && ec_htab_size_idx < N_EC_PRIMES);
+      vg_assert(ec_htab_size_idx < N_EC_PRIMES);
       if (ec_htab_size_idx < N_EC_PRIMES-1)
          resize_ec_htab();
    }

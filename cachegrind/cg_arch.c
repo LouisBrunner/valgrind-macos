@@ -306,7 +306,7 @@ void VG_(post_clo_init_configure_caches)(cache_t* I1c,
    check_cache_or_override ("LL", LLc, DEFINED(clo_LLc));
 
    // Then replace with any defined on the command line.  (Already checked in
-   // VG(parse_clo_cache_opt)().)
+   // VG(str_clo_cache_opt)().)
    if (DEFINED(clo_I1c)) { *I1c = *clo_I1c; }
    if (DEFINED(clo_D1c)) { *D1c = *clo_D1c; }
    if (DEFINED(clo_LLc)) { *LLc = *clo_LLc; }

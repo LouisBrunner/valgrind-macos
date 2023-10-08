@@ -1033,7 +1033,6 @@ static void rcdec_LineZ ( LineZ* lineZ ) {
 inline
 static void write_twobit_array ( UChar* arr, UWord ix, UWord b2 ) {
    Word bix, shft, mask, prep;
-   tl_assert(ix >= 0);
    bix  = ix >> 2;
    shft = 2 * (ix & 3); /* 0, 2, 4 or 6 */
    mask = 3 << shft;
@@ -1044,7 +1043,6 @@ static void write_twobit_array ( UChar* arr, UWord ix, UWord b2 ) {
 inline
 static UWord read_twobit_array ( UChar* arr, UWord ix ) {
    Word bix, shft;
-   tl_assert(ix >= 0);
    bix  = ix >> 2;
    shft = 2 * (ix & 3); /* 0, 2, 4 or 6 */
    return (arr[bix] >> shft) & 3;
@@ -2364,7 +2362,7 @@ static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts )
            copy it to the output but increment its timestamp value.
            Then copy the remaining entries.  (c) is the common case.
    */
-   tl_assert(i >= 0 && i <= n);
+   tl_assert(i <= n);
    if (i == n) { /* case (a) */
       UInt hi = out->usedTS++;
       out->ts[hi].thrid = me_thrid;

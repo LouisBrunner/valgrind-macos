@@ -5917,7 +5917,7 @@ static void vector_gen_pvc_mask ( const VexAbiInfo* vbi,
 
    IRDirty* d;
 
-   vassert( (VSX_addr >= 0) && (VSX_addr < 64) );
+   vassert(VSX_addr < 64);
    UInt reg_offset = offsetofPPCGuestState( guest_VSR0 )
       + sizeof(U128) * VSX_addr;
 

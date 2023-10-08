@@ -777,7 +777,6 @@ static
 InstrInfo* next_InstrInfo ( ClgState* clgs, UInt instr_size )
 {
    InstrInfo* ii;
-   tl_assert(clgs->ii_index >= 0);
    tl_assert(clgs->ii_index < clgs->bb->instr_count);
    ii = &clgs->bb->instr[ clgs->ii_index ];
 

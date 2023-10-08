@@ -685,7 +685,7 @@ static ThreadId map_threads_maybe_reverse_lookup_SLOW ( Thread* thr )
    ThreadId tid;
    tl_assert(HG_(is_sane_Thread)(thr));
    /* Check nobody used the invalid-threadid slot */
-   tl_assert(VG_INVALID_THREADID >= 0 && VG_INVALID_THREADID < VG_N_THREADS);
+   tl_assert(VG_INVALID_THREADID < VG_N_THREADS);
    tl_assert(map_threads[VG_INVALID_THREADID] == NULL);
    tid = thr->coretid;
    tl_assert(HG_(is_sane_ThreadId)(tid));

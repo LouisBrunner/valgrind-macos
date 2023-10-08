@@ -1710,7 +1710,7 @@ static void initialiseSector ( SECno sno )
          if (sector_search_order[ix] == sno)
             break;
       }
-      vg_assert(ix >= 0 && ix < n_sectors);
+      vg_assert(ix < n_sectors);
 
       if (VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, "TT/TC: recycle sector %d\n", sno);
@@ -2029,7 +2029,7 @@ static void delete_tte ( /*OUT*/Addr* ga_deleted,
    /* sec and secNo are mutually redundant; cross-check. */
    vg_assert(sec == &sectors[secNo]);
 
-   vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
+   vg_assert(tteno < N_TTES_PER_SECTOR);
    TTEntryC* tteC = &sec->ttC[tteno];
    TTEntryH* tteH = &sec->ttH[tteno];
    vg_assert(tteH->status == InUse);
@@ -2104,7 +2104,7 @@ SizeT delete_translations_in_sector_eclass ( /*OUT*/Addr* ga_deleted,
    TTEno    tteno;
    SizeT    numDeld = 0;
 
-   vg_assert(ec >= 0 && ec < ECLASS_N);
+   vg_assert(ec < ECLASS_N);
 
    for (i = 0; i < sec->ec2tte_used[ec]; i++) {
 

@@ -12797,7 +12797,7 @@ static Bool decode_V8_instruction (
         const HChar* iNames[4]
            = { "aese", "aesd", "aesmc", "aesimc" };
 
-        vassert(opc >= 0 && opc <= 3);
+        vassert(opc <= 3);
         void*        helper = helpers[opc];
         const HChar* hname  = hNames[opc];
 

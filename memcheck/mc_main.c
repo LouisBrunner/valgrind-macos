@@ -2946,8 +2946,7 @@ void make_aligned_word64_undefined_w_otag ( Addr a, UInt otag )
    //// Set the origins for a+0 .. a+7
    { OCacheLine* line;
      UWord lineoff = oc_line_offset(a);
-     tl_assert(lineoff >= 0
-               && lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
+     tl_assert(lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
      line = find_OCacheLine( a );
      line->u.main.descr[lineoff+0] = 0xF;
      line->u.main.descr[lineoff+1] = 0xF;
@@ -7120,7 +7119,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
              (cgbs[arg[2]].start == 0 && cgbs[arg[2]].size == 0)) {
             *ret = 1;
          } else {
-            tl_assert(arg[2] >= 0 && arg[2] < cgb_used);
+            tl_assert(arg[2] < cgb_used);
             cgbs[arg[2]].start = cgbs[arg[2]].size = 0;
             VG_(free)(cgbs[arg[2]].desc);
             cgb_discards++;

@@ -775,7 +775,7 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
       if (!img->ces[i]->fromC)
          break;
    }
-   vg_assert(i >= 0 && i < CACHE_N_ENTRIES);
+   vg_assert(i < CACHE_N_ENTRIES);
 
    realloc_CEnt(img, i, size, /*fromC?*/cslc != NULL);
    img->ces[i]->size = size;
@@ -1166,7 +1166,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
    vg_assert(is_in_CEnt(ce, offset));
    SizeT nToCopy = size - 1;
    SizeT nAvail  = (SizeT)(ce->used - (offset + 1 - ce->off));
-   vg_assert(nAvail >= 0 && nAvail <= ce->used-1);
+   vg_assert(nAvail <= ce->used-1);
    if (nAvail < nToCopy) nToCopy = nAvail;
    VG_(memcpy)(&dstU[1], &ce->data[offset + 1 - ce->off], nToCopy);
    return nToCopy + 1;

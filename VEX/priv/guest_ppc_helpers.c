@@ -1545,8 +1545,8 @@ void get_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
    acc_word[1] = 0xBAD;
    acc_word[0] = 0xBEEF;
 
-   vassert( (acc >= 0) && (acc < 8) );
-   vassert( (reg >= 0) && (reg < 4) );
+   vassert(acc < 8);
+   vassert(reg < 4);
 
    pU128_src = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
                         + reg*sizeof(U128));

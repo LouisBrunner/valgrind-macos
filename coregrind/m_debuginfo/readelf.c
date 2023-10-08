@@ -2334,7 +2334,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
          leave the relevant pointer at NULL. */
       RangeAndBias* inrx = NULL;
       RangeAndBias* inrw1 = NULL;
-      /* Depending on the link editor there may be two RW PT_LOAD headers
+      /* Depending on the link editro there may be two RW PT_LOAD headers
        * If so this will point to the seond one */
       RangeAndBias* inrw2 = NULL;
       /* used to switch between inrw1 and inrw2 */
@@ -2478,42 +2478,35 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
       }
 
       /* Accept .rodata where mapped as rx or rw (data), even if zero-sized */
-      /* Also accept .rodata.<subr_name>, and aggregate adjacent after alignment. */
-      if (0 == VG_(strncmp)(name, ".rodata", 7)) {
-         if ((inrx||inrw1) && !di->rodata_present) { /* first .rodata* */
+      if (0 == VG_(strcmp)(name, ".rodata")) {
+         if (!di->rodata_present) {
             di->rodata_svma = svma;
             di->rodata_avma = svma;
             di->rodata_size = size;
             di->rodata_debug_svma = svma;
-         } else if ((inrx||inrw1) && di->rodata_present) { /* not first .rodata* */
-            Addr tmp = VG_ROUNDUP(di->rodata_size + di->rodata_svma, alyn);
-            if (svma == tmp) { /* adjacent to previous .rodata* */
-               di->rodata_size = size + tmp - di->rodata_svma;
+            if (inrx) {
+               di->rodata_avma += inrx->bias;
+               di->rodata_bias = inrx->bias;
+               di->rodata_debug_bias = inrx->bias;
+            } else if (inrw1) {
+               di->rodata_avma += inrw1->bias;
+               di->rodata_bias = inrw1->bias;
+               di->rodata_debug_bias = inrw1->bias;
             } else {
-               BAD(".rodata"); /* is OK, but we cannot handle multiple .rodata* */
+               BAD(".rodata");
             }
+            di->rodata_present = True;
+            TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
+                         di->rodata_svma,
+                         di->rodata_svma + di->rodata_size - 1);
+            TRACE_SYMTAB("acquiring .rodata avma = %#lx .. %#lx\n",
+                         di->rodata_avma,
+                         di->rodata_avma + di->rodata_size - 1);
+            TRACE_SYMTAB("acquiring .rodata bias = %#lx\n",
+                         (UWord)di->rodata_bias);
+         } else {
+            BAD(".rodata");
          }
-         if (inrx) {
-            di->rodata_avma += inrx->bias;
-            di->rodata_bias = inrx->bias;
-            di->rodata_debug_bias = inrx->bias;
-         } else if (inrw1) {
-            di->rodata_avma += inrw1->bias;
-            di->rodata_bias = inrw1->bias;
-            di->rodata_debug_bias = inrw1->bias;
-         }
-         else {
-            BAD(".rodata");  /* should not happen? */
-         }
-         di->rodata_present = True;
-         TRACE_SYMTAB("acquiring .rodata svma = %#lx .. %#lx\n",
-                      di->rodata_svma,
-                      di->rodata_svma + di->rodata_size - 1);
-         TRACE_SYMTAB("acquiring .rodata avma = %#lx .. %#lx\n",
-                      di->rodata_avma,
-                      di->rodata_avma + di->rodata_size - 1);
-         TRACE_SYMTAB("acquiring .rodata bias = %#lx\n",
-                      (UWord)di->rodata_bias);
       }
 
       if (0 == VG_(strcmp)(name, ".dynbss")) {

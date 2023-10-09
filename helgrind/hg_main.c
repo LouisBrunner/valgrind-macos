@@ -5747,8 +5747,10 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 
       default:
          /* Unhandled Helgrind client request! */
-         tl_assert2(0, "unhandled Helgrind client request 0x%lx",
-                       args[0]);
+         VG_(message)(Vg_UserMsg,
+                      "Warning: unknown Helgrind client request code %llx\n",
+                      (ULong)args[0]);
+         return False;
    }
 
    return True;

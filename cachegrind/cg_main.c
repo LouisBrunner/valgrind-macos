@@ -1843,6 +1843,9 @@ static Bool cg_handle_client_request(ThreadId tid, UWord *args, UWord *ret)
       return True;
 
    default:
+      VG_(message)(Vg_UserMsg,
+                   "Warning: unknown cachegrind client request code %llx\n",
+                   (ULong)args[0]);
       return False;
    }
 }

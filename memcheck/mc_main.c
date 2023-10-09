@@ -7423,11 +7423,9 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       default:
-         VG_(message)(
-            Vg_UserMsg,
-            "Warning: unknown memcheck client request code %llx\n",
-            (ULong)arg[0]
-         );
+         VG_(message)(Vg_UserMsg,
+                      "Warning: unknown memcheck client request code %llx\n",
+                      (ULong)arg[0]);
          return False;
    }
    return True;

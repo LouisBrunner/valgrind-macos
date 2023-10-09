@@ -1211,6 +1211,9 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
 
 static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 {
+   if (!VG_IS_TOOL_USERREQ('D','H',arg[0]))
+      return False;
+
    switch (arg[0]) {
    case VG_USERREQ__DHAT_AD_HOC_EVENT: {
       if (clo_mode != AdHoc) {
@@ -1289,11 +1292,11 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
    }
 
    default:
-      VG_(message)(
-         Vg_UserMsg,
-         "Warning: unknown DHAT client request code %llx\n",
-         (ULong)arg[0]
+      VG_(message)(Vg_UserMsg,
+                   "Warning: unknown DHAT client request code %llx\n",
+                   (ULong)arg[0]
       );
+
       return False;
    }
 }

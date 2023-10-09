@@ -1689,6 +1689,9 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
       return handled;
    }
    default:
+      VG_(message)(Vg_UserMsg,
+                   "Warning: unknown callgrind client request code %llx\n",
+                   (ULong)args[0]);
       return False;
    }
 

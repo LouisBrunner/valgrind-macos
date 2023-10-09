@@ -1613,6 +1613,7 @@ typedef struct _MC_LeakSuppExtra MC_LeakSuppExtra;
 
 struct _MC_LeakSuppExtra {
    UInt match_leak_kinds;
+   UInt  leak_search_gen;
 
    /* Maintains nr of blocks and bytes suppressed with this suppression
       during the leak search identified by leak_search_gen.
@@ -1620,7 +1621,6 @@ struct _MC_LeakSuppExtra {
       used the first time during a leak search. */
    SizeT blocks_suppressed;
    SizeT bytes_suppressed;
-   UInt  leak_search_gen;
 };
 
 typedef struct {

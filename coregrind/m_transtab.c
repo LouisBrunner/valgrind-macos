@@ -2046,7 +2046,7 @@ static void delete_tte ( /*OUT*/Addr* ga_deleted,
    for (i = 0; i < tteC->n_tte2ec; i++) {
       ec_num = tteC->tte2ec_ec[i];
       ec_idx = tteC->tte2ec_ix[i];
-      vg_assert(ec_num >= 0 && ec_num < ECLASS_N);
+      vg_assert(ec_num < ECLASS_N);
       vg_assert(ec_idx >= 0);
       vg_assert(ec_idx < sec->ec2tte_used[ec_num]);
       /* Assert that the two links point at each other. */

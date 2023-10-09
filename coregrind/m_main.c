@@ -679,8 +679,8 @@ else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum",
    }
 
    else if VG_BOOL_CLOM(cloPD, arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
-   else if VG_BINT_CLOM(cloPD, arg, "--progress-interval",
-                        VG_(clo_progress_interval), 0, 3600) {}
+   else if VG_BUINT_CLOM(cloPD, arg, "--progress-interval",
+                        VG_(clo_progress_interval), 3600) {}
    else if VG_BOOL_CLO(arg, "--read-inline-info", VG_(clo_read_inline_info)) {}
    else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 

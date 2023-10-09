@@ -12874,7 +12874,7 @@ static Bool decode_V8_instruction (
         gate = False;
 
      if (gate) {
-        vassert(ix >= 0 && ix < 7);
+        vassert(ix < 7);
         const HChar* inames[7]
            = { "sha1c", "sha1p", "sha1m", "sha1su0",
                "sha256h", "sha256h2", "sha256su1" };

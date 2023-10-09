@@ -255,11 +255,36 @@ Bool VG_(bool_clom)(Clo_Mode qq_mode, const HChar* qq_arg, const HChar* qq_optio
       }                                                                \
       res;}))
 
+// As above, but for unsigned int arguments with a lower bound of 0
+#define VG_BUINTN_CLOM(qq_mode, qq_base, qq_arg, qq_option, qq_var, qq_hi) \
+(VG_(check_clom)                                                     \
+ (qq_mode, qq_arg, qq_option,                                        \
+  VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) &&      \
+ ({Bool res = True;                                                  \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ];         \
+      HChar* s;                                                         \
+      Long n = VG_(strtoll##qq_base)( val, &s );                        \
+      (qq_var) = n;                                                     \
+      if ('\0' != s[0] || (qq_var) != n) {                              \
+         VG_(fmsg_bad_option)(qq_arg,                                   \
+                              "Invalid integer value '%s'\n", val);     \
+         res = False; }                                                 \
+      /* Check bounds. */                                               \
+      if ((qq_var) > (qq_hi)) {                                         \
+         VG_(fmsg_bad_option)(qq_arg,                                   \
+            "'%s' argument must be <= %lld\n",            \
+                              (qq_option), (Long)(qq_hi));              \
+         res = False;                                                  \
+      }                                                                \
+      res;}))
+
 // Bounded decimal integer arg, eg. --foo=100
 #define VG_BINT_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    VG_BINTN_CLOM(cloP, 10, (qq_arg), qq_option, (qq_var), (qq_lo), (qq_hi))
 #define VG_BINT_CLOM(qq_mode, qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    VG_BINTN_CLOM(qq_mode, 10, (qq_arg), qq_option, (qq_var), (qq_lo), (qq_hi))
+#define VG_BUINT_CLOM(qq_mode, qq_arg, qq_option, qq_var, qq_hi) \
+   VG_BUINTN_CLOM(qq_mode, 10, (qq_arg), qq_option, (qq_var), (qq_hi))
 
 // Bounded hexadecimal integer arg, eg. --foo=0x1fa8
 #define VG_BHEX_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \

@@ -10382,7 +10382,7 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
          Adjust shift to compensate. */
       UInt lanebits = 8 << size;
       shift = lanebits - shift;
-      vassert(shift >= 0 && shift < lanebits);
+      vassert(shift < lanebits);
       const HChar* nm = NULL;
       /**/ if (bitU == 0 && opcode == BITS5(0,1,1,1,0)) nm = "sqshl";
       else if (bitU == 1 && opcode == BITS5(0,1,1,1,0)) nm = "uqshl";
@@ -11816,7 +11816,7 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
       Bool isQ   = bitQ == 1;
       Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
       if (!ok || (bitQ == 0 && size == X11)) return False;
-      vassert(size >= 0 && size <= 3);
+      vassert(size <= 3);
       /* The shift encoding has opposite sign for the leftwards case.
          Adjust shift to compensate. */
       UInt lanebits = 8 << size;

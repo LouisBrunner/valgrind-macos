@@ -4480,7 +4480,7 @@ Bool VG_(get_data_description)(
    n_frames = VG_(get_StackTrace)( tid, ips, N_FRAMES,
                                    sps, fps, 0/*first_ip_delta*/ );
 
-   vg_assert(n_frames >= 0 && n_frames <= N_FRAMES);
+   vg_assert(n_frames <= N_FRAMES);
    for (j = 0; j < n_frames; j++) {
       if (consider_vars_in_frame( dname1, dname2,
                                   ep, data_addr,

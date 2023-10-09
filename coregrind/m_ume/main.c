@@ -142,7 +142,7 @@ Int VG_(do_exec_inner)(const HChar* exe, ExeInfo* info)
    if (sr_isError(res))
       return sr_Err(res);
 
-   vg_assert2(sr_Res(res) >= 0 && sr_Res(res) < EXE_HANDLER_COUNT, 
+   vg_assert2(sr_Res(res) < EXE_HANDLER_COUNT,
               "invalid VG_(pre_exec_check) result");
 
    ret = (*exe_handlers[sr_Res(res)].load_fn)(fd, exe, info);

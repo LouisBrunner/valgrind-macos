@@ -2594,8 +2594,7 @@ void read_filename_table( /*MOD*/XArray* /* of UInt* */ fndn_ix_Table,
          DiCursor cur = get_AsciiZ(&c);
          str = ML_(addStrFromCursor)( cc->di, cur );
          dir_xa_ix = get_ULEB128( &c );
-         if (dirname_xa != NULL
-             && dir_xa_ix >= 0 && dir_xa_ix < VG_(sizeXA) (dirname_xa))
+         if (dirname_xa != NULL && dir_xa_ix < VG_(sizeXA) (dirname_xa))
             dirname = *(HChar**)VG_(indexXA) ( dirname_xa, dir_xa_ix );
          else
             dirname = NULL;

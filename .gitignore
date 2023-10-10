@@ -934,6 +934,7 @@
 /memcheck/tests/nanoleak
 /memcheck/tests/nanoleak2
 /memcheck/tests/nanoleak_supp
+/memcheck/tests/new_aligned_delete_default
 /memcheck/tests/new_delete_mismatch_size
 /memcheck/tests/new_nothrow
 /memcheck/tests/new_override

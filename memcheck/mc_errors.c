@@ -227,6 +227,7 @@ struct _MC_Error {
          const HChar *function_names;
          SizeT alloc_align;
          SizeT dealloc_align;
+         Bool default_delete;
       } AlignMismatch;
    } Err;
 };
@@ -831,14 +832,24 @@ void MC_(pp_Error) ( const Error* err )
       case Err_AlignMismatch:
          if (xml) {
             emit( "  <kind>MismatchedAllocateDeallocateAlignment</kind>\n" );
-            emit( "  <what>Mismatched %s size alloc value: %lu dealloc value %lu</what>\n",
-                  extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
+            if (extra->Err.AlignMismatch.default_delete) {
+               emit( "  <what>Mismatched %s size alloc value: %lu dealloc value: default-aligned</what>\n",
+                    extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align );
+            } else {
+               emit( "  <what>Mismatched %s size alloc value: %lu dealloc value: %lu</what>\n",
+                     extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
+            }
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
                                 &extra->Err.AlignMismatch.ai, False);
          } else {
-            emit( "Mismatched %s alignment alloc value: %lu dealloc value: %lu\n",
-                  extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
+            if (extra->Err.AlignMismatch.default_delete) {
+               emit( "Mismatched %s alignment alloc value: %lu dealloc value: default-aligned\n",
+                    extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align );
+            } else {
+               emit( "Mismatched %s alignment alloc value: %lu dealloc value: %lu\n",
+                     extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
+            }
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
                                 &extra->Err.AlignMismatch.ai, False);
@@ -1098,7 +1109,7 @@ void MC_(record_size_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT size, c
                             &extra );
 }
 
-void MC_(record_align_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT align, const HChar *function_names )
+void MC_(record_align_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT align, Bool default_delete, const HChar *function_names )
 {
    MC_Error extra;
    AddrInfo* ai = &extra.Err.AlignMismatch.ai;
@@ -1113,6 +1124,7 @@ void MC_(record_align_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT align,
    ai->Addr.Block.freed_at = MC_(freed_at) (mc);
    extra.Err.AlignMismatch.alloc_align = mc->alignB;
    extra.Err.AlignMismatch.dealloc_align = align;
+   extra.Err.AlignMismatch.default_delete = default_delete;
    extra.Err.AlignMismatch.function_names = function_names;
    VG_(maybe_record_error)( tid, Err_AlignMismatch, mc->data, /*s*/NULL,
                             &extra );
@@ -1256,7 +1268,10 @@ Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
                extra2->Err.AlignMismatch.alloc_align
                &&
                extra1->Err.AlignMismatch.dealloc_align ==
-               extra2->Err.AlignMismatch.dealloc_align;
+               extra2->Err.AlignMismatch.dealloc_align
+               &&
+               extra1->Err.AlignMismatch.default_delete ==
+               extra2->Err.AlignMismatch.default_delete;
 
       case Err_Leak:
          VG_(tool_panic)("Shouldn't get Err_Leak in mc_eq_Error,\n"

@@ -187,10 +187,6 @@ MC_Chunk* MC_(get_freed_block_bracketting) (Addr a)
    return NULL;
 }
 
-// @todo PJF !!!!!!!!!!
-// below alignB is the cleanup up value
-// would prefer the original value !!!!!!!!!
-
 /* Allocate a shadow chunk, put it on the appropriate list.
    If needed, release oldest blocks from freed list. */
 static

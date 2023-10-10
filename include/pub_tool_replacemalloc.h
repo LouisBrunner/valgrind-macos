@@ -94,6 +94,8 @@ typedef enum {
    AllocKindMemalign,
    AllocKindPosixMemalign,
    AllocKindAlignedAlloc,
+   AllocKindDeleteDefault,
+   AllocKindVecDeleteDefault,
    AllocKindDeleteSized,
    AllocKindVecDeleteSized,
    AllocKindNewAligned,

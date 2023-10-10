@@ -107,7 +107,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>MismatchedAllocateDeallocateAlignment</kind>
-  <what>Mismatched new/delete size alloc value: 64 dealloc value 63</what>
+  <what>Mismatched new/delete size alloc value: 64 dealloc value: 63</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -176,7 +176,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>MismatchedAllocateDeallocateAlignment</kind>
-  <what>Mismatched new[]/delete[] size alloc value: 64 dealloc value 63</what>
+  <what>Mismatched new[]/delete[] size alloc value: 64 dealloc value: 63</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -320,7 +320,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>MismatchedAllocateDeallocateAlignment</kind>
-  <what>Mismatched new/delete size alloc value: 64 dealloc value 63</what>
+  <what>Mismatched new/delete size alloc value: 64 dealloc value: 63</what>
   <stack>
     <frame>
       <ip>0x........</ip>
@@ -389,7 +389,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>MismatchedAllocateDeallocateAlignment</kind>
-  <what>Mismatched new[]/delete[] size alloc value: 64 dealloc value 63</what>
+  <what>Mismatched new[]/delete[] size alloc value: 64 dealloc value: 63</what>
   <stack>
     <frame>
       <ip>0x........</ip>

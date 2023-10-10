@@ -1,0 +1,5 @@
+prog: new_aligned_delete_default
+prereq: test -e ./new_aligned_delete_default
+vgopts: --show-mismatched-frees=yes -q
+#stderr_filter: filter_size_t
+

@@ -1025,31 +1025,47 @@ extern int * __error(void) __attribute__((weak));
 
 /*---------------------- delete ----------------------*/
 
+#define DELETE(soname, fnname, vg_replacement, tag) \
+ \
+    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size); \
+    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size)  \
+ { \
+ struct AlignedAllocInfo aligned_alloc_info = { .mem=p, .alloc_kind=AllocKind##tag }; \
+      \
+      DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
+      VERIFY_ALIGNMENT(&aligned_alloc_info); \
+      MALLOC_TRACE(#fnname "(%p)\n", p ); \
+      if (p == NULL)  \
+      return; \
+      (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
+ }
+
 #if defined(VGO_linux)
  // operator delete(void*), not mangled (for gcc 2.96)
- FREE(VG_Z_LIBSTDCXX_SONAME,   __builtin_delete,     __builtin_delete );
- FREE(VG_Z_LIBC_SONAME,        __builtin_delete,     __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,   __builtin_delete,     __builtin_delete, DeleteDefault  );
+ DELETE(VG_Z_LIBC_SONAME,        __builtin_delete,     __builtin_delete, DeleteDefault  );
  // operator delete(void*)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete, DeleteDefault  );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete, DeleteDefault  );
+ DELETE(VG_Z_LIBC_SONAME,       _ZdlPv,               __builtin_delete, DeleteDefault  );
+ DELETE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete, DeleteDefault  );
 
 #elif defined(VGO_freebsd)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete, DeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete, DeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete, DeleteDefault );
 
 #elif defined(VGO_darwin)
  // operator delete(void*)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete, DeleteDefault  );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdlPv,               __builtin_delete, DeleteDefault  );
+ DELETE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete, DeleteDefault  );
 
 #elif defined(VGO_solaris)
  // operator delete(void*)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete );
- FREE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdlPv,               __builtin_delete, DeleteDefault  );
+ DELETE(SO_SYN_MALLOC,          _ZdlPv,               __builtin_delete, DeleteDefault  );
 
 #endif
 
@@ -1243,27 +1259,27 @@ extern int * __error(void) __attribute__((weak));
 
 #if defined(VGO_linux)
  // operator delete(void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(VG_Z_LIBC_SONAME,      _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(VG_Z_LIBC_SONAME,      _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
 
 #elif defined(VGO_freebsd)
  // operator delete(void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
 
 #elif defined(VGO_darwin)
  // operator delete(void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,    _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
 
 #elif defined(VGO_solaris)
  // operator delete(void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete );
- FREE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME, _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
+ DELETE(SO_SYN_MALLOC,         _ZdlPvRKSt9nothrow_t,  __builtin_delete, DeleteDefault );
 
 #endif
 
@@ -1302,31 +1318,33 @@ extern int * __error(void) __attribute__((weak));
 
 /*---------------------- delete [] ----------------------*/
 
+
+
 #if defined(VGO_linux)
  // operator delete[](void*), not mangled (for gcc 2.96)
- FREE(VG_Z_LIBSTDCXX_SONAME,   __builtin_vec_delete, __builtin_vec_delete );
- FREE(VG_Z_LIBC_SONAME,        __builtin_vec_delete, __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,   __builtin_vec_delete, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBC_SONAME,        __builtin_vec_delete, __builtin_vec_delete, VecDeleteDefault );
  // operator delete[](void*)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete );
- FREE(VG_Z_LIBC_SONAME,       _ZdaPv,               __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBC_SONAME,       _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
 
 #elif defined(VGO_freebsd)
  // operator delete[](void*)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
 
 #elif defined(VGO_darwin)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
 
 #elif defined(VGO_solaris)
  // operator delete[](void*)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPv,               __builtin_vec_delete, VecDeleteDefault );
 
 #endif
 
@@ -1466,27 +1484,27 @@ extern int * __error(void) __attribute__((weak));
 
 #if defined(VGO_linux)
  // operator delete[](void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
 
 #elif defined(VGO_freebsd)
  // operator delete[](void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(VG_Z_LIBCXX_SONAME,     _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
 
 #elif defined(VGO_darwin)
  // operator delete[](void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(VG_Z_LIBCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBCXX_SONAME,     _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(VG_Z_LIBC_SONAME,       _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
 
 #elif defined(VGO_solaris)
  // operator delete[](void*, std::nothrow_t const&)
- FREE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
- FREE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete );
+ DELETE(VG_Z_LIBSTDCXX_SONAME,  _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
+ DELETE(SO_SYN_MALLOC,          _ZdaPvRKSt9nothrow_t, __builtin_vec_delete, VecDeleteDefault );
 
 #endif
 

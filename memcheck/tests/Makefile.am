@@ -171,6 +171,8 @@ EXTRA_DIST = \
 		sized_aligned_new_delete_misaligned3_supp.supp \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp_32 \
+	new_aligned_delete_default.stderr.exp \
+		new_aligned_delete_default.vgtest \
 	new_delete_mismatch_size.stderr.exp \
 		new_delete_mismatch_size.vgtest \
 	new_delete_mismatch_size_supp.stderr.exp \
@@ -557,6 +559,7 @@ endif
 
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
+	new_aligned_delete_default \
 	sized_aligned_new_delete_misaligned1 \
 	sized_aligned_new_delete_misaligned2 \
 	sized_aligned_new_delete_misaligned3
@@ -621,6 +624,8 @@ bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
+new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
 sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_misaligned1_SOURCES = sized_aligned_new_delete_misaligned1.cpp

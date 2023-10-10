@@ -580,7 +580,7 @@ Bool MC_(record_leak_error)     ( ThreadId tid,
 Bool MC_(record_fishy_value_error)  ( ThreadId tid, const HChar* function,
                                       const HChar *argument_name, SizeT value );
 void MC_(record_size_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT size, const HChar *function_names );
-void MC_(record_align_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT align, const HChar *function_names );
+void MC_(record_align_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT align, Bool default_delete, const HChar *function_names );
 
 
 /* Leak kinds tokens to call VG_(parse_enum_set). */

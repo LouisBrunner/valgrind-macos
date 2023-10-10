@@ -1792,7 +1792,7 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
          return (ekind == Err_SizeMismatch);
 
       case AlignMismatch:
-         return (ekind = Err_AlignMismatch);
+         return (ekind == Err_AlignMismatch);
 
       default:
          VG_(printf)("Error:\n"

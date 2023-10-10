@@ -54,5 +54,5 @@ int main() {
     // initially this test had two throwing
     // versions called from fork()s
     // but that doesn't mix well with xml
-    // so they have split out int vrsions 2 and 3
+    // so they have split out int versions 2 and 3
 }

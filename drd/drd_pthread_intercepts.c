@@ -792,7 +792,7 @@ int thr_join_intercept(thread_t joinee, thread_t *departed, void **thread_return
    CALL_FN_W_WWW(ret, fn, joinee, departed, thread_return);
    if (ret == 0)
    {
-      VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_THREAD_JOIN,
+      VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_THREAD_JOIN,
                                       joinee, 0, 0, 0, 0);
    }
    return ret;
@@ -895,11 +895,11 @@ int mutex_init_intercept(mutex_t *mutex, int type, void *arg)
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
 
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_MUTEX_INIT,
                                    mutex, DRD_(thread_to_drd_mutex_type)(type),
                                    0, 0, 0);
    CALL_FN_W_WWW(ret, fn, mutex, type, arg);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_MUTEX_INIT,
                                    mutex, 0, 0, 0, 0);
    return ret;
 }
@@ -964,12 +964,12 @@ void lmutex_lock_intercept(mutex_t *mutex)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_MUTEX_LOCK,
                                    mutex,
                                    DRD_(mutex_type)((pthread_mutex_t *) mutex),
                                    False /* try_lock */, 0, 0);
    CALL_FN_v_W(fn, mutex);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_MUTEX_LOCK,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_MUTEX_LOCK,
                                    mutex, True /* took_lock */, 0, 0, 0);
 }
 
@@ -1116,10 +1116,10 @@ int cond_init_intercept(cond_t *cond, int type, void *arg)
    int ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_COND_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_COND_INIT,
                                    cond, 0, 0, 0, 0);
    CALL_FN_W_WWW(ret, fn, cond, type, arg);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_COND_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_COND_INIT,
                                    cond, 0, 0, 0, 0);
    return ret;
 }
@@ -1461,11 +1461,11 @@ int sema_init_intercept(sema_t *sem, unsigned int value, int type, void *arg)
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_SEM_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_SEM_INIT,
                                    sem, type == USYNC_PROCESS ? 1 : 0,
                                    value, 0, 0);
    CALL_FN_W_WWWW(ret, fn, sem, value, type, arg);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_SEM_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_SEM_INIT,
                                    sem, 0, 0, 0, 0);
    return ret;
 }
@@ -1677,10 +1677,10 @@ int rwlock_init_intercept(rwlock_t *rwlock, int type, void *arg)
    int   ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_RWLOCK_INIT,
                                    rwlock, 0, 0, 0, 0);
    CALL_FN_W_WWW(ret, fn, rwlock, type, arg);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_INIT,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_RWLOCK_INIT,
                                    rwlock, 0, 0, 0, 0);
    return ret;
 }
@@ -1747,10 +1747,10 @@ void lrw_rdlock_intercept(rwlock_t *rwlock)
 {
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__PRE_RWLOCK_RDLOCK,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_RWLOCK_RDLOCK,
                                    rwlock, 0, 0, 0, 0);
    CALL_FN_v_W(fn, rwlock);
-   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__POST_RWLOCK_RDLOCK,
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_RWLOCK_RDLOCK,
                                    rwlock, True /* took_lock */, 0, 0, 0);
 }
 

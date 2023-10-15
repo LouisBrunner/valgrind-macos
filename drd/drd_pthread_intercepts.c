@@ -604,7 +604,8 @@ int pthread_create_intercept(pthread_t* thread, const pthread_attr_t* attr,
     * this means that the new thread will be started as a joinable thread.
     */
    thread_args.detachstate = PTHREAD_CREATE_JOINABLE;
-   if (attr)
+   /* The C11 thrd_create() implementation passes -1 as 'attr' argument. */
+   if (attr && (uintptr_t)attr + 1 != 0)
    {
       if (pthread_attr_getdetachstate(attr, &thread_args.detachstate) != 0)
          assert(0);

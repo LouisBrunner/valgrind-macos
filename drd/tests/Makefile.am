@@ -660,7 +660,7 @@ endif
 timed_mutex_SOURCES         = timed_mutex.cpp
 timed_mutex_CXXFLAGS        = $(AM_CXXFLAGS) -std=c++0x
 
-thrd_create_SOURCES	    = thrd_create.cpp
+thrd_create_SOURCES	    = thrd_create.c
 if VGCONF_OS_IS_FREEBSD
 thrd_create_LDFLAGS          = -lstdthreads
 endif

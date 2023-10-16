@@ -121,8 +121,8 @@ EXTRA_DIST = \
 	timerfd.vgtest \
 	timerfd.stderr.exp \
 	timerfd.stdout.exp \
-	timingsafe.vgtest \
-	timingsafe.stderr.exp \
+	timing_safe.vgtest \
+	timing_safe.stderr.exp \
 	utimens.vgtest \
 	utimens.stderr.exp \
 	utimes.vgtest \
@@ -148,7 +148,7 @@ check_PROGRAMS = \
 	stat \
 	statfs \
 	static_allocs \
-	timingsafe \
+	timing_safe \
 	utimens \
 	utimes
 

@@ -1,0 +1,3 @@
+prereq: test -e ./wcsncpy
+prog: wcsncpy
+vgopts: -q

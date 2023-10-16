@@ -1016,6 +1016,7 @@
 /memcheck/tests/wcs
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
+/memcheck/tests/wcsncpy
 /memcheck/tests/wmemcmp
 /memcheck/tests/wrap1
 /memcheck/tests/wrap2
@@ -1393,7 +1394,7 @@
 /memcheck/tests/freebsd/statfs
 /memcheck/tests/freebsd/static_allocs
 /memcheck/tests/freebsd/timerfd
-/memcheck/tests/freebsd/timingsafe
+/memcheck/tests/freebsd/timing_safe
 /memcheck/tests/freebsd/utimens
 /memcheck/tests/freebsd/utimes
 

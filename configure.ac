@@ -4913,7 +4913,8 @@ AC_CHECK_FUNCS([     \
         strchrnul    \
         memrchr      \
         strndup      \
-        close_range
+        close_range  \
+        wcsncpy
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -4943,6 +4944,8 @@ AM_CONDITIONAL([HAVE_GETADDRINFO],
                [test x$ac_cv_func_getaddrinfo = xyes])
 AM_CONDITIONAL([HAVE_CLOSE_RANGE],
                [test x$ac_cv_func_close_range = xyes])
+AM_CONDITIONAL([HAVE_WCSNCPY],
+               [test x$ac_cv_func_wcsncpy = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

@@ -2080,26 +2080,6 @@ AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_INCLUDE_THREAD_HEADER, test x$ac_cxx_can_include_thread_header = xyes)
 
-AC_MSG_CHECKING([that the C++ compiler supports thrd_create()])
-AC_LANG(C++)
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS=-std=c++11
-
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
-#include <threads.h> 
-], [[thrd_t thr; return thrd_create(&thr, [](void *arg){return 0;}, NULL);]])],
-[
-ac_cxx_have_thrd_create=yes
-AC_MSG_RESULT([yes])
-], [
-ac_cxx_have_thrd_create=no
-AC_MSG_RESULT([no])
-])
-CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
-
-AM_CONDITIONAL(CXX_HAVE_THRD_CREATE, test x$ac_cxx_have_thrd_create = xyes)
-
 # Check whether compiler can process #include <condition_variable> without errors
 
 AC_MSG_CHECKING([that C++ compiler can include <condition_variable> header file])
@@ -5464,6 +5444,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ], [
     AC_MSG_RESULT([no])
 ])
+
+# Check for C11 thrd_create()
+AC_MSG_CHECKING([for thrd_create()])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <threads.h>
+int thrd_entry(void *arg) { return 0; }
+], [[thrd_t thr; return thrd_create(&thr, thrd_entry, NULL);]])],
+[
+ac_cxx_have_thrd_create=yes
+AC_MSG_RESULT([yes])
+], [
+ac_cxx_have_thrd_create=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_THRD_CREATE, test x$ac_cxx_have_thrd_create = xyes)
 
 
 

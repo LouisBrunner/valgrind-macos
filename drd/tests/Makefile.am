@@ -515,7 +515,7 @@ if HAVE_SWAPCONTEXT
 check_PROGRAMS += swapcontext
 endif
 
-if CXX_HAVE_THRD_CREATE
+if HAVE_THRD_CREATE
 check_PROGRAMS += thrd_create
 endif
 

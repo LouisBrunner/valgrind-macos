@@ -1029,6 +1029,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
    LINXY(__NR_close_range,       sys_close_range),       // 436
 
+   LINXY(__NR_pidfd_getfd,       sys_pidfd_getfd),       // 438
    LINX_(__NR_faccessat2,        sys_faccessat2),       // 439
 
    LINXY (__NR_epoll_pwait2,     sys_epoll_pwait2),      // 441

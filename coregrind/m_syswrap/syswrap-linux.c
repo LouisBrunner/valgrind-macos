@@ -13646,6 +13646,24 @@ POST(sys_pidfd_open)
    }
 }
 
+PRE(sys_pidfd_getfd)
+{
+   PRINT("sys_pidfd_getfd ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
+   PRE_REG_READ3(long, "pidfd_getfd", int, pidfd, int, targetfd, unsigned int, flags);
+}
+
+POST(sys_pidfd_getfd)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "pidfd_getfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
 #undef PRE
 #undef POST
 

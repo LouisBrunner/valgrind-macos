@@ -31,7 +31,7 @@ do_cu42(uint16_t *dst, uint64_t dst_len, uint32_t *src, uint64_t src_len)
    register uint64_t  dest_len   asm("3") = dst_len;
 
    asm volatile(
-                CU42(2,4)
+                "cu42 2,4"
                 : "+d"(dest), "+d"(source), "+d"(source_len), "+d"(dest_len)
                 :
                 : "memory", "cc");

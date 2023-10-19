@@ -1,65 +1,65 @@
 Invalid write of size 2
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:62)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:62)
 
 Invalid write of size 2
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:68)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:68)
 
 Invalid write of size 1
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:68)
  Address 0x........ is 1 bytes after a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:68)
 
 Invalid write of size 1
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:71)
  Address 0x........ is 0 bytes after a block of size 2 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:71)
 
 Invalid write of size 4
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:77)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:77)
 
 Invalid write of size 4
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:80)
  Address 0x........ is 0 bytes inside a block of size 2 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:80)
 
 Invalid write of size 4
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:83)
  Address 0x........ is 0 bytes inside a block of size 3 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (cu21.c:83)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:94)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:99)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:104)
 
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: do_cu21 (cu21.c:45)
+   at 0x........: do_cu21 (cu21.c:47)
    by 0x........: main (cu21.c:116)
 

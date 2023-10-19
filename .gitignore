@@ -43,6 +43,7 @@
 # /auxprogs/
 /auxprogs/.deps
 /auxprogs/getoff-amd64-darwin
+/auxprogs/getoff-arm-linux
 /auxprogs/getoff-arm64-linux
 /auxprogs/getoff-x86-darwin
 /auxprogs/getoff-amd64-linux
@@ -533,7 +534,15 @@
 /exp-bbv/tests/amd64-linux/rep_prefix
 
 # /exp-bbv/tests/arm-linux/
+/exp-bbv/tests/arm-linux/*.post.diff
+/exp-bbv/tests/arm-linux/*.post.out
+/exp-bbv/tests/arm-linux/*.stderr.diff
+/exp-bbv/tests/arm-linux/*.stderr.out
+/exp-bbv/tests/arm-linux/*.stdout.diff
+/exp-bbv/tests/arm-linux/*.stdout.out
 /exp-bbv/tests/arm-linux/.deps
+/exp-bbv/tests/arm-linux/ll
+/exp-bbv/tests/arm-linux/million
 /exp-bbv/tests/arm-linux/Makefile
 /exp-bbv/tests/arm-linux/Makefile.in
 
@@ -1712,9 +1721,31 @@
 /none/tests/amd64-solaris/syscall_return_args
 
 # /none/tests/arm/
+/none/tests/arm/*.stderr.diff
+/none/tests/arm/*.stderr.out
+/none/tests/arm/*.stdout.diff
+/none/tests/arm/*.stdout.out
 /none/tests/arm/.deps
 /none/tests/arm/Makefile
 /none/tests/arm/Makefile.in
+/none/tests/arm/allexec
+/none/tests/arm/intdiv
+/none/tests/arm/ldrt
+/none/tests/arm/ldrt_arm
+/none/tests/arm/neon128
+/none/tests/arm/neon64
+/none/tests/arm/v6intARM
+/none/tests/arm/v6intThumb
+/none/tests/arm/v6media
+/none/tests/arm/v8crypto_a
+/none/tests/arm/v8crypto_t
+/none/tests/arm/v8fpsimd_a
+/none/tests/arm/v8fpsimd_t
+/none/tests/arm/v8memory_a
+/none/tests/arm/v8memory_t
+/none/tests/arm/vcvt_fixed_float_VFP
+/none/tests/arm/vfp
+/none/tests/arm/vfpv4_fma
 
 # /none/tests/arm64/
 /none/tests/arm64/.deps

@@ -1199,6 +1199,7 @@
 /memcheck/tests/s390x/Makefile
 /memcheck/tests/s390x/Makefile.in
 /memcheck/tests/s390x/cdsg
+/memcheck/tests/s390x/cli
 /memcheck/tests/s390x/cu21
 /memcheck/tests/s390x/cu42
 /memcheck/tests/s390x/ltgjhe

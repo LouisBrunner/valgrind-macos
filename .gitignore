@@ -481,6 +481,7 @@
 /drd/tests/tc22_exit_w_lock
 /drd/tests/tc23_bogus_condwait
 /drd/tests/tc24_nonzero_sem
+/drd/tests/thrd_create
 /drd/tests/threaded-fork
 /drd/tests/thread_name
 /drd/tests/thread_name_freebsd

@@ -3089,7 +3089,7 @@ PRE(stat64)
    //
    // This is our entry point for checking a particular dylib: if it looks like one,
    // we want to see the error result, if any, and subsequently check the cache
-   if (VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
+   if (ARG1 != NULL && VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
      *flags |= SfPostOnFail;
    }
 #endif

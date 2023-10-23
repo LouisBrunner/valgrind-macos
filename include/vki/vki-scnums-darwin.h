@@ -925,6 +925,8 @@
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(551)
 #elif DARWIN_VERS == DARWIN_13_00
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
+#elif DARWIN_VERS == DARWIN_14_00
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
 #else
 #error unknown darwin version
 #endif

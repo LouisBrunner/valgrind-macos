@@ -3756,7 +3756,7 @@ static Addr Addr__min ( Addr a, Addr b ) { return a < b ? a : b; }
 
 static void add_mapping_callback(Addr addr, SizeT len, UInt prot, 
                                  ULong dev, ULong ino, Off64T offset, 
-                                 const HChar *filename)
+                                 const HChar *filename, Bool ignore_offset)
 {
    // derived from sync_check_mapping_callback()
 

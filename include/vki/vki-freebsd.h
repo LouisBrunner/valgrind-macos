@@ -1321,8 +1321,6 @@ struct vki_semid_ds {
    unsigned short    sem_nsems;     /* no. of semaphores in array */
    vki_time_t     sem_otime;     /* last semop time */
    vki_time_t     sem_ctime;     /* last change time */
-   long        sem_pad2;
-   long        sem_pad3[4];
 };
 
 struct vki_sembuf {
@@ -1610,6 +1608,7 @@ struct vki_dirent {
 
 #define VKI_RFSPAWN         (1U<<31U)
 
+#define VKI_CLOSE_RANGE_CLOEXEC     (1<<2)
 
 //----------------------------------------------------------------------
 // From sys/msg.h
@@ -2047,34 +2046,37 @@ struct vki_umtx_robust_lists_params {
    vki_uintptr_t robust_inact_offset;
 };
 
-#define  VKI_UMTX_OP_LOCK     0
-#define  VKI_UMTX_OP_UNLOCK      1
-#define  VKI_UMTX_OP_WAIT     2
-#define  VKI_UMTX_OP_WAKE     3
-#define  VKI_UMTX_OP_MUTEX_TRYLOCK  4
-#define  VKI_UMTX_OP_MUTEX_LOCK     5
-#define  VKI_UMTX_OP_MUTEX_UNLOCK   6
-#define  VKI_UMTX_OP_SET_CEILING    7
-#define  VKI_UMTX_OP_CV_WAIT     8
-#define  VKI_UMTX_OP_CV_SIGNAL      9
-#define  VKI_UMTX_OP_CV_BROADCAST   10
-#define  VKI_UMTX_OP_WAIT_UINT      11
-#define  VKI_UMTX_OP_RW_RDLOCK      12
-#define  VKI_UMTX_OP_RW_WRLOCK      13
-#define  VKI_UMTX_OP_RW_UNLOCK      14
-#define  VKI_UMTX_OP_WAIT_UINT_PRIVATE 15
-#define  VKI_UMTX_OP_WAKE_PRIVATE   16
-#define  VKI_UMTX_OP_MUTEX_WAIT     17
-#define  VKI_UMTX_OP_MUTEX_WAKE     18 /* deprecated */
-#define  VKI_UMTX_OP_SEM_WAIT    19
-#define  VKI_UMTX_OP_SEM_WAKE    20
-#define  VKI_UMTX_OP_NWAKE_PRIVATE  21
-#define  VKI_UMTX_OP_MUTEX_WAKE2    22
+#define VKI_UMTX_OP_LOCK     0
+#define VKI_UMTX_OP_UNLOCK      1
+#define VKI_UMTX_OP_WAIT     2
+#define VKI_UMTX_OP_WAKE     3
+#define VKI_UMTX_OP_MUTEX_TRYLOCK  4
+#define VKI_UMTX_OP_MUTEX_LOCK     5
+#define VKI_UMTX_OP_MUTEX_UNLOCK   6
+#define VKI_UMTX_OP_SET_CEILING    7
+#define VKI_UMTX_OP_CV_WAIT     8
+#define VKI_UMTX_OP_CV_SIGNAL      9
+#define VKI_UMTX_OP_CV_BROADCAST   10
+#define VKI_UMTX_OP_WAIT_UINT      11
+#define VKI_UMTX_OP_RW_RDLOCK      12
+#define VKI_UMTX_OP_RW_WRLOCK      13
+#define VKI_UMTX_OP_RW_UNLOCK      14
+#define VKI_UMTX_OP_WAIT_UINT_PRIVATE 15
+#define VKI_UMTX_OP_WAKE_PRIVATE   16
+#define VKI_UMTX_OP_MUTEX_WAIT     17
+#define VKI_UMTX_OP_MUTEX_WAKE     18 /* deprecated */
+#define VKI_UMTX_OP_SEM_WAIT    19
+#define VKI_UMTX_OP_SEM_WAKE    20
+#define VKI_UMTX_OP_NWAKE_PRIVATE  21
+#define VKI_UMTX_OP_MUTEX_WAKE2    22
 #define VKI_UMTX_OP_SEM2_WAIT       23
 #define VKI_UMTX_OP_SEM2_WAKE       24
 #define VKI_UMTX_OP_SHM             25
 #define VKI_UMTX_OP_ROBUST_LISTS    26
-#define  VKI_UMTX_OP_MAX             27
+#if (FREEBSD_VERS >= FREEBSD_14)
+#define VKI_UMTX_OP_GET_MIN_TIMEOUT 27
+#define VKI_UMTX_OP_SET_MIN_TIMEOUT 28
+#endif
 
 
 //----------------------------------------------------------------------
@@ -2167,7 +2169,7 @@ struct vki_kinfo_vmentry {
    ULong kve_end;
    ULong   kve_offset;
    ULong   kve_fileid;
-   UInt    kve_fsid_freebsd11;
+   UInt    kve_vn_fsid_freebsd11;
    int   kve_flags;
    int   kve_resident;
    int   kve_private_resident;

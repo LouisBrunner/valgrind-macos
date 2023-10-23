@@ -72,7 +72,7 @@ void DRD_(vc_init)(VectorClock* const vc,
                    const VCElem* const vcelem,
                    const unsigned size);
 void DRD_(vc_cleanup)(VectorClock* const vc);
-void DRD_(vc_copy)(VectorClock* const new, const VectorClock* const rhs);
+void DRD_(vc_copy)(VectorClock* const obj, const VectorClock* const rhs);
 void DRD_(vc_assign)(VectorClock* const lhs, const VectorClock* const rhs);
 void DRD_(vc_increment)(VectorClock* const vc, DrdThreadId const tid);
 static __inline__

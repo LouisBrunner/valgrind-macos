@@ -282,8 +282,8 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
 
 static struct valgrind_target_ops low_target = {
    -1, // Override at init time.
-   regs,
    17, //sp = r15, which is register offset 17 in regs
+   regs,
    transfer_register,
    get_pc,
    set_pc,

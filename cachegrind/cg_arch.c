@@ -3,8 +3,8 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Cachegrind, a Valgrind tool for cache
-   profiling programs.
+   This file is part of Cachegrind, a high-precision tracing profiler
+   built with Valgrind.
 
    Copyright (C) 2011-2017 Nicholas Nethercote
       njn@valgrind.org
@@ -41,6 +41,16 @@ static void configure_caches(cache_t* I1c, cache_t* D1c, cache_t* LLc,
 // string otherwise.
 static const HChar* check_cache(cache_t* cache)
 {
+   if (cache->line_size == 0)
+   {
+      return "Cache line size is zero.\n";
+   }
+
+   if (cache->assoc == 0)
+   {
+      return "Cache associativity is zero.\n";
+   }
+
    // Simulator requires set count to be a power of two.
    if ((cache->size % (cache->line_size * cache->assoc) != 0) ||
        (-1 == VG_(log2)(cache->size/cache->line_size/cache->assoc)))
@@ -240,7 +250,6 @@ maybe_tweak_LLc(cache_t *LLc)
         power of two.  Then, increase the associativity by that
         factor.  Finally, re-calculate the total size so as to make
         sure it divides exactly between the sets. */
-     tl_assert(old_nSets >= 0);
      UInt new_nSets = floor_power_of_2 ( old_nSets );
      tl_assert(new_nSets > 0 && new_nSets < old_nSets);
      Double factor = (Double)old_nSets / (Double)new_nSets;
@@ -297,7 +306,7 @@ void VG_(post_clo_init_configure_caches)(cache_t* I1c,
    check_cache_or_override ("LL", LLc, DEFINED(clo_LLc));
 
    // Then replace with any defined on the command line.  (Already checked in
-   // VG(parse_clo_cache_opt)().)
+   // VG(str_clo_cache_opt)().)
    if (DEFINED(clo_I1c)) { *I1c = *clo_I1c; }
    if (DEFINED(clo_D1c)) { *D1c = *clo_D1c; }
    if (DEFINED(clo_LLc)) { *LLc = *clo_LLc; }
@@ -311,7 +320,7 @@ void VG_(post_clo_init_configure_caches)(cache_t* I1c,
 #undef DEFINED
 }
 
-void VG_(print_cache_clo_opts)()
+void VG_(print_cache_clo_opts)(void)
 {
    VG_(printf)(
 "    --I1=<size>,<assoc>,<line_size>  set I1 cache manually\n"

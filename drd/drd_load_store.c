@@ -66,7 +66,7 @@ static Bool s_first_race_only      = False;
 
 /* Function definitions. */
 
-Bool DRD_(get_check_stack_accesses)()
+Bool DRD_(get_check_stack_accesses)(void)
 {
    return s_check_stack_accesses;
 }
@@ -77,7 +77,7 @@ void DRD_(set_check_stack_accesses)(const Bool c)
    s_check_stack_accesses = c;
 }
 
-Bool DRD_(get_first_race_only)()
+Bool DRD_(get_first_race_only)(void)
 {
    return s_first_race_only;
 }

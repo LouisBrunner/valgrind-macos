@@ -20,14 +20,9 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
 	     spechelper-icm-1  spechelper-icm-2 spechelper-tmll \
 	     spechelper-tm laa vector lsc2 ppno vector_string vector_integer \
 	     vector_float add-z14 sub-z14 mul-z14 bic \
-	     misc3 vec2 vec2_float
-
-if BUILD_DFP_TESTS
-  INSN_TESTS += dfp-1 dfp-2 dfp-3 dfp-4 dfptest dfpext dfpconv srnmt pfpo
-endif
-if HAS_MLONG_DOUBLE_128
-  INSN_TESTS += fpext fixbr
-endif
+	     misc3 vec2 vec2_float \
+	     dfp-1 dfp-2 dfp-3 dfp-4 dfpconv dfpext dfptest pfpo srnmt \
+	     fpext fixbr
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
@@ -42,7 +37,7 @@ EXTRA_DIST = \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 \
-	op00.stderr.exp1 op00.stderr.exp2 op00.vgtest \
+	op00.stderr.exp op00.vgtest \
 	fixbr.vgtest fixbr.stderr.exp fixbr.stdout.exp \
 	fpext.vgtest fpext.stderr.exp fpext.stdout.exp \
 	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
@@ -56,6 +51,7 @@ EXTRA_DIST = \
 	dfpext.stderr.exp dfpext.stdout.exp dfpext.vgtest \
 	dfpconv.stderr.exp dfpconv.stdout.exp dfpconv.vgtest \
 	srnmt.stderr.exp srnmt.stdout.exp srnmt.vgtest \
+	stfle.stdout.exp-z16 \
 	pfpo.stderr.exp pfpo.stdout.exp pfpo.vgtest
 
 AM_CFLAGS    += @FLAG_M64@
@@ -67,8 +63,6 @@ cu12_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu14_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu21_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
 cu24_1_CFLAGS    = $(AM_CFLAGS) -DM3=1
-fixbr_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
-fpext_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
 ex_clone_LDADD   = -lpthread
 vector_CFLAGS    = $(AM_CFLAGS) -march=z13
 lsc2_CFLAGS       = -march=z13 -DS390_TESTS_NOCOLOR

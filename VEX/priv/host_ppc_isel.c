@@ -300,7 +300,6 @@ typedef
  
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmapLo[tmp];
 }
@@ -308,7 +307,6 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO,
                                ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapMedLo[tmp]));
    *vrLO = env->vregmapLo[tmp];
@@ -320,7 +318,6 @@ static void lookupIRTempQuad ( HReg* vrHi, HReg* vrMedHi, HReg* vrMedLo,
                                HReg* vrLo, ISelEnv* env, IRTemp tmp )
 {
    vassert(!env->mode64);
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapMedLo[tmp]));
    *vrHi    = env->vregmapHi[tmp];

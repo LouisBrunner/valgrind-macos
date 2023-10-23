@@ -1581,7 +1581,7 @@ void init_cmdbuf(void)
  * This function has to be called every time a profile dump is generated
  * to be able to react on PID changes.
  */
-void CLG_(init_dumps)()
+void CLG_(init_dumps)(void)
 {
    SysRes res;
 

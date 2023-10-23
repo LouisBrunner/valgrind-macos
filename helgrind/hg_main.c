@@ -685,7 +685,7 @@ static ThreadId map_threads_maybe_reverse_lookup_SLOW ( Thread* thr )
    ThreadId tid;
    tl_assert(HG_(is_sane_Thread)(thr));
    /* Check nobody used the invalid-threadid slot */
-   tl_assert(VG_INVALID_THREADID >= 0 && VG_INVALID_THREADID < VG_N_THREADS);
+   tl_assert(VG_INVALID_THREADID < VG_N_THREADS);
    tl_assert(map_threads[VG_INVALID_THREADID] == NULL);
    tid = thr->coretid;
    tl_assert(HG_(is_sane_ThreadId)(tid));
@@ -3328,7 +3328,7 @@ static void evh__HG_PTHREAD_BARRIER_RESIZE_PRE ( ThreadId tid,
          the barrier, so need to mess with dep edges in the same way
          as if the barrier had filled up normally. */
       present = VG_(sizeXA)(bar->waiting);
-      tl_assert(present >= 0 && present <= bar->size);
+      tl_assert(present <= bar->size);
       if (newcount <= present) {
          bar->size = present; /* keep the cross_sync call happy */
          do_barrier_cross_sync_and_empty(bar);
@@ -3625,9 +3625,9 @@ static void univ_laog_do_GC ( void ) {
    links = NULL;
    while (VG_(nextIterFM)( laog, NULL, (UWord*)&links )) {
       tl_assert(links);
-      tl_assert(links->inns >= 0 && links->inns < univ_laog_cardinality);
+      tl_assert(links->inns < univ_laog_cardinality);
       univ_laog_seen[links->inns] = True;
-      tl_assert(links->outs >= 0 && links->outs < univ_laog_cardinality);
+      tl_assert(links->outs < univ_laog_cardinality);
       univ_laog_seen[links->outs] = True;
       links = NULL;
    }
@@ -4237,7 +4237,7 @@ static void* hg_cli____builtin_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment),
                          /*is_zeroed*/False );
 }
-static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
@@ -4247,12 +4247,12 @@ static void* hg_cli____builtin_vec_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment), 
                          /*is_zeroed*/False );
 }
-static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
 }
-static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT n ) {
+static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT orig_alignT, SizeT n ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align, 
                          /*is_zeroed*/False );
@@ -5747,8 +5747,10 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 
       default:
          /* Unhandled Helgrind client request! */
-         tl_assert2(0, "unhandled Helgrind client request 0x%lx",
-                       args[0]);
+         VG_(message)(Vg_UserMsg,
+                      "Warning: unknown Helgrind client request code %llx\n",
+                      (ULong)args[0]);
+         return False;
    }
 
    return True;

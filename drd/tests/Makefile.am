@@ -365,6 +365,8 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
+	thrd_create.stderr.exp			    \
+	thrd_create.vgtest			    \
 	thread_name.stderr.exp			    \
 	thread_name.vgtest			    \
 	thread_name_xml.stderr.exp		    \
@@ -512,6 +514,10 @@ if HAVE_SWAPCONTEXT
 check_PROGRAMS += swapcontext
 endif
 
+if HAVE_THRD_CREATE
+check_PROGRAMS += thrd_create
+endif
+
 if !VGCONF_OS_IS_DARWIN
 # pth_mutex_signal is disabled on macOS as it doesn't support real-time signals
 check_PROGRAMS += sem_wait pth_mutex_signal
@@ -653,3 +659,8 @@ endif
 
 timed_mutex_SOURCES         = timed_mutex.cpp
 timed_mutex_CXXFLAGS        = $(AM_CXXFLAGS) -std=c++0x
+
+thrd_create_SOURCES	    = thrd_create.c
+if VGCONF_OS_IS_FREEBSD
+thrd_create_LDFLAGS          = -lstdthreads
+endif

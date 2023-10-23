@@ -21,7 +21,7 @@ get_rounding_mode(void)
 {
    unsigned fpc;
 
-   __asm__ volatile ("stfpc  %0\n\t" : "=m"(fpc));
+   __asm__ volatile ("stfpc  %0" : "=Q"(fpc));
 
    return fpc & 0x7;
 }

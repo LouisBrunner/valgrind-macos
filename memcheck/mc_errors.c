@@ -76,6 +76,10 @@ typedef
       Err_IllegalMempool,
       Err_FishyValue,
       Err_ReallocSizeZero,
+      Err_BadAlign,
+      Err_BadSize,
+      Err_SizeMismatch,
+      Err_AlignMismatch,
    }
    MC_ErrorTag;
 
@@ -164,6 +168,19 @@ struct _MC_Error {
          AddrInfo ai;
       } ReallocSizeZero;
 
+      struct {
+         AddrInfo ai;
+         SizeT dealloc_align;
+         SizeT size;
+         const HChar *msg;
+      } BadAlign;
+
+      struct {
+         AddrInfo ai;
+         SizeT size;
+         const HChar *func;
+      } BadSize;
+
       // Call to strcpy, memcpy, etc, with overlapping blocks.
       struct {
          Addr  src;   // Source block
@@ -192,6 +209,26 @@ struct _MC_Error {
          const HChar *argument_name;
          SizeT value;
       } FishyValue;
+
+      // Program allocates heap block with new but
+      // deallocates with a matching delete
+      // but with a different size
+      struct {
+         AddrInfo ai;
+         const HChar *function_names;
+         SizeT size;
+      } SizeMismatch;
+
+      // Program allocates heap block with one function
+      // (malloc/new/new[]/custom) and deallocates with
+      // a matching one but different alignment
+      struct {
+         AddrInfo ai;
+         const HChar *function_names;
+         SizeT alloc_align;
+         SizeT dealloc_align;
+         Bool default_delete;
+      } AlignMismatch;
    } Err;
 };
 
@@ -719,20 +756,105 @@ void MC_(pp_Error) ( const Error* err )
          }
          break;
 
-   case Err_ReallocSizeZero:
+      case Err_ReallocSizeZero:
+         if (xml) {
+            emit( "  <kind>ReallocSizeZero</kind>\n" );
+            emit( "  <what>realloc() with size 0</what>\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                                &extra->Err.ReallocSizeZero.ai, False);
+         } else {
+            emit( "realloc() with size 0\n" );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                                &extra->Err.ReallocSizeZero.ai, False);
+         }
+         break;
+
+      case Err_BadAlign:
+         if (extra->Err.BadAlign.size) {
+            if (xml) {
+               emit( "  <kind>InvalidSizeAndAlignment</kind>\n" );
+               emit( "  <what>Invalid size value: %lu alignment value: %lu%s</what>\n",
+                     extra->Err.BadAlign.size,
+                     extra->Err.BadAlign.dealloc_align, extra->Err.BadAlign.msg  );
+               VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            } else {
+               emit( "Invalid size value: %lu alignment value: %lu%s\n",
+                      extra->Err.BadAlign.size,
+                      extra->Err.BadAlign.dealloc_align, extra->Err.BadAlign.msg );
+               VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            }
+         } else {
+            if (xml) {
+               emit( "  <kind>InvalidAlignment</kind>\n" );
+               emit( "  <what>Invalid alignment value: %lu%s</what>\n",
+                     extra->Err.BadAlign.dealloc_align, extra->Err.BadAlign.msg );
+               VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            } else {
+               emit( "Invalid alignment value: %lu%s\n",
+                     extra->Err.BadAlign.dealloc_align, extra->Err.BadAlign.msg );
+               VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            }
+         }
+         break;
+
+   case Err_BadSize:
       if (xml) {
-         emit( "  <kind>ReallocSizeZero</kind>\n" );
-         emit( "  <what>realloc() with size 0</what>\n" );
+         emit( "  <kind>InvalidSize</kind>\n" );
+         emit( "  <what>%s invalid size value: %lu</what>\n",
+               extra->Err.BadSize.func, extra->Err.BadSize.size );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
-                             &extra->Err.ReallocSizeZero.ai, False);
       } else {
-         emit( "realloc() with size 0\n" );
+         emit( "%s invalid size value: %lu\n",
+               extra->Err.BadSize.func, extra->Err.BadSize.size  );
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
-                             &extra->Err.ReallocSizeZero.ai, False);
       }
       break;
+
+      case Err_SizeMismatch:
+         if (xml) {
+            emit( "  <kind>MismatchedAllocateDeallocateSize</kind>\n" );
+            emit( "  <what>Mismatched %s size value: %lu</what>\n",
+                  extra->Err.SizeMismatch.function_names, extra->Err.SizeMismatch.size );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                                &extra->Err.SizeMismatch.ai, False);
+         } else {
+            emit( "Mismatched %s size value: %lu\n",
+                  extra->Err.SizeMismatch.function_names, extra->Err.SizeMismatch.size );
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                                &extra->Err.SizeMismatch.ai, False);
+         }
+         break;
+
+      case Err_AlignMismatch:
+         if (xml) {
+            emit( "  <kind>MismatchedAllocateDeallocateAlignment</kind>\n" );
+            if (extra->Err.AlignMismatch.default_delete) {
+               emit( "  <what>Mismatched %s size alloc value: %lu dealloc value: default-aligned</what>\n",
+                    extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align );
+            } else {
+               emit( "  <what>Mismatched %s size alloc value: %lu dealloc value: %lu</what>\n",
+                     extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
+            }
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                                &extra->Err.AlignMismatch.ai, False);
+         } else {
+            if (extra->Err.AlignMismatch.default_delete) {
+               emit( "Mismatched %s alignment alloc value: %lu dealloc value: default-aligned\n",
+                    extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align );
+            } else {
+               emit( "Mismatched %s alignment alloc value: %lu dealloc value: %lu\n",
+                     extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
+            }
+            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                                &extra->Err.AlignMismatch.ai, False);
+         }
+         break;
 
       default: 
          VG_(printf)("Error:\n  unknown Memcheck error code %d\n",
@@ -896,6 +1018,24 @@ void MC_(record_realloc_size_zero) ( ThreadId tid, Addr a )
    VG_(maybe_record_error)( tid, Err_ReallocSizeZero, a, /*s*/NULL, &extra );
 }
 
+void MC_(record_bad_alignment) ( ThreadId tid, SizeT align, SizeT size, const HChar *msg )
+{
+   MC_Error extra;
+   tl_assert(VG_INVALID_THREADID != tid);
+   extra.Err.BadAlign.dealloc_align = align;
+   extra.Err.BadAlign.size= size;
+   extra.Err.BadAlign.msg = msg;
+   VG_(maybe_record_error)( tid, Err_BadAlign, /*addr*/0, /*s*/NULL, &extra );
+}
+
+void MC_(record_bad_size) ( ThreadId tid, SizeT size, const HChar *function )
+{
+   MC_Error extra;
+   tl_assert(VG_INVALID_THREADID != tid);
+   extra.Err.BadSize.size= size;
+   extra.Err.BadSize.func = function;
+   VG_(maybe_record_error)( tid, Err_BadSize, /*addr*/0, /*s*/NULL, &extra );
+}
 
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a ) 
 {
@@ -948,6 +1088,46 @@ Bool MC_(record_fishy_value_error) ( ThreadId tid, const HChar *function_name,
       tid, Err_FishyValue, /*addr*/0, /*s*/NULL, &extra );
 
    return True;
+}
+
+void MC_(record_size_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT size, const HChar *function_names)
+{
+   MC_Error extra;
+   AddrInfo* ai = &extra.Err.SizeMismatch.ai;
+   tl_assert(VG_INVALID_THREADID != tid);
+   ai->tag = Addr_Block;
+   ai->Addr.Block.block_kind = Block_Mallocd;  // Nb: Not 'Block_Freed'
+   ai->Addr.Block.block_desc = "block";
+   ai->Addr.Block.block_szB  = mc->szB;
+   ai->Addr.Block.rwoffset   = 0;
+   ai->Addr.Block.allocated_at = MC_(allocated_at) (mc);
+   VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
+   ai->Addr.Block.freed_at = MC_(freed_at) (mc);
+   extra.Err.SizeMismatch.size = size;
+   extra.Err.SizeMismatch.function_names = function_names;
+   VG_(maybe_record_error)( tid, Err_SizeMismatch, mc->data, /*s*/NULL,
+                            &extra );
+}
+
+void MC_(record_align_mismatch_error) ( ThreadId tid, MC_Chunk* mc, SizeT align, Bool default_delete, const HChar *function_names )
+{
+   MC_Error extra;
+   AddrInfo* ai = &extra.Err.AlignMismatch.ai;
+   tl_assert(VG_INVALID_THREADID != tid);
+   ai->tag = Addr_Block;
+   ai->Addr.Block.block_kind = Block_Mallocd;  // Nb: Not 'Block_Freed'
+   ai->Addr.Block.block_desc = "block";
+   ai->Addr.Block.block_szB  = mc->szB;
+   ai->Addr.Block.rwoffset   = 0;
+   ai->Addr.Block.allocated_at = MC_(allocated_at) (mc);
+   VG_(initThreadInfo) (&ai->Addr.Block.alloc_tinfo);
+   ai->Addr.Block.freed_at = MC_(freed_at) (mc);
+   extra.Err.AlignMismatch.alloc_align = mc->alignB;
+   extra.Err.AlignMismatch.dealloc_align = align;
+   extra.Err.AlignMismatch.default_delete = default_delete;
+   extra.Err.AlignMismatch.function_names = function_names;
+   VG_(maybe_record_error)( tid, Err_AlignMismatch, mc->data, /*s*/NULL,
+                            &extra );
 }
 
 void MC_(record_user_error) ( ThreadId tid, Addr a,
@@ -1057,6 +1237,41 @@ Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
       case Err_Value:
          return ( extra1->Err.Value.szB == extra2->Err.Value.szB
                 ? True : False );
+
+      case Err_BadAlign:
+         if (extra1->Err.BadAlign.size &&
+            extra2->Err.BadAlign.size) {
+            // cases where size should be non-zero or a multiple of alignment
+            return extra1->Err.BadAlign.size ==
+                  extra2->Err.BadAlign.size
+                  &&
+                  extra1->Err.BadAlign.dealloc_align ==
+                  extra2->Err.BadAlign.dealloc_align;
+         } else {
+            // non multiple of 2 alignment
+            return extra1->Err.BadAlign.dealloc_align ==
+                  extra2->Err.BadAlign.dealloc_align;
+         }
+
+      case Err_BadSize:
+         // sized delete mismatch
+         return extra1->Err.BadSize.size ==
+               extra2->Err.BadSize.size;
+
+      case Err_SizeMismatch:
+         return extra1->Err.SizeMismatch.size ==
+               extra2->Err.SizeMismatch.size;
+
+      case Err_AlignMismatch:
+         // alignments both powers of 2 but different
+         return extra1->Err.AlignMismatch.alloc_align ==
+               extra2->Err.AlignMismatch.alloc_align
+               &&
+               extra1->Err.AlignMismatch.dealloc_align ==
+               extra2->Err.AlignMismatch.dealloc_align
+               &&
+               extra1->Err.AlignMismatch.default_delete ==
+               extra2->Err.AlignMismatch.default_delete;
 
       case Err_Leak:
          VG_(tool_panic)("Shouldn't get Err_Leak in mc_eq_Error,\n"
@@ -1202,6 +1417,10 @@ UInt MC_(update_Error_extra)( const Error* err )
    // shown with VG_(unique_error)() so they 'extra' not copied.  But
    // we make it consistent with the others.
    case Err_Leak:
+   case Err_BadAlign:
+   case Err_BadSize:
+   case Err_SizeMismatch:
+   case Err_AlignMismatch:
       return sizeof(MC_Error);
 
    // For value errors, get the ExeContext corresponding to the
@@ -1352,13 +1571,17 @@ typedef
       // Unaddressable read/write attempt at given size
       Addr1Supp, Addr2Supp, Addr4Supp, Addr8Supp, Addr16Supp, Addr32Supp,
 
-      JumpSupp,      // Jump to unaddressable target
-      FreeSupp,      // Invalid or mismatching free
-      OverlapSupp,   // Overlapping blocks in memcpy(), strcpy(), etc
-      LeakSupp,      // Something to be suppressed in a leak check.
-      MempoolSupp,   // Memory pool suppression.
-      FishyValueSupp,// Fishy value suppression.
-      ReallocSizeZeroSupp, // realloc size 0 suppression
+      JumpSupp,             // Jump to unaddressable target
+      FreeSupp,             // Invalid or mismatching free
+      OverlapSupp,          // Overlapping blocks in memcpy(), strcpy(), etc
+      LeakSupp,             // Something to be suppressed in a leak check.
+      MempoolSupp,          // Memory pool suppression.
+      FishyValueSupp,       // Fishy value suppression.
+      ReallocSizeZeroSupp,  // realloc size 0 suppression
+      BadAlignSupp,     // Alignment not 2
+      BadSizeSupp,     // aligned alloc with size 0
+      SizeMismatch,  // Sized deallocation did not match allocation size
+      AlignMismatch, // Aligned deallocation did not match aligned allocation
    } 
    MC_SuppKind;
 
@@ -1390,6 +1613,10 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "Value32")) skind = Value32Supp;
    else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
    else if (VG_STREQ(name, "ReallocZero")) skind = ReallocSizeZeroSupp;
+   else if (VG_STREQ(name, "BadAlign")) skind = BadAlignSupp;
+   else if (VG_STREQ(name, "BadSize")) skind = BadSizeSupp;
+   else if (VG_STREQ(name, "SizeMismatch")) skind = SizeMismatch;
+   else if (VG_STREQ(name, "AlignMismatch")) skind = AlignMismatch;
    else 
       return False;
 
@@ -1401,6 +1628,7 @@ typedef struct _MC_LeakSuppExtra MC_LeakSuppExtra;
 
 struct _MC_LeakSuppExtra {
    UInt match_leak_kinds;
+   UInt  leak_search_gen;
 
    /* Maintains nr of blocks and bytes suppressed with this suppression
       during the leak search identified by leak_search_gen.
@@ -1408,7 +1636,6 @@ struct _MC_LeakSuppExtra {
       used the first time during a leak search. */
    SizeT blocks_suppressed;
    SizeT bytes_suppressed;
-   UInt  leak_search_gen;
 };
 
 typedef struct {
@@ -1567,10 +1794,20 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
                          supp_extra->argument_name);
       }
 
-      case ReallocSizeZeroSupp: {
-
+      case ReallocSizeZeroSupp:
          return (ekind == Err_ReallocSizeZero);
-      }
+
+      case BadAlignSupp:
+         return (ekind == Err_BadAlign);
+
+      case BadSizeSupp:
+         return (ekind == Err_BadSize);
+
+      case SizeMismatch:
+         return (ekind == Err_SizeMismatch);
+
+      case AlignMismatch:
+         return (ekind == Err_AlignMismatch);
 
       default:
          VG_(printf)("Error:\n"
@@ -1597,6 +1834,10 @@ const HChar* MC_(get_error_name) ( const Error* err )
    case Err_Cond:            return "Cond";
    case Err_FishyValue:      return "FishyValue";
    case Err_ReallocSizeZero: return "ReallocZero";
+   case Err_BadAlign:        return "BadAlign";
+   case Err_BadSize:         return "BadSize";
+   case Err_SizeMismatch:    return "SizeMismatch";
+   case Err_AlignMismatch:   return "AlignMismatch";
    case Err_Addr: {
       MC_Error* extra = VG_(get_error_extra)(err);
       switch ( extra->Err.Addr.szB ) {

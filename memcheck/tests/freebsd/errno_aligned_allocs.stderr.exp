@@ -1,10 +1,34 @@
 
+Invalid alignment value: 0 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
+   at 0x........: posix_memalign (vg_replace_malloc.c:...)
+   by 0x........: main (errno_aligned_allocs.c:14)
+
+Invalid alignment value: 2 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
+   at 0x........: posix_memalign (vg_replace_malloc.c:...)
+   by 0x........: main (errno_aligned_allocs.c:17)
+
+Invalid alignment value: 40 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
+   at 0x........: posix_memalign (vg_replace_malloc.c:...)
+   by 0x........: main (errno_aligned_allocs.c:20)
+
+aligned_alloc() invalid size value: 0
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (errno_aligned_allocs.c:60)
+
+Invalid size value: 25 alignment value: 8 (size should be a multiple of alignment)
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (errno_aligned_allocs.c:68)
+
+Invalid alignment value: 40 (should be a power of 2)
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (errno_aligned_allocs.c:73)
+
 
 HEAP SUMMARY:
     in use at exit: 0 bytes in 0 blocks
-  total heap usage: 1 allocs, 1 frees, 25 bytes allocated
+  total heap usage: 2 allocs, 2 frees, 25 bytes allocated
 
 For a detailed leak analysis, rerun with: --leak-check=full
 
 For lists of detected and suppressed errors, rerun with: -s
-ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 6 errors from 6 contexts (suppressed: 0 from 0)

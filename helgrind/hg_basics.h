@@ -42,7 +42,7 @@ void   HG_(free)   ( void* p );
 HChar* HG_(strdup) ( const HChar* cc, const HChar* s );
 
 static inline Bool HG_(is_sane_ThreadId) ( ThreadId coretid ) {
-   return coretid >= 0 && coretid < VG_N_THREADS;
+   return coretid < VG_N_THREADS;
 }
 
 

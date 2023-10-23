@@ -42,7 +42,7 @@ int say(const char *text, unsigned long num_chars)
 			"4:	mvi %0,3\n\t" \
 			"	j 0f\n\t" \
 			"0:	bcr 0,0 /*nop*/\n\t" \
-			:"=m" (__cc)::"memory"); \
+			:"=Q" (__cc)::"memory"); \
 	__cc; \
 })
 

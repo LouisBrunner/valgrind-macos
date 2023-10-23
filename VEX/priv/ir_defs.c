@@ -4225,7 +4225,6 @@ IRTemp newIRTemp ( IRTypeEnv* env, IRType ty )
 inline 
 IRType typeOfIRTemp ( const IRTypeEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->types_used);
    return env->types[tmp];
 }

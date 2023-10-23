@@ -5,6 +5,8 @@ dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
+		aligned_alloc.stderr.exp-musl \
+		aligned_alloc.stderr.exp-glibc238 \
 	brk.stderr.exp brk.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
@@ -36,7 +38,8 @@ EXTRA_DIST = \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
 	enomem.vgtest enomem.stderr.exp enomem.stdout.exp \
-	memalign.vgtest memalign.stderr.exp
+	memalign.vgtest memalign.stderr.exp \
+		memalign.stderr.exp-musl
 
 check_PROGRAMS = \
 	aligned_alloc \

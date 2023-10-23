@@ -772,6 +772,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #  endif
    Addr fp_min = sp - VG_STACK_REDZONE_SZB;
 
+   VG_(addr_load_di)(ip);
+
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
       when FP is not a reasonable stack location. */
@@ -913,6 +915,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                             play safe, a la x86/amd64 above.  See
                             extensive comments above. */
             RECURSIVE_MERGE(cmrf,ips,i);
+            VG_(addr_load_di)(ip);
             continue;
          }
 

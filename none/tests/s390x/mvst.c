@@ -15,20 +15,20 @@ char target[512];
 
 int mvst(void *targetp, void *source)
 {
+	register int eos asm("0") = '\0';
 	asm volatile(
-		"	lhi 0, 0\n"
 		"	mvst %0, %1\n"
-		::"a" (targetp),"a" (source): "0", "memory", "cc");
+		: "+a"(targetp), "+a"(source) : "d"(eos) : "memory", "cc");
 	return get_cc();
 }
 
 int mvst_full(void *targetp, void *source)
 {
+	register int eos asm("0") = '\0';
 	asm volatile(
-		"	lhi 0, 0\n"
 		"0:	mvst %0, %1\n"
 		"	jo 0b\n"
-		::"a" (targetp),"a" (source): "0", "memory", "cc");
+		: "+a"(targetp), "+a"(source) : "d"(eos) : "memory", "cc");
 	return get_cc();
 }
 

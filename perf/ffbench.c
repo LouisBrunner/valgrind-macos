@@ -165,9 +165,7 @@
 
 #define SWAP(a,b) tempr=(a); (a)=(b); (b)=tempr
 
-static void fourn(data, nn, ndim, isign)
-  Float data[];
-  int nn[], ndim, isign;
+static void fourn(Float data[], int nn[], int ndim, int isign)
 {
 	register int i1, i2, i3;
 	int i2rev, i3rev, ip1, ip2, ip3, ifp1, ifp2;

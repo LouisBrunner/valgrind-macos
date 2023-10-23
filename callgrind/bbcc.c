@@ -61,7 +61,7 @@ void CLG_(copy_current_bbcc_hash)(bbcc_hash* dst)
   dst->table   = current_bbccs.table;
 }
 
-bbcc_hash* CLG_(get_current_bbcc_hash)()
+bbcc_hash* CLG_(get_current_bbcc_hash)(void)
 {
   return &current_bbccs;
 }

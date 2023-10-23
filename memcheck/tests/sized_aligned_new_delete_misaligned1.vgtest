@@ -1,0 +1,4 @@
+prog: sized_aligned_new_delete_misaligned1
+prereq: test -e ./sized_aligned_new_delete_misaligned1
+vgopts: -q
+stderr_filter: filter_size_t

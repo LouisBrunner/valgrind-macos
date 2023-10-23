@@ -577,6 +577,9 @@ typedef struct
    SizeT size; /* and map address of each mapping             */
    OffT  foff;
    Bool  rx, rw, ro;  /* memory access flags for this mapping */
+#if defined(VGO_freebsd)
+   Bool ignore_foff;
+#endif
 } DebugInfoMapping;
 
 struct _DebugInfoFSM
@@ -677,6 +680,13 @@ struct _DebugInfo {
    /* If have_dinfo is False, then all fields below this point are
       invalid and should not be consulted. */
    Bool  have_dinfo; /* initially False */
+
+   /* If true then the reading of .debug_* section has been deferred
+      until it this information is required (such as when printing
+      a stacktrace).  Additionally, if true then the reading of any
+      separate debuginfo files associated with this object has also
+      been deferred. */
+   Bool deferred;
 
    /* All the rest of the fields in this structure are filled in once
       we have committed to reading the symbols and debug info (that
@@ -1155,16 +1165,16 @@ extern void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di );
 
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
+extern Word ML_(search_one_symtab) ( DebugInfo* di, Addr ptr,
                                      Bool findText );
 
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
-extern Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_loctab) ( DebugInfo* di, Addr ptr );
 
 /* Find a CFI-table index containing the specified pointer, or -1 if
    not found.  Binary search.  */
-extern Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr );
+extern Word ML_(search_one_cfitab) ( DebugInfo* di, Addr ptr );
 
 /* Find a FPO-table index containing the specified pointer, or -1
    if not found.  Binary search.  */

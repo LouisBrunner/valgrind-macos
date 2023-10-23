@@ -190,14 +190,12 @@ typedef
 
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmap[tmp];
 }
 
 static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -3771,6 +3769,62 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
+      case Iop_ShlN8x16: {
+         /* This instruction doesn't exist so we need to fake it using
+            Xsse_SHL16 and Xsse_SHR16.
+
+            We'd like to shift every byte in the 16-byte register to the left by
+            some amount.
+
+            Instead, we will make a copy and shift all the 16-bit words to the
+            *right* by 8 and then to the left by 8 plus the shift amount.  That
+            will get us the correct answer for the upper 8 bits of each 16-bit
+            word and zero elsewhere.
+
+            Then we will shift all the 16-bit words in the original to the left
+            by 8 plus the shift amount and then to the right by 8.  This will
+            get the correct answer for the lower 8 bits of each 16-bit word and
+            zero elsewhere.
+
+            Finally, we will OR those two results together.
+
+            Because we don't have a shift by constant in x86, we store the
+            constant 8 into a register and shift by that as needed.
+         */
+         HReg      greg  = iselVecExpr(env, e->Iex.Binop.arg1);
+         X86RMI*   rmi   = iselIntExpr_RMI(env, e->Iex.Binop.arg2);
+         X86AMode* esp0  = X86AMode_IR(0, hregX86_ESP());
+         HReg      ereg  = newVRegV(env);
+         HReg      eight = newVRegV(env); // To store the constant value 8.
+         HReg      dst   = newVRegV(env);
+         HReg      hi    = newVRegV(env);
+         REQUIRE_SSE2;
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(rmi));
+         addInstr(env, X86Instr_SseLdSt(True/*load*/, ereg, esp0));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(0)));
+         addInstr(env, X86Instr_Push(X86RMI_Imm(8)));
+         addInstr(env, X86Instr_SseLdSt(True/*load*/, eight, esp0));
+
+         op = Xsse_SHL16;
+         X86SseOp reverse_op = Xsse_SHR16;
+         addInstr(env, mk_vMOVsd_RR(greg, hi));
+         addInstr(env, X86Instr_SseReRg(reverse_op, eight, hi));
+         addInstr(env, X86Instr_SseReRg(op, eight, hi));
+         addInstr(env, X86Instr_SseReRg(op, ereg, hi));
+         addInstr(env, mk_vMOVsd_RR(greg, dst));
+         addInstr(env, X86Instr_SseReRg(op, eight, dst));
+         addInstr(env, X86Instr_SseReRg(op, ereg, dst));
+         addInstr(env, X86Instr_SseReRg(reverse_op, eight, dst));
+         addInstr(env, X86Instr_SseReRg(Xsse_OR, hi, dst));
+
+         add_to_esp(env, 32);
+         return dst;
+      }
       case Iop_ShlN16x8: op = Xsse_SHL16; goto do_SseShift;
       case Iop_ShlN32x4: op = Xsse_SHL32; goto do_SseShift;
       case Iop_ShlN64x2: op = Xsse_SHL64; goto do_SseShift;

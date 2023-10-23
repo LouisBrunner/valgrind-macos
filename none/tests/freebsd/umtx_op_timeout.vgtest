@@ -1,0 +1,7 @@
+prog: ../../../drd/tests/trylock
+# FreeBSD versions earlier than 14.0 - this has no effect
+# On 14.0 and later it causes thread init to make a _umtx_op syscall
+# with UMTX_OP_SET_MIN_TIMEOUT which affacts pthread APIs with timeouts
+env: LIBPTHREAD_UMTX_MIN_TIMEOUT=100
+vgopts: -q
+

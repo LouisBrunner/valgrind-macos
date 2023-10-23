@@ -1,0 +1,8 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+$dir/../../tests/filter_stderr_basic                |
+
+# Remove "Cachegrind, ..." line and the following copyright line.
+sed "/^Cachegrind, a high-precision tracing profiler/ , /./ d"

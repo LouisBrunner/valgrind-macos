@@ -24,7 +24,7 @@ Stylesheets, catalogs, parsing/formatting scripts:
 Some files of note:
   docs/xml/index.xml:        Top-level book-set wrapper
   docs/xml/FAQ.xml:          The FAQ
-  docs/valgrind-manpage.xml  The valgrind manpage
+  docs/xml/valgrind-manpage.xml The valgrind manpage
   docs/xml/vg-entities.xml:  Various strings, dates etc. used all over
   docs/xml/xml_help.txt:     Basic guide to common XML tags.
 

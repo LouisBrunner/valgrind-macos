@@ -142,7 +142,6 @@ static Bool is_sane_CEnt ( const HChar* who, const DiImage* img, UInt i )
       if (!(ce->used == ce->size || ce->used == 0)) goto fail;
    } else {
       if (!(ce->size == CACHE_ENTRY_SIZE)) goto fail;
-      if (!(ce->off >= 0)) goto fail;
       if (!(ce->off + ce->used <= img->real_size)) goto fail;
    }
    return True;
@@ -553,7 +552,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
    DiOffT off_orig = off;
    vg_assert(img != NULL);
    vg_assert(img->ces_used <= CACHE_N_ENTRIES);
-   vg_assert(entNo >= 0 && entNo < img->ces_used);
+   vg_assert(entNo < img->ces_used);
    vg_assert(off < img->real_size);
    CEnt* ce = img->ces[entNo];
    vg_assert(ce != NULL);
@@ -780,7 +779,7 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
       if (!img->ces[i]->fromC)
          break;
    }
-   vg_assert(i >= 0 && i < CACHE_N_ENTRIES);
+   vg_assert(i < CACHE_N_ENTRIES);
 
    realloc_CEnt(img, i, size, /*fromC?*/cslc != NULL);
    img->ces[i]->size = size;
@@ -1206,7 +1205,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
    vg_assert(is_in_CEnt(ce, offset));
    SizeT nToCopy = size - 1;
    SizeT nAvail  = (SizeT)(ce->used - (offset + 1 - ce->off));
-   vg_assert(nAvail >= 0 && nAvail <= ce->used-1);
+   vg_assert(nAvail <= ce->used-1);
    if (nAvail < nToCopy) nToCopy = nAvail;
    VG_(memcpy)(&dstU[1], &ce->data[offset + 1 - ce->off], nToCopy);
    return nToCopy + 1;
@@ -1361,7 +1360,7 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       DiOffT img_szB  = ML_(img_size)(img);
       DiOffT curr_off = 0;
       while (1) {
-         vg_assert(curr_off >= 0 && curr_off <= img_szB);
+         vg_assert(curr_off <= img_szB);
          if (curr_off == img_szB) break;
          DiOffT avail = img_szB - curr_off;
          vg_assert(avail > 0 && avail <= img_szB);

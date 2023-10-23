@@ -1035,8 +1035,11 @@ send_packet_start:
 // or -1 if no packet could be read.
 static int receive_packet(char *buf, int noackmode)
 {
-   int bufcnt = 0, ret;
-   char c, c1, c2;
+   int bufcnt = 0;
+   int ret;
+   char c;
+   char c1 = '\0';
+   char c2 = '\0';
    unsigned char csum = 0;
 
    // Look for first '$' (start of packet) or error.
@@ -1159,7 +1162,7 @@ static void gdb_relay(int pid, int send_noack_mode, char *q_buf);
    or the errno from the child on failure.  */
 static
 int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
-                            pid_t *pid)
+                            int in_port, pid_t *pid)
 {
    int err = 0;
    // We will use a pipe to track what the child does,
@@ -1243,6 +1246,19 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
          }
       }
 
+      /* When in stdio mode (talking to gdb through stdin/stdout, not
+         through a socket), redirect stdout to stderr and close stdin
+         for the inferior. That way at least some output can be seen,
+         but there will be no input.  */
+      if (in_port <= 0) {
+         /* close stdin */
+         close (0);
+         /* open /dev/null as new stdin */
+         open ("/dev/null", O_RDONLY);
+         /* redirect stdout as stderr */
+         dup2 (2, 1);
+      }
+
       /* Try to launch valgrind. Add --vgdb-error=0 to stop immediately so we
          can attach and --launched-with-multi to let valgrind know it doesn't
          need to show a banner how to connect to gdb, we will do that
@@ -1309,7 +1325,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
 
 /* Do multi stuff.  */
 static
-void do_multi_mode(int check_trials)
+void do_multi_mode(int check_trials, int in_port)
 {
    char *buf = vmalloc(PBUFSIZ+1);
    char *q_buf = vmalloc(PBUFSIZ+1); //save the qSupported packet sent by gdb
@@ -1415,12 +1431,12 @@ void do_multi_mode(int check_trials)
 
           // Count the lenghts of each substring, init to -1 to compensate for
           // each substring starting with a delim char.
-          for (int i = 0; i < count; i++)
+          for (size_t i = 0; i < count; i++)
              len[i] = -1;
           count_len(';', buf, len);
           if (next_str) {
              DEBUG(1, "vRun: next_str %s\n", next_str);
-             for (int i = 0; i < count; i++) {
+             for (size_t i = 0; i < count; i++) {
                 /* Handle the case when the arguments
                  * was specified to gdb's run command
                  * but no remote exec-file was set,
@@ -1436,16 +1452,16 @@ void do_multi_mode(int check_trials)
                    if (i < count - 1)
                       next_str = next_delim_string(next_str, *delim);
                 }
-                DEBUG(1, "vRun decoded: %s, next_str %s, len[%d] %d\n",
+                DEBUG(1, "vRun decoded: %s, next_str %s, len[%zu] %zu\n",
                       decoded_string[i], next_str, i, len[i]);
              }
 
              /* If we didn't get any arguments or the filename is an empty
                 string, valgrind won't know which program to run.  */
-             DEBUG (1, "count: %d, len[0]: %d\n", count, len[0]);
+             DEBUG (1, "count: %zu, len[0]: %zu\n", count, len[0]);
              if (! count || len[0] == 0) {
                 free(len);
-                for (int i = 0; i < count; i++)
+                for (size_t i = 0; i < count; i++)
                    free (decoded_string[i]);
                 free (decoded_string);
                 send_packet ("E01", noackmode);
@@ -1456,9 +1472,10 @@ void do_multi_mode(int check_trials)
                 launch valgrind with the correct arguments... We then use the
                 valgrind pid to start relaying packets.  */
              pid_t valgrind_pid = -1;
-             int res = fork_and_exec_valgrind (count,
+             int res = fork_and_exec_valgrind ((int)count,
                                                decoded_string,
                                                working_dir,
+                                               in_port,
                                                &valgrind_pid);
 
              if (res == 0) {
@@ -1692,7 +1709,7 @@ void gdb_relay(int pid, int send_noack_mode, char *q_buf)
                   buflen = getpkt(buf, from_pid, to_pid);
                   if (buflen != 2 || strcmp(buf, "OK") != 0) {
                      if (buflen != 2)
-                        ERROR(0, "no ack mode: unexpected buflen %d, buf %s\n",
+                        ERROR(0, "no ack mode: unexpected buflen %zu, buf %s\n",
                               buflen, buf);
                      else
                         ERROR(0, "no ack mode: unexpected packet %s\n", buf);
@@ -1715,7 +1732,7 @@ void gdb_relay(int pid, int send_noack_mode, char *q_buf)
                   if (buflen > 0) {
                      waiting_for_qsupported = False;
                   } else {
-                     ERROR(0, "Unexpected getpkt for qSupported reply: %d\n",
+                     ERROR(0, "Unexpected getpkt for qSupported reply: %zu\n",
                            buflen);
                   }
                } else if (!read_from_pid_write_to_gdb(from_pid))
@@ -2255,6 +2272,11 @@ void parse_options(int argc, char** argv,
             arg_errors++;
          }
       } else if (is_opt(argv[i], "--vgdb-prefix=")) {
+         if (vgdb_prefix) {
+            // was specified more than once on the command line
+            // ignore earlier uses
+            free(vgdb_prefix);
+         }
          vgdb_prefix = strdup (argv[i] + 14);
       } else if (is_opt(argv[i], "--valgrind=")) {
           char *path = argv[i] + 11;
@@ -2427,7 +2449,7 @@ int main(int argc, char** argv)
    if (multi_mode) {
       /* check_trails is the --wait argument in seconds, defaulting to 1
        * if not given.  */
-      do_multi_mode (check_trials);
+      do_multi_mode (check_trials, in_port);
    } else if (last_command >= 0) {
       standalone_send_commands(pid, last_command, commands);
    } else {

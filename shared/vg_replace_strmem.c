@@ -105,6 +105,7 @@
    20450 WSTRNCMP
    20460 MEMMEM
    20470 WMEMCMP
+   20480 WCSNCPY
 */
 
 #if defined(VGO_solaris)
@@ -1233,6 +1234,8 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #elif defined(VGO_freebsd)
  MEMCMP(VG_Z_LIBC_SONAME,  memcmp)
  MEMCMP(VG_Z_LIBC_SONAME,  bcmp)
+ MEMCMP(VG_Z_LIBC_SONAME,  timingsafe_memcmp)
+ MEMCMP(VG_Z_LIBC_SONAME,  timingsafe_bcmp)
 
 #elif defined(VGO_darwin)
 # if DARWIN_VERS >= DARWIN_10_9
@@ -2273,6 +2276,7 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  WMEMCHR(VG_Z_LIBC_SONAME, wmemchr)
 #endif
 
+/*---------------------- wmemcmp ----------------------*/
 
 #define WMEMCMP(soname, fnname) \
    int VG_REPLACE_FUNCTION_EZU(20470,soname,fnname)       \
@@ -2287,10 +2291,52 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
       return 0; \
    }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_freebsd)
  WMEMCMP(VG_Z_LIBC_SONAME, wmemcmp)
 #endif
 
+/*---------------------- wcsncpy ----------------------*/
+
+ // This is a wchar_t equivalent to strncpy.  We don't
+ // have wchar_t available here, but in the GNU C Library
+ // wchar_t is always 32 bits wide.
+
+#define WCSNCPY(soname, fnname) \
+ Int* VG_REPLACE_FUNCTION_EZU(20480,soname,fnname) \
+    ( Int* dst, const Int* src, SizeT n ); \
+    Int* VG_REPLACE_FUNCTION_EZU(20480,soname,fnname) \
+    ( Int* dst, const Int* src, SizeT n ) \
+ { \
+      const Int* src_orig = src; \
+      Int* dst_orig = dst; \
+      SizeT m = 0; \
+      \
+       while (m < n && *src) { \
+         m++; \
+         *dst++ = *src++; \
+      } \
+      \
+      /* This checks for overlap after copying, unavoidable without */ \
+      /* pre-counting length... should be ok */ \
+      /* +4 because sizeof(wchar_t) == 4 */ \
+      SizeT srclen = ((m < n) ? m+1 : n)*4; \
+      RECORD_COPY(srclen); \
+      if (is_overlap(dst_orig,  \
+                     src_orig,  \
+                     n*4, \
+                     srclen)) \
+      RECORD_OVERLAP_ERROR("wcsncpy", dst_orig, src_orig, 0); \
+      \
+ while (m++ < n) { \
+         *dst++ = 0; \
+      } \
+      \
+      return dst_orig; \
+ }
+
+#if defined(VGO_linux) || defined(VGO_freebsd)
+ WCSNCPY(VG_Z_LIBC_SONAME, wcsncpy)
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/

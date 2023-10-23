@@ -541,7 +541,7 @@ DECL_TEMPLATE(freebsd, sys_sigfastblock) // 573
 DECL_TEMPLATE(freebsd, sys___realpathat) // 574
 #endif
 
-// unimpl __NR_close_range         575
+DECL_TEMPLATE(freebsd, sys_close_range)  // 575
 
 #endif
 
@@ -556,9 +556,17 @@ DECL_TEMPLATE(freebsd, sys___specialfd) // 577
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
 
-// unimpl __NR_fspacectl   580
+// unimpl __NR_fspacectl           580
 // unimpl __NR_sched_getcpu        581
 DECL_TEMPLATE(freebsd, sys_swapoff) // 582
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
+DECL_TEMPLATE(freebsd, sys_kqueuex); // 583
+DECL_TEMPLATE(freebsd, sys_membarrier); // 584
+DECL_TEMPLATE(freebsd, sys_timerfd_create); // 585
+DECL_TEMPLATE(freebsd, sys_timerfd_gettime); // 586
+DECL_TEMPLATE(freebsd, sys_timerfd_settime); // 587
 #endif
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)

@@ -16,6 +16,7 @@ EXTRA_DIST = \
 	pushfpopf.stderr.exp pushfpopf.stdout.exp pushfpopf.vgtest \
 	pushfw_x86.vgtest pushfw_x86.stdout.exp pushfw_x86.stderr.exp \
 	pushpopmem.stderr.exp pushpopmem.stdout.exp pushpopmem.vgtest \
+	pcmpgt.stderr.exp pcmpgt.vgtest \
 	sh-mem-vec128-plo-no.vgtest \
 		sh-mem-vec128-plo-no.stderr.exp \
 		sh-mem-vec128-plo-no.stdout.exp \
@@ -40,6 +41,7 @@ check_PROGRAMS = \
 	pushfpopf \
 	pushfw_x86 \
 	pushpopmem \
+	pcmpgt \
 	sh-mem-vec128 \
 	sse_memory \
 	tronical \
@@ -62,3 +64,4 @@ endif
 tronical_SOURCES 	= tronical.S
 
 more_x86_fp_LDADD	= -lm
+pcmpgt_SOURCES = pcmpgt.cpp

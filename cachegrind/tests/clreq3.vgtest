@@ -1,0 +1,5 @@
+# Test that `--instr-at-start=no` results in zero instruction counts.
+prog: ../../tests/true
+vgopts: --instr-at-start=no
+stderr_filter: filter_clreq3
+cleanup: rm cachegrind.out.*

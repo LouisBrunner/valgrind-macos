@@ -41,10 +41,10 @@
 struct vg_mallocfunc_info {
    void* (*tl_malloc)              (ThreadId tid, SizeT n);
    void* (*tl___builtin_new)       (ThreadId tid, SizeT n);
-   void* (*tl___builtin_new_aligned) (ThreadId tid, SizeT n, SizeT align);
+   void* (*tl___builtin_new_aligned) (ThreadId tid, SizeT n, SizeT align, SizeT orig_align);
    void* (*tl___builtin_vec_new)   (ThreadId tid, SizeT n);
-   void* (*tl___builtin_vec_new_aligned) (ThreadId tid, SizeT n, SizeT align);
-   void* (*tl_memalign)            (ThreadId tid, SizeT align, SizeT n);
+   void* (*tl___builtin_vec_new_aligned) (ThreadId tid, SizeT n, SizeT align, SizeT orig_align);
+   void* (*tl_memalign)            (ThreadId tid, SizeT align, SizeT orig_align, SizeT n);
    void* (*tl_calloc)              (ThreadId tid, SizeT nmemb, SizeT n);
    void  (*tl_free)                (ThreadId tid, void* p);
    void  (*tl___builtin_delete)    (ThreadId tid, void* p);

@@ -14,6 +14,13 @@ sed "s/<count>.*<\/count>/<count>...<\/count>/" |
 # Filter out @* version symbol function names
 sed "s/<fn>\(.*\)\@\*<\/fn>/<fn>\1<\/fn>/" |
 sed "s/of size [48]</of size N</" |
+sed "s/unsigned int, std::align_val_t/unsigned long, std::align_val_t/" |
+sed "s/operator new(unsigned int/operator new(unsigned long/" |
+sed "s/operator new\[\](unsigned int/operator new[](unsigned long/" |
+sed "s/operator delete(void\*, unsigned int/operator delete(void*, unsigned long/" |
+sed "s/operator delete\[\](void\*, unsigned int/operator delete[](void*, unsigned long/" |
+sed "s/4294967295/18446744073709551615/" |
+sed "s/malloc_zone_memalign/posix_memalign/" |
 perl    -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c/vg_replace_malloc.c/" |
 perl -0 -p -e "s/<suppcounts>.*<\/suppcounts>/<suppcounts>...<\/suppcounts>/s" |
 perl    -p -e "s/<time>.*<\/time>/<time>...<\/time>/s" |

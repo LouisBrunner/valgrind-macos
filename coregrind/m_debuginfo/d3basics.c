@@ -648,7 +648,6 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
 
    sp = -1;
    vg_assert(expr);
-   vg_assert(exprszB >= 0);
    limit = expr + exprszB;
 
    /* Deal with the case where the entire expression is a single

@@ -301,6 +301,31 @@ static void test_all_fp_int_conversions()
 #undef TEST_EXEC
 #undef TEST_GENERATE
 
+/* -- Vector generate mask -- */
+
+#define XTEST(insn, i2, i3)                                                    \
+   do {                                                                        \
+      ulong_v out = vec_ini;                                                   \
+      puts(#insn " " #i2 "," #i3);                                             \
+      __asm__(#insn " %[out]," #i2 "," #i3 : [out] "+v"(out) : :);             \
+      printf("\t%016lx %016lx\n", out[0], out[1]);                             \
+   } while (0)
+
+static void test_all_generate_mask()
+{
+   XTEST(vgmb, 2, 1);
+   XTEST(vgmb, 0xf7, 0x30);
+   XTEST(vgmb, 0, 0);
+   XTEST(vgmh, 3, 2);
+   XTEST(vgmh, 15, 15);
+   XTEST(vgmf, 4, 3);
+   XTEST(vgmf, 16, 17);
+   XTEST(vgmg, 55, 63);
+   XTEST(vgmg, 43, 55);
+   XTEST(vgmg, 63, 2);
+}
+
+#undef XTEST
 
 int main()
 {
@@ -310,5 +335,6 @@ int main()
    test_all_double_bitshifts();
    test_all_int_fp_conversions();
    test_all_fp_int_conversions();
+   test_all_generate_mask();
    return 0;
 }

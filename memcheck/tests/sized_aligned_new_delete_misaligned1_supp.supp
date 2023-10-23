@@ -1,0 +1,126 @@
+{
+   scalar new aligned nothrow bad alignment
+   Memcheck:BadAlign
+   fun:_ZnwmSt11align_val_tRKSt9nothrow_t
+   fun:main
+}
+
+{
+   scalar new aligned nothrow bad alignment, 32 bit
+   Memcheck:BadAlign
+   fun:_ZnwjSt11align_val_tRKSt9nothrow_t
+   fun:main
+}
+
+{
+   scalar delete aligned bad alignment
+   Memcheck:BadAlign
+   fun:_ZdlPvSt11align_val_t
+   fun:main
+}
+
+{
+   scalar delete aligned alignment mismatch
+   Memcheck:AlignMismatch
+   fun:_ZdlPvSt11align_val_t
+   fun:main
+}
+
+{
+   array delete aligned bad alignment
+   Memcheck:BadAlign
+   fun:_ZdaPvSt11align_val_t
+   fun:main
+}
+
+{
+   array delete aligned alignment mismatch
+   Memcheck:AlignMismatch
+   fun:_ZdaPvSt11align_val_t
+   fun:main
+}
+
+{
+   scalar delete aligned nothow bad alignment
+   Memcheck:BadAlign
+   fun:_ZdlPvSt11align_val_tRKSt9nothrow_t
+   fun:main
+}
+
+{
+   array new aligned nothrow bad alignment
+   Memcheck:BadAlign
+   fun:_ZnamSt11align_val_tRKSt9nothrow_t
+   fun:main
+}
+
+{
+   array new aligned nothrow bad alignment, 32 bit
+   Memcheck:BadAlign
+   fun:_ZnajSt11align_val_tRKSt9nothrow_t
+   fun:main
+}
+
+{
+   array delete aligned nothrow bad alignment
+   Memcheck:BadAlign
+   fun:_ZdaPvSt11align_val_tRKSt9nothrow_t
+   fun:main
+}
+
+{
+   scalar delete sized aligned alignment mismatch
+   Memcheck:AlignMismatch
+   fun:_ZdlPvmSt11align_val_t
+   fun:main
+}
+
+{
+   scalar delete sized aligned alignment mismatch, 32 bit
+   Memcheck:AlignMismatch
+   fun:_ZdlPvjSt11align_val_t
+   fun:main
+}
+
+{
+   array delete aligned alignment mismatch
+   Memcheck:AlignMismatch
+   fun:_ZdaPvmSt11align_val_t
+   fun:main
+}
+
+{
+   array delete aligned alignment mismatch, 32 bit
+   Memcheck:AlignMismatch
+   fun:_ZdaPvjSt11align_val_t
+   fun:main
+}
+
+{
+   scalar delete sized aligned bad alignment
+   Memcheck:BadAlign
+   fun:_ZdlPvmSt11align_val_t
+   fun:main
+}
+
+{
+   scalar delete sized aligned bad alignment, 32 bit
+   Memcheck:BadAlign
+   fun:_ZdlPvjSt11align_val_t
+   fun:main
+}
+
+{
+   array delete sized aligned bad alignment
+   Memcheck:BadAlign
+   fun:_ZdaPvmSt11align_val_t
+   fun:main
+}
+
+{
+   array delete sized aligned bad alignment, 32bit
+   Memcheck:BadAlign
+   fun:_ZdaPvjSt11align_val_t
+   fun:main
+}
+

@@ -200,8 +200,8 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
 
 static struct valgrind_target_ops low_target = {
    num_regs,
-   regs,
    29, //sp = r29, which is register offset 29 in regs
+   regs,
    transfer_register,
    get_pc,
    set_pc,

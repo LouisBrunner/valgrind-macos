@@ -3316,7 +3316,7 @@ static UChar *mkFormS(UChar * p, UInt opc1, UInt rRD, UInt rRS, UInt rRT,
    vassert(rRS < 0x20);
    vassert(rRT < 0x20);
    vassert(opc2 <= 0x3F);
-   vassert(sa >= 0 && sa <= 0x3F);
+   vassert(sa <= 0x3F);
 
    theInstr = ((opc1 << 26) | (rRS << 21) | (rRT << 16) | (rRD << 11) |
               ((sa & 0x1F) << 6) | (opc2));

@@ -376,8 +376,7 @@ static double atanc[] = {
 
 /*  aint(x)	  Return integer part of number.  Truncates towards 0	 */
 
-double aint(x)
-double x;
+double aint(double x)
 {
 	long l;
 
@@ -394,8 +393,7 @@ double x;
 
 /*  sin(x)	  Return sine, x in radians  */
 
-static double sin(x)
-double x;
+static double sin(double x)
 {
 	int sign;
 	double y, r, z;
@@ -433,8 +431,7 @@ double x;
 
 /*  cos(x)	  Return cosine, x in radians, by identity  */
 
-static double cos(x)
-double x;
+static double cos(double x)
 {
 	x = (x < 0.0) ? -x : x;
 	if (x > twopi)		      /* Do range reduction here to limit */
@@ -444,8 +441,7 @@ double x;
 
 /*  tan(x)	  Return tangent, x in radians, by identity  */
 
-static double tan(x)
-double x;
+static double tan(double x)
 {
 	return sin(x) / cos(x);
 }
@@ -453,8 +449,7 @@ double x;
 /*  sqrt(x)	  Return square root.  Initial guess, then Newton-
 		  Raphson refinement  */
 
-double sqrt(x)
-double x;
+double sqrt(double x)
 {
 	double c, cl, y;
 	int n;
@@ -486,8 +481,7 @@ double x;
 /*  atan(x)	  Return arctangent in radians,
 		  range -pi/2 to pi/2  */
 
-static double atan(x)
-double x;
+static double atan(double x)
 {
 	int sign, l, y;
 	double a, b, z;
@@ -526,8 +520,7 @@ atl:
 /*  atan2(y,x)	  Return arctangent in radians of y/x,
 		  range -pi to pi  */
 
-static double atan2(y, x)
-double y, x;
+static double atan2(double y, double x)
 {
 	double temp;
 
@@ -551,8 +544,7 @@ double y, x;
 
 /*  asin(x)	  Return arcsine in radians of x  */
 
-static double asin(x)
-double x;
+static double asin(double x)
 {
 	if (fabs(x)>1.0) {
 	   fprintf(stderr,
@@ -670,9 +662,7 @@ static void transit_surface() {
 
 /*  Perform ray trace in specific spectral line  */
 
-static void trace_line(line, ray_h)
-int line;
-double ray_h;
+static void trace_line(int line, double ray_h)
 {
 	int i;
 
@@ -697,9 +687,7 @@ double ray_h;
 
 /*  Initialise when called the first time  */
 
-int main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char* argv[])
 {
 	int i, j, k, errors;
 	double od_fline, od_cline;

@@ -583,9 +583,9 @@ int main()
    /* At least one character will be written to BUFF, i.e. loop in jitted
       code is iterated */
    run_test(buff, 4, pattern1, sizeof pattern1);
-   run_test(buff, 5, pattern1, sizeof pattern2);
-   run_test(buff, 6, pattern1, sizeof pattern3);
-   run_test(buff, 7, pattern1, sizeof pattern4);
+   run_test(buff, 5, pattern1, sizeof pattern1);
+   run_test(buff, 6, pattern1, sizeof pattern1);
+   run_test(buff, 7, pattern1, sizeof pattern1);
 
    /* Convert buffer with mixed characters */
    printf("\n------------- test4 ----------------\n");

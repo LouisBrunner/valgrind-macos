@@ -16,7 +16,7 @@
 
 #include "coregrind/m_debuglog.c"
 
-void run(const char *format, ...)
+int run(const char *format, ...)
 {
   int n, num_stars;
   const char *p;
@@ -44,6 +44,8 @@ void run(const char *format, ...)
 
   emit(buf.buf, strlen(buf.buf));
   fprintf(stderr, "\twrote %3d chars\n", n);
+
+  return num_stars;
 }
 
 int main(int argc, char *argv[])

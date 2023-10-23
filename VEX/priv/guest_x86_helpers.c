@@ -2820,7 +2820,7 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
 
    /* Convert the segment selector onto a table index */
    seg_selector >>= 3;
-   vassert(seg_selector >= 0 && seg_selector < 8192);
+   vassert(seg_selector < 8192);
 
    if (tiBit == 0) {
 

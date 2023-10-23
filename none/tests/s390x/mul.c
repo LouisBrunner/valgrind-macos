@@ -29,23 +29,24 @@ static void do_imm_insns(void)
 #define msgr(x, y) "msgr " x ", " y "\n"
 #define msgf(x, y) "msgf " x ", " y "\n"
 #define msgfr(x, y) "msgfr " x ", " y "\n"
+#define msy(x, y) "msy " x ", " y "\n"
 
 static void do_regmem_insns(unsigned long m2)
 {
-	memsweep(m, m2);
+	rmemsweep(m, m2);
 	regsweep(mr, m2);
-	memsweep(mh, m2);
+	rmemsweep(mh, m2);
 	memsweep(mlg, m2);
 	regsweep(mlgr, m2);
 	memsweep(ml, m2);
 	regsweep(mlr, m2);
-	memsweep(ms, m2);
+	rmemsweep(ms, m2);
 	regsweep(msr, m2);
 	memsweep(msg, m2);
 	regsweep(msgr, m2);
 	memsweep(msgf, m2);
 	regsweep(msgfr, m2);
-	msysweep(m2);
+	memsweep(msy, m2);
 }
 
 int main()

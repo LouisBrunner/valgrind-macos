@@ -1,0 +1,4 @@
+prog: sized_aligned_new_delete_misaligned3
+prereq: test -e ./sized_aligned_new_delete_misaligned3
+vgopts: --xml=yes --xml-fd=2 --log-file=/dev/null
+stderr_filter: filter_xml

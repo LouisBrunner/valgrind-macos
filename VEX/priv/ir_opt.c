@@ -6371,7 +6371,7 @@ static Bool do_XOR_TRANSFORM_IRSB ( IRSB* sb )
       if (st->tag != Ist_WrTmp)
          continue;
       IRTemp t = st->Ist.WrTmp.tmp;
-      vassert(t >= 0 && t < n_tmps);
+      vassert(t < n_tmps);
       env[t] = st->Ist.WrTmp.data;
    }
 

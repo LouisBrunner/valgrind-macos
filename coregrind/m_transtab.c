@@ -92,10 +92,10 @@ typedef UShort HTTno;
    address range which does not fall cleanly within any specific bin.
    Note that ECLASS_SHIFT + ECLASS_WIDTH must be < 32.
    ECLASS_N must fit in a EclassNo. */
-#define ECLASS_SHIFT 13
-#define ECLASS_WIDTH 9
-#define ECLASS_MISC  (1 << ECLASS_WIDTH)
-#define ECLASS_N     (1 + ECLASS_MISC)
+#define ECLASS_SHIFT 13U
+#define ECLASS_WIDTH 9U
+#define ECLASS_MISC  (1U << ECLASS_WIDTH)
+#define ECLASS_N     (1U + ECLASS_MISC)
 STATIC_ASSERT(ECLASS_SHIFT + ECLASS_WIDTH < 32);
 
 typedef UShort EClassNo;
@@ -1152,7 +1152,7 @@ UInt addEClassNo ( /*MOD*/Sector* sec, EClassNo ec, TTEno tteno )
    Int    old_sz, new_sz, i, r;
    TTEno  *old_ar, *new_ar;
 
-   vg_assert(ec >= 0 && ec < ECLASS_N);
+   vg_assert(ec < ECLASS_N);
    vg_assert(tteno < N_TTES_PER_SECTOR);
 
    if (DEBUG_TRANSTAB) VG_(printf)("ec %d  gets %d\n", ec, (Int)tteno);
@@ -1192,7 +1192,7 @@ void upd_eclasses_after_add ( /*MOD*/Sector* sec, TTEno tteno )
 {
    Int i, r;
    EClassNo eclasses[3];
-   vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
+   vg_assert(tteno < N_TTES_PER_SECTOR);
 
    TTEntryH* tteH = &sec->ttH[tteno];
    r = vexGuestExtents_to_eclasses( eclasses, tteH );
@@ -1530,7 +1530,7 @@ static TTEno get_empty_tt_slot(SECno sNo)
    i = sectors[sNo].empty_tt_list;
    sectors[sNo].empty_tt_list = sectors[sNo].ttC[i].usage.next_empty_tte;
 
-   vg_assert (i >= 0 && i < N_TTES_PER_SECTOR);
+   vg_assert (i < N_TTES_PER_SECTOR);
 
    return i;
 }
@@ -1625,11 +1625,11 @@ static void initialiseSector ( SECno sno )
                       sizeof(HostExtent));
 
       /* Add an entry in the sector_search_order */
-      for (i = 0; i < n_sectors; i++) {
+      for (i = 0U; i < n_sectors; i++) {
          if (sector_search_order[i] == INV_SNO)
             break;
       }
-      vg_assert(i >= 0 && i < n_sectors);
+      vg_assert(i < n_sectors);
       sector_search_order[i] = sno;
 
       if (VG_(clo_verbosity) > 2)
@@ -1710,7 +1710,7 @@ static void initialiseSector ( SECno sno )
          if (sector_search_order[ix] == sno)
             break;
       }
-      vg_assert(ix >= 0 && ix < n_sectors);
+      vg_assert(ix < n_sectors);
 
       if (VG_(clo_verbosity) > 2)
          VG_(message)(Vg_DebugMsg, "TT/TC: recycle sector %d\n", sno);
@@ -1850,7 +1850,7 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
 
    // Point an htt entry to the tt slot
    HTTno htti = HASH_TT(entry);
-   vg_assert(htti >= 0 && htti < N_HTTES_PER_SECTOR);
+   vg_assert(htti < N_HTTES_PER_SECTOR);
    while (True) {
       if (sectors[y].htt[htti] == HTT_EMPTY
           || sectors[y].htt[htti] == HTT_DELETED)
@@ -1925,7 +1925,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
       all sectors and avoids multiple expensive % operations. */
    n_full_lookups++;
    kstart = HASH_TT(guest_addr);
-   vg_assert(kstart >= 0 && kstart < N_HTTES_PER_SECTOR);
+   vg_assert(kstart < N_HTTES_PER_SECTOR);
 
    /* Search in all the sectors,using sector_search_order[] as a
       heuristic guide as to what order to visit the sectors. */
@@ -1984,7 +1984,7 @@ Bool VG_(search_transtab) ( /*OUT*/Addr*  res_hcode,
 /*-------------------------------------------------------------*/
 
 /* forward */
-static void unredir_discard_translations( Addr, ULong );
+static void unredir_discard_translations( Addr /*guest_start*/, ULong  /*range*/);
 
 /* Stuff for deleting translations which intersect with a given
    address range.  Unfortunately, to make this run at a reasonable
@@ -2029,7 +2029,7 @@ static void delete_tte ( /*OUT*/Addr* ga_deleted,
    /* sec and secNo are mutually redundant; cross-check. */
    vg_assert(sec == &sectors[secNo]);
 
-   vg_assert(tteno >= 0 && tteno < N_TTES_PER_SECTOR);
+   vg_assert(tteno < N_TTES_PER_SECTOR);
    TTEntryC* tteC = &sec->ttC[tteno];
    TTEntryH* tteH = &sec->ttH[tteno];
    vg_assert(tteH->status == InUse);
@@ -2046,7 +2046,7 @@ static void delete_tte ( /*OUT*/Addr* ga_deleted,
    for (i = 0; i < tteC->n_tte2ec; i++) {
       ec_num = tteC->tte2ec_ec[i];
       ec_idx = tteC->tte2ec_ix[i];
-      vg_assert(ec_num >= 0 && ec_num < ECLASS_N);
+      vg_assert(ec_num < ECLASS_N);
       vg_assert(ec_idx >= 0);
       vg_assert(ec_idx < sec->ec2tte_used[ec_num]);
       /* Assert that the two links point at each other. */
@@ -2104,7 +2104,7 @@ SizeT delete_translations_in_sector_eclass ( /*OUT*/Addr* ga_deleted,
    TTEno    tteno;
    SizeT    numDeld = 0;
 
-   vg_assert(ec >= 0 && ec < ECLASS_N);
+   vg_assert(ec < ECLASS_N);
 
    for (i = 0; i < sec->ec2tte_used[ec]; i++) {
 
@@ -2237,7 +2237,7 @@ void VG_(discard_translations) ( Addr guest_start, ULong range,
                        "                    FAST, ec = %d\n", ec);
 
       /* Fast scheme */
-      vg_assert(ec >= 0 && ec < ECLASS_MISC);
+      vg_assert(ec < ECLASS_MISC);
 
       for (sno = 0; sno < n_sectors; sno++) {
          sec = &sectors[sno];
@@ -2343,7 +2343,7 @@ void VG_(discard_translations_safely) ( Addr  start, SizeT len,
 #define UNREDIR_SZB   1000
 
 #define N_UNREDIR_TT  500
-#define N_UNREDIR_TCQ (N_UNREDIR_TT * UNREDIR_SZB / sizeof(ULong))
+#define N_UNREDIR_TCQ (N_UNREDIR_TT * UNREDIR_SZB / (Int)sizeof(ULong))
 
 typedef
    struct {

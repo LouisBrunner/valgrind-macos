@@ -36,11 +36,12 @@
 struct valgrind_target_ops
 {
    int num_regs;
-   struct reg *reg_defs;
 
    int stack_pointer_regno;
    /* register number of the stack pointer register */
-   
+
+   struct reg *reg_defs;
+
    /* transfer the register regno from/to valgrind (guest state)
       to/from buf
       according to transfer_direction.

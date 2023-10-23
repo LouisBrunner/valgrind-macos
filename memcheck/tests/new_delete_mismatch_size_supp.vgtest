@@ -1,0 +1,4 @@
+prog: new_delete_mismatch_size
+prereq: test -e ./new_delete_mismatch_size
+vgopts: --show-mismatched-frees=yes --suppressions=new_delete_mismatch_size_supp.supp -s
+stderr_filter: filter_used_supp

@@ -12,7 +12,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * A new configure option --with-gdbscripts-dir lets you install
   the gdb valgrind python monitor scripts in a specific location.
-  For example an distro could use it to install the scripts in a
+  For example a distro could use it to install the scripts in a
   safe load location --with-gdbscripts-dir=%{_datadir}/gdb/auto-load
   It is also possible to configure --without-gdb-scripts-dir so no
   .debug_gdb_scripts section is added to the vgpreload library and
@@ -20,9 +20,31 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+* Support has been added for FreeBSD 14 and FreeBSD 15.
+* Add support for the folllowing FreeBSD system calls:
+  close_range, kqueuex, membarrier, timerfd_create,
+  timerfd_settime and timerfd_gettime (all added in FreeBSD 15).
 
 * ==================== TOOL CHANGES ===================
 
+* Memcheck now tests and warns about the values used for
+  alignment and size. These apply to various functions: memalign,
+  posix_memalign and aligned_alloc in C and various overloads
+  of operators new and delete in C++. The kinds of error that can
+  be detected are
+  - invalid alignment, for instance the alignment is usually required
+    to be a power of 2
+  - mismatched alignment between aligned allocation and aligned
+    deallocation
+  - mismatched size when sized delete is used
+  - bad size for functions that have implementation defined behaviour
+    when the requested size is zero
+
+* Cachegrind:
+  - You can now profile part of a program's execution using the new
+    `CACHEGRIND_START_INSTRUMENTATION` and `CACHEGRIND_STOP_INSTRUMENTATION`
+    client requests, along with the new `--instr-at-start` option. The
+    behaviour is the same as Callgrind's equivalent functionality.
 
 * ==================== FIXED BUGS ====================
 
@@ -33,20 +55,48 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+390871  ELF debug info reader confused with multiple .rodata* sections
+426751  Valgrind reports "still reachable" memory using musl (alpine running inside docker)
+432801  Valgrind 3.16.1 reports a jump based on uninitialized memory somehow related to clang and signals
+433857  Add validation to C++17 aligned new/delete alignment size
+433859  Add mismatched detection to C++ 17 aligned new/delete
 460192  Add epoll_pwait2
+461074  DWARF2 CFI reader: unhandled DW_OP_ 0x11 (consts) DW_OP_ 0x92 (bregx)
+465782  s390x: Valgrind doesn't compile with Clang on s390x
+466105  aligned_alloc problems, part 2
+467441  Add mismatched detection to C++ 14 sized delete
 469049  link failure on ppc64 (big endian) valgrind 3.20
 469146  massif --ignore-fn does not ignore inlined functions
 469768  Make it possible to install gdb scripts in a different location
 470121  Can't run callgrind_control with valgrind 3.21.0 because of perl errors
+470132  s390x: Assertion failure on VGM instruction
 470520  Multiple realloc zero errors crash in MC_(eq_Error)
 470713  Failure on the Yosys project: valgrind: m_libcfile.c:1802
         (Bool vgPlain_realpath(const HChar *, HChar *)):
         Assertion 'resolved' failed
 470830  Don't print actions vgdb me ... continue for vgdb --multi mode
+470978  s390x: Valgrind cannot start qemu-kvm when "sysctl vm.allocate_pgste=0"
+471311  gdb --multi mode stdout redirecting to stderr
+471807  Add support for lazy reading and downloading of DWARF debuginfo
+472219  Syscall param ppoll(ufds.events) points to uninitialised byte(s)
+472875  none/tests/s390x/dfp-1 failure 
+472963  Broken regular expression in configure.ac
+473604  Fix bug472219.c compile failure with Clang 16
+473677  make check compile failure with Clang 16 based on GCC 13.x
+473745  must-be-redirected function - strlen
+473870  FreeBSD 14 applications fail early at startup
+473944  Handle mold linker split RW PT_LOAD segments correctly
+474332  aligned_alloc under Valgrind returns nullptr when alignment is not a multiple of sizeof(void *)
+475650  DRD does not work with C11 threads
+475652  Missing suppression for __wcsncpy_avx2 (strncpy-avx2.S:308)?
+n-i-bz  Allow arguments with spaces in .valgrindrc files
+n-i-bz  FreeBSD fixed reading of Valgrind tools own debuginfo
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
+
+(3.22.0.RC1: 17 Oct 2023)
 
 Release 3.21.0 (28 Apr 2023)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

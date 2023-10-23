@@ -67,7 +67,7 @@ void CLG_(set_current_fn_stack)(fn_stack* s)
 
 static cxt_hash cxts;
 
-void CLG_(init_cxt_table)()
+void CLG_(init_cxt_table)(void)
 {
    Int i;
    

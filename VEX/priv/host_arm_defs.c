@@ -220,7 +220,7 @@ ARMAMode1* ARMAMode1_RRS ( HReg base, HReg index, UInt shift ) {
    am->ARMam1.RRS.base  = base;
    am->ARMam1.RRS.index = index;
    am->ARMam1.RRS.shift = shift;
-   vassert(0 <= shift && shift <= 3);
+   vassert(shift <= 3);
    return am;
 }
 
@@ -417,7 +417,7 @@ void ppARMAModeN ( ARMAModeN* am ) {
 /* --------- Reg or imm-8x4 operands --------- */
 
 static UInt ROR32 ( UInt x, UInt sh ) {
-   vassert(sh >= 0 && sh < 32);
+   vassert(sh < 32);
    if (sh == 0)
       return x;
    else
@@ -429,8 +429,8 @@ ARMRI84* ARMRI84_I84 ( UShort imm8, UShort imm4 ) {
    ri84->tag              = ARMri84_I84;
    ri84->ARMri84.I84.imm8 = imm8;
    ri84->ARMri84.I84.imm4 = imm4;
-   vassert(imm8 >= 0 && imm8 <= 255);
-   vassert(imm4 >= 0 && imm4 <= 15);
+   vassert(imm8 <= 255);
+   vassert(imm4 <= 15);
    return ri84;
 }
 ARMRI84* ARMRI84_R ( HReg reg ) {

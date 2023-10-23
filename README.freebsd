@@ -1,8 +1,7 @@
 Installing from ports or via pkg
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are using FreeBSD 11.3 or later, then you should be able to install
-Valgrind using either
+You can install Valgrind using either
 
 pkg install devel/valgrind
 
@@ -10,16 +9,28 @@ or alternatively from ports (if installed)
 
 cd /usr/ports/devel/valgrind && make install clean
 
+devel/valgrind is updated with official releases of Valgrind, normally
+in April and October each year. There is an alternative port,
+devel/valgrind-devel which occasionally gets updated from the latest
+Valgrind source. If you want to have the latest port, check on
+https://www.freshports.org/ to see which is the most recent. If you
+want to have the very latest version, you will need to build a copy
+from source. See README for instructions on getting the source with git.
+
 
 Building Valgrind
 ~~~~~~~~~~~~~~~~~
 
-Install ports for autoconf, automake, libtool and gmake.
+Install ports for autotools, gmake and python.
 
 $ sh autogen.sh
 $ ./configure --prefix=/where/ever
 $ gmake
 $ gmake install
+
+If you are using a jail for building, make sure that it is configured so that
+"uname -r" returns a string that matches the pattern "XX.Y-*" where XX is the
+major version (12, 13, 14 ...) and Y is the minor version (0, 1, 2, 3).
 
 Known Limitations (June 2022)
 
@@ -126,20 +137,33 @@ These are much easier.
 
 They just contain a POST_MEM_WRITE macro for each output argument.
 
-1. Running regression tests
+1. Frequent causes of problems
+
+- New _umtx_op codes. Valgrind will print "WARNING: _umtx_op unsupported value".
+  See syswrap-freebsd.c and add new cases for the new codes.
+- Additions to auxv. Depending on the entry it may need to be simply copied
+  from the host to the guest, it may need to be modified for the guest or
+  it may need to be ignored. See initimg-freebsd.c.
+- ELF PT_LOAD mappings. Either Valgrind will assert or there will be no source
+  information in error reports. See VG_(di_notify_mmap) in debuginfo.c
+- Because they contain many deliberate errors the regression tests are prone
+  to change with changes of compiler. Liberal use of 'volatile' and
+  '-Wno-warning-flag' can help - see configure.ac
+
+2. Running regression tests
 
 In order to run all of the regression tests you will need to install
 the following packages
 gdb
 gsed
 
-In addition to running "make" you will need to run
-"make check" to build the regression test exectutables
-and "make regtest".  Again, more details can be seen in
+In addition to running "gmake" you will need to run
+"gmake check" to build the regression test exectutables
+and "gmake regtest".  Again, more details can be seen in
 README_DEVELOPERS.
 
 If you want to run the 'nightly' script (see nightly/README.txt)
-you will need to install coreutils and modify the
+you will need to install coreutils (for GNU cp) and modify the
 nightly/conf/freebsd.* files. The default configuration
 sends an e-mail to the valgrind-testresults mailing list.
 

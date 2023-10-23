@@ -4333,7 +4333,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                   as that is a handy way to sign extend the lower 32
                   bits into the upper 32 bits. */
                if (mode64)
-                  vassert(n >= 0 && n < 32);
+                  vassert(n < 32);
                else 
                   vassert(n > 0 && n < 32);
                p = mkFormX(p, 31, r_srcL, r_dst, n, 824, 0, endness_host);

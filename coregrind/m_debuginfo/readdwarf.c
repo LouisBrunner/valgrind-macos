@@ -3165,6 +3165,20 @@ static Int dwarfexpr_to_dag ( const UnwindContext* ctx,
                VG_(printf)("DW_OP_breg%d: %ld", reg, sw);
             break;
 
+         case DW_OP_bregx:
+            /* push: reg + sleb128 */
+            reg = (Int)step_leb128U( &expr );
+            sw = step_leb128S( &expr );
+            ix = ML_(CfiExpr_Binop)( dst,
+                    Cbinop_Add,
+                    ML_(CfiExpr_DwReg)( dst, reg ),
+                    ML_(CfiExpr_Const)( dst, (UWord)sw )
+                 );
+            PUSH(ix);
+            if (ddump_frames)
+               VG_(printf)("DW_OP_bregx: %d %ld", reg, sw);
+            break;
+
          case DW_OP_reg0 ... DW_OP_reg31:
             /* push: reg */
             reg = (Int)opcode - (Int)DW_OP_reg0;
@@ -3183,6 +3197,21 @@ static Int dwarfexpr_to_dag ( const UnwindContext* ctx,
             PUSH( ML_(CfiExpr_Binop)( dst, Cbinop_Add, ix2, ix ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_plus_uconst: %lu", uw);
+            break;
+
+         case DW_OP_consts:
+            sw = step_leb128S( &expr );
+            PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_consts: %ld", sw);
+            break;
+
+         case DW_OP_const8s:
+            /* push: 64-bit signed immediate */
+            sw = step_le_s_encoded_literal( &expr, 8 );
+            PUSH( ML_(CfiExpr_Const)( dst, (UWord)sw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const8s: %ld", sw);
             break;
 
          case DW_OP_const4s:
@@ -3231,6 +3260,21 @@ static Int dwarfexpr_to_dag ( const UnwindContext* ctx,
             PUSH( ML_(CfiExpr_Const)( dst, uw ) );
             if (ddump_frames)
                VG_(printf)("DW_OP_const4: %lu", uw);
+            break;
+
+         case DW_OP_const8u:
+            /* push: 64-bit unsigned immediate */
+            uw = step_le_u_encoded_literal( &expr, 8 );
+            PUSH( ML_(CfiExpr_Const)( dst, uw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_const8: %lu", uw);
+            break;
+
+         case DW_OP_constu:
+            uw = step_leb128S ( &expr );
+            PUSH( ML_(CfiExpr_Const)( dst, uw ) );
+            if (ddump_frames)
+               VG_(printf)("DW_OP_constu: %lu", uw);
             break;
 
          case DW_OP_abs:

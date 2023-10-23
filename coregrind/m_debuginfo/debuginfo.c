@@ -549,6 +549,31 @@ static Bool ranges_overlap (Addr s1, SizeT len1, Addr s2, SizeT len2 )
    return True;
 }
 
+/*
+ * PJF 2023-09-23
+ *
+ * FreeBSD can perform a temporary mapping when loading exes
+ * and shared libraries. This is seen as a single page mapped
+ * before the ro/rx/rw mappings from the ELF file itself. More
+ * importantly, FreeBSD can reuse that same page when loading
+ * subsequent shared libraries. That means that we see this
+ * page as an overlap. Previously we noted that the mapping
+ * was not fixed and ignored it by returning early from
+ * VG_(di_notify_mmap).
+ *
+ * That works OK in general, but not for the tool itself.
+ * In order to read symbols for the tool, ML_(read_elf_object)
+ * needs to match up the ELF headers with the DebugInfo maps
+ * (populated from the global nsegments array).
+ *
+ * Two possible solutions would be to hack parse_procselfmaps
+ * even more so that it doesn't record the ro segment (is
+ * that info in kve_flags?). The other, which was also my
+ * original fix for this problem, is to just ignore identical
+ * ro mappings for different files on FreeBSD. I'm not certain
+ * that the size is always one page - that could be used to
+ * tighten the check even more.
+ */
 
 /* Do the basic mappings of the two DebugInfos overlap in any way? */
 static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
@@ -577,8 +602,19 @@ static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
       const DebugInfoMapping* map1 = VG_(indexXA)(di1->fsm.maps, i);
       for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
          const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
-         if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size))
+         if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size)) {
+#if defined(VGO_freebsd)
+            if (di1 != di2 && map1->ro && map2->ro &&
+                map1->avma == map2->avma && map1->size == map2->size) {
+               if (VG_(debugLog_getLevel)() >= 3) {
+                   VG_(dmsg)("do_DebugInfos_overlap-0: identical ro mappings from files %s and %s\n",
+                            di1->fsm.filename, di2->fsm.filename);
+               }
+               continue;
+            }
+#endif
             return True;
+         }
       }
    }
 
@@ -985,14 +1021,16 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    discard_DebugInfos_which_overlap_with( di );
 
    /* The DebugInfoMappings that now exist in the FSM may involve
-      overlaps.  This confuses ML_(read_elf_debug_info), and may cause
+      overlaps.  This confuses ML_(read_elf_*), and may cause
       it to compute wrong biases.  So de-overlap them now.
       See http://bugzilla.mozilla.org/show_bug.cgi?id=788974 */
    truncate_DebugInfoMapping_overlaps( di, di->fsm.maps );
 
    /* And acquire new info. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
-   ok = ML_(read_elf_debug_info)( di );
+   ok = ML_(read_elf_object)( di );
+   if (ok)
+      di->deferred = True;
 #  elif defined(VGO_darwin)
    ok = ML_(read_macho_debug_info)( di );
 #  else
@@ -1321,8 +1359,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #if defined(VGO_freebsd)
    /* Ignore non-fixed read-only mappings.  The dynamic linker may be
     * mapping something for its own transient purposes. */
-   if (!seg->isFF && is_ro_map)
-      return 0;
+   if (!seg->isFF && is_ro_map && debug) {
+      VG_(dmsg)("di_notify_mmap-4: non-fixed ro map\n");
+   }
 #endif
 
 #if defined(VGO_darwin)
@@ -1435,6 +1474,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    map.avma = seg->start;
    map.size = seg->end + 1 - seg->start;
    map.foff = seg->offset;
+#if defined(VGO_freebsd)
+   map.ignore_foff = seg->ignore_offset;
+#endif
    map.rx   = is_rx_map;
    map.rw   = is_rw_map;
    map.ro   = is_ro_map;
@@ -1469,6 +1511,51 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 }
 
+/* Load DI if it hasn't already been been loaded.  */
+void VG_(di_load_di)( DebugInfo *di )
+{
+   if (di->deferred) {
+      di->deferred = False;
+#if defined(VGO_darwin)
+      ML_(read_macho_debug_info) (di);
+#else
+      ML_(read_elf_debug) (di);
+#endif
+      ML_(canonicaliseTables)( di );
+
+      /* Check invariants listed in
+         Comment_on_IMPORTANT_REPRESENTATIONAL_INVARIANTS in
+         priv_storage.h. */
+      check_CFSI_related_invariants(di);
+      ML_(finish_CFSI_arrays)(di);
+   }
+}
+
+/* Load DI if it has a text segment containing A and DI hasn't already
+   been loaded.  */
+
+void VG_(load_di)( DebugInfo *di, Addr a)
+{
+   if (!di->text_present
+       || di->text_size <= 0
+       || di->text_avma > a
+       || a >= di->text_avma + di->text_size)
+      return;
+
+   VG_(di_load_di)(di);
+}
+
+/* Attempt to load DebugInfo with a text segment containing A,
+   if such a debuginfo hasn't already been loaded.  */
+
+void VG_(addr_load_di)( Addr a )
+{
+   DebugInfo *di;
+
+   di = VG_(find_DebugInfo)(VG_(current_DiEpoch)(), a);
+   if (di != NULL)
+      VG_(di_load_di)(di);
+}
 
 /* Unmap is simpler - throw away any SegInfos intersecting 
    [a, a+len).  */
@@ -2825,6 +2912,11 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
    Bool  know_objname;
    Bool  know_srcloc;
 
+   if (iipc && iipc->di)
+      VG_(load_di) (iipc->di, eip);
+   else
+      VG_(addr_load_di) (eip);
+
    if (is_bottom(iipc)) {
       // At the bottom (towards main), we describe the fn at eip.
       know_fnname = VG_(clo_sym_offsets)
@@ -2859,7 +2951,7 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
                      );
       know_dirinfo = buf_dirname[0] != '\0';
    } else {
-      const DiInlLoc *cur_inl = iipc && iipc->cur_inltab >= 0
+      const DiInlLoc *cur_inl = iipc && iipc->di && iipc->cur_inltab >= 0
          ? & iipc->di->inltab[iipc->cur_inltab]
          : NULL;
       vg_assert (cur_inl);
@@ -3168,6 +3260,8 @@ static void find_DiCfSI ( /*OUT*/DebugInfo** diP,
 
       if (!is_DI_valid_for_epoch(di, curr_epoch))
          continue;
+
+      VG_(load_di)(di, ip);
 
       /* Use the per-DebugInfo summary address ranges to skip
          inapplicable DebugInfos quickly. */
@@ -4465,7 +4559,7 @@ Bool VG_(get_data_description)(
    n_frames = VG_(get_StackTrace)( tid, ips, N_FRAMES,
                                    sps, fps, 0/*first_ip_delta*/ );
 
-   vg_assert(n_frames >= 0 && n_frames <= N_FRAMES);
+   vg_assert(n_frames <= N_FRAMES);
    for (j = 0; j < n_frames; j++) {
       if (consider_vars_in_frame( dname1, dname2,
                                   ep, data_addr,
@@ -5127,6 +5221,21 @@ static void caches__invalidate ( void ) {
    sym_name_cache__invalidate();
    debuginfo_generation++;
 }
+
+#if defined(VGO_freebsd)
+/*
+ * Used by FreeBSD if we detect a syscall cap_enter. That
+ * means capability mode, and lots of things won't work any more.
+ * Like opening new file handles. So try to make the most of a bad job
+ * and read all debuginfo in one go.
+ */
+void VG_(load_all_debuginfo) (void)
+{
+   for (DebugInfo* di = debugInfo_list; di; di = di->next) {
+      VG_(di_load_di)(di);
+   }
+}
+#endif
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

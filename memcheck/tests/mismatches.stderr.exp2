@@ -1,0 +1,56 @@
+Mismatched new/delete size value: 4
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:6)
+ Address 0x........ is 0 bytes inside a block of size 10 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:5)
+
+Mismatched free() / delete / delete []
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:6)
+ Address 0x........ is 0 bytes inside a block of size 10 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:5)
+
+Mismatched free() / delete / delete []
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:8)
+ Address 0x........ is 0 bytes inside a block of size 10 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:7)
+
+Mismatched new/delete size value: 4
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:13)
+ Address 0x........ is 0 bytes inside a block of size 40 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:12)
+
+Mismatched free() / delete / delete []
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:13)
+ Address 0x........ is 0 bytes inside a block of size 40 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:12)
+
+Mismatched free() / delete / delete []
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:15)
+ Address 0x........ is 0 bytes inside a block of size 40 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:14)
+
+Mismatched free() / delete / delete []
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:20)
+ Address 0x........ is 0 bytes inside a block of size 4 alloc'd
+   at 0x........: ...operator new... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:19)
+
+Mismatched free() / delete / delete []
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:22)
+ Address 0x........ is 0 bytes inside a block of size 4 alloc'd
+   at 0x........: ...operator new... (vg_replace_malloc.c:...)
+   by 0x........: main (mismatches.cpp:21)
+

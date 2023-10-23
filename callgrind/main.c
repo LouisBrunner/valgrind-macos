@@ -777,7 +777,6 @@ static
 InstrInfo* next_InstrInfo ( ClgState* clgs, UInt instr_size )
 {
    InstrInfo* ii;
-   tl_assert(clgs->ii_index >= 0);
    tl_assert(clgs->ii_index < clgs->bb->instr_count);
    ii = &clgs->bb->instr[ clgs->ii_index ];
 
@@ -1690,6 +1689,9 @@ Bool CLG_(handle_client_request)(ThreadId tid, UWord *args, UWord *ret)
       return handled;
    }
    default:
+      VG_(message)(Vg_UserMsg,
+                   "Warning: unknown callgrind client request code %llx\n",
+                   (ULong)args[0]);
       return False;
    }
 

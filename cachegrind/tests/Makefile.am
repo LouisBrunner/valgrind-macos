@@ -8,7 +8,10 @@ endif
 
 DIST_SUBDIRS = x86 .
 
-dist_noinst_SCRIPTS = filter_stderr filter_cachesim_discards
+dist_noinst_SCRIPTS = \
+	filter_stderr \
+	filter_cachesim_discards \
+	filter_clreq3
 
 # Note that `test.c` and `a.c` are not compiled.
 # They just serve as input for cg_annotate in `ann1a` and `ann1b`.
@@ -34,13 +37,16 @@ EXTRA_DIST = \
 		ann2-negatives.rs ann2-past-the-end.rs \
 	chdir.vgtest chdir.stderr.exp \
 	clreq.vgtest clreq.stderr.exp \
+	clreq2a.vgtest clreq2a.stderr.exp \
+	clreq2b.vgtest clreq2b.stderr.exp \
+	clreq3.vgtest clreq3.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
 	notpower2.vgtest notpower2.stderr.exp \
 	test.c a.c \
 	wrap5.vgtest wrap5.stderr.exp wrap5.stdout.exp
 
 check_PROGRAMS = \
-	chdir clreq dlclose myprint.so
+	chdir clreq clreq2 dlclose myprint.so
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

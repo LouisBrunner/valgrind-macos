@@ -309,7 +309,7 @@ void CLG_(push_call_stack)(BBCC* from, UInt jmp, BBCC* to, Addr sp, Bool skip)
  *
  * If the JCC becomes inactive, call entries are freed if possible
  */
-void CLG_(pop_call_stack)()
+void CLG_(pop_call_stack)(void)
 {
     jCC* jcc;
     Int depth = 0;

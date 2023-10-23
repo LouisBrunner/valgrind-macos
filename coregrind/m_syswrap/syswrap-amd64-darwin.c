@@ -582,7 +582,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
 
       // Go!
       /* Same comments as the 'release' in the then-clause.
-         start_thread_NORETURN calls run_thread_NORETURN calls
+         start_thread_NORETURN calls run_a_thread_NORETURN calls
          thread_wrapper which acquires the lock before continuing.
          Let's hope nothing non-thread-local happens until that point.
 

@@ -136,8 +136,8 @@ struct _Error {
 
    // The tool-specific part
    ThreadId tid;           // Initialised by core
-   ExeContext* where;      // Initialised by core
    ErrorKind ekind;        // Used by ALL.  Must be in the range (0..)
+   ExeContext* where;      // Initialised by core
    Addr addr;              // Used frequently
    const HChar* string;    // Used frequently
    void* extra;            // For any tool-specific extras

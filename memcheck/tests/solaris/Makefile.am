@@ -13,6 +13,7 @@ noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
 	aligned_alloc.stderr.exp aligned_alloc.vgtest \
+	aligned_alloc.stderr.exp-solaris \
 	brk.stderr.exp brk.stdout.exp brk.vgtest \
 	context_stack_die.stderr.exp context_stack_die.stdout.exp context_stack_die.vgtest \
 	door_data.stderr.exp door_data.stdout.exp door_data.vgtest \

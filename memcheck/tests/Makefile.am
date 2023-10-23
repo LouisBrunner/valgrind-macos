@@ -83,7 +83,9 @@ dist_noinst_SCRIPTS = \
 	filter_malloc_free \
 	filter_size_t \
 	filter_stanza \
-	filter_stanza.awk
+	filter_stanza.awk \
+	filter_used_supp \
+	filter_stanza_and_size_t
 
 noinst_HEADERS = leak.h
 
@@ -118,6 +120,7 @@ EXTRA_DIST = \
 	bug340392.stderr.exp bug340392.vgtest \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
+	bug472219.stderr.exp bug472219.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
 	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
@@ -141,12 +144,41 @@ EXTRA_DIST = \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	cxx17_aligned_new.stderr.exp cxx17_aligned_new.vgtest \
 		cxx17_aligned_new.stderr.exp_32 \
-		cxx17_aligned_new.stderr.exp-solaris \
 		cxx17_aligned_new.stdout.exp \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \
-	sized_aligned_new_delete_misaligned.stderr.exp \
-		sized_aligned_new_delete_misaligned.vgtest \
+	sized_aligned_new_delete_misaligned1.stderr.exp \
+		sized_aligned_new_delete_misaligned1.vgtest \
+	sized_aligned_new_delete_misaligned2.stderr.exp \
+		sized_aligned_new_delete_misaligned2.vgtest \
+	sized_aligned_new_delete_misaligned3.stderr.exp \
+		sized_aligned_new_delete_misaligned3.vgtest \
+	sized_aligned_new_delete_misaligned1_xml.stderr.exp \
+		sized_aligned_new_delete_misaligned1_xml.vgtest \
+	sized_aligned_new_delete_misaligned2_xml.stderr.exp \
+		sized_aligned_new_delete_misaligned2_xml.vgtest \
+	sized_aligned_new_delete_misaligned3_xml.stderr.exp \
+		sized_aligned_new_delete_misaligned3_xml.vgtest \
+	sized_aligned_new_delete_misaligned1_supp.vgtest \
+		sized_aligned_new_delete_misaligned1_supp.supp \
+		sized_aligned_new_delete_misaligned1_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned1_supp.stderr.exp_32 \
+	sized_aligned_new_delete_misaligned2_supp.vgtest \
+		sized_aligned_new_delete_misaligned2_supp.supp \
+		sized_aligned_new_delete_misaligned2_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned2_supp.stderr.exp_32 \
+	sized_aligned_new_delete_misaligned3_supp.vgtest \
+		sized_aligned_new_delete_misaligned3_supp.supp \
+		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned3_supp.stderr.exp_32 \
+	new_aligned_delete_default.stderr.exp \
+		new_aligned_delete_default.vgtest \
+	new_delete_mismatch_size.stderr.exp \
+		new_delete_mismatch_size.vgtest \
+	new_delete_mismatch_size_supp.stderr.exp \
+		new_delete_mismatch_size_supp.stderr.exp_32 \
+		new_delete_mismatch_size_supp.vgtest \
+		new_delete_mismatch_size_supp.supp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
 	demangle.stderr.exp demangle.vgtest \
 	big_debuginfo_symbol.stderr.exp big_debuginfo_symbol.vgtest \
@@ -227,6 +259,7 @@ EXTRA_DIST = \
 	memalign_args.vgtest memalign_args.stderr.exp \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-darwin \
+		memalign_args.stderr.exp-solaris \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \
@@ -234,6 +267,9 @@ EXTRA_DIST = \
 	mempool2.stderr.exp mempool2.vgtest \
 	metadata.stderr.exp metadata.stdout.exp metadata.vgtest \
 	mismatches.stderr.exp mismatches.vgtest \
+		mismatches.stderr.exp2 \
+	mismatches_xml.stderr.exp mismatches_xml.vgtest \
+		mismatches_xml.stderr.exp2 \
 	mmaptest.stderr.exp mmaptest.vgtest \
 	nanoleak_supp.stderr.exp nanoleak_supp.vgtest nanoleak.supp \
 	nanoleak_dynsupp.stderr.exp nanoleak_dynsupp.vgtest \
@@ -282,6 +318,10 @@ EXTRA_DIST = \
 	pointer-trace.vgtest \
 	pointer-trace.stderr.exp \
 	posix_memalign.stderr.exp posix_memalign.vgtest \
+		posix_memalign.stderr.exp-darwin \
+	posix_memalign_supp.stderr.exp posix_memalign_supp.vgtest \
+		posix_memalign_supp.supp \
+	posix_memalign_xml.stderr.exp posix_memalign_xml.vgtest \
 	post-syscall.stderr.exp post-syscall.vgtest \
 	reach_thread_register.stderr.exp reach_thread_register.vgtest \
 		reach_thread_register.stderr.exp-mips32 \
@@ -383,6 +423,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stdout.exp-darwin vcpu_fnfns.stdout.exp-solaris \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
 	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
+	wcsncpy.vgtest wcsncpy.stderr.exp \
 	wmemcmp.vgtest wmemcmp.stderr.exp \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
 	wrap2.vgtest wrap2.stdout.exp wrap2.stderr.exp \
@@ -415,6 +456,7 @@ check_PROGRAMS = \
 	bug287260 \
 	bug340392 \
 	bug464969_d_demangle \
+	bug472219 \
 	calloc-overflow \
 	client-msg \
 	clientperm \
@@ -518,7 +560,10 @@ endif
 
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
-	sized_aligned_new_delete_misaligned
+	new_aligned_delete_default \
+	sized_aligned_new_delete_misaligned1 \
+	sized_aligned_new_delete_misaligned2 \
+	sized_aligned_new_delete_misaligned3
 endif
 
 if HAVE_PTHREAD_BARRIER
@@ -526,7 +571,7 @@ check_PROGRAMS += reach_thread_register
 endif
 
 if HAVE_FSIZED_DEALLOCATION
-check_PROGRAMS += sized_delete
+check_PROGRAMS += sized_delete new_delete_mismatch_size
 endif
 
 if HAVE_GNU_STPNCPY
@@ -535,6 +580,11 @@ endif
 
 if HAVE_PTHREAD_SETNAME_NP
 check_PROGRAMS += threadname 
+endif
+
+# are there still pre-C99 C compilers?
+if HAVE_WCSNCPY
+check_PROGRAMS += wcsncpy
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
@@ -566,6 +616,7 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 accounting_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 badfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
 bug155125_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
+bug472219_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
 malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
@@ -579,10 +630,23 @@ bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
+new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
 sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
-sized_aligned_new_delete_misaligned_SOURCES = sized_aligned_new_delete_misaligned.cpp
-sized_aligned_new_delete_misaligned_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned1_SOURCES = sized_aligned_new_delete_misaligned1.cpp
+sized_aligned_new_delete_misaligned1_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+sized_aligned_new_delete_misaligned2_SOURCES = sized_aligned_new_delete_misaligned2.cpp
+sized_aligned_new_delete_misaligned2_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_UNUSED_VARIABLE@
+sized_aligned_new_delete_misaligned3_SOURCES = sized_aligned_new_delete_misaligned3.cpp
+sized_aligned_new_delete_misaligned3_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_UNUSED_VARIABLE@
+if COMPILER_IS_CLANG
+cxx17_aligned_new_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_args_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned1_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned2_CXXFLAGS += -fsized-deallocation
+sized_aligned_new_delete_misaligned3_CXXFLAGS += -fsized-deallocation
+endif
 endif
 
 demangle_SOURCES = demangle.cpp
@@ -630,6 +694,11 @@ memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
 mismatches_SOURCES	= mismatches.cpp
 mismatches_CXXFLAGS	= $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 
+if HAVE_FSIZED_DEALLOCATION
+new_delete_mismatch_size_SOURCES   = new_delete_mismatch_size.cpp
+new_delete_mismatch_size_CXXFLAGS  = $(AM_CXXFLAGS) @FLAG_FSIZED_DEALLOCATION@ -std=c++17
+endif
+
 new_nothrow_SOURCES 	= new_nothrow.cpp
 new_override_SOURCES 	= new_override.cpp
 
@@ -663,6 +732,7 @@ reach_thread_register_LDADD	= -lpthread
 
 realloc_size_zero_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_INCOMPATIBLE_POINTER_TYPES_DISCARDS_QUALIFIERS@
 realloc_size_zero_mismatch_SOURCES = realloc_size_zero_mismatch.cpp
+realloc_size_zero_mismatch_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 
 resvn_stack_CFLAGS      = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 

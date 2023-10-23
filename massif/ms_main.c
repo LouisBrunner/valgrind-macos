@@ -1428,7 +1428,7 @@ static void* ms___builtin_new ( ThreadId tid, SizeT szB )
    return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* ms___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* ms___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB , SizeT orig_alignB )
 {
    return alloc_and_record_block( tid, szB, alignB, /*is_zeroed*/False );
 }
@@ -1438,7 +1438,7 @@ static void* ms___builtin_vec_new ( ThreadId tid, SizeT szB )
    return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* ms___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* ms___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB, SizeT orig_alignB )
 {
    return alloc_and_record_block( tid, szB, alignB, /*is_zeroed*/False );
 }
@@ -1448,7 +1448,7 @@ static void* ms_calloc ( ThreadId tid, SizeT m, SizeT szB )
    return alloc_and_record_block( tid, m*szB, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-static void *ms_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
+static void *ms_memalign ( ThreadId tid, SizeT alignB, SizeT orig_alignB, SizeT szB)
 {
    return alloc_and_record_block( tid, szB, alignB, False );
 }

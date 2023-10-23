@@ -101,7 +101,8 @@ typedef
 
       /* This is just for memcheck's internal use - don't use it */
       _VG_USERREQ__MEMCHECK_RECORD_OVERLAP_ERROR 
-         = VG_USERREQ_TOOL_BASE('M','C') + 256
+         = VG_USERREQ_TOOL_BASE('M','C') + 256,
+      _VG_USERREQ__MEMCHECK_VERIFY_ALIGNMENT
    } Vg_MemCheckClientRequest;
 
 

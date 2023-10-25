@@ -861,7 +861,7 @@ static irop_t irops[] = {
   { DEFOP(Iop_CmpGT8Ux16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_CmpGT16Ux8, UNDEF_UNKNOWN), },
   { DEFOP(Iop_CmpGT32Ux4, UNDEF_UNKNOWN), },
-  { DEFOP(Iop_CmpGT64Ux2, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_CmpGT64Ux2, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Cnt8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Clz8x16, UNDEF_UNKNOWN), },
   { DEFOP(Iop_Clz16x8, UNDEF_UNKNOWN), },

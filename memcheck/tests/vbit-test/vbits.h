@@ -92,8 +92,12 @@ int     completely_defined_vbits(vbits_t);
 vbits_t cmpord_vbits(unsigned v1_num_bits, unsigned v2_num_bits);
 vbits_t cmp_eq_ne_vbits(vbits_t vbits1, vbits_t vbits2,
                         value_t val1, value_t val2);
+uint64_t min_vbits(uint64_t vbits, uint64_t value);
+uint64_t max_vbits(uint64_t vbits, uint64_t value);
 vbits_t int_add_or_sub_vbits(int isAdd,
                              vbits_t vbits1, vbits_t vbits2,
                              value_t val1, value_t val2);
+vbits_t cmp_gt_vbits(int is_signed, int bits_per_element, int element_count,
+                     vbits_t vbits1, vbits_t vbits2, value_t val1, value_t val2);
 
 #endif // VBITS_H

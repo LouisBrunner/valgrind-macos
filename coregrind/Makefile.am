@@ -569,9 +569,11 @@ endif
 # used by libgcc.
 #----------------------------------------------------------------------------
 
+if !COMPILER_IS_CLANG
 pkglib_LIBRARIES  += libgcc-sup-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 if VGCONF_HAVE_PLATFORM_SEC
 pkglib_LIBRARIES += libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
 endif
 
 libgcc_sup_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \

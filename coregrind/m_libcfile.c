@@ -1420,6 +1420,7 @@ Int VG_(socket) ( Int domain, Int type, Int protocol )
                                VKI_SO_NOSIGPIPE, (UWord)&optval, 
                                sizeof(optval));
        // ignore setsockopt() error
+       (void) res2;
    }
    return sr_isError(res) ? -1 : sr_Res(res);
 

@@ -50,7 +50,7 @@ CXXFLAGS="$CXXFLAGS"
 #----------------------------------------------------------------------------
 
 AC_PROG_LN_S
-m4_version_prereq([2.70], [AC_PROG_CC])
+m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
 # Make sure we can compile in C99 mode.
 if test "$ac_prog_cc_stdc" = "c99"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])

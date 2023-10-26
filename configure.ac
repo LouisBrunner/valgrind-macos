@@ -52,7 +52,7 @@ CXXFLAGS="$CXXFLAGS"
 AC_PROG_LN_S
 m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
 # Make sure we can compile in C99 mode.
-if test "$ac_cv_prog_cc_c99" = "no"; then
+if test "$ac_prog_cc_stdc" = "c99"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
 fi
 AC_PROG_CPP
@@ -153,8 +153,8 @@ fi
 rm $tmpfile
 
 # Make sure we can compile in C99 mode.
-AC_PROG_CC_C99
-if test "$ac_cv_prog_cc_c99" = "no"; then
+AC_PROG_CC
+if test "$ac_prog_cc_stdc" = "c99"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
 fi
 
@@ -531,186 +531,191 @@ case "${host_os}" in
         ;;
 
      *darwin*)
-        AC_MSG_RESULT([ok (${host_os})])
-        VGCONF_OS="darwin"
-        AC_DEFINE([DARWIN_10_5], 100500, [DARWIN_VERS value for Mac OS X 10.5])
-        AC_DEFINE([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6])
-        AC_DEFINE([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7])
-        AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8])
-        AC_DEFINE([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9])
-        AC_DEFINE([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10])
-        AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11])
-        AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12])
-        AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13])
-        AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14])
-        AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15])
-        AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0])
-        AC_DEFINE([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0])
-        AC_DEFINE([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0])
-        AC_DEFINE([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0])
+      AC_MSG_RESULT([ok (${host_os})])
+      VGCONF_OS="darwin"
 
-        AC_DEFINE([XCODE_10_XX], 101400, [XCODE_VERS value for Xcode earlier than 10.15])
-        AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6])
-        AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15])
-        AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0])
-        AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0])
-        AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0])
-        AC_DEFINE([XCODE_14_0], 140000, [XCODE_VERS value for Xcode 14.0])
+      AC_DEFUN([AC_ADD_DARWIN_VERS],[
+        $1=$2
+        AC_DEFINE_UNQUOTED([$1], [$$1], [DARWIN_VERS value for $3])
+        AC_SUBST($1)
+      ])
+      AC_ADD_DARWIN_VERS(DARWIN_10_5, 100500, [Mac OS X 10.5])
+      AC_ADD_DARWIN_VERS(DARWIN_10_6, 100600, [Mac OS X 10.6])
+      AC_ADD_DARWIN_VERS(DARWIN_10_7, 100700, [Mac OS X 10.7])
+      AC_ADD_DARWIN_VERS(DARWIN_10_8, 100800, [Mac OS X 10.8])
+      AC_ADD_DARWIN_VERS(DARWIN_10_9, 100900, [Mac OS X 10.9])
+      AC_ADD_DARWIN_VERS(DARWIN_10_10, 101000, [Mac OS X 10.10])
+      AC_ADD_DARWIN_VERS(DARWIN_10_11, 101100, [Mac OS X 10.11])
+      AC_ADD_DARWIN_VERS(DARWIN_10_12, 101200, [macOS 10.12])
+      AC_ADD_DARWIN_VERS(DARWIN_10_13, 101300, [macOS 10.13])
+      AC_ADD_DARWIN_VERS(DARWIN_10_14, 101400, [macOS 10.14])
+      AC_ADD_DARWIN_VERS(DARWIN_10_15, 101500, [macOS 10.15])
+      AC_ADD_DARWIN_VERS(DARWIN_11_00, 110000, [macOS 11.0])
+      AC_ADD_DARWIN_VERS(DARWIN_12_00, 120000, [macOS 12.0])
+      AC_ADD_DARWIN_VERS(DARWIN_13_00, 130000, [macOS 13.0])
+      AC_ADD_DARWIN_VERS(DARWIN_14_00, 140000, [macOS 14.0])
 
-        # Substitute the Xcode include path detected earlier
-        AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
+      AC_DEFINE([XCODE_10_XX], 101400, [XCODE_VERS value for Xcode earlier than 10.15])
+      AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6])
+      AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15])
+      AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0])
+      AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0])
+      AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0])
+      AC_DEFINE([XCODE_14_0], 140000, [XCODE_VERS value for Xcode 14.0])
 
-	AC_MSG_CHECKING([for the kernel version])
-	kernel=`uname -r`
+      # Substitute the Xcode include path detected earlier
+      AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
 
-        # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
-        # has only one relevant version, the OS version. The `uname` check
-        # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
-        # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
-        # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion),
-        # and we don't know of an macros similar to __GLIBC__ to get that info.
-        #
-        # XXX: `uname -r` won't do the right thing for cross-compiles, but
-        # that's not a problem yet.
-        #
-        # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
-        # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
-        # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
-        # time support for 10.5 (the 9.* pattern just below), I'll leave it
-        # in for now, just in case anybody wants to give it a try.  But I'm
-        # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
-	case "${kernel}" in
-	     9.*)
-		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_5, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin9-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     10.*)
-		  AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_6, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     11.*)
-		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     12.*)
-		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     13.*)
-		  AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_9, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     14.*)
-		  AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_10, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     15.*)
-		  AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_11, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     16.*)
-		  AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_12, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-	     17.*)
-		  AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
-		  AC_DEFINE([DARWIN_VERS], DARWIN_10_13, [Darwin / Mac OS X version])
-		  DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
-             18.*)
-                  AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave])
-                  AC_DEFINE([DARWIN_VERS], DARWIN_10_14, [Darwin / Mac OS X version])
-                  DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
+      AC_MSG_CHECKING([for the kernel version])
+      kernel=`uname -r`
+
+      # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
+      # has only one relevant version, the OS version. The `uname` check
+      # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
+      # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
+      # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion),
+      # and we don't know of an macros similar to __GLIBC__ to get that info.
+      #
+      # XXX: `uname -r` won't do the right thing for cross-compiles, but
+      # that's not a problem yet.
+      #
+      # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
+      # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
+      # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
+      # time support for 10.5 (the 9.* pattern just below), I'll leave it
+      # in for now, just in case anybody wants to give it a try.  But I'm
+      # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
+      DARWIN_DRD_SUPP="darwin10-drd.supp"
+      case "${kernel}" in
+        9.*)
+          AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
+          DARWIN_VERS=$DARWIN_10_5
+          DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
+          DARWIN_DRD_SUPP="darwin9-drd.supp"
+          ;;
+        10.*)
+          AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
+          DARWIN_VERS=$DARWIN_10_6
+          DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
+          ;;
+        11.*)
+          AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
+          DARWIN_VERS=$DARWIN_10_7
+          DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
+          ;;
+        12.*)
+          AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
+          DARWIN_VERS=$DARWIN_10_8
+          DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
+          ;;
+        13.*)
+          AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks])
+          DARWIN_VERS=$DARWIN_10_9
+          DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
+          ;;
+        14.*)
+          AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite])
+          DARWIN_VERS=$DARWIN_10_10
+          DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
+          ;;
+        15.*)
+          AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
+          DARWIN_VERS=$DARWIN_10_11
+          DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
+          ;;
+        16.*)
+          AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra])
+          DARWIN_VERS=$DARWIN_10_12
+          DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
+          ;;
+        17.*)
+          AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
+          DARWIN_VERS=$DARWIN_10_13
+          DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
+          ;;
+        18.*)
+          AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave])
+          DARWIN_VERS=$DARWIN_10_14
+          DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
+          ;;
+        19.*)
+          AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina])
+          DARWIN_VERS=$DARWIN_10_15
+          DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
+          ;;
+        20.*)
+          AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur])
+          DARWIN_VERS=$DARWIN_11_00
+          DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
+          ;;
+        21.*)
+          AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey])
+          DARWIN_VERS=$DARWIN_12_00
+          DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
+          ;;
+        22.*)
+          AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura])
+          DARWIN_VERS=$DARWIN_13_00
+          DEFAULT_SUPP="darwin22.supp ${DEFAULT_SUPP}"
+          ;;
+        23.*)
+          AC_MSG_RESULT([Darwin 23.x (${kernel}) / macOS 14 Sonoma])
+          DARWIN_VERS=$DARWIN_14_00
+          DEFAULT_SUPP="darwin23.supp ${DEFAULT_SUPP}"
+          ;;
+        *)
+          AC_MSG_RESULT([unsupported (${kernel})])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-10.11 and macOS 10.12-14.0)])
+          ;;
+      esac
+      AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X version])
+      AC_SUBST(DARWIN_VERS)
+      DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"
+
+      AC_MSG_CHECKING([for the the minimum macOS SDK version])
+      DARWIN_MIN_SDK="10.6"
+      if test $DARWIN_VERS -ge $DARWIN_11_00; then
+        DARWIN_MIN_SDK="10.8"
+      fi
+      AC_SUBST(DARWIN_MIN_SDK)
+      AC_DEFINE_UNQUOTED([DARWIN_MIN_SDK], $DARWIN_MIN_SDK, [Darwin / Mac OS X minimum SDK version])
+      AC_MSG_RESULT([${DARWIN_MIN_SDK}])
+
+      AC_MSG_CHECKING([for the Xcode SDK version])
+      xcodeversion="legacy"
+      if test "x$XCRUN" != "xno"; then
+        xcodeversion=`xcrun --sdk macosx --show-sdk-version`
+      fi
+      case "${xcodeversion}" in
+        10.14.6)
+          AC_DEFINE([XCODE_VERS], XCODE_10_14_6, [Xcode version])
+          ;;
+        legacy|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*|10.14*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          ;;
+        10.15*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
+          ;;
+        11.*)
+          AC_DEFINE([XCODE_VERS], XCODE_11_0, [Xcode version])
+          ;;
+        12.*)
+          AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
+          ;;
+        13.*)
+          AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
+          ;;
+        14.*)
+          AC_DEFINE([XCODE_VERS], XCODE_14_0, [Xcode version])
+          ;;
+        *)
+          AC_MSG_RESULT([unsupported (${xcodeversion})])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-11 and macOS 10.12-14.0)])
+          ;;
+      esac
+      AC_MSG_RESULT([${xcodeversion}])
+
       ;;
-       19.*)
-      AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina])
-      AC_DEFINE([DARWIN_VERS], DARWIN_10_15, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       20.*)
-      AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur])
-      AC_DEFINE([DARWIN_VERS], DARWIN_11_00, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       21.*)
-      AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey])
-      AC_DEFINE([DARWIN_VERS], DARWIN_12_00, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       22.*)
-      AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura])
-      AC_DEFINE([DARWIN_VERS], DARWIN_13_00, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin22.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       23.*)
-      AC_MSG_RESULT([Darwin 23.x (${kernel}) / macOS 14 Sonoma])
-      AC_DEFINE([DARWIN_VERS], DARWIN_14_00, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin23.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-             *)
-		  AC_MSG_RESULT([unsupported (${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-10.11 and macOS 10.12-14.0)])
-		  ;;
-	esac
-
-        AC_MSG_CHECKING([for the Xcode SDK version])
-        xcodeversion="legacy"
-        if test "x$XCRUN" != "xno"; then
-          xcodeversion=`xcrun --sdk macosx --show-sdk-version`
-        fi
-        case "${xcodeversion}" in
-	        10.14.6)
-            AC_DEFINE([XCODE_VERS], XCODE_10_14_6, [Xcode version])
-            ;;
-	        legacy|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*|10.14*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
-            ;;
-	        10.15*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
-            ;;
-	        11.*)
-            AC_DEFINE([XCODE_VERS], XCODE_11_0, [Xcode version])
-            ;;
-	        12.*)
-            AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
-            ;;
-	        13.*)
-            AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
-            ;;
-          14.*)
-            AC_DEFINE([XCODE_VERS], XCODE_14_0, [Xcode version])
-            ;;
-	        *)
-            AC_MSG_RESULT([unsupported (${xcodeversion})])
-            AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-11 and macOS 10.12-14.0)])
-            ;;
-	      esac
-        AC_MSG_RESULT([${xcodeversion}])
-
-        ;;
 
      solaris2.11*)
         AC_MSG_RESULT([ok (${host_os})])

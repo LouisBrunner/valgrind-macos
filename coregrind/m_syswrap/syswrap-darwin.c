@@ -255,8 +255,6 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    } else {
 
-      mach_msg_header_t msg;
-
       VG_(debugLog)(1, "syswrap-darwin",
                        "run_a_thread_NORETURN(tid=%u): "
                           "not last one standing\n",
@@ -271,6 +269,7 @@ static void run_a_thread_NORETURN ( Word tidW )
       /* tid is now invalid. */
 
 #  if DARWIN_VERS < DARWIN_10_14
+      mach_msg_header_t msg;
       // GrP fixme exit race
       msg.msgh_bits = MACH_MSGH_BITS(17, MACH_MSG_TYPE_MAKE_SEND_ONCE);
       msg.msgh_request_port = VG_(gettid)();
@@ -2324,12 +2323,9 @@ PRE(__mac_syscall)
 PRE(exit)
 {
    ThreadId     t;
-   ThreadState* tst;
 
    PRINT("darwin exit( %ld )", SARG1);
    PRE_REG_READ1(void, "exit", int, status);
-
-   tst = VG_(get_ThreadState)(tid);
 
    /* A little complex; find all the threads with the same threadgroup
       as this one (including this one), and mark them to exit */
@@ -3089,7 +3085,7 @@ PRE(stat64)
    //
    // This is our entry point for checking a particular dylib: if it looks like one,
    // we want to see the error result, if any, and subsequently check the cache
-   if (ARG1 != NULL && VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
+   if (ARG1 != 0 && VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
      *flags |= SfPostOnFail;
    }
 #endif
@@ -8891,6 +8887,7 @@ PRE(mach_msg)
                    (Addr)((char*)mh + sizeof(mach_msg_header_t) + complex_header_size),
                    send_size - sizeof(mach_msg_header_t) - complex_header_size);
       */
+      (void) complex_header_size;
       return;
    }
 }

@@ -172,6 +172,7 @@ EXTRA_DIST = \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp_32 \
 	new_aligned_delete_default.stderr.exp \
+	new_aligned_delete_default.stderr.exp_32 \
 		new_aligned_delete_default.vgtest \
 	new_delete_mismatch_size.stderr.exp \
 		new_delete_mismatch_size.vgtest \
@@ -292,6 +293,7 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc25-x86 \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
 	origin5-bz2.stderr.exp-glibc25-amd64-b \
+	origin5-bz2.stderr.exp-glibc25-x86-b \
 	origin5-bz2.stderr.exp-glibc27-ppc64 \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \

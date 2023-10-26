@@ -28,6 +28,10 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-20.04' }}
       - name: checkout project
         uses: actions/checkout@v1
+      - name: check versions
+        run: |
+          autoconf --version
+        shell: bash
       - name: calculate short SHA
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT

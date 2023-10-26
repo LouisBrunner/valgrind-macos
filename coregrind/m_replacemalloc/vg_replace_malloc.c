@@ -1027,13 +1027,12 @@ extern int * __error(void) __attribute__((weak));
 
 #define DELETE(soname, fnname, vg_replacement, tag) \
  \
-    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size); \
-    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p, SizeT size)  \
+    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p); \
+    void VG_REPLACE_FUNCTION_EZU(10050,soname,fnname) (void *p)  \
  { \
  struct AlignedAllocInfo aligned_alloc_info = { .mem=p, .alloc_kind=AllocKind##tag }; \
       \
       DO_INIT; \
-      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
       MALLOC_TRACE(#fnname "(%p)\n", p ); \
       if (p == NULL)  \

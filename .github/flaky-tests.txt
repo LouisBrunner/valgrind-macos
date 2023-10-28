@@ -1,0 +1,8 @@
+# seen on macOS 11
+none/tests/darwin/apple-main-arg
+# seen on macOS 11 and 12
+none/tests/allexec32
+none/tests/allexec64
+# seen on macOS 12
+none/tests/exec-sigmask
+memcheck/tests/sem

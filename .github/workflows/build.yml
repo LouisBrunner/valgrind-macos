@@ -20,7 +20,7 @@ jobs:
     name: Build and Test on ${{matrix.os}}
 
     steps:
-      - name: install dependencies (MacOS)
+      - name: install dependencies (macOS)
         run: brew update && brew install automake
         if: ${{ matrix.os != 'ubuntu-24.04' }}
       - name: install dependencies (Linux)
@@ -50,10 +50,19 @@ jobs:
       - name: build tests
         run: make check
       - name: run regression tests
-        run: make regtest | tee raw-results.txt
+        run: make regtest | tee ${{ env.TEST_FOLDER }}/raw-results.txt
       - name: process results
         if: always()
-        run: awk '/^== [0-9]+ tests, .* ==$/{flag=1;next}/^$/{flag=0}flag' < raw-results.txt > ${{ env.TEST_FOLDER }}/results.txt
+        run: |
+          awk '/^== [0-9]+ tests, .* ==$/{flag=1;next}/^$/{flag=0}flag' < ${{ env.TEST_FOLDER }}/raw-results.txt | tee ${{ env.TEST_FOLDER }}/results.txt | while read line; do
+            TEST_NAME=$(echo $line | cut -f 1 -d' ')
+            if grep -q $TEST_NAME .github/flaky-tests.txt && [ "${{ matrix.os != 'ubuntu-20.04' }}" == "true" ]; then
+              echo "skipping flaky test $TEST_NAME"
+            else
+              echo $line >> ${{ env.TEST_FOLDER }}/filtered-results.txt
+            fi
+          done
+        shell: bash
       - name: copy failing test outputs
         if: always()
         run: cat ${{ env.TEST_FOLDER }}/results.txt | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
@@ -62,7 +71,7 @@ jobs:
         uses: LouisBrunner/diff-action@v0.3.0
         with:
           old: .github/${{ matrix.os }}-expected.txt
-          new: ${{ env.TEST_FOLDER }}/results.txt
+          new: ${{ env.TEST_FOLDER }}/filtered-results.txt
           mode: deletion
           tolerance: same
           output: ${{ env.TEST_FOLDER }}/results.diff

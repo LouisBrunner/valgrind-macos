@@ -23,6 +23,8 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+476320  Build failure with GCC
+
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.

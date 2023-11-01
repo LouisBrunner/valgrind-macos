@@ -806,6 +806,8 @@ case "$ARCH_MAX-$VGCONF_OS" in
         else
            GCC_MAJOR_VERSION=`${CC} -dumpversion | $SED 's/\..*//' 2>/dev/null`
            FLAG_32ON64="-B/usr/local/lib32/gcc${GCC_MAJOR_VERSION} -Wl,-rpath,/usr/local/lib32/gcc${GCC_MAJOR_VERSION}/"
+           FLAG_32ON64_GXX="-L/usr/local/lib32/gcc${GCC_MAJOR_VERSION} -lgcc_s"
+           AC_SUBST(FLAG_32ON64_GXX)
         fi
         valt_load_address_pri_norml="0x38000000"
         valt_load_address_pri_inner="0x28000000"

@@ -73,12 +73,15 @@ check_PROGRAMS = \
 	new-cpp \
 	null \
 	one \
-	overloaded-new \
 	pages_as_heap \
 	peak \
 	realloc \
 	thresholds \
 	zero
+
+if HAVE_ALIGNED_CXX_ALLOC
+check_PROGRAMS += overloaded-new
+endif
 
 inlinfomalloc_CFLAGS = $(AM_CFLAGS) -w
 
@@ -92,10 +95,8 @@ bug469146_SOURCES	= bug469146.cpp
 bug469146_CXXFLAGS	= $(AM_CXXFLAGS) -O2 -fno-optimize-sibling-calls @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_ATTRIBUTES@
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
-# pre C++11 compilers don't have exception specs
-# C++11 and later compilers may complain about not having
-# exception specs
-overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec
+# aligned new needs C++17
+overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec -std=c++17
 
 # Suppress warnings for issues we are testing for
 alloc_fns_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result

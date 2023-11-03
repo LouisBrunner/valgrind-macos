@@ -51,8 +51,7 @@ EXTRA_DIST = \
 	thresholds_10_10.post.exp \
 	thresholds_10_10.stderr.exp thresholds_10_10.vgtest \
 	zero1.post.exp zero1.stderr.exp zero1.vgtest \
-	zero2.post.exp zero2.stderr.exp zero2.vgtest \
-	overloaded-new.post.exp-freebsd
+	zero2.post.exp zero2.stderr.exp zero2.vgtest
 
 check_PROGRAMS = \
 	alloc-fns \

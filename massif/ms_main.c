@@ -298,6 +298,12 @@ static void init_alloc_fns(void)
    // prodigiously stupid overloading that caused them to not allocate
    // memory.
    //
+   // PJF: the above comment is a bit wide of the mark.
+   // See https://en.cppreference.com/w/cpp/memory/new/operator_new
+   // There are two "non-allocating placement allocation functions"
+   //
+   // Because of the above we can't use wildcards.
+   //
    // XXX: because we don't look at the first stack entry (unless it's a
    // custom allocation) there's not much point to having all these alloc
    // functions here -- they should never appear anywhere (I think?) other
@@ -309,20 +315,37 @@ static void init_alloc_fns(void)
    //
    DO("malloc"                                              );
    DO("__builtin_new"                                       );
+# if VG_WORDSIZE == 4
    DO("operator new(unsigned)"                              );
+#else
    DO("operator new(unsigned long)"                         );
+#endif
    DO("__builtin_vec_new"                                   );
+# if VG_WORDSIZE == 4
    DO("operator new[](unsigned)"                            );
+#else
    DO("operator new[](unsigned long)"                       );
+#endif
    DO("calloc"                                              );
    DO("realloc"                                             );
    DO("memalign"                                            );
    DO("posix_memalign"                                      );
    DO("valloc"                                              );
+# if VG_WORDSIZE == 4
    DO("operator new(unsigned, std::nothrow_t const&)"       );
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
+   DO("operator new(unsigned, std::align_val_t al)"         );
+   DO("operator new[](unsigned, std::align_val_t al)"       );
+   DO("operator new(unsigned, std::align_val_t al, const std::nothrow_t&)"   );
+   DO("operator new[](unsigned, std::align_val_t al, const std::nothrow_t&)" );
+#else
    DO("operator new(unsigned long, std::nothrow_t const&)"  );
    DO("operator new[](unsigned long, std::nothrow_t const&)");
+   DO("operator new(unsigned long, std::align_val_t al)"    );
+   DO("operator new[](unsigned long, std::align_val_t al)"  );
+   DO("operator new(unsigned long, std::align_val_t al, const std::nothrow_t&)"   );
+   DO("operator new[](unsigned long, std::align_val_t al, const std::nothrow_t&)" );
+#endif
 #if defined(VGO_darwin)
    DO("malloc_zone_malloc"                                  );
    DO("malloc_zone_calloc"                                  );

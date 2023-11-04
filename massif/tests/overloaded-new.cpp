@@ -90,9 +90,9 @@ int main(void)
     delete [] c1;
     delete [] c2;
     operator delete(pa1, static_cast<std::align_val_t>(256U));
-    operator delete(pa2, static_cast<std::align_val_t>(256U));
+    operator delete[](pa2, static_cast<std::align_val_t>(256U));
     operator delete(pa3, static_cast<std::align_val_t>(256U));
-    operator delete(pa4, static_cast<std::align_val_t>(256U));
+    operator delete[](pa4, static_cast<std::align_val_t>(256U));
     return 0;
 }
 

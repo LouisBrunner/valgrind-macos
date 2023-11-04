@@ -16,62 +16,62 @@ typedef struct {
 
 __attribute__((noinline)) void* operator new (std::size_t n)
 {
-    return malloc(n);
+    return (void*)12345;
 }
 
 __attribute__((noinline)) void* operator new (std::size_t n, std::nothrow_t const &)
 {
-    return malloc(n);
+    return (void*)23456;
 }
 
 __attribute__((noinline)) void* operator new[] (std::size_t n)
 {
-    return malloc(n);
+    return (void*)34567;
 }
 
 __attribute__((noinline)) void* operator new[] (std::size_t n, std::nothrow_t const &)
 {
-    return malloc(n);
+    return (void*)45678;
 }
 
 __attribute__((noinline)) void* operator new (std::size_t size, std::align_val_t al)
 {
-    return aligned_alloc(static_cast<std::size_t>(al), size);
+    return (void*)56789;
 }
 
 __attribute__((noinline)) void* operator new[] (std::size_t size, std::align_val_t al)
 {
-    return aligned_alloc(static_cast<std::size_t>(al), size);
+    return (void*)67890;
 }
 
 __attribute__((noinline)) void* operator new(std::size_t size, std::align_val_t al, const std::nothrow_t&) noexcept
 {
-    return aligned_alloc(static_cast<std::size_t>(al), size);
+    return (void*)78901;
 }
 
 __attribute__((noinline)) void* operator new[](std::size_t size, std::align_val_t al, const std::nothrow_t&) noexcept
 {
-    return aligned_alloc(static_cast<std::size_t>(al), size);
+    return (void*)89012;
 }
 
 __attribute__((noinline)) void operator delete (void* p)
 {
-    free(p);
+
 }
 
 __attribute__((noinline)) void operator delete[] (void* p)
 {
-    free(p);
+
 }
 
 __attribute__((noinline))  void operator delete (void* ptr, std::align_val_t al ) noexcept
 {
-    free(ptr);
+
 }
 
 __attribute__((noinline))  void operator delete[] (void* ptr, std::align_val_t al ) noexcept
 {
-    free(ptr);
+
 }
 
 int main(void)

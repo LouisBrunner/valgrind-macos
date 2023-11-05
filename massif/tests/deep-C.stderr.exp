@@ -1,21 +1,21 @@
 Massif: alloc-fns:
 Massif:   malloc
 Massif:   __builtin_new
-Massif:   operator new(unsigned long)
+Massif:   operator new(unsigned)
 Massif:   __builtin_vec_new
-Massif:   operator new[](unsigned long)
+Massif:   operator new[](unsigned)
 Massif:   calloc
 Massif:   aligned_alloc
 Massif:   realloc
 Massif:   memalign
 Massif:   posix_memalign
 Massif:   valloc
-Massif:   operator new(unsigned long, std::nothrow_t const&)
-Massif:   operator new[](unsigned long, std::nothrow_t const&)
-Massif:   operator new(unsigned long, std::align_val_t)
-Massif:   operator new[](unsigned long, std::align_val_t)
-Massif:   operator new(unsigned long, std::align_val_t, std::nothrow_t const&)
-Massif:   operator new[](unsigned long, std::align_val_t, std::nothrow_t const&)
+Massif:   operator new(unsigned, std::nothrow_t const&)
+Massif:   operator new[](unsigned, std::nothrow_t const&)
+Massif:   operator new(unsigned, std::align_val_t)
+Massif:   operator new[](unsigned, std::align_val_t)
+Massif:   operator new(unsigned, std::align_val_t, std::nothrow_t const&)
+Massif:   operator new[](unsigned, std::align_val_t, std::nothrow_t const&)
 Massif:   a3
 Massif:   a4
 Massif:   a5

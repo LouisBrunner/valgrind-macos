@@ -282,6 +282,12 @@ static Bool have_started_executing_code = False;
 //--- Alloc fns                                            ---//
 //------------------------------------------------------------//
 
+// alloc_fns is not used for detecting allocations
+// it is used when checking for ignore functions in the callstack
+// see filter_IPs
+// allocation detection uses the usual coregrind reaplace malloc
+// mechanism which calls ms_malloc etc. here and in the end
+// everything goes through alloc_and_record_block
 static XArray* alloc_fns;
 static XArray* ignore_fns;
 
@@ -327,6 +333,7 @@ static void init_alloc_fns(void)
    DO("operator new[](unsigned long)"                       );
 #endif
    DO("calloc"                                              );
+   DO("aligned_alloc"                                       );
    DO("realloc"                                             );
    DO("memalign"                                            );
    DO("posix_memalign"                                      );
@@ -334,17 +341,17 @@ static void init_alloc_fns(void)
 # if VG_WORDSIZE == 4
    DO("operator new(unsigned, std::nothrow_t const&)"       );
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
-   DO("operator new(unsigned, std::align_val_t al)"         );
-   DO("operator new[](unsigned, std::align_val_t al)"       );
-   DO("operator new(unsigned, std::align_val_t al, const std::nothrow_t&)"   );
-   DO("operator new[](unsigned, std::align_val_t al, const std::nothrow_t&)" );
+   DO("operator new(unsigned, std::align_val_t)"            );
+   DO("operator new[](unsigned, std::align_val_t)"          );
+   DO("operator new(unsigned, std::align_val_t, std::nothrow_t const&)"   );
+   DO("operator new[](unsigned, std::align_val_t, std::nothrow_t const&)" );
 #else
    DO("operator new(unsigned long, std::nothrow_t const&)"  );
    DO("operator new[](unsigned long, std::nothrow_t const&)");
-   DO("operator new(unsigned long, std::align_val_t al)"    );
-   DO("operator new[](unsigned long, std::align_val_t al)"  );
-   DO("operator new(unsigned long, std::align_val_t al, const std::nothrow_t&)"   );
-   DO("operator new[](unsigned long, std::align_val_t al, const std::nothrow_t&)" );
+   DO("operator new(unsigned long, std::align_val_t)"       );
+   DO("operator new[](unsigned long, std::align_val_t)"     );
+   DO("operator new(unsigned long, std::align_val_t, std::nothrow_t const&)"   );
+   DO("operator new[](unsigned long, std::align_val_t, std::nothrow_t const&)" );
 #endif
 #if defined(VGO_darwin)
    DO("malloc_zone_malloc"                                  );

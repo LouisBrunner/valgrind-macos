@@ -33,6 +33,7 @@ EXTRA_DIST = \
 	null.post.exp null.stderr.exp null.vgtest \
 	one.post.exp one.post.exp2 one.stderr.exp one.vgtest \
 	overloaded-new.post.exp overloaded-new.post.exp-mips32 \
+	overloaded-new.post.exp-libstdc++ \
 	overloaded-new.stderr.exp overloaded-new.vgtest \
 	pages_as_heap.stderr.exp pages_as_heap.vgtest \
 	peak.post.exp peak.stderr.exp peak.vgtest \

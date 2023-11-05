@@ -24,6 +24,7 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 476320  Build failure with GCC
+476535  Difference in allocation size for massif/tests/overloaded-new between clang++/libc++ and g++/libstdc++
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

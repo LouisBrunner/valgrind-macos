@@ -6,7 +6,7 @@ ms_print arguments: massif.out
 
 
     KB
-98.28^                                    #                                   
+98.XX^                                    #                                   
      |                                    #:                                  
      |                                    #:::                                
      |                                    #::::                               
@@ -27,7 +27,7 @@ ms_print arguments: massif.out
      |    ::              ::              #:::::              ::              
      |  ::::              ::              #:::::              ::              
    0 +----------------------------------------------------------------------->KB
-     0                                                                   196.6
+     0                                                                   19X.X
 
 Number of snapshots: 18
  Detailed snapshots: [9 (peak)]
@@ -40,36 +40,36 @@ Number of snapshots: 18
   2          8,016            8,016            8,000            16            0
   3         10,024           10,024           10,000            24            0
   4         12,032           12,032           12,000            32            0
-  5         16,216           16,216           16,000           216            0
-  6         56,368           56,368           56,000           368            0
-  7         60,392           60,392           60,000           392            0
-  8        100,640          100,640          100,000           640            0
-  9        100,640          100,640          100,000           640            0
-99.36% (100,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->39.75% (40,000B) 0x........: main (overloaded-new.cpp:84)
+  5         16,XXX           16,XXX           16,000           XXX            0
+  6         56,XXX           56,XXX           56,000           XXX            0
+  7         60,XXX           60,XXX           60,000           XXX            0
+  8        100,XXX          100,XXX          100,000           XXX            0
+  9        100,XXX          100,XXX          100,000           XXX            0
+99.XX% (100,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->39.XX% (40,000B) 0x........: main (overloaded-new.cpp:84)
 | 
-->39.75% (40,000B) 0x........: main (overloaded-new.cpp:87)
+->39.XX% (40,000B) 0x........: main (overloaded-new.cpp:87)
 | 
-->03.97% (4,000B) 0x........: main (overloaded-new.cpp:79)
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:79)
 | 
-->03.97% (4,000B) 0x........: main (overloaded-new.cpp:80)
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:80)
 | 
-->03.97% (4,000B) 0x........: main (overloaded-new.cpp:83)
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:83)
 | 
-->03.97% (4,000B) 0x........: main (overloaded-new.cpp:86)
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:86)
 | 
-->01.99% (2,000B) 0x........: main (overloaded-new.cpp:81)
+->01.XX% (2,000B) 0x........: main (overloaded-new.cpp:81)
 | 
-->01.99% (2,000B) 0x........: main (overloaded-new.cpp:82)
+->01.XX% (2,000B) 0x........: main (overloaded-new.cpp:82)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
- 10        104,648           96,632           96,000           632            0
- 11        108,656           92,624           92,000           624            0
- 12        110,664           90,616           90,000           616            0
- 13        112,672           88,608           88,000           608            0
- 14        116,856           84,424           84,000           424            0
- 15        157,008           44,272           44,000           272            0
- 16        161,032           40,248           40,000           248            0
- 17        201,280                0                0             0            0
+ 10        104,XXX           96,XXX           96,000           XXX            0
+ 11        108,XXX           92,XXX           92,000           XXX            0
+ 12        110,XXX           90,XXX           90,000           XXX            0
+ 13        112,XXX           88,XXX           88,000           XXX            0
+ 14        116,XXX           84,XXX           84,000           XXX            0
+ 15        157,XXX           44,XXX           44,000           XXX            0
+ 16        161,XXX           40,XXX           40,000           XXX            0
+ 17        201,XXX                0                0             0            0

@@ -1,3 +1,4 @@
+prereq: test -e ./overloaded-new
 prog: overloaded-new
 vgopts: --stacks=no --time-unit=B --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook

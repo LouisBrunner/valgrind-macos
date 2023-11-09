@@ -14,6 +14,8 @@ $dir/../tests/filter_addresses                  |
 #       are installed but not system source then these
 #       errors get produced by GDB
 $SED -e '/\(rtld_start.S\|kill.S\|_exit.S\|_select.S\): No such file or directory/d' |
+# Likewise on some aarch64 GNU/Linux systems for dl-start.S
+$SED -e '/dl-start.S: No such file or directory/d' |
 
 # filter vgdb process id,
 #             pid

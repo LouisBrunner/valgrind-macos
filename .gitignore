@@ -1073,6 +1073,7 @@
 /memcheck/tests/amd64-linux/access_below_sp
 /memcheck/tests/amd64-linux/defcfaexpr
 /memcheck/tests/amd64-linux/int3-amd64
+/memcheck/tests/amd64-linux/reallocarray
 /memcheck/tests/amd64-linux/Makefile
 /memcheck/tests/amd64-linux/Makefile.in
 
@@ -1419,6 +1420,7 @@
 /memcheck/tests/amd64-freebsd/Makefile.in
 /memcheck/tests/amd64-freebsd/posix_fadvise
 /memcheck/tests/amd64-freebsd/posix_fallocate
+/memcheck/tests/amd64-freebsd/reallocarray
 /memcheck/tests/amd64-freebsd/reallocf
 
 # /memcheck/tests/x86-freebsd
@@ -1431,6 +1433,7 @@
 /memcheck/tests/x86-freebsd/Makefile.in
 /memcheck/tests/x86-freebsd/posix_fadvise
 /memcheck/tests/x86-freebsd/posix_fallocate
+/memcheck/tests/x86-freebsd/reallocarray
 
 # /mpi/
 /mpi/*.dSYM

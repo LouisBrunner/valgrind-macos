@@ -87,6 +87,8 @@
    10070 CALLOC
    10080 ZONEREALLOC
    10090 REALLOC
+   10091 REALLOCF
+   10092 REALLOCARRAY
    10100 ZONEMEMALIGN
    10110 MEMALIGN
    10120 VALLOC
@@ -1685,19 +1687,55 @@ extern int * __error(void) __attribute__((weak));
       return v; \
    }
 
+#define REALLOCARRAY(soname, fnname) \
+ \
+    void* VG_REPLACE_FUNCTION_EZU(10092,soname,fnname) \
+    ( void* ptrV, SizeT nmemb, SizeT size );\
+    void* VG_REPLACE_FUNCTION_EZU(10092,soname,fnname) \
+    ( void* ptrV, SizeT nmemb, SizeT size ) \
+ { \
+      void* v; \
+      \
+      DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(nmemb); \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
+      MALLOC_TRACE("reallocarray(%p,%llu,%llu)", ptrV, (ULong)nmemb, (ULong)size ); \
+      if (nmemb > 0 && (SizeT)-1 / nmemb < size) { \
+         SET_ERRNO_ENOMEM; \
+         return NULL; \
+      } \
+      v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, nmemb*size ); \
+      MALLOC_TRACE(" = %p\n", v ); \
+      if (v == NULL) { \
+         if (!(size*nmemb == 0U && info.clo_realloc_zero_bytes_frees == True)) {\
+            VG_REPLACE_FUNCTION_EZU(10050,VG_Z_LIBC_SONAME,free)(ptrV); \
+            SET_ERRNO_ENOMEM; \
+      } \
+   } \
+      MALLOC_TRACE(" = %p\n", v ); \
+      return v; \
+ }
+
 #if defined(VGO_linux)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
  REALLOC(SO_SYN_MALLOC,    realloc);
+ REALLOCARRAY(VG_Z_LIBC_SONAME, reallocarray);
+ REALLOCARRAY(SO_SYN_MALLOC, reallocarray);
 
 #elif defined(VGO_freebsd)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
  REALLOC(SO_SYN_MALLOC,    realloc);
  REALLOCF(VG_Z_LIBC_SONAME, reallocf);
  REALLOCF(SO_SYN_MALLOC, reallocf);
+ REALLOCARRAY(VG_Z_LIBC_SONAME, reallocarray);
+ REALLOCARRAY(SO_SYN_MALLOC, reallocarray);
 
 #elif defined(VGO_darwin)
  REALLOC(VG_Z_LIBC_SONAME, realloc);
  REALLOC(SO_SYN_MALLOC,    realloc);
+ REALLOCF(VG_Z_LIBC_SONAME, reallocf);
+ REALLOCF(SO_SYN_MALLOC, reallocf);
  ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
  ZONEREALLOC(SO_SYN_MALLOC,    malloc_zone_realloc);
 
@@ -1705,7 +1743,8 @@ extern int * __error(void) __attribute__((weak));
  REALLOC(VG_Z_LIBC_SONAME,      realloc);
  REALLOC(VG_Z_LIBUMEM_SO_1,     realloc);
  REALLOC(SO_SYN_MALLOC,         realloc);
-
+ REALLOCARRAY(VG_Z_LIBC_SONAME, reallocarray);
+ REALLOCARRAY(SO_SYN_MALLOC, reallocarray);
 #endif
 
 

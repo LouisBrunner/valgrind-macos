@@ -10,12 +10,14 @@ EXTRA_DIST = \
 	access_below_sp_2.vgtest \
 	access_below_sp_2.stderr.exp access_below_sp_2.stdout.exp \
 	defcfaexpr.vgtest defcfaexpr.stderr.exp \
-	int3-amd64.vgtest int3-amd64.stderr.exp int3-amd64.stdout.exp
+	int3-amd64.vgtest int3-amd64.stderr.exp int3-amd64.stdout.exp \
+	reallocarray.vgtest reallocarray.stderr.exp
 
 check_PROGRAMS = \
 	access_below_sp \
 	defcfaexpr \
-	int3-amd64
+	int3-amd64 \
+	reallocarray
 
 
 AM_CFLAGS    += @FLAG_M64@

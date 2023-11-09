@@ -16,9 +16,11 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	access_below_sp \
 	defcfaexpr \
-	int3-amd64 \
-	reallocarray
+	int3-amd64
 
+if HAVE_REALLOCARRAY
+check_PROGRAMS += reallocarray
+endif
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

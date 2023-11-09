@@ -4898,6 +4898,7 @@ AC_CHECK_FUNCS([     \
         pwritev2     \
         rawmemchr    \
         readlinkat   \
+        reallocarray   \
         semtimedop   \
         setcontext   \
         signalfd     \
@@ -4946,6 +4947,8 @@ AM_CONDITIONAL([HAVE_GETADDRINFO],
                [test x$ac_cv_func_getaddrinfo = xyes])
 AM_CONDITIONAL([HAVE_CLOSE_RANGE],
                [test x$ac_cv_func_close_range = xyes])
+AM_CONDITIONAL([HAVE_REALLOCARRAY],
+               [test x$ac_cv_func_reallocarray = xyes])
 AM_CONDITIONAL([HAVE_WCSNCPY],
                [test x$ac_cv_func_wcsncpy = xyes])
 

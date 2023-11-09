@@ -97,10 +97,6 @@ EXTRA_DIST = \
 	atomic_incs.stdout.exp-64bit-and-128bit \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
-        exit_on_first_error.stderr.exp \
-        exit_on_first_error.vgtest \
-        exit_on_first_error_with_xml.stderr.exp \
-        exit_on_first_error_with_xml.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
 	badfree.stderr.exp badfree.vgtest \
 	badfree3.stderr.exp badfree3.vgtest \
@@ -118,6 +114,7 @@ EXTRA_DIST = \
 	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
 	bug340392.stderr.exp bug340392.vgtest \
+	bug401284.stderr.exp bug401284.stdout.exp bug401284.vgtest \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.stderr.exp bug472219.vgtest \
@@ -195,6 +192,10 @@ EXTRA_DIST = \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
+        exit_on_first_error.stderr.exp \
+        exit_on_first_error.vgtest \
+        exit_on_first_error_with_xml.stderr.exp \
+        exit_on_first_error_with_xml.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve1.stderr.exp execve1.vgtest execve1.stderr.exp-kfail \
 	execve2.stderr.exp execve2.vgtest execve2.stderr.exp-kfail \
@@ -457,6 +458,7 @@ check_PROGRAMS = \
 	bug155125 \
 	bug287260 \
 	bug340392 \
+	bug401284 \
 	bug464969_d_demangle \
 	bug472219 \
 	calloc-overflow \

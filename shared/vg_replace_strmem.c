@@ -370,7 +370,7 @@ static inline void my_exit ( int x )
       if (is_overlap(dst_orig,  \
                      src_orig,  \
                      (Addr)dst-(Addr)dst_orig+1, \
-                     (Addr)src-(Addr)src_orig+1)) \
+                     (Addr)src-(Addr)src_orig)) \
          RECORD_OVERLAP_ERROR("strncat", dst_orig, src_orig, n); \
       \
       return dst_orig; \

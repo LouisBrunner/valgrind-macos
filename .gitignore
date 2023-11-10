@@ -1764,6 +1764,7 @@
 /none/tests/arm64/fp_and_simd_v82
 /none/tests/arm64/integer
 /none/tests/arm64/memory
+/none/tests/arm64/simd_dotprod
 /none/tests/arm64/simd_v81
 
 # /none/tests/darwin/

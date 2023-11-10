@@ -734,7 +734,8 @@ Addr setup_client_stack( void*  init_sp,
                                | VKI_HWCAP_SHA2         \
                                | VKI_HWCAP_CRC32        \
                                | VKI_HWCAP_FP           \
-                               | VKI_HWCAP_ASIMD)
+                               | VKI_HWCAP_ASIMD        \
+                               | VKI_HWCAP_ASIMDDP)
                auxv->u.a_val &= ARM64_SUPPORTED_HWCAP;
             }
 #           endif

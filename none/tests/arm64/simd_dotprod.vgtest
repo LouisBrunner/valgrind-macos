@@ -1,0 +1,3 @@
+prog: simd_dotprod
+prereq: test -x simd_dotprod && ../../../tests/arm64_features asimddp
+vgopts: -q

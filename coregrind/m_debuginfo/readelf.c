@@ -2421,18 +2421,18 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
 
       /* Accept .data where mapped as rw (data), even if zero-sized */
       if (0 == VG_(strcmp)(name, ".data")) {
+         if (inrw2) {
+            inrw = inrw2;
+         } else {
+            inrw = inrw1;
+         }
+
 #        if defined(SOLARIS_PT_SUNDWTRACE_THRP)
          if ((size == VKI_PT_SUNWDTRACE_SIZE) && (svma == dtrace_data_vaddr)) {
             TRACE_SYMTAB("ignoring .data section for dtrace_data "
                          "%#lx .. %#lx\n", svma, svma + size - 1);
          } else
 #        endif /* SOLARIS_PT_SUNDWTRACE_THRP */
-
-        if (inrw2) {
-           inrw = inrw2;
-        } else {
-           inrw = inrw1;
-        }
 
          if (inrw && !di->data_present) {
             di->data_present = True;

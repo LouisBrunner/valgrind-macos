@@ -4923,7 +4923,7 @@ AC_CHECK_FUNCS([     \
         pwritev2     \
         rawmemchr    \
         readlinkat   \
-        reallocarray   \
+        reallocarray \
         semtimedop   \
         setcontext   \
         signalfd     \
@@ -4937,6 +4937,8 @@ AC_CHECK_FUNCS([     \
         syscall      \
         utimensat    \
         mempcpy      \
+        strlcat      \
+        strlcpy      \
         stpncpy      \
         strchrnul    \
         memrchr      \
@@ -4976,6 +4978,10 @@ AM_CONDITIONAL([HAVE_REALLOCARRAY],
                [test x$ac_cv_func_reallocarray = xyes])
 AM_CONDITIONAL([HAVE_WCSNCPY],
                [test x$ac_cv_func_wcsncpy = xyes])
+AM_CONDITIONAL([HAVE_STRLCAT],
+               [test x$ac_cv_func_strlcat = xyes])
+AM_CONDITIONAL([HAVE_STRLCPY],
+               [test x$ac_cv_func_strlcpy = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

@@ -115,6 +115,8 @@ EXTRA_DIST = \
 	statfs.stderr.exp \
 	static_allocs.vgtest \
 	static_allocs.stderr.exp \
+	strlcat_strlcpy.vgtest \
+	strlcat_strlcpy.stderr.exp \
 	supponlyobj.vgtest \
 	supponlyobj.stderr.exp \
 	supponlyobj.supp \
@@ -148,6 +150,7 @@ check_PROGRAMS = \
 	stat \
 	statfs \
 	static_allocs \
+	strlcat_strlcpy \
 	timing_safe \
 	utimens \
 	utimes

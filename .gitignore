@@ -1406,6 +1406,7 @@
 /memcheck/tests/freebsd/stat
 /memcheck/tests/freebsd/statfs
 /memcheck/tests/freebsd/static_allocs
+/memcheck/tests/freebsd/strlcat_strlcpy
 /memcheck/tests/freebsd/timerfd
 /memcheck/tests/freebsd/timing_safe
 /memcheck/tests/freebsd/utimens

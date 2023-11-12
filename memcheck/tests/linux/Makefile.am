@@ -34,6 +34,7 @@ EXTRA_DIST = \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	proc-auxv.vgtest proc-auxv.stderr.exp getregset.vgtest \
 	getregset.stderr.exp getregset.stdout.exp \
+	strlcat_strlpcy.vgtest strlcat_strlpcy.stderr.exp \
 	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
@@ -87,6 +88,10 @@ endif
 
 if HAVE_SETCONTEXT
         check_PROGRAMS += stack_changes
+endif
+
+if HAVE_STRLCAT
+        check_PROGRAMS += strlcat_strlcpy
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

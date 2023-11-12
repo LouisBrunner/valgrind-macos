@@ -1158,6 +1158,7 @@
 /memcheck/tests/linux/syslog-syscall
 /memcheck/tests/linux/timerfd-syscall
 /memcheck/tests/linux/proc-auxv
+/memcheck/tests/linux/strlcat_strlcpy
 /memcheck/tests/linux/sys-openat
 /memcheck/tests/linux/sys-execveat
 /memcheck/tests/linux/check_execveat

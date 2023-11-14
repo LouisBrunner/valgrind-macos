@@ -1115,6 +1115,7 @@
 /memcheck/tests/darwin/Makefile.in
 /memcheck/tests/darwin/aio
 /memcheck/tests/darwin/aligned_alloc
+/memcheck/tests/darwin/bug437790
 /memcheck/tests/darwin/deep_badparam
 /memcheck/tests/darwin/env
 /memcheck/tests/darwin/ioctl-tiocsbrk

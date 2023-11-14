@@ -25,12 +25,16 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 
 401284  False positive "Source and destination overlap in strncat"
+437790  valgrind reports "Conditional jump or move depends on uninitialised
+        value" in memchr of macOS 10.12-10.15
 460616  disInstr(arm64): unhandled instruction 0x4E819402 (dotprod/ASIMDDP)
 475498  Add reallocarray wrapper
 476320  Build failure with GCC
-476535  Difference in allocation size for massif/tests/overloaded-new between clang++/libc++ and g++/libstdc++
+476535  Difference in allocation size for massif/tests/overloaded-new between
+        clang++/libc++ and g++/libstdc++
 476780  Extend strlcat and strlcpy wrappers to GNU libc
-476787  Build of Valgrind 3.21.0 fails when SOLARIS_PT_SUNDWTRACE_THRP is defined
+476787  Build of Valgrind 3.21.0 fails when SOLARIS_PT_SUNDWTRACE_THRP is
+        defined
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

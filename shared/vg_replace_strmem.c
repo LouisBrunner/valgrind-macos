@@ -999,6 +999,10 @@ static inline void my_exit ( int x )
   /* _platform_memchr$VARIANT$Haswell */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Haswell)
 # endif
+# if DARWIN_VERS >= DARWIN_10_12
+  /* _platform_memchr$VARIANT$Base */
+  MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Base)
+#endif
 
 #elif defined(VGO_solaris)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)

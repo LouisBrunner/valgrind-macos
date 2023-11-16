@@ -1365,6 +1365,9 @@
 /memcheck/tests/freebsd/Makefile.in
 /memcheck/tests/freebsd/452275
 /memcheck/tests/freebsd/access
+/memcheck/tests/freebsd/aio
+/memcheck/tests/freebsd/aiov
+/memcheck/tests/freebsd/aio_read
 /memcheck/tests/freebsd/aligned_alloc
 /memcheck/tests/freebsd/bug464476
 /memcheck/tests/freebsd/bug470713

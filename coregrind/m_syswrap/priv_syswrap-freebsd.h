@@ -549,8 +549,8 @@ DECL_TEMPLATE(freebsd, sys_close_range)  // 575
 
 // unimpl __NR_rpctls_syscall      576
 DECL_TEMPLATE(freebsd, sys___specialfd) // 577
-// unimpl __NR_aio_writev          578
-// unimpl __NR_aio_readv           579
+DECL_TEMPLATE(freebsd, sys_aio_writev)  // 578
+DECL_TEMPLATE(freebsd, sys_aio_readv)   // 579
 
 #endif
 

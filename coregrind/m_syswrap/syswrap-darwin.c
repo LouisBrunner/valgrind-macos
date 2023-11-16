@@ -4613,12 +4613,14 @@ PRE(aio_suspend)
    // but not the contents of the structs.
    PRINT( "aio_suspend ( %#lx )", ARG1 );
    PRE_REG_READ3(long, "aio_suspend",
-                 const struct vki_aiocb *, aiocbp, int, nent,
+                 const struct vki_aiocb * const *, aiocbp, int, nent,
                  const struct vki_timespec *, timeout);
-   if (ARG2 > 0)
+   if (ARG2 > 0) {
       PRE_MEM_READ("aio_suspend(list)", ARG1, ARG2 * sizeof(struct vki_aiocb *));
-   if (ARG3)
+   }
+   if (ARG3) {
       PRE_MEM_READ ("aio_suspend(timeout)", ARG3, sizeof(struct vki_timespec));
+   }
 }
 
 PRE(aio_error)

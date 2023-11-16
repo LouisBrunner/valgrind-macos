@@ -24,6 +24,14 @@ int main(void)
    /* SYS___specialfd                    577 */
    GO(SYS___specialfd, "3s 1m");
    SY(SYS___specialfd, x0+0xf000, x0+1, x0+10); FAIL;
+ 
+   /* SYS_aio_writev                     578 */
+   GO(SYS_aio_writev, "1s 1m");
+   SY(SYS_aio_writev, x0+1); FAIL;
+   
+   /* SYS_aio_readv                      579 */
+   GO(SYS_aio_readv, "1s 1m");
+   SY(SYS_aio_readv, x0+1); FAIL;
 
    return(0);
 }

@@ -8,6 +8,10 @@ dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 EXTRA_DIST = \
 	access.vgtest \
 	access.stderr.exp \
+	aio.vgtest aio.stderr.exp \
+	aiov.vgtest aiov.stderr.exp \
+	aio_read.vgtest aio_read.stderr.exp aio_read.stdout.exp \
+	aio_read.in \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
 	aligned_alloc_xml.vgtest aligned_alloc_xml.stderr.exp \
 	aligned_allocs_supp.vgtest \
@@ -132,8 +136,8 @@ EXTRA_DIST = \
 	utimes.stderr.exp
 
 check_PROGRAMS = \
-	access aligned_alloc bug464476 bug470713 capsicum \
-	chflags \
+	access aio aiov aio_read aligned_alloc bug464476 bug470713 \
+	capsicum chflags \
 	chmod_chown delete_sized_mismatch errno_aligned_allocs \
 	extattr \
 	fexecve \

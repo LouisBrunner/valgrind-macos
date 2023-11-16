@@ -100,3 +100,23 @@ Syscall param __specialfd(req) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+---------------------------------------------------------
+578:          SYS_aio_writev 1s 1m
+---------------------------------------------------------
+Syscall param aio_writev(iocb) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_writev(iocb) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+579:           SYS_aio_readv 1s 1m
+---------------------------------------------------------
+Syscall param aio_readv(iocb) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_readv(iocb) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

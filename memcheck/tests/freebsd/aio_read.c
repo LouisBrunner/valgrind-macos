@@ -15,7 +15,7 @@
 #define ERR_EXIT(msg) do { perror(msg); exit(1); } while(0)
 
 int main() {
-  int fd, ret;
+  int ret;
   char buf[64];
   struct aiocb my_aiocb;
 
@@ -41,6 +41,7 @@ int main() {
      ERR_EXIT("aio_return");
   }
 
+  buf[63] = '\0';
   printf("content: %s\n", buf);
 
   return 0;

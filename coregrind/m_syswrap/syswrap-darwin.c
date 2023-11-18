@@ -4582,7 +4582,6 @@ static void aio_init(void)
 
 PRE(aio_return)
 {
-   struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
    // This assumes that the kernel looks at the struct pointer, but not the
    // contents of the struct.
    PRINT( "aio_return ( %#lx )", ARG1 );
@@ -5017,11 +5016,11 @@ POST(host_get_io_master)
 
 PRE(host_get_io_master)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-   } Request;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//   } Request;
+//#pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -5285,26 +5284,26 @@ PRE(mach_port_set_context)
 
 POST(mach_port_set_context)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      NDR_record_t NDR;
-      kern_return_t RetCode;
-   } Reply;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      NDR_record_t NDR;
+//      kern_return_t RetCode;
+//   } Reply;
+//#pragma pack()
 }
 
 
 // JRS 2011-Aug-25 FIXME completely bogus
 PRE(task_get_exception_ports)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      NDR_record_t NDR;
-      exception_mask_t exception_mask;
-   } Request;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      NDR_record_t NDR;
+//      exception_mask_t exception_mask;
+//   } Request;
+//#pragma pack()
 
    PRINT("task_get_exception_ports(BOGUS)");
    AFTER = POST_FN(task_get_exception_ports);
@@ -5312,20 +5311,20 @@ PRE(task_get_exception_ports)
 
 POST(task_get_exception_ports)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_port_descriptor_t old_handlers[32];
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t masksCnt;
-      exception_mask_t masks[32];
-      exception_behavior_t old_behaviors[32];
-      thread_state_flavor_t old_flavors[32];
-   } Reply;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_port_descriptor_t old_handlers[32];
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t masksCnt;
+//      exception_mask_t masks[32];
+//      exception_behavior_t old_behaviors[32];
+//      thread_state_flavor_t old_flavors[32];
+//   } Reply;
+//#pragma pack()
 }
 
 
@@ -5610,18 +5609,18 @@ PRE(mach_port_get_set_status)
 
 POST(mach_port_get_set_status)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_descriptor_t members;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t membersCnt;
-      mach_msg_trailer_t trailer;
-   } Reply;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_descriptor_t members;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t membersCnt;
+//      mach_msg_trailer_t trailer;
+//   } Reply;
+//#pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -6154,17 +6153,17 @@ POST(task_policy_set)
 
 PRE(mach_ports_register)
 {
-#pragma pack(4)
-    typedef struct {
-       mach_msg_header_t Head;
-       /* start of the kernel processed data */
-       mach_msg_body_t msgh_body;
-       mach_msg_ool_ports_descriptor_t init_port_set;
-       /* end of the kernel processed data */
-       NDR_record_t NDR;
-       mach_msg_type_number_t init_port_setCnt;
-    } Request;
-#pragma pack()
+//#pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_ports_descriptor_t init_port_set;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t init_port_setCnt;
+//    } Request;
+//#pragma pack()
     
     // Request *req = (Request *)ARG1;
     
@@ -6193,11 +6192,11 @@ POST(mach_ports_register)
 
 PRE(mach_ports_lookup)
 {
-#pragma pack(4)
-   typedef struct {
-       mach_msg_header_t Head;
-   } Request;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//       mach_msg_header_t Head;
+//   } Request;
+//#pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -6208,17 +6207,17 @@ PRE(mach_ports_lookup)
 
 POST(mach_ports_lookup)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_ports_descriptor_t init_port_set;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t init_port_setCnt;
-   } Reply;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_ports_descriptor_t init_port_set;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t init_port_setCnt;
+//   } Reply;
+//#pragma pack()
 
     // Reply *reply = (Reply *)ARG1;
 }
@@ -6300,11 +6299,11 @@ POST(task_set_info)
 
 PRE(task_threads)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-   } Request;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//   } Request;
+//#pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -6622,17 +6621,17 @@ PRE(vm_read)
 
 POST(vm_read)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_descriptor_t data;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t dataCnt;
-   } Reply;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_descriptor_t data;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t dataCnt;
+//   } Reply;
+//#pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -6668,17 +6667,17 @@ PRE(mach_vm_read)
 
 POST(mach_vm_read)
 {
-#pragma pack(4)
-   typedef struct {
-      mach_msg_header_t Head;
-      /* start of the kernel processed data */
-      mach_msg_body_t msgh_body;
-      mach_msg_ool_descriptor_t data;
-      /* end of the kernel processed data */
-      NDR_record_t NDR;
-      mach_msg_type_number_t dataCnt;
-   } Reply;
-#pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_descriptor_t data;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t dataCnt;
+//   } Reply;
+//#pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -9971,17 +9970,17 @@ PRE(host_create_mach_voucher_trap)
 
 PRE(task_register_dyld_image_infos)
 {
-#pragma pack(4)
-    typedef struct {
-       mach_msg_header_t Head;
-       /* start of the kernel processed data */
-       mach_msg_body_t msgh_body;
-       mach_msg_ool_descriptor_t dyld_images;
-       /* end of the kernel processed data */
-       NDR_record_t NDR;
-       mach_msg_type_number_t dyld_imagesCnt;
-    } Request;
-#pragma pack()
+//#pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_descriptor_t dyld_images;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t dyld_imagesCnt;
+//    } Request;
+//#pragma pack()
     
     // Request *req = (Request *)ARG1;
     
@@ -10009,15 +10008,15 @@ POST(task_register_dyld_image_infos)
 
 PRE(task_register_dyld_shared_cache_image_info)
 {
-#pragma pack(4)
-    typedef struct {
-       mach_msg_header_t Head;
-       NDR_record_t NDR;
-       dyld_kernel_image_info_t dyld_cache_image;
-       boolean_t no_cache;
-       boolean_t private_cache;
-    } Request;
-#pragma pack()
+//#pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       NDR_record_t NDR;
+//       dyld_kernel_image_info_t dyld_cache_image;
+//       boolean_t no_cache;
+//       boolean_t private_cache;
+//    } Request;
+//#pragma pack()
     
     // Request *req = (Request *)ARG1;
     

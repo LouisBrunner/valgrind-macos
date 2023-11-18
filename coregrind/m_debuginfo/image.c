@@ -1221,6 +1221,20 @@ Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
    }
 }
 
+Int ML_(img_strcmp_n)(DiImage* img, DiOffT off1, const HChar* str2, Word n)
+{
+   ensure_valid(img, off1, 1, "ML_(img_strcmp_c)");
+   while (n) {
+      UChar c1 = get(img, off1);
+      UChar c2 = *(const UChar*)str2;
+      if (c1 < c2) return -1;
+      if (c1 > c2) return 1;
+      if (c1 == 0) return 0;
+      off1++; str2++; --n;
+   }
+   return 0;
+}
+
 UChar ML_(img_get_UChar)(DiImage* img, DiOffT offset)
 {
    ensure_valid(img, offset, 1, "ML_(img_get_UChar)");

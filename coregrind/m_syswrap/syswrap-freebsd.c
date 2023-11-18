@@ -3012,14 +3012,17 @@ PRE(sys_aio_cancel)
    } else {
       if (ARG2) {
          if (ML_(safe_to_deref)((struct vki_aiocb *)ARG2, sizeof(struct vki_aiocb))) {
-            struct vki_aiocb *iocb = (struct vki_aiocb *)ARG2;
+            // struct vki_aiocb *iocb = (struct vki_aiocb *)ARG2;
             // @todo PJF cancel only requests associated with
             // fildes and iocb
+            // Do I need to remove pending reads from iocb(v)_table
+            // or should the user always call aio_return even after
+            // aio_cancel?
          } else {
             SET_STATUS_Failure(VKI_EINVAL);
          }
       } else {
-         // @todo PJF cancel all requests associated with fildes
+         // @todo PJF cancel all requests associated with fildes, see above
       }
    }
 }

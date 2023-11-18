@@ -1145,6 +1145,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_faccessat2,             sys_faccessat2),              // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+
+   LINX_(__NR_fchmodat2,               sys_fchmodat2),               // 452
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

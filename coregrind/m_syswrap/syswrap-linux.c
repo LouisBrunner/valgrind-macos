@@ -6077,6 +6077,17 @@ PRE(sys_fchmodat)
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
 }
 
+PRE(sys_fchmodat2)
+{
+   PRINT("sys_fchmodat2 ( %ld, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
+	  FMT_REGWORD "u )",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "fchmodat2",
+                 int, dfd, const char *, path, vki_mode_t, mode,
+                 unsigned int, flags);
+   PRE_MEM_RASCIIZ( "fchmodat2(pathname)", ARG2 );
+}
+
 PRE(sys_faccessat)
 {
    PRINT("sys_faccessat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",

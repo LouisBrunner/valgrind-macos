@@ -50,4 +50,6 @@
 
 #define __NR_memfd_secret		447
 
+#define __NR_fchmodat2		452
+
 #endif

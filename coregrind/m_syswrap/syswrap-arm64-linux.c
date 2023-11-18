@@ -841,6 +841,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
 
    LINXY(__NR_memfd_secret,      sys_memfd_secret),      // 447
+
+   LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
 };
 
 

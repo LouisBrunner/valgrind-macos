@@ -1096,6 +1096,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..
    LINX_(__NR_sched_setattr,           sys_sched_setattr),           // 349
    LINXY(__NR_sched_getattr,           sys_sched_getattr),           // 350
+   LINX_(__NR_renameat2,               sys_renameat2),               // 351
    //..
    LINXY (__NR_getrandom,              sys_getrandom),               // 353
    LINXY (__NR_memfd_create,           sys_memfd_create),            // 354

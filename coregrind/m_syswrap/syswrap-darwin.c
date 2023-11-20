@@ -10142,7 +10142,7 @@ PRE(openat_nocancel)
    if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
        && *(Char *)(Addr)ARG2 != '/'
        && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
 
    /* Otherwise handle normally */
@@ -10704,6 +10704,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_sysctlbyname,        sysctlbyname),       // 274
    MACXY(__NR_necp_match_policy,   necp_match_policy),  // 460
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
+   MACXY(__NR_openat,              openat),             // 463
+#if DARWIN_VERS >= DARWIN_10_13
+   MACXY(__NR_openat_nocancel,     openat_nocancel),    // 464
+#endif
    MACX_(__NR_faccessat,           faccessat),          // 466
    MACX_(__NR_fstatat64,           fstatat64),          // 470
    MACX_(__NR_readlinkat,          readlinkat),         // 473

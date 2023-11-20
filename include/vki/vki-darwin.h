@@ -1132,7 +1132,10 @@ struct vki_necp_aggregate_result {
    u_int32_t     field6;
    u_int32_t     field7;
 };
-#endif /* DARWIN_VERS == DARWIN_10_10 */
+
+#define VKI_CSR_CHECK 0
+#define VKI_CSR_GET_ACTIVE_CONFIG 1
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
 
 #if DARWIN_VERS >= DARWIN_10_12
 // ulock_wake & ulock_wait operations

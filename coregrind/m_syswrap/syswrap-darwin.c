@@ -9805,9 +9805,38 @@ PRE(bsdthread_ctl)
 
 PRE(csrctl)
 {
-   PRINT("csrctl(op:%ld, useraddr:%#lx, usersize:%#lx) FIXME", ARG1, ARG2, ARG3);
+   switch (ARG1) {
+   case VKI_CSR_CHECK:
+     PRINT("csrctl(op:CSR_CHECK, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
    PRE_REG_READ3(int, "csrctl",
                  uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+     PRE_MEM_READ( "csrctl(useraddr)", ARG2, ARG3 );
+     break;
+
+   case VKI_CSR_GET_ACTIVE_CONFIG:
+      PRINT("csrctl(op:CSR_GET_ACTIVE_CONFIG, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
+      PRE_REG_READ3(int, "csrctl",
+                    uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+      PRE_MEM_WRITE( "csrctl(useraddr)", ARG2, ARG3 );
+      break;
+
+   default:
+      PRINT("csrctl(op:%ld [??], useraddr:%#lx, usersize:%#lx)", ARG1, ARG2, ARG3);
+      log_decaying("UNKNOWN csrctl %ld!", ARG1);
+      break;
+   }
+}
+POST(csrctl)
+{
+   vg_assert(SUCCESS);
+   switch (ARG1) {
+   case VKI_CSR_GET_ACTIVE_CONFIG:
+      POST_MEM_WRITE( ARG2, ARG3 );
+      break;
+
+   default:
+      break;
+   }
 }
 
 PRE(guarded_open_dprotected_np)

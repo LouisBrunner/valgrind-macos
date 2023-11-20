@@ -572,8 +572,10 @@ DECL_TEMPLATE(darwin, getattrlistbulk);          // 461
 // NYI clonefileat     // 462
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_10
-// NYI openat          // 463
-// NYI openat_nocancel // 464
+DECL_TEMPLATE(darwin, openat);                   // 463
+#if DARWIN_VERS >= DARWIN_10_13
+DECL_TEMPLATE(darwin, openat_nocancel);          // 464
+#endif
 // NYI renameat        // 465
 DECL_TEMPLATE(darwin, faccessat);                // 466
 // NYI fchmodat        // 467

@@ -9836,6 +9836,48 @@ PRE(guarded_writev_np)
         ARG1, ARG2, ARG3, (ULong)ARG4);
 }
 
+PRE(openat)
+{
+   if (ARG3 & VKI_O_CREAT) {
+      // 4-arg version
+      PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+      PRE_REG_READ4(long, "openat",
+                    int, dfd, const char *, filename, int, flags, int, mode);
+   } else {
+     // 3-arg version
+     PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+     PRE_REG_READ3(long, "openat",
+                   int, dfd, const char *, filename, int, flags);
+   }
+   PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+
+POST(openat)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
 
 
@@ -10071,6 +10113,54 @@ POST(mach_generate_activity_id)
 
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
+/* ---------------------------------------------------------------------
+ Added for macOS 10.13 (High Sierra)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_13
+
+PRE(openat_nocancel)
+{
+   if (ARG3 & VKI_O_CREAT) {
+      // 4-arg version
+      PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+      PRE_REG_READ4(long, "openat_nocancel",
+                    int, dfd, const char *, filename, int, flags, int, mode);
+   } else {
+     // 3-arg version
+     PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+     PRE_REG_READ3(long, "openat_nocancel",
+                   int, dfd, const char *, filename, int, flags);
+   }
+   PRE_MEM_RASCIIZ( "openat_nocancel(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+POST(openat_nocancel)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_13 */
 
 /* ---------------------------------------------------------------------
    syscall tables

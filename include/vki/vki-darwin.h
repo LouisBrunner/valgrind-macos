@@ -1122,7 +1122,7 @@ typedef int vki_errno_t;
 
 /* necp stuff.  This doesn't appear to exist in any user space include
    file. */
-#if DARWIN_VERS == DARWIN_10_10
+#if DARWIN_VERS >= DARWIN_10_10
 struct vki_necp_aggregate_result {
    vki_u_int32_t field1;
    unsigned int  field2;

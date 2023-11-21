@@ -869,9 +869,15 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    }
 
    /* normal exit */
-   if (ints)  free(ints);
-   if (addrs) free(addrs);
-   if (dtys)  free(dtys);
+   if (n_ints > 0) {
+      free(ints);
+   }
+   if (n_addrs > 0) {
+      free(addrs);
+   }
+   if (n_dtys) {
+      free(dtys);
+   }
    return;
 
   unhandled:

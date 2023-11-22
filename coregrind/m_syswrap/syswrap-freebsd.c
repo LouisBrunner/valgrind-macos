@@ -2957,7 +2957,7 @@ PRE(sys_aio_return)
    // read or write?
    if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
       SET_STATUS_from_SysRes(VG_(do_syscall1)(SYSNO, ARG1));
-      if (SUCCESS && RES >= 0) {
+      if (SUCCESS) {
          struct vki_aiocb* iocb = (struct vki_aiocb*)ARG1;
          if (!aio_init_done) {
             aio_init();
@@ -6933,8 +6933,7 @@ PRE(sys_aio_readv)
 #pragma clang diagnostic pop
 #endif
          PRE_MEM_READ("aio_readv(iocb->aio_iov)", (Addr)p_iovec,  vec_count*sizeof(struct vki_iovec));
-         // @todo PJF check that p_iovec is accessible
-         if (ML_(safe_to_deref)(p_iovec, vec_count*sizeof(struct vki_iovec*))) {
+         if (ML_(safe_to_deref)(p_iovec, vec_count*sizeof(struct vki_iovec))) {
             for (SizeT i = 0U; i < vec_count; ++i) {
                PRE_MEM_WRITE("aio_writev(iocb->aio_iov[...])",
                             (Addr)p_iovec[i].iov_base, p_iovec[i].iov_len);

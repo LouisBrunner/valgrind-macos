@@ -1264,7 +1264,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
                 && tteC->tte2ec_ec[k] >= tteC->tte2ec_ec[k+1])
                BAD("tteC->tte2ec_ec[..] out of order");
             ec_num = tteC->tte2ec_ec[k];
-            if (ec_num < 0 || ec_num >= ECLASS_N)
+            if (ec_num >= ECLASS_N)
                BAD("tteC->tte2ec_ec[..] out of range");
             if (ec_num != i)
                continue;

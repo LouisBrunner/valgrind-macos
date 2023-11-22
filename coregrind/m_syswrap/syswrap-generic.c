@@ -4351,8 +4351,7 @@ PRE(sys_poll)
 
 POST(sys_poll)
 {
-   // RES is UWord so always >= 0
-   if (SUCCESS && RES >= 0) {
+   if (SUCCESS) {
       UInt i;
       struct vki_pollfd* ufds = (struct vki_pollfd *)(Addr)ARG1;
       for (i = 0; i < ARG2; i++)

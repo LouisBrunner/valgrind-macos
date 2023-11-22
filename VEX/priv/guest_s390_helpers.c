@@ -570,7 +570,7 @@ s390_do_cu24(UInt srcval, UInt low_surrogate)
 
    srcval &= 0xffff;
 
-   if ((srcval >= 0x0000 && srcval <= 0xd7ff) ||
+   if ((srcval <= 0xd7ff) ||
        (srcval >= 0xdc00 && srcval <= 0xffff)) {
       retval = srcval;
    } else {

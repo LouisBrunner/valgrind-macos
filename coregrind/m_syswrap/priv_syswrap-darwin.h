@@ -421,7 +421,7 @@ DECL_TEMPLATE(darwin, aio_write);              // 319
 DECL_TEMPLATE(darwin, issetugid);               // 327
 DECL_TEMPLATE(darwin, __pthread_kill);          // 328
 DECL_TEMPLATE(darwin, __pthread_sigmask);       // 329
-// NYI __sigwait 330
+DECL_TEMPLATE(darwin, __sigwait);               // 330
 DECL_TEMPLATE(darwin, __disable_threadsignal);  // 331
 DECL_TEMPLATE(darwin, __pthread_markcancel);    // 332
 DECL_TEMPLATE(darwin, __pthread_canceled);      // 333

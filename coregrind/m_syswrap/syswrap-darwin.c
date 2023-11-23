@@ -2325,6 +2325,30 @@ POST(__pthread_sigmask)
 }
 
 
+// SYS___sigwait 330
+// int  sigwait(const sigset_t * __restrict, int * __restrict) __DARWIN_ALIAS_C(sigwait);
+PRE(__sigwait)
+{
+    *flags |= SfMayBlock;
+    PRINT("sys_sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+          ARG1,ARG2);
+    PRE_REG_READ2(int, "sigwait",
+                  const vki_sigset_t *, set, int *, sig);
+    if (ARG1 != 0) {
+        PRE_MEM_READ(  "sigwait(set)",  ARG1, sizeof(vki_sigset_t));
+    }
+    if (ARG2 != 0) {
+        PRE_MEM_WRITE( "sigwait(sig)", ARG2, sizeof(int));
+    }
+}
+
+POST(__sigwait)
+{
+    if (ARG2 != 0) {
+        POST_MEM_WRITE( ARG2, sizeof(int));
+    }
+}
+
 PRE(__pthread_canceled)
 {
    *flags |= SfMayBlock; /* might kill this thread??? */
@@ -10597,7 +10621,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_issetugid,               issetugid), 
    MACX_(__NR___pthread_kill,          __pthread_kill),
    MACX_(__NR___pthread_sigmask,       __pthread_sigmask), 
-// _____(__NR___sigwait), 
+   MACXY(__NR___sigwait,               __sigwait),  // 330
    MACX_(__NR___disable_threadsignal,  __disable_threadsignal), 
    MACX_(__NR___pthread_markcancel,    __pthread_markcancel), 
    MACX_(__NR___pthread_canceled,      __pthread_canceled),

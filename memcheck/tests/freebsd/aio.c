@@ -59,7 +59,12 @@ int main(void)
    // (don't crash on the repeated &a)
    assert( aio_read(&a) == 0 );
 
-   while (0 != aio_error(&a)) { }
+   int try_count = 0;
+   while (0 != aio_error(&a) && try_count < 10000) {
+      ++try_count;
+   }
+   
+   assert(try_count < 10000);
 
    assert( aio_return(&a) > 0 );    // XXX: (undefined value error here)
 

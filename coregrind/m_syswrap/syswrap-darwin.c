@@ -1083,16 +1083,6 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
 #define CALL_PRE(name) PRE_FN(name)(tid, layout, arrghs, status, flags)
 #define CALL_POST(name) POST_FN(name)(tid, arrghs, status)
 
-#if VG_WORDSIZE == 4
-// Combine two 32-bit values into a 64-bit value
-// Always use with low-numbered arg first (e.g. LOHI64(ARG1,ARG2) )
-# if defined(VGA_x86)
-#  define LOHI64(lo,hi)   ( ((ULong)(UInt)(lo)) | (((ULong)(UInt)(hi)) << 32) )
-# else
-#  error unknown architecture
-# endif
-#endif
-
 // Retrieve the current Mach thread
 #define MACH_THREAD ((Addr)VG_(get_ThreadState)(tid)->os_state.lwpid)
 

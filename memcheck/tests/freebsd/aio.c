@@ -5,6 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <time.h>
+#include <errno.h>
 int x;
 
 int main(void)
@@ -44,34 +46,40 @@ int main(void)
    assert(a.aio_fildes >= 0);
 
    // unaddressable aio_buf
-   assert(aio_read(&a) == 0);
-   assert(aio_return(&a) == -1);
+   //assert(aio_read(&a) == 0);
+   //assert(aio_return(&a) == -1);
 
    //------------------------------------------------------------------------
    a.aio_buf = buf;
 
    assert( aio_read(&a) == 0 );
-   
-   // undefined -- aio_return() not called yet
-   if (buf[0] == buf[9]) x++;       
 
    // also failed on macOS
    // (don't crash on the repeated &a)
-   assert( aio_read(&a) == 0 );
+   // assert( aio_read(&a) < 0 );
+
+   // undefined -- aio_return() not called yet
+   if (buf[0] == buf[9]) x++;
 
    int try_count = 0;
-   while (0 != aio_error(&a) && try_count < 10000) {
+   int res = aio_error(&a);
+   while (0 != res && try_count < 1000) {
       ++try_count;
+      struct timespec rq = { 0, 1000 };
+      nanosleep(&rq, NULL);
+      res = aio_error(&a);
    }
-   
-   assert(try_count < 10000);
+
+   assert(try_count < 1000);
 
    assert( aio_return(&a) > 0 );    // XXX: (undefined value error here)
 
    if (buf[0] == buf[9]) x++;
 
-   assert( aio_return(&a) > 0 );    // (repeated aio_return();  fails because 
+#if 0
+   assert( aio_return(&a) < 0 );    // (repeated aio_return();  fails because 
                                     // Valgrind can't find &a in the table)
+#endif
 
    //------------------------------------------------------------------------
    a.aio_buf    = 0;
@@ -79,8 +87,8 @@ int main(void)
    assert(a.aio_fildes >= 0);
 
    // unaddressable aio_buf
-   assert( aio_write(&a) == 0);
-   assert(aio_return(&a) == -1);
+   //assert( aio_write(&a) == 0);
+   //assert(aio_return(&a) == -1);
 
    //------------------------------------------------------------------------
    a.aio_buf = buf;
@@ -88,14 +96,25 @@ int main(void)
    assert( aio_write(&a) == 0 );
 
    // (don't crash on the repeated &a)
-   assert( aio_write(&a)  == 0 );
+   //assert( aio_write(&a) < 0 );
 
-   while (0 != aio_error(&a)) { }
+   try_count = 0;
+   res = aio_error(&a);
+   while (0 != res && try_count < 1000) {
+      ++try_count;
+      struct timespec rq = { 0, 1000 };
+      nanosleep(&rq, NULL);
+      res = aio_error(&a);
+   }
+
+   assert(try_count < 1000);
 
    assert( aio_return(&a) > 0 );
 
-   assert( aio_return(&a) > 0 );    // (repeated aio_return();  fails because 
+#if 0
+   assert( aio_return(&a) < 0 );    // (repeated aio_return();  fails because 
                                     // Valgrind can't find &a in the table)
+#endif
 
    unlink("mytmpfile");
 

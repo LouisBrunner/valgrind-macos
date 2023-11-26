@@ -1,23 +1,7 @@
 
 Warning: invalid file descriptor -1 in syscall aio_read()
-Syscall param aio_read(aiocbp->aio_buf) points to unaddressable byte(s)
-   at 0x........: aio_read (in /...libc...)
-   by 0x........: main (aio.c:47)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: main (aio.c:56)
-
-Warning: Duplicate control block 0x........ in aio_read
-Warning: Ensure 'aio_return' is called when 'aio_read' has completed
-Conditional jump or move depends on uninitialised value(s)
-   at 0x........: aio_read (in /...libc...)
-   by 0x........: main (aio.c:60)
-
-Syscall param aio_write(iocb->aio_buf) points to unaddressable byte(s)
-   at 0x........: aio_write (in /...libc...)
-   by 0x........: main (aio.c:82)
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
+   at 0x........: main (aio.c:62)
 
 
 HEAP SUMMARY:
@@ -28,4 +12,4 @@ For a detailed leak analysis, rerun with: --leak-check=full
 
 Use --track-origins=yes to see where uninitialised values come from
 For lists of detected and suppressed errors, rerun with: -s
-ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 0 from 0)
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

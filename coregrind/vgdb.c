@@ -1254,7 +1254,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
          /* close stdin */
          close (0);
          /* open /dev/null as new stdin */
-         open ("/dev/null", O_RDONLY);
+         (void)open ("/dev/null", O_RDONLY);
          /* redirect stdout as stderr */
          dup2 (2, 1);
       }

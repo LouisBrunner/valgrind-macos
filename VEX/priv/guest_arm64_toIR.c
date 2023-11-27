@@ -2385,7 +2385,7 @@ Bool dbm_DecodeBitMasks ( /*OUT*/ULong* wmask, /*OUT*/ULong* tmask,
 
    vassert(len >= 1 && len <= 6);
    ULong levels = // (zeroes(6 - len) << (6-len)) | ones(len);
-                  (1U << len) - 1;
+                  (1UL << len) - 1;
    vassert(levels >= 1 && levels <= 63);
 
    if (immediate && ((imms & levels) == levels)) { 
@@ -10431,7 +10431,9 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
       UInt shift = 0;
       Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
       if (!ok || size == X11) return False;
-      vassert(size >= X00 && size <= X10);
+      // always true, size is unsigned int
+      //vassert(size >= X00);
+      vassert(size <= X10);
       vassert(shift >= 1 && shift <= (8 << size));
       const HChar* nm = "??";
       IROp op = Iop_INVALID;
@@ -11836,7 +11838,7 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
          Adjust shift to compensate. */
       UInt lanebits = 8 << size;
       shift = lanebits - shift;
-      vassert(shift >= 0 && shift < lanebits);
+      vassert(shift < lanebits);
       IROp    op  = mkVecSHLN(size);
       IRExpr* src = getQReg128(nn);
       IRTemp  res = newTempV128();

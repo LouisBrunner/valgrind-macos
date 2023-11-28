@@ -42,6 +42,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 476787  Build of Valgrind 3.21.0 fails when SOLARIS_PT_SUNDWTRACE_THRP is
         defined
 476887  WARNING: unhandled amd64-freebsd syscall: 578
+477628  Add mremap support for Solaris
 477630  Include ucontext.h rather than sys/ucontext.h in Solaris sources
 
 To see details of a given bug, visit

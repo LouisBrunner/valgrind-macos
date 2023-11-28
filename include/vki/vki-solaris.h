@@ -1387,9 +1387,9 @@ typedef struct sigaction vki_sigaction_fromK_t;
 #define vki_sgttyb sgttyb
 
 
-#include <sys/ucontext.h>
+#include <ucontext.h>
 /* This section also contains items defined in sys/regset.h, this file
-   is directly included in sys/ucontext.h. */
+   is directly included in ucontext.h. */
 #if defined(VGP_x86_solaris)
 #define VKI_SS SS
 #define VKI_UESP UESP

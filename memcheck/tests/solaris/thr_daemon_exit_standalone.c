@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 #include <sys/regset.h>
 #include <sys/syscall.h>
-#include <sys/ucontext.h>
+#include <ucontext.h>
 
 #if defined(__amd64) || defined(__i386)
 #include <sys/segments.h>

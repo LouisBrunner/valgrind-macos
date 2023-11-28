@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <sys/regset.h>
 #include <sys/syscall.h>
-#include <sys/ucontext.h>
+#include <ucontext.h>
 
 #define OBIT(eflags) (!!((eflags) & (1 << 11)))
 #define SBIT(eflags) (!!((eflags) & (1 << 7)))

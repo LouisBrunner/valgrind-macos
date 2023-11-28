@@ -24,7 +24,7 @@
 #include <sys/sendfile.h>
 #include <sys/shm_impl.h>
 #include <sys/termios.h>
-#include <sys/ucontext.h>
+#include <ucontext.h>
 #include <sys/utsname.h>
 #include <sys/tsol/tndb.h>
 #include <sys/tsol/tsyscall.h>

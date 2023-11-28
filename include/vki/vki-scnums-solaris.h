@@ -33,6 +33,8 @@
 #ifndef __VKI_SCNUMS_SOLARIS_H
 #define __VKI_SCNUMS_SOLARIS_H
 
+#include "config.h"
+
 /* Note: Basic information about Solaris syscalls can be found in the kernel
    source file uts/common/os/sysent.c.
  */
@@ -178,6 +180,9 @@
 #if defined(SOLARIS_UUIDSYS_SYSCALL)
 #define __NR_uuidsys                    SYS_uuidsys
 #endif /* SOLARIS_UUIDSYS_SYSCALL */
+#if defined(HAVE_MREMAP)
+#define __NR_mremap                     SYS_mremap
+#endif /* HAVE_MREMAP */
 #define __NR_mmapobj                    SYS_mmapobj
 #define __NR_setrlimit                  SYS_setrlimit
 #define __NR_getrlimit                  SYS_getrlimit

@@ -663,6 +663,11 @@ typedef struct vki_kcf_door_arg_s {
 
 #define vki_meminfo_t meminfo_t
 
+#if defined(HAVE_MREMAP)
+#define VKI_MREMAP_FIXED MREMAP_FIXED
+#define VKI_MREMAP_MAYMOVE MREMAP_MAYMOVE
+#endif /* HAVE_MREMAP */
+
 
 #include <sys/mntio.h>
 #define VKI_MNTIOC_GETEXTMNTENT MNTIOC_GETEXTMNTENT

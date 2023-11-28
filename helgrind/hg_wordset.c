@@ -498,7 +498,7 @@ Bool HG_(saneWS_SLOW) ( WordSetU* wsu, WordSet ws )
    WordVec* wv;
    UWord    i;
    if (wsu == NULL) return False;
-   if (ws < 0 || ws >= wsu->ix2vec_used)
+   if (ws >= wsu->ix2vec_used)
       return False;
    wv = do_ix2vec( wsu, ws );
    /* can never happen .. do_ix2vec will assert instead.  Oh well. */

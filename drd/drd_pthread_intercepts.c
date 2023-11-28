@@ -360,25 +360,28 @@ static MutexT DRD_(pthread_to_drd_mutex_type)(int kind)
    kind &= PTHREAD_MUTEX_RECURSIVE | PTHREAD_MUTEX_ERRORCHECK |
       PTHREAD_MUTEX_NORMAL | PTHREAD_MUTEX_DEFAULT;
 
-   if (kind == PTHREAD_MUTEX_RECURSIVE)
+   if (kind == PTHREAD_MUTEX_RECURSIVE) {
       return mutex_type_recursive_mutex;
-   else if (kind == PTHREAD_MUTEX_ERRORCHECK)
+   }
+   if (kind == PTHREAD_MUTEX_ERRORCHECK) {
       return mutex_type_errorcheck_mutex;
-   else if (kind == PTHREAD_MUTEX_NORMAL)
+   }
+   if (kind == PTHREAD_MUTEX_NORMAL) {
       return mutex_type_default_mutex;
-   else if (kind == PTHREAD_MUTEX_DEFAULT)
-      // @todo PJF what about Solaris?
-#if defined(VGO_freebsd)
-      return mutex_type_errorcheck_mutex;
-#else
+   }
+   if (kind == PTHREAD_MUTEX_DEFAULT) {
+      // On FreeBSD PTHREAD_MUTEX_DEFAULT is the same as PTHREAD_MUTEX_ERRORCHECK
+      // so this code is unreachable, but that's not true for all platforms
+      // so just ignore the warning
+      // coverity[DEADCODE:FALSE]
       return mutex_type_default_mutex;
-#endif
+   }
 #if defined(HAVE_PTHREAD_MUTEX_ADAPTIVE_NP)
-   else if (kind == PTHREAD_MUTEX_ADAPTIVE_NP)
+   if (kind == PTHREAD_MUTEX_ADAPTIVE_NP) {
       return mutex_type_default_mutex;
+   }
 #endif
-   else
-      return mutex_type_invalid_mutex;
+   return mutex_type_invalid_mutex;
 }
 
 #if defined(VGO_solaris)

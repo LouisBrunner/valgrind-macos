@@ -1303,7 +1303,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
 
       for (j = 0; j < tteC->n_tte2ec; j++) {
          ec_num = tteC->tte2ec_ec[j];
-         if (ec_num < 0 || ec_num >= ECLASS_N)
+         if (ec_num >= ECLASS_N)
             BAD("tteC->tte2ec_ec[..] out of range");
          ec_idx = tteC->tte2ec_ix[j];
          if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[ec_num])

@@ -82,7 +82,7 @@ char timestamp_out[20];
 static char *vgdb_prefix = NULL;
 static char *valgrind_path = NULL;
 static char **vargs;
-static char cvargs = 0;
+static int cvargs = 0;
 
 char *timestamp_str (Bool produce)
 {
@@ -2294,7 +2294,7 @@ void parse_options(int argc, char** argv,
          // argc - i is the number of left over arguments
          // allocate enough space, put all args in it.
          cvargs = argc - i - 1;
-         vargs = vmalloc (cvargs * sizeof(vargs));
+         vargs = vmalloc (cvargs * sizeof(*vargs));
          i++;
          for (int j = 0; i < argc; i++) {
             vargs[j] = argv[i];

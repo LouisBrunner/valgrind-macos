@@ -913,6 +913,22 @@ int tohex (int nib)
       return 'a' + nib - 10;
 }
 
+static int hexify (char *hex, const char *bin, int count)
+{
+   int i;
+
+   /* May use a length, or a nul-terminated string as input. */
+   if (count == 0)
+      count = strlen (bin);
+
+  for (i = 0; i < count; i++) {
+     *hex++ = tohex ((*bin >> 4) & 0xf);
+     *hex++ = tohex (*bin++ & 0xf);
+  }
+  *hex = 0;
+  return i;
+}
+
 /* Returns an allocated hex-decoded string from the buf. Stops decoding
    at end of buf (zero) or when seeing the delim char.  */
 static
@@ -1406,7 +1422,12 @@ void do_multi_mode(int check_trials, int in_port)
           send_packet ("", noackmode);
        }
        else if (strncmp(QRCMD, buf, strlen(QRCMD)) == 0) {
-          send_packet ("No running target, monitor commands not available yet.", noackmode);
+           static const char *no_running_str =
+              "No running target, monitor commands not available yet.\n";
+           int str_count = strlen (no_running_str);
+           char hex[2 * str_count + 1];
+           hexify(hex, no_running_str, str_count);
+           send_packet(hex, noackmode);
 
           char *decoded_string = decode_hexstring (buf, strlen (QRCMD) + 1, 0);
           DEBUG(1, "qRcmd decoded: %s\n", decoded_string);

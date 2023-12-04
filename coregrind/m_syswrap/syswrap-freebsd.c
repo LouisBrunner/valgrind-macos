@@ -2673,6 +2673,7 @@ POST(sys_aio_read)
       if (!VG_(OSetWord_Contains)(iocb_table, (UWord)iocb)) {
          VG_(OSetWord_Insert)(iocb_table, (UWord)iocb);
       } else {
+         // @todo PJF this warns without callstack
          VG_(dmsg)("Warning: Duplicate control block %p in aio_read\n",
                    (void *)(Addr)ARG1);
          VG_(dmsg)("Warning: Ensure 'aio_return' is called when 'aio_read' has completed\n");
@@ -6972,6 +6973,7 @@ POST(sys_aio_readv)
       if (!VG_(OSetWord_Contains)(iocbv_table, (UWord)iocbv)) {
          VG_(OSetWord_Insert)(iocbv_table, (UWord)iocbv);
       } else {
+         // @todo PJF this warns without callstack
          VG_(dmsg)("Warning: Duplicate control block %p in aio_readv\n",
                    (void *)(Addr)ARG1);
          VG_(dmsg)("Warning: Ensure 'aio_return' is called when 'aio_readv' has completed\n");

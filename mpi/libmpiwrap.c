@@ -291,6 +291,8 @@ static void showTy ( FILE* f, MPI_Datatype ty )
 #  endif
    else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
 #  if defined(MPI_LONG_LONG)
+   // platform dependant? MPI_LONG_LONG and MPI_UNSIGNED_LONG_LONG can be the same
+   // coverity[DEADCODE:FALSE]
    else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
 #  endif
 #  if defined(MPI_UNSIGNED_LONG_LONG)

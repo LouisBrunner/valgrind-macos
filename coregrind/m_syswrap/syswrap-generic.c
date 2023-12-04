@@ -1658,7 +1658,7 @@ ML_(generic_POST_sys_recv) ( ThreadId tid,
                              UWord res,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
-   if (res >= 0 && arg1 != 0) {
+   if (arg1 != 0) {
       POST_MEM_WRITE( arg1, /* buf */
                       arg2  /* len */ );
    }

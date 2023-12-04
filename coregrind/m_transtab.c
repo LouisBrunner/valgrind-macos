@@ -2061,7 +2061,7 @@ static void delete_tte ( /*OUT*/Addr* ga_deleted,
       adding a reference from tte to its hash position in tt. */
    HTTno j;
    HTTno k = HASH_TT(tteC->entry);
-   vg_assert(k >= 0 && k < N_HTTES_PER_SECTOR);
+   vg_assert(k < N_HTTES_PER_SECTOR);
    for (j = 0; j < N_HTTES_PER_SECTOR; j++) {
       if (sec->htt[k] == tteno)
          break;

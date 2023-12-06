@@ -49,6 +49,8 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+#include "m_gdbserver/remote-utils-shared.h"
+
 /* vgdb has three usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.
    2. standalone to send monitor commands to a running valgrind-ified process
@@ -902,31 +904,6 @@ void close_connection(int to_pid, int from_pid)
    if (close(from_pid) != 0)
       ERROR(errno, "close from_pid\n");
 #endif
-}
-
-static
-int tohex (int nib)
-{
-   if (nib < 10)
-      return '0' + nib;
-   else
-      return 'a' + nib - 10;
-}
-
-static int hexify (char *hex, const char *bin, int count)
-{
-   int i;
-
-   /* May use a length, or a nul-terminated string as input. */
-   if (count == 0)
-      count = strlen (bin);
-
-  for (i = 0; i < count; i++) {
-     *hex++ = tohex ((*bin >> 4) & 0xf);
-     *hex++ = tohex (*bin++ & 0xf);
-  }
-  *hex = 0;
-  return i;
 }
 
 /* Returns an allocated hex-decoded string from the buf. Stops decoding

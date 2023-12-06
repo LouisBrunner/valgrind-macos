@@ -312,7 +312,6 @@ int decode_X_packet (char *from, int packet_len, CORE_ADDR * mem_addr_ptr,
 		     unsigned int *len_ptr, unsigned char *to);
 
 int unhexify (char *bin, const char *hex, int count);
-int hexify (char *hex, const char *bin, int count);
 /* heximage builds an image of bin according to byte order of the architecture 
    Useful for register and int image */
 char* heximage (char *buf, const char *bin, int count);
@@ -377,5 +376,8 @@ void init_registers (void);
 
 /* Version information, from version.c.  */
 extern const char version[];
+
+/* Shared remote utils functions with vgdb.  */
+#include "remote-utils-shared.h"
 
 #endif /* SERVER_H */

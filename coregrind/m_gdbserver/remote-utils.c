@@ -660,33 +660,6 @@ void decode_address (CORE_ADDR *addrp, const char *start, int len)
    *addrp = addr;
 }
 
-/* Convert number NIB to a hex digit.  */
-
-static
-int tohex (int nib)
-{
-   if (nib < 10)
-      return '0' + nib;
-   else
-      return 'a' + nib - 10;
-}
-
-int hexify (char *hex, const char *bin, int count)
-{
-   int i;
-
-   /* May use a length, or a nul-terminated string as input. */
-   if (count == 0)
-      count = strlen (bin);
-
-  for (i = 0; i < count; i++) {
-     *hex++ = tohex ((*bin >> 4) & 0xf);
-     *hex++ = tohex (*bin++ & 0xf);
-  }
-  *hex = 0;
-  return i;
-}
-
 /* builds an image of bin according to byte order of the architecture 
    Useful for register and int image */
 char* heximage (char *buf, const char *bin, int count)

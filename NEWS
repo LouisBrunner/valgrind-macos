@@ -46,6 +46,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 477628  Add mremap support for Solaris
 477630  Include ucontext.h rather than sys/ucontext.h in Solaris sources
 477719  vgdb incorrectly replies to qRcmd packet
+478211  Redundant code for vgdb.c and Valgrind core tools
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

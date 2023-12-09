@@ -935,6 +935,8 @@
 /memcheck/tests/match-overrun
 /memcheck/tests/memalign_args
 /memcheck/tests/memalign_test
+/memcheck/tests/memccpy1
+/memcheck/tests/memccpy2
 /memcheck/tests/memcmptest
 /memcheck/tests/memmem
 /memcheck/tests/mempool

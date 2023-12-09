@@ -106,6 +106,7 @@
    20460 MEMMEM
    20470 WMEMCMP
    20480 WCSNCPY
+   20490 MEMCCPY
 */
 
 #if defined(VGO_solaris)
@@ -152,7 +153,7 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
    }
 }
 
-
+#if defined(VGO_linux)
 /* Call here to exit if we can't continue.  On Android we can't call
    _exit for some reason, so we have to blunt-instrument it. */
 __attribute__ ((__noreturn__))
@@ -170,7 +171,7 @@ static inline void my_exit ( int x )
    _exit(x);
 #  endif
 }
-
+#endif
 
 // This is a macro rather than a function because we don't want to have an
 // extra function in the stack trace.
@@ -2344,6 +2345,41 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNCPY(VG_Z_LIBC_SONAME, wcsncpy)
+#endif
+
+ /*---------------------- memccpy ----------------------*/
+
+ /* memccpy */
+#define MEMCCPY(soname, fnname) \
+ void* VG_REPLACE_FUNCTION_EZU(20490,soname,fnname) \
+    ( void *dst, const void *src, Int c, SizeT len ); \
+    void* VG_REPLACE_FUNCTION_EZU(20490,soname,fnname) \
+    ( void *dst, const void *src, Int c, SizeT len ) \
+ { \
+      const char *s = src; \
+      char *d = dst; \
+      const char x = c; \
+      SizeT i = len; \
+      \
+      while (i-- > 0) \
+         if ((*d++ = *s++) == x) { \
+            SizeT srclen = (i < len) ? i : len; \
+            RECORD_COPY(srclen); \
+            if (is_overlap(dst, src, srclen, srclen)) \
+               RECORD_OVERLAP_ERROR("memccpy", dst, src, len); \
+            return d; \
+         } \
+      \
+      if (len) { \
+         RECORD_COPY(len); \
+         if (is_overlap(dst, src, len, len)) \
+            RECORD_OVERLAP_ERROR("memccpy", dst, src, len); \
+      } \
+      return NULL; \
+ }
+
+#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_darwin) || defined(VGO_solaris)
+ MEMCCPY(VG_Z_LIBC_SONAME, memccpy)
 #endif
 
 /*------------------------------------------------------------*/

@@ -262,6 +262,8 @@ EXTRA_DIST = \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-darwin \
 		memalign_args.stderr.exp-solaris \
+	memccpy1.stderr.exp memccpy1.stdout.exp memccpy1.vgtest \
+	memccpy2.stderr.exp memccpy2.vgtest \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \
@@ -497,6 +499,7 @@ check_PROGRAMS = \
 	match-overrun \
 	memalign_test  memcmptest mempool mempool2 mmaptest \
 	memalign_args \
+	memccpy1 memccpy2 \
 	memmem \
 	mismatches new_override metadata \
 	nanoleak_supp nanoleak2 new_nothrow \

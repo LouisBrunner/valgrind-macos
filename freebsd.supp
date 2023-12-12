@@ -83,4 +83,12 @@
    fun:malloc
    fun:__res_vinit
 }
+# back to regular reachables
+{
+   MEMCHECK-LIBC-REACHABLE-7
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:getgrnam
+}
 

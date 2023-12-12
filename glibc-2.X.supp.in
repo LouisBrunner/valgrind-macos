@@ -276,7 +276,7 @@
   dtv-addr-init
   Memcheck:Leak
   match-leak-kinds: possible,reachable
-  fun:malloc
+  ...
   fun:allocate_dtv_entry
   fun:allocate_and_init
   fun:tls_get_addr_tail*

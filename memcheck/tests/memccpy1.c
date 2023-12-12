@@ -1,3 +1,4 @@
+// Example copied from https://en.cppreference.com/w/c/string/byte/memccpy
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>

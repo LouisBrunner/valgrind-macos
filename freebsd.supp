@@ -61,3 +61,26 @@
    ...
    fun:newlocale
 }
+# when calling getaddrinfo
+{
+   MEMCHECK-LIBC-REACHABLE-4
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   fun:_nsyyparse
+}
+{
+   MEMCHECK-LIBC-REACHABLE-5
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_nsyylex
+}
+{
+   MEMCHECK-LIBC-REACHABLE-6
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__res_vinit
+}
+

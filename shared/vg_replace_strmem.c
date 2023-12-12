@@ -2349,7 +2349,7 @@ static inline void my_exit ( int x )
 
  /*---------------------- memccpy ----------------------*/
 
- /* memccpy */
+ /* memccpy, mostly based on GNU libc source */
 #define MEMCCPY(soname, fnname) \
  void* VG_REPLACE_FUNCTION_EZU(20490,soname,fnname) \
     ( void *dst, const void *src, Int c, SizeT len ); \

@@ -2216,6 +2216,7 @@
 /none/tests/x86/fpu_lazy_eflags
 /none/tests/x86/fxtract
 /none/tests/x86/getseg
+/none/tests/x86/gnu_binutils_nop
 /none/tests/x86/incdec_alt
 /none/tests/x86/insn_basic
 /none/tests/x86/insn_basic.c

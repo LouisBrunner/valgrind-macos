@@ -2495,6 +2495,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
                             name,
                             di->rodata_avma,
                             di->rodata_avma + di->rodata_size - 1);
+               goto out_rodata;
             }
          }
          if (inrx) {
@@ -2518,6 +2519,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
          TRACE_SYMTAB("acquiring .rodata bias = %#lx\n",
                       (UWord)di->rodata_bias);
       }
+  out_rodata:
 
       if (0 == VG_(strcmp)(name, ".dynbss")) {
          if (inrw1 && !di->bss_present) {

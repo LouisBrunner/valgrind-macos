@@ -2490,7 +2490,11 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
             if (svma == tmp) { /* adjacent to previous .rodata* */
                di->rodata_size = size + tmp - di->rodata_svma;
             } else {
-               BAD(".rodata"); /* is OK, but we cannot handle multiple .rodata* */
+                /* is OK, but we cannot handle multiple .rodata* */
+               TRACE_SYMTAB("%s section avma = %#lx .. %#lx is not contiguous, not merged\n",
+                            name,
+                            di->rodata_avma,
+                            di->rodata_avma + di->rodata_size - 1);
             }
          }
          if (inrx) {

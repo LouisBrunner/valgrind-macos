@@ -49,6 +49,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 478211  Redundant code for vgdb.c and Valgrind core tools
 478624  Valgrind incompatibility with binutils-2.42 on x86 with new nop patterns
         (unhandled instruction bytes: 0x2E 0x8D 0xB4 0x26
+478837  valgrind fails to read debug info for rust binaries
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

@@ -28,3 +28,4 @@ AM_CCASFLAGS += @FLAG_M64@
 
 defcfaexpr_SOURCES	= defcfaexpr.S
 defcfaexpr_CFLAGS	= $(AM_CFLAGS) @FLAG_NO_PIE@ 
+reallocarray_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@

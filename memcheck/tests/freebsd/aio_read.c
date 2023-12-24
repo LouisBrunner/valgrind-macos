@@ -41,7 +41,7 @@ int main() {
      ERR_EXIT("aio_return");
   }
 
-  buf[63] = '\0';
+  buf[ret] = '\0';
   printf("content: %s\n", buf);
 
   return 0;

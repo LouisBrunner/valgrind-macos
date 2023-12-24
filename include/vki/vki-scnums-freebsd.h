@@ -117,6 +117,8 @@
 #define __NR_vfork               66
 /* obs vread                     67 */
 /* obs vwrite                    68 */
+/* both of the following are obsolete
+ * and removed in FreeBSD  15 */
 #define __NR_sbrk                69
 #define __NR_sstk                70
 /* old mmap                      71 */

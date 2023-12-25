@@ -32,10 +32,11 @@ main ()
    * character of the first occurrence of little is returned.
    */
   assert (memmem (haystack, 0, needle, 0) == NULL);
+  assert (memmem (haystack, 1, needle, 0) == NULL);
 #else
   assert (memmem (haystack, 0, needle, 0) == haystack);
-#endif
   assert (memmem (haystack, 1, needle, 0) == haystack);
+#endif
   assert (memmem (haystack, 0, needle, 1) == NULL);
   assert (memmem (haystack, 1, needle, 1) == haystack);
   free (haystack);
@@ -43,7 +44,11 @@ main ()
 
   haystack = create_mem ("abc");
   needle = create_mem ("bc");
+#if defined(VGO_darwin)
+  assert (memmem (haystack, 3, needle, 0) == NULL);
+#else
   assert (memmem (haystack, 3, needle, 0) == haystack);
+#endif
   assert (memmem (haystack, 3, needle, 2) == haystack + 1);
   assert (memmem (haystack + 1, 2, needle, 2) == haystack + 1);
   assert (memmem (haystack + 2, 1, needle, 2) == NULL);

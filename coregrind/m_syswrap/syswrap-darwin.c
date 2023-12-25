@@ -9063,7 +9063,7 @@ PRE(sigreturn)
          a per-thread on-altstack/not-on-altstack flag, which is set
          by this flag.  Just ignore it and claim success for the time
          being. */
-      VG_(debugLog)(0, "syswrap-darwin",
+      VG_(debugLog)(1, "syswrap-darwin",
                        "WARNING: Ignoring sigreturn( ..., "
                        "UC_SET_ALT_STACK );\n");
       SET_STATUS_Success(0);
@@ -9071,7 +9071,7 @@ PRE(sigreturn)
    }
    if (ARG2 == VKI_UC_RESET_ALT_STACK) {
       /* Ditto */
-      VG_(debugLog)(0, "syswrap-darwin",
+      VG_(debugLog)(1, "syswrap-darwin",
                        "WARNING: Ignoring sigreturn( ..., "
                        "UC_RESET_ALT_STACK );\n");
       SET_STATUS_Success(0);

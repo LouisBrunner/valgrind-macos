@@ -24,7 +24,7 @@ main ()
 
   haystack = create_mem ("a");
   needle = create_mem ("a");
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_solaris)
   /*
    * macOS manpage says
    * If big_len is smaller than little_len, if little_len is 0, if big_len is 0 or if
@@ -44,7 +44,7 @@ main ()
 
   haystack = create_mem ("abc");
   needle = create_mem ("bc");
-#if defined(VGO_darwin)
+#if defined(VGO_darwin) || defined(VGO_solaris)
   assert (memmem (haystack, 3, needle, 0) == NULL);
 #else
   assert (memmem (haystack, 3, needle, 0) == haystack);

@@ -1989,6 +1989,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
          vg_assert(VG_IS_PAGE_ALIGNED(map->avma));
       }
       vg_assert(has_nonempty_rx);
+      vg_assert(di->fsm.rw_map_count == 0 || has_nonempty_rw);
    }
 
    /* ----------------------------------------------------------

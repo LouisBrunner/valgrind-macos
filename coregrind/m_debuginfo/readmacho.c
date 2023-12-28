@@ -93,7 +93,7 @@
        memory that falls entirely inside the primary image.
 */
 
-Bool ML_(is_macho_object_file)( const void* buf, SizeT szB )
+Bool ML_(check_macho_and_get_rw_loads)( const void* buf, SizeT szB, Int* rw_loads )
 {
    /* (JRS: the Mach-O headers might not be in this mapped data,
       because we only mapped a page for this initial check,
@@ -108,19 +108,39 @@ Bool ML_(is_macho_object_file)( const void* buf, SizeT szB )
       can to establish whether or not we're looking at something
       sane. */
 
+   /* @todo PJF change function signature to pass in file handle
+        Read MACH_HEADER to determine sizeofcommands
+       Allocate a dynamic buffer for the commands. */
+
    const struct fat_header*  fh_be = buf;
    const struct MACH_HEADER* mh    = buf;
 
    vg_assert(buf);
+   vg_assert(rw_loads);
    if (szB < sizeof(struct fat_header))
       return False;
-   if (VG_(ntohl)(fh_be->magic) == FAT_MAGIC)
+   if (VG_(ntohl)(fh_be->magic) == FAT_MAGIC) {
+      // @todo PJF not yet handled, previous behaviour was to assume that the count is 1
+      *rw_loads = 1;
       return True;
+   }
 
    if (szB < sizeof(struct MACH_HEADER))
       return False;
-   if (mh->magic == MAGIC)
+   if (mh->magic == MAGIC) {
+      const struct load_command* lc = (const struct load_command*)((const char*)buf + sizeof(struct MACH_HEADER));
+      for (unsigned int i = 0U; i < mh->ncmds; ++i) {
+         if (lc->cmd == LC_SEGMENT_CMD) {
+            const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
+            if (sc->initprot == 3) {
+              ++*rw_loads;
+            }
+         }
+         const char* tmp = (const char*)lc + lc->cmdsize;
+         lc = (const struct load_command*)tmp;
+      }
       return True;
+   }
 
    return False;
 }
@@ -714,7 +734,6 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* This should be ensured by our caller (that we're in the accept
       state). */
    vg_assert(di->fsm.have_rx_map);
-   vg_assert(di->fsm.rw_map_count);
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
@@ -726,7 +745,6 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          break;
    }
    vg_assert(rx_map);
-   vg_assert(rw_map);
 
    if (VG_(clo_verbosity) > 1)
       VG_(message)(Vg_DebugMsg,

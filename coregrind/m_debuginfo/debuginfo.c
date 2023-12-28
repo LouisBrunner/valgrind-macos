@@ -701,7 +701,6 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
    vg_assert(di->fsm.have_rx_map);
-   vg_assert(di->fsm.rw_map_count);
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       /* We are interested in r-x mappings only */
@@ -1171,7 +1170,11 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    Int        actual_fd, oflags;
 #if defined(VGO_darwin)
    SysRes     preadres;
-   HChar      buf1k[1024];
+   // @todo PJF make this dynamic
+   // that probably means reading the sizeofcmds from the mach_header then
+   // allocating enough space for it
+   // and then one day maybe doing something for fat binaries
+   HChar      buf4k[4096];
 #else
    Bool       elf_ok;
 #endif
@@ -1341,7 +1344,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #if defined(VGO_darwin)
    /* Peer at the first few bytes of the file, to see if it is an ELF */
    /* object file. Ignore the file if we do not have read permission. */
-   VG_(memset)(buf1k, 0, sizeof(buf1k));
+   VG_(memset)(buf4k, 0, sizeof(buf4k));
 #endif
 
    oflags = VKI_O_RDONLY;
@@ -1368,7 +1371,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 
 #if defined(VGO_darwin)
-   preadres = VG_(pread)( actual_fd, buf1k, sizeof(buf1k), 0 );
+   preadres = VG_(pread)( actual_fd, buf4k, sizeof(buf4k), 0 );
    if (use_fd == -1) {
       VG_(close)( actual_fd );
    }
@@ -1383,6 +1386,10 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    if (sr_Res(preadres) == 0)
       return 0;
    vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf1k) );
+
+   if (!ML_(is_macho_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
+      return 0;
+   rw_load_count = 1;
 #endif
 
    /* We're only interested in mappings of object files. */
@@ -1400,12 +1407,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
    }
 
-#  elif defined(VGO_darwin)
-   if (!ML_(is_macho_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
-      return 0;
-   rw_load_count = 1;
-#  else
-#    error "unknown OS"
 #  endif
 
    /* See if we have a DebugInfo for this filename.  If not,
@@ -1466,7 +1467,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    /* So, finally, are we in an accept state? */
    vg_assert(!di->have_dinfo);
    if (di->fsm.have_rx_map &&
-       rw_load_count >= 1 &&
        di->fsm.rw_map_count == rw_load_count) {
       /* Ok, so, finally, we found what we need, and we haven't
          already read debuginfo for this object.  So let's do so now.

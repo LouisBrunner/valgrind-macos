@@ -1387,9 +1387,10 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
    vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf1k) );
 
-   if (!ML_(is_macho_object_file)( buf1k, (SizeT)sr_Res(preadres) ))
+   rw_load_count = 0;
+
+   if (!ML_(check_macho_and_get_rw_loads)( buf4k, (SizeT)sr_Res(preadres), &rw_load_count ))
       return 0;
-   rw_load_count = 1;
 #endif
 
    /* We're only interested in mappings of object files. */

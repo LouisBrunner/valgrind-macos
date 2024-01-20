@@ -99,7 +99,7 @@ struct sigframe {
 
    /*
     * The following 7 members are roughly the same as
-    * 'stuct sigframe' in x86/sigrame.h
+    * 'struct sigframe' in x86/sigframe.h
     */
    Int  sigNo;
    Addr psigInfo;      /* code or pointer to sigContext */

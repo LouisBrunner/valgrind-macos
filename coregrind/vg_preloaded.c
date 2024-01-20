@@ -238,7 +238,7 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
 
 #elif defined(VGO_freebsd)
 
-#if (FREEBSD_VERS >= FREEBSD_13)
+#if (FREEBSD_VERS >= FREEBSD_14)
 
 void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void);
 void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)

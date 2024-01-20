@@ -668,7 +668,9 @@
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
 
+#if (FREEBSD_VERS >= FREEBSD_14)
 #define __NR_fspacectl           580
+#endif
 #define __NR_sched_getcpu        581
 #define __NR_swapoff             582
 

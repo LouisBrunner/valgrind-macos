@@ -556,17 +556,20 @@ DECL_TEMPLATE(freebsd, sys_aio_readv)   // 579
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
 
-// unimpl __NR_fspacectl           580
+#if (FREEBSD_VERS >= FREEBSD_14)
+// there was a hole in the numbering
+DECL_TEMPLATE(freebsd, sys_fspacectl) // 580
+#endif
 // unimpl __NR_sched_getcpu        581
 DECL_TEMPLATE(freebsd, sys_swapoff) // 582
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_15)
-DECL_TEMPLATE(freebsd, sys_kqueuex); // 583
-DECL_TEMPLATE(freebsd, sys_membarrier); // 584
-DECL_TEMPLATE(freebsd, sys_timerfd_create); // 585
-DECL_TEMPLATE(freebsd, sys_timerfd_gettime); // 586
-DECL_TEMPLATE(freebsd, sys_timerfd_settime); // 587
+DECL_TEMPLATE(freebsd, sys_kqueuex) // 583
+DECL_TEMPLATE(freebsd, sys_membarrier) // 584
+DECL_TEMPLATE(freebsd, sys_timerfd_create) // 585
+DECL_TEMPLATE(freebsd, sys_timerfd_gettime) // 586
+DECL_TEMPLATE(freebsd, sys_timerfd_settime) // 587
 #endif
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)

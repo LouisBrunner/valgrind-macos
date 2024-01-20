@@ -1593,6 +1593,12 @@ struct vki_dirent {
 #define VKI_F_SEAL_GROW    0x0004
 #define VKI_F_SEAL_WRITE   0x0008
 
+struct vki_spacectl_range {
+   vki_off_t   r_offset;
+   vki_off_t   r_len;
+};
+
+
 //----------------------------------------------------------------------
 // From sys/unistd.h
 //----------------------------------------------------------------------

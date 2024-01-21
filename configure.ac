@@ -271,7 +271,7 @@ case "${host_cpu}" in
         ARCH_MAX="s390x"
         ;;
 
-     armv7*)
+     arm*)
 	AC_MSG_RESULT([ok (${host_cpu})])
 	ARCH_MAX="arm"
 	;;

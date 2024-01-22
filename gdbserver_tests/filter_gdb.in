@@ -65,6 +65,9 @@ s/Thread [0-9][0-9]*/Thread ..../g
 #       delete thread switches
 /\[Switching to Thread ....\]/d
 
+#       delete thread exiting
+/\[Thread .... exited\]/d
+
 #       ??? Probably we had a 'Switching ' message in front of
 #        a frame line ?
 s/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/

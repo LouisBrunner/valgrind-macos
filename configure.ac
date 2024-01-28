@@ -237,6 +237,8 @@ AC_MSG_CHECKING([for a supported CPU])
 # Endian.  Similarly, ppc64le or PPC64LE refer to only 64-bit systems that are
 # Little Endian.
 
+VGCONF_PLATFORM_ARM_ARCH=
+
 case "${host_cpu}" in
      i?86) 
 	AC_MSG_RESULT([ok (${host_cpu})])
@@ -271,8 +273,21 @@ case "${host_cpu}" in
         ARCH_MAX="s390x"
         ;;
 
+     armv8*)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	VGCONF_PLATFORM_ARM_ARCH="-marm -mcpu=cortex-a8"
+	ARCH_MAX="arm"
+	;;
+
+     armv7*)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	VGCONF_PLATFORM_ARM_ARCH="-march=armv7 -mcpu=cortex-a8"
+	ARCH_MAX="arm"
+	;;
+
      arm*)
 	AC_MSG_RESULT([ok (${host_cpu})])
+	VGCONF_PLATFORM_ARM_ARCH="-march=armv6"
 	ARCH_MAX="arm"
 	;;
 
@@ -315,6 +330,8 @@ case "${host_cpu}" in
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
 	;;
 esac
+
+AC_SUBST(VGCONF_PLATFORM_ARM_ARCH)
 
 #----------------------------------------------------------------------------
 

@@ -281,7 +281,7 @@ case "${host_cpu}" in
 
      armv7*)
 	AC_MSG_RESULT([ok (${host_cpu})])
-	VGCONF_PLATFORM_ARM_ARCH="-march=armv7 -mcpu=cortex-a8"
+	VGCONF_PLATFORM_ARM_ARCH="-marm -mcpu=cortex-a8"
 	ARCH_MAX="arm"
 	;;
 

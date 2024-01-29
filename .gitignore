@@ -1395,6 +1395,7 @@
 /memcheck/tests/freebsd/linkat
 /memcheck/tests/freebsd/memalign
 /memcheck/tests/freebsd/misc
+/memcheck/tests/freebsd/openpty
 /memcheck/tests/freebsd/pdfork_pdkill
 /memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/revoke

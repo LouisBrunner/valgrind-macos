@@ -1086,6 +1086,11 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 #define VKI_FIOASYNC _VKI_IOW('f', 125, int)
 #define VKI_FIOSETOWN   _VKI_IOW('f', 124, int)
 #define VKI_FIOGETOWN   _VKI_IOW('f', 123, int)
+struct vki_fiodgname_arg {
+   int     len;
+   void    *buf;
+};
+#define VKI_FIODGNAME   _VKI_IOW('f', 120, struct vki_fiodgname_arg) /* get dev. name */
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
 #if 0

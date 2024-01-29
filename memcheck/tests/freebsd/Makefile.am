@@ -76,6 +76,8 @@ EXTRA_DIST = \
 	memalign_supp.supp \
 	misc.vgtest \
 	misc.stderr.exp \
+	openpty.vgtest \
+	openpty.stderr.exp \
 	pdfork_pdkill.vgtest \
 	pdfork_pdkill.stderr.exp \
 	realpathat.vgtest \
@@ -144,6 +146,7 @@ check_PROGRAMS = \
 	file_locking_wait6 \
 	get_set_context get_set_login getfh \
 	kqueue linkat memalign misc \
+	openpty \
 	pdfork_pdkill getfsstat inlinfo inlinfo_nested.so \
 	revoke scalar \
 	scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
@@ -200,3 +203,5 @@ errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT
 extattr_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
 memalign_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+openpty_LDFLAGS = ${AM_LDFLAGS} -lutil

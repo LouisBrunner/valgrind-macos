@@ -320,6 +320,7 @@ typedef struct vki_sigaltstack {
 #define VKI_O_TRUNC         00001000        /* not fcntl */
 #define VKI_O_APPEND        00002000
 #define VKI_O_NONBLOCK      00004000
+#define VKI_O_DIRECT        00040000
 
 #define VKI_AT_FDCWD            -100
 

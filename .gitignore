@@ -1547,6 +1547,7 @@
 /none/tests/map_unmap
 /none/tests/mmap_fcntl_bug
 /none/tests/mq
+/none/tests/mmap_o_direct
 /none/tests/mremap
 /none/tests/mremap2
 /none/tests/munmap_exe

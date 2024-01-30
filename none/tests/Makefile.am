@@ -151,6 +151,7 @@ EXTRA_DIST = \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
 	mmap_fcntl_bug.vgtest mmap_fcntl_bug.stdout.exp \
 		mmap_fcntl_bug.stderr.exp \
+	mmap_o_direct.stderr.exp mmap_o_direct.vgtest \
 	mq.stderr.exp mq.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
 	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
@@ -244,6 +245,7 @@ check_PROGRAMS = \
 	libvexmultiarch_test \
 	manythreads \
 	mmap_fcntl_bug \
+	mmap_o_direct \
 	munmap_exe map_unaligned map_unmap mq \
 	nocwd \
 	pending \

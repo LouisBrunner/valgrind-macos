@@ -4706,7 +4706,7 @@ PRE(sys__umtx_op)
                     struct umtx_robust_lists_params *, obj, int, op, unsigned long, flags);
       PRE_MEM_READ( "_umtx_op_robust_lists(mutex)", ARG3, sizeof(struct vki_umtx_robust_lists_params) );
       break;
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_3)
    case VKI_UMTX_OP_GET_MIN_TIMEOUT:
       PRINT( "sys__umtx_op ( GET_MIN_TIMEOUT, %#" FMT_REGWORD "x)", ARG4);
       // bit of a pain just reads args 2 and 4
@@ -4794,7 +4794,7 @@ POST(sys__umtx_op)
    case VKI_UMTX_OP_SHM:
    case VKI_UMTX_OP_ROBUST_LISTS:
       break;
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_3)
    case VKI_UMTX_OP_GET_MIN_TIMEOUT:
       POST_MEM_WRITE( ARG4, sizeof(long int) );
       break;
@@ -6991,7 +6991,7 @@ PRE(sys_swapoff)
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
 
 // SYS_kqueuex 583
 // int kqueuex(u_int flags);
@@ -7024,6 +7024,10 @@ PRE(sys_membarrier)
          ARG1, ARG2, SARG3);
    PRE_REG_READ3(int, "membarrier", int, cmd, unsigned, flags, int, cpu_id);
 }
+
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
 
 // SYS_timerfd_create 585
 // int timerfd_create(int clockid, int flags);
@@ -7820,9 +7824,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDX_(__NR_swapoff,          sys_swapoff),           // 582
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
    BSDXY(__NR_kqueuex,          sys_kqueuex),           // 583
    BSDX_(__NR_membarrier,       sys_membarrier),        // 584
+#endif
+#if (FREEBSD_VERS >= FREEBSD_15)
    BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587

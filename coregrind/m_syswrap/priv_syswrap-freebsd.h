@@ -564,9 +564,12 @@ DECL_TEMPLATE(freebsd, sys_fspacectl) // 580
 DECL_TEMPLATE(freebsd, sys_swapoff) // 582
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
 DECL_TEMPLATE(freebsd, sys_kqueuex) // 583
 DECL_TEMPLATE(freebsd, sys_membarrier) // 584
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
 DECL_TEMPLATE(freebsd, sys_timerfd_create) // 585
 DECL_TEMPLATE(freebsd, sys_timerfd_gettime) // 586
 DECL_TEMPLATE(freebsd, sys_timerfd_settime) // 587

@@ -2084,7 +2084,7 @@ struct vki_umtx_robust_lists_params {
 #define VKI_UMTX_OP_SEM2_WAKE       24
 #define VKI_UMTX_OP_SHM             25
 #define VKI_UMTX_OP_ROBUST_LISTS    26
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_3)
 #define VKI_UMTX_OP_GET_MIN_TIMEOUT 27
 #define VKI_UMTX_OP_SET_MIN_TIMEOUT 28
 #endif

@@ -413,6 +413,8 @@ case "${host_os}" in
         freebsd_13_1=1310
         AC_DEFINE([FREEBSD_13_2], 1320, [FREEBSD_VERS value for FreeBSD 13.2])
         freebsd_13_2=1320
+        AC_DEFINE([FREEBSD_13_3], 1330, [FREEBSD_VERS value for FreeBSD 13.3])
+        freebsd_13_3=1330
         AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
         freebsd_14=1400
         AC_DEFINE([FREEBSD_15], 1500, [FREEBSD_VERS value for FreeBSD 15.x])
@@ -462,6 +464,11 @@ case "${host_os}" in
               AC_MSG_RESULT([FreeBSD 13.2 (${kernel})])
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
               freebsd_vers=$freebsd_13_2
+              ;;
+           13.3-*)
+              AC_MSG_RESULT([FreeBSD 13.3 (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_3, [FreeBSD version])
+              freebsd_vers=$freebsd_13_3
               ;;
            *)
               AC_MSG_RESULT([unsupported (${kernel})])

@@ -314,6 +314,13 @@ fdleak_cmsg_LDADD	= -lsocket -lnsl
 fdleak_ipv4_LDADD	= -lsocket -lnsl
 fdleak_creat_LDADD	= -lsocket -lnsl
 fdleak_socketpair_LDADD	= -lsocket -lnsl
+else
+fcntl_setown_LDADD	= $(AL_LDFLAGS)
+fdleak_cmsg_CFLAGS	= $(AM_CFLAGS)
+fdleak_cmsg_LDADD	= $(AM_LDFLAGS)
+fdleak_ipv4_LDADD	= $(AM_LDFLAGS)
+fdleak_creat_LDADD	= $(AM_LDFLAGS)
+fdleak_socketpair_LDADD	= $(AM_LDFLAGS)
 endif
 floored_LDADD 		= -lm
 ifunc_CFLAGS		= $(AM_CFLAGS) -Wno-unused-function
@@ -372,7 +379,7 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
-timestamp_CFLAGS	= @FLAG_W_NO_USE_AFTER_FREE@
+timestamp_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so
 tls_LDFLAGS		= -Wl,-rpath,$(abs_top_builddir)/none/tests

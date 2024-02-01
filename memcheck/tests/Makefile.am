@@ -636,7 +636,7 @@ bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
-cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+cxx17_aligned_new_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
 new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp

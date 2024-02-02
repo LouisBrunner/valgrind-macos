@@ -34,6 +34,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 466884  Missing writev uninit padding suppression for _XSend
 475498  Add reallocarray wrapper
 476320  Build failure with GCC
+476331  clean up generated/distributed filter scripts
 476535  Difference in allocation size for massif/tests/overloaded-new between
         clang++/libc++ and g++/libstdc++
 476548  valgrind 3.22.0 fails on assertion when loading debuginfo file produced by mold

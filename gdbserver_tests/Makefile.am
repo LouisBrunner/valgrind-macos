@@ -11,12 +11,19 @@ endif
 DIST_SUBDIRS = solaris
 
 dist_noinst_SCRIPTS = \
-	invoker simulate_control_c make_local_links \
-	filter_gdb filter_make_empty \
-	filter_memcheck_monitor filter_stderr filter_vgdb \
-	filter_helgrind_monitor filter_helgrind_monitor_solaris \
+	invoker simulate_control_c \
+	make_local_links \
+	filter_make_empty \
+	filter_helgrind_monitor \
+	filter_helgrind_monitor_solaris \
 	filter_passsigalrm \
 	send_signal
+
+noinst_SCRIPTS = \
+	filter_gdb \
+	filter_memcheck_monitor \
+	filter_stderr \
+	filter_vgdb
 
 EXTRA_DIST = \
 	README_DEVELOPERS \

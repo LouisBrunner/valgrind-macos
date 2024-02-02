@@ -72,20 +72,23 @@ DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
 dist_noinst_SCRIPTS = \
 	filter_addressable \
 	filter_allocs \
-	filter_dw4 \
 	filter_leak_cases_possible \
 	filter_leak_cpp_interior \
-	filter_stderr filter_xml \
+	filter_xml \
 	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \
-	filter_overlaperror \
 	filter_malloc_free \
 	filter_size_t \
 	filter_stanza \
 	filter_stanza.awk \
 	filter_used_supp \
 	filter_stanza_and_size_t
+
+noinst_SCRIPTS = \
+	filter_dw4 \
+	filter_overlaperror \
+	filter_stderr
 
 noinst_HEADERS = leak.h
 

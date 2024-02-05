@@ -191,9 +191,9 @@ if HAVE_CLOSE_RANGE
 check_PROGRAMS += close_range
 endif
 
-scalar_CFLAGS = ${AM_CFLAGS} -g
-
 aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+close_range_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
 delete_sized_mismatch_CXXFLAGS = ${AM_CXXFLAGS} --std=c++14
 delete_sized_mismatch_SOURCES = delete_sized_mismatch.cpp
@@ -205,3 +205,5 @@ extattr_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 memalign_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 
 openpty_LDFLAGS = ${AM_LDFLAGS} -lutil
+
+scalar_CFLAGS = ${AM_CFLAGS} -g

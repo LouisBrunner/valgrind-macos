@@ -15,7 +15,7 @@ int main(void)
    char buf2[LEN];
    char buf3[LEN];
    struct iovec vec_array[] = {{buf1, LEN}, {buf2, LEN}, {buf3, LEN}};
-   struct iovec bad_array[] = {{NULL, LEN}, {buf2, LEN}, {buf3, LEN}};
+   //struct iovec bad_array[] = {{NULL, LEN}, {buf2, LEN}, {buf3, LEN}};
 
    struct aiocb a;
 

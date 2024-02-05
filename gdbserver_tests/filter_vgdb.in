@@ -31,6 +31,10 @@ $SED -e '/^1	rtld.c: No such file or directory\./d' |
 $SED -e '/rtld.c: Inappropriate ioctl for device\./d' |
 # similar for Debian 11.0 arm64
 $SED -e '/_exit.c: Inappropriate ioctl for device\./d' |
+# On FreeBSD, the opional core source package gets
+# installed after binaries so gdb complains that rtld_start.S
+# is more recent than ld-elf.so.1
+$SED -e "/^warning: Source file is more recent than executable./d" |
 
 # filter python loading denied error message (see also filter_gdb.in)
 $SED -e '/warning: File .*valgrind-monitor.py.*declined.*/d' |

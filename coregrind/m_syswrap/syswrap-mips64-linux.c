@@ -805,6 +805,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_memfd_create, sys_memfd_create),
    LINX_ (__NR_execveat, sys_execveat),
    LINX_ (__NR_membarrier, sys_membarrier),
+   GENX_ (__NR_mlock2, sys_mlock2),
    LINX_ (__NR_copy_file_range, sys_copy_file_range),
    LINXY (__NR_preadv, sys_preadv),
    LINX_ (__NR_pwritev, sys_pwritev),

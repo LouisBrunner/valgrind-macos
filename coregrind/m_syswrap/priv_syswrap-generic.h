@@ -260,6 +260,7 @@ DECL_TEMPLATE(generic, sys_mincore);               // * L?
 DECL_TEMPLATE(generic, sys_getdents64);            // * (SVr4,SVID?)
 DECL_TEMPLATE(generic, sys_statfs64);              // * (?)
 DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)
+DECL_TEMPLATE(generic, sys_mlock2);                // * L
 
 
 /* ---------------------------------------------------------------------

@@ -2738,6 +2738,13 @@ PRE(sys_nice)
    PRE_REG_READ1(long, "nice", int, inc);
 }
 
+PRE(sys_mlock2)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mlock2 ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
+   PRE_REG_READ2(int, "mlock2", void*, addr, vki_size_t, len);
+}
+
 PRE(sys_mlock)
 {
    *flags |= SfMayBlock;

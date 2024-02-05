@@ -816,7 +816,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_execveat,          sys_execveat),          // 281
    //   (__NR_userfaultfd,       sys_ni_syscall),        // 282
    LINX_(__NR_membarrier,        sys_membarrier),        // 283
-   //   (__NR_mlock2,            sys_ni_syscall),        // 284
+   GENX_(__NR_mlock2,            sys_mlock2),            // 284
    LINX_(__NR_copy_file_range,   sys_copy_file_range),   // 285
    LINXY(__NR_preadv2,           sys_preadv2),           // 286
    LINX_(__NR_pwritev2,          sys_pwritev2),          // 287

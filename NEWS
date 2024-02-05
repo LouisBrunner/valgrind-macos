@@ -37,7 +37,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 476331  clean up generated/distributed filter scripts
 476535  Difference in allocation size for massif/tests/overloaded-new between
         clang++/libc++ and g++/libstdc++
-476548  valgrind 3.22.0 fails on assertion when loading debuginfo file produced by mold
+476548  valgrind 3.22.0 fails on assertion when loading debuginfo file
+        produced by mold
 476708  valgrind-monitor.py regular expressions should use raw strings
 476780  Extend strlcat and strlcpy wrappers to GNU libc
 476787  Build of Valgrind 3.21.0 fails when SOLARIS_PT_SUNDWTRACE_THRP is
@@ -57,6 +58,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 480405  valgrind 3.22.0 "m_debuginfo/image.c:586 (set_CEnt):
         Assertion '!sr_isError(sr)' failed."
 480488  Add support for FreeBSD 13.3
+480706  Unhandled syscall 325 (mlock2)
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

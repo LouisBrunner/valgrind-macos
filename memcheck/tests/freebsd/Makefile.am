@@ -138,7 +138,7 @@ EXTRA_DIST = \
 	utimes.stderr.exp
 
 check_PROGRAMS = \
-	access aio aiov aio_read aligned_alloc bug464476 bug470713 \
+	access aio aio_read aligned_alloc bug464476 bug470713 \
 	capsicum chflags \
 	chmod_chown delete_sized_mismatch errno_aligned_allocs \
 	extattr \
@@ -164,6 +164,10 @@ check_PROGRAMS = \
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+
+if HAVE_AIO_READV
+check_PROGRAMS += aiov
+endif
 
 inlinfo_SOURCES = inlinfo.c
 inlinfo_DEPENDENCIES = inlinfo_nested.so

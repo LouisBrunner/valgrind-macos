@@ -5394,8 +5394,10 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   return __NR_openat2
 ]])], [
   ac_have_openat2=yes
+  AC_MSG_RESULT([yes])
 ], [
   ac_have_openat2=no
+  AC_MSG_RESULT([no])
 ])
 
 AM_CONDITIONAL([HAVE_OPENAT2],
@@ -5413,13 +5415,34 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   CRYPTO_secure_malloc_init(1<<20, 8);
 ]])], [
   ac_have_openssl=yes
+  AC_MSG_RESULT([yes])
 ], [
   ac_have_openssl=no
+  AC_MSG_RESULT([no])
 ])
 LIBS=$safe_LIBS
 
 AM_CONDITIONAL([HAVE_OPENSSL],
                [test x$ac_have_openssl = xyes])
+
+AC_MSG_CHECKING([if platform has aio_readv])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <aio.h>
+  #include <stdlib.h>
+]], [[
+  aio_readv(NULL);
+]])], [
+  ac_have_aio_readv=yes
+  AC_MSG_RESULT([yes])
+
+], [
+  ac_have_aio_readv=no
+  AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([HAVE_AIO_READV],
+               [test x$ac_have_aio_readv = xyes])
 
 # does g++ have built-in functions for atomic memory access ?
 AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])

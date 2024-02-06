@@ -1958,7 +1958,7 @@ Syscall param aio_read(iocb) points to unaddressable byte(s)
 Syscall param aio_write(iocb) contains uninitialised byte(s)
    ...
 
-Syscall param aio_read(iocb) points to unaddressable byte(s)
+Syscall param aio_write(iocb) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -2246,7 +2246,7 @@ Syscall param aio_suspend(timeout) points to unaddressable byte(s)
 ---------------------------------------------------------
 316:          SYS_aio_cancel 2s 1m
 ---------------------------------------------------------
-Syscall param aio_cancel(fildex) contains uninitialised byte(s)
+Syscall param aio_cancel(fildes) contains uninitialised byte(s)
    ...
 
 Syscall param aio_cancel(iocb) contains uninitialised byte(s)

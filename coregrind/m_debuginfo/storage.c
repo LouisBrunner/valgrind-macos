@@ -611,7 +611,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    /* Rule out ones which are completely outside the r-x mapped area.
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
-   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
+   vg_assert(di->fsm.have_rx_map);
    if (ML_(find_rx_mapping)(di, this, this + size - 1) == NULL) {
        if (0)
           VG_(message)(Vg_DebugMsg, 

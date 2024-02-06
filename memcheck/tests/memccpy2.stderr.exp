@@ -1,0 +1,8 @@
+Source and destination overlap in memccpy(0x........, 0x........, 31)
+   at 0x........: memccpy (vg_replace_strmem.c:...)
+   by 0x........: main (memccpy2.c:9)
+
+Source and destination overlap in memccpy(0x........, 0x........, 41)
+   at 0x........: memccpy (vg_replace_strmem.c:...)
+   by 0x........: main (memccpy2.c:11)
+

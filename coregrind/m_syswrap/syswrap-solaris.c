@@ -10953,6 +10953,9 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(SOLARIS_UUIDSYS_SYSCALL)
    SOLXY(__NR_uuidsys,              sys_uuidsys),               /* 124 */
 #endif /* SOLARIS_UUIDSYS_SYSCALL */
+#if defined(HAVE_MREMAP)
+   GENX_(__NR_mremap,               sys_mremap),                /* 126 */
+#endif /* HAVE_MREMAP */
    SOLX_(__NR_mmapobj,              sys_mmapobj),               /* 127 */
    GENX_(__NR_setrlimit,            sys_setrlimit),             /* 128 */
    GENXY(__NR_getrlimit,            sys_getrlimit),             /* 129 */

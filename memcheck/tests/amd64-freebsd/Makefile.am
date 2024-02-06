@@ -8,11 +8,13 @@ EXTRA_DIST = \
 	posix_fallocate.vgtest \
 	posix_fadvise.stderr.exp \
 	posix_fallocate.stderr.exp \
+	reallocarray.vgtest \
+	reallocarray.stderr.exp \
 	reallocf.vgtest \
 	reallocf.stderr.exp
 
 check_PROGRAMS = \
-	posix_fadvise posix_fallocate reallocf
+	posix_fadvise posix_fallocate reallocarray reallocf
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

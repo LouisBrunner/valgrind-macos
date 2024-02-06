@@ -26,7 +26,6 @@ dist_noinst_SCRIPTS = \
 	check_makefile_consistency \
 	check_ppc64_auxv_cap \
 	filter_addresses \
-	filter_discards \
 	filter_libc \
 	filter_numbers \
 	filter_stderr_basic \
@@ -35,6 +34,9 @@ dist_noinst_SCRIPTS = \
 	platform_test \
 	post_regtest_checks \
 	vg_regtest
+
+noinst_SCRIPTS = \
+	filter_discards
 
 noinst_HEADERS = \
 	asm.h \

@@ -857,6 +857,7 @@
 /memcheck/tests/bug340392
 /memcheck/tests/bug464969_d_demangle
 /memcheck/tests/bug472219
+/memcheck/tests/bug401284
 /memcheck/tests/calloc-overflow
 /memcheck/tests/cdebug_zlib
 /memcheck/tests/cdebug_zlib_gnu
@@ -934,6 +935,8 @@
 /memcheck/tests/match-overrun
 /memcheck/tests/memalign_args
 /memcheck/tests/memalign_test
+/memcheck/tests/memccpy1
+/memcheck/tests/memccpy2
 /memcheck/tests/memcmptest
 /memcheck/tests/memmem
 /memcheck/tests/mempool
@@ -1073,6 +1076,7 @@
 /memcheck/tests/amd64-linux/access_below_sp
 /memcheck/tests/amd64-linux/defcfaexpr
 /memcheck/tests/amd64-linux/int3-amd64
+/memcheck/tests/amd64-linux/reallocarray
 /memcheck/tests/amd64-linux/Makefile
 /memcheck/tests/amd64-linux/Makefile.in
 
@@ -1113,6 +1117,7 @@
 /memcheck/tests/darwin/Makefile.in
 /memcheck/tests/darwin/aio
 /memcheck/tests/darwin/aligned_alloc
+/memcheck/tests/darwin/bug437790
 /memcheck/tests/darwin/deep_badparam
 /memcheck/tests/darwin/env
 /memcheck/tests/darwin/ioctl-tiocsbrk
@@ -1132,6 +1137,7 @@
 /memcheck/tests/linux/.deps
 /memcheck/tests/linux/aligned_alloc
 /memcheck/tests/linux/brk
+/memcheck/tests/linux/bug480706
 /memcheck/tests/linux/capget
 /memcheck/tests/linux/check_preadv2_pwritev2
 /memcheck/tests/linux/dlclose_leak
@@ -1156,6 +1162,7 @@
 /memcheck/tests/linux/syslog-syscall
 /memcheck/tests/linux/timerfd-syscall
 /memcheck/tests/linux/proc-auxv
+/memcheck/tests/linux/strlcat_strlcpy
 /memcheck/tests/linux/sys-openat
 /memcheck/tests/linux/sys-execveat
 /memcheck/tests/linux/check_execveat
@@ -1361,6 +1368,9 @@
 /memcheck/tests/freebsd/Makefile.in
 /memcheck/tests/freebsd/452275
 /memcheck/tests/freebsd/access
+/memcheck/tests/freebsd/aio
+/memcheck/tests/freebsd/aiov
+/memcheck/tests/freebsd/aio_read
 /memcheck/tests/freebsd/aligned_alloc
 /memcheck/tests/freebsd/bug464476
 /memcheck/tests/freebsd/bug470713
@@ -1386,6 +1396,7 @@
 /memcheck/tests/freebsd/linkat
 /memcheck/tests/freebsd/memalign
 /memcheck/tests/freebsd/misc
+/memcheck/tests/freebsd/openpty
 /memcheck/tests/freebsd/pdfork_pdkill
 /memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/revoke
@@ -1404,6 +1415,7 @@
 /memcheck/tests/freebsd/stat
 /memcheck/tests/freebsd/statfs
 /memcheck/tests/freebsd/static_allocs
+/memcheck/tests/freebsd/strlcat_strlcpy
 /memcheck/tests/freebsd/timerfd
 /memcheck/tests/freebsd/timing_safe
 /memcheck/tests/freebsd/utimens
@@ -1419,6 +1431,7 @@
 /memcheck/tests/amd64-freebsd/Makefile.in
 /memcheck/tests/amd64-freebsd/posix_fadvise
 /memcheck/tests/amd64-freebsd/posix_fallocate
+/memcheck/tests/amd64-freebsd/reallocarray
 /memcheck/tests/amd64-freebsd/reallocf
 
 # /memcheck/tests/x86-freebsd
@@ -1431,6 +1444,7 @@
 /memcheck/tests/x86-freebsd/Makefile.in
 /memcheck/tests/x86-freebsd/posix_fadvise
 /memcheck/tests/x86-freebsd/posix_fallocate
+/memcheck/tests/x86-freebsd/reallocarray
 
 # /mpi/
 /mpi/*.dSYM
@@ -1534,6 +1548,7 @@
 /none/tests/map_unmap
 /none/tests/mmap_fcntl_bug
 /none/tests/mq
+/none/tests/mmap_o_direct
 /none/tests/mremap
 /none/tests/mremap2
 /none/tests/munmap_exe
@@ -1760,6 +1775,7 @@
 /none/tests/arm64/fp_and_simd_v82
 /none/tests/arm64/integer
 /none/tests/arm64/memory
+/none/tests/arm64/simd_dotprod
 /none/tests/arm64/simd_v81
 
 # /none/tests/darwin/
@@ -1775,6 +1791,7 @@
 /none/tests/darwin/apple-main-arg
 /none/tests/darwin/bug228343
 /none/tests/darwin/bug254164
+/none/tests/darwin/bug390269
 /none/tests/darwin/rlimit
 
 # /none/tests/linux/
@@ -2202,6 +2219,7 @@
 /none/tests/x86/fpu_lazy_eflags
 /none/tests/x86/fxtract
 /none/tests/x86/getseg
+/none/tests/x86/gnu_binutils_nop
 /none/tests/x86/incdec_alt
 /none/tests/x86/insn_basic
 /none/tests/x86/insn_basic.c

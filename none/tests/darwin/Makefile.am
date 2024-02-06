@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	apple-main-arg.stderr.exp apple-main-arg.vgtest \
 	bug228343.stderr.exp bug228343.stdout.exp bug228343.vgtest \
 	bug254164.stderr.exp bug254164.vgtest \
+	bug390269.stderr.exp bug390269.vgtest \
 	rlimit.stderr.exp rlimit.vgtest
 
 check_PROGRAMS = \
@@ -15,6 +16,7 @@ check_PROGRAMS = \
 	apple-main-arg \
 	bug228343 \
 	bug254164 \
+	bug390269 \
 	rlimit
 
 

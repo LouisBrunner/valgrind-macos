@@ -1,0 +1,2 @@
+prog: bug437790
+vgopts: -q

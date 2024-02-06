@@ -129,6 +129,8 @@ static char *find_client(const char *clientname)
 
       if (access(fullname, R_OK|X_OK) == 0)
          return fullname;
+      else if (access(fullname, X_OK) == 0)
+	 barf("Need read permission on %s", fullname);
    }
    free(fullname);
 

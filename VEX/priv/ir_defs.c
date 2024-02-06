@@ -4552,7 +4552,7 @@ static
 void useBeforeDef_Temp ( const IRSB* bb, const IRStmt* stmt, IRTemp tmp,
                          Int* def_counts )
 {
-   if (tmp < 0 || tmp >= bb->tyenv->types_used)
+   if (tmp >= bb->tyenv->types_used)
       sanityCheckFail(bb,stmt, "out of range Temp in IRExpr");
    if (def_counts[tmp] < 1)
       sanityCheckFail(bb,stmt, "IRTemp use before def in IRExpr");
@@ -4564,7 +4564,7 @@ void assignedOnce_Temp(const IRSB *bb, const IRStmt *stmt, IRTemp tmp,
                        const HChar *err_msg_out_of_range,
                        const HChar *err_msg_assigned_more_than_once)
 {
-   if (tmp < 0 || tmp >= n_def_counts) {
+   if (tmp >= n_def_counts) {
       sanityCheckFail(bb, stmt, err_msg_out_of_range);
    }
 

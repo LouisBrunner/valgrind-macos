@@ -1001,7 +1001,7 @@ Superblock* maybe_findSb ( Arena* a, Addr ad )
    while (min <= max) {
       Superblock * sb; 
       SizeT pos = min + (max - min)/2;
-      if (pos < 0 || pos >= a->sblocks_used)
+      if (pos >= a->sblocks_used)
          return NULL;
       sb = a->sblocks[pos];
       if ((Addr)&sb->payload_bytes[0] <= ad

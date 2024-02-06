@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr   \
+dist_noinst_SCRIPTS = \
 		      filter_stderr_solaris \
 		      filter_helgrind \
 		      filter_xml \
@@ -9,6 +9,8 @@ dist_noinst_SCRIPTS = filter_stderr   \
 		      filter_stderr_freebsd \
 		      filter_bug392331
 
+noinst_SCRIPTS = \
+	filter_stderr
 
 EXTRA_DIST = \
 	annotate_hbefore.vgtest annotate_hbefore.stdout.exp \

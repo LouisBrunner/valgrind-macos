@@ -2385,7 +2385,7 @@ Bool dbm_DecodeBitMasks ( /*OUT*/ULong* wmask, /*OUT*/ULong* tmask,
 
    vassert(len >= 1 && len <= 6);
    ULong levels = // (zeroes(6 - len) << (6-len)) | ones(len);
-                  (1U << len) - 1;
+                  (1UL << len) - 1;
    vassert(levels >= 1 && levels <= 63);
 
    if (immediate && ((imms & levels) == levels)) { 
@@ -9113,6 +9113,21 @@ IRTemp math_RHADD ( UInt size, Bool isU, IRTemp aa, IRTemp bb )
 }
 
 
+/* Generate IR to do {U,S}ADDLP */
+static
+IRTemp math_ADDLP ( UInt sizeNarrow, Bool isU, IRTemp src )
+{
+   IRTemp res = newTempV128();
+   assign(res,
+            binop(mkVecADD(sizeNarrow+1),
+                  mkexpr(math_WIDEN_EVEN_OR_ODD_LANES(
+                           isU, True/*fromOdd*/, sizeNarrow, mkexpr(src))),
+                  mkexpr(math_WIDEN_EVEN_OR_ODD_LANES(
+                           isU, False/*!fromOdd*/, sizeNarrow, mkexpr(src)))));
+   return res;
+}
+
+
 /* QCFLAG tracks the SIMD sticky saturation status.  Update the status
    thusly: if, after application of |opZHI| to both |qres| and |nres|,
    they have the same value, leave QCFLAG unchanged.  Otherwise, set it
@@ -10416,7 +10431,9 @@ Bool dis_AdvSIMD_scalar_shift_by_imm(/*MB_OUT*/DisResult* dres, UInt insn)
       UInt shift = 0;
       Bool ok    = getLaneInfo_IMMH_IMMB(&shift, &size, immh, immb);
       if (!ok || size == X11) return False;
-      vassert(size >= X00 && size <= X10);
+      // always true, size is unsigned int
+      //vassert(size >= X00);
+      vassert(size <= X10);
       vassert(shift >= 1 && shift <= (8 << size));
       const HChar* nm = "??";
       IROp op = Iop_INVALID;
@@ -11821,7 +11838,7 @@ Bool dis_AdvSIMD_shift_by_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
          Adjust shift to compensate. */
       UInt lanebits = 8 << size;
       shift = lanebits - shift;
-      vassert(shift >= 0 && shift < lanebits);
+      vassert(shift < lanebits);
       IROp    op  = mkVecSHLN(size);
       IRExpr* src = getQReg128(nn);
       IRTemp  res = newTempV128();
@@ -13406,12 +13423,7 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       IRTemp sum   = newTempV128();
       IRTemp res   = newTempV128();
       assign(src, getQReg128(nn));
-      assign(sum,
-             binop(mkVecADD(size+1),
-                   mkexpr(math_WIDEN_EVEN_OR_ODD_LANES(
-                             isU, True/*fromOdd*/, size, mkexpr(src))),
-                   mkexpr(math_WIDEN_EVEN_OR_ODD_LANES(
-                             isU, False/*!fromOdd*/, size, mkexpr(src)))));
+      sum = math_ADDLP(size, isU, src);
       assign(res, isACC ? binop(mkVecADD(size+1), mkexpr(sum), getQReg128(dd))
                         : mkexpr(sum));
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
@@ -15693,6 +15705,91 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
+Bool dis_AdvSIMD_dot_product(/*MB_OUT*/DisResult* dres, UInt insn)
+{
+   /* by element
+      31 30 29 28    23   21 20 15   11 10 9 4
+      0  Q  U  01111 size L  m  1110 H  0  n d
+      vector
+      31 30 29 28    23   21 20 15   11 10 9 4
+      0  Q  U  01110 size 0  m  1001 0  1  n d
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,31) != 0) {
+      return False;
+   }
+   UInt bitQ    = INSN(30,30);
+   UInt bitU    = INSN(29,29);
+   UInt opcode1 = INSN(28,24);
+   UInt size    = INSN(23,22);
+   UInt bitL    = INSN(21,21);
+   UInt mm      = INSN(20,16);
+   UInt opcode2 = INSN(15,12);
+   UInt bitH    = INSN(11,11);
+   UInt opcode3 = INSN(10,10);
+   UInt nn      = INSN(9,5);
+   UInt dd      = INSN(4,0);
+   UInt index   = (bitH << 1) + bitL;
+   vassert(index <= 3);
+
+   Bool byElement;
+   if (opcode1 == BITS5(0,1,1,1,1)
+       && opcode2 == BITS4(1,1,1,0)
+       && opcode3 == 0) {
+      byElement = True;
+   } else if (opcode1 == BITS5(0,1,1,1,0)
+       && opcode2 == BITS4(1,0,0,1)
+       && opcode3 == 1
+       && bitL == 0 && bitH == 0) {
+      byElement = False;
+   } else {
+      return False;
+   }
+
+   // '10' is the only valid size
+   if (size != X10) return False;
+
+   IRExpr* src1 = math_MAYBE_ZERO_HI64_fromE(bitQ, getQReg128(nn));
+   IRExpr* src2 = getQReg128(mm);
+   if (byElement) {
+      src2 = mkexpr(math_DUP_VEC_ELEM(src2, X10, index));
+   }
+
+   IROp mulOp = bitU ? Iop_Mull8Ux8 : Iop_Mull8Sx8;
+   IRTemp loProductSums = math_ADDLP(
+         X01, bitU, math_BINARY_WIDENING_V128(False, mulOp, src1, src2));
+   IRTemp hiProductSums = math_ADDLP(
+         X01, bitU, math_BINARY_WIDENING_V128(True, mulOp, src1, src2));
+
+   IRTemp res = newTempV128();
+   assign(res, binop(Iop_Add32x4,
+          mk_CatEvenLanes32x4(hiProductSums, loProductSums),
+          mk_CatOddLanes32x4(hiProductSums, loProductSums)));
+
+   // These instructions accumulate into the destination, but in non-q
+   // form the upper 64 bits get forced to 0
+   IRExpr* accVal = math_MAYBE_ZERO_HI64_fromE(bitQ, getQReg128(dd));
+   putQReg128(dd, binop(mkVecADD(size), mkexpr(res), accVal));
+
+   const HChar* nm = bitU ? "udot" : "sdot";
+   const HChar* destWidth = nameArr_Q_SZ(bitQ, size);
+   const HChar* srcWidth  = nameArr_Q_SZ(bitQ, X00);
+   if (byElement) {
+      DIP("%s v%u.%s, v%u.%s, v%u.4b[%u]\n", nm,
+         dd, destWidth,
+         nn, srcWidth, mm, index);
+   } else {
+      DIP("%s v%u.%s, v%u.%s, v%u.%s\n", nm,
+         dd, destWidth,
+         nn, srcWidth, mm, srcWidth);
+   }
+
+   return True;
+#  undef INSN
+}
+
+
+static
 Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo, Bool sigill_diag)
 {
@@ -15766,6 +15863,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_AdvSIMD_fp_to_from_fixedp_conv(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_to_from_int_conv(dres, insn);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_dot_product(dres, insn);
    if (UNLIKELY(ok)) return True;
    return False;
 }

@@ -34,8 +34,8 @@
 #include "pub_core_debuginfo.h"  // DebugInfo
 
 /* Identify a Mach-O object file by peering at the first few bytes of
-   it. */
-extern Bool ML_(is_macho_object_file)( const void* buf, SizeT size );
+   it. Also count the number of RW segements. */
+extern Bool ML_(check_macho_and_get_rw_loads)( const void* buf, SizeT size, Int* rw_loads );
 
 /* The central function for reading Mach-O debug info.  For the
    object/exe specified by the DebugInfo, find Mach-O sections, then read

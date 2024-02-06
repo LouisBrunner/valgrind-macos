@@ -1,0 +1,4 @@
+prereq: test -e ./strlcat_strlcpy
+prog: strlcat_strlcpy
+vgopts: -q
+

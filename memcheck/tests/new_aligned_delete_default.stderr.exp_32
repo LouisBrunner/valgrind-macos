@@ -1,0 +1,28 @@
+Mismatched new/delete alignment alloc value: 256 dealloc value: default-aligned
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:7)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: operator new(unsigned int, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:6)
+
+Mismatched new[]/delete[] alignment alloc value: 256 dealloc value: default-aligned
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:9)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: operator new[](unsigned int, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:8)
+
+Mismatched new/delete alignment alloc value: 256 dealloc value: default-aligned
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:11)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: operator new(unsigned int, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:10)
+
+Mismatched new[]/delete[] alignment alloc value: 256 dealloc value: default-aligned
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:13)
+ Address 0x........ is 0 bytes inside a block of size 1,024 alloc'd
+   at 0x........: operator new[](unsigned int, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (new_aligned_delete_default.cpp:12)
+

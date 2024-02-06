@@ -2716,10 +2716,16 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    /* we already tried line == 0; skip therefore. */
    for (line = 1; line < OC_LINES_PER_SET; line++) {
       if (ocacheL1->set[setno].line[line].tag == tag) {
-         if (line == 1) {
+         switch (line) {
+         // with OC_LINES_PER_SET equal to 2 this is the only possible case
+         case 1:
             stats_ocacheL1_found_at_1++;
-         } else {
+            break;
+#if OC_LINES_PER_SET > 2
+         default:
             stats_ocacheL1_found_at_N++;
+            break;
+#endif
          }
          if (UNLIKELY(0 == (ocacheL1_event_ctr++
                             & ((1<<OC_MOVE_FORWARDS_EVERY_BITS)-1)))) {

@@ -52,6 +52,7 @@ EXTRA_DIST = \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
 	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
+	gnu_binutils_nop.stderr.exp gnu_binutils_nop.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
 	int.stderr.exp int.stdout.exp int.disabled \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
@@ -100,6 +101,7 @@ check_PROGRAMS = \
 	fpu_lazy_eflags \
 	fxtract \
 	getseg \
+	gnu_binutils_nop \
 	incdec_alt \
 	$(INSN_TESTS) \
 	int \

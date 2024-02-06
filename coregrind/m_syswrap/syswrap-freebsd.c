@@ -56,6 +56,7 @@
 #include "pub_core_syswrap.h"
 #include "pub_core_inner.h"
 #include "pub_core_pathscan.h"
+#include "pub_core_oset.h"
 #if defined(ENABLE_INNER_CLIENT_REQUEST)
 #include "pub_core_clreq.h"
 #endif
@@ -973,53 +974,23 @@ PRE(sys_setlogin)
 // int ioctl(int fd, unsigned long request, ...);
 PRE(sys_ioctl)
 {
-   UInt dir  = _VKI_IOC_DIR(ARG2);
-   UInt size = _VKI_IOC_SIZE(ARG2);
    *flags |= SfMayBlock;
    // @todo PJF presumably the presence of ARG3 depends on ARG2
    PRINT("sys_ioctl ( %" FMT_REGWORD "u, 0x%" FMT_REGWORD "x, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "ioctl",
                  int, fd, unsigned long, request, unsigned long, arg);
 
-   /* On FreeBSD, ALL ioctl's are IOR/IOW encoded.  Just use the default decoder */
-   if (SimHintiS(SimHint_lax_ioctls, VG_(clo_sim_hints))) {
-      /*
-      * Be very lax about ioctl handling; the only
-      * assumption is that the size is correct. Doesn't
-      * require the full buffer to be initialized when
-      * writing.  Without this, using some device
-      * drivers with a large number of strange ioctl
-      * commands becomes very tiresome.
-      */
-   } else if (dir == _VKI_IOC_NONE && size > 0) {
-      static UWord unknown_ioctl[10];
-      static Int moans = sizeof(unknown_ioctl) / sizeof(unknown_ioctl[0]);
-      if (moans > 0 && !VG_(clo_xml)) {
-         /* Check if have not already moaned for this request. */
-         UInt i;
-         for (i = 0; i < sizeof(unknown_ioctl)/sizeof(unknown_ioctl[0]); i++) {
-            if (unknown_ioctl[i] == ARG2) {
-               break;
-            }
-            if (unknown_ioctl[i] == 0) {
-               unknown_ioctl[i] = ARG2;
-               moans--;
-               VG_(umsg)("Warning: noted but unhandled ioctl 0x%lx"
-                         " with no direction hints.\n", ARG2);
-               VG_(umsg)("   This could cause spurious value errors to appear.\n");
-               VG_(umsg)("   See README_MISSING_SYSCALL_OR_IOCTL for "
-                         "guidance on writing a proper wrapper.\n" );
-               return;
-            }
-         }
-      }
-   } else {
-      if ((dir & _VKI_IOC_WRITE) && size > 0) {
-         PRE_MEM_READ( "ioctl(generic)", ARG3, size);
-      }
-      if ((dir & _VKI_IOC_READ) && size > 0) {
-         PRE_MEM_WRITE( "ioctl(generic)", ARG3, size);
-      }
+   switch (ARG2) {
+   case VKI_FIODGNAME: {
+      struct vki_fiodgname_arg* data = (struct vki_fiodgname_arg*)(Addr)ARG3;
+      PRE_FIELD_READ("ioctl(FIODGNAME).len", data->len);
+      PRE_FIELD_READ("ioctl(FIODGNAME).buf", data->buf);
+      PRE_MEM_WRITE("ioctl(FIODGNAME).buf", (Addr)data->buf, data->len);
+      break;
+   }
+   default:
+      ML_(PRE_unknown_ioctl)(tid, ARG2, ARG3);
+      break;
    }
 
    // The block below is from Ryan Stone
@@ -1086,12 +1057,15 @@ PRE(sys_ioctl)
 
 POST(sys_ioctl)
 {
-   UInt dir  = _VKI_IOC_DIR(ARG2);
-   UInt size = _VKI_IOC_SIZE(ARG2);
-   vg_assert(SUCCESS);
-   if (size > 0 && (dir & _VKI_IOC_READ)
-         && RES == 0 && ARG3 != (Addr)NULL) {
-      POST_MEM_WRITE(ARG3, size);
+   switch (ARG2) {
+   case VKI_FIODGNAME: {
+      struct vki_fiodgname_arg* data = (struct vki_fiodgname_arg*)(Addr)ARG3;
+      POST_MEM_WRITE((Addr)data->buf, data->len);
+      break;
+   }
+   default:
+      ML_(POST_unknown_ioctl)(tid, RES, ARG2, ARG3);
+      break;
    }
 
 #if 0
@@ -2613,6 +2587,30 @@ PRE(sys_issetugid)
 // SYS_lchown  254
 // generic
 
+// We must record the iocb for each aio_read() in a table so that when
+// aio_return() is called we can mark the memory written asynchronously by
+// aio_read() as having been written.  We don't have to do this for
+// aio_write().  See bug 197227 for more details.
+static OSet* iocb_table = NULL;
+static Bool aio_init_done = False;
+
+static void aio_init(void)
+{
+   iocb_table = VG_(OSetWord_Create)(VG_(malloc), "syswrap.aio", VG_(free));
+   aio_init_done = True;
+}
+
+// and the same thing for vector reads
+static OSet* iocbv_table = NULL;
+static Bool aiov_init_done = False;
+
+static void aiov_init(void)
+{
+   iocbv_table = VG_(OSetWord_Create)(VG_(malloc), "syswrap.aiov", VG_(free));
+   aiov_init_done = True;
+}
+
+
 // SYS_aio_read   255
 // int aio_read(struct aiocb *iocb);
 PRE(sys_aio_read)
@@ -2622,15 +2620,37 @@ PRE(sys_aio_read)
    PRE_MEM_READ("aio_read(iocb)", ARG1, sizeof(struct vki_aiocb));
    if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
       struct vki_aiocb *iocb = (struct vki_aiocb *)ARG1;
-      PRE_MEM_WRITE( "aio_read(iocb->aio_offset)", (Addr)iocb, sizeof(struct vki_aiocb));
+      if (!ML_(fd_allowed)(iocb->aio_fildes, "aio_read", tid, False)) {
+         SET_STATUS_Failure(VKI_EBADF);
+      } else {
+         PRE_MEM_WRITE("aio_read(aiocbp->aio_buf)",
+                       (Addr)iocb->aio_buf, iocb->aio_nbytes);
+         // @todo PJF there is a difference between FreeBSD and
+         // Darwin here. On Darwin, if aio_buf is NULL the syscall
+         // will fail, on FreeBSD it doesn't fail.
+      }
+   } else {
+      SET_STATUS_Failure(VKI_EINVAL);
    }
 }
 
 POST(sys_aio_read)
 {
-   if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
-      struct vki_aiocb *iocb = (struct vki_aiocb *)ARG1;
-      POST_MEM_WRITE((Addr)iocb, sizeof(struct vki_aiocb));
+   struct vki_aiocb* iocb = (struct vki_aiocb*)ARG1;
+
+   if (iocb->aio_buf) {
+      if (!aio_init_done) {
+         aio_init();
+      }
+      // see also POST(sys_aio_readv)
+      if (!VG_(OSetWord_Contains)(iocb_table, (UWord)iocb)) {
+         VG_(OSetWord_Insert)(iocb_table, (UWord)iocb);
+      } else {
+         // @todo PJF this warns without callstack
+         VG_(dmsg)("Warning: Duplicate control block %p in aio_read\n",
+                   (void *)(Addr)ARG1);
+         VG_(dmsg)("Warning: Ensure 'aio_return' is called when 'aio_read' has completed\n");
+      }
    }
 }
 
@@ -2640,18 +2660,20 @@ PRE(sys_aio_write)
 {
    PRINT("sys_aio_write ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(int, "aio_write", struct vki_aiocb *, iocb);
-   PRE_MEM_READ("aio_read(iocb)", ARG1, sizeof(struct vki_aiocb));
+   PRE_MEM_READ("aio_write(iocb)", ARG1, sizeof(struct vki_aiocb));
    if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
       struct vki_aiocb *iocb = (struct vki_aiocb *)ARG1;
-      PRE_MEM_WRITE( "aio_write(iocb->aio_offset)", (Addr)iocb, sizeof(struct vki_aiocb));
-   }
-}
-
-POST(sys_aio_write)
-{
-   if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
-      struct vki_aiocb *iocb = (struct vki_aiocb *)ARG1;
-      PRE_MEM_WRITE( "aio_write(iocb->aio_offset)", (Addr)iocb, sizeof(struct vki_aiocb));
+      if (!ML_(fd_allowed)(iocb->aio_fildes, "aio_write", tid, False)) {
+         SET_STATUS_Failure( VKI_EBADF );
+      } else {
+         PRE_MEM_READ("aio_write(iocb->aio_buf)",
+                      (Addr)iocb->aio_buf, iocb->aio_nbytes);
+         // @todo PJF there is a difference between FreeBSD and
+         // Darwin here. On Darwin, if aio_buf is NULL the syscall
+         // will fail, on FreeBSD it doesn't fail.
+      }
+   } else {
+      SET_STATUS_Failure(VKI_EINVAL);
    }
 }
 
@@ -2905,9 +2927,50 @@ PRE(sys_aio_return)
 {
    PRINT("sys_aio_return ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(ssize_t, "aio_return", struct aiocb *, iocb);
-   // not too clear if this is read-only, sounds like it from the man page
-   // but it isn't const
    PRE_MEM_READ("aio_return(iocb)", ARG1, sizeof(struct vki_aiocb));
+   // read or write?
+   if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
+      SET_STATUS_from_SysRes(VG_(do_syscall1)(SYSNO, ARG1));
+      /*if (SUCCESS)*/ {
+         struct vki_aiocb* iocb = (struct vki_aiocb*)ARG1;
+         if (!aio_init_done) {
+            aio_init();
+         }
+         if (!aiov_init_done) {
+            aiov_init();
+         }
+
+         // for the happy path aio_return is supposed to be called
+         // after the io has completed (as determined by aio_error,
+         // aio_suspend or a signal).
+
+         // but what if the aio_read failed or hasn't completed?
+         // we want to remove the read from the iocb(v)_table
+         // in the case of aio_read failing
+         // if the read hasn't completed that's a user error
+         // I don't know if it's possible to recover in that case
+         // the iocb will have been removed from the table
+         // so if the user does recover and call aio_return
+         // 'correctly' we won't do the POST_MEM_WRITE
+         // I don't think that we can tell apart a failing
+         // read from a premature aio_return
+
+         // check if it was a plain read
+         if (VG_(OSetWord_Remove)(iocb_table, (UWord)iocb) && SUCCESS) {
+            POST_MEM_WRITE((Addr)iocb->aio_buf, iocb->aio_nbytes);
+         }
+         if (VG_(OSetWord_Remove)(iocbv_table, (UWord)iocb) && SUCCESS) {
+            SizeT vec_count = (SizeT)iocb->aio_nbytes;
+            // assume that id the read succeded p_iovec is accessible
+            volatile struct vki_iovec* p_iovec  = (volatile struct vki_iovec*)iocb->aio_buf;
+            for (SizeT i = 0U; i < vec_count; ++i) {
+               POST_MEM_WRITE((Addr)p_iovec[i].iov_base, p_iovec[i].iov_len);
+            }
+         }
+      }
+   } else {
+      SET_STATUS_Failure(VKI_EINVAL);
+   }
 }
 
 // SYS_aio_suspend   315
@@ -2916,9 +2979,13 @@ PRE(sys_aio_return)
 PRE(sys_aio_suspend)
 {
    PRINT("sys_aio_suspend ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ3(int, "aio_suspend", struct aiocb **, iocbs, int, nbiocb, const struct timespec*, timeout);
-   PRE_MEM_READ("aio_suspend(iocbs)", ARG1, ARG2*sizeof(struct vki_aiocb));
-   PRE_MEM_READ("aio_suspend(timeout)", ARG3, sizeof(struct vki_timespec));
+   PRE_REG_READ3(int, "aio_suspend", const struct aiocb * const *, iocbs, int, nbiocb, const struct timespec*, timeout);
+   if (ARG2 > 0) {
+      PRE_MEM_READ("aio_suspend(iocbs)", ARG1, ARG2*sizeof(struct vki_aiocb*));
+   }
+   if (ARG3) {
+      PRE_MEM_READ("aio_suspend(timeout)", ARG3, sizeof(struct vki_timespec));
+   }
 }
 
 // SYS_aio_cancel 316
@@ -2926,9 +2993,27 @@ PRE(sys_aio_suspend)
 PRE(sys_aio_cancel)
 {
    PRINT("sys_aio_cancel ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, ARG2);
-   PRE_REG_READ2(int, "aio_cancel", int, fildex, struct aiocb *, iocb);
+   PRE_REG_READ2(int, "aio_cancel", int, fildes, struct iocb *, iocb);
    if (ARG2) {
       PRE_MEM_READ("aio_cancel(iocb)", ARG2, sizeof(struct vki_aiocb));
+   }
+   if (!ML_(fd_allowed)(ARG1, "aio_cancel", tid, False)) {
+      SET_STATUS_Failure(VKI_EBADF);
+   } else {
+      if (ARG2) {
+         if (ML_(safe_to_deref)((struct vki_aiocb *)ARG2, sizeof(struct vki_aiocb))) {
+            // struct vki_aiocb *iocb = (struct vki_aiocb *)ARG2;
+            // @todo PJF cancel only requests associated with
+            // fildes and iocb
+            // Do I need to remove pending reads from iocb(v)_table
+            // or should the user always call aio_return even after
+            // aio_cancel?
+         } else {
+            SET_STATUS_Failure(VKI_EINVAL);
+         }
+      } else {
+         // @todo PJF cancel all requests associated with fildes, see above
+      }
    }
 }
 
@@ -4621,7 +4706,7 @@ PRE(sys__umtx_op)
                     struct umtx_robust_lists_params *, obj, int, op, unsigned long, flags);
       PRE_MEM_READ( "_umtx_op_robust_lists(mutex)", ARG3, sizeof(struct vki_umtx_robust_lists_params) );
       break;
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_3)
    case VKI_UMTX_OP_GET_MIN_TIMEOUT:
       PRINT( "sys__umtx_op ( GET_MIN_TIMEOUT, %#" FMT_REGWORD "x)", ARG4);
       // bit of a pain just reads args 2 and 4
@@ -4709,7 +4794,7 @@ POST(sys__umtx_op)
    case VKI_UMTX_OP_SHM:
    case VKI_UMTX_OP_ROBUST_LISTS:
       break;
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_3)
    case VKI_UMTX_OP_GET_MIN_TIMEOUT:
       POST_MEM_WRITE( ARG4, sizeof(long int) );
       break;
@@ -6775,9 +6860,125 @@ PRE(sys___specialfd)
    PRE_MEM_READ("__specialfd(req)", (Addr)ARG2, ARG3);
 }
 
+// SYS_aio_writev 578
+// int aio_writev(struct aiocb *iocb);
+PRE(sys_aio_writev)
+{
+   PRINT("sys_aio_writev ( %#" FMT_REGWORD "x )", ARG1);
+   PRE_REG_READ1(int, "aio_writev", struct vki_aiocb *, iocb);
+   PRE_MEM_READ("aio_writev(iocb)", ARG1, sizeof(struct vki_aiocb));
+   if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
+      struct vki_aiocb *iocb = (struct vki_aiocb *)ARG1;
+      if (!ML_(fd_allowed)(iocb->aio_fildes, "aio_writev", tid, False)) {
+         SET_STATUS_Failure( VKI_EBADF );
+      } else {
+         // aio_writev() gathers the data from the iocb->aio_iovcnt buffers specified
+         // by the members of the iocb->aio_iov array
+         // FreeBSD headers #define define this to aio_iovcnt
+         SizeT vec_count = (SizeT)iocb->aio_nbytes;
+#if defined(__clang__)
+#pragma clang diagnostic push
+         // yes, I know it is volatile
+#pragma clang diagnostic ignored "-Wcast-qual"
+#endif
+         struct vki_iovec* p_iovec  = (struct vki_iovec*)iocb->aio_buf;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+         PRE_MEM_READ("aio_writev(iocb->aio_iov)", (Addr)p_iovec, vec_count*sizeof(struct vki_iovec));
+         // and this to aio_iov
+
+         if (ML_(safe_to_deref)(p_iovec, vec_count*sizeof(struct vki_iovec))) {
+            for (SizeT i = 0U; i < vec_count; ++i) {
+               PRE_MEM_READ("aio_writev(iocb->iov[...])",
+                            (Addr)p_iovec[i].iov_base, p_iovec[i].iov_len);
+            }
+         }
+      }
+   } else {
+      SET_STATUS_Failure(VKI_EINVAL);
+   }
+}
+
+// SYS_aio_readv 579
+// int aio_readv(struct aiocb *iocb);
+PRE(sys_aio_readv)
+{
+   PRINT("sys_aio_readv ( %#" FMT_REGWORD "x )", ARG1);
+   PRE_REG_READ1(int, "aio_readv", struct vki_aiocb *, iocb);
+   PRE_MEM_READ("aio_readv(iocb)", ARG1, sizeof(struct vki_aiocb));
+   if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
+      struct vki_aiocb *iocb = (struct vki_aiocb *)ARG1;
+      if (!ML_(fd_allowed)(iocb->aio_fildes, "aio_readv", tid, False)) {
+         SET_STATUS_Failure( VKI_EBADF );
+      } else {
+         SizeT vec_count = (SizeT)iocb->aio_nbytes;
+#if defined(__clang__)
+#pragma clang diagnostic push
+         // yes, I know it is volatile
+#pragma clang diagnostic ignored "-Wcast-qual"
+#endif
+         struct vki_iovec* p_iovec  = (struct vki_iovec*)iocb->aio_buf;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+         PRE_MEM_READ("aio_readv(iocb->aio_iov)", (Addr)p_iovec,  vec_count*sizeof(struct vki_iovec));
+         if (ML_(safe_to_deref)(p_iovec, vec_count*sizeof(struct vki_iovec))) {
+            for (SizeT i = 0U; i < vec_count; ++i) {
+               PRE_MEM_WRITE("aio_writev(iocb->aio_iov[...])",
+                            (Addr)p_iovec[i].iov_base, p_iovec[i].iov_len);
+            }
+         }
+      }
+   } else {
+      SET_STATUS_Failure(VKI_EINVAL);
+   }
+}
+
+POST(sys_aio_readv)
+{
+   struct vki_aiocb* iocbv = (struct vki_aiocb*)ARG1;
+   if (iocbv->aio_buf) {
+      if (!aiov_init_done) {
+         aiov_init();
+      }
+
+      if (!VG_(OSetWord_Contains)(iocbv_table, (UWord)iocbv)) {
+         VG_(OSetWord_Insert)(iocbv_table, (UWord)iocbv);
+      } else {
+         // @todo PJF this warns without callstack
+         VG_(dmsg)("Warning: Duplicate control block %p in aio_readv\n",
+                   (void *)(Addr)ARG1);
+         VG_(dmsg)("Warning: Ensure 'aio_return' is called when 'aio_readv' has completed\n");
+      }
+   }
+}
+
 #endif // (FREEBSD_VERS >= FREEBSD_13_0)
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
+
+#if (FREEBSD_VERS >= FREEBSD_14)
+// SYS_fspacectl 580
+// int fspacectl(int fd, int cmd, const struct spacectl_range *rqsr, int flags,
+//     struct spacectl_range *rmsr);
+PRE(sys_fspacectl)
+{
+   PRINT("fspacectl ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3, SARG4, ARG5);
+   PRE_REG_READ5(int, "fspacectl", int, fd, int, cmd, const struct spacectl_range *, rqsr, int, flags, struct spacectl_range *, rmsr);
+   PRE_MEM_READ("fspacectl(rqsr)", (Addr)ARG3, sizeof(struct vki_spacectl_range));
+   if (ARG5) {
+      PRE_MEM_WRITE("fspacectl(rmsr)", (Addr)ARG5, sizeof(struct vki_spacectl_range));
+   }
+}
+
+POST(sys_fspacectl)
+{
+   if (ARG5) {
+      POST_MEM_WRITE((Addr)ARG5, sizeof(struct vki_spacectl_range));
+   }
+}
+#endif
 
 // SYS_swapoff 582
 // int swapoff(const char *special, u_int flags);
@@ -6790,7 +6991,7 @@ PRE(sys_swapoff)
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
 
 // SYS_kqueuex 583
 // int kqueuex(u_int flags);
@@ -6823,6 +7024,10 @@ PRE(sys_membarrier)
          ARG1, ARG2, SARG3);
    PRE_REG_READ3(int, "membarrier", int, cmd, unsigned, flags, int, cpu_id);
 }
+
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
 
 // SYS_timerfd_create 585
 // int timerfd_create(int clockid, int flags);
@@ -7223,7 +7428,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDX_(__NR_issetugid,        sys_issetugid),         // 253
    GENX_(__NR_lchown,           sys_lchown),            // 254
    BSDXY(__NR_aio_read,         sys_aio_read),          // 255
-   BSDXY(__NR_aio_write,        sys_aio_write),         // 256
+   BSDX_(__NR_aio_write,        sys_aio_write),         // 256
    BSDX_(__NR_lio_listio,       sys_lio_listio),        // 257
 
    GENXY(__NR_freebsd11_getdents, sys_getdents),        // 272
@@ -7606,19 +7811,24 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #if (FREEBSD_VERS >= FREEBSD_13_0)
    // unimpl __NR_rpctls_syscall      576
    BSDX_(__NR___specialfd,      sys___specialfd),       // 577
-   // unimpl __NR_aio_writev          578
-   // unimpl __NR_aio_readv           579
+   BSDX_(__NR_aio_writev,       sys_aio_writev),        // 578
+   BSDXY(__NR_aio_readv,        sys_aio_readv),         // 579
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
-   // unimpl __NR_fspacectl           580
+
+#if (FREEBSD_VERS >= FREEBSD_14)
+   BSDXY(__NR_fspacectl,        sys_fspacectl),        //  580
+#endif
    // unimpl __NR_sched_getcpu        581
    BSDX_(__NR_swapoff,          sys_swapoff),           // 582
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
    BSDXY(__NR_kqueuex,          sys_kqueuex),           // 583
    BSDX_(__NR_membarrier,       sys_membarrier),        // 584
+#endif
+#if (FREEBSD_VERS >= FREEBSD_15)
    BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587

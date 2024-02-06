@@ -1264,7 +1264,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
                 && tteC->tte2ec_ec[k] >= tteC->tte2ec_ec[k+1])
                BAD("tteC->tte2ec_ec[..] out of order");
             ec_num = tteC->tte2ec_ec[k];
-            if (ec_num < 0 || ec_num >= ECLASS_N)
+            if (ec_num >= ECLASS_N)
                BAD("tteC->tte2ec_ec[..] out of range");
             if (ec_num != i)
                continue;
@@ -1303,7 +1303,7 @@ static Bool sanity_check_eclasses_in_sector ( const Sector* sec )
 
       for (j = 0; j < tteC->n_tte2ec; j++) {
          ec_num = tteC->tte2ec_ec[j];
-         if (ec_num < 0 || ec_num >= ECLASS_N)
+         if (ec_num >= ECLASS_N)
             BAD("tteC->tte2ec_ec[..] out of range");
          ec_idx = tteC->tte2ec_ix[j];
          if (ec_idx < 0 || ec_idx >= sec->ec2tte_used[ec_num])
@@ -2061,7 +2061,7 @@ static void delete_tte ( /*OUT*/Addr* ga_deleted,
       adding a reference from tte to its hash position in tt. */
    HTTno j;
    HTTno k = HASH_TT(tteC->entry);
-   vg_assert(k >= 0 && k < N_HTTES_PER_SECTOR);
+   vg_assert(k < N_HTTES_PER_SECTOR);
    for (j = 0; j < N_HTTES_PER_SECTOR; j++) {
       if (sec->htt[k] == tteno)
          break;

@@ -1,0 +1,28 @@
+#! /bin/sh
+
+../../tests/filter_addresses |
+
+sed 's/98\.[0-9][0-9]\^/98.XX^/' |
+sed 's/0                                                                   19[0-9].[0-9]/0                                                                   19X.X/' |
+awk '/  5 .* 16,000 /{print "  5         16,XXX           16,XXX           16,000           XXX            0";next}{print}' |
+awk '/  6 .* 56,000 /{print "  6         56,XXX           56,XXX           56,000           XXX            0";next}{print}' |
+awk '/  7 .* 60,000 /{print "  7         60,XXX           60,XXX           60,000           XXX            0";next}{print}' |
+awk '/  8 .* 100,000 /{print "  8        100,XXX          100,XXX          100,000           XXX            0";next}{print}' |
+awk '/  9 .* 100,000 /{print "  9        100,XXX          100,XXX          100,000           XXX            0";next}{print}' |
+awk '/ 10 .* 96,000 /{print " 10        104,XXX           96,XXX           96,000           XXX            0";next}{print}' |
+awk '/ 11 .* 92,000 /{print " 11        108,XXX           92,XXX           92,000           XXX            0";next}{print}' |
+awk '/ 12 .* 90,000 /{print " 12        110,XXX           90,XXX           90,000           XXX            0";next}{print}' |
+awk '/ 13 .* 88,000 /{print " 13        112,XXX           88,XXX           88,000           XXX            0";next}{print}' |
+awk '/ 14 .* 84,000 /{print " 14        116,XXX           84,XXX           84,000           XXX            0";next}{print}' |
+awk '/ 15 .* 44,000 /{print " 15        157,XXX           44,XXX           44,000           XXX            0";next}{print}' |
+awk '/ 16 .* 40,000 /{print " 16        161,XXX           40,XXX           40,000           XXX            0";next}{print}' |
+awk '/ 17 .* 0 /{print " 17        201,XXX                0                0             0            0";next}{print}' |
+sed 's/^99\.[0-9][0-9]%/99.XX%/' |
+sed 's/^->39\.[0-9][0-9]%/->39.XX%/' |
+sed 's/^->03\.[0-9][0-9]%/->03.XX%/' |
+sed 's/^->01\.[0-9][0-9]%/->01.XX%/'
+
+
+
+
+

@@ -14405,7 +14405,6 @@ static const HChar *
 s390_irgen_KEB(UChar r1, IRTemp op2addr)
 {
    return s390_irgen_CxB("keb", r1, op2addr, Ity_F32, Iop_CmpF32);
-   return "keb";
 }
 
 static const HChar *

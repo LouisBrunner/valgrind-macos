@@ -138,4 +138,9 @@ valgrind_execute_test(const irop_t *op, test_data_t *data)
       print_opnd(stdout, &data->result);
       printf("\n");
    }
+
+   // Now that we have the vbits recorded, clear all the vbits.
+   for (i = 0; i < num_operands; ++i) {
+      VALGRIND_MAKE_MEM_DEFINED(&data->opnds[i].value, sizeof(data->opnds[i].value));
+   }
 }

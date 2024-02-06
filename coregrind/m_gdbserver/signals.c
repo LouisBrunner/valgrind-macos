@@ -483,6 +483,10 @@ enum target_signal target_signal_from_host (int hostsig)
          return (enum target_signal)
             (hostsig - 33 + (int) TARGET_SIGNAL_REALTIME_33);
       else if (hostsig == 32)
+         // depending on the platform the first two and the third
+         // if branches here may be mutually exclusive, ignore any
+         // coverity warnings
+         // coverity[DEADCODE:FALSE]
          return TARGET_SIGNAL_REALTIME_32;
       else if (64 <= hostsig && hostsig <= 127)
          return (enum target_signal)

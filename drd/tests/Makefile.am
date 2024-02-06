@@ -4,19 +4,21 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS =		    \
 	compare_error_count_with    \
 	filter_annotate_barrier_xml \
-	filter_error_count	    \
-	filter_error_summary	    \
 	filter_lambda               \
-	filter_stderr               \
 	filter_stderr_and_thread_no \
-	filter_stderr_and_thread_no_and_offset \
 	filter_stderr_solaris       \
-	filter_thread_no	    \
 	filter_thread_name_xml      \
-	filter_xml_and_thread_no    \
 	run_openmp_test             \
 	supported_libpthread	    \
 	supported_sem_init
+
+noinst_SCRIPTS = \
+	filter_error_count \
+	filter_error_summary \
+	filter_stderr \
+	filter_stderr_and_thread_no_and_offset \
+	filter_thread_no \
+	filter_xml_and_thread_no
 
 noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h		    \
@@ -68,11 +70,13 @@ EXTRA_DIST =                                        \
 	annotate_ignore_write2.stderr.exp	    \
 	annotate_ignore_write2.stderr.exp-solaris   \
 	annotate_ignore_write2.vgtest		    \
+	annotate_trace_memory.stderr.exp-arm        \
 	annotate_trace_memory.stderr.exp-32bit	    \
 	annotate_trace_memory.stderr.exp-32bit-clang \
 	annotate_trace_memory.stderr.exp-64bit	    \
-	annotate_trace_memory.stderr.exp-mips32	   \
+	annotate_trace_memory.stderr.exp-mips32	    \
 	annotate_trace_memory.vgtest		    \
+	annotate_trace_memory_xml.stderr.exp-arm    \
 	annotate_trace_memory_xml.stderr.exp-32bit  \
 	annotate_trace_memory_xml.stderr.exp-32bit-clang \
 	annotate_trace_memory_xml.stderr.exp-64bit  \

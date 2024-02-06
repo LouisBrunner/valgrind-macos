@@ -8,6 +8,7 @@ EXTRA_DIST = \
 		aligned_alloc.stderr.exp-musl \
 		aligned_alloc.stderr.exp-glibc238 \
 	brk.stderr.exp brk.vgtest \
+	bug480706.stderr.exp bug480706.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
 	debuginfod-check.pl \
@@ -34,6 +35,7 @@ EXTRA_DIST = \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	proc-auxv.vgtest proc-auxv.stderr.exp getregset.vgtest \
 	getregset.stderr.exp getregset.stdout.exp \
+	strlcat_strlcpy.vgtest strlcat_strlcpy.stderr.exp \
 	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
@@ -65,6 +67,10 @@ check_PROGRAMS = \
 	enomem \
 	memalign
 
+if HAVE_OPENSSL
+check_PROGRAMS += bug480706
+endif
+
 if HAVE_AT_FDCWD
 check_PROGRAMS += sys-openat
 endif
@@ -89,16 +95,24 @@ if HAVE_SETCONTEXT
         check_PROGRAMS += stack_changes
 endif
 
+if HAVE_STRLCAT
+        check_PROGRAMS += strlcat_strlcpy
+endif
+
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 stack_switch_LDADD    = -lpthread
 timerfd_syscall_LDADD = -lrt
 
+if HAVE_OPENSSL
+bug480706_LDADD             = -lcrypto
+endif
+
 # Build shared object for dlclose_leak
-dlclose_leak_so_so_SOURCES = dlclose_leak_so.c
-dlclose_leak_so_so_CFLAGS  = $(AM_CFLAGS) -fpic -g -O0
-dlclose_leak_so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -shared -Wl,-soname \
+dlclose_leak_so_so_SOURCES    = dlclose_leak_so.c
+dlclose_leak_so_so_CFLAGS     = $(AM_CFLAGS) -fpic -g -O0
+dlclose_leak_so_so_LDFLAGS    = -fpic $(AM_FLAG_M3264_PRI) -shared -Wl,-soname \
                               -Wl,dlclose_leak_so.so
 
 dlclose_leak_SOURCES          = dlclose_leak.c
@@ -111,6 +125,9 @@ dlclose_leak_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
                                 -Wl,-rpath,$(top_builddir)/memcheck/tests/linux
 
 enomem_CFLAGS                 = $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+if HAVE_STRLCAT
+strlcat_strlcpy_CFLAGS        = $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@
+endif
 sys_preadv_pwritev_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@ @FLAG_W_NO_STRINGOP_OVERREAD@ \
                                 @FLAG_W_NO_NONNULL@
 sys_preadv2_pwritev2_CFLAGS   = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@ @FLAG_W_NO_STRINGOP_OVERREAD@ \

@@ -51,7 +51,7 @@ int main(void)
 
    assert( aio_read(&a)  < 0 );     // (don't crash on the repeated &a)
 
-   while (0 != aio_error(&a)) { };
+   while (0 != aio_error(&a)) { }
 
    if (buf[0] == buf[9]) x++;       // undefined -- aio_return() not called yet
 
@@ -76,7 +76,7 @@ int main(void)
 
    assert( aio_write(&a)  < 0 );    // (don't crash on the repeated &a)
 
-   while (0 != aio_error(&a)) { };
+   while (0 != aio_error(&a)) { }
 
    assert( aio_return(&a) > 0 );
 

@@ -148,6 +148,12 @@
    do {                                                                      \
       __asm__ __volatile__ ("movl $0, %ecx\n\t"); \
    } while (0)
+#elif defined(__arm__)
+/* 32bit arm */
+#define CLEAR_CALLER_SAVED_REGS                                              \
+   do {                                                                      \
+      __asm__ __volatile__ ("mov %r0, $0\n\t");                              \
+   } while (0)
 #else
 #define CLEAR_CALLER_SAVED_REGS  /*nothing*/
 #endif

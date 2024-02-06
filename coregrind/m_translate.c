@@ -1831,7 +1831,7 @@ Bool VG_(translate) ( ThreadId tid,
    tres = LibVEX_Translate ( &vta );
 
    vg_assert(tres.status == VexTransOK);
-   vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
+   vg_assert(tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 

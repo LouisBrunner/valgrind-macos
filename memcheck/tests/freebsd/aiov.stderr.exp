@@ -1,0 +1,25 @@
+
+Warning: invalid file descriptor -1 in syscall aio_readv()
+Syscall param aio_readv(iocb->aio_iov) points to unaddressable byte(s)
+   ...
+   by 0x........: main (aiov.c:48)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (aiov.c:60)
+
+Syscall param aio_writev(iocb->aio_iov) points to unaddressable byte(s)
+   ...
+   by 0x........: main (aiov.c:81)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+Use --track-origins=yes to see where uninitialised values come from
+For lists of detected and suppressed errors, rerun with: -s
+ERROR SUMMARY: 3 errors from 3 contexts (suppressed: 0 from 0)

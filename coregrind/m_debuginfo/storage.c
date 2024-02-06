@@ -611,7 +611,7 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
    /* Rule out ones which are completely outside the r-x mapped area.
       See "Comment_Regarding_Text_Range_Checks" elsewhere in this file
       for background and rationale. */
-   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
+   vg_assert(di->fsm.have_rx_map);
    if (ML_(find_rx_mapping)(di, this, this + size - 1) == NULL) {
        if (0)
           VG_(message)(Vg_DebugMsg, 
@@ -748,7 +748,7 @@ DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos)
 {
    UInt cfsi_m_ix;
 
-   vg_assert(pos >= 0 && pos < di->cfsi_used);
+   vg_assert(pos < di->cfsi_used);
    switch (di->sizeof_cfsi_m_ix) {
       case 1: cfsi_m_ix = ((UChar*)  di->cfsi_m_ix)[pos]; break;
       case 2: cfsi_m_ix = ((UShort*) di->cfsi_m_ix)[pos]; break;
@@ -1297,8 +1297,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       that those extra sections have the same bias as .text, but that
       seems a reasonable assumption to me. */
    /* This is assured us by top level steering logic in debuginfo.c,
-      and it is re-checked at the start of
-      ML_(read_elf_debug_info). */
+      and it is re-checked at the start of ML_(read_elf_object). */
    vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
       if (VG_(clo_verbosity) > 1) {
@@ -1725,7 +1724,6 @@ static void canonicaliseSymtab ( struct _DebugInfo* di )
    for (i = 0; i < di->symtab_used; i++) {
       DiSym* sym = &di->symtab[i];
       vg_assert(sym->pri_name);
-      vg_assert(!sym->sec_names);
    }
 
    /* Sort by address. */
@@ -2068,7 +2066,6 @@ static void canonicaliseLoctab ( struct _DebugInfo* di )
    sort_loctab_and_loctab_fndn_ix (di);
 
    for (i = 0; i < ((Word)di->loctab_used)-1; i++) {
-      vg_assert(di->loctab[i].size < 10000);
       /* If two adjacent entries overlap, truncate the first. */
       if (di->loctab[i].addr + di->loctab[i].size > di->loctab[i+1].addr) {
          /* Do this in signed int32 because the actual .size fields
@@ -2383,6 +2380,9 @@ void ML_(finish_CFSI_arrays) ( struct _DebugInfo* di )
    vg_assert (f_holes == n_holes);
    vg_assert (pos == new_used);
 
+   if (di->deferred)
+      return;
+
    di->cfsi_used = new_used;
    di->cfsi_size = new_used;
    ML_(dinfo_free) (di->cfsi_rd);
@@ -2398,9 +2398,13 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
    canonicaliseLoctab ( di );
    canonicaliseInltab ( di );
    ML_(canonicaliseCFI) ( di );
+   canonicaliseVarInfo ( di );
+
+   if (di->deferred)
+      return;
+
    if (di->cfsi_m_pool)
       VG_(freezeDedupPA) (di->cfsi_m_pool, ML_(dinfo_shrink_block));
-   canonicaliseVarInfo ( di );
    if (di->strpool)
       VG_(freezeDedupPA) (di->strpool, ML_(dinfo_shrink_block));
    if (di->fndnpool)
@@ -2415,9 +2419,10 @@ void ML_(canonicaliseTables) ( struct _DebugInfo* di )
 /* Find a symbol-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
+Word ML_(search_one_symtab) ( DebugInfo* di, Addr ptr,
                               Bool findText )
 {
+   VG_(di_load_di)(di);
    Addr a_mid_lo, a_mid_hi;
    Word mid,
         lo = 0, 
@@ -2444,8 +2449,9 @@ Word ML_(search_one_symtab) ( const DebugInfo* di, Addr ptr,
 /* Find a location-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr )
+Word ML_(search_one_loctab) ( DebugInfo* di, Addr ptr )
 {
+   VG_(di_load_di)(di);
    Addr a_mid_lo, a_mid_hi;
    Word mid, 
         lo = 0, 
@@ -2468,8 +2474,9 @@ Word ML_(search_one_loctab) ( const DebugInfo* di, Addr ptr )
 /* Find a CFI-table index containing the specified pointer, or -1
    if not found.  Binary search.  */
 
-Word ML_(search_one_cfitab) ( const DebugInfo* di, Addr ptr )
+Word ML_(search_one_cfitab) ( DebugInfo* di, Addr ptr )
 {
+   VG_(di_load_di)(di);
    Word mid, 
         lo = 0, 
         hi = di->cfsi_used-1;

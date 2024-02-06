@@ -209,7 +209,7 @@ static inline UShort getUShortLittleEndianly ( const UChar* p )
 }
 
 static UInt ROR32 ( UInt x, UInt sh ) {
-   vassert(sh >= 0 && sh < 32);
+   vassert(sh < 32);
    if (sh == 0)
       return x;
    else
@@ -630,7 +630,7 @@ static void putIRegT ( UInt       iregNo,
    /* So, generate either an unconditional or a conditional write to
       the reg. */
    ASSERT_IS_THUMB;
-   vassert(iregNo >= 0 && iregNo <= 14);
+   vassert(iregNo <= 14);
    if (guardT == IRTemp_INVALID) {
       /* unconditional write */
       llPutIReg( iregNo, e );
@@ -1340,6 +1340,7 @@ void setFlags_D1_D2_ND ( UInt cc_op, IRTemp t_dep1,
    vassert(typeOfIRTemp(irsb->tyenv, t_dep1 == Ity_I32));
    vassert(typeOfIRTemp(irsb->tyenv, t_dep2 == Ity_I32));
    vassert(typeOfIRTemp(irsb->tyenv, t_ndep == Ity_I32));
+   // strictly unsigned cc_op must always be >= 0,  keeping for readability
    vassert(cc_op >= ARMG_CC_OP_COPY && cc_op < ARMG_CC_OP_NUMBER);
    if (guardT == IRTemp_INVALID) {
       /* unconditional */
@@ -12796,7 +12797,7 @@ static Bool decode_V8_instruction (
         const HChar* iNames[4]
            = { "aese", "aesd", "aesmc", "aesimc" };
 
-        vassert(opc >= 0 && opc <= 3);
+        vassert(opc <= 3);
         void*        helper = helpers[opc];
         const HChar* hname  = hNames[opc];
 
@@ -12873,7 +12874,7 @@ static Bool decode_V8_instruction (
         gate = False;
 
      if (gate) {
-        vassert(ix >= 0 && ix < 7);
+        vassert(ix < 7);
         const HChar* inames[7]
            = { "sha1c", "sha1p", "sha1m", "sha1su0",
                "sha256h", "sha256h2", "sha256su1" };
@@ -17794,7 +17795,7 @@ DisResult disInstr_ARM_WRK (
          IRTemp tmp  = newTemp(Ity_I32);
          IRTemp res  = newTemp(Ity_I32);
          UInt   mask = ((1 << wm1) - 1) + (1 << wm1);
-         vassert(msb >= 0 && msb <= 31);
+         vassert(msb <= 31);
          vassert(mask != 0); // guaranteed by msb being in 0 .. 31 inclusive
 
          assign(src, getIRegA(rN));
@@ -22271,7 +22272,7 @@ DisResult disInstr_THUMB_WRK (
          IRTemp tmp  = newTemp(Ity_I32);
          IRTemp res  = newTemp(Ity_I32);
          UInt   mask = ((1 << wm1) - 1) + (1 << wm1);
-         vassert(msb >= 0 && msb <= 31);
+         vassert(msb <= 31);
          vassert(mask != 0); // guaranteed by msb being in 0 .. 31 inclusive
 
          assign(src, getIRegT(rN));

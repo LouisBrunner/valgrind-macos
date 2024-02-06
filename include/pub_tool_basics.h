@@ -233,11 +233,6 @@ typedef
       UWord _val;
       UWord _val2;
       Bool  _isError;
-#if defined(VGP_amd64_freebsd)
-      char  padding[7];
-#else
-      char  padding[3];
-#endif
    }
    SysRes;
 

@@ -219,6 +219,19 @@
 }
 
 {
+   X on Debian 5.10 writev uninit padding
+   Memcheck:Param
+   writev(vector[...])
+   fun:__writev
+   fun:writev
+   fun:write_vec
+   fun:_xcb_conn_wait
+   fun:_xcb_out_send
+   fun:xcb_writev
+   fun:_XSend
+}
+
+{
    X on SUSE11 writev uninit padding
    Memcheck:Param
    writev(vector[...])

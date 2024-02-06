@@ -19248,7 +19248,7 @@ static UInt disInstr_MIPS_WRK_Special3(UInt cins, const VexArchInfo* archinfo,
          size = msb + 1;
          DIP("dext r%u, r%u, %u, %u", rt, rs, lsb, msb + 1);
          t1 = newTemp(Ity_I64);
-         vassert(lsb >= 0 && lsb < 32);
+         vassert(lsb < 32);
          vassert(size > 0 && size <= 32);
          vassert((lsb + size) > 0 && (lsb + size) <= 63);
 

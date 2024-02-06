@@ -16,7 +16,7 @@ static void xsem_wait(int fd)
       exit(1);
    }
 
-   fprintf(stdout, "wait completed on %d: count=%" PRIu64 "\n",
+   fprintf(stderr, "fd %d wait completed: count=%" PRIu64 "\n",
            fd, cntr);
 }
 
@@ -37,22 +37,22 @@ static void sem_player(int fd1, int fd2)
     * not good for regresson tests
     * (also xsem_wait above)
     */
-   fprintf(stdout, "posting 1 on %d\n", fd1);
+   fprintf(stderr, "fd %d posting 1\n", fd1);
    xsem_post(fd1, 1);
 
-   fprintf(stdout, "waiting on %d\n", fd2);
+   fprintf(stderr, "fd %d waiting\n", fd2);
    xsem_wait(fd2);
 
-   fprintf(stdout, "posting 1 on %d\n", fd1);
+   fprintf(stderr, "fd %d posting 1\n", fd1);
    xsem_post(fd1, 1);
 
-   fprintf(stdout, "waiting on %d\n", fd2);
+   fprintf(stderr, "fd %d waiting\n", fd2);
    xsem_wait(fd2);
 
-   fprintf(stdout, "posting 5 on %d\n", fd1);
+   fprintf(stderr, "fd %d posting 5\n", fd1);
    xsem_post(fd1, 5);
 
-   fprintf(stdout, "waiting 5 times on %d\n", fd2);
+   fprintf(stderr, "fd %d waiting 5 times\n", fd2);
    xsem_wait(fd2);
    xsem_wait(fd2);
    xsem_wait(fd2);
@@ -88,6 +88,7 @@ int main(int argc, char **argv)
       sem_player(fd1, fd2);
       exit(0);
    }
+   sleep(1);
    if ((cpid_waiter = fork()) == 0) {
       sem_player(fd2, fd1);
       exit(0);

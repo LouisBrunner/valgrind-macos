@@ -918,11 +918,11 @@ void reclaimSuperblock ( Arena* a, Superblock* sb)
    cszB = sizeof(Superblock) + sb->n_payload_bytes;
 
    // removes sb from superblock list.
-   for (i = 0; i < a->sblocks_used; i++) {
+   for (i = 0U; i < a->sblocks_used; i++) {
       if (a->sblocks[i] == sb)
          break;
    }
-   vg_assert(i >= 0 && i < a->sblocks_used);
+   vg_assert(i < a->sblocks_used);
    for (j = i; j < a->sblocks_used; j++)
       a->sblocks[j] = a->sblocks[j+1];
    a->sblocks_used--;
@@ -971,7 +971,7 @@ Superblock* findSb ( Arena* a, Block* b )
       Superblock * sb; 
       SizeT pos = min + (max - min)/2;
 
-      vg_assert(pos >= 0 && pos < a->sblocks_used);
+      vg_assert(pos < a->sblocks_used);
       sb = a->sblocks[pos];
       if ((Block*)&sb->payload_bytes[0] <= b
           && b < (Block*)&sb->payload_bytes[sb->n_payload_bytes])
@@ -1001,7 +1001,7 @@ Superblock* maybe_findSb ( Arena* a, Addr ad )
    while (min <= max) {
       Superblock * sb; 
       SizeT pos = min + (max - min)/2;
-      if (pos < 0 || pos >= a->sblocks_used)
+      if (pos >= a->sblocks_used)
          return NULL;
       sb = a->sblocks[pos];
       if ((Addr)&sb->payload_bytes[0] <= ad

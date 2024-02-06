@@ -159,10 +159,10 @@ typedef struct {
    // VG_(needs).malloc_replacement
    void* (*tool_malloc)              (ThreadId, SizeT);
    void* (*tool___builtin_new)       (ThreadId, SizeT);
-   void* (*tool___builtin_new_aligned)       (ThreadId, SizeT, SizeT);
+   void* (*tool___builtin_new_aligned)       (ThreadId, SizeT, SizeT, SizeT);
    void* (*tool___builtin_vec_new)   (ThreadId, SizeT);
-   void* (*tool___builtin_vec_new_aligned)   (ThreadId, SizeT, SizeT);
-   void* (*tool_memalign)            (ThreadId, SizeT, SizeT);
+   void* (*tool___builtin_vec_new_aligned)   (ThreadId, SizeT, SizeT, SizeT);
+   void* (*tool_memalign)            (ThreadId, SizeT, SizeT, SizeT);
    void* (*tool_calloc)              (ThreadId, SizeT, SizeT);
    void  (*tool_free)                (ThreadId, void*);
    void  (*tool___builtin_delete)    (ThreadId, void*);

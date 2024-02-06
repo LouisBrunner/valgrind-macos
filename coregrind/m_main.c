@@ -679,8 +679,8 @@ else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum",
    }
 
    else if VG_BOOL_CLOM(cloPD, arg, "--sym-offsets",      VG_(clo_sym_offsets)) {}
-   else if VG_BINT_CLOM(cloPD, arg, "--progress-interval",
-                        VG_(clo_progress_interval), 0, 3600) {}
+   else if VG_BUINT_CLOM(cloPD, arg, "--progress-interval",
+                        VG_(clo_progress_interval), 3600) {}
    else if VG_BOOL_CLO(arg, "--read-inline-info", VG_(clo_read_inline_info)) {}
    else if VG_BOOL_CLO(arg, "--read-var-info",    VG_(clo_read_var_info)) {}
 
@@ -1940,7 +1940,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //--------------------------------------------------------------
    VG_(debugLog)(1, "main", "Initialise scheduler (phase 1)\n");
    tid_main = VG_(scheduler_init_phase1)();
-   vg_assert(tid_main >= 0 && tid_main < VG_N_THREADS
+   vg_assert(tid_main < VG_N_THREADS
              && tid_main != VG_INVALID_THREADID);
    /* Tell the tool about tid_main */
    VG_TRACK( pre_thread_ll_create, VG_INVALID_THREADID, tid_main );
@@ -2260,12 +2260,14 @@ void shutdown_actions_NORETURN( ThreadId tid,
    /* Final call to gdbserver, if requested. */
    if (VG_(gdbserver_stop_at) (VgdbStopAt_Abexit)
               && tid_exit_code (tid) != 0) {
-      VG_(umsg)("(action at abexit, exit code %d) vgdb me ... \n",
-                tid_exit_code (tid));
+      if (!(VG_(clo_launched_with_multi)))
+         VG_(umsg)("(action at abexit, exit code %d) vgdb me ... \n",
+                   tid_exit_code (tid));
       VG_(gdbserver) (tid);
    } else if (VG_(gdbserver_stop_at) (VgdbStopAt_Exit)) {
-      VG_(umsg)("(action at exit, exit code %d) vgdb me ... \n",
-                tid_exit_code (tid));
+      if (!(VG_(clo_launched_with_multi)))
+          VG_(umsg)("(action at exit, exit code %d) vgdb me ... \n",
+                    tid_exit_code (tid));
       VG_(gdbserver) (tid);
    }
    VG_(threads)[tid].status = VgTs_Empty;
@@ -3475,6 +3477,11 @@ asm("\n"
 //
 // Maybe on FreeBSD the pointer to argc is 16byte aligned and can be 8 bytes above the
 // start of the stack?
+//
+// Some answers to this mystery here
+// https://forums.freebsd.org/threads/stack-alignment-argc-location-in-assembled-binaries.89302/#post-613119
+// and here
+// https://github.com/freebsd/freebsd-src/blob/releng/5.1/sys/amd64/amd64/machdep.c#LL487C1-L488C42
 
 asm("\n"
     ".text\n"

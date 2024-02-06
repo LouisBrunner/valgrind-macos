@@ -1732,6 +1732,8 @@ void VG_(kill_self)(Int sigNo)
 #  if !defined(VGO_darwin)
    /* This sometimes fails with EPERM on Darwin.  I don't know why. */
    vg_assert(r == 0);
+#  else
+   (void) r;
 #  endif
 
    VG_(convert_sigaction_fromK_to_toK)( &origsa, &origsa2 );

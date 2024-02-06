@@ -1274,7 +1274,7 @@ extern UInt mips_dirtyhelper_calculate_MSACSR ( void* gs, UInt ws, UInt wt,
    return ret;
 }
 
-extern UInt mips_dirtyhelper_get_MSAIR() {
+extern UInt mips_dirtyhelper_get_MSAIR(void) {
    UInt ret = 0;
 /* GCC 4.8 and later support MIPS MSA. */
 #if defined(__mips__) && (defined(__clang__) || (GCC_VERSION >= 408))

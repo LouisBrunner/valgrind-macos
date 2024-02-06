@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# the kqueue(x) tests wait for kernel events, specifically
+# writes to a file
+# this runs in the background
+# and modifies a tmp file that the TC will be watching
+# tiny race condition between the touch and
+# the valgrinded binary starting to monitor the file
+
+touch /tmp/touch_file
+sleep 1
+
+echo hello >> /tmp/touch_file
+rm /tmp/touch_file

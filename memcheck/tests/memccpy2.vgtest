@@ -1,0 +1,2 @@
+prog: memccpy2
+vgopts: -q

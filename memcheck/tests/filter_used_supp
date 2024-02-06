@@ -1,0 +1,7 @@
+#! /bin/sh
+
+./filter_stderr "$@" |
+
+grep -v default\.supp |
+
+grep used_suppression

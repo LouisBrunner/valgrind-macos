@@ -165,7 +165,7 @@ if ("$cc" =~ /clang$/) {
 }
 
 $cmd = "$cmd -arch $archstr";
-$cmd = "$cmd -macosx_version_min 10.6";
+$cmd = "$cmd @LD_OS_MIN_VERS_ARG@";
 $cmd = "$cmd -o $outname";
 $cmd = "$cmd -u __start -e __start";
 
@@ -174,6 +174,7 @@ my $stack_addr_str = $stack_addr->as_hex();
 my $stack_size_str = Math::BigInt::as_hex($TX_STACK_SIZE);
 
 $cmd = "$cmd -image_base $ala";
+# FIXME: 14.0 and later, mark it as deprecated and ignored but it still works
 $cmd = "$cmd -stack_addr $stack_addr_str";
 $cmd = "$cmd -stack_size $stack_size_str";
 

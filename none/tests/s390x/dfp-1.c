@@ -1,174 +1,84 @@
-#include <stdio.h>
-#include "opcodes.h"
 #include "dfp_utils.h"
+#include <stdio.h>
 
-volatile _Decimal64 d64_1, d64_2, result_64;
-volatile _Decimal128 d128_1, d128_2, result_128;
+#define DFP_BINOP(type, opc, binop, op1, op2, round)                           \
+   ({                                                                          \
+      int        cc;                                                           \
+      reg_##type result;                                                       \
+      asm("cr 0,0\n\t" /* clear CC */                                          \
+          ".insn rrf," #opc "0000,%[res],%[r1],%[r2],%[mode]\n\t"              \
+          "ipm %[cc]\n\t"                                                      \
+          "srl %[cc],28\n\t"                                                   \
+          : [res] "=f"(result), [cc] "=d"(cc)                                  \
+          : [r1] "f"(op1.f), [r2] "f"(op2.f), [mode] "i"(round)                \
+          : "cc");                                                             \
+      DFP_VAL_PRINT(op1.f, reg_##type);                                        \
+      printf(" " binop " ");                                                   \
+      DFP_VAL_PRINT(op2.f, reg_##type);                                        \
+      printf(" = ");                                                           \
+      DFP_VAL_PRINT(result, reg_##type);                                       \
+      printf(" cc = %d\n", cc);                                                \
+   })
 
-#define DFP_BINOP(insn, op1, op2, type, round, cc)                      \
-  ({                                                                    \
-    register type d1 asm("f0") =  op1;                                  \
-    register type d2 asm("f1") =  op2;                                  \
-    /* d1 = d1 (op) d2    */                                            \
-    asm volatile(insn(1,round,0,0)                                      \
-                 "ipm %1\n\t"                                           \
-                 "srl %1,28\n\t"                                        \
-                 :"+f" (d1), "=d" (cc)                                  \
-                 :"f"(d2)                                               \
-                 :"cc"                                                  \
-                 );                                                     \
-    d1;                                                                 \
-  })
+static const pun_d64 dd_3_14  = {0x2230000000000194}; /* 3.14DD */
+static const pun_d64 dd_m3_14 = {0xa230000000000194}; /* -3.14DD */
+static const pun_d64 dd_0_005 = {0x222c000000000005}; /* 0.005DD */
+static const pun_d64 dd_7     = {0x2238000000000007}; /* 7.DD */
+static const pun_d64 dd_0     = {0x2238000000000000}; /* 0.DD */
+static const pun_d64 dd_22    = {0x2238000000000022}; /* 22.DD */
+static const pun_d64 dd_m22   = {0xa238000000000022}; /* -22.DD */
 
-int main() {
-  int cc;
+static const pun_d128 dl_3_14  = {{0x2207800000000000, 0x0000000000000194}};
+static const pun_d128 dl_m3_14 = {{0xa207800000000000, 0x0000000000000194}};
+static const pun_d128 dl_0_005 = {{0x2207400000000000, 0x0000000000000005}};
+static const pun_d128 dl_7     = {{0x2208000000000000, 0x0000000000000007}};
+static const pun_d128 dl_0     = {{0x2208000000000000, 0x0000000000000000}};
+static const pun_d128 dl_22    = {{0x2208000000000000, 0x0000000000000022}};
+static const pun_d128 dl_m22   = {{0xa208000000000000, 0x0000000000000022}};
 
-  printf("Decimal floating point arithmetic\n");
+int main()
+{
+   printf("Decimal floating point arithmetic\n");
 
-    /* 64-bit ADD */
-  printf("64-bit ADD\n");
-  /* case 1: cc = 2 */
-  d64_1 = 3.14DD;
-  d64_2 = 0.005DD;
-  result_64 = DFP_BINOP(ADTRA, d64_1, d64_2, _Decimal64, 1, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "+", cc);
-  /* case 2: cc = 1 */
-  d64_1 = -3.14DD;
-  d64_2 = 0.005DD;
-  result_64 = DFP_BINOP(ADTRA, d64_1, d64_2, _Decimal64, 1, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "+", cc);
-  /* case 2: cc = 0 */
-  d64_1 = 3.14DD;
-  d64_2 = -d64_1;
-  result_64 = DFP_BINOP(ADTRA, d64_1, d64_2, _Decimal64, 3, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "+", cc);
+   printf("64-bit ADD\n");
+   DFP_BINOP(d64, 0xb3d2, "+", dd_3_14, dd_0_005, 1);  /* cc = 2 */
+   DFP_BINOP(d64, 0xb3d2, "+", dd_m3_14, dd_0_005, 1); /* cc = 1 */
+   DFP_BINOP(d64, 0xb3d2, "+", dd_3_14, dd_m3_14, 3);  /* cc = 0 */
 
+   printf("64-bit SUBTRACT\n");
+   DFP_BINOP(d64, 0xb3d3, "-", dd_3_14, dd_0_005, 1);  /* cc = 2 */
+   DFP_BINOP(d64, 0xb3d3, "-", dd_m3_14, dd_0_005, 1); /* cc = 1 */
+   DFP_BINOP(d64, 0xb3d3, "-", dd_3_14, dd_3_14, 3);   /* cc = 0 */
 
-    /* 64-bit SUBTRACT */
-  printf("64-bit SUBTRACT\n");
-  /* case 1: cc = 2 */
-  d64_1 = 3.14DD;
-  d64_2 = 0.005DD;
-  result_64 = DFP_BINOP(SDTRA, d64_1, d64_2, _Decimal64, 4, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "-", cc);
-  /* case 2: cc = 1 */
-  d64_1 = -3.14DD;
-  d64_2 = 0.005DD;
-  result_64 = DFP_BINOP(SDTRA, d64_1, d64_2, _Decimal64, 5, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "-", cc);
-  /* case 3: cc = 0 */
-  d64_1 = 3.14DD;
-  d64_2 = d64_1;
-  result_64 = DFP_BINOP(SDTRA, d64_1, d64_2, _Decimal64, 5, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "-", cc);
+   printf("64-bit MULTIPLY\n");
+   DFP_BINOP(d64, 0xb3d0, "*", dd_3_14, dd_7, 6);
+   DFP_BINOP(d64, 0xb3d0, "*", dd_m3_14, dd_7, 7);
+   DFP_BINOP(d64, 0xb3d0, "*", dd_m3_14, dd_0, 7);
 
-    /* 64-bit MULTIPLY */
-  printf("64-bit MULTIPLY\n");
-  /* case 1: cc = 2 */
-  d64_1 = 3.14DD;
-  d64_2 = 7.DD;
-  result_64 = DFP_BINOP(MDTRA, d64_1, d64_2, _Decimal64, 6, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "*", cc);
-  /* case 2: cc = 1 */
-  d64_1 = -3.14DD;
-  d64_2 = 7.DD;
-  result_64 = DFP_BINOP(MDTRA, d64_1, d64_2, _Decimal64, 7, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "*", cc);
-  /* case 3: cc = 0 */
-  d64_1 = -3.14DD;
-  d64_2 = 0.DD;
-  result_64 = DFP_BINOP(MDTRA, d64_1, d64_2, _Decimal64, 7, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "*", cc);
+   printf("64-bit DIVIDE\n");
+   DFP_BINOP(d64, 0xb3d1, "/", dd_22, dd_7, 13);
+   DFP_BINOP(d64, 0xb3d1, "/", dd_m22, dd_7, 14);
+   DFP_BINOP(d64, 0xb3d1, "/", dd_0, dd_7, 14);
 
-    /* 64-bit DIVIDE */
-  printf("64-bit DIVIDE\n");
-  /* case 1: cc = 2 */
-  d64_1 = 22.DD;
-  d64_2 = 7.DD;
-  result_64 = DFP_BINOP(DDTRA, d64_1, d64_2, _Decimal64, d, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "/", cc);
-  /* case 2: cc = 1 */
-  d64_1 = -22.DD;
-  d64_2 = 7.DD;
-  result_64 = DFP_BINOP(DDTRA, d64_1, d64_2, _Decimal64, e, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "/", cc);
-  /* case 3: cc = 0 */
-  d64_1 = 0.DD;
-  d64_2 = 7.DD;
-  result_64 = DFP_BINOP(DDTRA, d64_1, d64_2, _Decimal64, e, cc);
-  DFP_BINOP_PRINT(d64_1, d64_2, result_64, _Decimal64, "/", cc);
+   printf("128-bit ADD\n");
+   DFP_BINOP(d128, 0xb3da, "+", dl_3_14, dl_0_005, 1);  /* cc = 2 */
+   DFP_BINOP(d128, 0xb3da, "+", dl_m3_14, dl_0_005, 1); /* cc = 1 */
+   DFP_BINOP(d128, 0xb3da, "+", dl_3_14, dl_m3_14, 1);  /* cc = 0 */
 
-    /* 128-bit ADD */
-  printf("128-bit ADD\n");
-  /* case 1: cc = 2 */
-  d128_1 = 3.14DL;
-  d128_2 = 0.005DL;
-  result_128 = DFP_BINOP(AXTRA, d128_1, d128_2, _Decimal128, 1, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "+", cc);
-  /* case 2: cc = 1 */
-  d128_1 = -3.14DL;
-  d128_2 = 0.005DL;
-  result_128 = DFP_BINOP(AXTRA, d128_1, d128_2, _Decimal128, 1, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "+", cc);
-  /* case 3: cc = 0 */
-  d128_1 = 3.14DL;
-  d128_2 = -d128_1;
-  result_128 = DFP_BINOP(AXTRA, d128_1, d128_2, _Decimal128, 3, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "+", cc);
+   printf("128-bit SUBTRACT\n");
+   DFP_BINOP(d128, 0xb3db, "-", dl_3_14, dl_0_005, 1);  /* cc = 2 */
+   DFP_BINOP(d128, 0xb3db, "-", dl_m3_14, dl_0_005, 1); /* cc = 1 */
+   DFP_BINOP(d128, 0xb3db, "-", dl_3_14, dl_3_14, 1);   /* cc = 0 */
 
-    /* 128-bit SUBTRACT */
-  printf("128-bit SUBTRACT\n");
-  /* case 1: cc = 2 */
-  d128_1 = 3.14DL;
-  d128_2 = 0.005DL;
-  result_128 = DFP_BINOP(SXTRA, d128_1, d128_2, _Decimal128, 4, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "-", cc);
-  /* case 2: cc = 1 */
-  d128_1 = -3.14DL;
-  d128_2 = 0.005DL;
-  result_128 = DFP_BINOP(SXTRA, d128_1, d128_2, _Decimal128, 5, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "-", cc);
-  /* case 3: cc = 0 */
-  d128_1 = 3.14DL;
-  d128_2 = d128_1;
-  result_128 = DFP_BINOP(SXTRA, d128_1, d128_2, _Decimal128, 5, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "-", cc);
+   printf("128-bit MULTIPLY\n");
+   DFP_BINOP(d128, 0xb3d8, "*", dl_3_14, dl_7, 6);
+   DFP_BINOP(d128, 0xb3d8, "*", dl_m3_14, dl_7, 7);
+   DFP_BINOP(d128, 0xb3d8, "*", dl_3_14, dl_0, 7);
 
-    /* 128-bit MULTIPLY */
-  printf("128-bit MULTIPLY\n");
-  /* case 1: cc = 2 */
-  d128_1 = 3.14DL;
-  d128_2 = 7.DL;
-  result_128 = DFP_BINOP(MXTRA, d128_1, d128_2, _Decimal128, 6, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "*", cc);
-  /* case 2: cc = 1 */
-  d128_1 = -3.14DL;
-  d128_2 = 7.DL;
-  result_128 = DFP_BINOP(MXTRA, d128_1, d128_2, _Decimal128, 7, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "*", cc);
-  /* case 3: cc = 0 */
-  d128_1 = 3.14DL;
-  d128_2 = 0.DL;
-  result_128 = DFP_BINOP(MXTRA, d128_1, d128_2, _Decimal128, 7, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "*", cc);
+   printf("128-bit DIVIDE\n");
+   DFP_BINOP(d128, 0xb3d9, "/", dl_22, dl_7, 13);
+   DFP_BINOP(d128, 0xb3d9, "/", dl_m22, dl_7, 14);
+   DFP_BINOP(d128, 0xb3d9, "/", dl_0, dl_7, 14);
 
-    /* 128-bit DIVIDE */
-  printf("128-bit DIVIDE\n");
-  /* case 1: cc = 2 */
-  d128_1 = 22.DL;
-  d128_2 = 7.DL;
-  result_128 = DFP_BINOP(DXTRA, d128_1, d128_2, _Decimal128, d, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "/", cc);
-  /* case 2: cc = 1 */
-  d128_1 = -22.DL;
-  d128_2 = 7.DL;
-  result_128 = DFP_BINOP(DXTRA, d128_1, d128_2, _Decimal128, e, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "/", cc);
-  /* case 3: cc = 0 */
-  d128_1 = 0.DL;
-  d128_2 = 7.DL;
-  result_128 = DFP_BINOP(DXTRA, d128_1, d128_2, _Decimal128, e, cc);
-  DFP_BINOP_PRINT(d128_1, d128_2, result_128, _Decimal128, "/", cc);
-
-  return 0;
+   return 0;
 }

@@ -10,6 +10,8 @@ EXTRA_DIST = \
 # Headers, etc
 #----------------------------------------------------------------------------
 
+pkginclude_HEADERS = cachegrind.h
+
 bin_SCRIPTS = cg_annotate cg_diff cg_merge
 
 noinst_HEADERS = \

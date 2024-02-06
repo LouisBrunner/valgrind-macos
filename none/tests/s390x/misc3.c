@@ -142,13 +142,13 @@ static void test_all_select()
 
 /* -- Move right to left -- */
 
-static void test_mvcrl(void *to, void *from, size_t len)
+static void test_mvcrl(char *to, char *from, size_t len)
 {
    len -= 1;
    __asm__("lgr    0,%[len]\n\t"
            ".insn  sse,0xe50a00000000,%[to],%[from]\n\t"
-           : [to] "+Q" (*(struct { char c[len]; } *) to)
-           : [from] "Q" (*(struct { char c[len]; } *) from),
+           : [to] "+Q" (*(char (*)[len]) to)
+           : [from] "Q" (*(char (*)[len]) from),
              [len] "d" (len)
            : );
 }

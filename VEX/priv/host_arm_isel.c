@@ -126,14 +126,12 @@ typedef
 
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmap[tmp];
 }
 
 static void lookupIRTemp64 ( HReg* vrHI, HReg* vrLO, ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -252,7 +250,7 @@ static HReg        iselNeonExpr           ( ISelEnv* env, const IRExpr* e );
 /*---------------------------------------------------------*/
 
 static UInt ROR32 ( UInt x, UInt sh ) {
-   vassert(sh >= 0 && sh < 32);
+   vassert(sh < 32);
    if (sh == 0)
       return x;
    else

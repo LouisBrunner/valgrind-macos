@@ -1959,6 +1959,33 @@ POST(sys_pselect6_time64)
    }
 }
 
+static void blocking_syscall_sigmask_pre ( ThreadId tid,
+                                           Addr *sig_p, vki_size_t sigsz,
+                                           const HChar *sig_mem_name,
+                                           const HChar *malloc_str )
+{
+   if (*sig_p != 0 && sigsz == sizeof(vki_sigset_t)) {
+      const vki_sigset_t *guest_sigmask = (vki_sigset_t *) *sig_p;
+      PRE_MEM_READ(sig_mem_name, *sig_p, sigsz);
+      if (!ML_(safe_to_deref)(guest_sigmask, sizeof(*guest_sigmask))) {
+         *sig_p = 1; /* Something recognizable to PST() hook. */
+      } else {
+         vki_sigset_t *vg_sigmask =
+            VG_(malloc)(malloc_str, sizeof(*vg_sigmask));
+         *sig_p = (Addr)vg_sigmask;
+         *vg_sigmask = *guest_sigmask;
+         VG_(sanitize_client_sigmask)(vg_sigmask);
+      }
+   }
+}
+
+static void blocking_syscall_sigmask_post ( Addr sig, vki_size_t sigsz )
+{
+   if (sig != 0 && sigsz == sizeof(vki_sigset_t) && sig != 1) {
+      VG_(free)((vki_sigset_t *)sig);
+   }
+}
+
 static void ppoll_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
                                SyscallArgs* arrghs, SyscallStatus* status,
                                UWord* flags, Bool is_time64 )
@@ -1984,8 +2011,10 @@ static void ppoll_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
    for (i = 0; i < ARG2; i++) {
       PRE_MEM_READ( "ppoll(ufds.fd)",
                     (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
-      PRE_MEM_READ( "ppoll(ufds.events)",
-                    (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
+      if (ufds[i].fd >= 0) {
+         PRE_MEM_READ( "ppoll(ufds.events)",
+                       (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
+      }
       PRE_MEM_WRITE( "ppoll(ufds.revents)",
                      (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
@@ -1998,19 +2027,9 @@ static void ppoll_pre_helper ( ThreadId tid, SyscallArgLayout* layout,
                        sizeof(struct vki_timespec) );
       }
    }
-   if (ARG4 != 0 && sizeof(vki_sigset_t) == ARG5) {
-      const vki_sigset_t *guest_sigmask = (vki_sigset_t *)(Addr)ARG4;
-      PRE_MEM_READ( "ppoll(sigmask)", ARG4, ARG5);
-      if (!ML_(safe_to_deref)(guest_sigmask, sizeof(*guest_sigmask))) {
-         ARG4 = 1; /* Something recognisable to POST() hook. */
-      } else {
-         vki_sigset_t *vg_sigmask =
-             VG_(malloc)("syswrap.ppoll.1", sizeof(*vg_sigmask));
-         ARG4 = (Addr)vg_sigmask;
-         *vg_sigmask = *guest_sigmask;
-         VG_(sanitize_client_sigmask)(vg_sigmask);
-      }
-   }
+   blocking_syscall_sigmask_pre(tid, (Addr *)&ARG4, ARG5,
+                                "ppoll(sigmask)",
+                                "syswrap.ppoll.1");
 }
 
 static void ppoll_post_helper ( ThreadId tid, SyscallArgs* arrghs,
@@ -2023,9 +2042,7 @@ static void ppoll_post_helper ( ThreadId tid, SyscallArgs* arrghs,
       for (i = 0; i < ARG2; i++)
 	 POST_MEM_WRITE( (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
-   if (ARG4 != 0 && ARG5 == sizeof(vki_sigset_t) && ARG4 != 1) {
-      VG_(free)((vki_sigset_t *) (Addr)ARG4);
-   }
+   blocking_syscall_sigmask_post((Addr)ARG4, ARG5);
 }
 
 PRE(sys_ppoll)
@@ -2147,7 +2164,7 @@ POST(sys_epoll_wait)
 
 PRE(sys_epoll_pwait)
 {
-   *flags |= SfMayBlock;
+   *flags |= SfMayBlock | SfPostOnFail;
    PRINT("sys_epoll_pwait ( %ld, %#" FMT_REGWORD "x, %ld, %ld, %#"
           FMT_REGWORD "x, %" FMT_REGWORD "u )",
          SARG1, ARG2, SARG3, SARG4, ARG5, ARG6);
@@ -2157,12 +2174,15 @@ PRE(sys_epoll_pwait)
                  vki_size_t, sigsetsize);
    /* Assume all (maxevents) events records should be (fully) writable. */
    PRE_MEM_WRITE( "epoll_pwait(events)", ARG2, sizeof(struct vki_epoll_event)*ARG3);
-   if (ARG5)
-      PRE_MEM_READ( "epoll_pwait(sigmask)", ARG5, sizeof(vki_sigset_t) );
+   blocking_syscall_sigmask_pre(tid, (Addr *)&ARG5, ARG6,
+                                "epoll_pwait(sigmask)",
+                                "syswrap.epoll_pwait.1");
 }
 POST(sys_epoll_pwait)
 {
-   epoll_post_helper (tid, arrghs, status);
+   if (SUCCESS)
+      epoll_post_helper (tid, arrghs, status);
+   blocking_syscall_sigmask_post((Addr) ARG5, ARG6);
 }
 
 PRE(sys_epoll_pwait2)
@@ -3306,12 +3326,12 @@ PRE(sys_timerfd_gettime)
 {
    PRINT("sys_timerfd_gettime ( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
    PRE_REG_READ2(long, "timerfd_gettime",
-                 int, ufd,
-                 struct vki_itimerspec*, otmr);
+                 int, fd,
+                 struct vki_itimerspec*, curr_value);
    if (!ML_(fd_allowed)(ARG1, "timerfd_gettime", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
    else
-      PRE_MEM_WRITE("timerfd_gettime(result)",
+      PRE_MEM_WRITE("timerfd_gettime(curr_value)",
                     ARG2, sizeof(struct vki_itimerspec));
 }
 POST(sys_timerfd_gettime)
@@ -3343,19 +3363,19 @@ PRE(sys_timerfd_settime)
    PRINT("sys_timerfd_settime ( %ld, %ld, %#" FMT_REGWORD "x, %#"
          FMT_REGWORD "x )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "timerfd_settime",
-                 int, ufd,
+                 int, fd,
                  int, flags,
-                 const struct vki_itimerspec*, utmr,
-                 struct vki_itimerspec*, otmr);
+                 const struct vki_itimerspec*, new_value,
+                 struct vki_itimerspec*, old_value);
    if (!ML_(fd_allowed)(ARG1, "timerfd_settime", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
    else
    {
-      PRE_MEM_READ("timerfd_settime(result)",
+      PRE_MEM_READ("timerfd_settime(new_value)",
                    ARG3, sizeof(struct vki_itimerspec));
       if (ARG4)
       {
-         PRE_MEM_WRITE("timerfd_settime(result)",
+         PRE_MEM_WRITE("timerfd_settime(old_value)",
                        ARG4, sizeof(struct vki_itimerspec));
       }
    }
@@ -6055,6 +6075,17 @@ PRE(sys_fchmodat)
    PRE_REG_READ3(long, "fchmodat",
                  int, dfd, const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
+}
+
+PRE(sys_fchmodat2)
+{
+   PRINT("sys_fchmodat2 ( %ld, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
+	  FMT_REGWORD "u )",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "fchmodat2",
+                 int, dfd, const char *, path, vki_mode_t, mode,
+                 unsigned int, flags);
+   PRE_MEM_RASCIIZ( "fchmodat2(pathname)", ARG2 );
 }
 
 PRE(sys_faccessat)
@@ -13324,6 +13355,7 @@ POST(sys_io_uring_setup)
 
 PRE(sys_io_uring_enter)
 {
+   *flags |= SfMayBlock | SfPostOnFail;
    PRINT("sys_io_uring_enter ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %"
          FMT_REGWORD "u %" FMT_REGWORD "u, %" FMT_REGWORD "u %"
          FMT_REGWORD "u )",
@@ -13332,12 +13364,14 @@ PRE(sys_io_uring_enter)
                  unsigned int, fd, unsigned int, to_submit,
                  unsigned int, min_complete, unsigned int, flags,
                  const void *, sig, unsigned long, sigsz);
-   if (ARG5)
-      PRE_MEM_READ("io_uring_enter(sig)", ARG5, ARG6);
+   blocking_syscall_sigmask_pre(tid, (Addr *)&ARG5, ARG6,
+                                "io_uring_enter(sig)",
+                                "syswrap.io_uring_enter.1");
 }
 
 POST(sys_io_uring_enter)
 {
+   blocking_syscall_sigmask_post((Addr)ARG5, ARG6);
 }
 
 PRE(sys_io_uring_register)
@@ -13636,6 +13670,24 @@ PRE(sys_pidfd_open)
 POST(sys_pidfd_open)
 {
    if (!ML_(fd_allowed)(RES, "pidfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, RES);
+   }
+}
+
+PRE(sys_pidfd_getfd)
+{
+   PRINT("sys_pidfd_getfd ( %ld, %ld, %ld )", SARG1, SARG2, SARG3);
+   PRE_REG_READ3(long, "pidfd_getfd", int, pidfd, int, targetfd, unsigned int, flags);
+}
+
+POST(sys_pidfd_getfd)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "pidfd_getfd", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
    } else {

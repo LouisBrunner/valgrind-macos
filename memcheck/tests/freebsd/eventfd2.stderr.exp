@@ -1,0 +1,26 @@
+fd 3 posting 1
+fd 3 posting 1
+fd 3 posting 5
+fd 3 wait completed: count=1
+fd 3 wait completed: count=1
+fd 3 wait completed: count=1
+fd 3 wait completed: count=1
+fd 3 wait completed: count=1
+fd 3 wait completed: count=1
+fd 3 wait completed: count=1
+fd 3 waiting
+fd 3 waiting
+fd 3 waiting 5 times
+fd 4 posting 1
+fd 4 posting 1
+fd 4 posting 5
+fd 4 wait completed: count=1
+fd 4 wait completed: count=1
+fd 4 wait completed: count=1
+fd 4 wait completed: count=1
+fd 4 wait completed: count=1
+fd 4 wait completed: count=1
+fd 4 wait completed: count=1
+fd 4 waiting
+fd 4 waiting
+fd 4 waiting 5 times

@@ -1,0 +1,8 @@
+Terminal ':' (found):	"Stars:"
+Terminal ' ' (found):	"Stars: "
+Terminal ',' (found):	"Stars: Altair,"
+Terminal '.' (found):	"Stars: Altair, Sun, Vega."
+Terminal '!' (absent):	"Stars: Altair, Sun, Vega.@"
+
+Separate star names from distances (ly):
+Arcturus Vega Capella Rigel Procyon 

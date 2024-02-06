@@ -541,7 +541,7 @@ DECL_TEMPLATE(freebsd, sys_sigfastblock) // 573
 DECL_TEMPLATE(freebsd, sys___realpathat) // 574
 #endif
 
-// unimpl __NR_close_range         575
+DECL_TEMPLATE(freebsd, sys_close_range)  // 575
 
 #endif
 
@@ -549,16 +549,30 @@ DECL_TEMPLATE(freebsd, sys___realpathat) // 574
 
 // unimpl __NR_rpctls_syscall      576
 DECL_TEMPLATE(freebsd, sys___specialfd) // 577
-// unimpl __NR_aio_writev          578
-// unimpl __NR_aio_readv           579
+DECL_TEMPLATE(freebsd, sys_aio_writev)  // 578
+DECL_TEMPLATE(freebsd, sys_aio_readv)   // 579
 
 #endif
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
 
-// unimpl __NR_fspacectl   580
+#if (FREEBSD_VERS >= FREEBSD_14)
+// there was a hole in the numbering
+DECL_TEMPLATE(freebsd, sys_fspacectl) // 580
+#endif
 // unimpl __NR_sched_getcpu        581
 DECL_TEMPLATE(freebsd, sys_swapoff) // 582
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
+DECL_TEMPLATE(freebsd, sys_kqueuex) // 583
+DECL_TEMPLATE(freebsd, sys_membarrier) // 584
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
+DECL_TEMPLATE(freebsd, sys_timerfd_create) // 585
+DECL_TEMPLATE(freebsd, sys_timerfd_gettime) // 586
+DECL_TEMPLATE(freebsd, sys_timerfd_settime) // 587
 #endif
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)

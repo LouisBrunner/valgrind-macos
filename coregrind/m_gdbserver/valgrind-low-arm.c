@@ -294,8 +294,8 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
 
 static struct valgrind_target_ops low_target = {
    num_regs,
-   regs,
    13, //SP
+   regs,
    transfer_register,
    get_pc,
    set_pc,

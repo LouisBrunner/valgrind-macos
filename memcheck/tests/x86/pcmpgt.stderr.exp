@@ -1,0 +1,1498 @@
+
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:255)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:255)
+
+xxxxxxxx > xxxxxxxx, completely undefined, error above, 1 == 1
+00000000 > 00000000, completely defined, 0 == 0
+00000000 > f0000000, completely defined, 0 == 0
+f0000000 > 00000000, completely defined, 0 == 0
+00000000 > fxxxxxxx, defined: 0 > all negatives, 0 == 0
+0xxxxxxx > fxxxxxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:261)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:261)
+
+xxxxxxx0 > f0000000, undefined, error above, 1 == 1
+xxxxxxx1 > 80000000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxxxxxx > 6xxxxxxx, defined, 0 == 0
+8xxxxxxx > 9xxxxxxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:265)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:265)
+
+1234567x > 12345678, undefined, error above, 1 == 1
+1234567x > 1234567f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:267)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:267)
+
+1234567x > 1234567e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:269)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:269)
+
+xxxxxxxx > xxxxxxxx, completely undefined, error above, 1 == 1
+00000000 > 00000000, completely defined, 0 == 0
+00000000 > f0000000, completely defined, 0 == 0
+f0000000 > 00000000, completely defined, 0 == 0
+00000000 > fxxxxxxx, defined: 0 > all negatives, 0 == 0
+0xxxxxxx > fxxxxxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:275)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:275)
+
+xxxxxxx0 > f0000000, undefined, error above, 1 == 1
+xxxxxxx1 > 80000000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxxxxxx > 6xxxxxxx, defined, 0 == 0
+8xxxxxxx > 9xxxxxxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:279)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:279)
+
+1234567x > 12345678, undefined, error above, 1 == 1
+1234567x > 1234567f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:281)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:281)
+
+1234567x > 1234567e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:283)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:283)
+
+xxxxxxxx > xxxxxxxx, completely undefined, error above, 1 == 1
+00000000 > 00000000, completely defined, 0 == 0
+00000000 > f0000000, completely defined, 0 == 0
+f0000000 > 00000000, completely defined, 0 == 0
+00000000 > fxxxxxxx, defined: 0 > all negatives, 0 == 0
+0xxxxxxx > fxxxxxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:289)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:289)
+
+xxxxxxx0 > f0000000, undefined, error above, 1 == 1
+xxxxxxx1 > 80000000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxxxxxx > 6xxxxxxx, defined, 0 == 0
+8xxxxxxx > 9xxxxxxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:293)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:293)
+
+1234567x > 12345678, undefined, error above, 1 == 1
+1234567x > 1234567f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:295)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:295)
+
+1234567x > 1234567e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:297)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:297)
+
+xxxxxxxx > xxxxxxxx, completely undefined, error above, 1 == 1
+00000000 > 00000000, completely defined, 0 == 0
+00000000 > f0000000, completely defined, 0 == 0
+f0000000 > 00000000, completely defined, 0 == 0
+00000000 > fxxxxxxx, defined: 0 > all negatives, 0 == 0
+0xxxxxxx > fxxxxxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:303)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:303)
+
+xxxxxxx0 > f0000000, undefined, error above, 1 == 1
+xxxxxxx1 > 80000000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxxxxxx > 6xxxxxxx, defined, 0 == 0
+8xxxxxxx > 9xxxxxxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:307)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:307)
+
+1234567x > 12345678, undefined, error above, 1 == 1
+1234567x > 1234567f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:309)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned int, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:309)
+
+1234567x > 1234567e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:311)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:311)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:317)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:317)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:321)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:321)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:323)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:323)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:325)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:325)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:331)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:331)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:335)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:335)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:337)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:337)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:339)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:339)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:345)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:345)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:349)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:349)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:351)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:351)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:353)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:353)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:359)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:359)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:363)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:363)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:365)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:365)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:367)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:367)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:373)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:373)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:377)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:377)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:379)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:379)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:381)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:381)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:387)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:387)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:391)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:391)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:393)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:393)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:395)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:395)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:401)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:401)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:405)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:405)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:407)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:407)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:409)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:409)
+
+xxxx > xxxx, completely undefined, error above, 1 == 1
+0000 > 0000, completely defined, 0 == 0
+0000 > f000, completely defined, 0 == 0
+f000 > 0000, completely defined, 0 == 0
+0000 > fxxx, defined: 0 > all negatives, 0 == 0
+0xxx > fxxx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:415)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:415)
+
+xxx0 > f000, undefined, error above, 1 == 1
+xxx1 > 8000, defined: ends with 1 > MIN_INT, 0 == 0
+5xxx > 6xxx, defined, 0 == 0
+8xxx > 9xxx, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:419)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:419)
+
+123x > 1234, undefined, error above, 1 == 1
+123x > 123f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:421)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned short, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:421)
+
+123x > 123e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:423)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:423)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:429)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:429)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+
+More than 100 errors detected.  Subsequent errors
+will still be recorded, but in less detail than before.
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:433)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:433)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:435)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 0>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:435)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:437)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:437)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:443)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:443)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:447)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:447)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:449)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 1>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:449)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:451)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:451)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:457)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:457)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:461)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:461)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:463)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 2>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:463)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:465)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:465)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:471)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:471)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:475)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:475)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:477)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 3>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:477)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:479)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:479)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:485)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:485)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:489)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:489)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:491)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 4>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:491)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:493)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:493)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:499)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:499)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:503)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:503)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:505)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 5>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:505)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:507)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:507)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:513)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:513)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:517)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:517)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:519)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 6>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:519)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:521)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:521)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:527)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:527)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:531)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:531)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:533)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 7>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:533)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:535)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:535)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:541)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:541)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:545)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:545)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:547)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 8>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:547)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:549)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:549)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:555)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:555)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:559)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:559)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:561)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 9>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:561)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:563)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:563)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:569)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:569)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:573)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:573)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:575)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 10>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:575)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:577)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:577)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:583)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:583)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:587)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:587)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:589)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 11>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:589)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:591)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:591)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:597)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:597)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:601)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:601)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:603)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 12>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:603)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:605)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:605)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:611)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:611)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:615)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:615)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:617)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 13>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:617)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:619)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:619)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:625)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:625)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:629)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:629)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:631)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 14>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:631)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:633)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:633)
+
+xx > xx, completely undefined, error above, 1 == 1
+00 > 00, completely defined, 0 == 0
+00 > f0, completely defined, 0 == 0
+f0 > 00, completely defined, 0 == 0
+00 > fx, defined: 0 > all negatives, 0 == 0
+0x > fx, defined: non-negatives > all negatives, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:639)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:639)
+
+x0 > f0, undefined, error above, 1 == 1
+x1 > 80, defined: ends with 1 > MIN_INT, 0 == 0
+5x > 6x, defined, 0 == 0
+8x > 9x, defined, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:643)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:643)
+
+1x > 12, undefined, error above, 1 == 1
+1x > 1f, defined: x can't be more than f, 0 == 0
+Uninitialised byte(s) found during client check request
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:201)
+   by 0x........: main (pcmpgt.cpp:645)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:197)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: void doit<unsigned char, 15>(char const*, char const*, bool, char const*) (pcmpgt.cpp:206)
+   by 0x........: main (pcmpgt.cpp:645)
+
+1x > 1e, undefined: x can be more than e, error above, 1 == 1
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+Use --track-origins=yes to see where uninitialised values come from
+For lists of detected and suppressed errors, rerun with: -s
+ERROR SUMMARY: 224 errors from 224 contexts (suppressed: 0 from 0)

@@ -176,7 +176,7 @@ static void create_self_checks_as_needed(
          len2check  = vge->len[i];
 
          /* stay sane */
-         vassert(len2check >= 0 && len2check < 2000/*arbitrary*/);
+         vassert(len2check < 2000/*arbitrary*/);
 
          /* Skip the check if the translation involved zero bytes */
          if (len2check == 0)
@@ -960,7 +960,7 @@ static IRSB* disassemble_basic_block_till_stop(
       /* stay sane ... */
       vassert(dres.whatNext == Dis_StopHere || dres.whatNext == Dis_Continue);
       /* ... disassembled insn length is sane ... */
-      vassert(dres.len >= 0 && dres.len <= 24);
+      vassert(dres.len <= 24);
 
       /* If the disassembly function passed us a hint, take note of it. */
       if (LIKELY(dres.hint == Dis_HintNone)) {

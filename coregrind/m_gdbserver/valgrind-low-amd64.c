@@ -348,8 +348,8 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
 
 static struct valgrind_target_ops low_target = {
    -1, // Must be computed at init time.
-   regs,
    7, //RSP
+   regs,
    transfer_register,
    get_pc,
    set_pc,

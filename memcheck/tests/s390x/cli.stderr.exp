@@ -1,0 +1,4 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: do_compares (cli.c:15)
+   by 0x........: main (cli.c:38)
+

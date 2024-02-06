@@ -255,8 +255,6 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    } else {
 
-      mach_msg_header_t msg;
-
       VG_(debugLog)(1, "syswrap-darwin",
                        "run_a_thread_NORETURN(tid=%u): "
                           "not last one standing\n",
@@ -271,6 +269,7 @@ static void run_a_thread_NORETURN ( Word tidW )
       /* tid is now invalid. */
 
 #  if DARWIN_VERS < DARWIN_10_14
+      mach_msg_header_t msg;
       // GrP fixme exit race
       msg.msgh_bits = MACH_MSGH_BITS(17, MACH_MSG_TYPE_MAKE_SEND_ONCE);
       msg.msgh_request_port = VG_(gettid)();
@@ -1147,16 +1146,6 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
 
 #define CALL_PRE(name) PRE_FN(name)(tid, layout, arrghs, status, flags)
 #define CALL_POST(name) POST_FN(name)(tid, arrghs, status)
-
-#if VG_WORDSIZE == 4
-// Combine two 32-bit values into a 64-bit value
-// Always use with low-numbered arg first (e.g. LOHI64(ARG1,ARG2) )
-# if defined(VGA_x86)
-#  define LOHI64(lo,hi)   ( ((ULong)(UInt)(lo)) | (((ULong)(UInt)(hi)) << 32) )
-# else
-#  error unknown architecture
-# endif
-#endif
 
 // Retrieve the current Mach thread
 #define MACH_THREAD ((Addr)VG_(get_ThreadState)(tid)->os_state.lwpid)
@@ -2336,12 +2325,9 @@ PRE(__mac_syscall)
 PRE(exit)
 {
    ThreadId     t;
-   ThreadState* tst;
 
    PRINT("darwin exit( %ld )", SARG1);
    PRE_REG_READ1(void, "exit", int, status);
-
-   tst = VG_(get_ThreadState)(tid);
 
    /* A little complex; find all the threads with the same threadgroup
       as this one (including this one), and mark them to exit */
@@ -2447,6 +2433,30 @@ POST(__pthread_sigmask)
         POST_MEM_WRITE( ARG3, sizeof(vki_sigset_t));
 }
 
+
+// SYS___sigwait 330
+// int  sigwait(const sigset_t * __restrict, int * __restrict) __DARWIN_ALIAS_C(sigwait);
+PRE(__sigwait)
+{
+    *flags |= SfMayBlock;
+    PRINT("sys_sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+          ARG1,ARG2);
+    PRE_REG_READ2(int, "sigwait",
+                  const vki_sigset_t *, set, int *, sig);
+    if (ARG1 != 0) {
+        PRE_MEM_READ(  "sigwait(set)",  ARG1, sizeof(vki_sigset_t));
+    }
+    if (ARG2 != 0) {
+        PRE_MEM_WRITE( "sigwait(sig)", ARG2, sizeof(int));
+    }
+}
+
+POST(__sigwait)
+{
+    if (ARG2 != 0) {
+        POST_MEM_WRITE( ARG2, sizeof(int));
+    }
+}
 
 PRE(__pthread_canceled)
 {
@@ -3101,7 +3111,7 @@ PRE(stat64)
    //
    // This is our entry point for checking a particular dylib: if it looks like one,
    // we want to see the error result, if any, and subsequently check the cache
-   if (VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
+   if (ARG1 != 0 && VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
      *flags |= SfPostOnFail;
    }
 #endif
@@ -4755,31 +4765,27 @@ static void aio_init(void)
    aio_init_done = True;
 }
 
-static Bool was_a_successful_aio_read = False;
-
 PRE(aio_return)
 {
-   struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
    // This assumes that the kernel looks at the struct pointer, but not the
    // contents of the struct.
    PRINT( "aio_return ( %#lx )", ARG1 );
    PRE_REG_READ1(long, "aio_return", struct vki_aiocb*, aiocbp);
-
-   if (!aio_init_done) aio_init();
-   was_a_successful_aio_read = VG_(OSetWord_Remove)(aiocbp_table, (UWord)aiocbp);
-}
-POST(aio_return)
-{
-   // If we found the aiocbp in our own table it must have been an aio_read(),
-   // so mark the buffer as written.  If we didn't find it, it must have been
-   // an aio_write() or a bogus aio_return() (eg. a second one on the same
-   // aiocbp).  Either way, the buffer won't have been written so we don't
-   // have to mark the buffer as written.
-   if (was_a_successful_aio_read) {
-      struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
-      POST_MEM_WRITE((Addr)aiocbp->aio_buf, aiocbp->aio_nbytes);
-      was_a_successful_aio_read = False;
+   if (ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
+      SET_STATUS_from_SysRes(VG_(do_syscall1)(SYSNO, ARG1));
+      if (SUCCESS && RES >= 0) {
+         struct vki_aiocb* aiocbp = (struct vki_aiocb*)ARG1;
+         if (!aio_init_done) {
+            aio_init();
+         }
+         if (VG_(OSetWord_Remove)(aiocbp_table, (UWord)aiocbp)) {
+            POST_MEM_WRITE((Addr)aiocbp->aio_buf, aiocbp->aio_nbytes);
+         }
+      }
+   } else {
+      SET_STATUS_Failure(VKI_EINVAL);
    }
+
 }
 
 PRE(aio_suspend)
@@ -4788,12 +4794,14 @@ PRE(aio_suspend)
    // but not the contents of the structs.
    PRINT( "aio_suspend ( %#lx )", ARG1 );
    PRE_REG_READ3(long, "aio_suspend",
-                 const struct vki_aiocb *, aiocbp, int, nent,
+                 const struct vki_aiocb * const *, aiocbp, int, nent,
                  const struct vki_timespec *, timeout);
-   if (ARG2 > 0)
+   if (ARG2 > 0) {
       PRE_MEM_READ("aio_suspend(list)", ARG1, ARG2 * sizeof(struct vki_aiocb *));
-   if (ARG3)
+   }
+   if (ARG3) {
       PRE_MEM_READ ("aio_suspend(timeout)", ARG3, sizeof(struct vki_timespec));
+   }
 }
 
 PRE(aio_error)
@@ -8910,6 +8918,7 @@ PRE(mach_msg)
                    (Addr)((char*)mh + sizeof(mach_msg_header_t) + complex_header_size),
                    send_size - sizeof(mach_msg_header_t) - complex_header_size);
       */
+      (void) complex_header_size;
       return;
    }
 }
@@ -9455,7 +9464,7 @@ PRE(sigreturn)
          a per-thread on-altstack/not-on-altstack flag, which is set
          by this flag.  Just ignore it and claim success for the time
          being. */
-      VG_(debugLog)(0, "syswrap-darwin",
+      VG_(debugLog)(1, "syswrap-darwin",
                        "WARNING: Ignoring sigreturn( ..., "
                        "UC_SET_ALT_STACK );\n");
       SET_STATUS_Success(0);
@@ -9463,7 +9472,7 @@ PRE(sigreturn)
    }
    if (ARG2 == VKI_UC_RESET_ALT_STACK) {
       /* Ditto */
-      VG_(debugLog)(0, "syswrap-darwin",
+      VG_(debugLog)(1, "syswrap-darwin",
                        "WARNING: Ignoring sigreturn( ..., "
                        "UC_RESET_ALT_STACK );\n");
       SET_STATUS_Success(0);
@@ -10702,6 +10711,54 @@ POST(mach_generate_activity_id)
 
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
+/* ---------------------------------------------------------------------
+ Added for macOS 10.13 (High Sierra)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_13
+
+PRE(openat_nocancel)
+{
+   if (ARG3 & VKI_O_CREAT) {
+      // 4-arg version
+      PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+      PRE_REG_READ4(long, "openat_nocancel",
+                    int, dfd, const char *, filename, int, flags, int, mode);
+   } else {
+     // 3-arg version
+     PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+     PRE_REG_READ3(long, "openat_nocancel",
+                   int, dfd, const char *, filename, int, flags);
+   }
+   PRE_MEM_RASCIIZ( "openat_nocancel(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+POST(openat_nocancel)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_13 */
 
 /* ---------------------------------------------------------------------
  Added for macOS 10.13 (High Sierra)
@@ -11527,7 +11584,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)),   // old __pthread_cond_timedwait
 #endif
 // _____(__NR_aio_fsync),
-   MACXY(__NR_aio_return,     aio_return),
+   MACX_(__NR_aio_return,     aio_return),
    MACX_(__NR_aio_suspend,    aio_suspend),
 // _____(__NR_aio_cancel),
    MACX_(__NR_aio_error,      aio_error),
@@ -11549,7 +11606,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_issetugid,               issetugid),
    MACX_(__NR___pthread_kill,          __pthread_kill),
    MACX_(__NR___pthread_sigmask,       __pthread_sigmask),
-// _____(__NR___sigwait),
+   MACXY(__NR___sigwait,               __sigwait),  // 330
    MACX_(__NR___disable_threadsignal,  __disable_threadsignal),
    MACX_(__NR___pthread_markcancel,    __pthread_markcancel),
    MACX_(__NR___pthread_canceled,      __pthread_canceled),

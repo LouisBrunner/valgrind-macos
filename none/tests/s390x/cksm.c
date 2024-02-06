@@ -26,11 +26,10 @@ cksm_by_insn(const uint32_t *buff, uint64_t len, uint32_t sum)
   register uint64_t reg2 asm("2") = (uint64_t) buff;
   register uint64_t reg3 asm("3") = len;
 
-  asm volatile( "       lhi     4,42\n\t"
-                "       xr      4,4\n\t"        /* set cc to != 0 */
+  asm volatile( "       cr      0,0\n\t"        /* set cc to 0 */
                 "0:	cksm	%0,%1\n\t"	/* do checksum on longs */
 		"	jo	0b\n\t"
-		: "+d" (sum), "+d" (reg2), "+d" (reg3) : : "cc", "memory");
+		: "+d" (sum), "+a" (reg2), "+a" (reg3) : : "cc");
 
   cc   = get_cc();
   len  = reg3;

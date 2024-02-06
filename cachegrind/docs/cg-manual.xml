@@ -876,6 +876,21 @@ Cachegrind-specific options are:
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.instr-at-start" xreflabel="--instr-at-start">
+    <term>
+      <option><![CDATA[--instr-at-start=no|yes [yes] ]]></option>
+    </term>
+    <listitem>
+      <para>
+      Enables or disables instrumentation at the start of execution.
+      Use this in combination with
+      <computeroutput>CACHEGRIND_START_INSTRUMENTATION</computeroutput> and
+      <computeroutput>CACHEGRIND_STOP_INSTRUMENTATION</computeroutput> to
+      measure only part of a client program's execution.
+      </para>
+    </listitem>
+  </varlistentry>
+
   <varlistentry id="cg.opt.I1" xreflabel="--I1">
     <term>
       <option><![CDATA[--I1=<size>,<associativity>,<line size> ]]></option>
@@ -1136,6 +1151,48 @@ Cachegrind-specific options are:
 </variablelist>
 <!-- end of xi:include in the manpage -->
   
+</sect1>
+
+
+<sect1 id="cg-manual.clientrequests" xreflabel="Client requests">
+<title>Cachegrind Client Requests</title>
+
+<para>Cachegrind provides the following client requests in
+<filename>cachegrind.h</filename>.
+</para>
+
+<variablelist id="cg.clientrequests.list">
+
+  <varlistentry id="cg.cr.start-instr" xreflabel="CACHEGRIND_START_INSTRUMENTATION">
+    <term>
+      <computeroutput>CACHEGRIND_START_INSTRUMENTATION</computeroutput>
+    </term>
+    <listitem>
+      <para>Start Cachegrind instrumentation if not already enabled. Use this
+      in combination with
+      <computeroutput>CACHEGRIND_STOP_INSTRUMENTATION</computeroutput> and
+      <option><link linkend="opt.instr-at-start">--instr-at-start</link></option>
+      to measure only part of a client program's execution.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="cg.cr.stop-instr" xreflabel="CACHEGRIND_STOP_INSTRUMENTATION">
+    <term>
+      <computeroutput>CACHEGRIND_STOP_INSTRUMENTATION</computeroutput>
+    </term>
+    <listitem>
+      <para>Stop Cachegrind instrumentation if not already disabled. Use this
+      in combination with
+      <computeroutput>CACHEGRIND_START_INSTRUMENTATION</computeroutput> and
+      <option><link linkend="opt.instr-at-start">--instr-at-start</link></option>
+      to measure only part of a client program's execution.
+      </para>
+    </listitem>
+  </varlistentry>
+
+</variablelist>
+
 </sect1>
 
 

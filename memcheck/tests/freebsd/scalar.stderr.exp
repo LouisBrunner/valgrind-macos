@@ -1529,7 +1529,7 @@ Syscall param getpgid(pid) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-209:                SYS_poll 3s 3m
+209:                SYS_poll 2s 2m
 ---------------------------------------------------------
 Syscall param poll(ufds) contains uninitialised byte(s)
    ...
@@ -1544,13 +1544,20 @@ Syscall param poll(ufds.fd) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param poll(ufds.events) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
 Syscall param poll(ufds.revents) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+209:                SYS_poll 0s 2m
+---------------------------------------------------------
+Syscall param poll(ufds.fd) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param poll(ufds.events) points to uninitialised byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
 
 ---------------------------------------------------------
 220:   SYS_freebsd7___semctl (IPC_INFO) 4s 1m
@@ -1951,7 +1958,7 @@ Syscall param aio_read(iocb) points to unaddressable byte(s)
 Syscall param aio_write(iocb) contains uninitialised byte(s)
    ...
 
-Syscall param aio_read(iocb) points to unaddressable byte(s)
+Syscall param aio_write(iocb) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -2233,7 +2240,7 @@ Syscall param aio_suspend(timeout) points to unaddressable byte(s)
 ---------------------------------------------------------
 316:          SYS_aio_cancel 2s 1m
 ---------------------------------------------------------
-Syscall param aio_cancel(fildex) contains uninitialised byte(s)
+Syscall param aio_cancel(fildes) contains uninitialised byte(s)
    ...
 
 Syscall param aio_cancel(iocb) contains uninitialised byte(s)
@@ -4967,6 +4974,14 @@ Syscall param ppoll(timeout) contains uninitialised byte(s)
 
 Syscall param ppoll(newsigmask) contains uninitialised byte(s)
    ...
+
+Syscall param ppoll(fds.fd) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param ppoll(fds.revents) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param ppoll(timeout) points to unaddressable byte(s)
    ...

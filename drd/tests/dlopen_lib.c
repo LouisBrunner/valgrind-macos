@@ -18,7 +18,7 @@ void foo()
   int rc;
   uintptr_t t = 1;
 
-  printf("In main: creating thread %ld\n", t);
+  printf("In main: creating thread %u\n", (unsigned)t);
   rc = pthread_create(&thread, NULL, PrintHello, (void *)t);
   if (rc)
     printf("ERROR; return code from pthread_create() is %d\n", rc);

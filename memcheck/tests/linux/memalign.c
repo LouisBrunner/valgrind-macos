@@ -82,6 +82,10 @@ int main ( void )
    assert(p && (0 == (long)p % (4 * 1024 * 1024)));
    p = memalign(16 * 1024 * 1024, 100);
    assert(p && (0 == (long)p % (16 * 1024 * 1024)));
+
+   // size 0
+   p = memalign(256, 0);
+   assert(p && (0 == (long)p % 256));
 #else
    p = memalign(1024 * 1024, 4 * 1024 * 1024 + 1);
    assert(p && (0 == (long)p % (1024 * 1024)));
@@ -146,5 +150,9 @@ int main ( void )
    assert(p && (0 == (long)p % (4 * 1024 * 1024)));
    p = memalign(16 * 1024 * 1024, 100);
    assert(p && (0 == (long)p % (16 * 1024 * 1024)));
+
+   // size 0
+   p = memalign(256, 0);
+   assert(p && (0 == (long)p % 256));
 #endif
 }

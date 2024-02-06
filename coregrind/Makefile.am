@@ -80,7 +80,7 @@ valgrind_LDFLAGS   += -Wl,-M,/usr/lib/ld/map.noexstk
 endif
 
 
-vgdb_SOURCES = vgdb.c
+vgdb_SOURCES = vgdb.c m_gdbserver/remote-utils-shared.c
 if VGCONF_OS_IS_LINUX
 if VGCONF_PLATVARIANT_IS_ANDROID
 vgdb_SOURCES += vgdb-invoker-none.c
@@ -273,6 +273,7 @@ noinst_HEADERS = \
 	m_gdbserver/regcache.h \
 	m_gdbserver/regdef.h \
 	m_gdbserver/server.h \
+	m_gdbserver/remote-utils-shared.h \
 	m_gdbserver/target.h \
 	m_gdbserver/valgrind_low.h \
 	m_gdbserver/gdb/signals.h \
@@ -396,6 +397,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/inferiors.c \
 	m_gdbserver/regcache.c \
 	m_gdbserver/remote-utils.c \
+	m_gdbserver/remote-utils-shared-gdbserver.c \
 	m_gdbserver/server.c \
 	m_gdbserver/signals.c \
 	m_gdbserver/target.c \
@@ -574,9 +576,11 @@ endif
 # used by libgcc.
 #----------------------------------------------------------------------------
 
+if !COMPILER_IS_CLANG
 pkglib_LIBRARIES  += libgcc-sup-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 if VGCONF_HAVE_PLATFORM_SEC
 pkglib_LIBRARIES += libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
+endif
 endif
 
 libgcc_sup_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES = \

@@ -4,19 +4,21 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS =		    \
 	compare_error_count_with    \
 	filter_annotate_barrier_xml \
-	filter_error_count	    \
-	filter_error_summary	    \
 	filter_lambda               \
-	filter_stderr               \
 	filter_stderr_and_thread_no \
-	filter_stderr_and_thread_no_and_offset \
 	filter_stderr_solaris       \
-	filter_thread_no	    \
 	filter_thread_name_xml      \
-	filter_xml_and_thread_no    \
 	run_openmp_test             \
 	supported_libpthread	    \
 	supported_sem_init
+
+noinst_SCRIPTS = \
+	filter_error_count \
+	filter_error_summary \
+	filter_stderr \
+	filter_stderr_and_thread_no_and_offset \
+	filter_thread_no \
+	filter_xml_and_thread_no
 
 noinst_HEADERS =                                    \
 	tsan_thread_wrappers_pthread.h		    \
@@ -68,11 +70,13 @@ EXTRA_DIST =                                        \
 	annotate_ignore_write2.stderr.exp	    \
 	annotate_ignore_write2.stderr.exp-solaris   \
 	annotate_ignore_write2.vgtest		    \
+	annotate_trace_memory.stderr.exp-arm        \
 	annotate_trace_memory.stderr.exp-32bit	    \
 	annotate_trace_memory.stderr.exp-32bit-clang \
 	annotate_trace_memory.stderr.exp-64bit	    \
-	annotate_trace_memory.stderr.exp-mips32	   \
+	annotate_trace_memory.stderr.exp-mips32	    \
 	annotate_trace_memory.vgtest		    \
+	annotate_trace_memory_xml.stderr.exp-arm    \
 	annotate_trace_memory_xml.stderr.exp-32bit  \
 	annotate_trace_memory_xml.stderr.exp-32bit-clang \
 	annotate_trace_memory_xml.stderr.exp-64bit  \
@@ -365,6 +369,8 @@ EXTRA_DIST =                                        \
 	tc23_bogus_condwait.vgtest                  \
 	tc24_nonzero_sem.stderr.exp                 \
 	tc24_nonzero_sem.vgtest                     \
+	thrd_create.stderr.exp			    \
+	thrd_create.vgtest			    \
 	thread_name.stderr.exp			    \
 	thread_name.vgtest			    \
 	thread_name_xml.stderr.exp		    \
@@ -512,6 +518,10 @@ if HAVE_SWAPCONTEXT
 check_PROGRAMS += swapcontext
 endif
 
+if HAVE_THRD_CREATE
+check_PROGRAMS += thrd_create
+endif
+
 if !VGCONF_OS_IS_DARWIN
 # pth_mutex_signal is disabled on macOS as it doesn't support real-time signals
 check_PROGRAMS += sem_wait pth_mutex_signal
@@ -653,3 +663,8 @@ endif
 
 timed_mutex_SOURCES         = timed_mutex.cpp
 timed_mutex_CXXFLAGS        = $(AM_CXXFLAGS) -std=c++0x
+
+thrd_create_SOURCES	    = thrd_create.c
+if VGCONF_OS_IS_FREEBSD
+thrd_create_LDFLAGS          = -lstdthreads
+endif

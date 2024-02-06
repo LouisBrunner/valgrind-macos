@@ -5,7 +5,7 @@ dir=`dirname $0`
 $dir/../../tests/filter_stderr_basic                |
 
 # Remove "Cachegrind, ..." line and the following copyright line.
-sed "/^Cachegrind, a cache and branch-prediction profiler/ , /./ d" |
+sed "/^Cachegrind, a high-precision tracing profiler/ , /./ d" |
 
 # Remove numbers from I/D/LL "refs:" lines
 perl -p -e 's/((I|D|LL) *refs:)[ 0-9,()+rdw]*$/\1/'  |

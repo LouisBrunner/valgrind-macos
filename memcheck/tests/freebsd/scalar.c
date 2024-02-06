@@ -781,8 +781,14 @@ int main(void)
    /* netbsd newreboot            208 */
 
    /* SYS_poll                    209 */
-   GO(SYS_poll, "3s 3m");
+   GO(SYS_poll, "2s 2m");
    SY(SYS_poll, x0, x0+1, x0); FAIL;
+
+   {
+      struct pollfd fds = { x0, x0, x0 };
+      GO(SYS_poll, "0s 2m");
+      SY(SYS_poll, &fds, 1, 1); SUCC;
+   }
 
    /* SYS_freebsd7___semctl       220 */
    GO(SYS_freebsd7___semctl, "(IPC_INFO) 4s 1m");
@@ -1050,7 +1056,7 @@ int main(void)
 
    /* SYS_aio_error               317 */
    GO(SYS_aio_error, "1s 1m");
-   SY(SYS_aio_error, x0+1); FAIL;
+   SY(SYS_aio_error, x0+1); SUCC;
 
    /* freebsd 6 aio_read          318 */
 
@@ -1948,8 +1954,8 @@ int main(void)
    {
        struct pollfd arg1;
        arg1.fd = arg1.events = arg1.revents = x0;
-        GO(SYS_ppoll, "2s 2+2m");
-        SY(SYS_ppoll, &arg1, 1, x0+1, x0+1); FAIL;
+       GO(SYS_ppoll, "2s 2+2m");
+       SY(SYS_ppoll, &arg1, 1, x0+1, x0+1); FAIL;
    }
 
    /* SYS_futimens                546 */

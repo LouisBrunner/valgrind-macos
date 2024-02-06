@@ -65,6 +65,9 @@ s/Thread [0-9][0-9]*/Thread ..../g
 #       delete thread switches
 /\[Switching to Thread ....\]/d
 
+#       delete thread exiting
+/\[Thread .... exited\]/d
+
 #       ??? Probably we had a 'Switching ' message in front of
 #        a frame line ?
 s/\(\[Switching to thread [1234] (Thread ....)\]\)#0/\1\n#0/
@@ -120,11 +123,11 @@ s/in kill ().*$/in syscall .../
 #       anonymise syscall on ppc64 (bugzilla #284305)
 s/in .*kill ().*$/in syscall .../
 
-
 s/in _dl_sysinfo_int80 ()/in syscall .../
 /^   from \/lib\/ld-linux.so.*$/d
 s/\(0x........\) in ?? () from \/lib.*$/\1 in syscall .../
 s/\(0x........\) in ?? ()$/\1 in syscall .../
+s/in __select64 (.*/in syscall .../
 
 #       4 expressions to cover glibc 2.27 way to do a select, such as
 #          * 1    Thread 5548 (tid 1 VgTs_WaitSys) 0x0000000004f6203f in __GI___select (

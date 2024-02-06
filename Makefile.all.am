@@ -141,7 +141,7 @@ endif
 
 # These flags are used for building the preload shared objects (PSOs).
 # The aim is to give reasonable performance but also to have good
-# stack traces, since users often see stack traces extending 
+# stack traces, since users often see stack traces extending
 # into (and through) the preloads.  Also, we must use any
 # -mpreferred-stack-boundary flag to build the preload shared
 # objects, since that risks misaligning the client's stack and
@@ -232,13 +232,11 @@ AM_CFLAGS_X86_FREEBSD       = @FLAG_M32@ @PREFERRED_STACK_BOUNDARY_2@ \
 AM_CFLAGS_PSO_X86_FREEBSD       = @FLAG_M32@ $(AM_CFLAGS_BASE) $(AM_CFLAGS_PSO_BASE)
 AM_CCASFLAGS_X86_FREEBSD    = @FLAG_M32@ -g
 
-AM_FLAG_M3264_ARM_LINUX   = @FLAG_M32@
-AM_CFLAGS_ARM_LINUX       = @FLAG_M32@ \
-			 	$(AM_CFLAGS_BASE) -marm -mcpu=cortex-a8
+AM_FLAG_M3264_ARM_LINUX   = @FLAG_M32@ @VGCONF_PLATFORM_ARM_ARCH@
+AM_CFLAGS_ARM_LINUX       = @FLAG_M32@ $(AM_CFLAGS_BASE) @VGCONF_PLATFORM_ARM_ARCH@
 AM_CFLAGS_PSO_ARM_LINUX   = @FLAG_M32@ $(AM_CFLAGS_BASE) \
-				-marm -mcpu=cortex-a8 $(AM_CFLAGS_PSO_BASE)
-AM_CCASFLAGS_ARM_LINUX    = @FLAG_M32@ \
-				-marm -mcpu=cortex-a8 -g
+				$(AM_CFLAGS_PSO_BASE) @VGCONF_PLATFORM_ARM_ARCH@
+AM_CCASFLAGS_ARM_LINUX    = @FLAG_M32@ @VGCONF_PLATFORM_ARM_ARCH@
 
 AM_FLAG_M3264_ARM64_LINUX = @FLAG_M64@
 AM_CFLAGS_ARM64_LINUX     = @FLAG_M64@ $(AM_CFLAGS_BASE)
@@ -266,7 +264,8 @@ AM_CFLAGS_AMD64_DARWIN     = $(WERROR) -arch x86_64 $(AM_CFLAGS_BASE) \
           -I@XCODE_INC_DIR@ \
           @CLANG_OS_MIN_VERS_ARG@
 AM_CFLAGS_PSO_AMD64_DARWIN = $(AM_CFLAGS_AMD64_DARWIN) $(AM_CFLAGS_PSO_BASE)
-AM_CCASFLAGS_AMD64_DARWIN  = -arch x86_64 -g
+AM_CCASFLAGS_AMD64_DARWIN  = -arch x86_64 -g \
+			    @CLANG_OS_MIN_VERS_ARG@
 
 AM_FLAG_M3264_ARM64_DARWIN = -arch arm64
 AM_CFLAGS_ARM64_DARWIN     = $(WERROR) -arch arm64 $(AM_CFLAGS_BASE) \
@@ -322,7 +321,7 @@ AM_CCASFLAGS_PRI  = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 if VGCONF_HAVE_PLATFORM_SEC
  AM_FLAG_M3264_SEC = $(AM_FLAG_M3264_@VGCONF_PLATFORM_SEC_CAPS@)
 else
- AM_FLAG_M3264_SEC = 
+ AM_FLAG_M3264_SEC =
 endif
 
 

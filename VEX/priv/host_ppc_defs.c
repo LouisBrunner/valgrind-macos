@@ -4333,7 +4333,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                   as that is a handy way to sign extend the lower 32
                   bits into the upper 32 bits. */
                if (mode64)
-                  vassert(n >= 0 && n < 32);
+                  vassert(n < 32);
                else 
                   vassert(n > 0 && n < 32);
                p = mkFormX(p, 31, r_srcL, r_dst, n, 824, 0, endness_host);
@@ -4938,6 +4938,9 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
+      // PJF Coverity may be right but I'd reather keep the unreachable code
+      // "just in case" that conditions above ever change
+      // coverity[UNREACHABLE:FALSE]
       goto done;
    }
 

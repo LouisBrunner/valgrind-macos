@@ -248,6 +248,7 @@ struct vki_sigcontext {
 #define VKI_O_APPEND	  02000
 #define VKI_O_NONBLOCK	  04000
 #define VKI_O_LARGEFILE	0100000
+#define VKI_O_DIRECT	0200000
 
 #define VKI_AT_FDCWD            -100
 

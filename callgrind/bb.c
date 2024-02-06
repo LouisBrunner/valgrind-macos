@@ -33,7 +33,7 @@
 /* BB hash, resizable */
 bb_hash bbs;
 
-void CLG_(init_bb_hash)()
+void CLG_(init_bb_hash)(void)
 {
    Int i;
 
@@ -45,7 +45,7 @@ void CLG_(init_bb_hash)()
    for (i = 0; i < bbs.size; i++) bbs.table[i] = NULL;
 }
 
-bb_hash* CLG_(get_bb_hash)()
+bb_hash* CLG_(get_bb_hash)(void)
 {
   return &bbs;
 }

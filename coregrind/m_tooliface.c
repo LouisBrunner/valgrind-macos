@@ -336,10 +336,10 @@ void VG_(needs_info_location) (
 void VG_(needs_malloc_replacement)(
    void* (*malloc)               ( ThreadId, SizeT ),
    void* (*__builtin_new)        ( ThreadId, SizeT ),
-   void* (*__builtin_new_aligned)( ThreadId, SizeT, SizeT ),
+   void* (*__builtin_new_aligned)( ThreadId, SizeT, SizeT, SizeT ),
    void* (*__builtin_vec_new)    ( ThreadId, SizeT ),
-   void* (*__builtin_vec_new_aligned)( ThreadId, SizeT, SizeT ),
-   void* (*memalign)             ( ThreadId, SizeT, SizeT ),
+   void* (*__builtin_vec_new_aligned)( ThreadId, SizeT, SizeT, SizeT ),
+   void* (*memalign)             ( ThreadId, SizeT, SizeT, SizeT ),
    void* (*calloc)               ( ThreadId, SizeT, SizeT ),
    void  (*free)                 ( ThreadId, void* ),
    void  (*__builtin_delete)     ( ThreadId, void* ),

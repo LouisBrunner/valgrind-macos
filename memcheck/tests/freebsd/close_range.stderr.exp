@@ -1,0 +1,12 @@
+Syscall param close_range(lowfd) contains uninitialised byte(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:83)
+
+Syscall param close_range(highfd) contains uninitialised byte(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:83)
+
+Syscall param close_range(flags) contains uninitialised byte(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:83)
+

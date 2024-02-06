@@ -85,7 +85,6 @@ typedef
       WCache* _cache = &(_zzcache);                                  \
       tl_assert(_cache->dynMax >= 1);                                \
       tl_assert(_cache->dynMax <= N_WCACHE_STAT_MAX);                \
-      tl_assert(_cache->inUse >= 0);                                 \
       tl_assert(_cache->inUse <= _cache->dynMax);                    \
       if (_cache->inUse > 0) {                                       \
          if (_cache->ent[0].arg1 == _arg1                            \
@@ -112,7 +111,6 @@ typedef
       WCache* _cache = &(_zzcache);                                  \
       tl_assert(_cache->dynMax >= 1);                                \
       tl_assert(_cache->dynMax <= N_WCACHE_STAT_MAX);                \
-      tl_assert(_cache->inUse >= 0);                                 \
       tl_assert(_cache->inUse <= _cache->dynMax);                    \
       if (_cache->inUse < _cache->dynMax)                            \
          _cache->inUse++;                                            \
@@ -184,7 +182,6 @@ struct _WordSetU {
 static WordVec* new_WV_of_size ( WordSetU* wsu, UWord sz )
 {
    WordVec* wv;
-   tl_assert(sz >= 0);
    wv = wsu->alloc( wsu->cc, sizeof(WordVec) );
    wv->owner = wsu;
    wv->words = NULL;
@@ -422,7 +419,6 @@ UWord HG_(cardinalityWS) ( WordSetU* wsu, WordSet ws )
    WordVec* wv;
    tl_assert(wsu);
    wv = do_ix2vec( wsu, ws );
-   tl_assert(wv->size >= 0);
    return wv->size;
 }
 
@@ -449,7 +445,6 @@ void HG_(getPayloadWS) ( /*OUT*/UWord** words, /*OUT*/UWord* nWords,
    if (HG_DEBUG) VG_(printf)("getPayloadWS %s %d\n", wsu->cc, (Int)ws);
    tl_assert(wsu);
    wv = do_ix2vec( wsu, ws );
-   tl_assert(wv->size >= 0);
    *nWords = wv->size;
    *words  = wv->words;
 }
@@ -493,7 +488,7 @@ void HG_(dieWS) ( WordSetU* wsu, WordSet ws )
 Bool HG_(plausibleWS) ( WordSetU* wsu, WordSet ws )
 {
    if (wsu == NULL) return False;
-   if (ws < 0 || ws >= wsu->ix2vec_used)
+   if (ws >= wsu->ix2vec_used)
       return False;
    return True;
 }
@@ -503,12 +498,11 @@ Bool HG_(saneWS_SLOW) ( WordSetU* wsu, WordSet ws )
    WordVec* wv;
    UWord    i;
    if (wsu == NULL) return False;
-   if (ws < 0 || ws >= wsu->ix2vec_used)
+   if (ws >= wsu->ix2vec_used)
       return False;
    wv = do_ix2vec( wsu, ws );
    /* can never happen .. do_ix2vec will assert instead.  Oh well. */
    if (wv->owner != wsu) return False;
-   if (wv->size < 0) return False;
    if (wv->size > 0) {
       for (i = 0; i < wv->size-1; i++) {
          if (wv->words[i] >= wv->words[i+1])
@@ -670,7 +664,7 @@ WordSet HG_(delFromWS) ( WordSetU* wsu, WordSet ws, UWord w )
    }
    /* So w is present in ws, and the new set will be one element
       smaller. */
-   tl_assert(i >= 0 && i < wv->size);
+   tl_assert(i < wv->size);
    tl_assert(wv->size > 0);
 
    wv_new = new_WV_of_size( wsu, wv->size - 1 );

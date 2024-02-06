@@ -8,3 +8,6 @@
 #
 prog: bug340392
 vgopts: -q --expensive-definedness-checks=yes
+# Doesn't currently work on power
+# See https://bugs.kde.org/show_bug.cgi?id=352364
+prereq: ! ../../tests/arch_test ppc32 && ! ../../tests/arch_test ppc64 && ! ../../tests/arch_test ppc64le

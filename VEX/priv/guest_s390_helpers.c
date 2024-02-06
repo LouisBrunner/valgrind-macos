@@ -324,8 +324,9 @@ s390_stfle_range(UInt lo, UInt hi)
 ULong
 s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
 {
-   ULong hoststfle[S390_NUM_FACILITY_DW], cc, num_dw, i;
-   register ULong reg0 asm("0") = guest_state->guest_r0 & 0xF;  /* r0[56:63] */
+   ULong hoststfle[S390_NUM_FACILITY_DW], cc, last_dw, i;
+   register ULong reg0 asm("0") = guest_state->guest_r0;
+   last_dw = reg0 & 0xf;
 
    /* Restrict to facilities that we know about and that we assume to be
       compatible with Valgrind.  Of course, in this way we may reject features
@@ -393,26 +394,31 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
        /* 157-167: unassigned */
        | s390_stfle_range(168, 168)
        /* 168-191: unassigned */ ),
+
+      /* ===  192 .. 255  === */
+      /* 192: vector-packed-decimal, not supported */
+      (s390_stfle_range(193, 194)
+       /* 195: unassigned */
+       | s390_stfle_range(196, 197)),
    };
 
-   /* We cannot store more than S390_NUM_FACILITY_DW
-      (and it makes not much sense to do so anyhow) */
-   if (reg0 > S390_NUM_FACILITY_DW - 1)
-      reg0 = S390_NUM_FACILITY_DW - 1;
-
-   num_dw = reg0 + 1;  /* number of double words written */
-
-   asm volatile(" .insn s,0xb2b00000,%0\n"   /* stfle */
-                "ipm    %2\n"
-                "srl    %2,28\n"
-                : "=m" (hoststfle), "+d"(reg0), "=d"(cc) : : "cc", "memory");
+   asm(".insn s,0xb2b00000,%0\n" /* stfle */
+       "ipm   %2\n"
+       "srl   %2,28\n"
+       : "=Q"(hoststfle), "+d"(reg0), "=d"(cc)
+       :
+       : "cc");
 
    /* Update guest register 0  with what STFLE set r0 to */
    guest_state->guest_r0 = reg0;
 
    /* VM facilities = host facilities, filtered by acceptance */
-   for (i = 0; i < num_dw; ++i)
-      addr[i] = hoststfle[i] & accepted_facility[i];
+   for (i = 0; i <= last_dw; ++i) {
+      if (i < S390_NUM_FACILITY_DW)
+         addr[i] = hoststfle[i] & accepted_facility[i];
+      else
+         addr[i] = 0; /* mask out any excess doublewords */
+   }
 
    return cc;
 }
@@ -564,7 +570,7 @@ s390_do_cu24(UInt srcval, UInt low_surrogate)
 
    srcval &= 0xffff;
 
-   if ((srcval >= 0x0000 && srcval <= 0xd7ff) ||
+   if ((srcval <= 0xd7ff) ||
        (srcval >= 0xdc00 && srcval <= 0xffff)) {
       retval = srcval;
    } else {
@@ -2037,6 +2043,29 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
             Because cc == 3 cannot occur the rightmost bit of cond is
             a don't care.
          */
+         if (isC64(cc_dep2)) {
+            /* Avoid memcheck false positives for comparisons like `<= 0x1f',
+               `> 0x1f', `< 0x20', or `>= 0x20', where the lower bits don't
+               matter.  Some compiler optimizations yield such comparisons when
+               testing if any (or none) of the upper bits are set. */
+
+            ULong mask = cc_dep2->Iex.Const.con->Ico.U64;
+            ULong c    = cond & (8 + 4 + 2);
+
+            if ((mask & (mask - 1)) == 0) {
+               /* Transform `<  0x20' to `<= 0x1f' and
+                            `>= 0x20' to `>  0x1f' */
+               mask -= 1;
+               c ^= 8;
+            }
+            if (mask != 0 && (mask + 1) != 0 && (mask & (mask + 1)) == 0 &&
+                (c == 8 + 4 || c == 2)) {
+               IROp cmp = c == 8 + 4 ? Iop_CmpEQ64 : Iop_CmpNE64;
+               return unop(Iop_1Uto32,
+                           binop(cmp, binop(Iop_And64, cc_dep1, mkU64(~mask)),
+                                 mkU64(0)));
+            }
+         }
          if (cond == 8 || cond == 8 + 1) {
             return unop(Iop_1Uto32, binop(Iop_CmpEQ64, cc_dep1, cc_dep2));
          }

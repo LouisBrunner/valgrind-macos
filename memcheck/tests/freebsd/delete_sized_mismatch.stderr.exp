@@ -1,0 +1,14 @@
+Mismatched new/delete size value: 33
+   at 0x........: ...operator delete... (vg_replace_malloc.c:...)
+   by 0x........: main (delete_sized_mismatch.cpp:17)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: ...operator new... (vg_replace_malloc.c:...)
+   by 0x........: main (delete_sized_mismatch.cpp:16)
+
+Mismatched new[][/delete[] size value: 33
+   at 0x........: operator delete[](void*, unsigned long) (vg_replace_malloc.c:...)
+   by 0x........: main (delete_sized_mismatch.cpp:20)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (delete_sized_mismatch.cpp:19)
+

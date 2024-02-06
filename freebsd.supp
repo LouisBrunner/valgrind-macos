@@ -43,12 +43,52 @@
    fun:posix_fallocate
 }
 {
-   MEMCHECK-LIBX-REACHABLE-2
+   MEMCHECK-LIBC-REACHABLE-2
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
-   obj:/lib/libc.so.7
-   obj:/lib/libc.so.7
-   obj:/lib/libc.so.7
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
    fun:fwrite
 }
+# when calling std::locale::facet::_S_create_c_locale
+{
+   MEMCHECK-LIBC-REACHABLE-3
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:newlocale
+}
+# when calling getaddrinfo
+{
+   MEMCHECK-LIBC-REACHABLE-4
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   fun:_nsyyparse
+}
+{
+   MEMCHECK-LIBC-REACHABLE-5
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_nsyylex
+}
+{
+   MEMCHECK-LIBC-REACHABLE-6
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__res_vinit
+}
+# back to regular reachables
+{
+   MEMCHECK-LIBC-REACHABLE-7
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:getgrnam
+}
+

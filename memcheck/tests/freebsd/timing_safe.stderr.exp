@@ -1,0 +1,54 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:30)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:30)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:31)
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:31)
+
+Invalid read of size 1
+   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:35)
+ Address 0x........ is 0 bytes after a block of size 12 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (timing_safe.c:33)
+
+Invalid read of size 1
+   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:36)
+ Address 0x........ is 0 bytes after a block of size 12 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (timing_safe.c:33)
+
+Invalid read of size 1
+   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:40)
+ Address 0x........ is 0 bytes inside a block of size 12 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:38)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (timing_safe.c:33)
+
+Invalid read of size 1
+   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:41)
+ Address 0x........ is 0 bytes inside a block of size 12 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:38)
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (timing_safe.c:33)
+

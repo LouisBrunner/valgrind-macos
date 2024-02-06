@@ -54,32 +54,21 @@ jobs:
       - name: Create a merge which merge them into us
         id: merge
         run: |
-          NAME=$(date +%Y-%m-%d)
+          NAME=$(date +%Y-%m-%d-%s)
           BRANCH=feature/upstream-${NAME}
-          git checkout -b ${BRANCH}
-
           CHANGES=$(git log --oneline main..upstream/master)
 
-          CURRENT=$(git rev-parse HEAD)
           git merge upstream/master
-          AFTER_MERGE=$(git rev-parse HEAD)
 
-          if [ "${CURRENT}" = "${AFTER_MERGE}" ]; then
-            echo "No upstream changes"
-            CHANGED=no
-          else
-            git push -u origin ${BRANCH}
-            CHANGED=yes
-          fi
-
-          echo "Changed: ${CHANGED}"
+          echo "Branch: ${BRANCH}"
           echo "Generated: ${NAME}"
-          echo "changed=${CHANGED}" >> $GITHUB_OUTPUT
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
           echo "generated=${NAME}" >> $GITHUB_OUTPUT
-          echo "changes=${CHANGES}" >> $GITHUB_OUTPUT
+          echo "changes<<EOF" >> $GITHUB_OUTPUT
+          echo "${CHANGES}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         shell: bash
       - name: Create pull request
-        if: steps.merge.outputs.changed == 'yes'
         id: cpr
         uses: peter-evans/create-pull-request@v5
         with:
@@ -93,6 +82,8 @@ jobs:
             ```
             ${{ steps.merge.outputs.changes }}
             ```
+          branch: ${{ steps.merge.outputs.branch }}
+          delete-branch: true
           reviewers: LouisBrunner
           labels: upstream,chore,${{ env.LABEL }}
       - name: Close older pull requests

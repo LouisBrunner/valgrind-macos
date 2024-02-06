@@ -1019,6 +1019,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_execveat,          sys_execveat),         // 387
 
    LINX_(__NR_membarrier,        sys_membarrier),       // 389
+   GENX_(__NR_mlock2,            sys_mlock2),           // 390
    LINX_(__NR_copy_file_range,   sys_copy_file_range),  // 391
    LINXY(__NR_preadv2,           sys_preadv2),          // 392
    LINX_(__NR_pwritev2,          sys_pwritev2),         // 393
@@ -1055,10 +1056,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_pidfd_open,        sys_pidfd_open),        // 434
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
    LINXY(__NR_close_range,       sys_close_range),       // 436
-
+   LINXY(__NR_openat2,           sys_openat2),           // 437
+   LINXY(__NR_pidfd_getfd,       sys_pidfd_getfd),       // 438
    LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+
+   LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
 };
 
 

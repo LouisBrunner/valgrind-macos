@@ -19,7 +19,7 @@
                  "4:  mvi %0,3\n\t" \
                  "j   0f\n\t" \
                  "0:  /* nop */ brc 0,0\n\t" \
-                 : "=m" (__cc) : : "memory"); \
+                 : "=Q" (__cc) : : "memory"); \
 	__cc; \
 })
 

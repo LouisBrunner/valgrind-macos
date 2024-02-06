@@ -1,3 +1,4 @@
 prog: eventfd2
 prereq: test -e ./eventfd2
 vgopts: -q
+stderr_filter: filter_eventfd2

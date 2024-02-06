@@ -88,7 +88,7 @@ static int try_to_init_header(Addr address) {
     && VG_(strcmp)(header->magic, CACHE_MAGIC_arm64e) != 0
 #else
     0
-#error "unknown architecture
+#error "unknown architecture"
 #endif
   ) {
     VG_(debugLog)(2, "dyld_cache", "ERROR: incompatible shared dyld cache (%s)\n", header->magic);

@@ -1,0 +1,73 @@
+
+All heap blocks were freed -- no leaks are possible
+
+LEAK SUMMARY:
+   definitely lost: 0 (+0) bytes in 0 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 0 (+0) bytes in 0 (+0) blocks
+   still reachable: 40 (+40) bytes in 1 (+1) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+realloc() with size 0
+   at 0x........: reallocarray (vg_replace_malloc.c:...)
+   by 0x........: main (reallocarray.c:13)
+ Address 0x........ is 0 bytes inside a block of size 40 alloc'd
+   at 0x........: reallocarray (vg_replace_malloc.c:...)
+   by 0x........: main (reallocarray.c:11)
+
+LEAK SUMMARY:
+   definitely lost: 0 (+0) bytes in 0 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 0 (+0) bytes in 0 (+0) blocks
+   still reachable: 1 (-39) bytes in 1 (+0) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+realloc() with size 0
+   at 0x........: reallocarray (vg_replace_malloc.c:...)
+   by 0x........: main (reallocarray.c:15)
+ Address 0x........ is 0 bytes inside a block of size 1 alloc'd
+   at 0x........: reallocarray (vg_replace_malloc.c:...)
+   by 0x........: main (reallocarray.c:13)
+
+All heap blocks were freed -- no leaks are possible
+
+LEAK SUMMARY:
+   definitely lost: 0 (+0) bytes in 0 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 0 (+0) bytes in 0 (+0) blocks
+   still reachable: 40 (+39) bytes in 1 (+0) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+LEAK SUMMARY:
+   definitely lost: 0 (+0) bytes in 0 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 0 (+0) bytes in 0 (+0) blocks
+   still reachable: 40 (+0) bytes in 1 (+0) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+LEAK SUMMARY:
+   definitely lost: 0 (+0) bytes in 0 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 0 (+0) bytes in 0 (+0) blocks
+   still reachable: 40 (+0) bytes in 1 (+0) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
+
+
+HEAP SUMMARY:
+    in use at exit: 40 bytes in 1 blocks
+  total heap usage: 4 allocs, 3 frees, 82 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For lists of detected and suppressed errors, rerun with: -s
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

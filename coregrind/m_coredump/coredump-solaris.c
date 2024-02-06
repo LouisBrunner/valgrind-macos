@@ -886,7 +886,7 @@ void VG_(make_coredump)(ThreadId tid, const vki_siginfo_t *si,
 	 VG_(snprintf)(filename, filename_size, "%s%s.%d",
 		      basename, coreext, VG_(getpid)());
       else
-	 VG_(snprintf)(filename, filename_size, "%s%s.%d.%d",
+	 VG_(snprintf)(filename, filename_size, "%s%s.%d.%u",
 		      basename, coreext, VG_(getpid)(), seq);
       seq++;
 

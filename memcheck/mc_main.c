@@ -2711,15 +2711,21 @@ static OCacheLine* find_OCacheLine_SLOW ( Addr a )
    UWord setno   = (a >> OC_BITS_PER_LINE) & (OC_N_SETS - 1);
    UWord tagmask = ~((1 << OC_BITS_PER_LINE) - 1);
    UWord tag     = a & tagmask;
-   tl_assert(setno >= 0 && setno < OC_N_SETS);
+   tl_assert(setno < OC_N_SETS);
 
    /* we already tried line == 0; skip therefore. */
    for (line = 1; line < OC_LINES_PER_SET; line++) {
       if (ocacheL1->set[setno].line[line].tag == tag) {
-         if (line == 1) {
+         switch (line) {
+         // with OC_LINES_PER_SET equal to 2 this is the only possible case
+         case 1:
             stats_ocacheL1_found_at_1++;
-         } else {
+            break;
+#if OC_LINES_PER_SET > 2
+         default:
             stats_ocacheL1_found_at_N++;
+            break;
+#endif
          }
          if (UNLIKELY(0 == (ocacheL1_event_ctr++
                             & ((1<<OC_MOVE_FORWARDS_EVERY_BITS)-1)))) {
@@ -2953,8 +2959,7 @@ void make_aligned_word64_undefined_w_otag ( Addr a, UInt otag )
    //// Set the origins for a+0 .. a+7
    { OCacheLine* line;
      UWord lineoff = oc_line_offset(a);
-     tl_assert(lineoff >= 0
-               && lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
+     tl_assert(lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
      line = find_OCacheLine( a );
      line->u.main.descr[lineoff+0] = 0xF;
      line->u.main.descr[lineoff+1] = 0xF;
@@ -2991,8 +2996,7 @@ void make_aligned_word64_noaccess ( Addr a )
       if (UNLIKELY( MC_(clo_mc_level) == 3 )) {
          OCacheLine* line;
          UWord lineoff = oc_line_offset(a);
-         tl_assert(lineoff >= 0
-                   && lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
+         tl_assert(lineoff < OC_W32S_PER_LINE -1/*'cos 8-aligned*/);
          line = find_OCacheLine( a );
          line->u.main.descr[lineoff+0] = 0;
          line->u.main.descr[lineoff+1] = 0;
@@ -3719,7 +3723,7 @@ static inline UInt convert_nia_to_ecu ( Addr nia )
 
    stats__nia_cache_queries++;
    i = nia % N_NIA_TO_ECU_CACHE;
-   tl_assert(i >= 0 && i < N_NIA_TO_ECU_CACHE);
+   tl_assert(i < N_NIA_TO_ECU_CACHE);
 
    if (LIKELY( nia_to_ecu_cache[i].nia0 == nia ))
       return nia_to_ecu_cache[i].ecu0;
@@ -6055,8 +6059,8 @@ static Bool mc_expensive_sanity_check ( void )
    --partial-loads-ok needs to be enabled by default on all platforms.
    Not doing so causes lots of false errors. */
 Bool          MC_(clo_partial_loads_ok)       = True;
-Long          MC_(clo_freelist_vol)           = 20*1000*1000LL;
-Long          MC_(clo_freelist_big_blocks)    =  1*1000*1000LL;
+Long          MC_(clo_freelist_vol)           = 20LL*1000LL*1000LL;
+Long          MC_(clo_freelist_big_blocks)    =  1LL*1000LL*1000LL;
 LeakCheckMode MC_(clo_leak_check)             = LC_Summary;
 VgRes         MC_(clo_leak_resolution)        = Vg_HighRes;
 UInt          MC_(clo_show_leak_kinds)        = R2S(Possible) | R2S(Unreached);
@@ -6988,6 +6992,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
 {
    Int   i;
    Addr  bad_addr;
+   MC_Chunk* mc = NULL;
 
    if (!VG_IS_TOOL_USERREQ('M','C',arg[0])
        && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
@@ -7127,7 +7132,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
              (cgbs[arg[2]].start == 0 && cgbs[arg[2]].size == 0)) {
             *ret = 1;
          } else {
-            tl_assert(arg[2] >= 0 && arg[2] < cgb_used);
+            tl_assert(arg[2] < cgb_used);
             cgbs[arg[2]].start = cgbs[arg[2]].size = 0;
             VG_(free)(cgbs[arg[2]].desc);
             cgb_discards++;
@@ -7185,7 +7190,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          UInt rzB       =       arg[3];
          Bool is_zeroed = (Bool)arg[4];
 
-         MC_(new_block) ( tid, p, sizeB, /*ignored*/0, is_zeroed,
+         MC_(new_block) ( tid, p, sizeB, /*ignored*/0U, 0U, is_zeroed,
                           MC_AllocCustom, MC_(malloc_list) );
          if (rzB > 0) {
             MC_(make_mem_noaccess) ( p - rzB, rzB);
@@ -7218,6 +7223,138 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          MC_(record_overlap_error)(tid, s, src, dst, len);
          return True;
       }
+
+   case _VG_USERREQ__MEMCHECK_VERIFY_ALIGNMENT: {
+      struct AlignedAllocInfo *aligned_alloc_info  = (struct AlignedAllocInfo *)arg[1];
+      tl_assert(aligned_alloc_info);
+
+      switch (aligned_alloc_info->alloc_kind) {
+      case AllocKindMemalign:
+         // other platforms just ensure it is a power of 2
+         // ignore Illumos only enforcing multiple of 4 (probably a bug)
+         if (aligned_alloc_info->orig_alignment  == 0U ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be power of 2)" );
+         }
+         // size zero not allowed on all platforms (e.g. Illumos)
+         if (aligned_alloc_info->size == 0) {
+            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "memalign()" );
+         }
+         break;
+      case AllocKindPosixMemalign:
+         // must be power of 2
+         // alignment at least sizeof(size_t)
+         // size of 0 implementation defined
+         if (aligned_alloc_info->orig_alignment < sizeof(SizeT) ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero, a power of 2 and a multiple of sizeof(void*))" );
+         }
+         if (aligned_alloc_info->size == 0) {
+            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "posix_memalign()" );
+         }
+         break;
+      case AllocKindAlignedAlloc:
+         // must be power of 2
+         if ((aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be a power of 2)" );
+         }
+         // size should be integral multiple of alignment
+         if (aligned_alloc_info->orig_alignment &&
+             aligned_alloc_info->size % aligned_alloc_info->orig_alignment != 0U) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , aligned_alloc_info->size, " (size should be a multiple of alignment)" );
+         }
+         if (aligned_alloc_info->size == 0) {
+            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "aligned_alloc()" );
+         }
+         break;
+      case AllocKindDeleteSized:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new/delete" );
+         }
+         break;
+      case AllocKindVecDeleteSized:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new[][/delete[]" );
+         }
+         break;
+      case AllocKindNewAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      case AllocKindVecNewAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      case AllocKindDeleteDefault:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, 0U, True, "new/delete");
+         }
+         break;
+      case AllocKindDeleteAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, False, "new/delete");
+         }
+         break;
+      case AllocKindVecDeleteDefault:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, 0U, True, "new[]/delete[]");
+         }
+         break;
+      case AllocKindVecDeleteAligned:
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, False, "new[]/delete[]");
+         }
+         break;
+      case AllocKindDeleteSizedAligned:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new/delete");
+         }
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, False, "new/delete");
+         }
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      case AllocKindVecDeleteSizedAligned:
+         mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
+         if (mc && mc->szB != aligned_alloc_info->size) {
+            MC_(record_size_mismatch_error) ( tid, mc, aligned_alloc_info->size, "new[]/delete[]" );
+         }
+         if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {
+            MC_(record_align_mismatch_error) ( tid, mc, aligned_alloc_info->orig_alignment, False, "new[]/delete[]");
+         }
+         if (aligned_alloc_info->orig_alignment == 0 ||
+             (aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
+            MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero and a power of 2)" );
+         }
+         break;
+      default:
+         tl_assert (False);
+      }
+
+      return True;
+   }
 
       case VG_USERREQ__CREATE_MEMPOOL: {
          Addr pool      = (Addr)arg[1];
@@ -7311,11 +7448,9 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
       }
 
       default:
-         VG_(message)(
-            Vg_UserMsg,
-            "Warning: unknown memcheck client request code %llx\n",
-            (ULong)arg[0]
-         );
+         VG_(message)(Vg_UserMsg,
+                      "Warning: unknown memcheck client request code %llx\n",
+                      (ULong)arg[0]);
          return False;
    }
    return True;

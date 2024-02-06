@@ -1033,7 +1033,6 @@ static void rcdec_LineZ ( LineZ* lineZ ) {
 inline
 static void write_twobit_array ( UChar* arr, UWord ix, UWord b2 ) {
    Word bix, shft, mask, prep;
-   tl_assert(ix >= 0);
    bix  = ix >> 2;
    shft = 2 * (ix & 3); /* 0, 2, 4 or 6 */
    mask = 3 << shft;
@@ -1044,7 +1043,6 @@ static void write_twobit_array ( UChar* arr, UWord ix, UWord b2 ) {
 inline
 static UWord read_twobit_array ( UChar* arr, UWord ix ) {
    Word bix, shft;
-   tl_assert(ix >= 0);
    bix  = ix >> 2;
    shft = 2 * (ix & 3); /* 0, 2, 4 or 6 */
    return (arr[bix] >> shft) & 3;
@@ -1511,7 +1509,7 @@ static __attribute__((noinline)) void cacheline_wback ( UWord wix )
    if (0)
    VG_(printf)("scache wback line %d\n", (Int)wix);
 
-   tl_assert(wix >= 0 && wix < N_WAY_NENT);
+   tl_assert(wix < N_WAY_NENT);
 
    tag =  cache_shmem.tags0[wix];
    cl  = &cache_shmem.lyns0[wix];
@@ -1650,7 +1648,7 @@ static __attribute__((noinline)) void cacheline_fetch ( UWord wix )
    if (0)
    VG_(printf)("scache fetch line %d\n", (Int)wix);
 
-   tl_assert(wix >= 0 && wix < N_WAY_NENT);
+   tl_assert(wix < N_WAY_NENT);
 
    tag =  cache_shmem.tags0[wix];
    cl  = &cache_shmem.lyns0[wix];
@@ -2364,7 +2362,7 @@ static void VTS__tick ( /*OUT*/VTS* out, Thr* me, VTS* vts )
            copy it to the output but increment its timestamp value.
            Then copy the remaining entries.  (c) is the common case.
    */
-   tl_assert(i >= 0 && i <= n);
+   tl_assert(i <= n);
    if (i == n) { /* case (a) */
       UInt hi = out->usedTS++;
       out->ts[hi].thrid = me_thrid;
@@ -2434,8 +2432,8 @@ static void VTS__join ( /*OUT*/VTS* out, VTS* a, VTS* b )
          from a and b in order, where thrid is the next ThrID
          occurring in either a or b, and tyma/b are the relevant
          scalar timestamps, taking into account implicit zeroes. */
-      tl_assert(ia >= 0 && ia <= useda);
-      tl_assert(ib >= 0 && ib <= usedb);
+      tl_assert(ia <= useda);
+      tl_assert(ib <= usedb);
 
       if        (ia == useda && ib == usedb) {
          /* both empty - done */
@@ -3056,7 +3054,7 @@ static void vts_tab__do_GC ( Bool show_stats )
       can't set the threshold value smaller than it. */
    tl_assert(nFreed <= nTab);
    nLive = nTab - nFreed;
-   tl_assert(nLive >= 0 && nLive <= nTab);
+   tl_assert(nLive <= nTab);
    vts_next_GC_at = 2 * nLive;
    if (vts_next_GC_at < nTab)
       vts_next_GC_at = nTab;
@@ -5338,7 +5336,7 @@ static void record_race_info ( Thr* acc_thr,
    tl_assert(acc_thr);
    tl_assert(acc_thr->hgthread);
    tl_assert(acc_thr->hgthread->hbthr == acc_thr);
-   tl_assert(HG_(clo_history_level) >= 0 && HG_(clo_history_level) <= 2);
+   tl_assert(HG_(clo_history_level) <= 2);
 
    if (HG_(clo_history_level) == 1) {
       Bool found;

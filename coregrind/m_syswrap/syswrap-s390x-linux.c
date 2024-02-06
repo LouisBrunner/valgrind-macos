@@ -853,7 +853,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_recvfrom, sys_recvfrom),                                // 371
    LINXY(__NR_recvmsg, sys_recvmsg),                                  // 372
    LINX_(__NR_shutdown, sys_shutdown),                                // 373
-
+   GENX_(__NR_mlock2, sys_mlock2),                                    // 374
    LINX_(__NR_copy_file_range, sys_copy_file_range),                  // 375
    LINXY(__NR_preadv2, sys_preadv2),                                  // 376
    LINX_(__NR_pwritev2, sys_pwritev2),                                // 377
@@ -869,10 +869,15 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_pidfd_open, sys_pidfd_open),                            // 434
    GENX_(__NR_clone3, sys_ni_syscall),                                // 435
    LINXY(__NR_close_range, sys_close_range),                          // 436
-
+   LINXY(__NR_openat2, sys_openat2),                                  // 437
+   LINXY(__NR_pidfd_getfd, sys_pidfd_getfd),                          // 438
    LINX_(__NR_faccessat2,  sys_faccessat2),                           // 439
 
    LINXY(__NR_epoll_pwait2, sys_epoll_pwait2),                        // 441
+
+   LINXY(__NR_memfd_secret, sys_memfd_secret),                        // 447
+
+   LINX_ (__NR_fchmodat2, sys_fchmodat2),                             // 452
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

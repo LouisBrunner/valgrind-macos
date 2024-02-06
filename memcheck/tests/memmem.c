@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include "../../config.h"
 
 /* mallocs an mem block and fills it with A. A needs to be a zero
    terminated string. The A string chars, minus the terminating zero
@@ -23,8 +24,19 @@ main ()
 
   haystack = create_mem ("a");
   needle = create_mem ("a");
+#if defined(VGO_darwin) || defined(VGO_solaris)
+  /*
+   * macOS manpage says
+   * If big_len is smaller than little_len, if little_len is 0, if big_len is 0 or if
+   * little occurs nowhere in big, NULL is returned; otherwise a pointer to the first
+   * character of the first occurrence of little is returned.
+   */
+  assert (memmem (haystack, 0, needle, 0) == NULL);
+  assert (memmem (haystack, 1, needle, 0) == NULL);
+#else
   assert (memmem (haystack, 0, needle, 0) == haystack);
   assert (memmem (haystack, 1, needle, 0) == haystack);
+#endif
   assert (memmem (haystack, 0, needle, 1) == NULL);
   assert (memmem (haystack, 1, needle, 1) == haystack);
   free (haystack);
@@ -32,7 +44,11 @@ main ()
 
   haystack = create_mem ("abc");
   needle = create_mem ("bc");
+#if defined(VGO_darwin) || defined(VGO_solaris)
+  assert (memmem (haystack, 3, needle, 0) == NULL);
+#else
   assert (memmem (haystack, 3, needle, 0) == haystack);
+#endif
   assert (memmem (haystack, 3, needle, 2) == haystack + 1);
   assert (memmem (haystack + 1, 2, needle, 2) == haystack + 1);
   assert (memmem (haystack + 2, 1, needle, 2) == NULL);

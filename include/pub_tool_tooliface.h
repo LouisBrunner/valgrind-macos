@@ -474,10 +474,10 @@ extern void VG_(needs_var_info) ( void );
 extern void VG_(needs_malloc_replacement)(
    void* (*pmalloc)               ( ThreadId tid, SizeT n ),
    void* (*p__builtin_new)        ( ThreadId tid, SizeT n ),
-   void* (*p__builtin_new_aligned)( ThreadId tid, SizeT n, SizeT align ),
+   void* (*p__builtin_new_aligned)( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ),
    void* (*p__builtin_vec_new)    ( ThreadId tid, SizeT n ),
-   void* (*p__builtin_vec_new_aligned)( ThreadId tid, SizeT n, SizeT align ),
-   void* (*pmemalign)             ( ThreadId tid, SizeT align, SizeT n ),
+   void* (*p__builtin_vec_new_aligned)( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ),
+   void* (*pmemalign)             ( ThreadId tid, SizeT align, SizeT orig_align, SizeT n),
    void* (*pcalloc)               ( ThreadId tid, SizeT nmemb, SizeT size1 ),
    void  (*pfree)                 ( ThreadId tid, void* p ),
    void  (*p__builtin_delete)     ( ThreadId tid, void* p ),

@@ -123,17 +123,16 @@ mach_msg_options_after_interruption(mach_msg_option64_t option64)
 	return option64;
 }
 
-mach_msg_return_t
-mach_msg2(data, option64, msgh_bits_and_send_size, msgh_remote_and_local_port, msgh_voucher_and_id, desc_count_and_rcv_name, rcv_size_and_priority, timeout)
-    void *data;
-    mach_msg_option64_t option64;
-    uint64_t msgh_bits_and_send_size;
-    uint64_t msgh_remote_and_local_port;
-    uint64_t msgh_voucher_and_id;
-    uint64_t desc_count_and_rcv_name;
-    uint64_t rcv_size_and_priority;
-    uint64_t timeout;
-{
+mach_msg_return_t mach_msg2(
+  void *data,
+  mach_msg_option64_t option64,
+  uint64_t msgh_bits_and_send_size,
+  uint64_t msgh_remote_and_local_port,
+  uint64_t msgh_voucher_and_id,
+  uint64_t desc_count_and_rcv_name,
+  uint64_t rcv_size_and_priority,
+  uint64_t timeout
+) {
   mach_msg_return_t mr;
 
 	mr = mach_msg2_trap(data,
@@ -191,16 +190,15 @@ mach_msg_trap(mach_msg_header_t *msg,
               mach_msg_timeout_t timeout,
               mach_port_t notify);
 
-mach_msg_return_t
-mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
-    mach_msg_header_t *msg;
-    mach_msg_option_t option;
-    mach_msg_size_t send_size;
-    mach_msg_size_t rcv_size;
-    mach_port_t rcv_name;
-    mach_msg_timeout_t timeout;
-    mach_port_t notify;
-{
+mach_msg_return_t mach_msg(
+  mach_msg_header_t *msg,
+  mach_msg_option_t option,
+  mach_msg_size_t send_size,
+  mach_msg_size_t rcv_size,
+  mach_port_t rcv_name,
+  mach_msg_timeout_t timeout,
+  mach_port_t notify
+) {
 
 #if DARWIN_VERS >= DARWIN_13_00
     mach_msg_base_t *base;

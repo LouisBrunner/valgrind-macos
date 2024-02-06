@@ -23,14 +23,14 @@ int main()
 	got_ill = 0;
 	/* most architectures loop here, but on s390 this would increase the
 	   PSW by 2 and then by 2 */
-        asm volatile(".long 0\n");
+        asm volatile(".insn e,0x0000\n\t.insn e,0x0000");
         if (got_ill)
                 printf("0x00000000 does not loop\n");
 
 	got_ill = 0;
 	/* most architectures loop here, but on s390 this would increase the
 	   PSW by 6 and then by 2*/
-        asm volatile(".long 0xffffffff\n.long 0xffff0000\n");
+        asm volatile(".insn ril,0xffffffffffff,0xf,.-2\n\t.insn e,0x0000");
         if (got_ill)
                 printf("0xffffffff does not loop\n");
 	return 0;

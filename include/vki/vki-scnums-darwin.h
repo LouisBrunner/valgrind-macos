@@ -633,7 +633,7 @@
 #define	__NR_issetugid      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(327)
 #define	__NR___pthread_kill VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(328)
 #define	__NR___pthread_sigmask VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(329)
-#define	__NR___sigwait        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(330)
+#define __NR___sigwait      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(330)
 #define	__NR___disable_threadsignal VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(331)
 #define	__NR___pthread_markcancel VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(332)
 #define	__NR___pthread_canceled VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(333)
@@ -932,6 +932,8 @@
 #elif DARWIN_VERS == DARWIN_12_00
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(551)
 #elif DARWIN_VERS == DARWIN_13_00
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
+#elif DARWIN_VERS == DARWIN_14_00
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
 #else
 #error unknown darwin version

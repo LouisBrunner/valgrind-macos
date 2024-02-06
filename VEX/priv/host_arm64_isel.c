@@ -112,7 +112,6 @@ typedef
 
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmap[tmp];
 }
@@ -120,7 +119,6 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO, 
                                ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -1629,8 +1627,10 @@ static HReg iselCondCode_R_wrk ( ISelEnv* env, IRExpr* e )
    addInstr(env, ARM64Instr_Set64(res, cc));
    return res;
 
+   /* PJF the following two lines are dead code
    ppIRExpr(e);
    vpanic("iselCondCode_R(arm64)");
+   */
 }
 
 

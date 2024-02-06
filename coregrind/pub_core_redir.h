@@ -61,7 +61,7 @@
 //--------------------------------------------------------------------
 
 /* Notify the module of a new DebugInfo (called from m_debuginfo). */
-extern void VG_(redir_notify_new_DebugInfo)( const DebugInfo* );
+extern void VG_(redir_notify_new_DebugInfo)( DebugInfo* );
 
 /* Notify the module of the disappearance of a DebugInfo (also called
    from m_debuginfo). */

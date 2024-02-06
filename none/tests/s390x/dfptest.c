@@ -1,9 +1,5 @@
-#include <math.h>
+#include "dfp_utils.h"
 #include <stdio.h>
-
-/* Following macros adopted from dfp/math.h from libdfp */
-#define DEC_INFINITY    __builtin_infd64()
-#define DEC_NAN         (0.0DF * DEC_INFINITY)
 
 /* Following instructions are tested:
 test data class tests for
@@ -16,110 +12,63 @@ test data group tests for
    _decimal128 - TDGXT
 */
 
-#define TEST_128(opcode, d, n)                                  \
-  ({                                                            \
-    int match;                                                  \
-    _Decimal128 f = d;                                          \
-    long long num = n;                                          \
-    asm volatile(opcode ", %1,0(%2)\n"                          \
-                 "ipm %0\n"                                     \
-                 "srl %0,28\n"                                  \
-                 : "=d" (match) : "f" (f), "a" (num) : "cc");   \
-    match;                                                      \
- })
+static const pun_d32 d32_vals[] = {
+   {0x22400000}, /* +0.0DF */
+   {0xa2400000}, /* -0.0DF */
+   {0x22400022}, /* +2.2DF */
+   {0xa2400022}, /* -2.2DF */
+   {0x78000000}, /* DEC_INFINITY */
+   {0xf8000000}, /* -DEC_INFINITY */
+   {0x7c000000}, /* +DEC_NAN */
+   {0xfc000000}, /* -DEC_NAN */
+};
 
-#define TEST_64(opcode, d, n)                                   \
-  ({                                                            \
-    int match;                                                  \
-    _Decimal64 f = d;                                           \
-    long long num = n;                                          \
-    asm volatile(opcode ", %1,0(%2)\n"                          \
-                 "ipm %0\n"                                     \
-                 "srl %0,28\n"                                  \
-                 : "=d" (match) : "f" (f), "a" (num) : "cc");   \
-    match;                                                      \
- })
+static const pun_d64 d64_vals[] = {
+   {0x2234000000000000}, {0xa234000000000000}, {0x2234000000000022},
+   {0xa234000000000022}, {0x7800000000000000}, {0xf800000000000000},
+   {0x7c00000000000000}, {0xfc00000000000000},
+};
 
-#define TEST_32(opcode, d, n)                                   \
-  ({                                                            \
-    int match;                                                  \
-    _Decimal32 f = d;                                           \
-    long long num = n;                                          \
-    asm volatile(opcode ", %1,0(%2)\n"                          \
-                 "ipm %0\n"                                     \
-                 "srl %0,28\n"                                  \
-                 : "=d" (match) : "f" (f), "a" (num) : "cc");   \
-    match;                                                      \
- })
+static const pun_d128 d128_vals[] = {
+   {{0x2207c00000000000, 0x0000000000000000}},
+   {{0xa207c00000000000, 0x0000000000000000}},
+   {{0x2207c00000000000, 0x0000000000000022}},
+   {{0xa207c00000000000, 0x0000000000000022}},
+   {{0x7800000000000000, 0x0000000000000000}},
+   {{0xf800000000000000, 0x0000000000000000}},
+   {{0x7c00000000000000, 0x0000000000000000}},
+   {{0xfc00000000000000, 0x0000000000000000}},
+};
+
+#define TEST(opcode, ty, n)                                                    \
+   ({                                                                          \
+      const long num = n;                                                      \
+      for (unsigned j = 0; j != sizeof(ty##_vals) / sizeof(ty##_vals[0]);      \
+           j++) {                                                              \
+         int cc;                                                               \
+         asm(".insn rxe, " opcode ", %[dec],0(%[bits])\n\t"                    \
+             "ipm %[cc]\n"                                                     \
+             "srl %[cc],28"                                                    \
+             : [cc] "=d"(cc)                                                   \
+             : [dec] "f"(ty##_vals[j].f), [bits] "a"(num)                      \
+             : "cc");                                                          \
+         printf("%d", cc);                                                     \
+      }                                                                        \
+   })
 
 int main()
 {
-	int i;
+   int i;
 
-    /* The right most 12 bits 52:63 of the second operand are set and tested */
-    for (i = 0; i < 12; i++) {
-        /* DFP 128 bit - TDCXT */
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058", +0.0DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058", -0.0DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058", +2.2DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058", -2.2DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058",+DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058",-DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058", +DEC_NAN, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000058", -DEC_NAN, 1UL<<i));
-
-        /* DFP 128 bit - TDGXT */
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059", +0.0DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059", -0.0DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059", +2.2DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059", -2.2DF, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059",+DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059",-DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059", +DEC_NAN, 1UL<<i));
-        printf("%d", TEST_128(".insn rxe, 0xed0000000059", -DEC_NAN, 1UL<<i));
-
-        /* DFP 64 bit - TDCDT */
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054", +0.0DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054", -0.0DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054", +2.2DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054", -2.2DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054",+DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054",-DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054", +DEC_NAN, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000054", -DEC_NAN, 1UL<<i));
-
-        /* DFP 64 bit - TDGDT */
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055", +0.0DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055", -0.0DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055", +2.2DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055", -2.2DF, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055",+DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055",-DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055", +DEC_NAN, 1UL<<i));
-        printf("%d", TEST_64(".insn rxe, 0xed0000000055", -DEC_NAN, 1UL<<i));
-
-        /* DFP 32 bit - TDCET */
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050", +0.0DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050", -0.0DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050", +2.2DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050", -2.2DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050",+DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050",-DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050", +DEC_NAN, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000050", -DEC_NAN, 1UL<<i));
-
-        /* DFP 32 bit - TDGET */
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051", +0.0DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051", -0.0DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051", +2.2DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051", -2.2DF, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051",+DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051",-DEC_INFINITY,1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051", +DEC_NAN, 1UL<<i));
-        printf("%d", TEST_32(".insn rxe, 0xed0000000051", -DEC_NAN, 1UL<<i));
-
-        printf("\n");
-
-	}
-	return 0;
+   /* The rightmost 12 bits 52:63 of the second operand are set and tested */
+   for (i = 0; i < 12; i++) {
+      TEST("0xed0000000058", d128, 1UL << i); /* TDCXT */
+      TEST("0xed0000000059", d128, 1UL << i); /* TDGXT */
+      TEST("0xed0000000054", d64, 1UL << i);  /* TDCDT */
+      TEST("0xed0000000055", d64, 1UL << i);  /* TDGDT */
+      TEST("0xed0000000050", d32, 1UL << i);  /* TDCET */
+      TEST("0xed0000000051", d32, 1UL << i);  /* TDGET */
+      printf("\n");
+   }
+   return 0;
 }

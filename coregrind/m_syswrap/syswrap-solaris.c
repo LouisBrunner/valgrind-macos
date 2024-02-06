@@ -639,10 +639,11 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
       if (tst->os_state.ustack
           && VG_(am_is_valid_for_client)((Addr)tst->os_state.ustack,
                                          sizeof(*tst->os_state.ustack),
-                                         VKI_PROT_WRITE))
+                                         VKI_PROT_WRITE)) {
          *tst->os_state.ustack = uc->uc_stack;
          VG_TRACK(post_mem_write, part, tid, (Addr)&tst->os_state.ustack,
                   sizeof(tst->os_state.ustack));
+      }
    }
 
    /* Restore the architecture-specific part of the context. */
@@ -7831,8 +7832,9 @@ PRE(sys_pollsys)
    for (i = 0; i < ARG2; i++) {
       vki_pollfd_t *u = &ufds[i];
       PRE_FIELD_READ("poll(ufds.fd)", u->fd);
-      /* XXX Check if it's valid? */
-      PRE_FIELD_READ("poll(ufds.events)", u->events);
+      if (ML_(safe_to_deref)(&ufds[i].fd, sizeof(ufds[i].fd)) && ufds[i].fd >= 0) {
+         PRE_FIELD_READ("poll(ufds.events)", u->events);
+      }
       PRE_FIELD_WRITE("poll(ufds.revents)", u->revents);
    }
 
@@ -10951,6 +10953,9 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(SOLARIS_UUIDSYS_SYSCALL)
    SOLXY(__NR_uuidsys,              sys_uuidsys),               /* 124 */
 #endif /* SOLARIS_UUIDSYS_SYSCALL */
+#if defined(HAVE_MREMAP)
+   GENX_(__NR_mremap,               sys_mremap),                /* 126 */
+#endif /* HAVE_MREMAP */
    SOLX_(__NR_mmapobj,              sys_mmapobj),               /* 127 */
    GENX_(__NR_setrlimit,            sys_setrlimit),             /* 128 */
    GENXY(__NR_getrlimit,            sys_getrlimit),             /* 129 */

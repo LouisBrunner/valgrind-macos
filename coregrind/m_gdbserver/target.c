@@ -190,7 +190,7 @@ Int valgrind_stopped_by_syscall (void)
    return sysno_to_report;
 }
 
-Bool valgrind_stopped_before_syscall()
+Bool valgrind_stopped_before_syscall(void)
 {
    vg_assert (sysno_to_report >= 0);
    return before_syscall;

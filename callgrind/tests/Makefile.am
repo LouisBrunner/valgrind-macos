@@ -21,7 +21,8 @@ EXTRA_DIST = \
 	notpower2-hwpref.vgtest notpower2-hwpref.stderr.exp \
 	notpower2-use.vgtest notpower2-use.stderr.exp \
 	threads.vgtest threads.stderr.exp \
-	threads-use.vgtest threads-use.stderr.exp
+	threads-use.vgtest threads-use.stderr.exp \
+	find-source.vgtest find-source.stderr.exp find-source.post.exp
 
 check_PROGRAMS = clreq simwork threads
 

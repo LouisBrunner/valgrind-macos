@@ -2,24 +2,40 @@ Massif: alloc-fns:
 Massif:   malloc
 Massif:   __builtin_new
 Massif:   operator new(unsigned)
-Massif:   operator new(unsigned long)
 Massif:   __builtin_vec_new
 Massif:   operator new[](unsigned)
-Massif:   operator new[](unsigned long)
 Massif:   calloc
+Massif:   aligned_alloc
 Massif:   realloc
 Massif:   memalign
 Massif:   posix_memalign
 Massif:   valloc
 Massif:   operator new(unsigned, std::nothrow_t const&)
 Massif:   operator new[](unsigned, std::nothrow_t const&)
-Massif:   operator new(unsigned long, std::nothrow_t const&)
-Massif:   operator new[](unsigned long, std::nothrow_t const&)
+Massif:   operator new(unsigned, std::align_val_t)
+Massif:   operator new[](unsigned, std::align_val_t)
+Massif:   operator new(unsigned, std::align_val_t, std::nothrow_t const&)
+Massif:   operator new[](unsigned, std::align_val_t, std::nothrow_t const&)
+Massif:   _xpc_malloc
+Massif:   strdup
+Massif:   _xpc_calloc
 Massif: ignore-fns:
 Massif:   0: __part_load_locale
 Massif:   1: __time_load_locale
 Massif:   2: dwarf2_unwind_dyld_add_image_hook
 Massif:   3: get_or_create_key_element
+Massif:   4: _xpc_dictionary_insert
+Massif:   5: map_images_nolock
+Massif:   6: allocBuckets(void*, unsigned int)
+Massif:   7: realizeClass(objc_class*)
+Massif:   8: _NXHashRehashToCapacity
+Massif:   9: NXCreateHashTableFromZone
+Massif:   10: NXCreateMapTableFromZone
+Massif:   11: NXHashInsert
+Massif:   12: add_class_to_loadable_list
+Massif:   13: class_createInstance
+Massif:   14: xpc_string_create
+Massif:   15: xpc_array_create
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:800, hp:800, ex:0, st:0)
 Massif: realloc S.  2 (t:800, hp:800, ex:0, st:0)

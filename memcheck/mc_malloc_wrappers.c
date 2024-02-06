@@ -78,6 +78,7 @@ VgHashTable *MC_(mempool_list) = NULL;
 PoolAlloc *MC_(chunk_poolalloc) = NULL;
 static
 MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
+                            SizeT alignB,
                             MC_AllocKind kind);
 static inline
 void delete_MC_Chunk (MC_Chunk* mc);
@@ -190,11 +191,13 @@ MC_Chunk* MC_(get_freed_block_bracketting) (Addr a)
    If needed, release oldest blocks from freed list. */
 static
 MC_Chunk* create_MC_Chunk ( ThreadId tid, Addr p, SizeT szB,
+                            SizeT alignB,
                             MC_AllocKind kind)
 {
    MC_Chunk* mc  = VG_(allocEltPA)(MC_(chunk_poolalloc));
    mc->data      = p;
    mc->szB       = szB;
+   mc->alignB    = alignB;
    mc->allockind = kind;
    switch ( MC_(n_where_pointers)() ) {
       case 2: mc->where[1] = 0; // fallthrough to 1
@@ -357,6 +360,7 @@ UInt MC_(n_where_pointers) (void)
 /* Allocate memory and note change in memory available */
 void* MC_(new_block) ( ThreadId tid,
                        Addr p, SizeT szB, SizeT alignB,
+                       SizeT orig_alignB,
                        Bool is_zeroed, MC_AllocKind kind,
                        VgHashTable *table)
 {
@@ -383,7 +387,7 @@ void* MC_(new_block) ( ThreadId tid,
    // Only update stats if allocation succeeded.
    cmalloc_n_mallocs ++;
    cmalloc_bs_mallocd += (ULong)szB;
-   mc = create_MC_Chunk (tid, p, szB, kind);
+   mc = create_MC_Chunk (tid, p, szB, orig_alignB, kind);
    VG_(HT_add_node)( table, mc );
 
    if (is_zeroed)
@@ -402,7 +406,7 @@ void* MC_(malloc) ( ThreadId tid, SizeT n )
    if (MC_(record_fishy_value_error)(tid, "malloc", "size", n)) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
+      return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 0U,
          /*is_zeroed*/False, MC_AllocMalloc, MC_(malloc_list));
    }
 }
@@ -412,17 +416,17 @@ void* MC_(__builtin_new) ( ThreadId tid, SizeT n )
    if (MC_(record_fishy_value_error)(tid, "__builtin_new", "size", n)) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
+      return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 0U,
          /*is_zeroed*/False, MC_AllocNew, MC_(malloc_list));
    }
 }
 
-void* MC_(__builtin_new_aligned) ( ThreadId tid, SizeT n, SizeT alignB )
+void* MC_(__builtin_new_aligned) ( ThreadId tid, SizeT n, SizeT alignB, SizeT orig_alignB )
 {
    if (MC_(record_fishy_value_error)(tid, "__builtin_new_aligned", "size", n)) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, n, alignB,
+      return MC_(new_block) ( tid, 0, n, alignB, orig_alignB,
          /*is_zeroed*/False, MC_AllocNew, MC_(malloc_list));
    }
 }
@@ -432,29 +436,29 @@ void* MC_(__builtin_vec_new) ( ThreadId tid, SizeT n )
    if (MC_(record_fishy_value_error)(tid, "__builtin_vec_new", "size", n)) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 
+      return MC_(new_block) ( tid, 0, n, VG_(clo_alignment), 0U,
          /*is_zeroed*/False, MC_AllocNewVec, MC_(malloc_list));
    }
 }
 
-void* MC_(__builtin_vec_new_aligned) ( ThreadId tid, SizeT n, SizeT alignB )
+void* MC_(__builtin_vec_new_aligned) ( ThreadId tid, SizeT n, SizeT alignB, SizeT orig_alignB )
 {
    if (MC_(record_fishy_value_error)(tid, "__builtin_vec_new_aligned", "size", n)) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, n, alignB, 
+      return MC_(new_block) ( tid, 0, n, alignB, orig_alignB,
          /*is_zeroed*/False, MC_AllocNewVec, MC_(malloc_list));
    }
 }
 
-void* MC_(memalign) ( ThreadId tid, SizeT alignB, SizeT n )
+void* MC_(memalign) ( ThreadId tid, SizeT alignB, SizeT orig_alignB, SizeT n)
 {
    if (MC_(record_fishy_value_error)(tid, "memalign", "size", n)) {
       return NULL;
-   } else {
-      return MC_(new_block) ( tid, 0, n, alignB, 
-         /*is_zeroed*/False, MC_AllocMalloc, MC_(malloc_list));
    }
+
+   return MC_(new_block) ( tid, 0, n, alignB, orig_alignB,
+      /*is_zeroed*/False, MC_AllocMalloc, MC_(malloc_list));
 }
 
 void* MC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
@@ -463,7 +467,7 @@ void* MC_(calloc) ( ThreadId tid, SizeT nmemb, SizeT size1 )
        MC_(record_fishy_value_error)(tid, "calloc", "size", size1)) {
       return NULL;
    } else {
-      return MC_(new_block) ( tid, 0, nmemb*size1, VG_(clo_alignment),
+      return MC_(new_block) ( tid, 0, nmemb*size1, VG_(clo_alignment), 0U,
          /*is_zeroed*/True, MC_AllocMalloc, MC_(malloc_list));
    }
 }
@@ -574,7 +578,7 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
       return NULL;
 
    if (p_old == NULL) {
-      return MC_(new_block) ( tid, 0, new_szB, VG_(clo_alignment),
+      return MC_(new_block) ( tid, 0, new_szB, VG_(clo_alignment), 0U,
          /*is_zeroed*/False, MC_AllocMalloc, MC_(malloc_list));
    }
 
@@ -627,7 +631,8 @@ void* MC_(realloc) ( ThreadId tid, void* p_old, SizeT new_szB )
          queue). */
 
       // Allocate a new chunk.
-      new_mc = create_MC_Chunk( tid, a_new, new_szB, MC_AllocMalloc );
+      // Re-allocation does not conserve alignment.
+      new_mc = create_MC_Chunk( tid, a_new, new_szB, 0U, MC_AllocMalloc );
 
       // Now insert the new mc (with a new 'data' field) into malloc_list.
       VG_(HT_add_node)( MC_(malloc_list), new_mc );
@@ -959,7 +964,7 @@ void MC_(mempool_alloc)(ThreadId tid, Addr pool, Addr addr, SizeT szB)
       MC_(record_illegal_mempool_error) ( tid, pool );
    } else {
       if (MP_DETAILED_SANITY_CHECKS) check_mempool_sane(mp);
-      MC_(new_block)(tid, addr, szB, /*ignored*/0, mp->is_zeroed,
+      MC_(new_block)(tid, addr, szB, /*ignored*/0U, 0U, mp->is_zeroed,
                      MC_AllocCustom, mp->chunks);
       if (mp->rzB > 0) {
          // This is not needed if the user application has properly

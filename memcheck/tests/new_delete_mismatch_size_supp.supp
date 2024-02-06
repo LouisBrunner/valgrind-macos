@@ -1,0 +1,57 @@
+
+{
+   scalar new sized delete with size mismatch
+   Memcheck:SizeMismatch
+   fun:_ZdlPvm
+   fun:main
+}
+
+{
+   scalar new sized delete with size mismatch, 32 bit
+   Memcheck:SizeMismatch
+   fun:_ZdlPvj
+   fun:main
+}
+
+{
+   array new sized delete with size mismatch
+   Memcheck:SizeMismatch
+   fun:_ZdaPvm
+   fun:main
+}
+
+{
+   array new sized delete with size mismatch, 32 bit
+   Memcheck:SizeMismatch
+   fun:_ZdaPvj
+   fun:main
+}
+
+{
+   scalar aligned new sized aligned delete with size mismatch
+   Memcheck:SizeMismatch
+   fun:_ZdlPvmSt11align_val_t
+   fun:main
+}
+
+{
+   scalar aligned new sized aligned delete with size mismatch, 32 bit
+   Memcheck:SizeMismatch
+   fun:_ZdlPvjSt11align_val_t
+   fun:main
+}
+
+{
+   array aligned new sized aligned delete with size mismatch
+   Memcheck:SizeMismatch
+   fun:_ZdaPvmSt11align_val_t
+   fun:main
+}
+
+{
+   array aligned new sized aligned delete with size mismatch, 32 bit
+   Memcheck:SizeMismatch
+   fun:_ZdaPvjSt11align_val_t
+   fun:main
+}
+

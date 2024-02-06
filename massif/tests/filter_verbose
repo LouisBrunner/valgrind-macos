@@ -28,4 +28,8 @@ sed "s/\(Massif: XPt init expansions:\).*/\1  .../" |
 sed "s/\(Massif: XPt later expansions:\).*/\1 .../" |
 sed "s/\(Massif: SXPt allocs:\).*/\1          .../" |
 sed "s/\(Massif: SXPt frees:\).*/\1           .../" |
-sed "s/\(Massif: XCon redos:\).*/\1           .../"
+sed "s/\(Massif: XCon redos:\).*/\1           .../" |
+sed "s/Massif:   operator new(unsigned long/Massif:   operator new(unsigned/" |
+sed "s/Massif:   operator new\[\](unsigned long/Massif:   operator new\[\](unsigned/"
+
+

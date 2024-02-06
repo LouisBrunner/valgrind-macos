@@ -11,6 +11,7 @@ EXTRA_DIST = \
 	memory.stdout.exp memory.stderr.exp memory.vgtest \
 	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
 	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest \
+	simd_dotprod.stdout.exp simd_dotprod.stderr.exp simd_dotprod.vgtest \
         fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest \
 	fp_and_simd_v82.stdout.exp fp_and_simd_v82.stderr.exp \
 	fp_and_simd_v82.vgtest \
@@ -40,6 +41,10 @@ if BUILD_ARMV82_TESTS
   check_PROGRAMS += fp_and_simd_v82
 endif
 
+if BUILD_ARMV82_DOTPROD_TESTS
+  check_PROGRAMS += simd_dotprod
+endif
+
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
@@ -49,6 +54,7 @@ allexec_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 crc32_CFLAGS       = $(AM_CFLAGS) -march=armv8-a+crc
 atomics_v81_CFLAGS = $(AM_CFLAGS) -march=armv8.1-a
 simd_v81_CFLAGS    = $(AM_CFLAGS) -march=armv8.1-a+crypto
+simd_dotprod_CFLAGS    = $(AM_CFLAGS) -march=armv8.2-a+dotprod
 fp_and_simd_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 fp_and_simd_v82_CFLAGS = $(AM_CFLAGS) -march=armv8.2-a+fp16+crypto
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0

@@ -1521,8 +1521,8 @@ void write_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
 {
    U128* pU128_dst;
 
-   vassert( (acc >= 0) && (acc < 8) );
-   vassert( (reg >= 0) && (reg < 4) );
+   vassert(acc < 8);
+   vassert(reg < 4);
 
    pU128_dst = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
                         + reg*sizeof(U128));
@@ -1545,8 +1545,8 @@ void get_ACC_entry (VexGuestPPC64State* gst, UInt offset, UInt acc, UInt reg,
    acc_word[1] = 0xBAD;
    acc_word[0] = 0xBEEF;
 
-   vassert( (acc >= 0) && (acc < 8) );
-   vassert( (reg >= 0) && (reg < 4) );
+   vassert(acc < 8);
+   vassert(reg < 4);
 
    pU128_src = (U128*) (((UChar*)gst) + offset + acc*4*sizeof(U128)
                         + reg*sizeof(U128));
@@ -1776,6 +1776,8 @@ void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
             else if ( inst == XVI8GER4SPP )
                result[j] = clampS64toS32(sum + acc_word[j]);
 
+            // @todo PJF Coverity complains that if none of the abofe ifs are true
+            // then result gets used uninitialized
          } else {
             result[j] = 0;
          }

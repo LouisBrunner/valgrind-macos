@@ -1,0 +1,101 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>memcheck</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>memcheck</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./aligned_alloc</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidSizeAndAlignment</kind>
+  <what>Invalid size value: 25 alignment value: 8 (size should be a multiple of alignment)</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>aligned_alloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>aligned_alloc.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>InvalidAlignment</kind>
+  <what>Invalid alignment value: 40 (should be a power of 2)</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>aligned_alloc</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>aligned_alloc.c</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

@@ -116,7 +116,7 @@
 #define S390_NUM_GPRPARMS 5
 
 /* Number of double words needed to store all facility bits. */
-#define S390_NUM_FACILITY_DW 3
+#define S390_NUM_FACILITY_DW 4
 
 #endif /* __LIBVEX_PUB_S390X_H */
 

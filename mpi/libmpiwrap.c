@@ -291,6 +291,8 @@ static void showTy ( FILE* f, MPI_Datatype ty )
 #  endif
    else if (ty == MPI_LONG_LONG_INT)  fprintf(f,"LONG_LONG_INT");
 #  if defined(MPI_LONG_LONG)
+   // platform dependant? MPI_LONG_LONG and MPI_UNSIGNED_LONG_LONG can be the same
+   // coverity[DEADCODE:FALSE]
    else if (ty == MPI_LONG_LONG)      fprintf(f,"LONG_LONG");
 #  endif
 #  if defined(MPI_UNSIGNED_LONG_LONG)
@@ -869,9 +871,15 @@ void walk_type ( void(*f)(void*,long), char* base, MPI_Datatype ty )
    }
 
    /* normal exit */
-   if (ints)  free(ints);
-   if (addrs) free(addrs);
-   if (dtys)  free(dtys);
+   if (n_ints > 0) {
+      free(ints);
+   }
+   if (n_addrs > 0) {
+      free(addrs);
+   }
+   if (n_dtys) {
+      free(dtys);
+   }
    return;
 
   unhandled:
@@ -2279,10 +2287,10 @@ long WRAPPER_FOR(PMPI_Init)(int *argc, char ***argv)
    VALGRIND_GET_ORIG_FN(fn);
    before("Init");
    if (argc) {
-      check_mem_is_defined_untyped(argc, sizeof(int));
+      check_mem_is_defined_untyped(argc, sizeof(*argc));
    }
    if (argc && argv) {
-      check_mem_is_defined_untyped(*argv, *argc * sizeof(char**));
+      check_mem_is_defined_untyped(*argv, *argc * sizeof(**argv));
    }
    if (cONFIG_DER) VALGRIND_DISABLE_ERROR_REPORTING;
    CALL_FN_W_WW(err, fn, argc,argv);

@@ -256,7 +256,7 @@ SysRes ML_(am_do_extend_mapping_NO_NOTIFY)(
    /* Extend the mapping old_addr .. old_addr+old_len-1 to have length
       new_len, WITHOUT moving it.  If it can't be extended in place,
       fail. */
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    return VG_(do_syscall5)(
              __NR_mremap, 
              old_addr, old_len, new_len, 
@@ -277,7 +277,7 @@ SysRes ML_(am_do_relocate_nooverlap_mapping_NO_NOTIFY)(
       location and with the new length.  Only needs to handle the case
       where the two areas do not overlap, neither length is zero, and
       all args are page aligned. */
-#  if defined(VGO_linux)
+#  if defined(VGO_linux) || defined(VGO_solaris)
    return VG_(do_syscall5)(
              __NR_mremap, 
              old_addr, old_len, new_len, 

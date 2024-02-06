@@ -1658,7 +1658,7 @@ ML_(generic_POST_sys_recv) ( ThreadId tid,
                              UWord res,
                              UWord arg0, UWord arg1, UWord arg2 )
 {
-   if (res >= 0 && arg1 != 0) {
+   if (arg1 != 0) {
       POST_MEM_WRITE( arg1, /* buf */
                       arg2  /* len */ );
    }
@@ -1830,6 +1830,7 @@ UInt get_sem_count( Int semid )
    if (sr_isError(res))
       return 0;
 
+   // both clang-tidy and coverity complain about this but I think they are both wrong
    return buf.sem_nsems;
 #  elif defined(__NR_semsys) /* Solaris */
    struct vki_semid_ds buf;
@@ -2735,6 +2736,13 @@ PRE(sys_nice)
 {
    PRINT("sys_nice ( %ld )", SARG1);
    PRE_REG_READ1(long, "nice", int, inc);
+}
+
+PRE(sys_mlock2)
+{
+   *flags |= SfMayBlock;
+   PRINT("sys_mlock2 ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
+   PRE_REG_READ2(int, "mlock2", void*, addr, vki_size_t, len);
 }
 
 PRE(sys_mlock)
@@ -4339,8 +4347,10 @@ PRE(sys_poll)
    for (i = 0; i < ARG2; i++) {
       PRE_MEM_READ( "poll(ufds.fd)",
                     (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
-      PRE_MEM_READ( "poll(ufds.events)",
-                    (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
+      if (ML_(safe_to_deref)(&ufds[i].fd, sizeof(ufds[i].fd)) && ufds[i].fd >= 0) {
+         PRE_MEM_READ( "poll(ufds.events)",
+                       (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
+      }
       PRE_MEM_WRITE( "poll(ufds.revents)",
                      (Addr)(&ufds[i].revents), sizeof(ufds[i].revents) );
    }
@@ -4348,8 +4358,7 @@ PRE(sys_poll)
 
 POST(sys_poll)
 {
-   // RES is UWord so always >= 0
-   if (SUCCESS && RES >= 0) {
+   if (SUCCESS) {
       UInt i;
       struct vki_pollfd* ufds = (struct vki_pollfd *)(Addr)ARG1;
       for (i = 0; i < ARG2; i++)

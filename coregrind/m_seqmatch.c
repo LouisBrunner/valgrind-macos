@@ -65,11 +65,10 @@ Bool VG_(generic_match) (
    Bool  havePatt, haveInput;
    const HChar *currPatt, *currInput;
   tailcall:
-   vg_assert(nPatt >= 0 && nPatt  < 1000000); /* arbitrary */
-   vg_assert(inputCompleter
-             || (nInput >= 0  && nInput < 1000000)); /* arbitrary */
-   vg_assert(ixPatt >= 0  && ixPatt <= nPatt);
-   vg_assert(ixInput >= 0 && (inputCompleter || ixInput <= nInput));
+   vg_assert(nPatt  < 1000000); /* arbitrary */
+   vg_assert(inputCompleter || (nInput < 1000000)); /* arbitrary */
+   vg_assert(ixPatt <= nPatt);
+   vg_assert(inputCompleter || ixInput <= nInput);
 
    havePatt  = ixPatt < nPatt;
    haveInput = inputCompleter ? 

@@ -69,6 +69,7 @@
 
 #elif defined(VGP_nanomips_linux)
 #  include "vki/vki-scnums-nanomips-linux.h"
+#  include "vki/vki-scnums-shared-linux.h"
 
 #elif defined(VGP_mips64_linux)
 #  include "vki/vki-scnums-shared-linux.h"

@@ -177,21 +177,84 @@ void randomize_memory_pool()
       [{r,m}_memory_pool] -- address of random memory pool. Usefull for some instructions
 
 */
+
+struct insn_operands {
+   V128 v_arg[3];
+   V128 v_result;
+   uint64_t r_arg[3];
+   uint64_t r_result;
+};
+
+void print_results(s390x_test_usageInfo info,
+                   const struct insn_operands *orig,
+                   const struct insn_operands *current)
+{
+   unsigned int v_equal = 0;
+   unsigned int r_equal = 0;
+   int i;
+   for (i = 0; i < 3; i++) {
+      if (memcmp(&orig->v_arg[i], &current->v_arg[i],
+                 sizeof(orig->v_arg[i])) == 0)
+         v_equal |= 1 << i;
+      if (orig->r_arg[i] == current->r_arg[i])
+         r_equal |= 1 << i;
+   }
+   for (i = 0; i < 3; i++) {
+      if (!(v_equal & (1 << i)) && (info & (V128_V_ARG1_AS_INT << i))) {
+         printf("  v_arg%d   = ", i + 1);
+         print_hex(current->v_arg[i]);
+      }
+   }
+   if (info & V128_V_RES_AS_INT) {
+      printf("  v_result = ");
+      print_hex64(current->v_result, info & V128_V_RES_ZERO_ONLY);
+   }
+   for (i = 0; i < 3; i++) {
+      if (!(v_equal & (1 << i)) && (info & (V128_V_ARG1_AS_FLOAT64 << i))) {
+         printf("  v_arg%d   = ", i + 1);
+         print_f64(current->v_arg[i], 0);
+      }
+   }
+   if (info & V128_V_RES_AS_FLOAT64) {
+      printf("  v_result = ");
+      print_f64(current->v_result, info & V128_V_RES_ZERO_ONLY);
+   }
+   for (i = 0; i < 3; i++) {
+      if (!(v_equal & (1 << i)) && (info & (V128_V_ARG1_AS_FLOAT32 << i))) {
+         printf("  v_arg%d   = ", i + 1);
+         print_f32(current->v_arg[i], 0, 0);
+      }
+   }
+   if (info & V128_V_RES_AS_FLOAT32) {
+      printf("  v_result = ");
+      print_f32(current->v_result, info & V128_V_RES_EVEN_ONLY,
+                info & V128_V_RES_ZERO_ONLY);
+   }
+   for (i = 0; i < 3; i++) {
+      if (!(r_equal & (1 << i)) && (info & (V128_R_ARG1 << i))) {
+         printf("  r_arg%d   = ", i + 1);
+         print_uint64_t(current->r_arg[i]);
+      }
+   }
+   if (info & V128_R_RES) {
+      printf("  r_result = ");
+      print_uint64_t(current->r_result);
+   }
+}
+
 #define s390_test_generate(insn, asm_string) \
 static void test_##insn##_selective(const s390x_test_usageInfo info) \
 { \
-   V128 v_result = { .u64 = {0ULL, 0ULL} }; \
-   V128 v_arg1; \
-   V128 v_arg2; \
-   V128 v_arg3; \
-   uint64_t r_arg1 = random_uint64_t(); \
-   uint64_t r_arg2 = random_uint64_t(); \
-   uint64_t r_arg3 = random_uint64_t(); \
-   uint64_t r_result = 0ULL; \
-    \
-   random_V128(&v_arg1); \
-   random_V128(&v_arg2); \
-   random_V128(&v_arg3); \
+   struct insn_operands orig = { .v_result.u64 = {0ULL, 0ULL} }; \
+   struct insn_operands current; \
+   orig.r_arg[0] = random_uint64_t(); \
+   orig.r_arg[1] = random_uint64_t(); \
+   orig.r_arg[2] = random_uint64_t(); \
+   orig.r_result = 0ULL; \
+   random_V128(&orig.v_arg[0]); \
+   random_V128(&orig.v_arg[1]); \
+   random_V128(&orig.v_arg[2]); \
+   current = orig; \
     \
    __asm__ volatile( \
        "vl  %%v1, %[v_arg1]\n" \
@@ -204,66 +267,23 @@ static void test_##insn##_selective(const s390x_test_usageInfo info) \
        "vst %%v1, %[v_arg1]\n" \
        "vst %%v2, %[v_arg2]\n" \
        "vst %%v3, %[v_arg3]\n" \
-       : [v_result]      "=m" (v_result), \
-         [m_result]      "=m" (r_result), \
-         [r_result]      "+d" (r_result), \
-         [r_arg1]        "+d" (r_arg1), \
-         [r_arg2]        "+d" (r_arg2), \
-         [r_arg3]        "+d" (r_arg3) \
-       : [v_arg1]        "m" (v_arg1), \
-         [v_arg2]        "m" (v_arg2), \
-         [v_arg3]        "m" (v_arg3), \
-         [m_arg1]        "m" (r_arg1), \
-         [m_arg2]        "m" (r_arg2), \
-         [m_arg3]        "m" (r_arg3), \
-         [r_memory_pool] "r" (random_memory_pool), \
-         [m_memory_pool] "m" (random_memory_pool) \
-       : "memory", "cc", \
-         "r1", "r2", "r3", "r5", \
-         "v1", "v2", "v3", "v5"); \
+       : [v_result]      "+R" (current.v_result), \
+         [r_result]      "+d" (current.r_result), \
+         [r_arg1]        "+a" (current.r_arg[0]), \
+         [r_arg2]        "+a" (current.r_arg[1]), \
+         [r_arg3]        "+a" (current.r_arg[2]), \
+         [v_arg1]        "+R" (current.v_arg[0]), \
+         [v_arg2]        "+R" (current.v_arg[1]), \
+         [v_arg3]        "+R" (current.v_arg[2]) \
+       : [m_arg1]        "R" (current.r_arg[0]), \
+         [m_arg2]        "R" (current.r_arg[1]), \
+         [m_arg3]        "R" (current.r_arg[2]), \
+         [r_memory_pool] "d" (random_memory_pool), \
+         [m_memory_pool] "R" (random_memory_pool) \
+       : "cc", "v1", "v2", "v3", "v5"); \
     \
    printf("insn %s:\n", #insn); \
-   if (info & V128_V_ARG1_AS_INT) \
-      {printf("  v_arg1   = "); print_hex(v_arg1);} \
-   if (info & V128_V_ARG2_AS_INT) \
-      {printf("  v_arg2   = "); print_hex(v_arg2);} \
-   if (info & V128_V_ARG3_AS_INT) \
-      {printf("  v_arg3   = "); print_hex(v_arg3);} \
-   if (info & V128_V_RES_AS_INT) { \
-      printf("  v_result = "); \
-      print_hex64(v_result, info & V128_V_RES_ZERO_ONLY); \
-   } \
-   \
-   if (info & V128_V_ARG1_AS_FLOAT64) \
-      {printf("  v_arg1   = "); print_f64(v_arg1, 0);} \
-   if (info & V128_V_ARG2_AS_FLOAT64) \
-      {printf("  v_arg2   = "); print_f64(v_arg2, 0);} \
-   if (info & V128_V_ARG3_AS_FLOAT64) \
-      {printf("  v_arg3   = "); print_f64(v_arg3, 0);} \
-   if (info & V128_V_RES_AS_FLOAT64) { \
-      printf("  v_result = "); \
-      print_f64(v_result, info & V128_V_RES_ZERO_ONLY); \
-   } \
-   \
-   if (info & V128_V_ARG1_AS_FLOAT32) \
-      {printf("  v_arg1   = "); print_f32(v_arg1, 0, 0);} \
-   if (info & V128_V_ARG2_AS_FLOAT32) \
-      {printf("  v_arg2   = "); print_f32(v_arg2, 0, 0);} \
-   if (info & V128_V_ARG3_AS_FLOAT32) \
-      {printf("  v_arg3   = "); print_f32(v_arg3, 0, 0);} \
-   if (info & V128_V_RES_AS_FLOAT32) { \
-      printf("  v_result = "); \
-      print_f32(v_result, info & V128_V_RES_EVEN_ONLY, \
-                info & V128_V_RES_ZERO_ONLY); \
-   } \
-   if (info & V128_R_ARG1) \
-      {printf("  r_arg1   = "); print_uint64_t(r_arg1);} \
-   if (info & V128_R_ARG2) \
-      {printf("  r_arg2   = "); print_uint64_t(r_arg2);} \
-   if (info & V128_R_ARG3) \
-      {printf("  r_arg3   = "); print_uint64_t(r_arg3);} \
-   if (info & V128_R_RES) \
-      {printf("  r_result = "); print_uint64_t(r_result);} \
+   print_results(info, &orig, &current); \
 } \
 __attribute__((unused)) static void test_##insn() \
 { \

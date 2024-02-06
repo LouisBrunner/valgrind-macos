@@ -20,9 +20,11 @@ while (<>)
     # Remove the filename -- on some platforms (eg. Linux) it will be in
     # libc, on some (eg. Darwin) it will be in the main executable.
     s/\(below main\) \(.+\)$/(below main)/;
+    s/start \(in \/usr\/lib\/system\/libdyld.dylib\)/(below main)/;
 
     # libc on x86 FreeBSD
     s#_start1 \(src/lib/csu/i386/crt1_c.c.*#(below main)#;
+    s#__libc_start1 \(in /...libc...\)#(below main)#;
 
     # filter out the exact libc-start.c:### line number. (ppc64*)
     s/\(libc-start.c:[0-9]*\)$/(in \/...libc...)/;

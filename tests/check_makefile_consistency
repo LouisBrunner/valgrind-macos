@@ -83,13 +83,28 @@ do
             rc=1
           fi
         done
-  
+
+        # check that filter files (but nor ones derived from filter*.in) are in dist_noinst_SCRIPTS
         for f in $(ls -d filter* 2>/dev/null | grep -v \.in)
         do
-          if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *dist_noinst_SCRIPTS *=' |
+          if [ ! -e "$f".in ]; then
+            if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *dist_noinst_SCRIPTS *=' |
                grep -qw "$f"
+            then
+              echo "$m:1: error: $f is missing in dist_noinst_SCRIPTS"
+              rc=1
+            fi
+          fi
+        done
+        
+        # check that filter files derived from filter*.in are in noinst_SCRIPTS
+        for f in $(ls -d filter*\.in 2>/dev/null )
+        do
+          f2=`echo $f | sed 's/\.in//'`
+          if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *noinst_SCRIPTS *=' |
+             grep -qw "$f2"
           then
-            echo "$m:1: error: $f is missing in dist_noinst_SCRIPTS"
+            echo "$m:1: error: $f2 is missing in noinst_SCRIPTS"
             rc=1
           fi
         done

@@ -65,3 +65,15 @@
    fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
    ...
 }
+
+{
+   OSX1300:libSystemInitializer
+   Memcheck:Cond
+   ...
+   fun:libSystem_initializer
+   fun:___ZZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateEENK3$_0clEv_block_invoke
+   fun:___ZNK5dyld313MachOAnalyzer18forEachInitializerER11DiagnosticsRKNS0_15VMAddrConverterEU13block_pointerFvjEPKv_block_invoke.180
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   fun:_ZNK5dyld39MachOFile18forEachLoadCommandER11DiagnosticsU13block_pointerFvPK12load_commandRbE
+   ...
+}

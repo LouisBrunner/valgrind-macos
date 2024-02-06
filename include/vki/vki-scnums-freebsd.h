@@ -117,6 +117,8 @@
 #define __NR_vfork               66
 /* obs vread                     67 */
 /* obs vwrite                    68 */
+/* both of the following are obsolete
+ * and removed in FreeBSD  15 */
 #define __NR_sbrk                69
 #define __NR_sstk                70
 /* old mmap                      71 */
@@ -645,10 +647,12 @@
 #define __NR_funlinkat           568
 #define __NR_copy_file_range     569
 #define __NR___sysctlbyname      570
+#if (FREEBSD_VERS >= FREEBSD_13_0)
 #define __NR_shm_open2           571
 #define __NR_shm_rename          572
 #define __NR_sigfastblock        573
 #define __NR___realpathat        574
+#endif
 #define __NR_close_range         575
 
 #endif
@@ -664,9 +668,25 @@
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
 
+#if (FREEBSD_VERS >= FREEBSD_14)
 #define __NR_fspacectl           580
+#endif
 #define __NR_sched_getcpu        581
 #define __NR_swapoff             582
+
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
+
+#define __NR_kqueuex             583
+#define __NR_membarrier          584
+
+#endif
+
+#if (FREEBSD_VERS >= FREEBSD_15)
+#define __NR_timerfd_create      585
+#define __NR_timerfd_gettime     586
+#define __NR_timerfd_settime     587
 
 #endif
 

@@ -76,7 +76,7 @@ DEFINE_GDB_PY_SCRIPT(VG_GDBSCRIPTS_DIR "/valgrind-monitor.py")
 void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run);
 void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run)
 {
-#  if !defined(__UCLIBC__) && !defined(MUSL_LIBC) \
+#  if !defined(__UCLIBC__) \
       && !defined(VGPV_arm_linux_android) \
       && !defined(VGPV_x86_linux_android) \
       && !defined(VGPV_mips32_linux_android) \
@@ -88,6 +88,14 @@ void VG_NOTIFY_ON_LOAD(freeres)(Vg_FreeresToRun to_run)
        (_ZN9__gnu_cxx9__freeresEv != NULL)) {
       _ZN9__gnu_cxx9__freeresEv();
    }
+
+#  endif
+
+#  if !defined(__UCLIBC__) && !defined(MUSL_LIBC) \
+      && !defined(VGPV_arm_linux_android) \
+      && !defined(VGPV_x86_linux_android) \
+      && !defined(VGPV_mips32_linux_android) \
+      && !defined(VGPV_arm64_linux_android)
 
    extern void __libc_freeres(void) __attribute__((weak));
    if (((to_run & VG_RUN__LIBC_FREERES) != 0) &&
@@ -180,9 +188,61 @@ static void env_unsetenv ( HChar **env, const HChar *varname )
       }
    }
    *(to++) = *(from++);
+
    /* fix the 4th "char* apple" pointer (aka. executable path pointer) */
    *(to++) = *(from++);
+
+// FIXME: probably wrong, most likely should be 10.14.6
+#if DARWIN_VERS < DARWIN_14_00
+   /* We only do this on older versions of darwin because dyld changed
+      and by the point we do this changes, the apple env ptr is already set,
+      so if we move values around, we'll end up with a pointer pointing inside
+      (and even potentially after) applep.
+
+      Instead we copy the first value of the applelp over and over again
+      so that envp and applep are still separated by NULL,
+      applep is continuous and points to a correct value.
+
+      See the following example, using the following envp and applep:
+
+      ```
+        0xXXXX00: PATH=/bin (envp)
+        0xXXXX08: DYLD_INSERT_LIBRARIES=/lib
+        0xXXXX10: USER=foo
+        0xXXXX18: NULL
+        0xXXXX20: executable_path=/bin/ls (applep)
+        0xXXXX28: NULL
+      ```
+
+      # With this line
+
+      ```
+        0xXXXX00: PATH=/bin (envp)
+        0xXXXX08: USER=foo
+        0xXXXX10: NULL
+        0xXXXX18: executable_path=/bin/ls
+        0xXXXX20: NULL (applep)
+        0xXXXX28: NULL
+      ```
+
+      Notice that the applep is now invalid.
+
+      # Without this line
+
+      ```
+        0xXXXX00: PATH=/bin (envp)
+        0xXXXX08: USER=foo
+        0xXXXX10: NULL
+        0xXXXX18: executable_path=/bin/ls
+        0xXXXX20: executable_path=/bin/ls (applep)
+        0xXXXX28: NULL
+      ```
+
+      Notice that while values in applep are duplicated, this is only the case if browsing frop envp[len+1]
+      but not from applep which is always valid. Duplicated values are also harmless in this case.
+   */
    *to = NULL;
+#endif
 }
 
 static void vg_cleanup_env(void)  __attribute__((constructor));
@@ -230,7 +290,27 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
 
 #elif defined(VGO_freebsd)
 
-// nothing specific currently
+#if (FREEBSD_VERS >= FREEBSD_14)
+
+void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void);
+void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
+{
+    OrigFn fn;
+    Addr result = 0;
+    Addr fnentry;
+
+    /* Call the original indirect function and get it's result */
+    VALGRIND_GET_ORIG_FN(fn);
+    CALL_FN_W_v(result, fn);
+
+    fnentry = result;
+
+    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__ADD_IFUNC_TARGET,
+                                    fn.nraddr, fnentry, 0, 0, 0);
+    return (void*)result;
+}
+
+#endif
 
 #elif defined(VGO_solaris)
 

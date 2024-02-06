@@ -15,7 +15,7 @@
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [22])
+m4_define([v_minor_ver], [23])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
 m4_define([v_rel_date], ["?? ??? 202?"])
@@ -52,7 +52,7 @@ CXXFLAGS="$CXXFLAGS"
 AC_PROG_LN_S
 m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
 # Make sure we can compile in C99 mode.
-if test "$ac_cv_prog_cc_c99" = "no"; then
+if test "$ac_prog_cc_stdc" = "c99"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
 fi
 AC_PROG_CPP
@@ -153,8 +153,8 @@ fi
 rm $tmpfile
 
 # Make sure we can compile in C99 mode.
-AC_PROG_CC_C99
-if test "$ac_cv_prog_cc_c99" = "no"; then
+AC_PROG_CC
+if test "$ac_prog_cc_stdc" = "c99"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
 fi
 
@@ -335,6 +335,8 @@ AC_MSG_CHECKING([for a supported CPU])
 # Endian.  Similarly, ppc64le or PPC64LE refer to only 64-bit systems that are
 # Little Endian.
 
+VGCONF_PLATFORM_ARM_ARCH=
+
 case "${host_cpu}" in
      i?86)
 	AC_MSG_RESULT([ok (${host_cpu})])
@@ -369,8 +371,21 @@ case "${host_cpu}" in
         ARCH_MAX="s390x"
         ;;
 
+     armv8*)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	VGCONF_PLATFORM_ARM_ARCH="-marm -mcpu=cortex-a8"
+	ARCH_MAX="arm"
+	;;
+
      armv7*)
 	AC_MSG_RESULT([ok (${host_cpu})])
+	VGCONF_PLATFORM_ARM_ARCH="-marm -mcpu=cortex-a8"
+	ARCH_MAX="arm"
+	;;
+
+     arm*)
+	AC_MSG_RESULT([ok (${host_cpu})])
+	VGCONF_PLATFORM_ARM_ARCH="-march=armv6"
 	ARCH_MAX="arm"
 	;;
 
@@ -413,6 +428,8 @@ case "${host_cpu}" in
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
 	;;
 esac
+
+AC_SUBST(VGCONF_PLATFORM_ARM_ARCH)
 
 #----------------------------------------------------------------------------
 
@@ -494,8 +511,12 @@ case "${host_os}" in
         freebsd_13_1=1310
         AC_DEFINE([FREEBSD_13_2], 1320, [FREEBSD_VERS value for FreeBSD 13.2])
         freebsd_13_2=1320
+        AC_DEFINE([FREEBSD_13_3], 1330, [FREEBSD_VERS value for FreeBSD 13.3])
+        freebsd_13_3=1330
         AC_DEFINE([FREEBSD_14], 1400, [FREEBSD_VERS value for FreeBSD 14.x])
         freebsd_14=1400
+        AC_DEFINE([FREEBSD_15], 1500, [FREEBSD_VERS value for FreeBSD 15.x])
+        freebsd_15=1500
 
         AC_MSG_CHECKING([for the kernel version])
         kernel=`uname -r`
@@ -542,6 +563,15 @@ case "${host_os}" in
               AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
               freebsd_vers=$freebsd_13_2
               ;;
+           13.3-*)
+              AC_MSG_RESULT([FreeBSD 13.3 (${kernel})])
+              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_3, [FreeBSD version])
+              freebsd_vers=$freebsd_13_3
+              ;;
+           *)
+              AC_MSG_RESULT([unsupported (${kernel})])
+              AC_MSG_ERROR([Valgrind works on FreeBSD 10.x to 15.x])
+              ;;
            esac
            ;;
         14.*)
@@ -549,9 +579,14 @@ case "${host_os}" in
            AC_DEFINE([FREEBSD_VERS], FREEBSD_14, [FreeBSD version])
            freebsd_vers=$freebsd_14
            ;;
+        15.*)
+           AC_MSG_RESULT([FreeBSD 15.x (${kernel})])
+           AC_DEFINE([FREEBSD_VERS], FREEBSD_15, [FreeBSD version])
+           freebsd_vers=$freebsd_15
+           ;;
         *)
            AC_MSG_RESULT([unsupported (${kernel})])
-           AC_MSG_ERROR([Valgrind works on FreeBSD 10.x to 14.x])
+           AC_MSG_ERROR([Valgrind works on FreeBSD 10.x to 15.x])
            ;;
         esac
 
@@ -559,215 +594,242 @@ case "${host_os}" in
         ;;
 
      *darwin*)
-        AC_MSG_RESULT([ok (${host_os})])
-        VGCONF_OS="darwin"
-        AC_DEFINE([DARWIN_10_5], 100500, [DARWIN_VERS value for Mac OS X 10.5])
-        AC_DEFINE([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6 / iOS 4])
-        AC_DEFINE([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7 / iOS 5])
-        AC_DEFINE([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8 / iOS 6])
-        AC_DEFINE([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9 / iOS 7])
-        AC_DEFINE([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10 / iOS 8])
-        AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11 / iOS 9])
-        AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12 / iOS 10])
-        AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13 / iOS 11])
-        AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14 / iOS 12])
-        AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15 / iOS 13])
-        AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0 / iOS 14])
-        AC_DEFINE([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0 / iOS 15])
-        AC_DEFINE([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
+      AC_MSG_RESULT([ok (${host_os})])
+      VGCONF_OS="darwin"
 
-        AC_DEFINE([XCODE_10_XX], 101200, [XCODE_VERS value for Xcode earlier than 10.13 (iOS 11)])
-        AC_DEFINE([XCODE_10_13], 101300, [XCODE_VERS value for Xcode 10.13 (iOS 11)])
-        AC_DEFINE([XCODE_10_14], 101400, [XCODE_VERS value for Xcode 10.14 (iOS 12)])
-        AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6 (iOS 12)])
-        AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15 (iOS 13)])
-        AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0 (iOS 14)])
-        AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0 (iOS 15)])
-        AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0 (iOS 16)])
+      AC_DEFUN([AC_ADD_DARWIN_VERS],[
+        $1=$2
+        AC_DEFINE_UNQUOTED([$1], [$$1], [DARWIN_VERS value for $3])
+        AC_SUBST($1)
+      ])
+      AC_ADD_DARWIN_VERS([DARWIN_10_5], 100500, [DARWIN_VERS value for Mac OS X 10.5])
+      AC_ADD_DARWIN_VERS([DARWIN_10_6], 100600, [DARWIN_VERS value for Mac OS X 10.6 / iOS 4])
+      AC_ADD_DARWIN_VERS([DARWIN_10_7], 100700, [DARWIN_VERS value for Mac OS X 10.7 / iOS 5])
+      AC_ADD_DARWIN_VERS([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8 / iOS 6])
+      AC_ADD_DARWIN_VERS([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9 / iOS 7])
+      AC_ADD_DARWIN_VERS([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10 / iOS 8])
+      AC_ADD_DARWIN_VERS([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11 / iOS 9])
+      AC_ADD_DARWIN_VERS([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12 / iOS 10])
+      AC_ADD_DARWIN_VERS([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13 / iOS 11])
+      AC_ADD_DARWIN_VERS([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14 / iOS 12])
+      AC_ADD_DARWIN_VERS([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15 / iOS 13])
+      AC_ADD_DARWIN_VERS([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0 / iOS 14])
+      AC_ADD_DARWIN_VERS([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0 / iOS 15])
+      AC_ADD_DARWIN_VERS([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
+      AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
 
-        # Substitute the Xcode include path detected earlier
-        AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
-        AC_SUBST(XCODE_LIB_DIR, [$xcodedir_lib])
+      AC_DEFINE([XCODE_10_XX], 101200, [XCODE_VERS value for Xcode earlier than 10.13 (iOS 11)])
+      AC_DEFINE([XCODE_10_13], 101300, [XCODE_VERS value for Xcode 10.13 (iOS 11)])
+      AC_DEFINE([XCODE_10_14], 101400, [XCODE_VERS value for Xcode 10.14 (iOS 12)])
+      AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6 (iOS 12)])
+      AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15 (iOS 13)])
+      AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0 (iOS 14)])
+      AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0 (iOS 15)])
+      AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0 (iOS 16)])
+      AC_DEFINE([XCODE_14_0], 140000, [XCODE_VERS value for Xcode 14.0])
 
-
-        AC_MSG_CHECKING([for the Darwin platform])
-        case "${darwin_platform}" in
-        macosx)
-			    clang_os_min_vers_arg="-mmacosx-version-min=10.6"
-          ;;
-        iphoneos)
-			    clang_os_min_vers_arg="-miphoneos-version-min=4"
-          ;;
-        *)
-          AC_MSG_RESULT([unsupported Darwin platform (${darwin_platform})])
-          AC_MSG_ERROR([Valgrind works on macOS (macosx) and iOS (iphoneos)])
-        esac
-        AC_MSG_RESULT([ok (${darwin_platform})])
-
-        # Ensure clang receive the right minimum version argument
-        AC_SUBST(CLANG_OS_MIN_VERS_ARG, [$clang_os_min_vers_arg])
+      # Substitute the Xcode include path detected earlier
+      AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
+      AC_SUBST(XCODE_LIB_DIR, [$xcodedir_lib])
 
 
-	AC_MSG_CHECKING([for the kernel version])
-        kernel=$darwin_version
-        if test "x$kernel" = "x"; then
-            if test "${host_cpu}" != "${build_cpu}"; then
-                AC_MSG_WARN([You are cross-compiling without specifying the target's darwin-version, valgrind might not work.])
-            fi
-	kernel=`uname -r`
-        fi
+      AC_MSG_CHECKING([for the Darwin platform])
+      case "${darwin_platform}" in
+      macosx)
+      iphoneos)
+        ;;
+      *)
+        AC_MSG_RESULT([unsupported Darwin platform (${darwin_platform})])
+        AC_MSG_ERROR([Valgrind works on macOS (macosx) and iOS (iphoneos)])
+      esac
+      AC_MSG_RESULT([ok (${darwin_platform})])
 
-        # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
-        # has only one relevant version, the OS version. The `uname` check
-        # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
-        # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
-        # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion),
-        # and we don't know of an macros similar to __GLIBC__ to get that info.
-        #
-        # XXX: `uname -r` won't do the right thing for cross-compiles, but
-        # that's not a problem yet. 2020: Now it is.
-        #
-        # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
-        # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
-        # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
-        # time support for 10.5 (the 9.* pattern just below), I'll leave it
-        # in for now, just in case anybody wants to give it a try.  But I'm
-        # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
 
-        case "${darwin_platform}-${kernel}" in
+      AC_MSG_CHECKING([for the kernel version])
+      kernel=$darwin_version
+      if test "x$kernel" = "x"; then
+          if test "${host_cpu}" != "${build_cpu}"; then
+              AC_MSG_WARN([You are cross-compiling without specifying the target\'s darwin-version, valgrind might not work.])
+          fi
+          kernel=`uname -r`
+      fi
+
+      # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
+      # has only one relevant version, the OS version. The `uname` check
+      # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
+      # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
+      # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion),
+      # and we don't know of an macros similar to __GLIBC__ to get that info.
+      #
+      # XXX: `uname -r` won't do the right thing for cross-compiles, but
+      # that's not a problem yet. 2020: Now it is.
+      #
+      # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
+      # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
+      # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
+      # time support for 10.5 (the 9.* pattern just below), I'll leave it
+      # in for now, just in case anybody wants to give it a try.  But I'm
+      # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
+      DARWIN_DRD_SUPP="darwin10-drd.supp"
+      case "${darwin_platform}-${kernel}" in
         macosx-9.*)
-		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_5, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin9.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin9-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
+          DARWIN_VERS=$DARWIN_10_5
+          DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
+          DARWIN_DRD_SUPP="darwin9-drd.supp"
+          ;;
         macosx-10.*|iphoneos-4.*)
           AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard / iOS 4])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_6, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin10.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_6
+          DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-11.*|iphoneos-5.*)
           AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion / iOS 5])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_7, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin11.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_7
+          DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-12.*|iphoneos-6.*)
           AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion / iOS 6])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_8, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin12.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_8
+          DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-13.*|iphoneos-7.*)
           AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks / iOS 7])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_9, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin13.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_9
+          DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-14.*|iphoneos-8.*)
           AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite / iOS 8])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_10, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin14.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_10
+          DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-15.*|iphoneos-9.*)
           AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan / iOS 9])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_11, [Darwin / Mac OS X / iOS version])
-		  DEFAULT_SUPP="darwin15.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_11
+          DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-16.*|iphoneos-10.*)
           AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra / iOS 10])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_12, [Darwin / macOS / iOS version])
-		  DEFAULT_SUPP="darwin16.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_12
+          DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-17.*|iphoneos-11.*)
           AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra / iOS 11])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_13, [Darwin / macOS / iOS version])
-		  DEFAULT_SUPP="darwin17.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-		  ;;
+          DARWIN_VERS=$DARWIN_10_13
+          DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-18.*|iphoneos-12.*)
           AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave / iOS 12])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_14, [Darwin / macOS / iOS version])
-                  DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-      ;;
+          DARWIN_VERS=$DARWIN_10_14
+          DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
+          ;;
         macosx-19.*|iphoneos-13.*)
           AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina / iOS 13])
-          AC_DEFINE([DARWIN_VERS], DARWIN_10_15, [Darwin / macOS / iOS version])
-      DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       macosx-20.*|iphoneos-14.*)
-      AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur / iOS 14])
-      AC_DEFINE([DARWIN_VERS], DARWIN_11_00, [Darwin / macOS / iOS version])
-      DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       macosx-21.*|iphoneos-15.*)
-      AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey])
-      AC_DEFINE([DARWIN_VERS], DARWIN_12_00, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-       macosx-22.*|iphoneos-16.*)
-      AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura])
-      AC_DEFINE([DARWIN_VERS], DARWIN_13_00, [Darwin / Mac OS X version])
-      DEFAULT_SUPP="darwin22.supp ${DEFAULT_SUPP}"
-      DEFAULT_SUPP="darwin10-drd.supp ${DEFAULT_SUPP}"
-                  ;;
-             *)
+          DARWIN_VERS=$DARWIN_10_15
+          DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
+          ;;
+        macosx-20.*|iphoneos-14.*)
+          AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur / iOS 14])
+          DARWIN_VERS=$DARWIN_11_00
+          DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
+          ;;
+        macosx-21.*|iphoneos-15.*)
+          AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey / iOS 15])
+          DARWIN_VERS=$DARWIN_12_00
+          DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
+          ;;
+        macosx-22.*|iphoneos-16.*)
+          AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura / iOS 16])
+          DARWIN_VERS=$DARWIN_13_00
+          DEFAULT_SUPP="darwin22.supp ${DEFAULT_SUPP}"
+          ;;
+        macosx-23.*|iphoneos-17.*)
+          AC_MSG_RESULT([Darwin 23.x (${kernel}) / macOS 14 Sonoma / iOS 17])
+          DARWIN_VERS=$DARWIN_14_00
+          DEFAULT_SUPP="darwin23.supp ${DEFAULT_SUPP}"
+          ;;
+        *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-22.x (Mac OS X 10.6-10.11, macOS 10.12-13.0 and iOS 4-16)])
-		  ;;
-	esac
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-10.11, macOS 10.12-14.0 and iOS 4-17)])
+          ;;
+      esac
+      AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X / macOS / iOS version])
+      AC_SUBST(DARWIN_VERS)
+      DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"
 
-        AC_MSG_CHECKING([for the Xcode SDK version])
-        xcodeversion="legacy"
-        if test "x$XCRUN" != "xno"; then
-          xcodeversion=`xcrun --sdk $darwin_sdk --show-sdk-version`
+      AC_MSG_CHECKING([for the the minimum macOS SDK version])
+      case "${darwin_platform}" in
+      macosx)
+        DARWIN_MIN_SDK="10.6"
+        ld_os_min_vers_arg="-macosx_version_min=${DARWIN_MIN_SDK}"
+        if test $DARWIN_VERS -ge $DARWIN_11_00; then
+          DARWIN_MIN_SDK="10.8"
+          # they changed the name around 11.0
+          ld_os_min_vers_arg="-macos_version_min=${DARWIN_MIN_SDK}"
         fi
-        case "${darwin_platform}-${xcodeversion}" in
-          macosx-10.13*|iphoneos-11.*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_13, [Xcode version])
-            ;;
-          macosx-10.14.6)
-            AC_DEFINE([XCODE_VERS], XCODE_10_14_6, [Xcode version])
-            ;;
-          macosx-10.14*|iphoneos-12.*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_14, [Xcode version])
-            ;;
-          macosx-10.15*|iphoneos-13.*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
-            ;;
-          macosx-11.*|iphoneos-14.*)
-            AC_DEFINE([XCODE_VERS], XCODE_11_0, [Xcode version])
-            ;;
-	        macosx-12.*|iphoneos-15.*)
-            AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
-            ;;
-	        macosx-13.*|iphoneos-16.*)
-            AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
-            ;;
-          legacy)
-            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
-            ;;
-          macosx-10.5*|macosx-10.6*|macosx-10.7*|macosx-10.8*|macosx-10.9*|macosx-10.10*|macosx-10.11*|macosx-10.12*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
-            ;;
-          iphoneos-4.*|iphoneos-5.*|iphoneos-6.*|iphoneos-7.*|iphoneos-8.*|iphoneos-9.*|iphoneos-10.*)
-            AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
-            ;;
-	        *)
-            AC_MSG_RESULT([unsupported (${xcodeversion})])
-            AC_MSG_ERROR([Valgrind works on Darwin 10.x-22.x (Mac OS X 10.6-11 and macOS 10.12-13.0 and iOS 4-16)])
-            ;;
-	      esac
-        AC_MSG_RESULT([${xcodeversion}])
+        clang_os_min_vers_arg="-mmacosx-version-min=${DARWIN_MIN_SDK}"
         ;;
+      iphoneos)
+        IPHONE_MIN_SDK=4
+        clang_os_min_vers_arg="-miphoneos-version-min=${IPHONE_MIN_SDK}"
+        ld_os_min_vers_arg="-miphoneos-version-min=${IPHONE_MIN_SDK}"
+        ;;
+      *)
+        AC_MSG_RESULT([unsupported Darwin platform (${darwin_platform})])
+        AC_MSG_ERROR([Valgrind works on macOS (macosx) and iOS (iphoneos)])
+      esac
+      AC_MSG_RESULT([ok (${clang_os_min_vers_arg} ${ld_os_min_vers_arg})])
+
+      # Ensure clang receive the right minimum version argument
+      AC_SUBST(CLANG_OS_MIN_VERS_ARG, [$clang_os_min_vers_arg])
+      AC_SUBST(LD_OS_MIN_VERS_ARG, [$ld_os_min_vers_arg])
+
+      AC_MSG_CHECKING([for the Xcode SDK version])
+      xcodeversion="legacy"
+      if test "x$XCRUN" != "xno"; then
+        xcodeversion=`xcrun --sdk $darwin_sdk --show-sdk-version`
+      fi
+      case "${darwin_platform}-${xcodeversion}" in
+        macosx-10.13*|iphoneos-11.*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_13, [Xcode version])
+          ;;
+        macosx-10.14.6)
+          AC_DEFINE([XCODE_VERS], XCODE_10_14_6, [Xcode version])
+          ;;
+        macosx-10.14*|iphoneos-12.*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_14, [Xcode version])
+          ;;
+        macosx-10.15*|iphoneos-13.*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
+          ;;
+        macosx-11.*|iphoneos-14.*)
+          AC_DEFINE([XCODE_VERS], XCODE_11_0, [Xcode version])
+          ;;
+        macosx-12.*|iphoneos-15.*)
+          AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
+          ;;
+        macosx-13.*|iphoneos-16.*)
+          AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
+          ;;
+        macosx-14.*|iphoneos-17.*)
+          AC_DEFINE([XCODE_VERS], XCODE_14_0, [Xcode version])
+          ;;
+        legacy)
+          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          ;;
+        macosx-10.5*|macosx-10.6*|macosx-10.7*|macosx-10.8*|macosx-10.9*|macosx-10.10*|macosx-10.11*|macosx-10.12*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          ;;
+        iphoneos-4.*|iphoneos-5.*|iphoneos-6.*|iphoneos-7.*|iphoneos-8.*|iphoneos-9.*|iphoneos-10.*)
+          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          ;;
+        *)
+          AC_MSG_RESULT([unsupported (${xcodeversion})])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-11 and macOS 10.12-14.0 and iOS 4-17)])
+          ;;
+      esac
+      AC_MSG_RESULT([${xcodeversion}])
+      ;;
 
      solaris2.11*)
         AC_MSG_RESULT([ok (${host_os})])
@@ -1027,6 +1089,8 @@ case "$ARCH_MAX-$VGCONF_OS" in
         else
            GCC_MAJOR_VERSION=`${CC} -dumpversion | $SED 's/\..*//' 2>/dev/null`
            FLAG_32ON64="-B/usr/local/lib32/gcc${GCC_MAJOR_VERSION} -Wl,-rpath,/usr/local/lib32/gcc${GCC_MAJOR_VERSION}/"
+           FLAG_32ON64_GXX="-L/usr/local/lib32/gcc${GCC_MAJOR_VERSION} -lgcc_s"
+           AC_SUBST(FLAG_32ON64_GXX)
         fi
         valt_load_address_pri_norml="0x38000000"
         valt_load_address_pri_inner="0x28000000"
@@ -2793,6 +2857,7 @@ AC_GCC_WARNING_SUBST_NO([static-local-in-inline], [FLAG_W_NO_STATIC_LOCAL_IN_INL
 AC_GCC_WARNING_SUBST_NO([mismatched-new-delete], [FLAG_W_NO_MISMATCHED_NEW_DELETE])
 AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST_NO([expansion-to-defined], [FLAG_W_NO_EXPANSION_TO_DEFINED])
+AC_GCC_WARNING_SUBST_NO([unused-variable], [FLAG_W_NO_UNUSED_VARIABLE])
 AC_GCC_WARNING_SUBST_NO([unused-but-set-variable], [FLAG_W_NO_UNUSED_BUT_SET_VARIABLE])
 AC_GCC_WARNING_SUBST_NO([non-power-of-two-alignment], [FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT])
 AC_GCC_WARNING_SUBST_NO([sign-compare], [FLAG_W_NO_SIGN_COMPARE])
@@ -2806,6 +2871,7 @@ AC_GCC_WARNING_SUBST_NO([fortify-source], [FLAG_W_NO_FORTIFY_SOURCE])
 AC_GCC_WARNING_SUBST_NO([builtin-memcpy-chk-size], [FLAG_W_NO_BUILTIN_MEMCPY_CHK_SIZE])
 AC_GCC_WARNING_SUBST_NO([incompatible-pointer-types-discards-qualifiers], [FLAG_W_NO_INCOMPATIBLE_POINTER_TYPES_DISCARDS_QUALIFIERS])
 AC_GCC_WARNING_SUBST_NO([suspicious-bzero], [FLAG_W_NO_SUSPICIOUS_BZERO])
+AC_GCC_WARNING_SUBST_NO([attributes], [FLAG_W_NO_ATTRIBUTES])
 
 AC_GCC_WARNING_SUBST_NO_VAL([alloc-size-larger-than], [1677216], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
 
@@ -3307,6 +3373,26 @@ AC_MSG_NOTICE([ld --image-base or -Ttext-segment used, no need to strip build-id
 AC_SUBST([FLAG_NO_BUILD_ID], [""])
 fi
 CFLAGS=$safe_CFLAGS
+
+# On s390x, if the linker supports -Wl,--s390-pgste, then we build the
+# tools with that flag.  This enables running programs that need it, such
+# as qemu-kvm.
+if test x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX; then
+AC_MSG_CHECKING([if the linker accepts -Wl,--s390-pgste])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wl,--s390-pgste"
+
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([ ], [return 0;])],
+[
+  AC_SUBST([FLAG_S390_PGSTE], ["-Wl,--s390-pgste"])
+  AC_MSG_RESULT([yes])
+], [
+  AC_SUBST([FLAG_S390_PGSTE], [""])
+  AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+fi
 
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
@@ -3916,6 +4002,31 @@ AC_MSG_RESULT([no])
 CFLAGS="$save_CFLAGS"
 
 AM_CONDITIONAL(BUILD_ARMV82_TESTS, test x$ac_have_armv82_feature = xyes)
+
+
+# Does the C compiler support the armv82-a+dotprod flag and assembler dotprod instructions
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_ARMV82_DOTPROD_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if gcc supports the armv82-a+dotprod feature flag and assembler supports dotprod instructions])
+
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -march=armv8.2-a+dotprod -Werror"
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+int main()
+{
+    __asm__ __volatile__("sdot v1.4s, v2.16b, v3.16b");
+    return 0;
+}
+]])], [
+ac_have_armv82_dotprod_feature=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_armv82_dotprod_feature=no
+AC_MSG_RESULT([no])
+])
+CFLAGS="$save_CFLAGS"
+
+AM_CONDITIONAL(BUILD_ARMV82_DOTPROD_TESTS, test x$ac_have_armv82_dotprod_feature = xyes)
 
 
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
@@ -4725,6 +4836,16 @@ AC_PATH_PROG(DIS_PATH, dis, false)
 if test "x$DIS_PATH" = "xfalse"; then
   AC_MSG_FAILURE([Object code disassembler (`dis') not found.])
 fi
+# The illumos source is (or was) here
+# https://github.com/illumos/illumos-gate/blob/master/usr/src/lib/libscf/common/lowlevel.c#L1148
+# specifically the line
+#
+# request.rdr_version = REPOSITORY_DOOR_VERSION;
+#
+# rdr_version is a 32bit unsigned int
+# The macro REPOSITORY_DOOR_VERSION contains the ascii letters "Rep" in the top 3
+# bytes and the door version in the lowest byte. Hence we look for Rep which is 526570
+# in hex and then extrace the following byte.
 AC_CHECK_LIB(scf, scf_handle_bind, [], [
   AC_MSG_WARN([Function `scf_handle_bind' was not found in `libscf'.])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
@@ -4740,7 +4861,7 @@ if ! $DIS_PATH -F scf_handle_bind $libscf  | grep -q -E '0x(4d01)?526570'; then
   AC_MSG_WARN([Function `scf_handle_bind' does not contain repository cache protocol version.])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
 fi
-hex=$( $DIS_PATH -F scf_handle_bind $libscf  | perl -pe '($_) = /0x(?:4d01)?526570(\d{2}),/' )
+hex=$( $DIS_PATH -F scf_handle_bind $libscf  | grep 526570 | sed 's/.*526570//;s/,.*//' )
 if test -z "$hex"; then
   AC_MSG_WARN([Version of the repository cache protocol is empty?!])
   AC_MSG_ERROR([Cannot determine version of the repository cache protocol.])
@@ -4947,17 +5068,19 @@ fi # test "$VGCONF_OS" = "solaris"
 #----------------------------------------------------------------------------
 
 # Rather than having a large number of feature test as above with Solaris
-# these tests are per-version. This may not be entirely relialable for
+# these tests are per-version. This may not be entirely reliable for
 # FreeBSD development branches (XX.Y-CURRENT) or pre-release branches
 # (XX.Y-STABLE) but it should work for XX-Y-RELEASE
 
 if test "$VGCONF_OS" = "freebsd" ; then
 
 AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13_0)
+AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, test $freebsd_vers -ge $freebsd_15)
 
 else
 
 AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, false)
+AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, false)
 
 fi # test "$VGCONF_OS" = "freebsd"
 
@@ -5039,6 +5162,7 @@ AC_CHECK_FUNCS([     \
         copy_file_range \
         epoll_create \
         epoll_pwait  \
+        getaddrinfo  \
         klogctl      \
         mallinfo     \
         memchr       \
@@ -5064,6 +5188,7 @@ AC_CHECK_FUNCS([     \
         pwritev2     \
         rawmemchr    \
         readlinkat   \
+        reallocarray \
         semtimedop   \
         setcontext   \
         signalfd     \
@@ -5077,10 +5202,14 @@ AC_CHECK_FUNCS([     \
         syscall      \
         utimensat    \
         mempcpy      \
+        strlcat      \
+        strlcpy      \
         stpncpy      \
         strchrnul    \
         memrchr      \
         strndup      \
+        close_range  \
+        wcsncpy
         ])
 CFLAGS="$save_CFLAGS"
 
@@ -5107,6 +5236,18 @@ AM_CONDITIONAL([HAVE_SETCONTEXT], [test x$ac_cv_func_setcontext = xyes])
 AM_CONDITIONAL([HAVE_SWAPCONTEXT], [test x$ac_cv_func_swapcontext = xyes])
 AM_CONDITIONAL([HAVE_MEMFD_CREATE],
                [test x$ac_cv_func_memfd_create = xyes])
+AM_CONDITIONAL([HAVE_GETADDRINFO],
+               [test x$ac_cv_func_getaddrinfo = xyes])
+AM_CONDITIONAL([HAVE_CLOSE_RANGE],
+               [test x$ac_cv_func_close_range = xyes])
+AM_CONDITIONAL([HAVE_REALLOCARRAY],
+               [test x$ac_cv_func_reallocarray = xyes])
+AM_CONDITIONAL([HAVE_WCSNCPY],
+               [test x$ac_cv_func_wcsncpy = xyes])
+AM_CONDITIONAL([HAVE_STRLCAT],
+               [test x$ac_cv_func_strlcat = xyes])
+AM_CONDITIONAL([HAVE_STRLCPY],
+               [test x$ac_cv_func_strlcpy = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
@@ -5497,12 +5638,55 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   return __NR_openat2
 ]])], [
   ac_have_openat2=yes
+  AC_MSG_RESULT([yes])
 ], [
   ac_have_openat2=no
+  AC_MSG_RESULT([no])
 ])
 
 AM_CONDITIONAL([HAVE_OPENAT2],
                [test x$ac_have_openat2 = xyes])
+
+# check for crypto
+
+safe_LIBS="$LIBS"
+LIBS="-lcrypto"
+AC_MSG_CHECKING([if platform has openssl crypto])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <openssl/crypto.h>
+]], [[
+  CRYPTO_secure_malloc_init(1<<20, 8);
+]])], [
+  ac_have_openssl=yes
+  AC_MSG_RESULT([yes])
+], [
+  ac_have_openssl=no
+  AC_MSG_RESULT([no])
+])
+LIBS=$safe_LIBS
+
+AM_CONDITIONAL([HAVE_OPENSSL],
+               [test x$ac_have_openssl = xyes])
+
+AC_MSG_CHECKING([if platform has aio_readv])
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <aio.h>
+  #include <stdlib.h>
+]], [[
+  aio_readv(NULL);
+]])], [
+  ac_have_aio_readv=yes
+  AC_MSG_RESULT([yes])
+
+], [
+  ac_have_aio_readv=no
+  AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([HAVE_AIO_READV],
+               [test x$ac_have_aio_readv = xyes])
 
 # does g++ have built-in functions for atomic memory access ?
 AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])
@@ -5591,6 +5775,42 @@ CXXFLAGS=$safe_CXXFLAGS
 
 AM_CONDITIONAL([HAVE_SHARED_POINTER_ANNOTATION],
                [test x$ac_have_shared_pointer_annotation = xyes])
+
+# checking for GNU libc C17 aligned_alloc
+# just check glibc version rather than trying to muck around
+# checking the runtime behaviour or seeing if it is a weak alias
+AC_MSG_CHECKING([for AT_GNU_LIBC_C17_ALIGNED_ALLOC])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <features.h>
+]], [[
+#if !defined(__GLIBC__) || __GLIBC__ != 2 || !defined(__GLIBC_MINOR__) || __GLIBC_MINOR__ < 38
+#error "not GNU libc 2.38 or later"
+#endif
+]])], [
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_GNU_LIBC_C17_ALIGNED_ALLOC], 1,
+              [Define to 1 if you have GNU libc C17 aligned_alloc.])
+
+], [
+    AC_MSG_RESULT([no])
+])
+
+# Check for C11 thrd_create()
+AC_MSG_CHECKING([for thrd_create()])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <threads.h>
+int thrd_entry(void *arg) { return 0; }
+], [[thrd_t thr; return thrd_create(&thr, thrd_entry, NULL);]])],
+[
+ac_cxx_have_thrd_create=yes
+AC_MSG_RESULT([yes])
+], [
+ac_cxx_have_thrd_create=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_THRD_CREATE, test x$ac_cxx_have_thrd_create = xyes)
+
 
 
 #----------------------------------------------------------------------------

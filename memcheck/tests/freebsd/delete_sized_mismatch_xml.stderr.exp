@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>4</protocolversion>
+<protocoltool>memcheck</protocoltool>
+
+<preamble>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+  <line>...</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>memcheck</tool>
+
+<args>
+  <vargv>...</vargv>
+  <argv>
+    <exe>./delete_sized_mismatch</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>MismatchedAllocateDeallocateSize</kind>
+  <what>Mismatched new/delete size value: 33</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>operator delete(void*, unsigned long)</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>delete_sized_mismatch.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 0 bytes inside a block of size 32 alloc'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>operator new(unsigned long)</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>delete_sized_mismatch.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>MismatchedAllocateDeallocateSize</kind>
+  <what>Mismatched new[][/delete[] size value: 33</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>operator delete[](void*, unsigned long)</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>delete_sized_mismatch.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+  <auxwhat>Address 0x........ is 0 bytes inside a block of size 32 alloc'd</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>operator new[](unsigned long)</fn>
+      <dir>...</dir>
+      <file>vg_replace_malloc.c</file>
+      <line>...</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>delete_sized_mismatch.cpp</file>
+      <line>...</line>
+    </frame>
+  </stack>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>...</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>...</suppcounts>
+
+</valgrindoutput>
+

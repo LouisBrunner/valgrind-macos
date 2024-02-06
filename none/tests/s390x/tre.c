@@ -30,8 +30,8 @@ tre_regs tre(uint8_t *codepage, uint8_t *addr, uint64_t len, uint8_t test_byte)
                 " tre  %1,%2\n"
                 " ipm  %0\n"
                 " srl  %0,28\n"
-		:"=d"(cc),"+&d"(a1)
-                :"d"(a2),"d"(param),"d"(l1),"d"(test_byte):  "cc", "memory" );
+                : "=d"(cc), "+a"(a1), "+a"(a2), "+a"(l1), "+d"(param)
+                : : "cc", "memory");
 
    regs.addr = a1;
    regs.len = l1;

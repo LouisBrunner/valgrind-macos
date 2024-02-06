@@ -1,0 +1,4 @@
+used_suppression:      1 array aligned new sized aligned delete with size mismatch new_delete_mismatch_size_supp.supp:45
+used_suppression:      1 scalar aligned new sized aligned delete with size mismatch new_delete_mismatch_size_supp.supp:31
+used_suppression:      1 array new sized delete with size mismatch new_delete_mismatch_size_supp.supp:17
+used_suppression:      1 scalar new sized delete with size mismatch new_delete_mismatch_size_supp.supp:3

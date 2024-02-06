@@ -14405,7 +14405,6 @@ static const HChar *
 s390_irgen_KEB(UChar r1, IRTemp op2addr)
 {
    return s390_irgen_CxB("keb", r1, op2addr, Ity_F32, Iop_CmpF32);
-   return "keb";
 }
 
 static const HChar *
@@ -16388,50 +16387,37 @@ s390_irgen_VGBM(UChar v1, UShort i2, UChar m3 __attribute__((unused)))
 static const HChar *
 s390_irgen_VGM(UChar v1, UShort i2, UChar m3)
 {
-   UChar from = (i2 & 0xff00) >> 8;
-   UChar to   = (i2 & 0x00ff);
-   ULong value = 0UL;
-   IRType type = s390_vr_get_type(m3);
-   vassert(from <= to);
+   s390_insn_assert("vgm", m3 <= 3);
 
-   UChar maxIndex = 0;
-   switch (type) {
-   case Ity_I8:
-      maxIndex = 7;
-      break;
-   case Ity_I16:
-      maxIndex = 15;
-      break;
-   case Ity_I32:
-      maxIndex = 31;
-      break;
-   case Ity_I64:
-      maxIndex = 63;
-      break;
-   default:
-      vpanic("s390_irgen_VGM: unknown type");
-   }
+   UChar  max_idx = (8 << m3) - 1;
+   UChar  from    = max_idx & (i2 >> 8);
+   UChar  to      = max_idx & i2;
+   ULong  all_one = (1ULL << max_idx << 1) - 1;
+   ULong  value   = (all_one >> from) ^ (all_one >> to >> 1);
 
-   for(UChar index = from; index <= to; index++) {
-      value |= (1ULL << (maxIndex - index));
-   }
+   /* In case of wrap-around we now have a value that needs inverting:
+          to         from
+          V           V
+      00000111111111110000000000000000 */
+   if (to < from)
+      value ^= all_one;
 
-   IRExpr *fillValue;
-   switch (type) {
-   case Ity_I8:
+   IRExpr* fillValue;
+   switch (m3) {
+   case 0:
       fillValue = mkU8(value);
       break;
-   case Ity_I16:
+   case 1:
       fillValue = mkU16(value);
       break;
-   case Ity_I32:
+   case 2:
       fillValue = mkU32(value);
       break;
-   case Ity_I64:
+   case 3:
       fillValue = mkU64(value);
       break;
    default:
-      vpanic("s390_irgen_VGM: unknown type");
+      vpanic("s390_irgen_VGM: unknown element size");
    }
 
    s390_vr_fill(v1, fillValue);

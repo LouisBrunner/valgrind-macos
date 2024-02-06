@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr filter_verbose
+dist_noinst_SCRIPTS = filter_stderr filter_verbose filter_new_aligned
 
 EXTRA_DIST = \
 	alloc-fns-A.post.exp alloc-fns-A.stderr.exp alloc-fns-A.vgtest \
@@ -29,13 +29,11 @@ EXTRA_DIST = \
 	mmapunmap.post.exp mmapunmap.post.exp-ppc64 \
 	mmapunmap.stderr.exp mmapunmap.vgtest \
 	new-cpp.post.exp new-cpp.stderr.exp new-cpp.vgtest \
-		new-cpp.post.exp-freebsd new-cpp.post.exp-x86-freebsd-gcc \
 	no-stack-no-heap.post.exp no-stack-no-heap.stderr.exp no-stack-no-heap.vgtest \
 	null.post.exp null.stderr.exp null.vgtest \
 	one.post.exp one.post.exp2 one.stderr.exp one.vgtest \
 	overloaded-new.post.exp overloaded-new.post.exp-mips32 \
 	overloaded-new.stderr.exp overloaded-new.vgtest \
-		overloaded-new.post.exp-freebsd overloaded-new.post.exp-x86-freebsd-gcc \
 	pages_as_heap.stderr.exp pages_as_heap.vgtest \
 	peak.post.exp peak.stderr.exp peak.vgtest \
 	peak2.post.exp peak2.stderr.exp peak2.vgtest \
@@ -53,8 +51,7 @@ EXTRA_DIST = \
 	thresholds_10_10.post.exp \
 	thresholds_10_10.stderr.exp thresholds_10_10.vgtest \
 	zero1.post.exp zero1.stderr.exp zero1.vgtest \
-	zero2.post.exp zero2.stderr.exp zero2.vgtest \
-	overloaded-new.post.exp-freebsd
+	zero2.post.exp zero2.stderr.exp zero2.vgtest
 
 check_PROGRAMS = \
 	alloc-fns \
@@ -75,12 +72,15 @@ check_PROGRAMS = \
 	new-cpp \
 	null \
 	one \
-	overloaded-new \
 	pages_as_heap \
 	peak \
 	realloc \
 	thresholds \
 	zero
+
+if HAVE_ALIGNED_CXX_ALLOC
+check_PROGRAMS += overloaded-new
+endif
 
 inlinfomalloc_CFLAGS = $(AM_CFLAGS) -w
 
@@ -91,13 +91,11 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 bug469146_SOURCES	= bug469146.cpp
 # -fno-optimize-sibling-calls because otherwise some platforms will have
 # tail call optimization which messes up --ignore-fn
-bug469146_CXXFLAGS	= $(AM_CXXFLAGS) -O2 -fno-optimize-sibling-calls
+bug469146_CXXFLAGS	= $(AM_CXXFLAGS) -O2 -fno-optimize-sibling-calls @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_ATTRIBUTES@
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
-# pre C++11 compilers don't have exception specs
-# C++11 and later compilers may complain about not having
-# exception specs
-overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec
+# aligned new needs C++17
+overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec -std=c++17
 
 # Suppress warnings for issues we are testing for
 alloc_fns_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result

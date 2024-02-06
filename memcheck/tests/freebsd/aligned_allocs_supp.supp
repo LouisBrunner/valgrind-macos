@@ -1,0 +1,20 @@
+{
+   posix_memalign bad alignment
+   Memcheck:BadAlign
+   fun:posix_memalign
+   fun:main
+}
+
+{
+   aligned_alloc bad alignment
+   Memcheck:BadAlign
+   fun:aligned_alloc
+   fun:main
+}
+
+{
+   aligned_alloc bad size
+   Memcheck:BadSize
+   fun:aligned_alloc
+   fun:main
+}

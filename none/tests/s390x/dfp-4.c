@@ -1,43 +1,30 @@
-#include <stdio.h>
-#include <sys/types.h>
 #include "dfp_utils.h"
+#include <stdio.h>
 
-volatile _Decimal32 d32_1, d32_2;
-volatile _Decimal64 d64_1, d64_2;
-volatile _Decimal128 d128_1, d128_2;
+#define CONV(opc, from, to, val)                                               \
+   {                                                                           \
+      pun_d##to out;                                                           \
+      printf("%-11s : ", "D" #from " -> D" #to);                               \
+      DFP_VAL_PRINT(val, pun_d##from);                                         \
+      asm(".insn rrf," opc "0000,%[r1],%[r2],0,0"                              \
+          : [r1] "=f"(out.f)                                                   \
+          : [r2] "f"(val.f));                                                  \
+      printf(" -> ");                                                          \
+      DFP_VAL_PRINT(out, pun_d##to);                                           \
+      putchar('\n');                                                           \
+   }
+
+static const pun_d64 dd_A = {0x22340000000c0004}; /* 60000.4DD */
+static const pun_d32 df_B = {0x2df00002};         /* 3.000002DF  */
+
+/* 100000000.000028DL */
+static const pun_d128 dl_C = {{0x2206800000000000, 0x0000800000000028}};
 
 int main(void)
 {
-   d64_1 = 5.000005DD;
-   d64_2 = 60000.4DD;
-   d32_1 = 3.000002DF;
-   d32_2 = 500000.000005DF;
-   d128_1 = 100000000.000028DL;
-
-   d64_1 = (_Decimal64) d32_1; //Exercise LDETR (load lengthened)
-   printf("D32 -> D64  : ");
-   DFP_VAL_PRINT(d32_1, _Decimal32);
-   printf(" -> ");
-   DFP_VAL_PRINT(d64_1, _Decimal64);
-
-   d128_2 = (_Decimal128) d64_2; //Exercise LXDTR (load lengthened)
-   printf("\nD64 -> D128 : ");
-   DFP_VAL_PRINT(d64_2, _Decimal64);
-   printf(" -> ");
-   DFP_VAL_PRINT(d128_2, _Decimal128);
-
-   d32_2 = (_Decimal32) d64_2; //Exercise LEDTR (load rounded)
-   printf("\nD64 -> D32  : ");
-   DFP_VAL_PRINT(d64_2, _Decimal64);
-   printf(" -> ");
-   DFP_VAL_PRINT(d32_2, _Decimal32);
-
-   d64_2 = (_Decimal64) d128_1; //Exercise LDXTR (load rounded)
-   printf("\nD128 -> D64 : ");
-   DFP_VAL_PRINT(d128_1, _Decimal128);
-   printf(" -> ");
-   DFP_VAL_PRINT(d64_2, _Decimal64);
-   printf("\n");
-
+   CONV("0xb3d4", 32, 64, df_B);  /* LDETR (load lengthened) */
+   CONV("0xb3dc", 64, 128, dd_A); /* LXDTR (load lengthened) */
+   CONV("0xb3d5", 64, 32, dd_A);  /* LEDTR (load rounded) */
+   CONV("0xb3dd", 128, 64, dl_C); /* LDXTR (load rounded) */
    return 0;
 }

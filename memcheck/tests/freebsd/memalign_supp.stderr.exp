@@ -1,0 +1,13 @@
+
+
+HEAP SUMMARY:
+    in use at exit: 20,976,192 bytes in 8 blocks
+  total heap usage: 12 allocs, 4 frees, 32,588,352 bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+used_suppression:      8 memalign bad alignment memalign_supp.supp:2
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

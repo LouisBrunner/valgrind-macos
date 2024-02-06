@@ -57,6 +57,10 @@ int main(void)
    
    // if ever we make this multi-platform, Solaris doesn't support this
    // zero size
+   p = aligned_alloc(32, 0);
+   assert(p && ((size_t)p % 32U == 0U));
+   free(p);
+   // zero alignment
    p = aligned_alloc(0, 8);
    assert(p == NULL && errno == EINVAL);
    errno = 0;

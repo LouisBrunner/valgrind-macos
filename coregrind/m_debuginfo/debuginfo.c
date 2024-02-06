@@ -1937,12 +1937,13 @@ void VG_(di_notify_pdb_debuginfo)( Int fd_obj, Addr avma_obj,
 ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
 {
    DebugInfo* di;
+   Int rw_load_count;
    const Bool       debug = VG_(debugLog_getLevel)() >= 3;
 
    if (debug)
       VG_(dmsg)("di_notify_dsc-1: %s\n", filename);
 
-   if (!ML_(is_macho_object_file)( (const void*) header, len ))
+   if (!ML_(check_macho_and_get_rw_loads)( (const void*) header, len, &rw_load_count ))
       return 0;
 
    /* See if we have a DebugInfo for this filename.  If not,

@@ -761,11 +761,11 @@ case "${host_os}" in
       case "${darwin_platform}" in
       macosx)
         DARWIN_MIN_SDK="10.6"
-        ld_os_min_vers_arg="-macosx_version_min=${DARWIN_MIN_SDK}"
+        ld_os_min_vers_arg="-macosx_version_min ${DARWIN_MIN_SDK}"
         if test $DARWIN_VERS -ge $DARWIN_11_00; then
           DARWIN_MIN_SDK="10.8"
           # they changed the name around 11.0
-          ld_os_min_vers_arg="-macos_version_min=${DARWIN_MIN_SDK}"
+          ld_os_min_vers_arg="-macos_version_min ${DARWIN_MIN_SDK}"
         fi
         clang_os_min_vers_arg="-mmacosx-version-min=${DARWIN_MIN_SDK}"
         ;;

@@ -626,7 +626,7 @@ case "${host_os}" in
       AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0 (iOS 14)])
       AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0 (iOS 15)])
       AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0 (iOS 16)])
-      AC_DEFINE([XCODE_14_0], 140000, [XCODE_VERS value for Xcode 14.0])
+      AC_DEFINE([XCODE_14_0], 140000, [XCODE_VERS value for Xcode 14.0 (iOS 17)])
 
       # Substitute the Xcode include path detected earlier
       AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
@@ -635,15 +635,15 @@ case "${host_os}" in
 
       AC_MSG_CHECKING([for the Darwin platform])
       case "${darwin_platform}" in
-      macosx)
-      iphoneos)
-        ;;
-      *)
-        AC_MSG_RESULT([unsupported Darwin platform (${darwin_platform})])
-        AC_MSG_ERROR([Valgrind works on macOS (macosx) and iOS (iphoneos)])
+        macosx)
+          ;;
+        iphoneos)
+          ;;
+        *)
+          AC_MSG_RESULT([unsupported Darwin platform (${darwin_platform})])
+          AC_MSG_ERROR([Valgrind works on macOS (macosx) and iOS (iphoneos)])
       esac
       AC_MSG_RESULT([ok (${darwin_platform})])
-
 
       AC_MSG_CHECKING([for the kernel version])
       kernel=$darwin_version

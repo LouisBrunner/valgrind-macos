@@ -106,7 +106,7 @@ stack_switch_LDADD    = -lpthread
 timerfd_syscall_LDADD = -lrt
 
 if HAVE_OPENSSL
-bug480706_LDFLAGS             = ${AM_LDFLAGS} -lcrypto
+bug480706_LDADD             = -lcrypto
 endif
 
 # Build shared object for dlclose_leak

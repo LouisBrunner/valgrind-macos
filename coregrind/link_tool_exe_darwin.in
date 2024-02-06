@@ -153,8 +153,10 @@ my $cmd = "/usr/bin/ld";
 
 if ($archstr eq "arm64") {
     $cmd = "$cmd -L@XCODE_LIB_DIR@ -lSystem";
+    $cmd = "$cmd -segaddr __TEXT $ala";
 } else {
     $cmd = "$cmd -static";
+    $cmd = "$cmd -image_base $ala";
 }
 
 # If we're building with clang (viz, the C compiler as specified
@@ -173,7 +175,6 @@ my $stack_addr = Math::BigInt->new( $ala ) - $TX_STACK_OFFSET_BEFORE_TEXT;
 my $stack_addr_str = $stack_addr->as_hex();
 my $stack_size_str = Math::BigInt::as_hex($TX_STACK_SIZE);
 
-$cmd = "$cmd -image_base $ala";
 # FIXME: 14.0 and later mark it as deprecated and ignored but it still works
 $cmd = "$cmd -stack_addr $stack_addr_str";
 $cmd = "$cmd -stack_size $stack_size_str";
@@ -197,12 +198,14 @@ if ($r != 0) {
 # and now kludge the tool exe
 # see bug 267997
 
+# if ($archstr eq "arm64") {
+#     exit 0;
+# }
+
 $cmd = "../coregrind/fixup_macho_loadcmds";
 $cmd = "$cmd $stack_addr_str $stack_size_str $outname";
 
 if ($archstr eq "arm64") {
-    # TODO: temp, roll into fixup_macho_loadcmds
-    # $cmd = "python3 ../coregrind/make_binary_dynamic_darwin.py $outname";
     $cmd = "python3 ../coregrind/fixup_dynamic_binary_darwin.py $outname $ala";
 }
 

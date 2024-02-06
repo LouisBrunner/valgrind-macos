@@ -35,25 +35,6 @@ def main():
   # tool.remove_section("__la_symbol_ptr")
   # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DATA_IN_CODE)
   # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.FUNCTION_STARTS)
-  # offset all segments and sections so the load address is correct
-  text = tool.get_segment("__TEXT")
-  data = tool.get_segment("__DATA")
-  offset = image_base - text.virtual_address
-  text.virtual_address = image_base
-  text.get_section("__text").virtual_address += offset
-  text.get_section("__const").virtual_address += offset
-  text.get_section("__cstring").virtual_address += offset
-  text.get_section("__unwind_info").virtual_address += offset
-  text.get_section("__stubs").virtual_address += offset
-  text.get_section("__stub_helper").virtual_address += offset
-  data.virtual_address += offset
-  data.get_section("__const").virtual_address += offset
-  data.get_section("__data").virtual_address += offset
-  data.get_section("__common").virtual_address += offset
-  data.get_section("__bss").virtual_address += offset
-  data.get_section("__got").virtual_address += offset
-  data.get_section("__la_symbol_ptr").virtual_address += offset
-  tool.get_segment("__LINKEDIT").virtual_address += offset
 
   # Commit the changes and make the binary executable
   tool.write(toolpath_fixed)

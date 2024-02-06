@@ -8,6 +8,7 @@ noinst_HEADERS = scalar.h
 EXTRA_DIST = \
 	aio.stderr.exp aio.vgtest \
 	aligned_alloc.stderr.exp aligned_alloc.vgtest \
+	bug437790.vgtest bug437790.stdout.exp bug437790.stderr.exp \
 	deep_badparam.stderr.exp deep_badparam.stdout.exp deep_badparam.vgtest \
 	env.stderr.exp env.vgtest \
 	ioctl-tiocsbrk.stderr.exp ioctl-tiocsbrk.vgtest \
@@ -22,6 +23,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	aio \
 	aligned_alloc \
+	bug437790 \
 	deep_badparam \
 	env \
 	ioctl-tiocsbrk \

@@ -1056,7 +1056,7 @@ int main(void)
 
    /* SYS_aio_error               317 */
    GO(SYS_aio_error, "1s 1m");
-   SY(SYS_aio_error, x0+1); FAIL;
+   SY(SYS_aio_error, x0+1); SUCC;
 
    /* freebsd 6 aio_read          318 */
 

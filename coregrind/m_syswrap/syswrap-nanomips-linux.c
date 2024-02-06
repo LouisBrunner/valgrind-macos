@@ -814,7 +814,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_execveat,               sys_execveat),
    //    (__NR_userfaultfd,            sys_ni_syscall),
    LINX_ (__NR_membarrier,             sys_membarrier),
-   //    (__NR_mlock2,                 sys_ni_syscall),
+   GENX_ (__NR_mlock2,                 sys_mlock2),
    //    (__NR_copy_file_range,        sys_ni_syscall),
    //    (__NR_preadv2,                sys_ni_syscall),
    //    (__NR_pwritev2,               sys_ni_syscall),
@@ -827,8 +827,11 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_pidfd_open,             sys_pidfd_open),
    GENX_ (__NR_clone3,                 sys_ni_syscall),
    LINXY (__NR_close_range,            sys_close_range),
+   LINXY(__NR_openat2,                 sys_openat2),
+   LINXY(__NR_pidfd_getfd,             sys_pidfd_getfd),
    LINX_ (__NR_faccessat2,             sys_faccessat2),
    LINXY (__NR_epoll_pwait2,           sys_epoll_pwait2),
+   LINX_ (__NR_fchmodat2,              sys_fchmodat2),
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

@@ -8,6 +8,10 @@ dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 EXTRA_DIST = \
 	access.vgtest \
 	access.stderr.exp \
+	aio.vgtest aio.stderr.exp \
+	aiov.vgtest aiov.stderr.exp \
+	aio_read.vgtest aio_read.stderr.exp aio_read.stdout.exp \
+	aio_read.in \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
 	aligned_alloc_xml.vgtest aligned_alloc_xml.stderr.exp \
 	aligned_allocs_supp.vgtest \
@@ -72,6 +76,8 @@ EXTRA_DIST = \
 	memalign_supp.supp \
 	misc.vgtest \
 	misc.stderr.exp \
+	openpty.vgtest \
+	openpty.stderr.exp \
 	pdfork_pdkill.vgtest \
 	pdfork_pdkill.stderr.exp \
 	realpathat.vgtest \
@@ -115,6 +121,8 @@ EXTRA_DIST = \
 	statfs.stderr.exp \
 	static_allocs.vgtest \
 	static_allocs.stderr.exp \
+	strlcat_strlcpy.vgtest \
+	strlcat_strlcpy.stderr.exp \
 	supponlyobj.vgtest \
 	supponlyobj.stderr.exp \
 	supponlyobj.supp \
@@ -130,14 +138,15 @@ EXTRA_DIST = \
 	utimes.stderr.exp
 
 check_PROGRAMS = \
-	access aligned_alloc bug464476 bug470713 capsicum \
-	chflags \
+	access aio aio_read aligned_alloc bug464476 bug470713 \
+	capsicum chflags \
 	chmod_chown delete_sized_mismatch errno_aligned_allocs \
 	extattr \
 	fexecve \
 	file_locking_wait6 \
 	get_set_context get_set_login getfh \
 	kqueue linkat memalign misc \
+	openpty \
 	pdfork_pdkill getfsstat inlinfo inlinfo_nested.so \
 	revoke scalar \
 	scalar_fork scalar_thr_exit scalar_abort2 scalar_pdfork \
@@ -148,12 +157,17 @@ check_PROGRAMS = \
 	stat \
 	statfs \
 	static_allocs \
+	strlcat_strlcpy \
 	timing_safe \
 	utimens \
 	utimes
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
+
+if HAVE_AIO_READV
+check_PROGRAMS += aiov
+endif
 
 inlinfo_SOURCES = inlinfo.c
 inlinfo_DEPENDENCIES = inlinfo_nested.so
@@ -181,9 +195,9 @@ if HAVE_CLOSE_RANGE
 check_PROGRAMS += close_range
 endif
 
-scalar_CFLAGS = ${AM_CFLAGS} -g
-
 aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+close_range_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
 delete_sized_mismatch_CXXFLAGS = ${AM_CXXFLAGS} --std=c++14
 delete_sized_mismatch_SOURCES = delete_sized_mismatch.cpp
@@ -193,3 +207,7 @@ errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT
 extattr_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
 memalign_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
+openpty_LDFLAGS = ${AM_LDFLAGS} -lutil
+
+scalar_CFLAGS = ${AM_CFLAGS} -g

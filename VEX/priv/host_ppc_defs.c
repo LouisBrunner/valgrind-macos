@@ -4938,6 +4938,9 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       default:
          goto bad;
       }
+      // PJF Coverity may be right but I'd reather keep the unreachable code
+      // "just in case" that conditions above ever change
+      // coverity[UNREACHABLE:FALSE]
       goto done;
    }
 

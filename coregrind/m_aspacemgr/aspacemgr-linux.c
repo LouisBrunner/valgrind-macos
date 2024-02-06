@@ -860,11 +860,19 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       if (nsegments[i].hasW) seg_prot |= VKI_PROT_WRITE;
       if (nsegments[i].hasX) seg_prot |= VKI_PROT_EXEC;
 
+#if defined(VGO_darwin) || defined(VGO_freebsd)
+      // GrP fixme kernel info doesn't have dev/inode
+      cmp_devino = False;
+
+      // GrP fixme V and kernel don't agree on offsets
+      cmp_offsets = False;
+#else
       cmp_offsets
          = nsegments[i].kind == SkFileC || nsegments[i].kind == SkFileV;
 
       cmp_devino
          = nsegments[i].dev != 0 || nsegments[i].ino != 0;
+#endif
 
       /* Consider other reasons to not compare dev/inode */
 #if defined(VGO_linux)
@@ -876,14 +884,6 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       /* hack apparently needed on MontaVista Linux */
       if (filename && VG_(strstr)(filename, "/.lib-ro/"))
          cmp_devino = False;
-#endif
-
-#if defined(VGO_darwin) || defined(VGO_freebsd)
-      // GrP fixme kernel info doesn't have dev/inode
-      cmp_devino = False;
-      
-      // GrP fixme V and kernel don't agree on offsets
-      cmp_offsets = False;
 #endif
       
       /* If we are doing sloppy execute permission checks then we

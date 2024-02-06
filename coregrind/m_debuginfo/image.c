@@ -134,8 +134,8 @@ static Bool is_sane_CEnt ( const HChar* who, const DiImage* img, UInt i )
    if (!(ce->used <= ce->size)) goto fail;
    if (ce->fromC) {
       // ce->size can be anything, but ce->used must be either the
-      // same or zero, in the case that it hasn't been set yet.  
-      // Similarly, ce->off must either be above the real_size 
+      // same or zero, in the case that it hasn't been set yet.
+      // Similarly, ce->off must either be above the real_size
       // threshold, or zero if it hasn't been set yet.
       if (!(ce->off >= img->real_size || ce->off == 0)) goto fail;
       if (!(ce->off + ce->used <= img->size)) goto fail;
@@ -427,7 +427,7 @@ static Bool parse_Frame_asciiz ( const Frame* fr, const HChar* tag,
 static Bool parse_Frame_le64_le64_le64_bytes (
                const Frame* fr, const HChar* tag,
                /*OUT*/ULong* n1, /*OUT*/ULong* n2, /*OUT*/ULong* n3,
-               /*OUT*/UChar** data, /*OUT*/ULong* n_data 
+               /*OUT*/UChar** data, /*OUT*/ULong* n_data
             )
 {
    vg_assert(VG_(strlen)(tag) == 4);
@@ -576,7 +576,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
       UInt delay = now - t_last;
       t_last = now;
       nread += len;
-      VG_(printf)("XXXXXXXX (tot %'llu)  read %'lu  offset %'llu  delay %'u\n", 
+      VG_(printf)("XXXXXXXX (tot %'llu)  read %'lu  offset %'llu  delay %'u\n",
                   nread, len, off, delay);
    }
 
@@ -585,7 +585,27 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
       if (img->source.fd == -1) {
         VG_(memcpy)(&ce->data[0], ((const char *)img->source.session_id) + off, len);
       } else {
+      // PJF not quite so simple - see
+      // https://bugs.kde.org/show_bug.cgi?id=480405
+      // if img->source.fd was opened with O_DIRECT the memory needs
+      // to be aligned and also the length
+      // that's a lot of hassle just to take a quick peek to see if
+      // is an ELF binary so just twiddle the flag before and after
+      // peeking.
+      // This doesn't seem to be a problem on FreeBSD. I haven't tested
+      // on macOS or Solaris, hence the conditional compilation
+#if defined(VKI_O_DIRECT)
+      Int flags = VG_(fcntl)(img->source.fd, VKI_F_GETFL, 0);
+      if (flags & VKI_O_DIRECT) {
+          VG_(fcntl)(img->source.fd, VKI_F_SETFL, flags & ~VKI_O_DIRECT);
+      }
+#endif
       SysRes sr = VG_(pread)(img->source.fd, &ce->data[0], (Int)len, off);
+#if defined(VKI_O_DIRECT)
+      if (flags & VKI_O_DIRECT) {
+         VG_(fcntl)(img->source.fd, VKI_F_SETFL, flags);
+      }
+#endif
       vg_assert(!sr_isError(sr));
       }
    } else {
@@ -649,7 +669,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
      end_of_else_clause:
       {}
    }
-   
+
    ce->off  = off;
    ce->used = len;
    ce->fromC = False;
@@ -849,7 +869,7 @@ DiImage* ML_(img_from_local_file)(const HChar* fullpath)
        || /* size is unrepresentable as a SizeT */
           size != (DiOffT)(SizeT)(size)) {
       VG_(close)(sr_Res(fd));
-      return NULL; 
+      return NULL;
    }
 
    DiImage* img = ML_(dinfo_zalloc)("di.image.ML_iflf.1", sizeof(DiImage));
@@ -978,7 +998,7 @@ DiImage* ML_(img_from_di_server)(const HChar* filename,
    if (!set_blocking(sd))
       return NULL;
    Int one = 1;
-   Int sr = VG_(setsockopt)(sd, VKI_IPPROTO_TCP, VKI_TCP_NODELAY, 
+   Int sr = VG_(setsockopt)(sd, VKI_IPPROTO_TCP, VKI_TCP_NODELAY,
                             &one, sizeof(one));
    vg_assert(sr == 0);
 
@@ -1258,6 +1278,20 @@ Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
       if (c1 == 0) return 0;
       off1++; str2++;
    }
+}
+
+Int ML_(img_strcmp_n)(DiImage* img, DiOffT off1, const HChar* str2, Word n)
+{
+   ensure_valid(img, off1, 1, "ML_(img_strcmp_c)");
+   while (n) {
+      UChar c1 = get(img, off1);
+      UChar c2 = *(const UChar*)str2;
+      if (c1 < c2) return -1;
+      if (c1 > c2) return 1;
+      if (c1 == 0) return 0;
+      off1++; str2++; --n;
+   }
+   return 0;
 }
 
 UChar ML_(img_get_UChar)(DiImage* img, DiOffT offset)

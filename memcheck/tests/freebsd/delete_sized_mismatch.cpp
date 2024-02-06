@@ -8,8 +8,8 @@
 
 int main()
 {
-   size_t size(32);
-   size_t badsize(33);
+   std::size_t size(32);
+   std::size_t badsize(33);
 
    void *mem = nullptr;
 

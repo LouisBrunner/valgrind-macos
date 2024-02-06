@@ -1,0 +1,42 @@
+Source and destination overlap in strlcpy(0x........, 0x........, 96)
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:15)
+
+Source and destination overlap in strlcpy(0x........, 0x........, 91)
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:18)
+
+Source and destination overlap in strlcpy(0x........, 0x........, 95)
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:21)
+
+Source and destination overlap in strlcpy(0x........, 0x........, 96)
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:30)
+
+Invalid write of size 1
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:30)
+ Address 0x........ is 0 bytes after a block of size 100 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (strlcat_strlcpy.c:9)
+
+Invalid read of size 1
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:30)
+ Address 0x........ is 0 bytes after a block of size 100 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
+   by 0x........: main (strlcat_strlcpy.c:9)
+
+Source and destination overlap in strlcat(0x........, 0x........, 95)
+   at 0x........: strlcat (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:36)
+
+Source and destination overlap in strlcat(0x........, 0x........, 93)
+   at 0x........: strlcat (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:40)
+
+Source and destination overlap in strlcpy(0x........, 0x........, 98)
+   at 0x........: strlcpy (vg_replace_strmem.c:...)
+   by 0x........: main (strlcat_strlcpy.c:44)
+

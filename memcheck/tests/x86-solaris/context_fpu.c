@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-#include <sys/ucontext.h>
+#include <ucontext.h>
 
 static siginfo_t si;
 static ucontext_t uc;

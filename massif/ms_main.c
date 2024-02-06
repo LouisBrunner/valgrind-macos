@@ -282,6 +282,12 @@ static Bool have_started_executing_code = False;
 //--- Alloc fns                                            ---//
 //------------------------------------------------------------//
 
+// alloc_fns is not used for detecting allocations
+// it is used when checking for ignore functions in the callstack
+// see filter_IPs
+// allocation detection uses the usual coregrind reaplace malloc
+// mechanism which calls ms_malloc etc. here and in the end
+// everything goes through alloc_and_record_block
 static XArray* alloc_fns;
 static XArray* ignore_fns;
 
@@ -298,6 +304,12 @@ static void init_alloc_fns(void)
    // prodigiously stupid overloading that caused them to not allocate
    // memory.
    //
+   // PJF: the above comment is a bit wide of the mark.
+   // See https://en.cppreference.com/w/cpp/memory/new/operator_new
+   // There are two "non-allocating placement allocation functions"
+   //
+   // Because of the above we can't use wildcards.
+   //
    // XXX: because we don't look at the first stack entry (unless it's a
    // custom allocation) there's not much point to having all these alloc
    // functions here -- they should never appear anywhere (I think?) other
@@ -309,20 +321,38 @@ static void init_alloc_fns(void)
    //
    DO("malloc"                                              );
    DO("__builtin_new"                                       );
+# if VG_WORDSIZE == 4
    DO("operator new(unsigned)"                              );
+#else
    DO("operator new(unsigned long)"                         );
+#endif
    DO("__builtin_vec_new"                                   );
+# if VG_WORDSIZE == 4
    DO("operator new[](unsigned)"                            );
+#else
    DO("operator new[](unsigned long)"                       );
+#endif
    DO("calloc"                                              );
+   DO("aligned_alloc"                                       );
    DO("realloc"                                             );
    DO("memalign"                                            );
    DO("posix_memalign"                                      );
    DO("valloc"                                              );
+# if VG_WORDSIZE == 4
    DO("operator new(unsigned, std::nothrow_t const&)"       );
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
+   DO("operator new(unsigned, std::align_val_t)"            );
+   DO("operator new[](unsigned, std::align_val_t)"          );
+   DO("operator new(unsigned, std::align_val_t, std::nothrow_t const&)"   );
+   DO("operator new[](unsigned, std::align_val_t, std::nothrow_t const&)" );
+#else
    DO("operator new(unsigned long, std::nothrow_t const&)"  );
    DO("operator new[](unsigned long, std::nothrow_t const&)");
+   DO("operator new(unsigned long, std::align_val_t)"       );
+   DO("operator new[](unsigned long, std::align_val_t)"     );
+   DO("operator new(unsigned long, std::align_val_t, std::nothrow_t const&)"   );
+   DO("operator new[](unsigned long, std::align_val_t, std::nothrow_t const&)" );
+#endif
 #if defined(VGO_darwin)
    DO("malloc_zone_malloc"                                  );
    DO("malloc_zone_calloc"                                  );

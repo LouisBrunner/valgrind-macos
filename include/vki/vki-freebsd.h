@@ -1086,6 +1086,11 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 #define VKI_FIOASYNC _VKI_IOW('f', 125, int)
 #define VKI_FIOSETOWN   _VKI_IOW('f', 124, int)
 #define VKI_FIOGETOWN   _VKI_IOW('f', 123, int)
+struct vki_fiodgname_arg {
+   int     len;
+   void    *buf;
+};
+#define VKI_FIODGNAME   _VKI_IOW('f', 120, struct vki_fiodgname_arg) /* get dev. name */
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
 #if 0
@@ -1593,6 +1598,12 @@ struct vki_dirent {
 #define VKI_F_SEAL_GROW    0x0004
 #define VKI_F_SEAL_WRITE   0x0008
 
+struct vki_spacectl_range {
+   vki_off_t   r_offset;
+   vki_off_t   r_len;
+};
+
+
 //----------------------------------------------------------------------
 // From sys/unistd.h
 //----------------------------------------------------------------------
@@ -2073,7 +2084,7 @@ struct vki_umtx_robust_lists_params {
 #define VKI_UMTX_OP_SEM2_WAKE       24
 #define VKI_UMTX_OP_SHM             25
 #define VKI_UMTX_OP_ROBUST_LISTS    26
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_13_3)
 #define VKI_UMTX_OP_GET_MIN_TIMEOUT 27
 #define VKI_UMTX_OP_SET_MIN_TIMEOUT 28
 #endif

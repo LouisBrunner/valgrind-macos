@@ -58,7 +58,8 @@
 {
    helgrind-glibc-__printf_buffer_write
    Helgrind:Race
-   fun:memcpy
+   fun:memcpy*
+   ...
    fun:__printf_buffer_write
 }
 
@@ -332,3 +333,10 @@
    Helgrind:Race
    fun:_nss_*_gethostbyname4_r
 }
+
+{
+   helgrind--- libnss without debuginfo
+   Helgrind:Race
+   obj:/usr/lib/*/libnss_mdns4*.so.*
+}
+

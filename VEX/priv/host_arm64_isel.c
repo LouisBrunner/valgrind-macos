@@ -1627,8 +1627,10 @@ static HReg iselCondCode_R_wrk ( ISelEnv* env, IRExpr* e )
    addInstr(env, ARM64Instr_Set64(res, cc));
    return res;
 
+   /* PJF the following two lines are dead code
    ppIRExpr(e);
    vpanic("iselCondCode_R(arm64)");
+   */
 }
 
 

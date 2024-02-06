@@ -813,3 +813,15 @@ fun:pthread_rwlock_init
    fun:_pthread_start
    fun:thread_start
 }
+
+{
+   OSX1013:vng_aes_encrypt_opt
+   Memcheck:Value8
+   fun:vng_aes_encrypt_opt
+}
+
+{
+   OSX1013:ccaes_vng_ctr_crypt
+   Memcheck:Cond
+   fun:ccaes_vng_ctr_crypt
+}

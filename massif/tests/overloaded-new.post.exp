@@ -1,36 +1,36 @@
 --------------------------------------------------------------------------------
 Command:            ./overloaded-new
-Massif arguments:   --stacks=no --time-unit=B --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0 --ignore-fn=call_init
+Massif arguments:   --stacks=no --time-unit=B --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0 --ignore-fn=call_init --ignore-fn=pool
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 
 
     KB
-11.75^                                    ###########                         
-     |                                    #                                   
-     |                                    #                                   
-     |                                    #                                   
-     |                             :::::::#                                   
-     |                             :      #                                   
-     |                             :      #                                   
-     |                       :::::::      #          ::::::::::::             
-     |                       :     :      #          :                        
-     |                       :     :      #          :                        
-     |                       :     :      #          :                        
-     |                       :     :      #          :                        
-     |                       :     :      #          :                        
-     |                       :     :      #          :                        
-     |           :::::::::::::     :      #          :           ::::::       
-     |           :           :     :      #          :           :            
-     |           :           :     :      #          :           :            
-     |           :           :     :      #          :           :     :::::: 
-     |           :           :     :      #          :           :     :      
-     |           :           :     :      #          :           :     :      
+98.XX^                                    #                                   
+     |                                    #:                                  
+     |                                    #:::                                
+     |                                    #::::                               
+     |                                    #:::::::::::::::::::                
+     |                                    #:::::                              
+     |                                    #:::::                              
+     |                                    #:::::                              
+     |                     :::::::::::::::#:::::                              
+     |                    ::              #:::::                              
+     |                    ::              #:::::                              
+     |                    ::              #:::::                              
+     |                    ::              #:::::              :               
+     |                    ::              #:::::              ::::::::::::::: 
+     |                    ::              #:::::              ::              
+     |                    ::              #:::::              ::              
+     |                    ::              #:::::              ::              
+     |     :::::::::::::::::              #:::::              ::              
+     |    ::              ::              #:::::              ::              
+     |  ::::              ::              #:::::              ::              
    0 +----------------------------------------------------------------------->KB
-     0                                                                   23.50
+     0                                                                   19X.X
 
-Number of snapshots: 10
- Detailed snapshots: [5 (peak)]
+Number of snapshots: 18
+ Detailed snapshots: [9 (peak)]
 
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
@@ -40,20 +40,36 @@ Number of snapshots: 10
   2          8,016            8,016            8,000            16            0
   3         10,024           10,024           10,000            24            0
   4         12,032           12,032           12,000            32            0
-  5         12,032           12,032           12,000            32            0
-99.73% (12,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
-->33.24% (4,000B) 0x........: main (overloaded-new.cpp:49)
+  5         16,XXX           16,XXX           16,000           XXX            0
+  6         56,XXX           56,XXX           56,000           XXX            0
+  7         60,XXX           60,XXX           60,000           XXX            0
+  8        100,XXX          100,XXX          100,000           XXX            0
+  9        100,XXX          100,XXX          100,000           XXX            0
+99.XX% (100,000B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
+->39.XX% (40,000B) 0x........: main (overloaded-new.cpp:84)
 | 
-->33.24% (4,000B) 0x........: main (overloaded-new.cpp:50)
+->39.XX% (40,000B) 0x........: main (overloaded-new.cpp:87)
 | 
-->16.62% (2,000B) 0x........: main (overloaded-new.cpp:51)
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:79)
 | 
-->16.62% (2,000B) 0x........: main (overloaded-new.cpp:52)
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:80)
+| 
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:83)
+| 
+->03.XX% (4,000B) 0x........: main (overloaded-new.cpp:86)
+| 
+->01.XX% (2,000B) 0x........: main (overloaded-new.cpp:81)
+| 
+->01.XX% (2,000B) 0x........: main (overloaded-new.cpp:82)
   
 --------------------------------------------------------------------------------
   n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  6         16,040            8,024            8,000            24            0
-  7         20,048            4,016            4,000            16            0
-  8         22,056            2,008            2,000             8            0
-  9         24,064                0                0             0            0
+ 10        104,XXX           96,XXX           96,000           XXX            0
+ 11        108,XXX           92,XXX           92,000           XXX            0
+ 12        110,XXX           90,XXX           90,000           XXX            0
+ 13        112,XXX           88,XXX           88,000           XXX            0
+ 14        116,XXX           84,XXX           84,000           XXX            0
+ 15        157,XXX           44,XXX           44,000           XXX            0
+ 16        161,XXX           40,XXX           40,000           XXX            0
+ 17        201,XXX                0                0             0            0

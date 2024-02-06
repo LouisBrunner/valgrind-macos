@@ -8,15 +8,18 @@ struct data {
     struct addrinfo *res;
 };
 
-struct data threaddat[5] = {
+struct data threaddat[] = {
     { "www.freebsd.org", 0 },
     { "www.google.com", 0 },
     { "www.freshports.org", 0 },
     { "www.github.com", 0 },
-    { "www.kernel.org", 0 }
+    { "www.kernel.org", 0 },
+    { "petunia.bogus.address", 0 }
 };
 
-pthread_t threads[5];
+static const size_t threaddat_size = sizeof(threaddat)/sizeof(threaddat[0]);
+
+pthread_t threads[sizeof(threaddat)/sizeof(threaddat[0])];
 
 void *resolve(void *d) {
     struct data *data = d;
@@ -26,10 +29,10 @@ void *resolve(void *d) {
 
 int main(void) {
     int i;
-    for (i = 0; i < 5; ++i) {
+    for (i = 0; i < threaddat_size; ++i) {
         pthread_create(&threads[i], 0, resolve, &threaddat[i]);
     }
-    for (i = 0; i < 5; ++i) {
+    for (i = 0; i < threaddat_size; ++i) {
         pthread_join(threads[i], 0);
         freeaddrinfo(threaddat[i].res);
     }

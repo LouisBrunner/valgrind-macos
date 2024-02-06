@@ -49,6 +49,8 @@
 #include <sys/time.h>
 #include <sys/wait.h>
 
+#include "m_gdbserver/remote-utils-shared.h"
+
 /* vgdb has three usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.
    2. standalone to send monitor commands to a running valgrind-ified process
@@ -82,7 +84,7 @@ char timestamp_out[20];
 static char *vgdb_prefix = NULL;
 static char *valgrind_path = NULL;
 static char **vargs;
-static char cvargs = 0;
+static int cvargs = 0;
 
 char *timestamp_str (Bool produce)
 {
@@ -904,15 +906,6 @@ void close_connection(int to_pid, int from_pid)
 #endif
 }
 
-static
-int tohex (int nib)
-{
-   if (nib < 10)
-      return '0' + nib;
-   else
-      return 'a' + nib - 10;
-}
-
 /* Returns an allocated hex-decoded string from the buf. Stops decoding
    at end of buf (zero) or when seeing the delim char.  */
 static
@@ -1254,7 +1247,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
          /* close stdin */
          close (0);
          /* open /dev/null as new stdin */
-         open ("/dev/null", O_RDONLY);
+         (void)open ("/dev/null", O_RDONLY);
          /* redirect stdout as stderr */
          dup2 (2, 1);
       }
@@ -1406,7 +1399,12 @@ void do_multi_mode(int check_trials, int in_port)
           send_packet ("", noackmode);
        }
        else if (strncmp(QRCMD, buf, strlen(QRCMD)) == 0) {
-          send_packet ("No running target, monitor commands not available yet.", noackmode);
+           static const char *no_running_str =
+              "No running target, monitor commands not available yet.\n";
+           int str_count = strlen (no_running_str);
+           char hex[2 * str_count + 1];
+           hexify(hex, no_running_str, str_count);
+           send_packet(hex, noackmode);
 
           char *decoded_string = decode_hexstring (buf, strlen (QRCMD) + 1, 0);
           DEBUG(1, "qRcmd decoded: %s\n", decoded_string);
@@ -2294,7 +2292,7 @@ void parse_options(int argc, char** argv,
          // argc - i is the number of left over arguments
          // allocate enough space, put all args in it.
          cvargs = argc - i - 1;
-         vargs = vmalloc (cvargs * sizeof(vargs));
+         vargs = vmalloc (cvargs * sizeof(*vargs));
          i++;
          for (int j = 0; i < argc; i++) {
             vargs[j] = argv[i];

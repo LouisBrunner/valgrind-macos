@@ -238,3 +238,25 @@ inline scalar code
 
 
 chainXDirect_ARM64: use direct jump forms when possible
+
+
+Raspberry Pi
+~~~~~~~~~~~~
+
+The Raspberry Pi since version 3 has had 64 bit hardware (aarch64). However,
+Raspberry Pi OS (formerly raspbian) has a 32-bit userland. You can check
+this using commands like file, ldd or readelf. For instance,
+
+$ file -L `which gcc`
+/usr/bin/gcc: ELF 32-bit LSB executable, ARM, EABI5 version 1 (GNU/Linux), dynamically linked, interpreter /lib/ld-linux-armhf.so.3, BuildID[sha1]=6cfb4b75e1e265eb5a05ef0a1915bca9bae34674, for GNU/Linux 3.2.0, stripped
+
+As a consequence, if you try to run just "configure" it will detect aarch64 and
+select the "arm64" target, which is incorrect for the 32-bit userland.
+
+Instead you should run
+
+configure --host=armv8-unknown-linux
+
+That will override the aarch64 detection and result in a 32bit build of
+Valgrind for the "arm" target.
+

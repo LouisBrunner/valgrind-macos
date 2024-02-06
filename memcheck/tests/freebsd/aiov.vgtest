@@ -1,0 +1,4 @@
+prereq: test -e ./aiov
+prog: aiov
+vgopts: --leak-check=no
+stderr_filter: ../filter_allocs

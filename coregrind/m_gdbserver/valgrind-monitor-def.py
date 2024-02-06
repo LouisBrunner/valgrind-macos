@@ -211,7 +211,7 @@ class Valgrind_ADDR_LEN_opt(Valgrind_Command):
 For compatibility reason with the Valgrind gdbserver monitor command,
 we detect and accept usages such as 0x1234ABCD[10]."""
     def invoke(self, arg_str : str, from_tty : bool) -> None:
-        if re.fullmatch("^0x[0123456789ABCDEFabcdef]+\[[^\[\]]+\]$", arg_str):
+        if re.fullmatch(r"^0x[0123456789ABCDEFabcdef]+\[[^\[\]]+\]$", arg_str):
             arg_str = arg_str.replace("[", " ")
             arg_str = arg_str.replace("]", " ")
         eval_execute_2(self, arg_str,

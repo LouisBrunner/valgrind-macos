@@ -38,6 +38,7 @@ void *Worker() {
    void *x = malloc((i % 64) + 1);
    free (x);
  }
+ return NULL;
 }
 
 void SignalHandlerWithSpinlock(int sig, siginfo_t *siginfo, void *context) {

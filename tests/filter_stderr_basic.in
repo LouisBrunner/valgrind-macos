@@ -77,4 +77,7 @@ $SED '/warning: no debug symbols in executable/d' | # macOS
 $SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d' |
 
 # Remove macOS dsymutil
-$SED '/^run: \/usr\/bin\/dsymutil.*/d'
+$SED '/^run: \/usr\/bin\/dsymutil.*/d' |
+
+# Suppress Darwin dyld errors
+$SED '/^used_suppression:.*OSX.*dyld.*default.supp:*/d'

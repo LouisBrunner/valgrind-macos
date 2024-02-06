@@ -1,0 +1,2 @@
+prereq: test -e ./reallocarray
+prog: reallocarray

@@ -72,20 +72,23 @@ DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
 dist_noinst_SCRIPTS = \
 	filter_addressable \
 	filter_allocs \
-	filter_dw4 \
 	filter_leak_cases_possible \
 	filter_leak_cpp_interior \
-	filter_stderr filter_xml \
+	filter_xml \
 	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \
-	filter_overlaperror \
 	filter_malloc_free \
 	filter_size_t \
 	filter_stanza \
 	filter_stanza.awk \
 	filter_used_supp \
 	filter_stanza_and_size_t
+
+noinst_SCRIPTS = \
+	filter_dw4 \
+	filter_overlaperror \
+	filter_stderr
 
 noinst_HEADERS = leak.h
 
@@ -97,10 +100,6 @@ EXTRA_DIST = \
 	atomic_incs.stdout.exp-64bit-and-128bit \
 	badaddrvalue.stderr.exp \
 	badaddrvalue.stdout.exp badaddrvalue.vgtest \
-        exit_on_first_error.stderr.exp \
-        exit_on_first_error.vgtest \
-        exit_on_first_error_with_xml.stderr.exp \
-        exit_on_first_error_with_xml.vgtest \
 	badfree-2trace.stderr.exp badfree-2trace.vgtest \
 	badfree.stderr.exp badfree.vgtest \
 	badfree3.stderr.exp badfree3.vgtest \
@@ -118,6 +117,7 @@ EXTRA_DIST = \
 	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
 	bug340392.stderr.exp bug340392.vgtest \
+	bug401284.stderr.exp bug401284.stdout.exp bug401284.vgtest \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.stderr.exp bug472219.vgtest \
@@ -172,6 +172,7 @@ EXTRA_DIST = \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp_32 \
 	new_aligned_delete_default.stderr.exp \
+	new_aligned_delete_default.stderr.exp_32 \
 		new_aligned_delete_default.vgtest \
 	new_delete_mismatch_size.stderr.exp \
 		new_delete_mismatch_size.vgtest \
@@ -194,6 +195,10 @@ EXTRA_DIST = \
 	erringfds.stderr.exp erringfds.stdout.exp erringfds.vgtest \
 	error_counts.stderr.exp error_counts.vgtest \
 	errs1.stderr.exp errs1.vgtest \
+        exit_on_first_error.stderr.exp \
+        exit_on_first_error.vgtest \
+        exit_on_first_error_with_xml.stderr.exp \
+        exit_on_first_error_with_xml.vgtest \
 	exitprog.stderr.exp exitprog.vgtest \
 	execve1.stderr.exp execve1.vgtest execve1.stderr.exp-kfail \
 	execve2.stderr.exp execve2.vgtest execve2.stderr.exp-kfail \
@@ -260,6 +265,8 @@ EXTRA_DIST = \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-darwin \
 		memalign_args.stderr.exp-solaris \
+	memccpy1.stderr.exp memccpy1.stdout.exp memccpy1.vgtest \
+	memccpy2.stderr.exp memccpy2.vgtest \
 	memcmptest.stderr.exp memcmptest.stderr.exp2 \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \
@@ -292,6 +299,7 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc25-x86 \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
 	origin5-bz2.stderr.exp-glibc25-amd64-b \
+	origin5-bz2.stderr.exp-glibc25-x86-b \
 	origin5-bz2.stderr.exp-glibc27-ppc64 \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \
@@ -455,6 +463,7 @@ check_PROGRAMS = \
 	bug155125 \
 	bug287260 \
 	bug340392 \
+	bug401284 \
 	bug464969_d_demangle \
 	bug472219 \
 	calloc-overflow \
@@ -493,6 +502,7 @@ check_PROGRAMS = \
 	match-overrun \
 	memalign_test  memcmptest mempool mempool2 mmaptest \
 	memalign_args \
+	memccpy1 memccpy2 \
 	memmem \
 	mismatches new_override metadata \
 	nanoleak_supp nanoleak2 new_nothrow \
@@ -629,7 +639,7 @@ bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
-cxx17_aligned_new_CXXFLAGS = -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+cxx17_aligned_new_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
 new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp

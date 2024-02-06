@@ -7,6 +7,7 @@
 #include <limits.h>
 #include <string>
 #include <memory>
+#include <cstring>
 
 using std::cerr;
 using std::cout;
@@ -18,7 +19,7 @@ int main(int argc, char **argv)
    size_t len;
 
    if (sysctl(mib, 4, NULL, &len, NULL, 0) != 0) {
-      cout << "sysctl failed to get path length: " << strerror(errno) << '\n';
+      cout << "sysctl failed to get path length: " << std::strerror(errno) << '\n';
       return -1;
    }
 
@@ -32,7 +33,7 @@ int main(int argc, char **argv)
    if (string(aResult.get()) == argv[1]) {
       cout << "OK\n";
    } else {
-      cout << "Not OK aResult " << aResult << " argv[1] " << argv[1] << '\n';
+      cout << "Not OK aResult " << aResult.get() << " argv[1] " << argv[1] << '\n';
    }
 
    if (sysctl(mib, 4, NULL, NULL, NULL, 0) != -1) {

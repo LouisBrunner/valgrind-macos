@@ -663,6 +663,11 @@ typedef struct vki_kcf_door_arg_s {
 
 #define vki_meminfo_t meminfo_t
 
+#if defined(HAVE_MREMAP)
+#define VKI_MREMAP_FIXED MREMAP_FIXED
+#define VKI_MREMAP_MAYMOVE MREMAP_MAYMOVE
+#endif /* HAVE_MREMAP */
+
 
 #include <sys/mntio.h>
 #define VKI_MNTIOC_GETEXTMNTENT MNTIOC_GETEXTMNTENT
@@ -1382,9 +1387,9 @@ typedef struct sigaction vki_sigaction_fromK_t;
 #define vki_sgttyb sgttyb
 
 
-#include <sys/ucontext.h>
+#include <ucontext.h>
 /* This section also contains items defined in sys/regset.h, this file
-   is directly included in sys/ucontext.h. */
+   is directly included in ucontext.h. */
 #if defined(VGP_x86_solaris)
 #define VKI_SS SS
 #define VKI_UESP UESP

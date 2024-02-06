@@ -2799,10 +2799,13 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
    /* If this isn't true, we're in Big Trouble. */
    vassert(8 == sizeof(VexGuestX86SegDescr));
 
-   if (verboze) 
+   if (verboze) {
+      // Coverity is right but this is unimportant
+      // coverity[DEADCODE:FALSE]
       vex_printf("x86h_use_seg_selector: "
                  "seg_selector = 0x%x, vaddr = 0x%x\n", 
                  seg_selector, virtual_addr);
+   }
 
    /* Check for wildly invalid selector. */
    if (seg_selector & ~0xFFFF)

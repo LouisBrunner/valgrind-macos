@@ -8198,7 +8198,7 @@ DisResult disInstr_X86_WRK (
          delta += 5;
          goto decode_success;
       }
-      /* Don't barf on recent binutils padding,
+      /* Don't barf on recent (2010) binutils padding,
          all variants of which are: nopw %cs:0x0(%eax,%eax,1)
          66 2e 0f 1f 84 00 00 00 00 00
          66 66 2e 0f 1f 84 00 00 00 00 00
@@ -8219,6 +8219,26 @@ DisResult disInstr_X86_WRK (
              && code[data16_cnt + 8] == 0x00 ) {
             DIP("nopw %%cs:0x0(%%eax,%%eax,1)\n");
             delta += 9 + data16_cnt;
+            goto decode_success;
+         }
+      }
+
+      /* bug478624 GNU binutils uses a leal of esi into itself with
+         a zero offset and CS prefix as an 8 byte no-op (Dec 2023).
+         Since the CS prefix is hardly ever used we don't do much
+         to decode it, just a few cases for conditional branches.
+         So add handling here with other pseudo-no-ops.
+       */
+      if (code[0] == 0x2E && code[1] == 0x8D) {
+         if (code[2] == 0x74 && code[3] == 0x26 && code[4] == 0x00) {
+            DIP("leal %%cs:0(%%esi,%%eiz,1),%%esi\n");
+            delta += 5;
+            goto decode_success;
+         }
+         if (code[2] == 0xB4 && code[3] == 0x26 && code[4] == 0x00
+             && code[5] == 0x00 && code[6] == 0x00 && code[7] == 0x00) {
+            DIP("leal %%cs:0(%%esi,%%eiz,1),%%esi\n");
+            delta += 8;
             goto decode_success;
          }
       }

@@ -1,0 +1,3 @@
+prog: aio_read
+args: < aio_read.in
+vgopts: -q

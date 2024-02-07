@@ -11709,7 +11709,7 @@ s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
       case S390_VEC_FLOAT_COMPARE_EQUAL:
          return s390_emit_VFCE(buf, v1, v2, v3, s390_getM_from_size(size), 0, 0);
       case S390_VEC_FLOAT_COMPARE_LESS_OR_EQUAL:
-         // PJF I assume that CHE is cmpare higher or equal so the order need swapping
+         // PJF I assume that CHE is compare higher or equal so the order needs swapping
          // coverity[SWAPPED_ARGUMENTS:FALSE]
          return s390_emit_VFCHE(buf, v1, v3, v2, s390_getM_from_size(size), 0, 0);
       case S390_VEC_FLOAT_COMPARE_LESS:

@@ -140,6 +140,7 @@ static void showV128 ( V128* v )
       printf("%02x", (Int)v->u8[i]);
 }
 
+#if 0
 static void showBlock ( const char* msg, V128* block, Int nBlock )
 {
    Int i;
@@ -160,6 +161,7 @@ static ULong dup4x16 ( UInt x )
    r |= (r << 32);
    return r;
 }
+#endif
 
 // Generate a random double-precision number.  About 1 time in 2,
 // instead return a special value (+/- Inf, +/-Nan, denorm).

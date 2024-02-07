@@ -58,7 +58,7 @@
 {
    helgrind-glibc-__printf_buffer_write
    Helgrind:Race
-   fun:memcpy*
+   fun:*memcpy*
    ...
    fun:__printf_buffer_write
 }

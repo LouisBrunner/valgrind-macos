@@ -1,3 +1,4 @@
+prereq: test -e ./bug480706
 prog: bug480706
 vgopts: -q
 

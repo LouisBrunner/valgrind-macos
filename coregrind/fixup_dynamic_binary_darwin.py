@@ -35,6 +35,8 @@ def main():
   # tool.remove_section("__la_symbol_ptr")
   # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DATA_IN_CODE)
   # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.FUNCTION_STARTS)
+  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_EXPORTS_TRIE)
+  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_CHAINED_FIXUPS)
 
   # Commit the changes and make the binary executable
   tool.write(toolpath_fixed)

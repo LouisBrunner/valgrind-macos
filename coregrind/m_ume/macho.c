@@ -73,6 +73,7 @@ typedef struct load_info_t {
   vki_uint8_t *linker_entry; // dylinker entry point
   Addr linker_offset; // dylinker text offset
   vki_size_t max_addr; // biggest address reached while loading segments
+  Addr text_slide; // slide of the text segment because of "ASLR" (arm64-only)
 } load_info_t;
 
 static void print(const HChar *str)
@@ -241,11 +242,24 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    filesize = VG_PGROUNDUP(segcmd->filesize);
    vmsize = VG_PGROUNDUP(segcmd->vmsize);
    if (filesize > 0) {
-      addr = slided_addr;
+      addr = slided_addr + out_info->text_slide;
       VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu)\n", addr, filesize);
       res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd, 
                                                  offset + segcmd->fileoff, 
                                                  filename);
+#if defined(VGA_arm64)
+      // basically, we can't map at 0x0100000000 because the kernel doesn't allow it
+      // however, most binaries start their TEXT there, so we need to slide it
+      // we just do a non-fixed mmap and let the kernel decide where to put it
+      // we then calculate the slide and apply it everywhere it's needed
+      if (sr_isError(res) && !VG_(strcmp)(segcmd->segname, "__TEXT")) {
+        res = VG_(am_mmap_named_file_fixed_client_flags)(
+            0, filesize, prot, VKI_MAP_PRIVATE,
+            fd, offset + segcmd->fileoff, filename
+        );
+        out_info->text_slide = sr_Res(res) - addr;
+      }
+#endif
       check_mmap(res, addr, filesize, "load_segment1");
    }
 
@@ -333,7 +347,7 @@ load_genericthread(struct thread_command *threadcmd, int type,
 #elif defined(VGA_arm64)
       if (flavor == ARM_THREAD_STATE64 && count == ARM_THREAD_STATE64_COUNT){
          arm_thread_state64_t *state = (arm_thread_state64_t *)p;
-         out_info->entry = (vki_uint8_t *)state->__pc;
+         out_info->entry = (vki_uint8_t *)state->__pc + out_info->text_slide;
          if (type == LC_UNIXTHREAD) {
             out_info->stack_end =
               (vki_uint8_t *)(state->__sp ? state->__sp : VKI_USRSTACK64);
@@ -398,6 +412,7 @@ load_unixthread(struct thread_command *threadcmd, load_info_t *out_info)
       // FIXME: due to ASLR, we can't use VKI_MAP_FIXED here as that address space is probably used already,
       // however, it would be nice to be able to pass `stackbase` as an input to the advisory
       res = VG_(am_mmap_anon_float_client)(stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+      stackbase = sr_Res(res);
 #else
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
 #endif
@@ -468,7 +483,7 @@ load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
    linker_info.entry = NULL;
    linker_info.linker_entry = NULL;
    linker_info.linker_offset = 0;
-   linker_info.max_addr = out_info->max_addr;
+   linker_info.max_addr = out_info->max_addr + out_info->text_slide;
 
    if (dycmd->name.offset >= dycmd->cmdsize) {
       print("bad executable (invalid dylinker command)\n");

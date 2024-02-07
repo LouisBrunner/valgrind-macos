@@ -1657,6 +1657,8 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       ,--------------------------------, 0x000000000000
       |           4 GB page zero       |
       |--------------------------------| 0x000100000000
+      |            reserved            |
+      |--------------------------------| ~0x00010XXXXXXX (mmap/kernel-determined)
       |          client text           |
       |--------------------------------| ??? (hopefully less than 0x158000000, same as amd64)
       |             unused             |
@@ -2546,6 +2548,15 @@ SysRes VG_(am_mmap_named_file_fixed_client_flags)
           );
    if (sr_isError(sres))
       return sres;
+
+#if defined(VGP_arm64_darwin)
+   // On arm64, we can't use MAP_FIXED with certain maps,
+   // so we use this function to make a client floating map backed by a file
+   // this is to avoid duplicating all this code just for one platform & arch combo.
+   if (start == 0 && flags & ~VKI_MAP_FIXED) {
+      start = sr_Res(sres);
+   }
+#endif
 
    if (sr_Res(sres) != start) {
       /* I don't think this can happen.  It means the kernel made a
@@ -3792,16 +3803,20 @@ static void parse_procselfmaps (
       }
       iter = addr + size;
 
-#if defined(VGA_arm64)
-      // FIXME: we ignore any mapping before Valgrind's TEXT segment
-      // because they conflict with the binary we want to load
-      // and then Valgrind refuses to load it.
-      // Most likely, this is the where dyld loads itself before loading Valgrind.
-      if (addr < 0x158000000) {
-        VG_(debugLog)(1, "aspacem", "ignoring mapping %p..%p (potential future conflict)\n", addr, addr + size);
-        continue;
-      }
-#endif
+// #if defined(VGA_arm64)
+//       // FIXME: we ignore any mapping before Valgrind's TEXT segment
+//       // because they conflict with the binary we want to load
+//       // and then Valgrind refuses to load it.
+//       // Most likely, this is the where dyld loads itself before loading Valgrind.
+//       if (addr < 0x158000000) {
+//         VG_(debugLog)(1, "aspacem", "ignoring mapping %p..%p (potential future conflict)\n", addr, addr + size);
+//         SysRes sres = ML_(am_do_munmap_NO_NOTIFY)( addr, size );
+//         if (sr_isError(sres)) {
+//           VG_(debugLog)(1, "aspacem", "failed to unmap %p..%p\n", addr, addr + size);
+//         }
+//         continue;
+//       }
+// #endif
       if (addr > last  &&  record_gap) {
          (*record_gap)(last, addr - last);
       }

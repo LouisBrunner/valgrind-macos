@@ -153,6 +153,9 @@
 #define CLEAR_CALLER_SAVED_REGS                                              \
    do {                                                                      \
       __asm__ __volatile__ ("mov %r0, $0\n\t");                              \
+      __asm__ __volatile__ ("mov %r1, $0\n\t");                              \
+      __asm__ __volatile__ ("mov %r2, $0\n\t");                              \
+      __asm__ __volatile__ ("mov %r3, $0\n\t");                              \
    } while (0)
 #else
 #define CLEAR_CALLER_SAVED_REGS  /*nothing*/

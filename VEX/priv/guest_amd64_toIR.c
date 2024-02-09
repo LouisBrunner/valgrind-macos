@@ -32693,10 +32693,32 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
    if (guest_RIP_next_mustcheck 
        && guest_RIP_next_assumed != guest_RIP_curr_instr + dres.len) {
       vex_printf("\n");
+      vex_printf("     current %%rip = 0x%llx\n",
+                 guest_RIP_curr_instr );
       vex_printf("assumed next %%rip = 0x%llx\n", 
                  guest_RIP_next_assumed );
       vex_printf(" actual next %%rip = 0x%llx\n", 
                  guest_RIP_curr_instr + dres.len );
+      vex_printf("instruction bytes: "
+                 "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+                 getUChar(delta+0),
+                 getUChar(delta+1),
+                 getUChar(delta+2),
+                 getUChar(delta+3),
+                 getUChar(delta+4),
+                 getUChar(delta+5),
+                 getUChar(delta+6),
+                 getUChar(delta+7),
+                 getUChar(delta+8),
+                 getUChar(delta+9) );
+
+      /* re-disassemble the instruction so as
+         to generate a useful error message; then assert. */
+      vex_traceflags |= VEX_TRACE_FE;
+      guest_RIP_next_assumed   = 0;
+      guest_RIP_next_mustcheck = False;
+      dres = disInstr_AMD64_WRK ( &expect_CAS,
+                                 delta, archinfo, abiinfo, sigill_diag_IN );
       vpanic("disInstr_AMD64: disInstr miscalculated next %rip");
    }
 

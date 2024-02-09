@@ -180,7 +180,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    vki_size_t vmsize;   // page-aligned
    vki_size_t vmend;    // page-aligned
    unsigned int prot;
-   Addr slided_addr = segcmd->vmaddr + out_info->linker_offset;
+   Addr slided_addr = segcmd->vmaddr + out_info->linker_offset + out_info->text_slide;
 
    // GrP fixme mark __UNIXSTACK as SF_STACK
     
@@ -242,7 +242,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    filesize = VG_PGROUNDUP(segcmd->filesize);
    vmsize = VG_PGROUNDUP(segcmd->vmsize);
    if (filesize > 0) {
-      addr = slided_addr + out_info->text_slide;
+      addr = slided_addr;
       VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu)\n", addr, filesize);
       res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd, 
                                                  offset + segcmd->fileoff, 
@@ -253,11 +253,15 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
       // we just do a non-fixed mmap and let the kernel decide where to put it
       // we then calculate the slide and apply it everywhere it's needed
       if (sr_isError(res) && !VG_(strcmp)(segcmd->segname, "__TEXT")) {
+        VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu) failed, trying floating\n", addr, filesize);
         res = VG_(am_mmap_named_file_fixed_client_flags)(
             0, filesize, prot, VKI_MAP_PRIVATE,
             fd, offset + segcmd->fileoff, filename
         );
+        if (!sr_isError(res)) {
         out_info->text_slide = sr_Res(res) - addr;
+          VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu) succeeded, now %#lx with slide: %#lx\n", addr, filesize, sr_Res(res), out_info->text_slide);
+        }
       }
 #endif
       check_mmap(res, addr, filesize, "load_segment1");
@@ -483,7 +487,8 @@ load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
    linker_info.entry = NULL;
    linker_info.linker_entry = NULL;
    linker_info.linker_offset = 0;
-   linker_info.max_addr = out_info->max_addr + out_info->text_slide;
+   linker_info.text_slide = 0;
+   linker_info.max_addr = out_info->max_addr;
 
    if (dycmd->name.offset >= dycmd->cmdsize) {
       print("bad executable (invalid dylinker command)\n");
@@ -870,6 +875,7 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
    load_info.linker_entry = NULL;
    load_info.linker_offset = 0;
    load_info.max_addr = 0;
+   load_info.text_slide = 0;
 
    err = VG_(fstat)(fd, &sb);
    if (err) {

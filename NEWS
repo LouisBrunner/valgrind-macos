@@ -33,6 +33,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         value" in memchr of macOS 10.12-10.15
 460616  disInstr(arm64): unhandled instruction 0x4E819402 (dotprod/ASIMDDP)
 466884  Missing writev uninit padding suppression for _XSend
+471036  disInstr_AMD64: disInstr miscalculated next %rip on RORX imm8, m32/64, r32/6
 475498  Add reallocarray wrapper
 476320  Build failure with GCC
 476331  clean up generated/distributed filter scripts

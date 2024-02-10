@@ -32176,7 +32176,7 @@ Long dis_ESC_0F3A__VEX (
                                    nameIRegG(size,pfx,rm));
             delta += 2;
          } else {
-            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
             imm8 = getUChar(delta+alen);
             assign( src, loadLE(ty, mkexpr(addr)) );
             DIP("rorx %d,%s,%s\n", imm8, dis_buf, nameIRegG(size,pfx,rm));

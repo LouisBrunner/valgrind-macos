@@ -809,7 +809,7 @@ else
 endif
 
 varinfo5so_so_SOURCES   = varinfo5so.c
-varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow @FLAG_W_NO_MAYBE_UNINITIALIZED@
+varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow -fno-optimize-sibling-calls @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if VGCONF_OS_IS_DARWIN
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
 				-dynamiclib -all_load

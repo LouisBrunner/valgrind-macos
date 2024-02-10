@@ -5,7 +5,7 @@
 ./filter_stderr "$@" |
 sed "s/static_local_def\.[0-9]*/static_local_def\.XXXX/g" |
 sed "s/static_local_undef\.[0-9]*/static_local_undef\.XXXX/g" |
-sed "s/foo.static_local_undef/static_local_undef.XXXX/g" |
-sed "s/foo.static_local_def/static_local_def.XXXX/g" |
+sed "s/foo3\{0,1\}\.static_local_undef/static_local_undef.XXXX/g" |
+sed "s/foo3\{0,1\}\.static_local_def/static_local_def.XXXX/g" |
 sed "s/frame #./frame #X/g"
 

@@ -184,7 +184,7 @@ s/in \.__select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall ...
 /^[ 	]*at \.\.\/sysdeps\/unix\/syscall-template\.S/d
 /^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d
 
-/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d
+/^\(warning: \)\?[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d
 /^[1-9][0-9]*[ 	]in *\.\.\/sysdeps\/unix\/syscall-template\.S/d
 /^[1-9][0-9]*[ 	]T_PSEUDO (SYSCALL_SYMBOL, SYSCALL_NAME, SYSCALL_NARGS)/d
 

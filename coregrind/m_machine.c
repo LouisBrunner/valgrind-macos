@@ -40,8 +40,6 @@
 #include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL and SIGFPE
 #include "pub_core_debuglog.h"
 
-#define BYPASS_SIGILL 1
-
 #define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
 #define FRAME_PTR(regs)    ((regs).vex.VG_FRAME_PTR)
@@ -1755,6 +1753,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_arm64)
    {
+#if !defined(VGO_darwin)
      /* Use the attribute and feature registers to determine host hardware
       * capabilities. Only user-space features are read. Naming conventions
       * follow the Arm Architecture Reference Manual.
@@ -1769,7 +1768,7 @@ Bool VG_(machine_get_hwcaps)( void )
       * ----------------
       * ...5555 5544 4444 4444 3333 3333 3332 2222 2222 1111 1111 11
       * ...5432 1098 7654 3210 9876 5432 1098 7654 3210 9876 5432 1098 7654 3210
-      * ...I8MM      BF16                                                   DPB
+      * ...I8MM      BF16                GPI  GPA                 API  APA  DPB
       *
       * ID_AA64PFR0_EL1 Processor Feature Register 0
       * ---------------
@@ -1782,11 +1781,11 @@ Bool VG_(machine_get_hwcaps)( void )
 
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
-     Bool have_vfp16, have_fp16;
+     Bool have_vfp16, have_fp16, have_pauth;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
-              = have_dpbcvadp = have_vfp16 = have_fp16 = False;
+              = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1820,7 +1819,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
 
      /* Does reading ID_AA64ISAR0_EL1 register throw SIGILL on base v8.0? */
-     if (BYPASS_SIGILL || VG_MINIMAL_SETJMP(env_unsup_insn))
+     if (VG_MINIMAL_SETJMP(env_unsup_insn))
         is_base_v8 = True;
      else
         __asm__ __volatile__("mrs x0, ID_AA64ISAR0_EL1");
@@ -1830,6 +1829,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
+#endif
 
      va = VexArchARM64;
      vai.endness = VexEndnessLE;
@@ -1851,6 +1851,9 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
      vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
 
+#if defined(VGO_darwin)
+     vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+#else
      r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
      vg_assert(r == 0);
 
@@ -1871,7 +1874,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      ULong ctr_el0;
      /* Does reading ctr_el0 register throw SIGILL? */
-     if (BYPASS_SIGILL || VG_MINIMAL_SETJMP(env_unsup_insn))
+     if (VG_MINIMAL_SETJMP(env_unsup_insn))
         ctr_el0 = 0;
      else
      __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
@@ -1914,10 +1917,18 @@ Bool VG_(machine_get_hwcaps)( void )
      /* ID_AA64ISAR1_EL1 Instruction set attribute register 1 fields */
      #define ID_AA64ISAR1_I8MM_SHIFT           52
      #define ID_AA64ISAR1_BF16_SHIFT           44
+     #define ID_AA64ISAR1_GPI_SHIFT            28
+     #define ID_AA64ISAR1_GPA_SHIFT            24
+     #define ID_AA64ISAR1_API_SHIFT             8
+     #define ID_AA64ISAR1_APA_SHIFT             4
      #define ID_AA64ISAR1_DPB_SHIFT             0
      /* Field values */
      #define ID_AA64ISAR1_I8MM_SUPPORTED       0x1
      #define ID_AA64ISAR1_BF16_SUPPORTED       0x1
+     #define ID_AA64ISAR1_GPI_SUPPORTED        0x1
+     #define ID_AA64ISAR1_GPA_SUPPORTED        0x1
+     #define ID_AA64ISAR1_API_SUPPORTED        0x1
+     #define ID_AA64ISAR1_APA_SUPPORTED        0x1
      #define ID_AA64ISAR1_DPBCVAP_SUPPORTED    0x1
      #define ID_AA64ISAR1_DPBCVADP_SUPPORTED   0x2
 
@@ -2017,6 +2028,16 @@ Bool VG_(machine_get_hwcaps)( void )
      get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_DPB_SHIFT,
              ID_AA64ISAR1_DPBCVADP_SUPPORTED, have_dpbcvadp);
 
+     /* APA or API indicate support for PAUTH instructions.
+      * Optional for v8.3.
+      */
+     get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_APA_SHIFT,
+             ID_AA64ISAR1_APA_SUPPORTED, have_pauth);
+     if (!have_pauth) {
+        get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_API_SHIFT,
+                ID_AA64ISAR1_API_SUPPORTED, have_pauth);
+     }
+
      /* Read ID_AA64PFR0_EL1 attributes */
 
      /* VFP16 indicates support for half-precision vector arithmetic.
@@ -2043,9 +2064,11 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_bf16)       vai.hwcaps |= VEX_HWCAPS_ARM64_BF16;
      if (have_fp16)       vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
      if (have_vfp16)      vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
+     if (have_pauth)      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
 
      #undef get_cpu_ftr
      #undef get_ftr
+#endif
 
      return True;
    }

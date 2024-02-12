@@ -253,14 +253,20 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
       // we just do a non-fixed mmap and let the kernel decide where to put it
       // we then calculate the slide and apply it everywhere it's needed
       if (sr_isError(res) && !VG_(strcmp)(segcmd->segname, "__TEXT")) {
-        VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu) failed, trying floating\n", addr, filesize);
+        VG_(debugLog)(2, "ume",
+          "mmap fixed (file) (%#lx, %lu) failed with error %lu (%s), trying floating\n",
+          addr, filesize, sr_Err(res), VG_(strerror)(sr_Err(res))
+        );
         res = VG_(am_mmap_named_file_fixed_client_flags)(
             0, filesize, prot, VKI_MAP_PRIVATE,
             fd, offset + segcmd->fileoff, filename
         );
         if (!sr_isError(res)) {
         out_info->text_slide = sr_Res(res) - addr;
-          VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu) succeeded, now %#lx with slide: %#lx\n", addr, filesize, sr_Res(res), out_info->text_slide);
+          VG_(debugLog)(2, "ume",
+            "mmap fixed (file) (%#lx, %lu) succeeded, now %#lx with slide: %#lx\n",
+            addr, filesize, sr_Res(res), out_info->text_slide
+          );
         }
       }
 #endif

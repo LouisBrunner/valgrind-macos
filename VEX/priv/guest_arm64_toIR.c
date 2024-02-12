@@ -2932,7 +2932,7 @@ static IRTemp getShiftedIRegOrZR ( Bool is64,
 
 static
 Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
-                                        UInt insn, Bool sigill_diag)
+                                        UInt insn, const VexArchInfo* archinfo, Bool sigill_diag)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 
@@ -3723,6 +3723,9 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
                                   Z
    */
    if ((INSN(31,8) & 0xFFFFD0) == 0xDAC100) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
       Bool isZ = INSN(13,13) == 1;
       Bool isD = INSN(11,11) == 1;
       Bool isA = INSN(10,10) == 0;
@@ -3742,6 +3745,9 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       sf    S                   opcode
    */
    if ((INSN(31,8) & 0xFFE0FC) == 0x9AC030) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
       UInt mm = INSN(20,16);
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
@@ -3749,6 +3755,30 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       DIP("pacga %s, %s, %s (FAKED)\n", nameIRegOrSP(True, dd), nameIRegOrSP(True, nn), nameIRegOrSP(True, mm));
       return True;
    }
+
+   /* -------------------- AUTD{A,B}{Z} -------------------- */
+    /* 31 30 29           20      15     9  4
+        1  1  0 1101 0110 00001   000110 Rn Rd    AUTDA <Xd>, <Xn|SP>
+        1  1  0 1101 0110 00001   001110 Rn 11111 AUTDZA <Xd>
+        1  1  0 1101 0110 00001   000111 Rn Rd    AUTDB <Xd>, <Xn|SP>
+        1  1  0 1101 0110 00001   001111 Rn 11111 AUTDZB <Xd>
+        sf    S           opcode2 opcode Rn Rd
+    */
+    if ((INSN(31,8) & 0xFFFFD0) == 0xDAC180) {
+        if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+          return False;
+        }
+        Bool isZ = INSN(13,13) == 1;
+        Bool isA = INSN(10,10) == 0;
+        UInt nn = INSN(9,5);
+        UInt dd = INSN(4,0);
+        if (isZ && nn == 31) {
+            DIP("autd%cz %s (FAKED)\n", isA ? 'a' : 'b', nameIRegOrSP(True, dd));
+        } else {
+            DIP("autd%c %s, %s (FAKED)\n", isA ? 'a' : 'b', nameIRegOrSP(True, dd), nameIRegOrSP(True, nn));
+        }
+        return True;
+    }
 
    if (sigill_diag) {
       vex_printf("ARM64 front end: data_processing_register\n");
@@ -7944,6 +7974,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
         branch(AuthIA/B(X30, SP, TRUE), RET, FALSE)
    */
    if ((INSN(31,0) & 0xFFFFFBFF) == 0xD65F0BFF) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
       Bool isA = INSN(10,10) == 0;
       putPC(getIReg64orSP(30));
       dres->whatNext = Dis_StopHere;
@@ -7966,6 +7999,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
               Z op           AM  Rn    Rm
    */
    if ((INSN(31,12) & 0xFEFFF) == 0xD61F0 || (INSN(31,12) & 0xFEFFF) == 0xD63F0) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
         Bool isZ = INSN(24,24) == 0;
       Bool isL = INSN(21,21) == 1;
         Bool isA = INSN(10,10) == 0;
@@ -7981,9 +8017,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
         dres->whatNext = Dis_StopHere;
         dres->jk_StopHere = Ijk_Call; // FIXME: I think?
         if (isZ && mm == 31) {
-          DIP("b%sra%cz %s\n", isL ? "z" : "", isA ? 'a' : 'b', nameIReg64orSP(nn));
+        DIP("b%sra%cz %s\n", isL ? "l" : "", isA ? 'a' : 'b', nameIReg64orSP(nn));
         } else {
-          DIP("b%sra%c %s, %s\n", isL ? "z" : "", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));
+        DIP("b%sra%c %s, %s\n", isL ? "l" : "", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));
         }
         return True;
     }
@@ -16134,7 +16170,7 @@ Bool disInstr_ARM64_WRK (
          break;
       case BITS4(0,1,0,1): case BITS4(1,1,0,1):
          // Data processing - register
-         ok = dis_ARM64_data_processing_register(dres, insn, sigill_diag);
+         ok = dis_ARM64_data_processing_register(dres, insn, archinfo, sigill_diag);
          break;
       case BITS4(0,1,1,1): case BITS4(1,1,1,1): 
          // Data processing - SIMD and floating point

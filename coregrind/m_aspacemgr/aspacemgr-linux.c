@@ -3803,20 +3803,6 @@ static void parse_procselfmaps (
       }
       iter = addr + size;
 
-// #if defined(VGA_arm64)
-//       // FIXME: we ignore any mapping before Valgrind's TEXT segment
-//       // because they conflict with the binary we want to load
-//       // and then Valgrind refuses to load it.
-//       // Most likely, this is the where dyld loads itself before loading Valgrind.
-//       if (addr < 0x158000000) {
-//         VG_(debugLog)(1, "aspacem", "ignoring mapping %p..%p (potential future conflict)\n", addr, addr + size);
-//         SysRes sres = ML_(am_do_munmap_NO_NOTIFY)( addr, size );
-//         if (sr_isError(sres)) {
-//           VG_(debugLog)(1, "aspacem", "failed to unmap %p..%p\n", addr, addr + size);
-//         }
-//         continue;
-//       }
-// #endif
       if (addr > last  &&  record_gap) {
          (*record_gap)(last, addr - last);
       }

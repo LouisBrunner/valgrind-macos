@@ -3710,7 +3710,7 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
    }
 
    /* -------------------- PAC{D,I}{Z}{A,B} -------------------- */
-   /* 31 30 29          20      15v-13 9  4
+   /* 31 30 29          20      15     9  4
       1  1  0 1101 0110 00001   000000 Rn Rd    PACIA <Xd>, <Xn|SP>
       1  1  0 1101 0110 00001   001000 Rn 11111 PACIZA <Xd>
       1  1  0 1101 0110 00001   000001 Rn Rd    PACIB <Xd>, <Xn|SP>
@@ -3722,7 +3722,9 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       sf    S           opcode2 opcode
                                   Z
    */
-   if ((INSN(31,8) & 0xFFFFD0) == 0xDAC100) {
+   if (INSN(31,20) == BITS12(1,1,0,1,1,0,1,0,1,1,0,0)
+       && INSN(19,14) == BITS6(0,0,0,1,0,0)
+       && INSN(12,12) == 0) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
       }
@@ -3757,13 +3759,15 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
        1  1  0 1101 0110 00001   001111 Rn 11111 AUTDZB <Xd>
        sf    S           opcode2 opcode Rn Rd
    */
-   if ((INSN(31,8) & 0xFFFFD0) == 0x9AC018) {
+   if (INSN(31,20) == BITS12(1,1,0,1,1,0,1,0,1,1,0,0)
+       && INSN(19,14) == BITS6(0,0,0,1,0,0)
+       && INSN(12,12) == 1) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
       }
       Bool isZ = INSN(13,13) == 1;
-      Bool isA = INSN(10,10) == 0;
       Bool isD = INSN(11,11) == 1;
+      Bool isA = INSN(10,10) == 0;
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
       // FIXME: basically a NOP if we don't implement PAC
@@ -3782,11 +3786,11 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
 
    /* -------------------- XPAC{D,I} -------------------- */
     /* 31 30 29           20      15     9  4
-       1  0  0 1101 0110 00001   010000 11111 Rd    XPACD <Xd>
-       1  0  0 1101 0110 00001   010001 11111 Rd    XPACI <Xd>
+       1  1  0 1101 0110 00001   010000 11111 Rd    XPACD <Xd>
+       1  1  0 1101 0110 00001   010001 11111 Rd    XPACI <Xd>
        sf    S                   opcode
     */
-   if (INSN(31,20) == BITS12(1,0,0,1,1,0,1,0,1,1,0,0)
+   if (INSN(31,20) == BITS12(1,1,0,1,1,0,1,0,1,1,0,0)
        && INSN(19,11) == BITS9(0,0,0,1,0,1,0,0,0)
        && INSN(9,5) == BITS5(1,1,1,1,1)) {
         if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
@@ -3806,7 +3810,8 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
        1  0  0 1101 0110 Rm      001100 Rn Rd    PACGA <Xd>, <Xn>, <Xm|SP>
        sf    S                   opcode
    */
-   if ((INSN(31,8) & 0xFFE0FC) == 0x9AC030) {
+   if (INSN(31,21) == BITS11(1,0,0,1,1,0,1,0,1,1,0)
+       && INSN(15,10) == BITS6(0,0,1,1,0,0)) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
         }
@@ -8024,7 +8029,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    */
    if (INSN(31,24) == BITS8(1,1,0,1,0,1,0,1)
        && INSN(23,16) == BITS8(0,0,0,0,0,0,1,1)
-       && (INSN(15,8) == BITS8(0,0,1,0,0,0,1,1) || INSN(15,8) == BITS8(0,0,1,0,0,0,1,0))
+       && (INSN(15,8) == BITS8(0,0,1,0,0,0,0,1) || INSN(15,8) == BITS8(0,0,1,0,0,0,1,1))
        && INSN(7,7) == 1
        && INSN(4,0) == BITS5(1,1,1,1,1)) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
@@ -8127,7 +8132,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       class   opc  op2   op3     Rn    op4
               Z op           AM  Rn    Rm
    */
-   if ((INSN(31,12) & 0xFEFFF) == 0xD61F0 || (INSN(31,12) & 0xFEFFF) == 0xD63F0) {
+   if (INSN(31,25) == BITS7(1,1,0,1,0,1,1)
+       && INSN(23,22) == BITS2(0,0)
+       && INSN(20,11) == BITS10(1,1,1,1,1,0,0,0,0,1)) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
       }

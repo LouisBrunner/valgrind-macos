@@ -3731,52 +3731,92 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       Bool isA = INSN(10,10) == 0;
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
-      if (isZ && nn == 31) {
-        DIP("pac%cz%c %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrSP(True, dd));
+      // FIXME: basically a NOP if we don't implement PAC
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.InsertPAC.6
+      // dd = insert_pac(dd, nn | SP, isA, !isD);
+      if (isZ) {
+        if (nn != 31) {
+          return False;
+        }
+        DIP("pac%cz%c %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrZR(True, dd));
       } else {
-        DIP("pac%c%c %s, %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrSP(True, dd), nameIRegOrSP(True, nn));
+        DIP("pac%c%c %s, %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrZR(True, dd), nameIRegOrSP(True, nn));
       }
+      return True;
+   }
+
+   /* -------------------- AUT{D,I}{A,B}{Z} -------------------- */
+   /* 31 30 29          20      15     9  4
+       1  1  0 1101 0110 00001   000100 Rn Rd    AUTIA <Xd>, <Xn|SP>
+       1  1  0 1101 0110 00001   001100 Rn 11111 AUTIZA <Xd>
+       1  1  0 1101 0110 00001   000101 Rn Rd    AUTIB <Xd>, <Xn|SP>
+       1  1  0 1101 0110 00001   001101 Rn 11111 AUTIZB <Xd>
+       1  1  0 1101 0110 00001   000110 Rn Rd    AUTDA <Xd>, <Xn|SP>
+       1  1  0 1101 0110 00001   001110 Rn 11111 AUTDZA <Xd>
+       1  1  0 1101 0110 00001   000111 Rn Rd    AUTDB <Xd>, <Xn|SP>
+       1  1  0 1101 0110 00001   001111 Rn 11111 AUTDZB <Xd>
+       sf    S           opcode2 opcode Rn Rd
+   */
+   if ((INSN(31,8) & 0xFFFFD0) == 0x9AC018) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
+      Bool isZ = INSN(13,13) == 1;
+      Bool isA = INSN(10,10) == 0;
+      Bool isD = INSN(11,11) == 1;
+      UInt nn = INSN(9,5);
+      UInt dd = INSN(4,0);
+      // FIXME: basically a NOP if we don't implement PAC
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      // dd = authenticate(dd, nn | SP, isA, !isD);
+      if (isZ) {
+        if (nn != 31) {
+          return False;
+        }
+        DIP("aut%c%cz %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrZR(True, dd));
+      } else {
+        DIP("aut%c%c %s, %s (FAKED)\n", isD ? 'd' : 'i', isA ? 'a' : 'b', nameIRegOrZR(True, dd), nameIRegOrSP(True, nn));
+      }
+      return True;
+   }
+
+   /* -------------------- XPAC{D,I} -------------------- */
+    /* 31 30 29           20      15     9  4
+       1  0  0 1101 0110 00001   010000 11111 Rd    XPACD <Xd>
+       1  0  0 1101 0110 00001   010001 11111 Rd    XPACI <Xd>
+       sf    S                   opcode
+    */
+   if (INSN(31,20) == BITS12(1,0,0,1,1,0,1,0,1,1,0,0)
+       && INSN(19,11) == BITS9(0,0,0,1,0,1,0,0,0)
+       && INSN(9,5) == BITS5(1,1,1,1,1)) {
+        if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+          return False;
+        }
+      Bool isD = INSN(10,10) == 0;
+        UInt dd = INSN(4,0);
+      // FIXME: not sure if actually needed
+      // see https://developer.arm.com/documentation/ddi0602/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.AuthIA.3
+      // dd = strip(dd, isD)
+      DIP("xpac%c %s (FAKED)\n", isD ? 'd' : 'i', nameIRegOrZR(True, dd));
       return True;
    }
 
    /* -------------------- PACGA -------------------- */
-   /* 31 30 29          20      15     9  4
-      1  0  0 1101 0110 Rm      001100 Rn Rd    PACGA <Xd>, <Xn>, <Xm|SP>
-      sf    S                   opcode
+   /* 31 30 29           20      15     9  4
+       1  0  0 1101 0110 Rm      001100 Rn Rd    PACGA <Xd>, <Xn>, <Xm|SP>
+       sf    S                   opcode
    */
    if ((INSN(31,8) & 0xFFE0FC) == 0x9AC030) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
-      }
+        }
       UInt mm = INSN(20,16);
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
-      putIReg64orZR(dd, mkU64(0x101010FF00000000));
-      DIP("pacga %s, %s, %s (FAKED)\n", nameIRegOrSP(True, dd), nameIRegOrSP(True, nn), nameIRegOrSP(True, mm));
-      return True;
-   }
-
-   /* -------------------- AUTD{A,B}{Z} -------------------- */
-    /* 31 30 29           20      15     9  4
-        1  1  0 1101 0110 00001   000110 Rn Rd    AUTDA <Xd>, <Xn|SP>
-        1  1  0 1101 0110 00001   001110 Rn 11111 AUTDZA <Xd>
-        1  1  0 1101 0110 00001   000111 Rn Rd    AUTDB <Xd>, <Xn|SP>
-        1  1  0 1101 0110 00001   001111 Rn 11111 AUTDZB <Xd>
-        sf    S           opcode2 opcode Rn Rd
-    */
-    if ((INSN(31,8) & 0xFFFFD0) == 0xDAC180) {
-        if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
-          return False;
-        }
-        Bool isZ = INSN(13,13) == 1;
-        Bool isA = INSN(10,10) == 0;
-        UInt nn = INSN(9,5);
-        UInt dd = INSN(4,0);
-        if (isZ && nn == 31) {
-            DIP("autd%cz %s (FAKED)\n", isA ? 'a' : 'b', nameIRegOrSP(True, dd));
-        } else {
-            DIP("autd%c %s, %s (FAKED)\n", isA ? 'a' : 'b', nameIRegOrSP(True, dd), nameIRegOrSP(True, nn));
-        }
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.ComputePACIMPDEF.4
+      // dd = compute_pac(dd, nn, mm | SP) & 0xFFFFFFFF00000000;
+      // FIXME: putIReg64orZR(dd, mkU64(0x101010FF00000000));
+      DIP("pacga %s, %s, %s (FAKED)\n", nameIRegOrZR(True, dd), nameIRegOrZR(True, nn), nameIRegOrSP(True, mm));
         return True;
     }
 
@@ -7927,6 +7967,82 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* ------------------- XPACLRI ------------------- */
+   /* 31        23        15   11   7   4
+      1101 0101 0000 0011 0010 0000 111 11111  XPACLRI
+   */
+   if (INSN(31,0) == 0xD50320FF) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
+      // FIXME: not sure if actually needed
+      // x30 = strip(x30, False)
+      // putIReg64orZR(30, binop(mkAND(Ity_I64), getIReg64orZR(30), 0x??));
+      // see https://developer.arm.com/documentation/ddi0602/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.AuthIA.3
+      DIP("xpaclri (FAKED)\n");
+      return True;
+   }
+
+   /* ------------------- PACI{A,B}{Z,SP,1716} ------------------- */
+   /* 31        23        15   11   7   4
+      1101 0101 0000 0011 0010 0001 000 11111  PACIA1716
+      1101 0101 0000 0011 0010 0011 000 11111  PACIAZ
+      1101 0101 0000 0011 0010 0011 001 11111  PACIASP
+      1101 0101 0000 0011 0010 0001 010 11111  PACIB1716
+      1101 0101 0000 0011 0010 0011 010 11111  PACIBZ
+      1101 0101 0000 0011 0010 0011 011 11111  PACIBSP
+   */
+   if (INSN(31,24) == BITS8(1,1,0,1,0,1,0,1)
+       && INSN(23,16) == BITS8(0,0,0,0,0,0,1,1)
+       && (INSN(15,8) == BITS8(0,0,1,0,0,0,0,1) || INSN(15,8) == BITS8(0,0,1,0,0,0,1,1))
+       && INSN(7,7) == 0
+       && INSN(4,0) == BITS5(1,1,1,1,1)) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
+      Bool is1716 = INSN(9,9) == 0;
+      Bool isA = INSN(6,6) == 0;
+      Bool isSP = INSN(5,5) == 1;
+      Bool isZ = !isSP && !isA;
+      // FIXME: basically a NOP if we don't implement PAC
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.InsertPAC.6
+      // if isZ || isSP then dd = 30 else dd = 17
+      // if isZ then nn = 31 elif isSP then nn = SP else nn = 16
+      // dd = insert_pac(dd, nn | SP, isA, True);
+      DIP("paci%c%s%s%s (FAKED)\n", isA ? 'a' : 'b', isZ ? "z" : "", isSP ? "sp" : "", is1716 ? "1716" : "");
+      return True;
+    }
+
+   /* ------------------- AUTI{A,B}{Z,SP,1716} ------------------- */
+   /* 31        23        15   11   7   4
+      1101 0101 0000 0011 0010 0001 100 11111  AUTIA1716
+      1101 0101 0000 0011 0010 0011 100 11111  AUTIAZ
+      1101 0101 0000 0011 0010 0011 101 11111  AUTIASP
+      1101 0101 0000 0011 0010 0001 110 11111  AUTIB1716
+      1101 0101 0000 0011 0010 0011 110 11111  AUTIBZ
+      1101 0101 0000 0011 0010 0011 111 11111  AUTIBSP
+   */
+   if (INSN(31,24) == BITS8(1,1,0,1,0,1,0,1)
+       && INSN(23,16) == BITS8(0,0,0,0,0,0,1,1)
+       && (INSN(15,8) == BITS8(0,0,1,0,0,0,1,1) || INSN(15,8) == BITS8(0,0,1,0,0,0,1,0))
+       && INSN(7,7) == 1
+       && INSN(4,0) == BITS5(1,1,1,1,1)) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
+      Bool is1716 = INSN(9,9) == 0;
+      Bool isA = INSN(6,6) == 0;
+      Bool isSP = INSN(5,5) == 1;
+      Bool isZ = !isSP && !isA;
+      // FIXME: basically a NOP if we don't implement PAC
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      // if isZ || isSP then dd = 30 else dd = 17
+      // if isZ then nn = 31 elif isSP then nn = SP else nn = 16
+      // dd = authenticate(dd, nn | SP, isA, True);
+      DIP("auti%c%s%s%s (FAKED)\n", isA ? 'a' : 'b', isZ ? "z" : "", isSP ? "sp" : "", is1716 ? "1716" : "");
+      return True;
+    }
+
    /* -------------------- HINT ------------------- */
    /* 31        23        15   11   4 3
       1101 0101 0000 0011 0010 imm7 1 1111
@@ -7962,10 +8078,12 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
-   /* ------------------- RETA{A,B} ------------------ */
+   /* ------------------- {E}RETA{A,B} ------------------ */
    /* 31      24   20    15   10 9     4
       1101011 0010 11111 000010  11111 11111 RETAA
       1101011 0010 11111 000011  11111 11111 RETAB
+      1101011 0100 11111 000010  11111 11111 ERETAA
+      1101011 0100 11111 000011  11111 11111 ERETAB
       class   opc  op2   op3     Rn    op4
               Z op           AM  Rn    Rm
 
@@ -7973,15 +8091,26 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
         PSTATE.BTYPE = '00'
         branch(AuthIA/B(X30, SP, TRUE), RET, FALSE)
    */
-   if ((INSN(31,0) & 0xFFFFFBFF) == 0xD65F0BFF) {
+   if (INSN(31,24) == BITS8(1,1,0,1,0,1,1,0)
+       && (INSN(23,22) == BITS2(0,1) || INSN(23,22) == BITS2(1,0))
+       && INSN(21,11) == BITS11(0,1,1,1,1,1,0,0,0,0,1)
+       && INSN(9,0) == BITS10(1,1,1,1,1,1,1,1,1,1)) {
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
       }
       Bool isA = INSN(10,10) == 0;
+      Bool isE = INSN(23,23) == 1;
+      // FIXME: basically a NOP if we don't implement PAC
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      // pc = authenticate(x30, SP, isA, True);
+      if (isE) {
+        return False;
+      } else {
       putPC(getIReg64orSP(30));
       dres->whatNext = Dis_StopHere;
       dres->jk_StopHere = Ijk_Ret;
-      DIP("reta%c (FAKED)\n", isA ? 'a' : 'b');
+      }
+      DIP("%sreta%c (FAKED)\n", isE ? "e" : "", isA ? 'a' : 'b');
       return True;
    }
 
@@ -7992,7 +8121,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       1101011 1000 11111 000010  Rn    Rm    BRAA <Xn>, <Xm|SP>
       1101011 1000 11111 000011  Rn    Rm    BRAB <Xn>, <Xm|SP>
       1101011 0001 11111 000010  Rn    11111 BLRAAZ <Xn>
-      1101011 0001 11111 000011  Rn    11111 BLRAAB <Xn>
+      1101011 0001 11111 000011  Rn    11111 BLRABZ <Xn>
       1101011 1001 11111 000010  Rn    Rm    BLRAA <Xn>, <Xm|SP>
       1101011 1001 11111 000011  Rn    Rm    BLRAB <Xn>, <Xm|SP>
       class   opc  op2   op3     Rn    op4
@@ -8009,6 +8138,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
         UInt mm  = INSN(4,0);
 
         IRTemp target = newTemp(Ity_I64);
+      // FIXME: basically a NOP if we don't implement PAC
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      // pc = authenticate(nn, mm | SP, isA, True);
         assign(target, getIReg64orSP(nn));
       if (isL) {
         putIReg64orZR(30, mkU64(guest_PC_curr_instr + 4));
@@ -8016,7 +8148,10 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
         putPC(mkexpr(target));
         dres->whatNext = Dis_StopHere;
         dres->jk_StopHere = Ijk_Call; // FIXME: I think?
-        if (isZ && mm == 31) {
+      if (isZ) {
+        if (mm != 31) {
+          return False;
+        }
         DIP("b%sra%cz %s\n", isL ? "l" : "", isA ? 'a' : 'b', nameIReg64orSP(nn));
         } else {
         DIP("b%sra%c %s, %s\n", isL ? "l" : "", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));

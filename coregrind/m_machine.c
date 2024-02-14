@@ -1853,6 +1853,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #if defined(VGO_darwin)
      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+
+     ULong ctr_el0 = 0;
 #else
      r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
      vg_assert(r == 0);
@@ -1884,6 +1886,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
+#endif
 
      vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;
      vai.arm64_iMinLine_lg2_szB = ((ctr_el0 >>  0) & 0xF) + 2;
@@ -1894,6 +1897,7 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(debugLog)(1, "machine", "ARM64: requires_fallback_LLSC: %s\n",
                    vai.arm64_requires_fallback_LLSC ? "yes" : "no");
 
+#if !defined(VGO_darwin)
      if (is_base_v8)
         return True;
 

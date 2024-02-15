@@ -91,4 +91,10 @@
    fun:malloc
    fun:getgrnam
 }
-
+{
+   MEMCHECK-LIBTHR-REACHABLE-1
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:*/lib*/libthr.so.3
+}

@@ -306,6 +306,7 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \
 	origin5-bz2.stderr.exp-glibc218-mips32 \
+	origin5-bz2.stderr.exp-glibc236-arm \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
 	origin6-fp.stderr.exp-glibc25-amd64 \
 	origin6-fp.stderr.exp-glibc27-ppc64 \

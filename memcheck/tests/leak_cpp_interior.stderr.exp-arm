@@ -13,7 +13,7 @@ LEAK SUMMARY:
    definitely lost: x bytes in 1 blocks
    indirectly lost: 0 bytes in 0 blocks
      possibly lost: x bytes in 1 blocks
-   still reachable: x bytes in 8 blocks
+   still reachable: x bytes in 7 blocks
                       of which reachable via heuristic:
                         stdstring          : x bytes in 2 blocks
                         length64           : x bytes in 1 blocks
@@ -26,7 +26,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (+x) bytes in 4 (+3) blocks
-   still reachable: x (-x) bytes in 5 (-3) blocks
+   still reachable: x (-x) bytes in 4 (-3) blocks
                       of which reachable via heuristic:
                         stdstring          : 0 (-x) bytes in 0 (-2) blocks
                         length64           : 0 (-x) bytes in 0 (-1) blocks
@@ -38,7 +38,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (+x) bytes in 6 (+2) blocks
-   still reachable: x (-x) bytes in 3 (-2) blocks
+   still reachable: x (-x) bytes in 2 (-2) blocks
                       of which reachable via heuristic:
                         multipleinheritance: 0 (-x) bytes in 0 (-2) blocks
 To see details of leaked memory, give 'full' arg to leak_check
@@ -48,7 +48,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (-x) bytes in 5 (-1) blocks
-   still reachable: x (+x) bytes in 4 (+1) blocks
+   still reachable: x (+x) bytes in 3 (+1) blocks
                       of which reachable via heuristic:
                         length64           : x (+x) bytes in 1 (+1) blocks
 To see details of leaked memory, give 'full' arg to leak_check
@@ -58,7 +58,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (-x) bytes in 4 (-1) blocks
-   still reachable: x (+x) bytes in 5 (+1) blocks
+   still reachable: x (+x) bytes in 4 (+1) blocks
                       of which reachable via heuristic:
                         stdstring          : x (+x) bytes in 2 (+2) blocks
                         length64           : 0 (-x) bytes in 0 (-1) blocks
@@ -69,7 +69,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (-x) bytes in 1 (-3) blocks
-   still reachable: x (+x) bytes in 8 (+3) blocks
+   still reachable: x (+x) bytes in 7 (+3) blocks
                       of which reachable via heuristic:
                         stdstring          : x (+0) bytes in 2 (+0) blocks
                         length64           : x (+x) bytes in 1 (+1) blocks
@@ -81,7 +81,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (+0) bytes in 1 (+0) blocks
-   still reachable: x (+0) bytes in 8 (+0) blocks
+   still reachable: x (+0) bytes in 7 (+0) blocks
                       of which reachable via heuristic:
                         stdstring          : x (+0) bytes in 2 (+0) blocks
                         length64           : x (+0) bytes in 1 (+0) blocks
@@ -93,7 +93,7 @@ LEAK SUMMARY:
    definitely lost: x (+0) bytes in 1 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
      possibly lost: x (+x) bytes in 6 (+5) blocks
-   still reachable: x (-x) bytes in 3 (-5) blocks
+   still reachable: x (-x) bytes in 2 (-5) blocks
                       of which reachable via heuristic:
                         stdstring          : 0 (-x) bytes in 0 (-2) blocks
                         length64           : 0 (-x) bytes in 0 (-1) blocks

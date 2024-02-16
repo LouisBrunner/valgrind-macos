@@ -337,6 +337,7 @@
 {
    helgrind--- libnss without debuginfo
    Helgrind:Race
+   ...
    obj:/usr/lib/*/libnss_mdns4*.so.*
 }
 

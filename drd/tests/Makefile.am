@@ -353,6 +353,7 @@ EXTRA_DIST =                                        \
 	tc18_semabuse.vgtest                        \
 	tc19_shadowmem.stderr.exp-32bit             \
 	tc19_shadowmem.stderr.exp-32bit-BE          \
+	tc19_shadowmem.stderr.exp-32on64            \
 	tc19_shadowmem.stderr.exp-64bit             \
 	tc19_shadowmem.vgtest                       \
 	tc21_pthonce.stderr.exp                     \

@@ -332,7 +332,6 @@ static Addr aspacem_cStart = 0;
 // Where aspacem will start looking for Valgrind space
 static Addr aspacem_vStart = 0;
 
-
 #define AM_SANITY_CHECK                                      \
    do {                                                      \
       if (VG_(clo_sanity_level) >= 3)                        \

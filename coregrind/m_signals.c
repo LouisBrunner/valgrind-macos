@@ -2698,7 +2698,7 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
       code know about it. */
    VG_(change_stack)(VG_(clstk_id), new_stack_base, VG_(clstk_end));
 
-   if (VG_(clo_sanity_level) > 2)
+   if (VG_(clo_sanity_level) >= 3)
       VG_(sanity_check_general)(False);
 
    return True;

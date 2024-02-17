@@ -1550,7 +1550,7 @@ VgSchedReturnCode VG_(scheduler) ( ThreadId tid )
       /* amd64-linux, ppc32-linux, amd64-darwin, amd64-solaris */
       case VEX_TRC_JMP_SYS_SYSCALL:
 	 handle_syscall(tid, trc[0]);
-	 if (VG_(clo_sanity_level) > 2)
+         if (VG_(clo_sanity_level) >= 3)
 	    VG_(sanity_check_general)(True); /* sanity-check every syscall */
 	 break;
 
@@ -2370,7 +2370,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
       Gradually increase the interval between such checks so as not to
       burden long-running programs too much. */
    if ( force_expensive
-        || VG_(clo_sanity_level) > 1
+        || VG_(clo_sanity_level) >= 2
         || (VG_(clo_sanity_level) == 1 
             && sanity_fast_count == next_slow_check_at)) {
 
@@ -2410,7 +2410,7 @@ void VG_(sanity_check_general) ( Bool force_expensive )
       }
    }
 
-   if (VG_(clo_sanity_level) > 1) {
+   if (VG_(clo_sanity_level) >= 2) {
       /* Check sanity of the low-level memory manager.  Note that bugs
          in the client's code can cause this to fail, so we don't do
          this check unless specially asked for.  And because it's

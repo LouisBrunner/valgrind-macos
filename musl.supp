@@ -2,7 +2,7 @@
 # See: https://www.openwall.com/lists/musl/2017/06/15/4
 
 {
-   musl-dynlink-false-positive1
+   musl-dynlink1
    Memcheck:Leak
    fun:calloc
    fun:load_direct_deps
@@ -14,7 +14,7 @@
 }
 
 {
-   musl-dynlink-false-positive2
+   musl-dynlink2
    Memcheck:Leak
    fun:calloc
    fun:load_direct_deps
@@ -25,7 +25,7 @@
 }
 
 {
-   musl-dynlink-false-positive3
+   musl-dynlink3
    Memcheck:Leak
    fun:calloc
    fun:load_library
@@ -36,11 +36,102 @@
 }
 
 {
-   musl-dynlink-false-positive4
+   musl-dynlink4
    Memcheck:Leak
    fun:calloc
    fun:load_library
    fun:load_preload
    fun:__dls3
    fun:__dls2
+}
+
+{
+   musl-helgrind-pthread_exit
+   Helgrind:Race
+   ...
+   fun:pthread_exit
+}
+
+{
+   musl-helgrind-pthread_create
+   Helgrind:Race
+   ...
+   fun:pthread_create
+}
+
+{
+   musl-drd-pthread_exit
+   drd:ConflictingAccess
+   ...
+   fun:pthread_exit
+}
+
+{
+   musl-drd-pthread_create
+   drd:ConflictingAccess
+   ...
+   fun:pthread_create
+}
+
+{
+   musl-drd-setlocale
+   drd:ConflictingAccess
+   ...
+   fun:setlocale
+}
+
+{
+   musl-drd-__tl_lock
+   drd:ConflictingAccess
+   fun:__wait
+   fun:__tl_lock
+}
+
+{
+   musl-drd-printf_core
+   drd:ConflictingAccess
+   fun:__fwritex
+   fun:out
+   fun:printf_core
+}
+
+{
+   musl-drd-__ofl_lock
+   drd:ConflictingAccess
+   fun:__ofl_lock
+}
+
+{
+   musl-drd-__funcs_on_exit
+   drd:ConflictingAccess
+   fun:__funcs_on_exit
+}
+
+{
+   musl-drd-fwrite1
+   drd:ConflictingAccess
+   fun:__stdio_write
+   fun:fwrite
+}
+
+{
+   musl-drd-fwrite2
+   drd:ConflictingAccess
+   fun:__fwritex
+   fun:fwrite
+}
+
+{
+   musl-drd-freeaddrinfo
+   drd:ConflictingAccess
+   fun:__lock
+   fun:freeaddrinfo
+}
+
+{
+   musl-drd-exit
+   drd:ConflictingAccess
+   fun:__lock
+   fun:__funcs_on_exit
+   fun:exit
 }

@@ -4968,7 +4968,8 @@ AC_CHECK_FUNCS([     \
         memrchr      \
         strndup      \
         close_range  \
-        wcsncpy
+        wcsncpy      \
+        free_aligned_sized
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -5006,6 +5007,8 @@ AM_CONDITIONAL([HAVE_STRLCAT],
                [test x$ac_cv_func_strlcat = xyes])
 AM_CONDITIONAL([HAVE_STRLCPY],
                [test x$ac_cv_func_strlcpy = xyes])
+AM_CONDITIONAL([HAVE_FREE_ALIGNED_SIZED],
+               [test x$ac_cv_func_free_aligned_sized = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

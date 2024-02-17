@@ -32,6 +32,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 437790  valgrind reports "Conditional jump or move depends on uninitialised
         value" in memchr of macOS 10.12-10.15
 460616  disInstr(arm64): unhandled instruction 0x4E819402 (dotprod/ASIMDDP)
+466762  Add redirs for C23 free_sized() and free_aligned_sized()
 466884  Missing writev uninit padding suppression for _XSend
 471036  disInstr_AMD64: disInstr miscalculated next %rip on RORX imm8, m32/64, r32/6
 475498  Add reallocarray wrapper

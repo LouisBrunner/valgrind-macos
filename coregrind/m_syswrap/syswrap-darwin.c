@@ -9817,20 +9817,24 @@ PRE(bsdthread_ctl)
                  void*, cmd, void*, arg1, void*, arg2, void*, arg3);
 }
 
+// syscalls.master says
+// int csrctl(uint32_t op, user_addr_t useraddr, user_addr_t usersize) NO_SYSCALL_STUB;
+// but https://github.com/search?q=repo%3Aapple-open-source%2Fmacos%20__csrctl&type=code says
+// int __csrctl(csr_op_t op, void *buffer, size_t size);
 PRE(csrctl)
 {
    switch (ARG1) {
    case VKI_CSR_CHECK:
      PRINT("csrctl(op:CSR_CHECK, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
-   PRE_REG_READ3(int, "csrctl",
-                 uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+     PRE_REG_READ3(int, "csrctl",
+                   uint32_t, op, void*, useraddr, size_t, usersize);
      PRE_MEM_READ( "csrctl(useraddr)", ARG2, ARG3 );
      break;
 
    case VKI_CSR_GET_ACTIVE_CONFIG:
       PRINT("csrctl(op:CSR_GET_ACTIVE_CONFIG, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
       PRE_REG_READ3(int, "csrctl",
-                    uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+                    uint32_t, op, void*, useraddr, size_t, usersize);
       PRE_MEM_WRITE( "csrctl(useraddr)", ARG2, ARG3 );
       break;
 

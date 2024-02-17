@@ -3,6 +3,9 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <stddef.h>
+#if !defined(O_DIRECT)
+#define O_DIRECT 0
+#endif
 
 int main(void)
 {

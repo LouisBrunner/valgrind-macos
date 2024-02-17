@@ -414,7 +414,11 @@ void do_rorx64 ( /*OUT*/ULong* res1, /*OUT*/ULong* res2, ULong arg )
     "xorq $0x8d5, (%%rsp)"    "\n\t"
     "movq (%%rsp), %1"        "\n\t"
     "popfq"                   "\n\t"
+#if defined(__APPLE__)
+    "rorx $67, _g_ulong_arg(%%rip), %0" "\n\t"
+#else
     "rorx $67, g_ulong_arg(%%rip), %0" "\n\t"
+#endif
     "pushfq"                  "\n\t"
     "movq (%%rsp), %2"        "\n\t"
     "xorq $0x8d5, (%%rsp)"    "\n\t"
@@ -469,7 +473,11 @@ void do_rorx32 ( /*OUT*/ULong* res1, /*OUT*/ULong* res2, UInt arg )
     "xorq $0x8d5, (%%rsp)"    "\n\t"
     "movq (%%rsp), %1"        "\n\t"
     "popfq"                   "\n\t"
+#if defined(__APPLE__)
+    "rorx $67, _g_uint_arg(%%rip), %k0" "\n\t"
+#else
     "rorx $67, g_uint_arg(%%rip), %k0" "\n\t"
+#endif
     "pushfq"                  "\n\t"
     "movq (%%rsp), %2"        "\n\t"
     "xorq $0x8d5, (%%rsp)"    "\n\t"

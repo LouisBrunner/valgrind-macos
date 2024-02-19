@@ -744,10 +744,25 @@ static Addr setup_client_stack(void*  init_sp,
 
 #if (FREEBSD_VERS >= FREEBSD_13_2)
       case VKI_AT_USRSTACKBASE:
+         VG_(debugLog)(2, "initimg",
+                       "usrstackbase from OS %lx\n",
+                       (UWord)auxv->u.a_val);
          auxv->u.a_val = VG_(get_usrstack)();
+         VG_(debugLog)(2, "initimg",
+                       "usrstackbase from aspacemgr %lx\n",
+                       (UWord)auxv->u.a_val);
          break;
       case VKI_AT_USRSTACKLIM:
+         VG_(debugLog)(2, "initimg",
+                       "usrstacklim from OS %lu (%lx)\n",
+                       (UWord)auxv->u.a_val,
+                       (UWord)auxv->u.a_val);
          auxv->u.a_val = clstack_max_size;
+         VG_(debugLog)(2, "initimg",
+                       "usrstacklim from aspacemgr %lu (%lx)\n",
+                       clstack_max_size,
+                       clstack_max_size);
+
          break;
 #endif
 

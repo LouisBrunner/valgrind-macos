@@ -425,7 +425,7 @@ void VG_(sigframe_destroy)( ThreadId tid )
    if (VG_(clo_trace_signals)) {
       VG_(message)(
          Vg_DebugMsg,
-         "VG_(signal_return) (thread %u): valid magic; RIP=%#llx\n",
+         "VG_(sigframe_destroy) (thread %u): valid magic; RIP=%#llx\n",
          tid, tst->arch.vex.guest_RIP);
    }
 

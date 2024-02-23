@@ -3981,6 +3981,17 @@ static void parse_procselfmaps (
    Int    oid[4];
    SysRes sres;
    Int map_count = 0;
+   // this assumes that compiling with clang uses ld.lld which produces 3 LOAD segements
+   // and that compiling with GCC uses ld.bfd which produces 2 LOAD segments
+#if defined(__clang__)
+   Int const rx_map = 1;
+   Int const rw_map = 2;
+#elif defined(__GNUC__)
+   Int const rx_map = 0;
+   Int const rw_map = 1;
+#else
+#error("unsupported compiler")
+#endif
    // could copy the whole kinfo_vmentry but it is 1160 bytes
    char   *rx_filename = NULL;
    ULong  rx_dev = 0U;
@@ -4024,7 +4035,7 @@ static void parse_procselfmaps (
 
       map_count = (p - (char *)procmap_buf)/kve->kve_structsize;
 
-      if (tool_read_maps && map_count == 2) {
+      if (tool_read_maps && map_count == rw_map) {
          aspacem_assert((prot & (VKI_PROT_READ | VKI_PROT_WRITE)) == (VKI_PROT_READ | VKI_PROT_WRITE));
          filename = rx_filename;
          dev = rx_dev;
@@ -4041,7 +4052,7 @@ static void parse_procselfmaps (
                            foffset, filename, tool_read_maps && map_count == 2 );
       }
 
-      if (tool_read_maps && map_count == 1) {
+      if (tool_read_maps && map_count == rx_map) {
          aspacem_assert((prot & (VKI_PROT_READ | VKI_PROT_EXEC)) == (VKI_PROT_READ | VKI_PROT_EXEC));
          rx_filename = filename;
          rx_dev = dev;

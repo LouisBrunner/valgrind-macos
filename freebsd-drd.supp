@@ -249,3 +249,9 @@
    obj:*/lib*/libc.so.7
    fun:getaddrinfo
 }
+{
+   DRD-FREEEBSD15-_UMTX_OP_ERR
+   drd:ConflictingAccess
+   fun:_umtx_op_err
+}
+

@@ -4,6 +4,10 @@
 
 gsed '/by 0x........: stat (in \/...libc...)/d;/by 0x........: fstat (in \/...libc...)/d;/by 0x........: fstatat (in \/...libc...)/d' |
 gsed '/by 0x........: statfs (in \/...libc...)/d;/by 0x........: fstatfs (in \/...libc...)/d' |
+gsed 's/at 0x........: fstatat (in \/...libc...)/.../' |
+gsed 's/: fstatfs/: __sys_fstatfs/' |
+gsed 's/: statfs/: _statfs/' |
+gsed 's/: fstat/: __sys_fstat/' |
 
 # fox x86 compatibility
 

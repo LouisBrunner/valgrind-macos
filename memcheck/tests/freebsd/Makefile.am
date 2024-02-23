@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 	filter_scalar filter_realpathat filter_fstat filter_eventfd2 \
-	toucher1 toucher2
+	toucher1 toucher2 filter_getfsstat
 
 EXTRA_DIST = \
 	access.vgtest \

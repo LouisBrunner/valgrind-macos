@@ -1,0 +1,7 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+gsed 's/: getfsstat/: _getfsstat/'
+
+exit 0

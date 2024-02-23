@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 #include "config.h"
 
 void* child1 ( void* arg )
@@ -19,7 +20,9 @@ void* child1 ( void* arg )
 void *sleep1 ( void* arg )
 {
    /* Long sleep, we hope to never trigger. */
-   sleep (10);
+   struct timespec ts = {0, 1000000};
+   for (int i = 0; i < 10000; ++i)
+      nanosleep(&ts, NULL);
    pthread_barrier_wait ( (pthread_barrier_t*)arg );
    return NULL;
 }
@@ -27,7 +30,9 @@ void *sleep1 ( void* arg )
 void *exit1 ( void* arg )
 {
    /* Sleep a bit, then exit, we are done. */
-   sleep (1);
+   struct timespec ts = {0, 1000000};
+   for (int i = 0; i < 1000; ++i)
+      nanosleep(&ts, NULL);
    exit (0);
    return NULL;
 }
@@ -60,7 +65,9 @@ int main ( void )
   /* create a thread, whose only purpose is to block on the barrier */
   pthread_create(&thr1, NULL, child1, (void*)bar3);
   /* guarantee that it gets there first */
-  sleep(1);
+  struct timespec ts = {0, 1000000};
+  for (int i = 0; i < 1000; ++i)
+      nanosleep(&ts, NULL);
   /* and now reinitialise */
   pthread_barrier_init(bar3, NULL, 3);
 
@@ -71,7 +78,7 @@ int main ( void )
   pthread_barrier_init(bar4, NULL, 2);
   /* create a thread, whose purpose is to "unblock" the barrier after
      some sleeping in case it keeps being blocked. We hope it isn't
-     needed, but if it is, because pthread_barier_destroy hangs
+     needed, but if it is, because pthread_barrier_destroy hangs
      and we will get an extra warning about the barrier being already
      destroyed. */
   pthread_create(&slp2, NULL, sleep1, (void*)bar4);

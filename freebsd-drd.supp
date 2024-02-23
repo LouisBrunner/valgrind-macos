@@ -254,4 +254,9 @@
    drd:ConflictingAccess
    fun:_umtx_op_err
 }
-
+{
+   DRD-FREEEBSD15-_MALLOC_THREAD_CLEANUP
+   drd:ConflictingAccess
+   ...
+   fun:_malloc_thread_cleanup
+}

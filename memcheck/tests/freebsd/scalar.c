@@ -303,9 +303,11 @@ int main(void)
 
    /* obsol vwrite                68 */
 
+#if (FREEBSD_VERS < FREEBSD_15)
    /* SYS_sbrk                    69 */
    GO(SYS_sbrk, "1s 1m");
    SY(SYS_sbrk, x0); FAIL;
+#endif
 
    /* not implemented on OS SYS_sstk 70 */
 

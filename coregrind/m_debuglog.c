@@ -300,7 +300,7 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 
 static UInt local_sys_getpid ( void )
 {
-   UInt __res;
+   ULong __res;
    __asm__ volatile (
       "mov  x8, #"VG_STRINGIFY(__NR_getpid)"\n"
       "svc  0x0\n"      /* getpid() */

@@ -1332,11 +1332,12 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    */
 
    // Ask what the I and D line sizes are
-   UInt cache_type_register;
+   ULong read_mrs;
    // Copy the content of the cache type register to a core register.
    __asm__ __volatile__ ("mrs %[ctr], ctr_el0" // NOLINT
-                         : [ctr] "=r" (cache_type_register));
+                         : [ctr] "=r" (read_mrs));
 
+   UInt cache_type_register = read_mrs;
    const Int kDCacheLineSizeShift = 16;
    const Int kICacheLineSizeShift = 0;
    const UInt kDCacheLineSizeMask = 0xf << kDCacheLineSizeShift;

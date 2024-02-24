@@ -1763,6 +1763,10 @@
 /none/tests/arm/vfpv4_fma
 
 # /none/tests/arm64/
+/none/tests/arm64/*.stderr.diff*
+/none/tests/arm64/*.stderr.out
+/none/tests/arm64/*.stdout.diff*
+/none/tests/arm64/*.stdout.out
 /none/tests/arm64/.deps
 /none/tests/arm64/Makefile
 /none/tests/arm64/Makefile.in

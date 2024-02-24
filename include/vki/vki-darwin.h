@@ -436,14 +436,19 @@ typedef struct {
 //typedef  struct __sigaction  vki_sigaction_toK_t;
 //typedef  struct sigaction    vki_sigaction_fromK_t;
 
+
+#define VKI_UC_TRAD        1
+#define VKI_UC_FLAVOR     30
+
 typedef
    struct {
       void* ksa_handler;
+      // see sendsig_set_thread_state/sendsig in XNU for details
 #if defined(VGP_arm64_darwin)
       // arm64 adds a token argument which needs to be passed to sigreturn
-      void (*sa_tramp)(void*,UWord,UWord,void*,void*,void*);
+      void (*sa_tramp)(void* catcher, UWord infostyle, UWord sig, void* p_sinfo, void* p_uctx, void* token);
 #else
-      void (*sa_tramp)(void*,UWord,UWord,void*,void*);
+      void (*sa_tramp)(void* ua_catcher, UWord infostyle, UWord sig, void* ua_sip, void* ua_uctxp);
 #endif
       vki_sigset_t sa_mask;
       int sa_flags;

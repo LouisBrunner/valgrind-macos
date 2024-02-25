@@ -286,7 +286,11 @@
 #define	__NR_fchflags       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(35)
 #define	__NR_sync           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(36)
 #define	__NR_kill           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(37)
+#if defined(VGA_arm64)
+#define __NR_sys_crossarch_trap VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(38)
+#else
 			/* 38  old stat */
+#endif
 #define	__NR_getppid        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(39)
 			/* 40  old lstat */
 #define	__NR_dup            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(41)

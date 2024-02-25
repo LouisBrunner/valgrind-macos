@@ -45,6 +45,8 @@
 #include "pub_core_debuglog.h"   // VG_(debugLog)
 
 #if defined(VGO_darwin)
+#include "m_mach/pub_mach.h"
+
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #include <mach/mach.h>   /* mach_thread_self */
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
@@ -1412,6 +1414,10 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
      // move this code before the code is generated.
      : "cc", "memory"
    );
+
+#  elif defined(VGP_arm64_darwin)
+
+  sys_icache_invalidate(ptr, nbytes);
 
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,

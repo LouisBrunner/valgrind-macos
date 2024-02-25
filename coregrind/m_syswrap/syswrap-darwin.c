@@ -9527,22 +9527,22 @@ PRE(sigreturn)
 #if defined(VGA_arm64)
 PRE(thread_set_tsd_base)
 {
-  PRINT("thread_set_tsd_base ( %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3);
-  // TODO: broken
+  PRINT("thread_set_tsd_base ( %#lx )", ARG1);
   PRE_REG_READ1(void, "thread_set_tsd_base", struct pthread_t *, self);
 
-  // {
-  //   ThreadState *tst = VG_(get_ThreadState)(tid);
-  //   tst->os_state.pthread = ARG1;
-  //   // SET_STATUS_Success(0x60);
-  //   // see comments on x86 case just above
-  //   SET_STATUS_from_SysRes(
-  //       VG_(mk_SysRes_arm64_darwin)(
-  //         VG_DARWIN_SYSNO_CLASS(__NR_thread_set_cthread_self),
-  //         False, 0, 0x60
-  //       )
-  //   );
-  // }
+  {
+    ThreadState *tst = VG_(get_ThreadState)(tid);
+    tst->os_state.pthread = ARG1;
+    tst->arch.vex.guest_TPIDR_EL0 = ARG1;
+    // SET_STATUS_Success(0x60);
+    // see comments on x86 case just below
+    SET_STATUS_from_SysRes(
+        VG_(mk_SysRes_arm64_darwin)(
+          VG_DARWIN_SYSNO_CLASS(__NR_thread_set_tsd_base),
+          False, 0, ARG1
+        )
+    );
+  }
 }
 
 #elif defined(VGA_x86) || defined(VGA_amd64)
@@ -11088,6 +11088,14 @@ POST(task_read_for_pid)
   }
 }
 
+#if defined(VGA_arm64)
+PRE(sys_crossarch_trap)
+{
+  PRINT("sys_crossarch_trap(%lu)", ARG1);
+  PRE_REG_READ1(kern_return_t, "sys_crossarch_trap", uint32_t, name);
+}
+#endif
+
 #endif /* DARWIN_VERS >= DARWIN_11_00 */
 
 
@@ -11208,7 +11216,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_fchflags,    fchflags),
    GENX_(__NR_sync,        sys_sync),
    GENX_(__NR_kill,        sys_kill),
+#if defined(VGA_arm64)
+   MACX_(__NR_sys_crossarch_trap, sys_crossarch_trap),
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(38)),    // old stat
+#endif
    GENX_(__NR_getppid,     sys_getppid),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(40)),    // old lstat
    GENXY(__NR_dup,         sys_dup),

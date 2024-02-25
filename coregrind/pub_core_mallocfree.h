@@ -170,7 +170,7 @@ extern void VG_(describe_arena_addr) ( Addr a, /*OUT*/AddrArenaInfo* aai );
 __attribute__((always_inline))
 __inline__
 void enable_thread_to_jit_write(Addr ptr, SizeT size, Bool enable) {
-  VG_(debugLog)(2, "mmapjit", "enable_thread_to_jit_write(%#lx, %lu, %d)\n", ptr, size, enable);
+  VG_(debugLog)(4, "mmapjit", "enable_thread_to_jit_write(%#lx, %lu, %d)\n", ptr, size, enable);
 
   SysRes sres = VG_(do_syscall3)(__NR_mprotect, ptr, size,
     enable ? VKI_PROT_READ | VKI_PROT_WRITE

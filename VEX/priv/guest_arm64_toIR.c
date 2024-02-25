@@ -7679,17 +7679,25 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    /* ---- Cases for TPIDR_EL0 ----
       0xD51BD0 010 Rt   MSR tpidr_el0, rT
       0xD53BD0 010 Rt   MRS rT, tpidr_el0
+      ---- Cases for TPIDRRO_EL0 ----
+      0xD53BD0 011 Rt   MRS rT, tpidrro_el0
    */
    if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD51BD040 /*MSR*/
-       || (INSN(31,0) & 0xFFFFFFE0) == 0xD53BD040 /*MRS*/) {
+       || (INSN(31,0) & 0xFFFFFFE0) == 0xD53BD040 /*MRS*/
+       || (INSN(31,0) & 0xFFFFFFE0) == 0xD53BD060 /*MRS RO*/) {
       Bool toSys = INSN(21,21) == 0;
       UInt tt    = INSN(4,0);
+      Bool isRO  = INSN(21,21) == 1;
       if (toSys) {
          stmt( IRStmt_Put( OFFB_TPIDR_EL0, getIReg64orZR(tt)) );
          DIP("msr tpidr_el0, %s\n", nameIReg64orZR(tt));
       } else {
          putIReg64orZR(tt, IRExpr_Get( OFFB_TPIDR_EL0, Ity_I64 ));
+         if (isRO) {
+            DIP("mrs %s, tpidrro_el0\n", nameIReg64orZR(tt));
+         } else {
          DIP("mrs %s, tpidr_el0\n", nameIReg64orZR(tt));
+      }
       }
       return True;
    }

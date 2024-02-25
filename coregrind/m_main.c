@@ -2067,6 +2067,10 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                0 /* di_handle: no associated debug info */ );
 #    elif defined(VGP_arm64_darwin)
       VG_TRACK( new_mem_startup,
+                0xfffff4000, 0x1000,
+                True, False, True, /* r-- */
+                0 /* di_handle: no associated debug info */ );
+      VG_TRACK( new_mem_startup,
                 0xfffffc000, 0x1000,
                 True, False, True, /* r-x */
                 0 /* di_handle: no associated debug info */ );

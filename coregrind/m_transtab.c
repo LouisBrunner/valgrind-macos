@@ -44,7 +44,7 @@
 #include "pub_core_dispatch.h"   // For VG_(disp_cp*) addresses
 
 
-#define DEBUG_TRANSTAB 1
+#define DEBUG_TRANSTAB 0
 
 
 /*-------------------------------------------------------------*/
@@ -913,11 +913,6 @@ void VG_(tt_tc_do_chaining) ( void* from__patch_addr,
    TTEntryC* from_tteC = index_tteC(from_sNo, from_tteNo);
 
    ALLOW_RWX_WRITE((Addr) sectors[from_sNo].tc, 8 * tc_sector_szQ);
-   if (DEBUG_TRANSTAB)
-    VG_(printf)(
-      "VEX chaining %p -> %p (to_fastEP=%d)\n",
-      from__patch_addr, host_code, to_fastEP
-    );
    /* Get VEX to do the patching itself.  We have to hand it off
       since it is host-dependent. */
    VexInvalRange vir
@@ -991,12 +986,12 @@ static void unchain_one ( VexArch arch_host, VexEndness endness_host,
    // dst check is ok because LibVEX_UnChain checks that
    // place_to_jump_to_EXPECTED really is the current dst, and
    // asserts if it isn't.
-   if (DEBUG_TRANSTAB)
-      VG_(printf)("VEX unchaining %p -> %p (fastEP=%d)\n",
-                  place_to_patch, place_to_jump_to_EXPECTED, ie->to_fastEP);
+
+   ALLOW_RWX_WRITE((Addr) sectors[ie->from_sNo].tc, 8 * tc_sector_szQ);
    VexInvalRange vir
        = LibVEX_UnChain( arch_host, endness_host, place_to_patch,
                          place_to_jump_to_EXPECTED, disp_cp_chain_me );
+   ALLOW_RWX_EXECUTE((Addr) sectors[ie->from_sNo].tc, 8 * tc_sector_szQ);
    VG_(invalidate_icache)( (void*)vir.start, vir.len );
 }
 
@@ -1832,11 +1827,6 @@ void VG_(add_to_transtab)( const VexGuestExtents* vge,
    dstP = (UChar*)tcptr;
    srcP = (UChar*)code;
    ALLOW_RWX_WRITE((Addr) sectors[y].tc, 8 * tc_sector_szQ);
-   if (DEBUG_TRANSTAB)
-    VG_(printf)(
-      "add_to_transtab: copying %d bytes to 0x%lx\n",
-      code_len, (Addr)dstP
-    );
    VG_(memcpy)(dstP, srcP, code_len);
    ALLOW_RWX_EXECUTE((Addr) sectors[y].tc, 8 * tc_sector_szQ);
    sectors[y].tc_next += reqdQ;

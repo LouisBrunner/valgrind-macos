@@ -13,6 +13,9 @@
    along with this program; if not, see <http://www.gnu.org/licenses/>.
    The GNU General Public License is contained in the file COPYING.
 */
+#ifndef __PRIV_DYLD_INTERNALS_H
+#define __PRIV_DYLD_INTERNALS_H
+
 #if defined(VGO_darwin)
 
 // This file contains a bunch of structure defined in Apple's dyld
@@ -131,5 +134,7 @@ typedef struct {
   uint32_t    textSegmentSize;
   uint32_t    pathOffset;             // offset from start of cache file
 } dyld_cache_image_text_info;
+
+#endif
 
 #endif

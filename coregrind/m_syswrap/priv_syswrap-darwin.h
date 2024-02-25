@@ -93,7 +93,11 @@ DECL_TEMPLATE(darwin, chflags);                 // 34
 DECL_TEMPLATE(darwin, fchflags);                // 35
 // GEN sync 36
 // GEN kill 37
+#if defined(VGA_arm64)
+DECL_TEMPLATE(darwin, sys_crossarch_trap);      // 38
+#else
 // old stat 38
+#endif
 // GEN getppid 39
 // old lstat 40
 // GEN dup 41

@@ -996,11 +996,11 @@ __private_extern__ UWord
 do_syscall_mach_WRK ( UWord a1, UWord a2, UWord a3, /* x0, x1, x2 */
                       UWord a4, UWord a5, UWord a6, /* x3, x4, x5 */
                       UWord a7, UWord a8,           /* x6, x7 */
-                      UWord syscall_no );           /* 8(rsp) */
+                      UWord syscall_no );           /* 0(rsp) */
 // Mach trap: 64-bit result, no error flag
 asm(".private_extern _do_syscall_mach_WRK\n"
     "_do_syscall_mach_WRK:\n"
-    "        ldr     x16, [sp, #8]    \n"  /* load syscall_no */
+    "        ldr     x16, [sp, #0]    \n"  /* load syscall_no */
     "        svc     0x80             \n"
     "        ret                      \n"
     );
@@ -1336,6 +1336,10 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
          err = 0;
          break;
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
+         vg_assert(sysno == __NR_thread_set_tsd_base);
+          wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
+                                    __SYSNO_thread_set_tsd_base);
+         break;
       default:
          vg_assert(0);
          break;

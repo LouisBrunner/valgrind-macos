@@ -103,14 +103,11 @@
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
-#undef PLAT_arm64_darwin
 
 #if defined(__APPLE__) && defined(__i386__)
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
-#elif defined(__APPLE__) && defined(__aarch64__)
-#  define PLAT_arm64_darwin 1
 #else
 #  error "Can't be compiled on this platform"
 #endif
@@ -119,11 +116,7 @@
 #include <mach-o/nlist.h>
 #include <mach-o/fat.h>
 
-#ifdef PLAT_arm64_darwin
-#include <mach/arm/thread_status.h>
-#else
 #include <mach/i386/thread_status.h>
-#endif
 
 /* Get hold of DARWIN_VERS, and check it has a sane value. */
 #include "config.h"
@@ -313,8 +306,6 @@ static Int map_image_aboard ( /*OUT*/ImageInfo* ii, HChar* filename )
            cputype = CPU_TYPE_X86;
 #          elif defined(PLAT_amd64_darwin)
            cputype = CPU_TYPE_X86_64;
-#          elif defined(PLAT_arm64_darwin)
-           cputype = CPU_TYPE_ARM64;
 #          else
 #            error "unknown architecture"
 #          endif
@@ -473,14 +464,6 @@ void modify_macho_loadcmds ( HChar* filename,
             UInt* w32s = (UInt*)( (UChar*)tcmd + sizeof(*tcmd) );
             if (DEBUGPRINTING)
                printf("UnixThread: flavor %u = ", w32s[0]);
-#ifdef PLAT_arm64_darwin
-            if (w32s[0] == ARM_THREAD_STATE64 && !have_rsp) {
-               if (DEBUGPRINTING)
-                  printf("ARM_THREAD_STATE64\n");
-               arm_thread_state64_t* state64
-                  = (arm_thread_state64_t*)(&w32s[2]);
-               init_rsp = state64->__sp;
-#else
             if (w32s[0] == x86_THREAD_STATE64 && !have_rsp) {
                if (DEBUGPRINTING)
                   printf("x86_THREAD_STATE64\n");
@@ -620,10 +603,6 @@ static Bool is_plausible_tool_exe_name ( HChar* nm )
    if (p && 0 == strcmp(p, "-amd64-darwin"))
       return True;
 
-   p = strstr(nm, "-arm64-darwin");
-   if (p && 0 == strcmp(p, "-arm64-darwin"))
-      return True;
-
    return False;
 }
 
@@ -638,10 +617,6 @@ int main ( int argc, char** argv )
       fail("args: -stack_addr-arg -stack_size-arg "
            "name-of-tool-executable-to-modify");
 
-#ifdef PLAT_arm64_darwin
-    fail("this tool is not used on arm64 yet");
-#endif
-
    r= sscanf(argv[1], "0x%llx", &req_stack_addr);
    if (r != 1) fail("invalid stack_addr arg");
 
@@ -653,7 +628,7 @@ int main ( int argc, char** argv )
            "stack_size 0x%llx\n", req_stack_addr, req_stack_size );
 
    if (!is_plausible_tool_exe_name(argv[3]))
-      fail("implausible tool exe name -- not of the form *-{x86,amd64,arm64}-darwin");
+      fail("implausible tool exe name -- not of the form *-{x86,amd64}-darwin");
 
    fprintf(stderr, "fixup_macho_loadcmds: examining tool exe: %s\n",
            argv[3] );

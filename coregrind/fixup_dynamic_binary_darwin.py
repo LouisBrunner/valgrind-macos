@@ -11,11 +11,9 @@ except ImportError:
 # so we try to add them where they would naturally be
 
 def main():
-  if len(sys.argv) != 3:
-    print("Usage: python3 fixup_dynamic_binary_darwin.py <binary> <image_base>")
+  if len(sys.argv) != 2:
+    print("Usage: python3 fixup_dynamic_binary_darwin.py <binary>")
     sys.exit(1)
-
-  image_base = int(sys.argv[2], 16)
 
   toolpath = sys.argv[1]
   toolpath_fixed = f"{toolpath}.fixed"
@@ -23,20 +21,9 @@ def main():
 
   # Remove signature if present as it will be invalidated by our modifications
   tool.remove_signature()
-  # Remove non-required stuff
-  # tool.header.remove(lief._lief.MachO.HEADER_FLAGS.TWOLEVEL)
+  # libSystem.B.dylib has we don't need it and it might mess up our memory layout
+  # and initaalize things we don't want to be initialized (yet)
   tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.LOAD_DYLIB) # libSystem.B.dylib
-  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.BUILD_VERSION)
-  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_INFO_ONLY)
-  # tool.remove_section("__unwind_info")
-  # tool.remove_section("__stubs")
-  # tool.remove_section("__stub_helper")
-  # tool.remove_section("__got")
-  # tool.remove_section("__la_symbol_ptr")
-  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DATA_IN_CODE)
-  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.FUNCTION_STARTS)
-  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_EXPORTS_TRIE)
-  # tool.remove(lief._lief.MachO.LOAD_COMMAND_TYPES.DYLD_CHAINED_FIXUPS)
 
   # Commit the changes and make the binary executable
   tool.write(toolpath_fixed)

@@ -390,6 +390,13 @@ Addr setup_client_stack( void*  init_sp,
 #endif
    }
 
+#if defined(VGA_arm64)
+    // This is required so that dyld can load our dylib specified in DYLD_INSERT_LIBRARIES
+#define EXTRA_APPLE_ARG "arm64e_abi=all"
+    stringsize += VG_(strlen)(EXTRA_APPLE_ARG) + 1;
+    auxsize += sizeof(Word);
+#endif
+
    /* Darwin mach_header */
    if (info->dynamic) auxsize += sizeof(Word);
 
@@ -468,7 +475,7 @@ Addr setup_client_stack( void*  init_sp,
       *ptr = (Addr)copy_str(&strtab, *cpp);
    *ptr++ = 0;
 
-   /* --- executable_path + NULL --- */
+   /* --- executable_path --- */
    if (info->executable_path) {
 #if XCODE_VERS >= XCODE_10_14_6
        Int executable_path_len = VG_(strlen)(info->executable_path) + 16 + 1;
@@ -479,8 +486,12 @@ Addr setup_client_stack( void*  init_sp,
 #else
        *ptr++ = (Addr)copy_str(&strtab, info->executable_path);
 #endif
-   } else
-       *ptr++ = 0;
+   }
+
+#if defined(VGA_arm64)
+   *ptr++ = (Addr)copy_str(&strtab, EXTRA_APPLE_ARG);
+#endif
+
    *ptr++ = 0;
 
    vg_assert((strtab-stringbase) == stringsize);

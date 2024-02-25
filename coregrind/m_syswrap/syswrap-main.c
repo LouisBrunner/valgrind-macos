@@ -384,6 +384,7 @@ void do_syscall_for_client ( Int syscallno,
                );
          break;
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
+         // TODO: invalid for arm64 (they don't exist and the only one who does is handled differently)
          err = ML_(do_syscall_for_client_mdep_WRK)(
                   VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex,
                   syscall_mask, &saved, 0/*unused:sigsetSzB*/

@@ -610,6 +610,7 @@ case "${host_os}" in
       AC_ADD_DARWIN_VERS([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10 / iOS 8])
       AC_ADD_DARWIN_VERS([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11 / iOS 9])
       AC_ADD_DARWIN_VERS([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12 / iOS 10])
+      # iOS 11 and before are not supported because they use arm64 instead of arm64e (which is ~armv8.3-a)
       AC_ADD_DARWIN_VERS([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13 / iOS 11])
       AC_ADD_DARWIN_VERS([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14 / iOS 12])
       AC_ADD_DARWIN_VERS([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15 / iOS 13])
@@ -5288,7 +5289,7 @@ elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN ; then
   mflag_primary="$FLAG_M64 -arch x86_64"
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN ; then
-  mflag_primary="$FLAG_M64 -arch arm64"
+  mflag_primary="$FLAG_M64 -arch arm64e"
 fi
 
 mflag_secondary=

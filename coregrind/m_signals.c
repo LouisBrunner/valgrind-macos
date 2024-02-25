@@ -524,13 +524,13 @@ VgHashTable *ht_sigchld_ignore = NULL;
       ucontext_t* uc = (ucontext_t*)ucV;
       struct __darwin_mcontext64* mc = uc->uc_mcontext;
       struct __darwin_arm_thread_state64* ss = &mc->__ss;
-      return ss->__pc;
+      return arm_thread_state64_get_pc(*ss);
    }
    static inline Addr VG_UCONTEXT_STACK_PTR( void* ucV ) {
       ucontext_t* uc = (ucontext_t*)ucV;
       struct __darwin_mcontext64* mc = uc->uc_mcontext;
       struct __darwin_arm_thread_state64* ss = &mc->__ss;
-      return ss->__sp;
+      return arm_thread_state64_get_sp(*ss);
    }
    static inline SysRes VG_UCONTEXT_SYSCALL_SYSRES( void* ucV,
                                                     UWord scclass ) {
@@ -569,10 +569,10 @@ VgHashTable *ht_sigchld_ignore = NULL;
       ucontext_t* uc = (ucontext_t*)ucV;
       struct __darwin_mcontext64* mc = uc->uc_mcontext;
       struct __darwin_arm_thread_state64* ss = &mc->__ss;
-      srP->r_pc = (ULong)(ss->__pc);
-      srP->r_sp = (ULong)(ss->__sp);
-      srP->misc.ARM64.x29 = ss->__fp;
-      srP->misc.ARM64.x30 = ss->__lr;
+      srP->r_pc = (ULong)(arm_thread_state64_get_pc(*ss));
+      srP->r_sp = (ULong)(arm_thread_state64_get_sp(*ss));
+      srP->misc.ARM64.x29 = arm_thread_state64_get_fp(*ss);
+      srP->misc.ARM64.x30 = arm_thread_state64_get_lr(*ss);
    }
 
 #elif defined(VGP_x86_freebsd)

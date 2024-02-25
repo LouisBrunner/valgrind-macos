@@ -207,11 +207,6 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    }
 #endif
 
-   // Record the segment containing the Mach headers themselves
-   if (segcmd->fileoff == 0  &&  segcmd->filesize != 0) {
-      out_info->text = (vki_uint8_t *)slided_addr;
-   }
-
    // Record the __UNIXSTACK start
    if (0 == VG_(strcmp)(segcmd->segname, SEG_UNIXSTACK)) {
       out_info->stack_start = (vki_uint8_t *)slided_addr;
@@ -263,6 +258,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
         );
         if (!sr_isError(res)) {
         out_info->text_slide = sr_Res(res) - addr;
+        slided_addr += out_info->text_slide;
           VG_(debugLog)(2, "ume",
             "mmap fixed (file) (%#lx, %lu) succeeded, now %#lx with slide: %#lx\n",
             addr, filesize, sr_Res(res), out_info->text_slide
@@ -271,6 +267,11 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
       }
 #endif
       check_mmap(res, addr, filesize, "load_segment1");
+   }
+
+   // Record the segment containing the Mach headers themselves
+   if (segcmd->fileoff == 0  &&  segcmd->filesize != 0) {
+      out_info->text = (vki_uint8_t *)slided_addr;
    }
 
    // Zero-fill the remainder of the segment, if any
@@ -357,14 +358,17 @@ load_genericthread(struct thread_command *threadcmd, int type,
 #elif defined(VGA_arm64)
       if (flavor == ARM_THREAD_STATE64 && count == ARM_THREAD_STATE64_COUNT){
          arm_thread_state64_t *state = (arm_thread_state64_t *)p;
-         out_info->entry = (vki_uint8_t *)state->__pc + out_info->text_slide;
+         out_info->entry = (vki_uint8_t *)arm_thread_state64_get_pc(*state) + out_info->text_slide;
          if (type == LC_UNIXTHREAD) {
-            out_info->stack_end =
-              (vki_uint8_t *)(state->__sp ? state->__sp : VKI_USRSTACK64);
+            out_info->stack_end = (vki_uint8_t *)(
+              arm_thread_state64_get_sp(*state)
+              ? arm_thread_state64_get_sp(*state)
+              : VKI_USRSTACK64
+            );
             vg_assert(VG_IS_PAGE_ALIGNED(out_info->stack_end));
             out_info->stack_end--;
          }
-         if (customstack) *customstack = state->__sp;
+         if (customstack) *customstack = arm_thread_state64_get_sp(*state);
          return 0;
       }
 

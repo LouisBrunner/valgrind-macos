@@ -94,10 +94,12 @@ static void synthesize_ucontext( ThreadState *tst,
    TO_CTX(24);  TO_CTX(25);  TO_CTX(26);  TO_CTX(27);
    TO_CTX(28);
 #  undef TO_CTX
-   uc->__mcontext_data.__ss.__fp = tst->arch.vex.guest_X29;
-   uc->__mcontext_data.__ss.__lr = tst->arch.vex.guest_X30;
-   uc->__mcontext_data.__ss.__sp = tst->arch.vex.guest_XSP;
-   uc->__mcontext_data.__ss.__pc = tst->arch.vex.guest_PC;
+   // TODO: should we be using `arm_thread_state64_set_REG` here?
+   // seems like it might do ptrauth stuff for us, not sure if we want that
+   uc->__mcontext_data.__ss.__opaque_fp = (void*) tst->arch.vex.guest_X29;
+   uc->__mcontext_data.__ss.__opaque_lr = (void*) tst->arch.vex.guest_X30;
+   uc->__mcontext_data.__ss.__opaque_sp = (void*) tst->arch.vex.guest_XSP;
+   uc->__mcontext_data.__ss.__opaque_pc = (void*) tst->arch.vex.guest_PC;
    uc->__mcontext_data.__ss.__cpsr = 0; /* slack .. could do better */
 
    if (siguc) {
@@ -118,8 +120,8 @@ static void restore_from_ucontext(ThreadState *tst,
       FROM_CTX(24);  FROM_CTX(25);  FROM_CTX(26);  FROM_CTX(27);
       FROM_CTX(28);
 #     undef FROM_CTX
-  tst->arch.vex.guest_XSP = uc->__mcontext_data.__ss.__sp; // should we use SET_SP here?
-  tst->arch.vex.guest_PC  = uc->__mcontext_data.__ss.__pc;
+  tst->arch.vex.guest_XSP = arm_thread_state64_get_sp(uc->__mcontext_data.__ss); // should we use SET_SP here?
+  tst->arch.vex.guest_PC  = arm_thread_state64_get_pc(uc->__mcontext_data.__ss);
 }
 
 /* EXPORTED */

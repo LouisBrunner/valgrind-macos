@@ -817,6 +817,7 @@ uninstall-local: uninstall-noinst_PROGRAMS uninstall-noinst_DSYMS
 #----------------------------------------------------------------------------
 
 if VGCONF_OS_IS_DARWIN
+if ! VGCONF_PLATFORMS_INCLUDE_ARM64_DARWIN
 
 BUILT_SOURCES += fixup_macho_loadcmds
 fixup_macho_loadcmds: fixup_macho_loadcmds.c
@@ -824,6 +825,7 @@ fixup_macho_loadcmds: fixup_macho_loadcmds.c
 
 CLEANFILES += fixup_macho_loadcmds
 
+endif
 endif
 
 EXTRA_DIST += fixup_macho_loadcmds.c

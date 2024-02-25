@@ -87,7 +87,7 @@ TOOL_LDFLAGS_AMD64_DARWIN = \
 	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch x86_64
 
 TOOL_LDFLAGS_ARM64_DARWIN = \
-	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch arm64
+	$(TOOL_LDFLAGS_COMMON_DARWIN) -arch arm64e
 
 # MIPS Linux default start symbol is __start, not _start like on x86 or amd
 TOOL_LDFLAGS_MIPS32_LINUX = \

@@ -7818,26 +7818,41 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("mrs %s, ctr_el0\n", nameIReg64orZR(tt));
       return True;
    }
-   /* ---- Cases for CNTVCT_EL0 ----
+   /* ---- Cases for CNTVCT_EL0 and similar ----
       This is a timestamp counter of some sort.  Support reads of it only
       by passing through to the host.
       D5 3B E0 010 Rt  MRS Xt, cntvct_el0
+      D5 3C FA 110 Rt  MRS Xt, acntvct_el0
    */
-   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE040) {
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE040
+      || (INSN(31,0) & 0xFFFFFFC0) == 0xD53CFAC0
+   ) {
       UInt     tt   = INSN(4,0);
+      Bool     isA  = (INSN(31,0) & 0xFFFFFFC0) == 0xD53CFAC0;
       IRTemp   val  = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
-      IRDirty* d    = unsafeIRDirty_1_N ( 
+      IRDirty* d;
+      if (isA) {
+        d = unsafeIRDirty_1_N (
+            val,
+            0/*regparms*/,
+            "arm64g_dirtyhelper_MRS_ACNTVCT_EL0",
+            &arm64g_dirtyhelper_MRS_ACNTVCT_EL0,
+            args
+        );
+      } else {
+        d = unsafeIRDirty_1_N (
                          val, 
                          0/*regparms*/, 
                          "arm64g_dirtyhelper_MRS_CNTVCT_EL0",
                          &arm64g_dirtyhelper_MRS_CNTVCT_EL0,
                          args 
                       );
+      }
       /* execute the dirty call, dumping the result in val. */
       stmt( IRStmt_Dirty(d) );
       putIReg64orZR(tt, mkexpr(val));
-      DIP("mrs %s, cntvct_el0\n", nameIReg64orZR(tt));
+      DIP("mrs %s, %scntvct_el0\n", nameIReg64orZR(tt), isA ? "a" : "");
       return True;
    }   
    /* ---- Cases for CNTFRQ_EL0 ----

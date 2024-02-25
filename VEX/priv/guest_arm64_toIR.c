@@ -4993,7 +4993,8 @@ const HChar* nameArr_Q_SZ ( UInt bitQ, UInt size )
 
 static
 Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
-                          const VexAbiInfo* abiinfo, Bool sigill_diag)
+                          const VexArchInfo* archinfo, const VexAbiInfo* abiinfo,
+                          Bool sigill_diag)
 {
 #  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
 
@@ -7487,6 +7488,48 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
              nameIReg64orSP(nn));
          return True;
       }
+   }
+
+   /* ---------------- ARMv8.3-A: Load-Acquire RCpc Register Byte --------------- */
+   /* 31 29  26 25 23 22 21 20 15 14  11 9  4
+      00 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPRB <Wt>, [<Xn|SP>{, #0}]
+      01 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPRH <Wt>, [<Xn|SP>{, #0}]
+      10 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPR  <Xt>, [<Xn|SP>{, #0}] (32-bit)
+      11 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPR  <Xt>, [<Xn|SP>{, #0}] (64-bit)
+      sz     V     A  R     Rs o3 opc    Rn Rt
+   */
+   if (INSN(29,21) == BITS9(1,1,1,0,0,0,1,0,1)
+       && INSN(15,11) == BITS5(1,1,0,0,0)
+   ) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_LRCPC) == 0) {
+        return False;
+      }
+      UInt tt = INSN(4,0);
+      UInt nn = INSN(9,5);
+      Bool isByte = INSN(31,30) == 0;
+      Bool isHalf = INSN(31,30) == 1;
+      Bool is32   = INSN(31,30) == 2;
+      Bool is64   = INSN(31,30) == 3;
+      IRType ty = isByte ? Ity_I8 : isHalf ? Ity_I16 : is32 ? Ity_I32 : Ity_I64;
+
+      IRTemp addr = newTemp(Ity_I64);
+      assign(addr, getIReg64orSP(nn));
+      IRTemp data = newTemp(ty);
+      assign(data, loadLE(ty, mkexpr(addr)));
+      if (is64) {
+        putIReg64orZR(tt, mkexpr(data));
+      } else if (is32) {
+        putIReg32orZR(tt, mkexpr(data));
+      } else if (isHalf) {
+        putIReg32orZR(tt, unop(Iop_16Uto32, mkexpr(data)));
+      } else {
+        putIReg32orZR(tt, unop(Iop_8Uto32, mkexpr(data)));
+      }
+
+      DIP("ldapr%s %s, [%s]\n",
+          isByte ? "b" : isHalf ? "h" : "",
+          nameIRegOrZR(is32, tt), nameIReg64orSP(nn));
+      return True;
    }
 
    if (sigill_diag) {
@@ -16331,7 +16374,7 @@ Bool disInstr_ARM64_WRK (
       case BITS4(0,1,0,0): case BITS4(0,1,1,0):
       case BITS4(1,1,0,0): case BITS4(1,1,1,0):
          // Loads and stores
-         ok = dis_ARM64_load_store(dres, insn, abiinfo, sigill_diag);
+         ok = dis_ARM64_load_store(dres, insn, archinfo, abiinfo, sigill_diag);
          break;
       case BITS4(0,1,0,1): case BITS4(1,1,0,1):
          // Data processing - register

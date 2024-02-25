@@ -1781,11 +1781,12 @@ Bool VG_(machine_get_hwcaps)( void )
 
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
-     Bool have_vfp16, have_fp16, have_pauth;
+     Bool have_vfp16, have_fp16, have_pauth, have_lrcpc;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
-              = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth = False;
+              = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth
+              = have_lrcpc = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1855,6 +1856,7 @@ Bool VG_(machine_get_hwcaps)( void )
      (void) handler_unsup_insn;
 
      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+     vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
 
      ULong ctr_el0 = 0;
 #else
@@ -2071,6 +2073,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_fp16)       vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
      if (have_vfp16)      vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
      if (have_pauth)      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+     if (have_lrcpc)      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
 
      #undef get_cpu_ftr
      #undef get_ftr

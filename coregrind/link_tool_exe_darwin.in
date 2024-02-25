@@ -151,7 +151,7 @@ die "Can't find '-arch archstr' in command line"
 # build the command line
 my $cmd = "/usr/bin/ld";
 
-if ($archstr eq "arm64e") {
+if ($archstr eq "arm64" || $archstr eq "arm64e") {
     $cmd = "$cmd -L@XCODE_LIB_DIR@ -lSystem";
     $cmd = "$cmd -segaddr __TEXT $ala";
 } else {
@@ -201,7 +201,7 @@ if ($r != 0) {
 $cmd = "../coregrind/fixup_macho_loadcmds";
 $cmd = "$cmd $stack_addr_str $stack_size_str $outname";
 
-if ($archstr eq "arm64e") {
+if ($archstr eq "arm64" || $archstr eq "arm64e") {
     # on arm we fix it up differently because it's a dynamic binary
     $cmd = "python3 ../coregrind/fixup_dynamic_binary_darwin.py $outname";
 }

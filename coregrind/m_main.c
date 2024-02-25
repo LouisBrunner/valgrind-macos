@@ -1110,6 +1110,13 @@ void main_process_cmd_line_options( void )
          here. */
    }
 
+#if defined(VGO_freebsd)
+   if (VG_(clo_sanity_level) >= 3) {
+      VG_(debugLog)(0, "main", "Warning: due to transparent memory mappings with MAP_STACK\n");
+      VG_(debugLog)(0, "main", "--sanity-level=3 and above may give spurious errors.\n");
+   }
+#endif
+
    /* All non-logging-related options have been checked.  If the logging
       option specified is ok, we can switch to it, as we know we won't
       have to generate any other command-line-related error messages.

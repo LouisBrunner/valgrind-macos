@@ -3907,6 +3907,68 @@ Bool VG_(get_changed_segments)(
 #elif defined(VGO_freebsd)
 
 /*
+ * Some more nasty hacks.
+ *
+ * On FreeBSD mmap with MAP_STACK will result in TWO adjacent areas being mapped.
+ * Assuming a grow down stack, the one in the lower address is a growth guard
+ * area. The one in the higher area is the stack. The kernel will automatically
+ * extend the stack into the growth guard. Valgrind doesn't see any of that.
+ * When we see mapped memory like that, we need to try to merge them so that
+ * they match the mmap that Valgrind saw and recorded.
+ *
+ * There is also the initial stack. Valgrind will have already recorded that
+ * with parse_procselfmaps. So we don't want to merge that.
+ */
+static char* maybe_merge_procmap_stack(char* p,  struct vki_kinfo_vmentry *kve, Addr* pEndPlusOne, UInt* pProt)
+{
+   static Bool sgrowsiz_read = False;
+   static SizeT kern_sgrowsiz;
+   if (!sgrowsiz_read) {
+      SizeT sysctl_size = sizeof(SizeT);
+      VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
+      sgrowsiz_read = True;
+   }
+   char* p_next = p + kve->kve_structsize;
+   struct vki_kinfo_vmentry *kve_next = (struct vki_kinfo_vmentry *)(p_next);
+
+#if defined(VGP_amd64_freebsd)
+   // I think that this is the stacksize rlimit
+   // I could use sysctl kern.maxssiz for this
+   if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 512ULL*1024ULL*1024ULL) {
+      return p;
+   }
+#elif defined(VGP_x86_freebsd)
+   // sysctl kern.maxssiz OK for x86 on x86 but not x86 on amd64
+   if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 64ULL*1024ULL*1024ULL) {
+      return p;
+   }
+#endif
+
+   while (kve_next->kve_protection & VKI_KVME_PROT_READ &&
+          kve_next->kve_protection & VKI_KVME_PROT_WRITE &&
+          kve_next->kve_flags & VKI_KVME_FLAG_GROWS_DOWN &&
+          kve_next->kve_end - kve_next->kve_start == kern_sgrowsiz) {
+
+
+      *pEndPlusOne += kern_sgrowsiz;
+      if (kve_next->kve_protection & VKI_KVME_PROT_READ) {
+         *pProt |= VKI_PROT_READ;
+      }
+      if (kve_next->kve_protection & VKI_KVME_PROT_WRITE) {
+         *pProt |= VKI_PROT_WRITE;
+      }
+      if (kve_next->kve_protection & VKI_KVME_PROT_EXEC) {
+         *pProt |= VKI_PROT_EXEC;
+      }
+      p_next += kve->kve_structsize;
+      kve_next = (struct vki_kinfo_vmentry *)(p_next);
+   }
+   p_next -= kve->kve_structsize;
+   return p_next;
+}
+
+
+/*
  * PJF 2023-09-23
  *
  * This function is somewhat badly named for FreeBSD, where the
@@ -3928,7 +3990,7 @@ Bool VG_(get_changed_segments)(
  * the RW PT_LOAD.
  *
  * For instance, objdump -p for memcheck-amd64-freebsd contains
- *     LOAD off    0x0000000000000000 vaddr 0x0000000038000000 paddr 0x0000000038000000 align 2**12
+ *    LOAD off    0x0000000000000000 vaddr 0x0000000038000000 paddr 0x0000000038000000 align 2**12
  *         filesz 0x00000000000c5124 memsz 0x00000000000c5124 flags r--
  *    LOAD off    0x00000000000c5130 vaddr 0x00000000380c6130 paddr 0x00000000380c6130 align 2**12
  *         filesz 0x00000000001b10df memsz 0x00000000001b10df flags r-x
@@ -4048,6 +4110,12 @@ static void parse_procselfmaps (
       if (record_gap && gapStart < start)
          (*record_gap) ( gapStart, start-gapStart );
 
+      if (kve->kve_type == VKI_KVME_TYPE_GUARD &&
+          record_mapping == sync_check_mapping_callback &&
+          VG_(clo_sanity_level) >= 3)  {
+         p = maybe_merge_procmap_stack(p, kve, &endPlusOne, &prot);
+      }
+
       if (record_mapping && start < endPlusOne) {
          (*record_mapping) ( start, endPlusOne-start,
                              prot, dev, ino,
@@ -4064,6 +4132,11 @@ static void parse_procselfmaps (
       }
 
       gapStart = endPlusOne;
+      // PJF I think that we need to walk this based on each entry's kve_structsize
+      // because sysctl kern.coredump_pack_fileinfo (on by default) can cause this
+      // array to be packed (for core dumps)
+      // the packing consists of only storing the used part of kve_path rather than
+      // the full 1024 bytes
       p += kve->kve_structsize;
    }
  

@@ -2164,6 +2164,8 @@ typedef struct vki_cap_rights       vki_cap_rights_t;
 #define VKI_KVME_TYPE_DEVICE        4
 #define VKI_KVME_TYPE_PHYS          5
 #define VKI_KVME_TYPE_DEAD          6
+#define VKI_KVME_TYPE_MGTDEVICE     8
+#define VKI_KVME_TYPE_GUARD         9
 #define VKI_KVME_TYPE_UNKNOWN       255
 
 #define VKI_KVME_PROT_READ          0x00000001
@@ -2172,6 +2174,11 @@ typedef struct vki_cap_rights       vki_cap_rights_t;
 
 #define VKI_KVME_FLAG_COW           0x00000001
 #define VKI_KVME_FLAG_NEEDS_COPY    0x00000002
+#define VKI_KVME_FLAG_NOCOREDUMP    0x00000004
+#define VKI_KVME_FLAG_SUPER         0x00000008
+#define VKI_KVME_FLAG_GROWS_UP      0x00000010
+#define VKI_KVME_FLAG_GROWS_DOWN    0x00000020
+#define VKI_KVME_FLAG_USER_WIRED    0x00000040
 
 struct vki_kinfo_vmentry {
    int   kve_structsize;
@@ -2559,8 +2566,9 @@ struct vki_ps_strings {
 
 
 #define VKI_NT_FREEBSD_ABI_TAG 1
-#define VKI_NT_FREEBSD_FEATURE_CTL	4
-#define VKI_NT_FREEBSD_FCTL_WXNEEDED	0x00000008
+#define VKI_NT_FREEBSD_FEATURE_CTL 4
+#define VKI_NT_FREEBSD_FCTL_STKGAP_DISABLE 0x00000004
+#define VKI_NT_FREEBSD_FCTL_WXNEEDED 0x00000008
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
 #if 0

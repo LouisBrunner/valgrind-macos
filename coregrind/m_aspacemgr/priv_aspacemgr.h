@@ -53,6 +53,10 @@
 
 #include "pub_core_options.h"    // VG_(clo_sanity_level)
 
+#if defined(VGO_freebsd)
+#include "pub_core_libcproc.h"   // VG_(sysctlbyname)
+#endif
+
 #include "pub_core_aspacemgr.h"  // self
 
 

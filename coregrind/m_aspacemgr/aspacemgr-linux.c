@@ -1686,9 +1686,6 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    // and fills the space up to the end of the segment
    // see man mmap
 
-   // Version number from
-   // https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/versions-10.html
-
    // On x86 this is 0x3FE0000
    // And on amd64 it is 0x1FFE0000 (536739840)
    // There is less of an issue on amd64 as we just choose some arbitrary address rather then trying
@@ -1701,13 +1698,15 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    // This seems to be in the sysctl kern.sgrowsiz
    // Then there is kern.maxssiz which is the total stack size (grow size + guard area)
    // In other words guard area = maxssiz - sgrowsiz
-
-#if (__FreeBSD_version >= 1003516)
+   //
+   // Unfortunately there isn't a maxssiz32 for x86 on amd64
+   // That means x86 on amd64 gets the amd64 stack size of 512M
+   // which is really quite big for the x86 address space
+   // so we can't use these syscalls. Maybe one day when all supported platforms
+   // have them.
 
 #if 0
    // this block implements what is described above
-   // this makes no changes to the regression tests
-   // I'm keeping it for a rainy day.
    // note this needs
    // #include "pub_core_libcproc.h"
    SizeT kern_maxssiz;
@@ -1715,17 +1714,20 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    SizeT sysctl_size = sizeof(SizeT);
    VG_(sysctlbyname)("kern.maxssiz", &kern_maxssiz, &sysctl_size, NULL, 0);
    VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
-
-   suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE;
+   VG_(printf)("maxssiz %lx\n", kern_maxssiz);
+   //suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE;
 #endif
 
+   // on amd64 we have oodles of space and just shove the new stack somewhere out of the way
+   // x86 is far more constrained, and we put the new stack just below the stack passed in to V
+   // except that it has stack space and the growth stack guard below it as decribed above
+   // so we need to skip over the existing stack/growth area on x86
+
+# if VG_WORDSIZE == 4
    suggested_clstack_end = aspacem_maxAddr - 64*1024*1024UL
                                            + VKI_PAGE_SIZE;
-
 #else
-   suggested_clstack_end = aspacem_maxAddr - 16*1024*1024UL
-                                           + VKI_PAGE_SIZE;
-
+   suggested_clstack_end = aspacem_maxAddr;
 #endif
 
    // --- Solaris ------------------------------------------

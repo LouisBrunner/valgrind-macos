@@ -325,6 +325,23 @@ static HChar *copy_bytes(HChar **tab, const HChar *src, SizeT size)
    return orig;
 }
 
+static const struct auxv *find_auxv(const UWord* sp)
+{
+   sp++;                // skip argc (Nb: is word-sized, not int-sized!)
+
+   while (*sp != 0) {   // skip argv
+      sp++;
+   }
+   sp++;
+
+   while (*sp != 0) {   // skip env
+      sp++;
+   }
+   sp++;
+
+   return (const struct auxv *)sp;
+}
+
 /* ----------------------------------------------------------------
 
    This sets up the client's initial stack, containing the args,
@@ -350,7 +367,7 @@ static HChar *copy_bytes(HChar **tab, const HChar *src, SizeT size)
                   | argv            |
                   +-----------------+
                   | argc            |
-   lower address  +-----------------+ <- sp
+   lower address  +-----------------+ <- client_SP (return value)
                   | undefined       |
                   :                 :
 
@@ -360,27 +377,26 @@ static HChar *copy_bytes(HChar **tab, const HChar *src, SizeT size)
 
    The client's auxv is created by copying and modifying our own one.
 
+   init_sp: used to find the auxv passed by the OS to V
+   some of it will be used to generate the client auxv
+
+   new_client_envp: this is a copy of the original client envp
+   with LD_PRELOADs added and VALGRIND_LAUNCHER removed
+
+   info: structure containing about the memory mappings of the
+   exe (text and stack)
+
+   client_auxv: (output) the auxv created here
+
+   clstack_end: the value returned by VG_(am_startup), which is
+   128G
+
+   clstack_max_size: the max of sysctlkern.maxssiz and VG_(clo_main_stacksize)
+   aspacem_maxAddr
+
    ---------------------------------------------------------------- */
-
-static struct auxv *find_auxv(UWord* sp)
-{
-   sp++;                // skip argc (Nb: is word-sized, not int-sized!)
-
-   while (*sp != 0) {   // skip argv
-      sp++;
-   }
-   sp++;
-
-   while (*sp != 0) {   // skip env
-      sp++;
-   }
-   sp++;
-
-   return (struct auxv *)sp;
-}
-
-static Addr setup_client_stack(void*  init_sp,
-                               HChar** orig_envp,
+static Addr setup_client_stack(const void*  init_sp,
+                               HChar** new_client_envp,
                                const ExeInfo* info,
                                UInt** client_auxv,
                                Addr   clstack_end,
@@ -388,19 +404,19 @@ static Addr setup_client_stack(void*  init_sp,
 {
    SysRes res;
    HChar **cpp;
-   HChar *strtab;    /* string table */
+   HChar *strtab;            /* string table */
    HChar *stringbase;
    Addr *ptr;
    struct auxv *auxv;
    const struct auxv *orig_auxv;
    const struct auxv *cauxv;
-   unsigned stringsize;    /* total size of strings in bytes */
-   unsigned auxsize;    /* total size of auxv in bytes */
-   Int argc;         /* total argc */
-   Int envc;         /* total number of env vars */
-   unsigned stacksize;     /* total client stack size */
+   unsigned stringsize;      /* total size of strings in bytes */
+   unsigned auxsize;         /* total size of auxv in bytes */
+   Int argc;                 /* total argc */
+   Int envc;                 /* total number of env vars */
+   unsigned used_stacksize;  /* total used client stack size */
    Addr client_SP;           /* client stack base (initial SP) */
-   Addr clstack_start;
+   Addr clstack_start;       /* client_SP rounded down to nearest page */
    Int i;
    Bool have_exename;
    Word client_argv;
@@ -447,7 +463,7 @@ static Addr setup_client_stack(void*  init_sp,
 
    /* ...and the environment */
    envc = 0;
-   for (cpp = orig_envp; cpp && *cpp; cpp++) {
+   for (cpp = new_client_envp; cpp && *cpp; cpp++) {
       envc++;
       stringsize += VG_(strlen)(*cpp) + 1;
    }
@@ -494,7 +510,7 @@ static Addr setup_client_stack(void*  init_sp,
    }
 
    /* OK, now we know how big the client stack is */
-   stacksize =
+   used_stacksize =
       sizeof(Word) +                          /* argc */
       (have_exename ? sizeof(HChar **) : 0) +  /* argc[0] == exename */
       sizeof(HChar **)*argc +                 /* argv */
@@ -505,11 +521,11 @@ static Addr setup_client_stack(void*  init_sp,
       VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
    if (0) {
-      VG_(printf)("stacksize = %u\n", stacksize);
+      VG_(printf)("stacksize = %u\n", used_stacksize);
    }
 
    /* client_SP is the client's stack pointer */
-   client_SP = clstack_end - stacksize;
+   client_SP = clstack_end - used_stacksize;
    client_SP = VG_ROUNDDN(client_SP, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
@@ -525,13 +541,31 @@ static Addr setup_client_stack(void*  init_sp,
       VG_(printf)("stringsize=%u auxsize=%u stacksize=%u maxsize=0x%lx\n"
                   "clstack_start %p\n"
                   "clstack_end   %p\n",
-                  stringsize, auxsize, stacksize, clstack_max_size,
+                  stringsize, auxsize, used_stacksize, clstack_max_size,
                   (void*)clstack_start, (void*)clstack_end);
    }
 
    /* ==================== allocate space ==================== */
 
+   /*
+   higher address +-----------------+ <- clstack_end    ^                ^
+                  | args env auxv   |                   |                |
+                  |   see above     |                   |                |
+    ower address  +-----------------+ <- client_SP   anon_size           |
+                  |  round to page  |                   |                |
+                  +-----------------+ <- clstack_start  |                |
+                  |    one page     |                   |           clstack_max_size
+                  +-----------------+ <- anon_start     v                |
+                  :                 :                   ^                |
+                  :      RSVN       :                resvn_size          |
+                  :                 :                   |                |
+                  +-----------------+ <- resvn_start    v                v
+
+   */
+
    {
+      // see comment in VG_(am_startup) about getting the maxssiz from
+      // the OS, not currently feasible with x86 on amd64
       SizeT anon_size   = clstack_end - clstack_start + 1;
       SizeT resvn_size  = clstack_max_size - anon_size;
       Addr  anon_start  = clstack_start;
@@ -568,7 +602,7 @@ static Addr setup_client_stack(void*  init_sp,
 #    endif
 
       if (0) {
-         VG_(printf)("%#lx 0x%lx  %#lx 0x%lx\n",
+         VG_(printf)("resvn_start %#lx resvn_size 0x%lx  anon_start %#lx anon_size 0x%lx\n",
                      resvn_start, resvn_size, anon_start, anon_size);
       }
 
@@ -638,7 +672,7 @@ static Addr setup_client_stack(void*  init_sp,
 
    /* --- envp --- */
    VG_(client_envp) = (HChar **)ptr;
-   for (cpp = orig_envp; cpp && *cpp; ptr++, cpp++) {
+   for (cpp = new_client_envp; cpp && *cpp; ptr++, cpp++) {
       *ptr = (Addr)copy_str(&strtab, *cpp);
    }
    *ptr++ = 0;

@@ -31,17 +31,12 @@
 
 #include "vki/vki-scnums-darwin.h"
 
-# FIXME: couldn't find a way to negate the value in a macro
-# I always got a weird value, for some reason the ldr pseudo-instruction is loading the wrong value
-#define GET_SYSNO(x) (VG_DARWIN_SYSNO_INDEX(x))
-
 	// mach_port_name_t task_self_trap(void)
 	.text
 	.align 4
 	.globl _task_self_trap
 _task_self_trap:
-	ldr	x16, =GET_SYSNO(__NR_task_self_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_task_self_trap)
 	svc 0x80
 	ret
 
@@ -50,8 +45,7 @@ _task_self_trap:
 	.align 4
 	.globl _thread_self_trap
 _thread_self_trap:
-	ldr	x16, =GET_SYSNO(__NR_thread_self_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_thread_self_trap)
 	svc 0x80
 	ret
 
@@ -60,8 +54,7 @@ _thread_self_trap:
 	.align 4
 	.globl _mach_msg_trap
 _mach_msg_trap:
-	ldr	x16, =GET_SYSNO(__NR_mach_msg_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_mach_msg_trap)
 	svc 0x80
 	ret
 
@@ -71,8 +64,7 @@ _mach_msg_trap:
 	.align 4
 	.globl _mach_msg2_trap
 _mach_msg2_trap:
-	ldr	x16, =GET_SYSNO(__NR_mach_msg2_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_mach_msg2_trap)
 	svc 0x80
 	ret
 #endif
@@ -82,8 +74,7 @@ _mach_msg2_trap:
 	.align 4
 	.globl _mach_reply_port
 _mach_reply_port:
-	ldr	x16, =GET_SYSNO(__NR_mach_reply_port)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_mach_reply_port)
 	svc 0x80
 	ret
 
@@ -92,8 +83,7 @@ _mach_reply_port:
 	.align 4
 	.globl _swtch_pri
 _swtch_pri:
-	ldr	x16, =GET_SYSNO(__NR_swtch_pri)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_swtch_pri)
 	svc 0x80
 	ret
 
@@ -102,8 +92,7 @@ _swtch_pri:
 	.align 4
 	.globl _semaphore_wait
 _semaphore_wait:
-	ldr	x16, =GET_SYSNO(__NR_semaphore_wait_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_semaphore_wait_trap)
 	svc 0x80
 	ret
 
@@ -112,8 +101,7 @@ _semaphore_wait:
 	.align 4
 	.globl _semaphore_signal
 _semaphore_signal:
-	ldr	x16, =GET_SYSNO(__NR_semaphore_signal_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_semaphore_signal_trap)
 	svc 0x80
 	ret
 
@@ -122,8 +110,7 @@ _semaphore_signal:
 	.align 4
 	.globl _semaphore_signal_thread
 _semaphore_signal_thread:
-	ldr	x16, =GET_SYSNO(__NR_semaphore_signal_thread_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_semaphore_signal_thread_trap)
 	svc 0x80
 	ret
 
@@ -132,8 +119,7 @@ _semaphore_signal_thread:
 	.align 4
 	.globl _semaphore_wait_signal
 _semaphore_wait_signal:
-	ldr	x16, =GET_SYSNO(__NR_semaphore_wait_signal_trap)
-	neg x16, x16
+	ldr	x16, =VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(__NR_semaphore_wait_signal_trap)
 	svc 0x80
 	ret
 

@@ -56,6 +56,10 @@
 // number back to the kernel (__NR_something shouldn't be passed directly to
 // the kernel).
 //
+// Nore that on arm, the class are unused and it works more like on i386.
+// Mach are negative, Unix are positive and machine-dependent don't really exist
+// outside thread_set_tsd_base which is a special value of 0x80000000.
+//
 // Hack: x86 `int $0x80` (unix, 64-bit result) are special.
 // [I haven't worked out why... --njn]
 
@@ -86,24 +90,26 @@
     ((VG_DARWIN_SYSCALL_CLASS_DIAG << VG_DARWIN_SYSCALL_CLASS_SHIFT) | \
      (VG_DARWIN_SYSCALL_NUMBER_MASK & (syscall_number)))
 
-
 /* Macros for decoding syscall numbers from the 64-bit encoding scheme. */
 #define VG_DARWIN_SYSNO_INDEX(sysno) ((sysno) & VG_DARWIN_SYSCALL_NUMBER_MASK)
 #define VG_DARWIN_SYSNO_CLASS(sysno) ((sysno) >> VG_DARWIN_SYSCALL_CLASS_SHIFT)
 
 
 /* Macros for converting syscall numbers to the form expected by the kernel.*/
-#if defined(VGA_x86)
+#if defined(VGA_x86) || defined(VGA_arm64)
    // This converts the 64-bit syscall number encoding, which we use
    // throughout Valgrind, into the 32-bit syscall number encoding, which is
    // suitable for passing to the (32-bit) kernel.
+   // This is also the case on ARM.
 #  define VG_DARWIN_SYSNO_FOR_KERNEL(sysno) \
     ((VG_DARWIN_SYSNO_CLASS(sysno) == VG_DARWIN_SYSCALL_CLASS_MACH) \
     ? -VG_DARWIN_SYSNO_INDEX(sysno) \
     :  VG_DARWIN_SYSNO_INDEX(sysno) \
     )
+#  define VG_DARWIN_UNIX_SYSNO_FOR_KERNEL_ASM(sysno) VG_DARWIN_SYSNO_INDEX(sysno)
+#  define VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(sysno) (-VG_DARWIN_SYSNO_INDEX(sysno))
 
-#elif defined(VGA_amd64) || defined(VGA_arm64)
+#elif defined(VGA_amd64)
    // For 64-bit systems, we don't need to do anything to the syscall number.
 #  define VG_DARWIN_SYSNO_FOR_KERNEL(sysno) (sysno)
 
@@ -135,11 +141,8 @@
 
 #elif defined(VGA_arm64)
 
-// 0 icache flush
-// 1 dcache flush
-#define __NR_thread_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(2)
-// 3 get thread
-// others are invalid
+#define __NR_thread_set_tsd_base VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(0)
+#define __SYSNO_thread_set_tsd_base 0x80000000
 
 #else
 #  error unknown architecture

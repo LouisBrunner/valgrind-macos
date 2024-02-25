@@ -827,8 +827,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
 
    VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
    canonical->sysno = gst->guest_X16;
-   // TODO: need special handling for thread_set_tsd_base (idx 0x80000000)
-   if (canonical->sysno >= 0) {
+   if (canonical->sysno == __SYSNO_thread_set_tsd_base) {
+     canonical->sysno = __NR_thread_set_tsd_base;
+   } else if (canonical->sysno >= 0) {
      canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
    } else {
      canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);

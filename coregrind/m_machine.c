@@ -1852,6 +1852,8 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
 
 #if defined(VGO_darwin)
+     (void) handler_unsup_insn;
+
      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
 
      ULong ctr_el0 = 0;

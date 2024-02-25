@@ -36,7 +36,7 @@
 // tools.
 //--------------------------------------------------------------------
 
-/* Allocation arenas.  
+/* Allocation arenas.
 
       CORE      for the core's and tools' general use.
       DINFO     for debug info (symbols, line #s, CFI, etc) storage.
@@ -46,7 +46,7 @@
       TTAUX     for storing TT/TC auxiliary structures (address range
                 equivalence classes).
 
-   When adding a new arena, remember also to add it to ensure_mm_init(). 
+   When adding a new arena, remember also to add it to ensure_mm_init().
 */
 typedef Int ArenaId;
 
@@ -113,7 +113,7 @@ extern void* VG_(arena_realloc) ( ArenaId arena, const HChar* cc,
                                   void* ptr, SizeT size );
 extern void* VG_(arena_memalign)( ArenaId aid, const HChar* cc,
                                   SizeT req_alignB, SizeT req_pszB );
-extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
+extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc,
                                    const HChar* s);
 
 /* Specialised version of realloc, that shrinks the size of the block ptr from
@@ -143,7 +143,7 @@ extern void  VG_(print_all_arena_stats) ( void );
 
 extern void  VG_(print_arena_cc_analysis) ( void );
 
-typedef 
+typedef
    struct _AddrArenaInfo
    AddrArenaInfo;
 
@@ -177,28 +177,6 @@ void enable_thread_to_jit_write(Addr ptr, SizeT size, Bool enable) {
            : VKI_PROT_READ | VKI_PROT_EXEC
   );
   vg_assert2(!sr_isError(sres), "mprotect failed: %s (%d)", VG_(strerror)(sr_Res(sres)), sr_Res(sres));
-  return;
-
-  // FIXME: might not even be needed!
-  // reimplementation of pthread_jit_write_protect_np
-#define JIT_PERM_REG "S3_6_c15_c1_5"
-#define JIT_PERM_RW_ADDR 0xfffffc110
-#define JIT_PERM_RX_ADDR 0xfffffc118
-
-  Addr addr = enable ? JIT_PERM_RW_ADDR : JIT_PERM_RX_ADDR;
-  __asm__ __volatile__(
-    "movz x0, %0\n"
-    "movk x0, %1, lsl 16\n"
-    "movk x0, %2, lsl 32\n"
-    "movk x0, %3, lsl 48\n"
-    "ldr x0, [x0]\n"
-    "msr " JIT_PERM_REG ", x0\n"
-    "isb sy\n"
-    :
-    : "i"((addr & 0xffff)), "i"((addr >> 16) & 0xffff),
-      "i"((addr >> 32) & 0xffff), "i"((addr >> 48) & 0xffff)
-    :
-  );
 }
 #define ALLOW_RWX_WRITE(ptr, size) enable_thread_to_jit_write((ptr), (size), 1)
 #define ALLOW_RWX_EXECUTE(ptr, size) enable_thread_to_jit_write((ptr), (size), 0)

@@ -9525,23 +9525,24 @@ PRE(sigreturn)
 
 
 #if defined(VGA_arm64)
-PRE(thread_set_cthread_self)
+PRE(thread_set_tsd_base)
 {
-  PRINT("thread_set_cthread_self ( %#lx )", ARG1);
-  PRE_REG_READ1(void, "thread_set_cthread_self", struct pthread_t *, self);
+  PRINT("thread_set_tsd_base ( %#lx, %#lx, %#lx )", ARG1, ARG2, ARG3);
+  // TODO: broken
+  PRE_REG_READ1(void, "thread_set_tsd_base", struct pthread_t *, self);
 
-  {
-    ThreadState *tst = VG_(get_ThreadState)(tid);
-    tst->os_state.pthread = ARG1;
-    // SET_STATUS_Success(0x60);
-    // see comments on x86 case just above
-    SET_STATUS_from_SysRes(
-        VG_(mk_SysRes_arm64_darwin)(
-          VG_DARWIN_SYSNO_CLASS(__NR_thread_set_cthread_self),
-          False, 0, 0x60
-        )
-    );
-  }
+  // {
+  //   ThreadState *tst = VG_(get_ThreadState)(tid);
+  //   tst->os_state.pthread = ARG1;
+  //   // SET_STATUS_Success(0x60);
+  //   // see comments on x86 case just above
+  //   SET_STATUS_from_SysRes(
+  //       VG_(mk_SysRes_arm64_darwin)(
+  //         VG_DARWIN_SYSNO_CLASS(__NR_thread_set_cthread_self),
+  //         False, 0, 0x60
+  //       )
+  //   );
+  // }
 }
 
 #elif defined(VGA_x86) || defined(VGA_amd64)
@@ -12022,7 +12023,7 @@ const SyscallTableEntry ML_(mdep_trap_table)[] = {
 #elif defined(VGA_amd64)
    MACX_(__NR_thread_fast_set_cthread_self, thread_fast_set_cthread_self),
 #elif defined(VGA_arm64)
-   MACX_(__NR_thread_set_cthread_self, thread_set_cthread_self),
+   MACX_(__NR_thread_set_tsd_base, thread_set_tsd_base),
 #else
 #error unknown architecture
 #endif

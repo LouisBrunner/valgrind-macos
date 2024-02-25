@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -455,7 +455,7 @@ SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    %ebp).
 */
 extern UWord do_syscall_WRK (
-          UWord syscall_no, 
+          UWord syscall_no,
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6
        );
@@ -515,7 +515,7 @@ asm(
    regs, so we don't have to do any register saving/restoring).
 */
 extern UWord do_syscall_WRK (
-          UWord syscall_no, 
+          UWord syscall_no,
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6
        );
@@ -544,13 +544,13 @@ asm(
    the regs %r3:%r8, i.e. the kernel's syscall calling convention.
 
    The %cr0.so bit flags an error.
-   We return the syscall return value in %r3, and the %cr0.so in 
+   We return the syscall return value in %r3, and the %cr0.so in
    the lowest bit of %r4.
    We return a ULong, of which %r3 is the high word, and %r4 the low.
    No callee-save regs are clobbered, so no saving/restoring is needed.
 */
 extern ULong do_syscall_WRK (
-          UWord syscall_no, 
+          UWord syscall_no,
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6
        );
@@ -720,7 +720,7 @@ asm(
    -4096 .. -1 is an error value.  All other values are success
    values.
 
-   r0 to r5 remain unchanged, but syscall_no is in r6 and needs 
+   r0 to r5 remain unchanged, but syscall_no is in r6 and needs
    to be moved to r8 (??)
 */
 extern UWord do_syscall_WRK (
@@ -748,7 +748,7 @@ asm(
    and it Just Works.  Error is when carry is set.
 */
 extern ULong do_syscall_WRK (
-          UWord syscall_no, 
+          UWord syscall_no,
           UWord a1, UWord a2, UWord a3,
           UWord a4, UWord a5, UWord a6,
           UWord a7, UWord a8, UInt *flags
@@ -846,7 +846,7 @@ asm(
    nb here, sizeof(UWord) == sizeof(UInt)
 */
 
-__private_extern__ ULong 
+__private_extern__ ULong
 do_syscall_unix_WRK ( UWord a1, UWord a2, UWord a3, /* 4(esp)..12(esp) */
                       UWord a4, UWord a5, UWord a6, /* 16(esp)..24(esp) */
                       UWord a7, UWord a8, /* 28(esp)..32(esp) */
@@ -866,7 +866,7 @@ asm(".private_extern _do_syscall_unix_WRK\n"
     "    1:  ret                      \n"
     );
 
-__private_extern__ UInt 
+__private_extern__ UInt
 do_syscall_mach_WRK ( UWord a1, UWord a2, UWord a3, /* 4(esp)..12(esp) */
                       UWord a4, UWord a5, UWord a6, /* 16(esp)..24(esp) */
                       UWord a7, UWord a8, /* 28(esp)..32(esp) */
@@ -879,7 +879,7 @@ asm(".private_extern _do_syscall_mach_WRK\n"
     "        ret                      \n"
     );
 
-__private_extern__ UInt 
+__private_extern__ UInt
 do_syscall_mdep_WRK ( UWord a1, UWord a2, UWord a3, /* 4(esp)..12(esp) */
                       UWord a4, UWord a5, UWord a6, /* 16(esp)..24(esp) */
                       UWord a7, UWord a8, /* 28(esp)..32(esp) */
@@ -912,7 +912,7 @@ asm(
    nb here, sizeof(UWord) == sizeof(ULong)
 */
 
-__private_extern__ UWord 
+__private_extern__ UWord
 do_syscall_unix_WRK ( UWord a1, UWord a2, UWord a3, /* rdi, rsi, rdx */
                       UWord a4, UWord a5, UWord a6, /* rcx, r8,  r9 */
                       UWord a7, UWord a8,           /* 8(rsp), 16(rsp) */
@@ -936,7 +936,7 @@ asm(".private_extern _do_syscall_unix_WRK\n"
     "        retq                     \n"  /* return 1st result word */
     );
 
-__private_extern__ UWord 
+__private_extern__ UWord
 do_syscall_mach_WRK ( UWord a1, UWord a2, UWord a3, /* rdi, rsi, rdx */
                       UWord a4, UWord a5, UWord a6, /* rcx, r8,  r9 */
                       UWord a7, UWord a8,           /* 8(rsp), 16(rsp) */
@@ -1287,12 +1287,12 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
          wHI = (UInt)(u64 >> 32);
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
-         wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8, 
+         wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
                                    VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
-         wLO = do_syscall_mdep_WRK(a1,a2,a3,a4,a5,a6,a7,a8, 
+         wLO = do_syscall_mdep_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
                                    VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
@@ -1312,7 +1312,7 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
-         wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8, 
+         wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
                                    VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
@@ -1321,7 +1321,7 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
          break;
    }
    return VG_(mk_SysRes_amd64_darwin)( scclass, err ? True : False, wHI, wLO );
-  
+
 #  elif defined(VGP_arm64_darwin)
    ULong wLO = 0, wHI = 0, err = 0;
    UChar scclass = VG_DARWIN_SYSNO_CLASS(sysno);
@@ -1331,11 +1331,11 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
                                    VG_DARWIN_SYSNO_FOR_KERNEL(sysno), &err, &wHI);
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
-      case VG_DARWIN_SYSCALL_CLASS_MDEP:
          wLO = do_syscall_mach_WRK(a1,a2,a3,a4,a5,a6,a7,a8,
                                    VG_DARWIN_SYSNO_FOR_KERNEL(sysno));
          err = 0;
          break;
+      case VG_DARWIN_SYSCALL_CLASS_MDEP:
       default:
          vg_assert(0);
          break;
@@ -1449,7 +1449,7 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
 
 /* Return a string which gives the name of an error value.  Note,
    unlike the standard C syserror fn, the returned string is not
-   malloc-allocated or writable -- treat it as a constant. 
+   malloc-allocated or writable -- treat it as a constant.
    TODO: implement this properly. */
 
 const HChar* VG_(strerror) ( UWord errnum )

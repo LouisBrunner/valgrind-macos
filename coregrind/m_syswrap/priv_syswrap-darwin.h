@@ -51,7 +51,7 @@ void VG_(show_open_ports)(void);
 
 Bool ML_(sync_mappings)(const HChar *when, const HChar *where, UWord num);
 
-// Unix syscalls.  
+// Unix syscalls.
 // GEN = it uses the generic wrapper
 // NYI = wrapper not yet implemented in Valgrind
 // NOC = the non-"_nocancel" wrapper is used
@@ -851,7 +851,7 @@ DECL_TEMPLATE(darwin, mach_msg2);
 
 // Machine-dependent traps
 #if defined(VGA_arm64)
-DECL_TEMPLATE(darwin, thread_set_cthread_self);
+DECL_TEMPLATE(darwin, thread_set_tsd_base);
 #elif defined(VGA_x86) || defined(VGA_amd64)
 DECL_TEMPLATE(darwin, thread_fast_set_cthread_self);
 #else
@@ -860,24 +860,24 @@ DECL_TEMPLATE(darwin, thread_fast_set_cthread_self);
 
 // syswrap-<arch>-darwin.c
 #include <mach/mach.h>
-extern 
-void thread_state_from_vex(thread_state_t mach_generic, 
-                           thread_state_flavor_t flavor, 
-                           mach_msg_type_number_t count, 
+extern
+void thread_state_from_vex(thread_state_t mach_generic,
+                           thread_state_flavor_t flavor,
+                           mach_msg_type_number_t count,
                            VexGuestArchState *vex_generic);
 extern
-void thread_state_to_vex(const thread_state_t mach_generic, 
-                         thread_state_flavor_t flavor, 
-                         mach_msg_type_number_t count, 
+void thread_state_to_vex(const thread_state_t mach_generic,
+                         thread_state_flavor_t flavor,
+                         mach_msg_type_number_t count,
                          VexGuestArchState *vex_generic);
-extern 
-ThreadState *build_thread(const thread_state_t state, 
-                          thread_state_flavor_t flavor, 
+extern
+ThreadState *build_thread(const thread_state_t state,
+                          thread_state_flavor_t flavor,
                           mach_msg_type_number_t count);
 extern
-void hijack_thread_state(thread_state_t mach_generic, 
-                         thread_state_flavor_t flavor, 
-                         mach_msg_type_number_t count, 
+void hijack_thread_state(thread_state_t mach_generic,
+                         thread_state_flavor_t flavor,
+                         mach_msg_type_number_t count,
                          ThreadState *tst);
 extern
 __attribute__((noreturn))
@@ -887,7 +887,7 @@ void call_on_new_stack_0_1 ( Addr stack,
                              Word arg1 );
 
 extern void pthread_hijack_asm(void);
-extern void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, 
+extern void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
                            Addr stacksize, Addr flags, Addr sp);
 extern void wqthread_hijack_asm(void);
 extern void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem, Int reuse, Addr sp);

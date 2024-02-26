@@ -94,10 +94,10 @@ static void arm_thread_state64_from_vex(arm_thread_state64_t *mach,
   mach->__x[28] = vex->guest_X28;
   // TODO: should we be using `arm_thread_state64_set_REG` here?
   // seems like it might do ptrauth stuff for us, not sure if we want that
-  mach->__opaque_fp = (void*) vex->guest_X29;
-  mach->__opaque_lr = (void*) vex->guest_X30;
-  mach->__opaque_sp = (void*) vex->guest_XSP;
-  mach->__opaque_pc = (void*) vex->guest_PC;
+  mach->__fp = (void*) vex->guest_X29;
+  mach->__lr = (void*) vex->guest_X30;
+  mach->__sp = (void*) vex->guest_XSP;
+  mach->__pc = (void*) vex->guest_PC;
   mach->__cpsr = LibVEX_GuestARM64_get_nzcv(vex);
   // FIXME: not required?
   // mach->__flags = ???;
@@ -318,8 +318,8 @@ void hijack_thread_state(thread_state_t mach_generic,
    *(uintptr_t *)stack = 0;               // push fake return address
 
    mach->__x[0] = (uintptr_t)tst;          // arg1 = tst
-   mach->__opaque_pc = (void*)&start_thread_NORETURN;
-   mach->__opaque_sp = (void*)stack;
+   mach->__pc = (void*)&start_thread_NORETURN;
+   mach->__sp = (void*)stack;
 }
 
 

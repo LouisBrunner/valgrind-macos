@@ -96,10 +96,10 @@ static void synthesize_ucontext( ThreadState *tst,
 #  undef TO_CTX
    // TODO: should we be using `arm_thread_state64_set_REG` here?
    // seems like it might do ptrauth stuff for us, not sure if we want that
-   uc->__mcontext_data.__ss.__opaque_fp = (void*) tst->arch.vex.guest_X29;
-   uc->__mcontext_data.__ss.__opaque_lr = (void*) tst->arch.vex.guest_X30;
-   uc->__mcontext_data.__ss.__opaque_sp = (void*) tst->arch.vex.guest_XSP;
-   uc->__mcontext_data.__ss.__opaque_pc = (void*) tst->arch.vex.guest_PC;
+   uc->__mcontext_data.__ss.__fp = (void*) tst->arch.vex.guest_X29;
+   uc->__mcontext_data.__ss.__lr = (void*) tst->arch.vex.guest_X30;
+   uc->__mcontext_data.__ss.__sp = (void*) tst->arch.vex.guest_XSP;
+   uc->__mcontext_data.__ss.__pc = (void*) tst->arch.vex.guest_PC;
    uc->__mcontext_data.__ss.__cpsr = 0; /* slack .. could do better */
 
    if (siguc) {

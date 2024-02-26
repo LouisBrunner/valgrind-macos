@@ -1,6 +1,7 @@
 *.o
 .DS_Store
 /*/*.orig
+configure~
 
 # /
 /.in_place
@@ -44,10 +45,9 @@
 
 # /auxprogs/
 /auxprogs/.deps
-/auxprogs/getoff-amd64-darwin
+/auxprogs/getoff-*-darwin
 /auxprogs/getoff-arm-linux
 /auxprogs/getoff-arm64-linux
-/auxprogs/getoff-x86-darwin
 /auxprogs/getoff-amd64-linux
 /auxprogs/getoff-x86-linux
 /auxprogs/getoff-s390x-linux

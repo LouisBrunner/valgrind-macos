@@ -12,7 +12,7 @@
  * And then CLOSE_RANGE_CLOEXEC added to 13 but not backported
  * so 12 has close_range but not CLOSE_RANGE_CLOEXEC */
 #if !defined(CLOSE_RANGE_CLOEXEC)
-#define CLOSE_RANGE_CLOEXEC 1
+#define CLOSE_RANGE_CLOEXEC 1<<2
 #endif
 
 int main(void)

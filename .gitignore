@@ -2192,6 +2192,7 @@
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
 /none/tests/freebsd/452275
+/none/tests/freebsd/sanity_level_thread
 /none/tests/freebsd/usrstack
 /none/tests/freebsd/proc_pid_file
 

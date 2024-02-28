@@ -13540,11 +13540,17 @@ POST(sys_close_range)
    if (last >= VG_(fd_hard_limit))
       last = VG_(fd_hard_limit) - 1;
 
-   for (fd = ARG1; fd <= last; fd++)
-      if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
-	  && fd != VG_(log_output_sink).fd
-	  && fd != VG_(xml_output_sink).fd)
-      ML_(record_fd_close)(fd);
+   /* If the close_range range is too wide, we don't want to loop
+      through the whole range.  */
+   if (ARG2 == ~0U)
+     ML_(record_fd_close_range)(tid, ARG1);
+   else {
+     for (fd = ARG1; fd <= last; fd++)
+       if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
+           && fd != VG_(log_output_sink).fd
+           && fd != VG_(xml_output_sink).fd)
+         ML_(record_fd_close)(tid, fd);
+   }
 }
 
 

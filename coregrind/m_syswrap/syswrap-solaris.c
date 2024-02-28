@@ -1791,7 +1791,7 @@ POST(sys_close)
    /* Possibly an explicitly open'ed client door fd was just closed.
       Generic sys_close wrapper calls this only if VG_(clo_track_fds) = True. */
    if (!VG_(clo_track_fds))
-      ML_(record_fd_close)(ARG1);
+      ML_(record_fd_close)(tid, ARG1);
 }
 
 PRE(sys_linkat)
@@ -8693,7 +8693,7 @@ static Int pre_check_and_close_fds(ThreadId tid, const HChar *name,
          if ((desc->d_attributes & DOOR_DESCRIPTOR) &&
              (desc->d_attributes & DOOR_RELEASE)) {
             Int fd = desc->d_data.d_desc.d_descriptor;
-            ML_(record_fd_close)(fd);
+            ML_(record_fd_close)(tid, fd);
          }
       }
    }
@@ -9563,7 +9563,7 @@ POST(sys_door)
    case VKI_DOOR_REVOKE:
       door_record_revoke(tid, ARG1);
       if (VG_(clo_track_fds))
-         ML_(record_fd_close)(ARG1);
+         ML_(record_fd_close)(tid, ARG1);
       break;
    case VKI_DOOR_INFO:
       POST_MEM_WRITE(ARG2, sizeof(vki_door_info_t));

@@ -1,0 +1,3 @@
+prog: socket_close
+prereq: test -x socket_close
+vgopts: -q --track-fds=yes

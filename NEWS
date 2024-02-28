@@ -10,6 +10,10 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* --track-fds=yes will now also warn about double closing of file
+  descriptors. Printing the context where the file descriptor was
+  originally opened and where it was previously closed.
+
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ===================
@@ -36,6 +40,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 466762  Add redirs for C23 free_sized() and free_aligned_sized()
 466884  Missing writev uninit padding suppression for _XSend
 471036  disInstr_AMD64: disInstr miscalculated next %rip on RORX imm8, m32/64, r32/6
+471222  support tracking of file descriptors being double closed
 475498  Add reallocarray wrapper
 476320  Build failure with GCC
 476331  clean up generated/distributed filter scripts

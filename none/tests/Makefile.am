@@ -226,7 +226,10 @@ EXTRA_DIST = \
 	vgprintf.stderr.exp vgprintf.vgtest \
 	vgprintf_nvalgrind.stderr.exp vgprintf_nvalgrind.vgtest \
 	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest \
-	sigprocmask.stderr.exp sigprocmask.vgtest
+	sigprocmask.stderr.exp sigprocmask.vgtest \
+	socket_close.stderr.exp socket_close.vgtest \
+	file_dclose.stderr.exp file_dclose.vgtest \
+	double_close_range.stderr.exp double_close_range.vgtest
 
 
 check_PROGRAMS = \
@@ -277,7 +280,13 @@ check_PROGRAMS = \
 	coolo_sigaction \
 	gxx304 \
 	process_vm_readv_writev \
-	sigprocmask
+	sigprocmask \
+	socket_close \
+	file_dclose
+
+if HAVE_CLOSE_RANGE
+   check_PROGRAMS += double_close_range
+endif
 
 if HAVE_NESTED_FUNCTIONS
    check_PROGRAMS += nestedfns

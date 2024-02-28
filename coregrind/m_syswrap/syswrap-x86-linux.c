@@ -1163,7 +1163,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_write,             sys_write),          // 4
 
    GENXY(__NR_open,              sys_open),           // 5
-   GENXY(__NR_close,             sys_close),          // 6
+   GENX_(__NR_close,             sys_close),          // 6
    GENXY(__NR_waitpid,           sys_waitpid),        // 7
    GENXY(__NR_creat,             sys_creat),          // 8
    GENX_(__NR_link,              sys_link),           // 9

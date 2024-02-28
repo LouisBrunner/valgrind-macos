@@ -6846,7 +6846,7 @@ POST(sys_close_range)
       if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
           && fd != VG_(log_output_sink).fd
           && fd != VG_(xml_output_sink).fd)
-         ML_(record_fd_close)(fd);
+         ML_(record_fd_close)(tid, fd);
 }
 #endif
 
@@ -7119,7 +7119,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    GENX_(__NR_write,            sys_write),             // 4
    GENXY(__NR_open,             sys_open),              // 5
-   GENXY(__NR_close,            sys_close),             // 6
+   GENX_(__NR_close,            sys_close),             // 6
    GENXY(__NR_wait4,            sys_wait4),             // 7
 
    // 4.3 creat                                            8

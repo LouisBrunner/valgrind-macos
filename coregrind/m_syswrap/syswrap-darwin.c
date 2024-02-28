@@ -10239,7 +10239,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read,        sys_read), 
    GENX_(__NR_write,       sys_write), 
    GENXY(__NR_open,        sys_open), 
-   GENXY(__NR_close,       sys_close), 
+   GENX_(__NR_close,       sys_close),
    GENXY(__NR_wait4,       sys_wait4), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(8)),     // old creat
    GENX_(__NR_link,        sys_link), 
@@ -10695,7 +10695,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read_nocancel,     sys_read),
    GENX_(__NR_write_nocancel,    sys_write),
    GENXY(__NR_open_nocancel,     sys_open),
-   GENXY(__NR_close_nocancel,    sys_close),
+   GENX_(__NR_close_nocancel,    sys_close),
    GENXY(__NR_wait4_nocancel,    sys_wait4),   // 400
    MACXY(__NR_recvmsg_nocancel,  recvmsg),
    MACX_(__NR_sendmsg_nocancel,  sendmsg),

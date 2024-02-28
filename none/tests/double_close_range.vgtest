@@ -1,0 +1,3 @@
+prog: double_close_range
+prereq: test -x double_close_range
+vgopts: -q --track-fds=yes

@@ -473,7 +473,7 @@ static SyscallTableEntry syscall_table[] = {
    GENXY(__NR_read,              sys_read),           // 0 
    GENX_(__NR_write,             sys_write),          // 1 
    GENXY(__NR_open,              sys_open),           // 2 
-   GENXY(__NR_close,             sys_close),          // 3 
+   GENX_(__NR_close,             sys_close),          // 3
    GENXY(__NR_stat,              sys_newstat),        // 4 
 
    GENXY(__NR_fstat,             sys_newfstat),       // 5 

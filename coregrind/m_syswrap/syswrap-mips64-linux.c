@@ -513,7 +513,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY (__NR_read, sys_read),  /* 5000 */
    GENX_ (__NR_write, sys_write),
    GENXY (__NR_open, sys_open),
-   GENXY (__NR_close, sys_close),
+   GENX_ (__NR_close, sys_close),
    GENXY (__NR_stat, sys_newstat),
    GENXY (__NR_fstat, sys_newfstat),
    GENXY (__NR_lstat, sys_newlstat),

@@ -322,7 +322,7 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "n" (VgTs_Empty), "n" (__NR_bsdthread_terminate)
          : "rax", "rdi", "rsi", "rdx", "r10"
       );
-#else
+#elif defined(VGP_arm64_darwin)
       asm volatile (
          "str %w1, %0\n" /* set tst->status = VgTs_Empty */
          "movz x16, %2\n"         /* set x16[00:15] (syscall no) = __NR_bsdthread_terminate & 0xFFFF */
@@ -336,6 +336,8 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "r" (VgTs_Empty), "n" (__NR_bsdthread_terminate & 0xffff), "n" ((__NR_bsdthread_terminate >> 16) & 0xffff)
          : "x0", "x1", "x2", "x3", "x16"
       );
+#else
+# error Unknown platform
 #endif
 #endif
 

@@ -195,16 +195,17 @@ if ($r != 0) {
    exit 1;
 }
 
+if ($archstr eq "arm64") {
+    # no further fixing needed (or possible really)
+    # what is built is what we get
+    exit 0;
+}
+
 # and now kludge the tool exe
 # see bug 267997
 
 $cmd = "../coregrind/fixup_macho_loadcmds";
 $cmd = "$cmd $stack_addr_str $stack_size_str $outname";
-
-if ($archstr eq "arm64") {
-    # on arm we fix it up differently because it's a dynamic binary
-    $cmd = "python3 ../coregrind/fixup_dynamic_binary_darwin.py $outname";
-}
 
 print "link_tool_exe_darwin: $cmd\n";
 

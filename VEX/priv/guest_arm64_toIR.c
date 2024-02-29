@@ -8214,7 +8214,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       // FIXME: basically a NOP if we don't implement PAC
       // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
       // pc = authenticate(nn, mm | SP, isA, True);
-        assign(target, getIReg64orSP(nn));
+      // TODO: unfortunately, some binaries will use pre-signed pointers, so we need to support it in some way
+      // currently we just wipe away [63:40]
+      assign(target, binop(mkAND(Ity_I64), getIReg64orSP(nn), mkU(Ity_I64, ~(0xffffffUL << 40))));
       if (isL) {
         putIReg64orZR(30, mkU64(guest_PC_curr_instr + 4));
       }

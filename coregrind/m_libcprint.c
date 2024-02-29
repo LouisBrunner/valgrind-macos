@@ -184,6 +184,11 @@ void VG_(print_preamble)(Bool logging_to_fd)
          "%sUsing Valgrind-%s and LibVEX; rerun with -h for copyright info%s\n",
          xpre, VG_(clo_verbosity) <= 1 ? VERSION : VERSION "-" VGGIT, xpost);
 
+#if defined(VGP_arm64_darwin)
+      umsg_or_xml(
+         "%sApple Silicon support is currently experimental, see https://github.com/LouisBrunner/valgrind-macos/issues/56 in case of issue.\n",
+         xpre);
+
       // Print the command line.  At one point we wrapped at 80 chars and
       // printed a '\' as a line joiner, but that makes it hard to cut and
       // paste the command line (because of the "==pid==" prefixes), so we now

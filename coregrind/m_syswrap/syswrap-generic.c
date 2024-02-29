@@ -4002,11 +4002,12 @@ void handle_sys_mprotect(ThreadId tid, SyscallStatus* status,
                          Addr *addr, SizeT *len, Int *prot)
 {
    if (!ML_(valid_client_addr)(*addr, *len, tid, "mprotect")) {
-#if defined(VGO_freebsd)
-      SET_STATUS_Failure( VKI_EINVAL );
-#else
-      SET_STATUS_Failure( VKI_ENOMEM );
-#endif
+// TODO: override for now
+// #if defined(VGO_freebsd)
+//       SET_STATUS_Failure( VKI_EINVAL );
+// #else
+//       SET_STATUS_Failure( VKI_ENOMEM );
+// #endif
    } 
 #if defined(VKI_PROT_GROWSDOWN)
    else 

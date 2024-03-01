@@ -37,6 +37,7 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_seqmatch.h"
+#include "pub_core_mach.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscall.h"
@@ -45,8 +46,6 @@
 #include "pub_core_debuglog.h"   // VG_(debugLog)
 
 #if defined(VGO_darwin)
-#include "m_mach/pub_mach.h"
-
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
 #include <mach/mach.h>   /* mach_thread_self */
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
@@ -1417,7 +1416,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 
 #  elif defined(VGP_arm64_darwin)
 
-  sys_icache_invalidate(ptr, nbytes);
+  VG_(mach_invalidate_icache)(ptr, nbytes);
 
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,

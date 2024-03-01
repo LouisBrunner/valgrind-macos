@@ -43,6 +43,7 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_ume.h"
+#include "pub_core_mach.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_threadstate.h"     /* ThreadArchState */
@@ -323,10 +324,35 @@ static HChar *copy_str(HChar **tab, const HChar *str)
    ---------------------------------------------------------------- */
 
 #if defined(VGA_arm64)
-// see below for explaination
+// Due to valgrind tools being dynamic and needing libSystem.B loaded (because of XNU & dyld),
+// the system libraries initializers already ran. This is **bad** as most of them will check for
+// multiple initializations. So we do a bunch of hacks to reset the memory to a saner state
 
 // not exported by any public mac header
 void _dispatch_mach_hooks_install_default(void);
+
+static void resetInitializers(void) {
+  void *ptr;
+
+  // libsystem.B@libSystem_initializer > libxpc@libxpc_initializer > ??? > libdispatch@dispatch_mach_hooks_install_4libxpc
+  _dispatch_mach_hooks_install_default();
+
+  // libsystem.B@libSystem_initializer > libdispatch@libdispatch_init > libdispatch@_workgroup_init > libpthread@pthread_install_workgroup_functions_np > __pthread_workgroup_functions
+  ptr = VG_(dyld_dlsym)("/usr/lib/system/libsystem_pthread.dylib", "__pthread_workgroup_functions");
+  if (!ptr) {
+    VG_(printf)("Error: could not reset libsystem_pthread.dylib, aborting.\n");
+    VG_(exit)(1);
+  }
+  *((Addr*) ptr) = 0;
+
+  // libsystem.B@libSystem_initializer > libtrace@libtrace_init > ??? > libdispatch@voucher_activity_initialize_4libtrace > __voucher_libtrace_hooks
+  ptr = VG_(dyld_dlsym)("/usr/lib/system/libdispatch.dylib", "__voucher_libtrace_hooks");
+  if (!ptr) {
+    VG_(printf)("Error: could not reset libdispatch.dylib, aborting.\n");
+    VG_(exit)(1);
+  }
+  *((Addr*) ptr) = 0;
+}
 #endif
 
 static 
@@ -354,15 +380,7 @@ Addr setup_client_stack( void*  init_sp,
    vg_assert( VG_(args_for_client) );
 
 #if defined(VGA_arm64)
-// Due to valgrind tools being dynamic and needing libSystem.B loaded (because of XNU & dyld),
-// the system libraries initializers already ran. This is **bad** as most of them will check for
-// multiple initializations. So we do a bunch of hacks to reset the memory to a saner state
-  // libsystem.B@libSystem_initializer > libdispatch@libdispatch_init > libdispatch@_workgroup_init > libpthread@pthread_install_workgroup_functions_np > __pthread_workgroup_functions
-  *((Addr*) 0x1de8e0008) = 0x0;
-  // libsystem.B@libSystem_initializer > libxpc@libxpc_initializer > ??? > libdispatch@dispatch_mach_hooks_install_4libxpc
-  _dispatch_mach_hooks_install_default();
-  // libsystem.B@libSystem_initializer > libtrace@libtrace_init > ??? > libdispatch@voucher_activity_initialize_4libtrace > __voucher_libtrace_hooks
-  *((Addr*) 0x1de8d2c90) = 0x0;
+  resetInitializers();
 #endif
 
    /* ==================== compute sizes ==================== */

@@ -58,6 +58,11 @@ extern int VG_(dyld_cache_load_library)(const HChar*);
 extern Addr VG_(dyld_cache_get_slide)(void);
 #endif
 
+#if defined(VGA_arm64)
+extern void VG_(mach_invalidate_icache)( void *start, SizeT len);
+extern void* VG_(dyld_dlsym)( const HChar * library, const HChar * symbol );
+#endif
+
 #endif // __PUB_CORE_MACH_H
 
 #endif // defined(VGO_darwin)

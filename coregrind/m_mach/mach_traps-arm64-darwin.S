@@ -206,10 +206,10 @@ Lend:
 
 #define MMU_I_CLINE	6		// cache line size as 1<<MMU_I_CLINE (64)
 
-/* void sys_icache_invalidate(void *start, size_t length) */
-.globl	_sys_icache_invalidate
+/* void vgPlain_mach_invalidate_icache(void *start, size_t length) */
+.globl	_vgPlain_mach_invalidate_icache
 .p2align	2
-_sys_icache_invalidate:
+_vgPlain_mach_invalidate_icache:
 	// see InvalidatePoU_IcacheRegion() in xnu/osfmk/arm64/caches_asm.s
 	cbz		x1, 2f							// length > 0 ?
 

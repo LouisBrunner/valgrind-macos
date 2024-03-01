@@ -267,8 +267,8 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
         );
 
         if (!sr_isError(res)) {
-        out_info->text_slide = sr_Res(res) - addr;
-        slided_addr += out_info->text_slide;
+          out_info->text_slide = sr_Res(res) - addr;
+          slided_addr += out_info->text_slide;
           VG_(debugLog)(2, "ume",
             "mmap fixed (file) (%#lx, %lu) succeeded, now %#lx with slide: %#lx\n",
             addr, filesize, sr_Res(res), out_info->text_slide
@@ -282,14 +282,14 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
             res = VG_(do_syscall3)(__NR_mprotect, (UWord)sr_Res(res), filesize, saved_prot );
             if (sr_isError(res)) {
               check_mmap_float(res, filesize, "load_segment1-mprotect");
-        }
-      }
+            }
+          }
         } else {
           check_mmap_float(res, filesize, "load_segment1");
         }
       } else {
-      check_mmap(res, addr, filesize, "load_segment1");
-   }
+        check_mmap(res, addr, filesize, "load_segment1");
+      }
 #else
       check_mmap(res, addr, filesize, "load_segment1");
 #endif

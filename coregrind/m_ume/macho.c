@@ -243,7 +243,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
                                                  offset + segcmd->fileoff, 
                                                  filename);
 #if defined(VGA_arm64)
-      // basically, we can't map at 0x0100000000 because the kernel doesn't allow it
+      // most of the time, we can't map at 0x100000000 because the kernel doesn't allow it
       // however, most binaries start their TEXT there, so we need to slide it
       // we just do a non-fixed mmap and let the kernel decide where to put it
       // we then calculate the slide and apply it everywhere it's needed
@@ -252,10 +252,20 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
           "mmap fixed (file) (%#lx, %lu) failed with error %lu (%s), trying floating\n",
           addr, filesize, sr_Err(res), VG_(strerror)(sr_Err(res))
         );
+        unsigned int saved_prot = prot;
+        if (sr_Err(res) == VKI_EPERM) {
+          prot = VKI_PROT_READ;
+          VG_(debugLog)(2, "ume",
+            "failure might be due to protection, downgrading from %x to %x (will be restored post mmap through mprotect)\n",
+            saved_prot, prot
+          );
+        }
+
         res = VG_(am_mmap_named_file_fixed_client_flags)(
             0, filesize, prot, VKI_MAP_PRIVATE,
             fd, offset + segcmd->fileoff, filename
         );
+
         if (!sr_isError(res)) {
         out_info->text_slide = sr_Res(res) - addr;
         slided_addr += out_info->text_slide;
@@ -263,10 +273,26 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
             "mmap fixed (file) (%#lx, %lu) succeeded, now %#lx with slide: %#lx\n",
             addr, filesize, sr_Res(res), out_info->text_slide
           );
+
+          if (saved_prot != prot) {
+            VG_(debugLog)(2, "ume",
+              "restoring protection from %x to %x\n",
+              prot, saved_prot
+            );
+            res = VG_(do_syscall3)(__NR_mprotect, (UWord)sr_Res(res), filesize, saved_prot );
+            if (sr_isError(res)) {
+              check_mmap_float(res, filesize, "load_segment1-mprotect");
         }
       }
-#endif
+        } else {
+          check_mmap_float(res, filesize, "load_segment1");
+        }
+      } else {
       check_mmap(res, addr, filesize, "load_segment1");
+   }
+#else
+      check_mmap(res, addr, filesize, "load_segment1");
+#endif
    }
 
    // Record the segment containing the Mach headers themselves

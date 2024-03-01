@@ -119,6 +119,7 @@ extern ULong arm64g_calc_crc32cx ( ULong acc, ULong bits );
 
 extern ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void );
 extern ULong arm64g_dirtyhelper_MRS_ACNTVCT_EL0 ( void );
+extern ULong arm64g_dirtyhelper_MRS_DIT_EL0 ( void );
 
 extern ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void );
 

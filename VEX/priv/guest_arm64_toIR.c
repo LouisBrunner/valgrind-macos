@@ -7865,7 +7865,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       This is a timestamp counter of some sort.  Support reads of it only
       by passing through to the host.
       D5 3B E0 010 Rt  MRS Xt, cntvct_el0
-      D5 3C FA 110 Rt  MRS Xt, acntvct_el0
+      D5 3C FA 110 Rt  MRS Xt, acntvct_el0 (S3_4_c15_c10_6 on Apple Silicon)
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE040
       || (INSN(31,0) & 0xFFFFFFC0) == 0xD53CFAC0
@@ -8233,6 +8233,33 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
         }
         return True;
     }
+
+    /* ---- Cases for DIT ----
+      This gives access to the DIT bit which is used to control the time some data processing instructions take.
+      31         21 20  18  15   11   7   4
+      1101010100 1  11  011 0100 0010 101 Rt MRS Xt, DIT (s3_3_c4_c2_5)
+                 L  op0 op1 CRn  CRm  op2 Rt
+   */
+   if ((INSN(31,4) & 0xFFFFFFE) == 0xD53B42A) {
+    if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_DIT) == 0) {
+      return False;
+    }
+    UInt tt = INSN(4,0);
+    IRTemp   val  = newTemp(Ity_I64);
+    IRExpr** args = mkIRExprVec_0();
+    IRDirty* d = unsafeIRDirty_1_N (
+        val,
+        0/*regparms*/,
+        "arm64g_dirtyhelper_MRS_DIT_EL0",
+        &arm64g_dirtyhelper_MRS_DIT_EL0,
+        args
+    );
+    /* execute the dirty call, dumping the result in val. */
+    stmt( IRStmt_Dirty(d) );
+    putIReg64orZR(tt, mkexpr(val));
+    DIP("mrs %s, DIT_EL0\n", nameIReg64orZR(tt));
+    return True;
+   }
 
 
    if (sigill_diag) {

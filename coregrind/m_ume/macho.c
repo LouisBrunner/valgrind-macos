@@ -254,6 +254,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
         );
         unsigned int saved_prot = prot;
         if (sr_Err(res) == VKI_EPERM) {
+          // sometimes the kernel refuses to mmap some files with R-X protection, so we mount with R-- and mprotect back to R-X
           prot = VKI_PROT_READ;
           VG_(debugLog)(2, "ume",
             "failure might be due to protection, downgrading from %x to %x (will be restored post mmap through mprotect)\n",

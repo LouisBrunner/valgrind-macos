@@ -1781,12 +1781,12 @@ Bool VG_(machine_get_hwcaps)( void )
 
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
-     Bool have_vfp16, have_fp16, have_pauth, have_lrcpc;
+     Bool have_vfp16, have_fp16, have_pauth, have_lrcpc, have_dit;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
               = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth
-              = have_lrcpc = False;
+              = have_lrcpc = have_dit = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1857,6 +1857,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+     vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
 
      ULong ctr_el0 = 0;
 #else
@@ -1927,6 +1928,7 @@ Bool VG_(machine_get_hwcaps)( void )
      #define ID_AA64ISAR1_BF16_SHIFT           44
      #define ID_AA64ISAR1_GPI_SHIFT            28
      #define ID_AA64ISAR1_GPA_SHIFT            24
+     #define ID_AA64ISAR1_LRCPC_SHIFT          20
      #define ID_AA64ISAR1_API_SHIFT             8
      #define ID_AA64ISAR1_APA_SHIFT             4
      #define ID_AA64ISAR1_DPB_SHIFT             0
@@ -1935,15 +1937,18 @@ Bool VG_(machine_get_hwcaps)( void )
      #define ID_AA64ISAR1_BF16_SUPPORTED       0x1
      #define ID_AA64ISAR1_GPI_SUPPORTED        0x1
      #define ID_AA64ISAR1_GPA_SUPPORTED        0x1
+     #define ID_AA64ISAR1_LRCPC_SUPPORTED      0x2
      #define ID_AA64ISAR1_API_SUPPORTED        0x1
      #define ID_AA64ISAR1_APA_SUPPORTED        0x1
      #define ID_AA64ISAR1_DPBCVAP_SUPPORTED    0x1
      #define ID_AA64ISAR1_DPBCVADP_SUPPORTED   0x2
 
      /* ID_AA64PFR0_EL1 Processor feature register 0 fields */
+     #define ID_AA64PFR0_DIT_SHIFT             48
      #define ID_AA64PFR0_VFP16_SHIFT           20
      #define ID_AA64PFR0_FP16_SHIFT            16
      /* Field values */
+     #define ID_AA64PFR0_DIT_SUPPORTED         0x1
      #define ID_AA64PFR0_VFP16_SUPPORTED       0x1
      #define ID_AA64PFR0_FP16_SUPPORTED        0x1
 
@@ -2036,6 +2041,12 @@ Bool VG_(machine_get_hwcaps)( void )
      get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_DPB_SHIFT,
              ID_AA64ISAR1_DPBCVADP_SUPPORTED, have_dpbcvadp);
 
+     /* LRCPC indicates support for LDA Release Consistent core consistent RCPC model.
+      * Optional for v8.2.
+      */
+     get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_LRCPC_SHIFT,
+             ID_AA64ISAR1_LRCPC_SUPPORTED, have_lrcpc);
+
      /* APA or API indicate support for PAUTH instructions.
       * Optional for v8.3.
       */
@@ -2047,6 +2058,12 @@ Bool VG_(machine_get_hwcaps)( void )
      }
 
      /* Read ID_AA64PFR0_EL1 attributes */
+
+     /* DIT indicates support for Data Independent Timing instructions.
+      * Required from v8.4 onwards.
+      */
+     get_ftr(ID_AA64PFR0_EL1, ID_AA64PFR0_DIT_SHIFT,
+             ID_AA64PFR0_DIT_SUPPORTED, have_dit);
 
      /* VFP16 indicates support for half-precision vector arithmetic.
       * Optional for v8.2. Must be the same value as FP16.
@@ -2074,6 +2091,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_vfp16)      vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
      if (have_pauth)      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
      if (have_lrcpc)      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+     if (have_dit)        vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
 
      #undef get_cpu_ftr
      #undef get_ftr

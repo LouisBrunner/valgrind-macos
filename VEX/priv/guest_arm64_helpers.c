@@ -804,6 +804,28 @@ ULong arm64g_dirtyhelper_MRS_DIT_EL0 ( void )
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack. */
+void arm64g_dirtyhelper_MSR_set_PSTATE_DIT ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   __asm__ __volatile__("msr DIT, 1");
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack. */
+void arm64g_dirtyhelper_MSR_clr_PSTATE_DIT ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   __asm__ __volatile__("msr DIT, 0");
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
 /* Horrible hack.  On non-arm64 platforms, return 0. */
 ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void )
 {

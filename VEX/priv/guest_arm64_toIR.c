@@ -8261,6 +8261,64 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
     return True;
    }
 
+   /* ---- MSR (immediate) ----
+    This is used to set bits of PSTATE, supported are:
+    * PSTATE.D, PSTATE.A, PSTATE.I, PSTATE.F, and PSTATE.SP
+    * PSTATE.DIT (if FEAT_DIT is supported)
+
+    31               18  15   11  7   4
+    1101 0101 0000 0 op1 0100 CRm op2 11111 msr <pstatefield>, #<imm>
+
+    imm: CRm<3:0>
+    pstatefield:PSTATE<op1, op2>:
+    * 000, 101: SPSel
+    * 011, 010: DIT (FEAT_DIT)
+    * 011, 110: DAIFSet
+    * 011, 111: DAIFClr
+    */
+  if (INSN(31, 20) == BITS12(1,1,0,1, 0,1,0,1, 0,0,0,0)
+       && INSN(19, 19) == 0
+       && INSN(15, 12) == BITS4(0,1,0,0)
+       && INSN(4, 0) == BITS5(1,1,1,1,1)
+  ) {
+    UInt op1 = INSN(18, 16);
+    UInt imm = INSN(11, 8);
+    UInt op2 = INSN(7, 5);
+    IRDirty* d;
+
+    // Only support PSTATE.DIT at the moment
+    if (op1 != 3 || op2 != 2) {
+      return False;
+    }
+
+    if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_DIT) == 0) {
+      return False;
+    }
+
+    if ((imm & 1) == 1) {
+      d = unsafeIRDirty_0_N(
+          0/*regparms*/,
+          "arm64g_dirtyhelper_MSR_set_PSTATE_DIT",
+          &arm64g_dirtyhelper_MSR_set_PSTATE_DIT,
+          mkIRExprVec_0()
+      );
+    } else {
+      d = unsafeIRDirty_0_N(
+          0/*regparms*/,
+          "arm64g_dirtyhelper_MSR_clr_PSTATE_DIT",
+          &arm64g_dirtyhelper_MSR_clr_PSTATE_DIT,
+          mkIRExprVec_0()
+      );
+    }
+
+    /* execute the dirty call */
+    stmt( IRStmt_Dirty(d) );
+
+    DIP("msr PSTATE.DIT, #%u\n", imm & 1);
+    return True;
+  }
+
+
 
    if (sigill_diag) {
       vex_printf("ARM64 front end: branch_etc\n");

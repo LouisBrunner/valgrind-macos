@@ -762,12 +762,20 @@ case "${host_os}" in
       macosx)
         DARWIN_MIN_SDK="10.6"
         ld_os_min_vers_arg="-macosx_version_min ${DARWIN_MIN_SDK}"
-        if test $DARWIN_VERS -ge $DARWIN_11_00; then
-          DARWIN_MIN_SDK="10.8"
-          # they changed the name around 11.0
-          ld_os_min_vers_arg="-macos_version_min ${DARWIN_MIN_SDK}"
-        fi
         clang_os_min_vers_arg="-mmacosx-version-min=${DARWIN_MIN_SDK}"
+        if test $DARWIN_VERS -ge $DARWIN_11_00; then
+          if test $ARCH_MAX = "arm64"; then
+            # arm64 is only supported on macOS 11.0 and later
+            # this means that when you use a lower version it automatically caps it to 11.0
+            DARWIN_MIN_SDK="11.0"
+          else
+          DARWIN_MIN_SDK="10.8"
+          fi
+
+          # they changed the names around 11.0
+          ld_os_min_vers_arg="-macos_version_min ${DARWIN_MIN_SDK}"
+          clang_os_min_vers_arg="-mmacos-version-min=${DARWIN_MIN_SDK}"
+        fi
         ;;
       iphoneos)
         IPHONE_MIN_SDK=4

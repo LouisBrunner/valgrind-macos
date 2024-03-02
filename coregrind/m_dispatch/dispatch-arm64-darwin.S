@@ -54,6 +54,8 @@ void VG_(disp_run_translations)( UWord* two_words,
                                  Addr   host_addr );
 */
 .text
+.align 4
+
 .globl VG_(disp_run_translations)
 VG_(disp_run_translations):
   /* x0  holds two_words

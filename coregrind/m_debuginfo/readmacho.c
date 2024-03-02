@@ -737,6 +737,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    HChar*   dsymfilename = NULL;
    Bool     have_uuid    = False;
    Bool     from_memory  = False; // True if we're reading from DSC
+   Bool     have_rw      = False;
    Addr     kernel_slide = 0; // Used when from_memory is True
    UChar    uuid[16];
    Word     i;
@@ -751,14 +752,16 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       state). */
    vg_assert(di->fsm.have_rx_map);
 #if DARWIN_VERS >= DARWIN_11_00
-   // FIXME: this is a hack to identify when a DebugInfo is associated with the DSC
-   // (without adding tons of new functions and fields)
-   if (di->fsm.rw_map_count == 0) {
+   if (di->from_memory) {
      from_memory = True;
      kernel_slide = VG_(dyld_cache_get_slide)();
    }
+   if (di->fsm.rw_map_count) {
+      have_rw = True;
+   }
 #else
    vg_assert(di->fsm.rw_map_count);
+   have_rw = True;
 #endif
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
@@ -767,14 +770,14 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          rx_map = map;
       if (map->rw && !rw_map)
          rw_map = map;
-      if (rx_map && (rw_map || from_memory))
+      if (rx_map && (rw_map || !have_rw))
          break;
    }
    vg_assert(rx_map);
-   vg_assert(rw_map || from_memory);
+   vg_assert(!have_rw || rw_map);
 
    if (VG_(clo_verbosity) > 1) {
-      if (from_memory) {
+      if (!have_rw) {
         VG_(message)(Vg_DebugMsg,
                     "%s (rx at %#lx)\n", di->fsm.filename,
                     rx_map->avma);
@@ -906,7 +909,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->text_debug_bias = di->text_bias;
             }
             /* Try for __DATA */
-            if (!from_memory && !di->data_present
+            if (have_rw && !di->data_present
                 && 0 == VG_(strcmp)(&seg.segname[0], "__DATA")
                 /* && DDD:seg->fileoff == 0 */ && seg.filesize != 0) {
                di->data_present = True;

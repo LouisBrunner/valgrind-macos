@@ -70,15 +70,15 @@ void* VG_(dyld_dlsym)( const HChar * library, const HChar * symbol) {
   for (i = 0; i < loaded_image->ncmds; ++i) {
     if (cmd->cmd == LC_SEGMENT_CMD) {
       const struct SEGMENT_COMMAND * seg = (const struct SEGMENT_COMMAND *) cmd;
-      VG_(debugLog)(3, "dyld_helpers", "dlsym: found segment %s in %s\n", seg->segname, library);
+      VG_(debugLog)(5, "dyld_helpers", "dlsym: found segment %s in %s\n", seg->segname, library);
       if (VG_(strcmp)(seg->segname, SEG_LINKEDIT) == 0) {
         linkedit_addr = seg->vmaddr - seg->fileoff + slide;
-        VG_(debugLog)(2, "dyld_helpers", "dlsym: found linkedit segment at %#lx in %s\n", linkedit_addr, library);
+        VG_(debugLog)(4, "dyld_helpers", "dlsym: found linkedit segment at %#lx in %s\n", linkedit_addr, library);
       }
     } else if (cmd->cmd == LC_SYMTAB) {
       const struct symtab_command * symtab = (const struct symtab_command *) cmd;
 
-      VG_(debugLog)(2, "dyld_helpers", "dlsym: found symbol table in %s\n", library);
+      VG_(debugLog)(4, "dyld_helpers", "dlsym: found symbol table in %s\n", library);
       if (!linkedit_addr) {
         VG_(debugLog)(1, "dyld_helpers", "dlsym: could not find linkedit segment in %s\n", library);
         return NULL;
@@ -91,12 +91,12 @@ void* VG_(dyld_dlsym)( const HChar * library, const HChar * symbol) {
           continue;
         }
 
-        VG_(debugLog)(3, "dyld_helpers", "dlsym: found symbol %s in %s symbol table\n", strtab + sym[i].n_un.n_strx, library);
+        VG_(debugLog)(5, "dyld_helpers", "dlsym: found symbol %s in %s symbol table\n", strtab + sym[i].n_un.n_strx, library);
         if (VG_(strcmp)(strtab + sym[i].n_un.n_strx, symbol) != 0) {
           continue;
         }
 
-        void* ptr = sym[i].n_value + slide;
+        void* ptr = (void*) (sym[i].n_value + slide);
         VG_(debugLog)(1, "dyld_helpers", "dlsym: found symbol %s at %p in %s symbol table\n", symbol, ptr, library);
         return ptr;
       }

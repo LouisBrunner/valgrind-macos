@@ -107,7 +107,7 @@ static int try_to_init_header(Addr address) {
   for (int i = 0; i < header->mappingCount; ++i) {
     const dyld_cache_mapping_info* mapping = &mappings[i];
     Addr map_addr = calculate_unslid(mapping->address);
-    VG_(debugLog)(4, "dyld_cache",
+    VG_(debugLog)(5, "dyld_cache",
       "mapping[%d]{\n"
       "  .address: %#lx,\n"
       "  .size: %llu (%#llx),\n"
@@ -166,7 +166,7 @@ static int try_to_init(void) {
           const dyld_subcache_entry* sub_cache = &((const dyld_subcache_entry*) sub_caches)[i];
           const uint8_t* u = sub_cache->uuid;
           sub_cache_addr = calculate_relative(dyld_cache.header, sub_cache->cacheVMOffset);
-          VG_(debugLog)(4, "dyld_cache",
+          VG_(debugLog)(5, "dyld_cache",
             "sub_cache_v2[%d]{\n"
             "  .uuid: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x,\n"
             "  .cacheVMOffset: %#lx,\n"
@@ -182,7 +182,7 @@ static int try_to_init(void) {
           const dyld_subcache_entry_v1* sub_cache = &((const dyld_subcache_entry_v1*) sub_caches)[i];
           const uint8_t* u = sub_cache->uuid;
           sub_cache_addr = calculate_relative(dyld_cache.header, sub_cache->cacheVMOffset);
-          VG_(debugLog)(4, "dyld_cache",
+          VG_(debugLog)(5, "dyld_cache",
             "sub_cache_v1[%d]{\n"
             "  .uuid: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x,\n"
             "  .cacheVMOffset: %#lx,\n"
@@ -290,7 +290,7 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
 static void output_debug_info(const dyld_cache_header* cache) {
   const uint8_t* u1 = cache->uuid;
   const uint8_t* u2 = cache->symbolFileUUID;
-  VG_(debugLog)(4, "dyld_cache",
+  VG_(debugLog)(5, "dyld_cache",
     "shared dyld content: {\n"
     "  .magic: %s,\n"
     "  .mappingOffset: %#x,\n"

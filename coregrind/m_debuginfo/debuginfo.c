@@ -323,6 +323,10 @@ DebugInfo* alloc_DebugInfo( const HChar* filename )
       di->ddump_frames = VG_(clo_debug_dump_frames);
    }
 
+#if DARWIN_VERS >= DARWIN_11_00
+   di->from_memory = False;
+#endif
+
    return di;
 }
 
@@ -722,9 +726,7 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
 #if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
    // not required, in the case of a DSC map we only have r-x
    // (technically the DSC has multiple mappings but what's the point of adding all of them?)
-   if (di->fsm.have_ro_map) {
-     vg_assert(di->fsm.rw_map_count);
-   }
+   // also on arm64 some libs don't have rw-
 #else
    vg_assert(di->fsm.rw_map_count);
 #endif
@@ -1950,6 +1952,8 @@ ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
       create one. */
    di = find_or_create_DebugInfo_for( filename );
    vg_assert(di);
+
+   di->from_memory = True;
 
    if (di->have_dinfo) {
       if (debug)

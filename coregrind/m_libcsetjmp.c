@@ -382,6 +382,7 @@ __asm__(
 #if defined(VGP_arm64_darwin)
 __asm__(
 ".text\n"
+".align 4\n"
 
 ".globl _VG_MINIMAL_SETJMP"  "\n"
 "_VG_MINIMAL_SETJMP:"  "\n" // x0 = jmp_buf

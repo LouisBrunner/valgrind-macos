@@ -176,7 +176,9 @@ my $stack_addr_str = $stack_addr->as_hex();
 my $stack_size_str = Math::BigInt::as_hex($TX_STACK_SIZE);
 
 # FIXME: 14.0 and later mark it as deprecated and ignored but it still works
+if ($archstr ne "arm64") {
 $cmd = "$cmd -stack_addr $stack_addr_str";
+}
 $cmd = "$cmd -stack_size $stack_size_str";
 
 foreach my $n (2 .. $#ARGV) {

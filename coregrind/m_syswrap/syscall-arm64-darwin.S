@@ -79,6 +79,8 @@
 #define MDEP 2
 #define UNIX 3
 
+.align 4
+
 .macro DO_SYSCALL
    /* Stash callee-saves and our args on the stack */
    stp  x29, x30, [sp, #-16]!
@@ -214,7 +216,6 @@ ML_(do_syscall_for_client_mdep_WRK):
 #define FOO(scclass,labelno) L_##scclass##_##labelno
 #define MK_L_SCCLASS_N(scclass,labelno) FOO(scclass,labelno)
 
-.align 2
 .globl ML_(blksys_setup_MACH)
 .globl ML_(blksys_restart_MACH)
 .globl ML_(blksys_complete_MACH)

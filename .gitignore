@@ -2179,9 +2179,9 @@
 /none/tests/solaris/threads_exitall
 
 # /none/tests/freebsd/
-/none/tests/freebsd/*.stderr.diff
+/none/tests/freebsd/*.stderr.diff*
 /none/tests/freebsd/*.stderr.out
-/none/tests/freebsd/*.stdout.diff
+/none/tests/freebsd/*.stdout.diff*
 /none/tests/freebsd/*.stdout.out
 /none/tests/freebsd/.deps
 /none/tests/freebsd/Makefile

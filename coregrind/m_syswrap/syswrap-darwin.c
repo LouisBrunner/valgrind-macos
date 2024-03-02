@@ -11149,7 +11149,7 @@ PRE(map_with_linking_np)
     PRE_MEM_READ( "map_with_linking_np(regions)", ARG1, sizeof(struct mwl_region) * ARG2 );
   }
   if (ARG3) {
-    PRE_MEM_READ( "map_with_linking_np(link_info)", ARG3, sizeof(struct mwl_info_hdr) * ARG4 );
+    PRE_MEM_READ( "map_with_linking_np(link_info)", ARG3, ARG4 );
   }
 }
 

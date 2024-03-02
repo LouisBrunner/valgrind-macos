@@ -1,0 +1,11 @@
+
+# Suppressions for Darwin 23.x / macOS 14.0 Sonoma (arm64)
+
+############################################
+
+{
+   OSX1400:dyld_faulty_std_move
+   Memcheck:Param
+   stat64(path)
+   obj:/usr/lib/dyld
+}

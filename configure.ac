@@ -675,84 +675,80 @@ case "${host_os}" in
         macosx-9.*)
           AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
           DARWIN_VERS=$DARWIN_10_5
-          DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
           DARWIN_DRD_SUPP="darwin9-drd.supp"
           ;;
         macosx-10.*|iphoneos-4.*)
           AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard / iOS 4])
           DARWIN_VERS=$DARWIN_10_6
-          DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
           ;;
         macosx-11.*|iphoneos-5.*)
           AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion / iOS 5])
           DARWIN_VERS=$DARWIN_10_7
-          DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
           ;;
         macosx-12.*|iphoneos-6.*)
           AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion / iOS 6])
           DARWIN_VERS=$DARWIN_10_8
-          DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
           ;;
         macosx-13.*|iphoneos-7.*)
           AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks / iOS 7])
           DARWIN_VERS=$DARWIN_10_9
-          DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
           ;;
         macosx-14.*|iphoneos-8.*)
           AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite / iOS 8])
           DARWIN_VERS=$DARWIN_10_10
-          DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
           ;;
         macosx-15.*|iphoneos-9.*)
           AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan / iOS 9])
           DARWIN_VERS=$DARWIN_10_11
-          DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
           ;;
         macosx-16.*|iphoneos-10.*)
           AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra / iOS 10])
           DARWIN_VERS=$DARWIN_10_12
-          DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
           ;;
         macosx-17.*|iphoneos-11.*)
           AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra / iOS 11])
           DARWIN_VERS=$DARWIN_10_13
-          DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
           ;;
         macosx-18.*|iphoneos-12.*)
           AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave / iOS 12])
           DARWIN_VERS=$DARWIN_10_14
-          DEFAULT_SUPP="darwin18.supp ${DEFAULT_SUPP}"
           ;;
         macosx-19.*|iphoneos-13.*)
           AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina / iOS 13])
           DARWIN_VERS=$DARWIN_10_15
-          DEFAULT_SUPP="darwin19.supp ${DEFAULT_SUPP}"
           ;;
         macosx-20.*|iphoneos-14.*)
           AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur / iOS 14])
           DARWIN_VERS=$DARWIN_11_00
-          DEFAULT_SUPP="darwin20.supp ${DEFAULT_SUPP}"
           ;;
         macosx-21.*|iphoneos-15.*)
           AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey / iOS 15])
           DARWIN_VERS=$DARWIN_12_00
-          DEFAULT_SUPP="darwin21.supp ${DEFAULT_SUPP}"
           ;;
         macosx-22.*|iphoneos-16.*)
           AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura / iOS 16])
           DARWIN_VERS=$DARWIN_13_00
-          DEFAULT_SUPP="darwin22.supp ${DEFAULT_SUPP}"
           ;;
         macosx-23.*|iphoneos-17.*)
           AC_MSG_RESULT([Darwin 23.x (${kernel}) / macOS 14 Sonoma / iOS 17])
           DARWIN_VERS=$DARWIN_14_00
-          DEFAULT_SUPP="darwin23.supp ${DEFAULT_SUPP}"
           ;;
         *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
           AC_MSG_ERROR([Valgrind works on Darwin 10.x-23.x (Mac OS X 10.6-10.11, macOS 10.12-14.0 and iOS 4-17)])
           ;;
       esac
+      platform_version=`echo $kernel | $SED -e 's/([0-9]+).*/\1/'`
+      if test $darwin_platform = "iphoneos"; then
+        platform_version=$((platform_version + 6))
+      fi
+      if test -f "darwin${platform_version}.supp"; then
+        DEFAULT_SUPP="darwin${platform_version}.supp ${DEFAULT_SUPP}"
+      fi
+      if test -f "darwin${platform_version}-${MAX_ARCH}.supp"; then
+        DEFAULT_SUPP="darwin${platform_version}-${MAX_ARCH}.supp ${DEFAULT_SUPP}"
+      fi
+
       AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X / macOS / iOS version])
       AC_SUBST(DARWIN_VERS)
       DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"

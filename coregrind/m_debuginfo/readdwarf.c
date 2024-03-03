@@ -2085,7 +2085,6 @@ void ML_(read_debuginfo_dwarf1) (
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
 #elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
-// TODO: this might be widely wrong for darwin
 # define N_CFI_REGS 128
 #elif defined(VGP_s390x_linux)
 # define N_CFI_REGS 66

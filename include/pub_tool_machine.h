@@ -91,7 +91,6 @@
 #  define VG_STACK_REDZONE_SZB    128
 
 #elif defined(VGP_arm64_darwin)
-// TODO: might be wrong?
 #  define VG_MIN_INSTR_SZB          4
 #  define VG_MAX_INSTR_SZB          4
 #  define VG_CLREQ_SZB             20

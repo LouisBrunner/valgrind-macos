@@ -286,17 +286,21 @@ static inline void my_exit ( int x )
  STRCHR(VG_Z_LD_ELF32_SO_1,        strchr)
 
 #elif defined(VGO_darwin)
- STRCHR(VG_Z_LIBC_SONAME, strchr)
-# if DARWIN_VERS == DARWIN_10_9
+# if defined(VGP_arm64_darwin)
   STRCHR(libsystemZuplatformZddylib, _platform_strchr)
+# else
+  STRCHR(VG_Z_LIBC_SONAME, strchr)
+#  if DARWIN_VERS == DARWIN_10_9
+   STRCHR(libsystemZuplatformZddylib, _platform_strchr)
+#  endif
+#  if DARWIN_VERS >= DARWIN_10_10
+   /* _platform_strchr$VARIANT$Generic */
+   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Generic)
+   /* _platform_strchr$VARIANT$Haswell */
+   STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Haswell)
+#  endif
+  STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Base)
 # endif
-# if DARWIN_VERS >= DARWIN_10_10
-  /* _platform_strchr$VARIANT$Generic */
-  STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Generic)
-  /* _platform_strchr$VARIANT$Haswell */
-  STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Haswell)
-# endif
- STRCHR(libsystemZuplatformZddylib, _platform_strchr$VARIANT$Base)
 
 #elif defined(VGO_solaris)
  STRCHR(VG_Z_LIBC_SONAME,          strchr)
@@ -342,6 +346,10 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  //STRCAT(VG_Z_LIBC_SONAME, strcat)
+# if defined(VGP_arm64_darwin)
+  STRCAT(libsystemZucZddylib, strcat)
+  STRCAT(libsystemZucZddylib, __strcat_chk)
+# endif
 
 #elif defined(VGO_solaris)
  STRCAT(VG_Z_LIBC_SONAME, strcat)
@@ -388,6 +396,9 @@ static inline void my_exit ( int x )
  //STRNCAT(VG_Z_DYLD,        strncat)
 # if DARWIN_VERS >= DARWIN_10_14
  STRNCAT(libsystemZucZddylib, __strncat_chk)
+# endif
+# if defined(VGP_arm64_darwin)
+  STRNCAT(libsystemZucZddylib, strncat)
 # endif
 
 #elif defined(VGO_solaris)
@@ -446,6 +457,10 @@ static inline void my_exit ( int x )
  //STRLCAT(VG_Z_LIBC_SONAME, strlcat)
  //STRLCAT(VG_Z_DYLD,        strlcat)
  STRLCAT(VG_Z_LIBC_SONAME, strlcat)
+# if defined(VGP_arm64_darwin)
+  STRLCAT(libsystemZucZddylib, __strlcat_chk)
+  STRLCAT(libsystemZuplatformZddylib, _platform_strlcat)
+# endif
 
 #elif defined(VGO_solaris)
  STRLCAT(VG_Z_LIBC_SONAME, strlcat)
@@ -477,6 +492,9 @@ static inline void my_exit ( int x )
 #elif defined(VGO_darwin)
 # if DARWIN_VERS == DARWIN_10_9
   STRNLEN(libsystemZucZddylib, strnlen)
+# endif
+# if defined(VGP_arm64_darwin)
+  STRNLEN(libsystemZuplatformZddylib, _platform_strnlen)
 # endif
 
 #elif defined(VGO_solaris)
@@ -526,6 +544,9 @@ static inline void my_exit ( int x )
  STRLEN(VG_Z_LIBC_SONAME, strlen)
 # if DARWIN_VERS >= DARWIN_10_9
   STRLEN(libsystemZucZddylib, strlen)
+# endif
+# if defined(VGP_arm64_darwin)
+  STRLEN(libsystemZuplatformZddylib, _platform_strlen)
 # endif
 
 #elif defined(VGO_solaris)
@@ -579,6 +600,9 @@ static inline void my_exit ( int x )
 # if DARWIN_VERS >= DARWIN_10_14
   STRCPY(libsystemZucZddylib, __strcpy_chk)
 # endif
+# if defined(VGP_arm64_darwin)
+  STRCPY(libsystemZuplatformZddylib, _platform_strcpy)
+# endif
 
 #elif defined(VGO_solaris)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
@@ -628,7 +652,10 @@ static inline void my_exit ( int x )
   STRNCPY(libsystemZucZddylib, strncpy)
 # endif
 # if DARWIN_VERS >= DARWIN_10_14
-STRNCPY(libsystemZucZddylib, __strncpy_chk)
+  STRNCPY(libsystemZucZddylib, __strncpy_chk)
+# endif
+# if defined(VGP_arm64_darwin)
+  STRNCPY(libsystemZuplatformZddylib, _platform_strncpy)
 # endif
 
 #elif defined(VGO_solaris)
@@ -685,6 +712,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  //STRLCPY(VG_Z_LIBC_SONAME, strlcpy)
  //STRLCPY(VG_Z_DYLD,        strlcpy)
  STRLCPY(VG_Z_LIBC_SONAME, strlcpy)
+# if defined(VGP_arm64_darwin)
+  STRLCPY(libsystemZucZddylib, __strlcpy_chk)
+  STRLCPY(libsystemZuplatformZddylib, _platform_strlcpy)
+# endif
 
 #elif defined(VGO_solaris)
  /* special case for n == 0 which is undocumented but heavily used */
@@ -785,6 +816,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #elif defined(VGO_darwin)
  //STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
+# if defined(VGP_arm64_darwin)
+  STRCASECMP(libsystemZucZddylib, strcasecmp)
+# endif
 
 #elif defined(VGO_solaris)
  STRCASECMP(VG_Z_LIBC_SONAME, strcasecmp)
@@ -834,6 +868,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #elif defined(VGO_darwin)
  //STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
  //STRNCASECMP(VG_Z_DYLD,        strncasecmp)
+# if defined(VGP_arm64_darwin)
+  STRNCASECMP(libsystemZucZddylib, strncasecmp)
+# endif
 
 #elif defined(VGO_solaris)
  STRNCASECMP(VG_Z_LIBC_SONAME, strncasecmp)
@@ -874,6 +911,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #elif defined(VGO_darwin)
  //STRCASECMP_L(VG_Z_LIBC_SONAME, strcasecmp_l)
+# if defined(VGP_arm64_darwin)
+  STRCASECMP_L(libsystemZucZddylib, strcasecmp_l)
+# endif
 
 #elif defined(VGO_solaris)
 
@@ -916,6 +956,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #elif defined(VGO_darwin)
  //STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
  //STRNCASECMP_L(VG_Z_DYLD,        strncasecmp_l)
+# if defined(VGP_arm64_darwin)
+  STRNCASECMP_L(libsystemZucZddylib, strncasecmp_l)
+# endif
 
 #elif defined(VGO_solaris)
 
@@ -998,6 +1041,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
+# else
 # if DARWIN_VERS == DARWIN_10_9
   MEMCHR(VG_Z_DYLD,                   memchr)
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
@@ -1012,6 +1058,7 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 # if DARWIN_VERS >= DARWIN_10_12
   /* _platform_memchr$VARIANT$Base */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Base)
+#endif
 #endif
 
 #elif defined(VGO_solaris)
@@ -1311,6 +1358,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #elif defined(VGO_darwin)
  //STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
  //STPCPY(VG_Z_DYLD,                 stpcpy)
+# if defined(VGP_arm64_darwin)
+  STPCPY(libsystemZucZddylib, stpcpy)
+# endif
 
 #elif defined(VGO_solaris)
  STPCPY(VG_Z_LIBC_SONAME,          stpcpy)
@@ -1345,6 +1395,11 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  STPNCPY(VG_Z_LIBC_SONAME, stpncpy)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  STPNCPY(libsystemZucZddylib, stpncpy)
+  STPNCPY(libsystemZucZddylib, __stpncpy_chk)
+# endif
 #endif
 
 
@@ -1406,6 +1461,11 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  //MEMSET(VG_Z_LIBC_SONAME, memset)
  //MEMSET(VG_Z_DYLD,        memset)
  MEMSET(VG_Z_LIBC_SONAME, memset)
+# if defined(VGP_arm64_darwin)
+  MEMSET(libsystemZucZddylib, __memset_chk)
+  MEMSET(libsystemZuplatformZddylib, memset)
+  MEMSET(libsystemZuplatformZddylib, _platform_memset)
+# endif
 
 #elif defined(VGO_solaris)
  MEMSET(VG_Z_LIBC_SONAME, memset)
@@ -1432,6 +1492,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  MEMMOVE(VG_Z_LIBC_SONAME,   memmove)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  MEMMOVE(libsystemZuplatformZddylib, _platform_memmove)
+# else
 # if DARWIN_VERS <= DARWIN_10_6
   MEMMOVE(VG_Z_LIBC_SONAME, memmove)
 # endif
@@ -1440,6 +1503,7 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 # if DARWIN_VERS >= DARWIN_10_9
   /* _platform_memmove$VARIANT$Ivybridge */
   MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDIvybridge)
+# endif
 # endif
 
 #elif defined(VGO_solaris)
@@ -1484,6 +1548,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #elif defined(VGO_darwin)
  //BCOPY(VG_Z_LIBC_SONAME, bcopy)
  //BCOPY(VG_Z_DYLD,        bcopy)
+# if defined(VGP_arm64_darwin)
+  MEMSET(libsystemZucZddylib, bcopy)
+# endif
 
 #elif defined(VGO_darwin)
  BCOPY(VG_Z_LIBC_SONAME, bcopy)
@@ -1530,6 +1597,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  GLIBC25___MEMMOVE_CHK(VG_Z_LIBC_SONAME, __memmove_chk)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  GLIBC25___MEMMOVE_CHK(libsystemZucZddylib, __memmove_chk)
+# endif
 
 #elif defined(VGO_solaris)
 
@@ -1664,6 +1734,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  GLIBC25___STPCPY_CHK(VG_Z_LIBC_SONAME, __stpcpy_chk)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  GLIBC25___STPCPY_CHK(libsystemZucZddylib, __stpcpy_chk)
+# endif
 
 #elif defined(VGO_solaris)
 
@@ -1773,6 +1846,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  GLIBC26___MEMCPY_CHK(VG_Z_LIBC_SONAME, __memcpy_chk)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  GLIBC26___MEMCPY_CHK(libsystemZucZddylib, __memcpy_chk)
+# endif
 
 #elif defined(VGO_solaris)
 
@@ -1827,6 +1903,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  STRSTR(VG_Z_LIBC_SONAME,          strstr)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  STRSTR(libsystemZuplatformZddylib, _platform_strstr)
+# endif
 
 #elif defined(VGO_solaris)
  STRSTR(VG_Z_LIBC_SONAME,          strstr)
@@ -1866,6 +1945,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGP_s390x_linux)
  MEMMEM(VG_Z_LIBC_SONAME,          memmem)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  MEMMEM(libsystemZucZddylib, memmem)
+# endif
 #endif
 
 
@@ -1910,6 +1993,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  STRPBRK(libsystemZucZddylib, strpbrk)
+# endif
 
 #elif defined(VGO_solaris)
  STRPBRK(VG_Z_LIBC_SONAME,          strpbrk)
@@ -1960,6 +2046,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  STRCSPN(libsystemZucZddylib, strcspn)
+# endif
 
 #elif defined(VGO_solaris)
  STRCSPN(VG_Z_LIBC_SONAME,          strcspn)
@@ -2010,6 +2099,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
  STRSPN(VG_Z_LIBC_SONAME,          strspn)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  STRSPN(libsystemZucZddylib, strspn)
+# endif
 
 #elif defined(VGO_solaris)
  STRSPN(VG_Z_LIBC_SONAME,          strspn)
@@ -2069,6 +2161,9 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
   STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
 
 #elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  STRCASESTR(libsystemZucZddylib, strcasestr)
+# endif
 
 #elif defined(VGO_solaris)
   STRCASESTR(VG_Z_LIBC_SONAME,      strcasestr)
@@ -2096,6 +2191,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  WCSLEN(VG_Z_LIBC_SONAME,          wcslen)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSLEN(libsystemZucZddylib, wcslen)
+# endif
 
 #endif
 
@@ -2119,6 +2218,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNLEN(VG_Z_LIBC_SONAME, wcsnlen)
  WCSNLEN(VG_Z_LIBC_SONAME, __GI_wcsnlen)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSNLEN(libsystemZucZddylib, wcsnlen)
+# endif
 #endif
 
 /*---------------------- wcscmp ----------------------*/
@@ -2150,6 +2253,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSCMP(VG_Z_LIBC_SONAME,          wcscmp)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSCMP(libsystemZucZddylib, wcscmp)
+# endif
 #endif
 
 /*---------------------- wcsncmp ----------------------*/
@@ -2180,6 +2287,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
    }
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNCMP(VG_Z_LIBC_SONAME,          wcsncmp)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSNCMP(libsystemZucZddylib, wcsncmp)
+# endif
 #endif
 
 /*---------------------- wcscpy ----------------------*/
@@ -2217,6 +2328,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
  WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSCPY(libsystemZucZddylib, wcscpy)
+# endif
 #endif
 
 
@@ -2240,6 +2355,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux)  || defined(VGO_freebsd)
  WCSCHR(VG_Z_LIBC_SONAME,          wcschr)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSCHR(libsystemZucZddylib, wcschr)
+# endif
 #endif
 /*---------------------- wcsrchr ----------------------*/
 
@@ -2262,6 +2381,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSRCHR(VG_Z_LIBC_SONAME, wcsrchr)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSRCHR(libsystemZucZddylib, wcsrchr)
+# endif
 #endif
 
  /*---------------------- wmemchr ----------------------*/
@@ -2292,6 +2415,11 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_freebsd)
  WMEMCHR(VG_Z_LIBC_SONAME, wmemchr)
+
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WMEMCHR(libsystemZucZddylib, wmemchr)
+# endif
 #endif
 
 /*---------------------- wmemcmp ----------------------*/
@@ -2311,6 +2439,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WMEMCMP(VG_Z_LIBC_SONAME, wmemcmp)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WMEMCMP(libsystemZucZddylib, wmemcmp)
+# endif
 #endif
 
 /*---------------------- wcsncpy ----------------------*/
@@ -2354,6 +2486,10 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNCPY(VG_Z_LIBC_SONAME, wcsncpy)
+#elif defined(VGO_darwin)
+# if defined(VGP_arm64_darwin)
+  WCSNCPY(libsystemZucZddylib, wcsncpy)
+# endif
 #endif
 
  /*---------------------- memccpy ----------------------*/
@@ -2387,8 +2523,14 @@ STRNCPY(libsystemZucZddylib, __strncpy_chk)
       return NULL; \
  }
 
-#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_darwin) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  MEMCCPY(VG_Z_LIBC_SONAME, memccpy)
+#elif defined(VGO_darwin)
+ MEMCCPY(VG_Z_LIBC_SONAME, memccpy)
+# if defined(VGP_arm64_darwin)
+  MEMCCPY(libsystemZucZddylib, __memccpy_chk)
+  MEMCCPY(libsystemZuplatformZddylib, _platform_memccpy)
+# endif
 #endif
 
 /*------------------------------------------------------------*/

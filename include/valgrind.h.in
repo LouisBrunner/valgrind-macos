@@ -782,8 +782,10 @@ typedef
    OrigFn;
 
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
-            "ror x12, x12, #3  ;  ror x12, x12, #13 \n\t"         \
-            "ror x12, x12, #51 ;  ror x12, x12, #61 \n\t"
+            "ror x12, x12, #3  \n\t"                              \
+            "ror x12, x12, #13 \n\t"                              \
+            "ror x12, x12, #51 \n\t"                              \
+            "ror x12, x12, #61 \n\t"
 
 #define VALGRIND_DO_CLIENT_REQUEST_EXPR(                          \
         _zzq_default, _zzq_request,                               \

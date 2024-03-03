@@ -1170,7 +1170,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                Addr fp_max_orig )
 {
    Bool  debug = False;
-   Int   i;
+   Int   i = 0;
    Addr  fp_max;
    UInt  n_found = 0;
    const Int cmrf = VG_(clo_merge_recursive_frames);
@@ -1223,8 +1223,29 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    ips[0] = uregs.pc;
    i = 1;
 
+#  if defined(VGO_darwin) || (defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_13_0))
+   if (VG_(is_valid_tid)(tid_if_known) &&
+      VG_(is_in_syscall)(tid_if_known) &&
+      i < max_n_ips) {
+      /* On Darwin and FreeBSD, all the system call stubs have no function
+       * prolog.  So instead of top of the stack being a new
+       * frame comprising a saved BP and a return address, we
+       * just have the return address in the caller's frame.
+       * Adjust for this by recording the return address.
+       */
+      if (debug)
+         VG_(printf)("     in syscall, use SP-1\n");
+      ips[i] = *(Addr *)uregs.sp - 1;
+      if (sps) sps[i] = uregs.sp;
+      if (fps) fps[i] = uregs.x29;
+      i++;
+   }
+#  endif
+
    /* Loop unwinding the stack, using CFI. */
    while (True) {
+      Addr old_sp;
+
       if (debug) {
          VG_(printf)("i: %d, pc: 0x%lx, sp: 0x%lx\n",
                      i, uregs.pc, uregs.sp);
@@ -1232,6 +1253,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
       if (i >= max_n_ips)
          break;
+
+      old_sp = uregs.sp;
 
       if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
          if (sps) sps[i] = uregs.sp;
@@ -1241,6 +1264,31 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             VG_(printf)("USING CFI: pc: 0x%lx, sp: 0x%lx\n",
                         uregs.pc, uregs.sp);
          uregs.pc = uregs.pc - 1;
+         RECURSIVE_MERGE(cmrf,ips,i);
+         continue;
+      }
+
+      /* See amd64 version for details. */
+      if (fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)) {
+         /* fp looks sane, so use it. */
+         uregs.pc = (((UWord*)uregs.x29)[1]);
+         if (0 == uregs.pc || 1 == uregs.pc) break;
+         uregs.sp = uregs.x29 + sizeof(Addr) /*saved %rbp*/
+                               + sizeof(Addr) /*ra*/;
+         if (old_sp >= uregs.sp) {
+            if (debug)
+               VG_(printf) ("     FF end of stack old_sp %p >= sp %p\n",
+                            (void*)old_sp, (void*)uregs.sp);
+            break;
+         }
+         uregs.x29 = (((UWord*)uregs.x29)[0]);
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.x29;
+         ips[i++] = uregs.pc - 1; /* -1: refer to calling insn, not the RA */
+         if (debug)
+            VG_(printf)("     ipsF[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
+                        i-1, ips[i-1], uregs.x29, uregs.sp);
+         uregs.pc = uregs.pc - 1; /* as per comment at the head of this loop */
          RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }

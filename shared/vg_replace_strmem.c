@@ -153,7 +153,7 @@ Bool is_overlap ( void* dst, const void* src, SizeT dstlen, SizeT srclen )
    }
 }
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_darwin)
 /* Call here to exit if we can't continue.  On Android we can't call
    _exit for some reason, so we have to blunt-instrument it. */
 __attribute__ ((__noreturn__))

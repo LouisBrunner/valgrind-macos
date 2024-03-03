@@ -3,6 +3,7 @@
 
 ############################################
 
+# Real bug: dyld uses a std::move'd object
 {
    OSX1400:dyld_faulty_std_move
    Memcheck:Param
@@ -10,5 +11,25 @@
    fun:stat
    ...
    fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
+}
+
+# Unknown issue: first call to forEachInsertedDylib > getFrameworkPartialPath reads past \0 during strncmp, no clue why
+{
+   OSX1400:dyld_strrchr_overflow1
+   Memcheck:Cond
+   fun:strncmp
    ...
+   fun:_ZNK5dyld413ProcessConfig13PathOverrides23getFrameworkPartialPathEPKc
+   ...
+   fun:_ZNK5dyld413ProcessConfig13PathOverrides20forEachInsertedDylibEU13block_pointerFvPKcRbE
+}
+
+{
+   OSX1400:dyld_strrchr_overflow2
+   Memcheck:Value8
+   fun:strncmp
+   ...
+   fun:_ZNK5dyld413ProcessConfig13PathOverrides23getFrameworkPartialPathEPKc
+   ...
+   fun:_ZNK5dyld413ProcessConfig13PathOverrides20forEachInsertedDylibEU13block_pointerFvPKcRbE
 }

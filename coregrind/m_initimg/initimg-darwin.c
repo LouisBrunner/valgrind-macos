@@ -331,7 +331,7 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 // not exported by any public mac header
 void _dispatch_mach_hooks_install_default(void);
 
-static void resetInitializers(void) {
+static void reset_initializers(void) {
   void *ptr;
 
   // libsystem.B@libSystem_initializer > libxpc@libxpc_initializer > ??? > libdispatch@dispatch_mach_hooks_install_4libxpc
@@ -379,9 +379,6 @@ Addr setup_client_stack( void*  init_sp,
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert( VG_(args_for_client) );
 
-#if defined(VGA_arm64)
-  resetInitializers();
-#endif
 
    /* ==================== compute sizes ==================== */
 
@@ -544,6 +541,56 @@ Addr setup_client_stack( void*  init_sp,
 /*=== Record system memory regions                                 ===*/
 /*====================================================================*/
 
+void VG_(mach_record_system_memory)(void) {
+    /* Darwin only: tell the tools where the client's kernel commpage
+      is.  It would be better to do this by telling aspacemgr about
+      it -- see the now disused record_system_memory() below --
+      but that causes the sync checker to fail,
+      since the mapping doesn't appear in the kernel-supplied
+      process map.  So do it here instead. */
+
+#if defined(VGA_amd64)
+  VG_TRACK( new_mem_startup,
+            0x7fffffe00000, 0x7ffffffff000-0x7fffffe00000,
+            True, False, True, /* r-x */
+            0 /* di_handle: no associated debug info */ );
+#elif defined(VGA_x86)
+  VG_TRACK( new_mem_startup,
+            0xfffec000, 0xfffff000-0xfffec000,
+            True, False, True, /* r-x */
+            0 /* di_handle: no associated debug info */ );
+#elif defined(VGA_arm64)
+  VG_TRACK( new_mem_startup,
+            0xfffff4000, 0x1000,
+            True, False, True, /* r-- */
+            0 /* di_handle: no associated debug info */ );
+  VG_TRACK( new_mem_startup,
+            0xfffffc000, 0x1000,
+            True, False, True, /* r-x */
+            0 /* di_handle: no associated debug info */ );
+
+  // tell tools about the feature flags SHM, it avoids ton of errors without using any suppression
+
+  // first we need to find the address of the feature flags table
+  Addr* ptr = VG_(dyld_dlsym)("/usr/lib/system/libsystem_featureflags.dylib", "__os_feature_table_table");
+  if (!ptr) {
+    VG_(debugLog)(0, "initimg", "could not find OS features table\n");
+  } else {
+    VG_(debugLog)(2, "initimg", "OS features table at %#lx (pointer at %p)\n", *ptr, ptr);
+    NSegment const * seg = VG_(am_find_anon_segment)(*ptr);
+    if (!seg) {
+      VG_(debugLog)(0, "initimg", "could not find segment for OS features table\n");
+    } else {
+      VG_(debugLog)(2, "initimg", "tell tool about OS features table segment at %#lx\n", seg->start);
+      VG_TRACK( new_mem_startup, seg->start, seg->end+1-seg->start,
+                seg->hasR, seg->hasW, seg->hasX, 0 );
+    }
+  }
+#else
+# error "Unknown Darwin architecture"
+#endif
+}
+
 static void record_system_memory(void)
 {
   /* JRS 2014-Jul-08: this messes up the sync checker, because the
@@ -570,6 +617,8 @@ static void record_system_memory(void)
 
 #elif defined(VGA_arm64)
    /* commpage 0xfffffc000+ - not in vm_region */
+   VG_(am_notify_client_mmap)(0xfffff4000, 0x1000,
+                              VKI_PROT_READ, 0, -1, 0);
    VG_(am_notify_client_mmap)(0xfffffc000, 0x1000,
                               VKI_PROT_READ|VKI_PROT_EXEC, 0, -1, 0);
 
@@ -641,6 +690,10 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
 
    // Tell aspacem about commpage, etc
    record_system_memory();
+
+#if defined(VGA_arm64)
+   reset_initializers();
+#endif
 
    VG_(free)(info.interp_name); info.interp_name = NULL;
    VG_(free)(info.interp_args); info.interp_args = NULL;

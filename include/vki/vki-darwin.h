@@ -83,8 +83,19 @@
 // magic mmap() flags
 #define	VKI_MAP_ANONYMOUS MAP_ANON	// linux synonym
 
+// See xnu/osfmk/mach/vm_statistics.h
+#define VKI_VM_MEMORY_MALLOC 1
+#define VKI_VM_MEMORY_MALLOC_SMALL 2
+#define VKI_VM_MEMORY_MALLOC_TINY 7
+#define VKI_VM_MEMORY_MALLOC_NANO 11
+#define VKI_VM_MEMORY_STACK 30
+#define VKI_VM_MEMORY_UNSHARED_PMAP 35
+#define VKI_VM_MEMORY_DYLD 60
+#define VKI_VM_MEMORY_OS_ALLOC_ONCE 73
+#define VKI_VM_MEMORY_VALGRIND 242
+
 // fds for mmap(MAP_ANON), displayed by vmmap
-#define VM_TAG_VALGRIND VM_MAKE_TAG(239)  // SkAnonV
+#define VM_TAG_VALGRIND VM_MAKE_TAG(VKI_VM_MEMORY_VALGRIND)  // SkAnonV
 
 // page sizes
 #define VKI_MAX_PAGE_SHIFT VKI_PAGE_SHIFT

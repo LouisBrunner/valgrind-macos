@@ -1558,6 +1558,11 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    // GrP fixme no dev/ino on darwin
    if (offset != 0) 
       seg.kind = SkFileV;
+   if (filename && VG_(strstr)(filename, DARWIN_FAKE_MEMORY_PATH) != NULL) {
+      // these are owned by the kernel and are already initialized
+      // we flag them as client so m_main.c track them correctly
+      seg.kind = SkFileC;
+   }
 #  endif // defined(VGO_darwin)
 
 #  if defined(VGP_arm_linux)
@@ -3758,8 +3763,46 @@ static int get_filename_for_region(int pid, Addr addr, HChar* path, SizeT path_l
   if (len > MAXPATHLEN) {
     len = MAXPATHLEN;
   }
+  if (len > path_len) {
+    len = path_len;
+  }
   VG_(strncpy)(path, info.prp_vip.vip_path, len);
   return len;
+}
+
+static int get_name_from_tag(int tag, HChar* path, SizeT path_len) {
+  switch (tag) {
+    case VKI_VM_MEMORY_DYLD:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[internal dyld memory]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_OS_ALLOC_ONCE:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[kernel alloc once]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_MALLOC:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc memory]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_MALLOC_SMALL:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (small) memory]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_MALLOC_TINY:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (tiny) memory]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_MALLOC_NANO:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (nano) memory]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_STACK:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[stack]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_UNSHARED_PMAP:
+      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[unshared pmap]", path_len);
+      return 1;
+    case VKI_VM_MEMORY_VALGRIND:
+    case 0:
+      return 0;
+    default:
+      VG_(debugLog)(0,"aspacem", "unknown vm tag: %d\n", tag);
+      return 0;
+  }
 }
 
 static UInt stats_machcalls = 0;
@@ -3808,8 +3851,11 @@ static void parse_procselfmaps (
       }
       if (record_mapping) {
          ret = get_filename_for_region(pid, addr, name, sizeof(name));
+         if (!ret) {
+           ret = get_name_from_tag(info.user_tag, name, sizeof(name));
+         }
          (*record_mapping)(addr, size, mach2vki(info.protection),
-                           0, 0, info.offset, ret ? name : NULL, False);
+                           0, info.user_tag, info.offset, ret ? name : NULL, False);
       }
       last = addr + size;
    }

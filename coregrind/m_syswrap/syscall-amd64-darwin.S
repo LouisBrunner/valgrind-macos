@@ -153,7 +153,10 @@ L_$0_3:	/* In the range [3, 4), the syscall result is in %rax,
 	movq	%rax, %rdi	/* arg1 = new flag */
 	movq	%r11, %rsi	/* arg2 = vex state */
 	addq	$$24, %rsp	/* remove syscall parameters */
+        movl    $$1, OFFSET_amd64_SETC(%r11)
 	call	_LibVEX_GuestAMD64_put_rflag_c
+        movq	-16(%rbp), %r11
+        movl    $$0, OFFSET_amd64_SETC(%r11)
 .else
 	addq	$$24, %rsp	/* remove syscall parameters*/
 .endif

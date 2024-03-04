@@ -3120,35 +3120,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 #if defined(VGO_freebsd) || defined(VGO_darwin)
   if (outside_range)
   {
-     /* This is not guaranteed to work since the compiler / link editor
-        could lay out the binary functions in a different order to
-        the source file. However, it seems to work. */
-
-#if defined (VGA_amd64)
-
-     vg_assert((Addr)_______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ >
-               (Addr)LibVEX_GuestAMD64_put_rflag_c );
-
-     vg_assert(addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ >
-               addr_amd64g_calculate_rflags_all_WRK);
-
-     if ((ip >= (Addr)LibVEX_GuestAMD64_put_rflag_c &&
-          ip <  (Addr)_______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______) ||
-         (ip >= addr_amd64g_calculate_rflags_all_WRK &&
-         ip < addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______))
-#else
-
-     vg_assert((Addr)_______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______ >
-               (Addr)LibVEX_GuestX86_put_eflag_c);
- 
-     vg_assert(addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______>
-              addr_x86g_calculate_eflags_all_WRK);
-
-     if ((ip >= (Addr)LibVEX_GuestX86_put_eflag_c &&
-         ip <  (Addr)_______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______) ||
-         (ip >= addr_x86g_calculate_eflags_all_WRK &&
-          ip < addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______))
-#endif
+     if (th_regs->vex.guest_SETC)
      {
         outside_range = False;
         in_complete_to_committed = True;

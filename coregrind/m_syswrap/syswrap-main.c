@@ -384,7 +384,11 @@ void do_syscall_for_client ( Int syscallno,
                );
          break;
       case VG_DARWIN_SYSCALL_CLASS_MDEP:
-         // TODO: invalid for arm64 (they don't exist and the only one who does is handled differently)
+#if defined(VGP_arm64_darwin)
+         // They do not exist on arm64. We pretend thread_set_tsd_base is one for simplicity,
+         // but we don't forward it to the kernel so this function SHOULD NOT be called.
+         vg_assert(0);
+#endif
          err = ML_(do_syscall_for_client_mdep_WRK)(
                   VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex,
                   syscall_mask, &saved, 0/*unused:sigsetSzB*/

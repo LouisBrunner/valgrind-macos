@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -51,6 +51,7 @@
 #include "pub_core_vki.h"       // Avoids warnings from pub_core_libcfile.h
 #include "pub_core_libcproc.h"  // For VALGRIND_LIB, VALGRIND_LAUNCHER
 #include "pub_core_ume.h"
+#include "pub_core_mach.h"
 
 static struct {
    cpu_type_t cputype;
@@ -65,7 +66,7 @@ static struct {
       MacOS X, but .. the Apple PPC descriptors refer to the BE
       variant, since the LE variant is something that appeared long
       after Apple dropped PPC. */
-   { CPU_TYPE_POWERPC,   "ppc",    "ppc32" }, 
+   { CPU_TYPE_POWERPC,   "ppc",    "ppc32" },
    { CPU_TYPE_POWERPC64, "ppc64",  "ppc64be" }
 };
 static int valid_archs_count = sizeof(valid_archs)/sizeof(valid_archs[0]);
@@ -157,7 +158,7 @@ static const char *select_arch(
    if (bytes != sizeof(buf)) {
       return NULL;
    }
-   
+
    // If it's thin, return that arch.
    {
       struct mach_header *mh = (struct mach_header *)buf;
@@ -183,7 +184,7 @@ static const char *select_arch(
          if (fat_has_cputype(fh, default_cputype)) {
             return default_arch;
          }
-         
+
          // Scan fat headers for any supported arch.
          for (i = 0; i < valid_archs_count; i++) {
             if (fat_has_cputype(fh, valid_archs[i].cputype)) {
@@ -192,7 +193,7 @@ static const char *select_arch(
          }
       }
    }
-   
+
    return NULL;
 }
 
@@ -220,7 +221,7 @@ int main(int argc, char** argv, char** envp)
    char **new_argv;
    int new_argc;
 
-   /* Start the debugging-log system ASAP.  First find out how many 
+   /* Start the debugging-log system ASAP.  First find out how many
       "-d"s were specified.  This is a pre-scan of the command line.
       At the same time, look for the tool name. */
    loglevel = 0;
@@ -237,9 +238,9 @@ int main(int argc, char** argv, char** envp)
          }
          break;
       }
-      if (0 == strcmp(argv[i], "-d")) 
+      if (0 == strcmp(argv[i], "-d"))
          loglevel++;
-      if (0 == strncmp(argv[i], "--tool=", 7)) 
+      if (0 == strncmp(argv[i], "--tool=", 7))
          toolname = argv[i] + 7;
       if (0 == strncmp(argv[i], "--arch=", 7))
          archname = argv[i] + 7;
@@ -253,7 +254,7 @@ int main(int argc, char** argv, char** envp)
    if (toolname) {
       VG_(debugLog)(1, "launcher", "tool '%s' requested\n", toolname);
    } else {
-      VG_(debugLog)(1, "launcher", 
+      VG_(debugLog)(1, "launcher",
                        "no tool requested, defaulting to 'memcheck'\n");
       toolname = "memcheck";
    }
@@ -298,14 +299,14 @@ int main(int argc, char** argv, char** envp)
       free(vgpreload_core);
    }
 
-   /* Find the "default" arch (VGCONF_ARCH_PRI from configure). 
+   /* Find the "default" arch (VGCONF_ARCH_PRI from configure).
       This is the preferred arch from fat files and the fallback. */
    default_arch = NULL;
    default_cputype = 0;
    for (i = 0; i < valid_archs_count; i++) {
       if (!valid_archs[i].cputype) continue;
-      if (0 == strncmp(VG_PLATFORM, valid_archs[i].valgrind_name, 
-                       strlen(valid_archs[i].valgrind_name))) 
+      if (0 == strncmp(VG_PLATFORM, valid_archs[i].valgrind_name,
+                       strlen(valid_archs[i].valgrind_name)))
       {
          default_arch = valid_archs[i].valgrind_name;
          default_cputype = valid_archs[i].cputype;
@@ -321,7 +322,7 @@ int main(int argc, char** argv, char** envp)
       // --arch from command line
       arch = NULL;
       for (i = 0; i < valid_archs_count; i++) {
-         if (0 == strcmp(archname, valid_archs[i].apple_name)  ||  
+         if (0 == strcmp(archname, valid_archs[i].apple_name)  ||
              0 == strcmp(archname, valid_archs[i].valgrind_name))
          {
             arch = valid_archs[i].valgrind_name;
@@ -330,28 +331,28 @@ int main(int argc, char** argv, char** envp)
       }
       if (i == valid_archs_count) barf("Unknown --arch '%s'", archname);
       assert(NULL != arch);
-      VG_(debugLog)(1, "launcher", "using arch '%s' from --arch=%s\n", 
+      VG_(debugLog)(1, "launcher", "using arch '%s' from --arch=%s\n",
                     arch, archname);
-   } 
+   }
    else if (clientname == NULL) {
       // no client executable; use default as fallback
-      VG_(debugLog)(1, "launcher", 
+      VG_(debugLog)(1, "launcher",
                        "no client specified, defaulting arch to '%s'\n",
                         default_arch);
       arch = default_arch;
-   } 
+   }
    else if ((arch = select_arch(clientname, default_cputype,default_arch))) {
       // arch from client executable
       VG_(debugLog)(1, "launcher", "selected arch '%s'\n", arch);
-   } 
+   }
    else {
       // nothing found in client executable; use default as fallback
-      VG_(debugLog)(1, "launcher", 
+      VG_(debugLog)(1, "launcher",
                        "no arch detected, defaulting arch to '%s'\n",
                        default_arch);
       arch = default_arch;
    }
-   
+
    cwd = getcwd(NULL, 0);
    if (!cwd) barf("Current directory no longer exists.");
 
@@ -359,10 +360,11 @@ int main(int argc, char** argv, char** envp)
       we can tell stage2.  stage2 will use the name for recursive
       invocations of valgrind on child processes. */
    memset(launcher_name, 0, PATH_MAX+1);
-   for (i = 0; envp[i]; i++) 
+   for (i = 0; envp[i]; i++)
        ; /* executable path is after last envp item */
    /* envp[i] == NULL ; envp[i+1] == executable_path */
    executable_path = envp[i+1];
+
    /* Since macOS 10.14.6, executable_path is prefixed by "executable_path=",
       like an environment list */
    if (strlen(executable_path) > 16 && strncmp(executable_path, "executable_path=", 16) == 0) {
@@ -387,16 +389,25 @@ int main(int argc, char** argv, char** envp)
    // contains the executable path.  Don't forget about it.
    for (j = 0; envp[j]; j++)
       ;
-   new_env = malloc((j+4) * sizeof(char*));
+   // 5 includes VALGRIND_LAUNCHER, VALGRIND_STARTUP_PWD, MallocNanoZone (or VALGRIND_DUMMY_ENV), NULL and executable_path
+   new_env = malloc((j+5) * sizeof(char*));
    if (new_env == NULL)
       barf("malloc of new_env failed.");
    for (i = 0; i < j; i++)
       new_env[i] = envp[i];
    new_env[i++] = new_line;
    new_env[i++] = set_cwd;
+   if (!strcmp(arch, "arm64")) {
+     // Tools are dynamic on arm64 so malloc gets init'd.
+     // Nano can't be init'd twice in a row (ourselves + guest) so we just disable it for ourselves.
+     new_env[i++] = strdup(MACH_DISABLE_NANO_MALLOC);
+   } else {
+     // Easier to set a dummy value than do a lot of condition to make a smaller malloc, different assert, etc.
+     new_env[i++] = strdup(MACH_DUMMY_ENV_VAR);
+   }
    new_env[i++] = NULL;
    new_env[i  ] = envp[i-2]; // the 'apple' arg == the executable_path
-   assert(i == j+3);
+   assert(i == j+4);
 
    /* tediously edit env: hide dyld options from valgrind's captive dyld */
    for (i = 0; envp[i]; i++) {

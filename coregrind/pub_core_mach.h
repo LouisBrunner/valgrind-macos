@@ -34,7 +34,7 @@
 #define DARWIN_FAKE_MEMORY_PATH "/dev/macos/internals/"
 
 //--------------------------------------------------------------------
-// PURPOSE: This module contains the Mach kernel interface, 
+// PURPOSE: This module contains the Mach kernel interface,
 // for operating systems like Darwin / Mac OS X that use it.
 //--------------------------------------------------------------------
 
@@ -54,6 +54,9 @@ extern void VG_(mach_record_system_memory)(void);
 #error "Unsupported platform"
 #endif
 
+#define MACH_DUMMY_ENV_VAR "VALGRIND_DUMMY_ENV=0"
+#define MACH_DISABLE_NANO_MALLOC "MallocNanoZone=0"
+
 #if DARWIN_VERS >= DARWIN_11_00
 // Dyld shared cache (DSC) parsing, which is required as system libraries are not provided on disk
 // starting with macOS 11.0 (Big Sur)
@@ -65,7 +68,9 @@ extern Addr VG_(dyld_cache_get_slide)(void);
 
 #if defined(VGA_arm64)
 extern void VG_(mach_invalidate_icache)( void *start, SizeT len);
+
 extern void* VG_(dyld_dlsym)( const HChar * library, const HChar * symbol );
+extern void VG_(dyld_register_existing_libraries)( void );
 #endif
 
 #endif // __PUB_CORE_MACH_H

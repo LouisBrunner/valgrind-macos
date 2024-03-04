@@ -30,6 +30,7 @@
 
 #include "pub_core_debuglog.h"              // VG_(debugLog)
 #include "pub_tool_libcbase.h"
+#include "pub_core_debuginfo.h"             // VG_(di_notify_dsc)
 #include "pub_core_mach.h"
 
 #include <mach-o/dyld.h>
@@ -111,6 +112,28 @@ void* VG_(dyld_dlsym)( const HChar * library, const HChar * symbol) {
 
   VG_(debugLog)(1, "dyld_helpers", "dlsym: could not find symbol table in %s\n", library);
   return NULL;
+}
+
+void VG_(dyld_register_existing_libraries)(void) {
+  Int i;
+  const HChar * name;
+  const struct MACH_HEADER* loaded_image;
+  ULong res = 0;
+
+  for (i = 0; i < _dyld_image_count(); ++i) {
+    name = _dyld_get_image_name(i);
+
+    // we are mostly interested in system libraries
+    if (VG_(strstr)(name, "/usr/lib/system/") == NULL) {
+      continue;
+    }
+
+    loaded_image = (const struct MACH_HEADER*) _dyld_get_image_header(i);
+    res = VG_(di_notify_dsc)(name, (Addr)loaded_image, sizeof(struct MACH_HEADER) + loaded_image->sizeofcmds);
+    if (res == 0) {
+      VG_(debugLog)(2, "dyld_helpers", "failed to load debuginfo from: %s\n", name);
+    }
+  }
 }
 
 #endif

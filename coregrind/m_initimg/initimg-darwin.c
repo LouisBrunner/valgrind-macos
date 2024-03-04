@@ -57,7 +57,7 @@
 
 /* Load the client whose name is VG_(argv_the_exename). */
 
-static void load_client ( /*OUT*/ExeInfo* info, 
+static void load_client ( /*OUT*/ExeInfo* info,
                           /*OUT*/Addr*    client_ip)
 {
    const HChar* exe_name;
@@ -106,7 +106,7 @@ static void load_client ( /*OUT*/ExeInfo* info,
    not be able to see this.
 
    Before macOS 11:
-   Also, add DYLD_SHARED_REGION=avoid, because V doesn't know how 
+   Also, add DYLD_SHARED_REGION=avoid, because V doesn't know how
    to process the dyld shared cache file.
 
    Since macOS 11:
@@ -140,14 +140,15 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    HChar** ret;
    HChar*  preload_tool_path;
    Int     envc, i;
+   Bool    has_changed;
 
    /* Alloc space for the vgpreload_core.so path and vgpreload_<tool>.so
       paths.  We might not need the space for vgpreload_<tool>.so, but it
       doesn't hurt to over-allocate briefly.  The 16s are just cautious
       slop. */
-   Int preload_core_path_len = vglib_len + sizeof(preload_core) 
+   Int preload_core_path_len = vglib_len + sizeof(preload_core)
                                          + sizeof(VG_PLATFORM) + 16;
-   Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname) 
+   Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname)
                                          + sizeof(VG_PLATFORM) + 16;
    Int preload_string_len    = preload_core_path_len + preload_tool_path_len;
    HChar* preload_string     = VG_(malloc)("initimg-darwin.sce.1", preload_string_len);
@@ -158,10 +159,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    VG_(snprintf)(preload_tool_path, preload_tool_path_len,
                  "%s/vgpreload_%s-%s.so", VG_(libdir), toolname, VG_PLATFORM);
    if (VG_(access)(preload_tool_path, True/*r*/, False/*w*/, False/*x*/) == 0) {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so:%s", 
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so:%s",
                     VG_(libdir), preload_core, VG_PLATFORM, preload_tool_path);
    } else {
-      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so", 
+      VG_(snprintf)(preload_string, preload_string_len, "%s/%s-%s.so",
                     VG_(libdir), preload_core, VG_PLATFORM);
    }
    VG_(free)(preload_tool_path);
@@ -175,7 +176,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
       envc++;
 
    /* Allocate a new space */
-   ret = VG_(malloc) ("initimg-darwin.sce.3", 
+   ret = VG_(malloc) ("initimg-darwin.sce.3",
 #if DARWIN_VERS >= DARWIN_10_15
                       sizeof(HChar *) * (envc+3+1)); /* 3 new entries + NULL */
 #else
@@ -186,7 +187,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    for (cpp = ret; *origenv; )
       *cpp++ = *origenv++;
    *cpp = NULL;
-   
+
    vg_assert(envc == (cpp - ret));
 
    /* Walk over the new environment, mashing as we go */
@@ -235,19 +236,27 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    // pthread really wants a non-zero value for ptr_munge
    ret[envc++] = VG_(strdup)("initimg-darwin.sce.6", "PTHREAD_PTR_MUNGE_TOKEN=0x00000001");
 #endif
-   
 
-   /* ret[0 .. envc-1] is live now. */
-   /* Find and remove a binding for VALGRIND_LAUNCHER. */
-   for (i = 0; i < envc; i++)
-      if (0 == VG_(memcmp)(ret[i], v_launcher, v_launcher_len))
-         break;
 
-   if (i < envc) {
-      for (; i < envc-1; i++)
-         ret[i] = ret[i+1];
-      envc--;
-   }
+   do {
+    has_changed = False;
+
+    /* ret[0 .. envc-1] is live now. */
+    /* Find and remove extra env variables like VALGRIND_LAUNCHER. */
+    for (i = 0; i < envc; i++)
+        if (0 == VG_(memcmp)(ret[i], v_launcher, v_launcher_len)
+          || 0 == VG_(strcmp)(ret[i], MACH_DUMMY_ENV_VAR)
+          || 0 == VG_(strcmp)(ret[i], MACH_DISABLE_NANO_MALLOC)) {
+          has_changed = True;
+          break;
+        }
+
+    if (has_changed && i < envc) {
+        for (; i < envc-1; i++)
+          ret[i] = ret[i+1];
+        envc--;
+    }
+   } while (has_changed);
 
    /* Change VYLD_ to DYLD */
    for (i = 0; i < envc; i++) {
@@ -287,7 +296,7 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
 
 /* ----------------------------------------------------------------
- 
+
    This sets up the client's initial stack, containing the args,
    environment and aux vector.
 
@@ -355,9 +364,9 @@ static void reset_initializers(void) {
 }
 #endif
 
-static 
+static
 Addr setup_client_stack( void*  init_sp,
-                         HChar** orig_envp, 
+                         HChar** orig_envp,
                          const ExeInfo* info,
                          Addr   clstack_end,
                          SizeT  clstack_max_size,
@@ -386,7 +395,7 @@ Addr setup_client_stack( void*  init_sp,
    stringsize   = 0;
    auxsize = 0;
 
-   /* paste on the extra args if the loader needs them (ie, the #! 
+   /* paste on the extra args if the loader needs them (ie, the #!
       interpreter and its argument) */
    argc = 0;
    if (info->interp_name != NULL) {
@@ -403,7 +412,7 @@ Addr setup_client_stack( void*  init_sp,
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       argc++;
-      stringsize += VG_(strlen)( * (HChar**) 
+      stringsize += VG_(strlen)( * (HChar**)
                                    VG_(indexXA)( VG_(args_for_client), i ))
                     + 1;
    }
@@ -452,7 +461,7 @@ Addr setup_client_stack( void*  init_sp,
    client_SP = VG_ROUNDDN(client_SP, 32); /* make stack 32 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (HChar *)clstack_end 
+   stringbase = strtab = (HChar *)clstack_end
                          - VG_ROUNDUP(stringsize, sizeof(int));
 
    /* The max stack size */
@@ -497,7 +506,7 @@ Addr setup_client_stack( void*  init_sp,
 
    for (i = 0; i < VG_(sizeXA)( VG_(args_for_client) ); i++) {
       *ptr++ = (Addr)copy_str(
-                       &strtab, 
+                       &strtab,
                        * (HChar**) VG_(indexXA)( VG_(args_for_client), i )
                      );
    }
@@ -569,9 +578,9 @@ void VG_(mach_record_system_memory)(void) {
             True, False, True, /* r-x */
             0 /* di_handle: no associated debug info */ );
 
-  // tell tools about the feature flags SHM, it avoids ton of errors without using any suppression
-
-  // first we need to find the address of the feature flags table
+  // Tell tools about the feature flags SHM, it avoids ton of errors without using any suppression.
+  // First we need to find the address of the feature flags table,
+  // then we find the associated segment. Finally we tell the tool about it.
   Addr* ptr = VG_(dyld_dlsym)("/usr/lib/system/libsystem_featureflags.dylib", "__os_feature_table_table");
   if (!ptr) {
     VG_(debugLog)(0, "initimg", "could not find OS features table\n");
@@ -586,6 +595,12 @@ void VG_(mach_record_system_memory)(void) {
                 seg->hasR, seg->hasW, seg->hasX, 0 );
     }
   }
+
+  // Because we are forced to link with libSystem.B, most (if not all) of the system libraries are already in memory
+  // luckily, dyld will still load most of them when we start the guest binary
+  // however, some don't (e.g. libsystem_platform or libsystem_pthread).
+  // We need to find them, load their DebugInfo, calculate redirections, etc.
+  VG_(dyld_register_existing_libraries)();
 #else
 # error "Unknown Darwin architecture"
 #endif
@@ -624,7 +639,7 @@ static void record_system_memory(void)
 
 #else
 #  error unknown architecture
-#endif  
+#endif
 }
 
 
@@ -671,9 +686,9 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
    //--------------------------------------------------------------
    iicii.clstack_end = info.stack_end;
    iifii.clstack_max_size = info.stack_end - info.stack_start + 1;
-   
-   iifii.initial_client_SP = 
-       setup_client_stack( iicii.argv - 1, env, &info, 
+
+   iifii.initial_client_SP =
+       setup_client_stack( iicii.argv - 1, env, &info,
                            iicii.clstack_end, iifii.clstack_max_size,
                            vex_archinfo );
 
@@ -681,10 +696,10 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
 
    VG_(debugLog)(2, "initimg",
                  "Client info: "
-                 "initial_IP=%p initial_SP=%p stack=[%p..%p]\n", 
+                 "initial_IP=%p initial_SP=%p stack=[%p..%p]\n",
                  (void*)(iifii.initial_client_IP),
                  (void*)(iifii.initial_client_SP),
-                 (void*)(info.stack_start), 
+                 (void*)(info.stack_start),
                  (void*)(info.stack_end));
 
 

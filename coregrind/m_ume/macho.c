@@ -253,7 +253,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
           addr, filesize, sr_Err(res), VG_(strerror)(sr_Err(res))
         );
         unsigned int saved_prot = prot;
-        if (sr_Err(res) == VKI_EPERM) {
+        if (sr_Err(res) == VKI_EPERM || sr_Err(res) == VKI_EINVAL) {
           // sometimes the kernel refuses to mmap some files with R-X protection, so we mount with R-- and mprotect back to R-X
           prot = VKI_PROT_READ;
           VG_(debugLog)(2, "ume",

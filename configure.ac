@@ -5940,6 +5940,8 @@ AC_CONFIG_FILES([coregrind/link_tool_exe_freebsd],
                 [chmod +x coregrind/link_tool_exe_freebsd])
 AC_CONFIG_FILES([coregrind/link_tool_exe_darwin],
                 [chmod +x coregrind/link_tool_exe_darwin])
+AC_CONFIG_FILES([coregrind/macho_create_system_libs.sh],
+                [chmod +x coregrind/macho_create_system_libs.sh])
 AC_CONFIG_FILES([coregrind/link_tool_exe_solaris],
                 [chmod +x coregrind/link_tool_exe_solaris])
 AC_CONFIG_FILES([tests/filter_stderr_basic],

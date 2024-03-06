@@ -1249,8 +1249,6 @@ void shutdown_actions_NORETURN( ThreadId tid,
    been filled in with any important details as required by whatever
    OS we have been built for.
 */
-
-#include "pub_core_syscall.h"
 static
 Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
 {

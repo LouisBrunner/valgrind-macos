@@ -469,9 +469,8 @@ void modify_macho_loadcmds ( HChar* filename,
                   printf("x86_THREAD_STATE64\n");
                x86_thread_state64_t* state64
                   = (x86_thread_state64_t*)(&w32s[2]);
-               init_rsp = state64->__rsp;
-#endif
                have_rsp = True;
+               init_rsp = state64->__rsp;
                if (DEBUGPRINTING)
                   printf("rsp = 0x%llx\n", init_rsp);
             } else {

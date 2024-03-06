@@ -140,7 +140,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    HChar** ret;
    HChar*  preload_tool_path;
    Int     envc, i;
-   Bool    has_changed;
 
    /* Alloc space for the vgpreload_core.so path and vgpreload_<tool>.so
       paths.  We might not need the space for vgpreload_<tool>.so, but it
@@ -237,26 +236,17 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    ret[envc++] = VG_(strdup)("initimg-darwin.sce.6", "PTHREAD_PTR_MUNGE_TOKEN=0x00000001");
 #endif
 
+   /* ret[0 .. envc-1] is live now. */
+   /* Find and remove a binding for VALGRIND_LAUNCHER. */
+   for (i = 0; i < envc; i++)
+      if (0 == VG_(memcmp)(ret[i], v_launcher, v_launcher_len))
+        break;
 
-   do {
-    has_changed = False;
-
-    /* ret[0 .. envc-1] is live now. */
-    /* Find and remove extra env variables like VALGRIND_LAUNCHER. */
-    for (i = 0; i < envc; i++)
-        if (0 == VG_(memcmp)(ret[i], v_launcher, v_launcher_len)
-          || 0 == VG_(strcmp)(ret[i], MACH_DUMMY_ENV_VAR)
-          || 0 == VG_(strcmp)(ret[i], MACH_DISABLE_NANO_MALLOC)) {
-          has_changed = True;
-          break;
-        }
-
-    if (has_changed && i < envc) {
-        for (; i < envc-1; i++)
-          ret[i] = ret[i+1];
-        envc--;
-    }
-   } while (has_changed);
+  if (i < envc) {
+      for (; i < envc-1; i++)
+        ret[i] = ret[i+1];
+      envc--;
+  }
 
    /* Change VYLD_ to DYLD */
    for (i = 0; i < envc; i++) {
@@ -332,38 +322,6 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
    ---------------------------------------------------------------- */
 
-#if defined(VGA_arm64)
-// Due to valgrind tools being dynamic and needing libSystem.B loaded (because of XNU & dyld),
-// the system libraries initializers already ran. This is **bad** as most of them will check for
-// multiple initializations. So we do a bunch of hacks to reset the memory to a saner state
-
-// not exported by any public mac header
-void _dispatch_mach_hooks_install_default(void);
-
-static void reset_initializers(void) {
-  void *ptr;
-
-  // libsystem.B@libSystem_initializer > libxpc@libxpc_initializer > ??? > libdispatch@dispatch_mach_hooks_install_4libxpc
-  _dispatch_mach_hooks_install_default();
-
-  // libsystem.B@libSystem_initializer > libdispatch@libdispatch_init > libdispatch@_workgroup_init > libpthread@pthread_install_workgroup_functions_np > __pthread_workgroup_functions
-  ptr = VG_(dyld_dlsym)("/usr/lib/system/libsystem_pthread.dylib", "__pthread_workgroup_functions");
-  if (!ptr) {
-    VG_(printf)("Error: could not reset libsystem_pthread.dylib, aborting.\n");
-    VG_(exit)(1);
-  }
-  *((Addr*) ptr) = 0;
-
-  // libsystem.B@libSystem_initializer > libtrace@libtrace_init > ??? > libdispatch@voucher_activity_initialize_4libtrace > __voucher_libtrace_hooks
-  ptr = VG_(dyld_dlsym)("/usr/lib/system/libdispatch.dylib", "__voucher_libtrace_hooks");
-  if (!ptr) {
-    VG_(printf)("Error: could not reset libdispatch.dylib, aborting.\n");
-    VG_(exit)(1);
-  }
-  *((Addr*) ptr) = 0;
-}
-#endif
-
 static
 Addr setup_client_stack( void*  init_sp,
                          HChar** orig_envp,
@@ -387,7 +345,6 @@ Addr setup_client_stack( void*  init_sp,
 
    vg_assert(VG_IS_PAGE_ALIGNED(clstack_end+1));
    vg_assert( VG_(args_for_client) );
-
 
    /* ==================== compute sizes ==================== */
 
@@ -577,30 +534,6 @@ void VG_(mach_record_system_memory)(void) {
             0xfffffc000, 0x1000,
             True, False, True, /* r-x */
             0 /* di_handle: no associated debug info */ );
-
-  // Tell tools about the feature flags SHM, it avoids ton of errors without using any suppression.
-  // First we need to find the address of the feature flags table,
-  // then we find the associated segment. Finally we tell the tool about it.
-  Addr* ptr = VG_(dyld_dlsym)("/usr/lib/system/libsystem_featureflags.dylib", "__os_feature_table_table");
-  if (!ptr) {
-    VG_(debugLog)(0, "initimg", "could not find OS features table\n");
-  } else {
-    VG_(debugLog)(2, "initimg", "OS features table at %#lx (pointer at %p)\n", *ptr, ptr);
-    NSegment const * seg = VG_(am_find_anon_segment)(*ptr);
-    if (!seg) {
-      VG_(debugLog)(0, "initimg", "could not find segment for OS features table\n");
-    } else {
-      VG_(debugLog)(2, "initimg", "tell tool about OS features table segment at %#lx\n", seg->start);
-      VG_TRACK( new_mem_startup, seg->start, seg->end+1-seg->start,
-                seg->hasR, seg->hasW, seg->hasX, 0 );
-    }
-  }
-
-  // Because we are forced to link with libSystem.B, most (if not all) of the system libraries are already in memory
-  // luckily, dyld will still load most of them when we start the guest binary
-  // however, some don't (e.g. libsystem_platform or libsystem_pthread).
-  // We need to find them, load their DebugInfo, calculate redirections, etc.
-  VG_(dyld_register_existing_libraries)();
 #else
 # error "Unknown Darwin architecture"
 #endif
@@ -705,10 +638,6 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
 
    // Tell aspacem about commpage, etc
    record_system_memory();
-
-#if defined(VGA_arm64)
-   reset_initializers();
-#endif
 
    VG_(free)(info.interp_name); info.interp_name = NULL;
    VG_(free)(info.interp_args); info.interp_args = NULL;

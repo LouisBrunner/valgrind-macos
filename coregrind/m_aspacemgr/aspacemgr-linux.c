@@ -3771,6 +3771,7 @@ static int get_filename_for_region(int pid, Addr addr, HChar* path, SizeT path_l
 }
 
 static int get_name_from_tag(int tag, HChar* path, SizeT path_len) {
+  return 0;
   switch (tag) {
     case VKI_VM_MEMORY_DYLD:
       VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[internal dyld memory]", path_len);

@@ -152,7 +152,7 @@ die "Can't find '-arch archstr' in command line"
 my $cmd = "/usr/bin/ld";
 
 if ($archstr eq "arm64") {
-    $cmd = "$cmd -L@XCODE_LIB_DIR@ -lSystem";
+    $cmd = "$cmd -L../coregrind -lmySystem -lmydyld";
     $cmd = "$cmd -segaddr __TEXT $ala";
 } else {
     $cmd = "$cmd -static";
@@ -198,8 +198,20 @@ if ($r != 0) {
 }
 
 if ($archstr eq "arm64") {
-    # no further fixing needed (or possible really)
-    # what is built is what we get
+    # need to adjust the load commands otherwise the kernel will load the ACTUAL dylibs
+    # (which defeats the whole purpose of making our own system libraries)
+    $cmd = "install_name_tool -change /usr/lib/libSystem.B.dylib @executable_path/libmySystem.dylib $outname";
+    print "link_tool_exe_darwin: $cmd\n";
+    $r = system($cmd);
+    if ($r != 0) {
+        exit 1;
+    }
+    $cmd = "install_name_tool -change /usr/lib/system/libdyld.dylib @executable_path/libmydyld.dylib $outname";
+    print "link_tool_exe_darwin: $cmd\n";
+    $r = system($cmd);
+    if ($r != 0) {
+        exit 1;
+    }
     exit 0;
 }
 

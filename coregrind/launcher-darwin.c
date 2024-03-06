@@ -364,7 +364,6 @@ int main(int argc, char** argv, char** envp)
        ; /* executable path is after last envp item */
    /* envp[i] == NULL ; envp[i+1] == executable_path */
    executable_path = envp[i+1];
-
    /* Since macOS 10.14.6, executable_path is prefixed by "executable_path=",
       like an environment list */
    if (strlen(executable_path) > 16 && strncmp(executable_path, "executable_path=", 16) == 0) {
@@ -389,25 +388,17 @@ int main(int argc, char** argv, char** envp)
    // contains the executable path.  Don't forget about it.
    for (j = 0; envp[j]; j++)
       ;
-   // 5 includes VALGRIND_LAUNCHER, VALGRIND_STARTUP_PWD, MallocNanoZone (or VALGRIND_DUMMY_ENV), NULL and executable_path
-   new_env = malloc((j+5) * sizeof(char*));
+   // 4 includes VALGRIND_LAUNCHER, VALGRIND_STARTUP_PWD, NULL and executable_path
+   new_env = malloc((j+4) * sizeof(char*));
    if (new_env == NULL)
       barf("malloc of new_env failed.");
    for (i = 0; i < j; i++)
       new_env[i] = envp[i];
    new_env[i++] = new_line;
    new_env[i++] = set_cwd;
-   if (!strcmp(arch, "arm64")) {
-     // Tools are dynamic on arm64 so malloc gets init'd.
-     // Nano can't be init'd twice in a row (ourselves + guest) so we just disable it for ourselves.
-     new_env[i++] = strdup(MACH_DISABLE_NANO_MALLOC);
-   } else {
-     // Easier to set a dummy value than do a lot of condition to make a smaller malloc, different assert, etc.
-     new_env[i++] = strdup(MACH_DUMMY_ENV_VAR);
-   }
    new_env[i++] = NULL;
    new_env[i  ] = envp[i-2]; // the 'apple' arg == the executable_path
-   assert(i == j+4);
+   assert(i == j+3);
 
    /* tediously edit env: hide dyld options from valgrind's captive dyld */
    for (i = 0; envp[i]; i++) {

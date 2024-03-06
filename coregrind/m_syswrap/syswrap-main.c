@@ -847,8 +847,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg6  = gst->guest_X5;
    canonical->arg7  = gst->guest_X6;
    canonical->arg8  = gst->guest_X7;
-   // FIXME: don't know if required
-   //  canonical->arg9  = gst->guest_X8;
+   canonical->arg9  = gst->guest_X8;
 
    // no canonical->sysno adjustment needed
 
@@ -1111,8 +1110,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_X5 = canonical->arg6;
    gst->guest_X6 = canonical->arg7;
    gst->guest_X7 = canonical->arg8;
-   // FIXME: not sure if required?
-   //  gst->guest_X8 = canonical->arg9;
+   gst->guest_X8 = canonical->arg9;
 
 #elif defined(VGP_s390x_linux)
    VexGuestS390XState* gst = (VexGuestS390XState*)gst_vanilla;

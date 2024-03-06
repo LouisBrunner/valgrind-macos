@@ -20,6 +20,7 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
 endif
 
+noinst_PROGRAMS =
 
 EXTRA_DIST = \
 	m_debuginfo/README.txt \
@@ -169,6 +170,10 @@ mach_defs += \
         @XCODE_INC_DIR@/mach/task.defs \
         @XCODE_INC_DIR@/mach/thread_act.defs \
         @XCODE_INC_DIR@/mach/vm_map.defs
+
+if VGCONF_ARCHS_INCLUDE_ARM64
+noinst_PROGRAMS += libmySystem.so libmydyld.so
+endif
 endif
 
 # Be careful w.r.t. parallel builds.  See section 27.9 of the automake info
@@ -424,7 +429,6 @@ COREGRIND_SOURCES_COMMON = \
 	m_mach/mach_traps-arm64-darwin.S \
 	m_mach/mig_strncpy.c \
 	m_mach/dyld_cache.c \
-	m_mach/dyld_helpers.c \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/sched-lock.c \
 	m_scheduler/sched-lock-generic.c \
@@ -627,7 +631,7 @@ endif
 # vgpreload_core-<platform>.a
 #----------------------------------------------------------------------------
 
-noinst_PROGRAMS  = vgpreload_core-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+noinst_PROGRAMS += vgpreload_core-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
 if VGCONF_HAVE_PLATFORM_SEC
 noinst_PROGRAMS += vgpreload_core-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
 endif

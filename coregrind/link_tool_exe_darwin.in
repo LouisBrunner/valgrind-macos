@@ -152,7 +152,7 @@ die "Can't find '-arch archstr' in command line"
 my $cmd = "/usr/bin/ld";
 
 if ($archstr eq "arm64") {
-    $cmd = "$cmd -L../coregrind -lmySystem -lmydyld";
+    $cmd = "$cmd -Z -L../coregrind -lmySystem -lmydyld";
     $cmd = "$cmd -segaddr __TEXT $ala";
 } else {
     $cmd = "$cmd -static";
@@ -200,13 +200,21 @@ if ($r != 0) {
 if ($archstr eq "arm64") {
     # need to adjust the load commands otherwise the kernel will load the ACTUAL dylibs
     # (which defeats the whole purpose of making our own system libraries)
-    $cmd = "install_name_tool -change /usr/lib/libSystem.B.dylib @executable_path/libmySystem.dylib $outname";
+    $cmd = "install_name_tool -change /usr/lib/libSystem.B.dylib \@rpath/libmySystem.so $outname";
     print "link_tool_exe_darwin: $cmd\n";
     $r = system($cmd);
     if ($r != 0) {
         exit 1;
     }
-    $cmd = "install_name_tool -change /usr/lib/system/libdyld.dylib @executable_path/libmydyld.dylib $outname";
+    $cmd = "install_name_tool -change /usr/lib/system/libdyld.dylib \@rpath/libmydyld.so $outname";
+    print "link_tool_exe_darwin: $cmd\n";
+    $r = system($cmd);
+    if ($r != 0) {
+        exit 1;
+    }
+    # finally add the rpath to the binary, this allows us to support the file structure
+    # when valgrind is installed and when used in-place
+    $cmd = "install_name_tool -add_rpath \@executable_path -add_rpath \@executable_path/../coregrind $outname";
     print "link_tool_exe_darwin: $cmd\n";
     $r = system($cmd);
     if ($r != 0) {

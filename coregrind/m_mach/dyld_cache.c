@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (c) 2020 Louis Brunner <louis.brunner.fr@gmail.com>
+   Copyright (c) 2020-2024 Louis Brunner <louis.brunner.fr@gmail.com>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as

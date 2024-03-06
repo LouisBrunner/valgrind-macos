@@ -173,6 +173,21 @@ mach_defs += \
 
 if VGCONF_ARCHS_INCLUDE_ARM64
 noinst_PROGRAMS += libmySystem.so libmydyld.so
+
+libmySystem_so_SOURCES = m_mach/dummy_syslib.c
+libmySystem_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmySystem_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmySystem_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmySystem_so_LINK = ./delayed-install-systemb.sh \
+  /usr/bin/ld -dylib @LD_OS_MIN_VERS_ARG@ -L@XCODE_LIB_DIR@ -lSystem -o libmySystem.so
+
+libmydyld_so_SOURCES = m_mach/dummy_syslib.c m_mach/dummy_dylddata.S
+libmydyld_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_LDFLAGS = \
+  -dynamic -dynamiclib -Wl,-dead_strip_dylibs \
+  -install_name /usr/lib/system/libdyld.dylib
 endif
 endif
 

@@ -62,6 +62,9 @@ typedef
       RegWord arg6;
       RegWord arg7;
       RegWord arg8;
+#if defined(VGO_darwin)
+      RegWord arg9;
+#endif
    }
    SyscallArgs;
 

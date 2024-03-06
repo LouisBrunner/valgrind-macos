@@ -1270,7 +1270,7 @@ struct vki_utsname {
 #define VKI_IPC_RMID 0     /* remove resource */
 #define VKI_IPC_SET  1     /* set ipc_perm options */
 #define VKI_IPC_STAT 2     /* get ipc_perm options */
-#define VKI_IPC_INFO 3     /* see ipcs */
+#define VKI_IPC_INFO 3     /* only used by Linux compatibilty shm_ctl */
 
 //----------------------------------------------------------------------
 // From sys/ipc.h

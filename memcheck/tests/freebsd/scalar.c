@@ -793,8 +793,8 @@ int main(void)
    }
 
    /* SYS_freebsd7___semctl       220 */
-   GO(SYS_freebsd7___semctl, "(IPC_INFO) 4s 1m");
-   SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_INFO, x0+1); FAIL;
+   GO(SYS_freebsd7___semctl, "(IPC_STAT) 4s 1m");
+   SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
 
    GO(SYS_freebsd7___semctl, "(bogus cmd) 3s 0m");
    SY(SYS_freebsd7___semctl, x0, x0, x0-1, x0+1); FAIL;
@@ -1787,8 +1787,8 @@ int main(void)
 #endif
 
    /* SYS___semctl                510 */
-   GO(SYS___semctl, "(IPC_INFO) 4s 1m");
-   SY(SYS___semctl, x0, x0, x0+IPC_INFO, x0+1); FAIL;
+   GO(SYS___semctl, "(IPC_STAT) 4s 1m");
+   SY(SYS___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
 
    GO(SYS___semctl, "(other) 3s 0m");
    SY(SYS___semctl, x0, x0, x0+3000, x0+1); FAIL;

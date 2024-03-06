@@ -2186,38 +2186,38 @@ PRE(sys_futimes)
 // int semctl(int semid, int semnum, int cmd, ...);
 PRE(sys_freebsd7___semctl)
 {
+   union vki_semun* semun;
    switch (ARG3) {
-   case VKI_IPC_INFO:
-   case VKI_SEM_INFO:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
-                    int, semid, int, semnum, int, cmd, struct seminfo *, arg);
-      break;
    case VKI_IPC_STAT:
    case VKI_SEM_STAT:
    case VKI_IPC_SET:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
-                    int, semid, int, semnum, int, cmd, struct vki_semid_ds_old *, arg);
-      break;
    case VKI_GETALL:
    case VKI_SETALL:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
+      PRINT("sys_freebsd7___semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
       PRE_REG_READ4(int, "semctl",
-                    int, semid, int, semnum, int, cmd, unsigned short *, arg);
+                    int, semid, int, semnum, int, cmd, union vki_semun *, arg);
+      PRE_MEM_READ("sys_freebsd7___semctl(arg)", ARG4, sizeof(union vki_semun));
+      semun = (union vki_semun*)ARG4;
+      if (ML_(safe_to_deref)(semun, sizeof(*semun))) {
+         ARG4 = (RegWord)semun;
+         ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
+      }
       break;
    default:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,ARG3);
+      PRINT("sys_freebsd7___semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,ARG3);
       PRE_REG_READ3(long, "semctl",
                     int, semid, int, semnum, int, cmd);
       break;
    }
-   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 
 POST(sys_freebsd7___semctl)
 {
-   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+   union vki_semun* semun = (union vki_semun*)ARG4;
+   if (ML_(safe_to_deref)(semun, sizeof(*semun))) {
+      ARG4 = (RegWord)semun;
+      ML_(generic_POST_sys_semctl)(tid, RES, ARG1,ARG2,ARG3,ARG4);
+   }
 }
 
 // SYS_semget  221
@@ -5647,25 +5647,23 @@ PRE(sys_closefrom)
 // int __semctl(int semid, int semnum, int cmd, _Inout_ union semun *arg);
 PRE(sys___semctl)
 {
+   union vki_semun* semun;
+
    switch (ARG3) {
-   case VKI_IPC_INFO:
-   case VKI_SEM_INFO:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
-                    int, semid, int, semnum, int, cmd, struct seminfo *, arg);
-      break;
    case VKI_IPC_STAT:
    case VKI_SEM_STAT:
    case VKI_IPC_SET:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(long, "semctl",
-                    int, semid, int, semnum, int, cmd, struct semid_ds *, arg);
-      break;
    case VKI_GETALL:
    case VKI_SETALL:
-      PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
+      PRINT("sys___semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
       PRE_REG_READ4(long, "semctl",
-                    int, semid, int, semnum, int, cmd, unsigned short *, arg);
+                    int, semid, int, semnum, int, cmd, union  vki_semun *, arg);
+      PRE_MEM_READ("sys___sysctl(arg)", ARG4, sizeof(union vki_semun));
+      semun = (union vki_semun*)ARG4;
+      if (ML_(safe_to_deref)(semun, sizeof(*semun))) {
+         ARG4 = (RegWord)semun;
+         ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
+      }
       break;
    default:
       PRINT("sys_semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,ARG3);
@@ -5673,12 +5671,15 @@ PRE(sys___semctl)
                     int, semid, int, semnum, int, cmd);
       break;
    }
-   ML_(generic_PRE_sys_semctl)(tid, ARG1,ARG2,ARG3,ARG4);
 }
 
 POST(sys___semctl)
 {
-   ML_(generic_POST_sys_semctl)(tid, RES,ARG1,ARG2,ARG3,ARG4);
+   union vki_semun* semun = (union vki_semun*)ARG4;
+   if (ML_(safe_to_deref)(semun, sizeof(*semun))) {
+      ARG4 = (RegWord)semun;
+      ML_(generic_POST_sys_semctl)(tid, RES, ARG1,ARG2,ARG3,ARG4);
+   }
 }
 
 // SYS_msgctl  511

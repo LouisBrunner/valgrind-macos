@@ -1825,7 +1825,7 @@ UInt get_sem_count( Int semid )
 #  elif defined(__NR___semctl) /* FreeBSD */
    struct vki_semid_ds buf;
    arg.buf = &buf;
-   res = VG_(do_syscall4)(__NR___semctl, semid, 0, VKI_IPC_STAT, *(UWord *)&arg);
+   res = VG_(do_syscall4)(__NR___semctl, semid, 0, VKI_IPC_STAT, (RegWord)&arg);
 
    if (sr_isError(res))
       return 0;

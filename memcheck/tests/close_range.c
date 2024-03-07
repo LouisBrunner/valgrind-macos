@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -5,6 +6,11 @@
 #include <sys/resource.h>
 #include <fcntl.h>
 #include <assert.h>
+
+/* For the linux kernel the CLOSE_RANGE_* constants are in a separate header.  */
+#if defined(__linux__)
+#include <linux/close_range.h>
+#endif
 
 /* It looks like close_range was initially implemented for FreeBSD 13
  * but without CLOSE_RANGE_CLOEXEC

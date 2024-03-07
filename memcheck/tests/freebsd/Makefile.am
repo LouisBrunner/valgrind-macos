@@ -35,7 +35,6 @@ EXTRA_DIST = \
 		chflags.stderr.exp-x86 \
 	chmod_chown.vgtest \
 	chmod_chown.stderr.exp \
-	close_range.vgtest close_range.stderr.exp \
 	delete_sized_mismatch.vgtest \
 	delete_sized_mismatch.stderr.exp \
 	delete_sized_mismatch_xml.vgtest \
@@ -191,13 +190,7 @@ scalar_15_plus_CFLAGS = ${AM_CFLAGS} -g
 timerfd_LDFLAGS = -lm
 endif
 
-if HAVE_CLOSE_RANGE
-check_PROGRAMS += close_range
-endif
-
 aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
-
-close_range_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 
 delete_sized_mismatch_CXXFLAGS = ${AM_CXXFLAGS} --std=c++14
 delete_sized_mismatch_SOURCES = delete_sized_mismatch.cpp

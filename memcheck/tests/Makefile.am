@@ -132,6 +132,8 @@ EXTRA_DIST = \
 	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	clo_redzone_default.vgtest clo_redzone_128.vgtest \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
+	close_range.vgtest close_range.stderr.exp \
+	close_range.stderr.exp.linux \
 	cond_ld.vgtest cond_ld.stdout.exp cond_ld.stderr.exp-arm \
 		cond_ld.stderr.exp-64bit-non-arm \
 		cond_ld.stderr.exp-32bit-non-arm \
@@ -577,6 +579,13 @@ check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
 	sized_aligned_new_delete_misaligned2 \
 	sized_aligned_new_delete_misaligned3
 endif
+
+if HAVE_CLOSE_RANGE
+check_PROGRAMS += close_range
+endif
+
+close_range_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@ \
+		     @FLAG_W_NO_UNINITIALIZED@
 
 if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += reach_thread_register

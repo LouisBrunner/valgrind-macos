@@ -146,6 +146,7 @@ extern UInt VG_(amd64_darwin_REDIR_FOR_arc4random)( void );
 extern Addr  VG_(arm64_darwin_SUBST_FOR_sigreturn);
 extern SizeT VG_(arm64_darwin_REDIR_FOR_strlen)( void* );
 extern SizeT VG_(arm64_darwin_REDIR_FOR_strcmp)( void*, void* );
+extern SizeT VG_(arm64_darwin_REDIR_FOR_strncmp)( void*, void* );
 extern void* VG_(arm64_darwin_REDIR_FOR_strcat)( void*, void * );
 extern char* VG_(arm64_darwin_REDIR_FOR_strcpy)( char *s1, char *s2 );
 extern SizeT VG_(arm64_darwin_REDIR_FOR_strlcat)( char *s1, const char *s2,

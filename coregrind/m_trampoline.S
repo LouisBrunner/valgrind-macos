@@ -1349,6 +1349,25 @@ VG_(arm64_darwin_REDIR_FOR_strcmp):
   mov     x0, 0
   ret
 
+.globl VG_(arm64_darwin_REDIR_FOR_strncmp)
+VG_(arm64_darwin_REDIR_FOR_strncmp):
+  mov     x3, 0
+.L27:
+  cmp     x3, x2
+  bge     .L29
+  ldrb    w4, [x0,x3]
+  ldrb    w5, [x1,x3]
+  cmp     w4, w5
+  b.ne    .L28
+  add     x3, x3, 1
+  b       .L27
+.L28:
+  sub     w0, w4, w5
+  ret
+.L29:
+  mov     x0, 0
+  ret
+
 .globl VG_(arm64_darwin_REDIR_FOR_strcpy)
 VG_(arm64_darwin_REDIR_FOR_strcpy):
   mov x2, 0

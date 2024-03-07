@@ -1605,6 +1605,8 @@ void VG_(redir_initialise) ( void )
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       add_hardwired_spec("dyld", "strcmp",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strcmp), NULL);
+      add_hardwired_spec("dyld", "strncmp",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strncmp), NULL);
       add_hardwired_spec("dyld", "strlen",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strlen), NULL);
       add_hardwired_spec("dyld", "strcat",

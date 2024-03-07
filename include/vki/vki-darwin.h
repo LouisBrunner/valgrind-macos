@@ -54,7 +54,12 @@
 #include <sys/types.h>
 
 #define vki_dev_t dev_t
+#if defined(VGP_arm64_darwin)
+// kernel uses 16bit, but somehow it's defined as 32bit in userland
+#define vki_mode_t uint16_t
+#else
 #define vki_mode_t mode_t
+#endif
 #define vki_ino_t ino_t
 #define vki_ino64_t ino64_t
 #define vki_nlink_t nlink_t
@@ -89,6 +94,7 @@
 #define VKI_VM_MEMORY_MALLOC_TINY 7
 #define VKI_VM_MEMORY_MALLOC_NANO 11
 #define VKI_VM_MEMORY_STACK 30
+#define VKI_VM_MEMORY_SHARED_PMAP 32
 #define VKI_VM_MEMORY_UNSHARED_PMAP 35
 #define VKI_VM_MEMORY_DYLD 60
 #define VKI_VM_MEMORY_OS_ALLOC_ONCE 73

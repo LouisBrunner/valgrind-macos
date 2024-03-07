@@ -632,7 +632,10 @@ static Bool sane_NSegment ( const NSegment* s )
       case SkAnonC: case SkAnonV: case SkShmC:
          return 
             s->smode == SmFixed 
-            && s->dev == 0 && s->ino == 0 && s->offset == 0 && s->fnIdx == -1
+#if !defined(VGO_darwin) // on macOS we use ino as the vm_tag holder
+            && s->ino == 0
+#endif
+            && s->dev == 0 && s->offset == 0 && s->fnIdx == -1
             && (s->kind==SkAnonC ? True : !s->isCH);
 
       case SkFileC: case SkFileV:
@@ -1431,6 +1434,11 @@ void split_nsegments_lo_and_hi ( Addr sLo, Addr sHi,
    /* Not that I'm overly paranoid or anything, definitely not :-) */
 }
 
+#if defined(VGO_darwin)
+#include "pub_core_tooliface.h"
+
+static void fill_segment(NSegment* seg);
+#endif
 
 /* Add SEG to the collection, deleting/truncating any it overlaps.
    This deals with all the tricky cases of splitting up segments as
@@ -1443,6 +1451,19 @@ static void add_segment ( const NSegment* seg )
 
    Addr sStart = seg->start;
    Addr sEnd   = seg->end;
+
+#if defined(VGO_darwin)
+   // FIXME: the cast is unfortunate but I don't want to change every callsite to call 2 functions
+   fill_segment((NSegment*) (Addr) seg);
+   if (seg->ino == VKI_VM_MEMORY_OS_ALLOC_ONCE) {
+     // This segment is actually filled up by the kernel,
+     // so don't mark it as uninitialized.
+     VG_TRACK( new_mem_startup,
+       seg->start, seg->end+1-seg->start,
+       seg->hasR, seg->hasW, seg->hasX, 0
+     );
+   }
+#endif
 
    aspacem_assert(sStart <= sEnd);
    aspacem_assert(VG_IS_PAGE_ALIGNED(sStart));
@@ -1558,11 +1579,6 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
    // GrP fixme no dev/ino on darwin
    if (offset != 0) 
       seg.kind = SkFileV;
-   if (filename && VG_(strstr)(filename, DARWIN_FAKE_MEMORY_PATH) != NULL) {
-      // these are owned by the kernel and are already initialized
-      // we flag them as client so m_main.c track them correctly
-      seg.kind = SkFileC;
-   }
 #  endif // defined(VGO_darwin)
 
 #  if defined(VGP_arm_linux)
@@ -3748,62 +3764,91 @@ static unsigned int mach2vki(unsigned int vm_prot)
       ((vm_prot & VM_PROT_EXECUTE) ? VKI_PROT_EXEC    : 0) ;
 }
 
-static int get_filename_for_region(int pid, Addr addr, HChar* path, SizeT path_len) {
+static Int get_filename_for_region(int pid, Addr addr, HChar* path, SizeT path_len, ULong* vm_tag) {
   int ret;
   SizeT len;
   struct proc_regionwithpathinfo info;
+  VG_(memset)(&info, 0, sizeof(info));
   ret = sr_Res(VG_(do_syscall6)(__NR_proc_info, 2, pid, PROC_PIDREGIONPATHINFO, addr, (Addr)&info, sizeof(info)));
   if (ret == -1) {
-    return 0;
+    return ret;
+  }
+  if (vm_tag) {
+    *vm_tag = info.prp_prinfo.pri_user_tag;
   }
   len = VG_(strlen)(&info.prp_vip.vip_path[0]);
   if (len == 0) {
     return 0;
   }
-  if (len > MAXPATHLEN) {
-    len = MAXPATHLEN;
-  }
+  len += 1; // include the null terminator
   if (len > path_len) {
     len = path_len;
   }
-  VG_(strncpy)(path, info.prp_vip.vip_path, len);
+  VG_(strlcpy)(path, info.prp_vip.vip_path, len);
   return len;
 }
 
-static int get_name_from_tag(int tag, HChar* path, SizeT path_len) {
-  return 0;
+static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
   switch (tag) {
     case VKI_VM_MEMORY_DYLD:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[internal dyld memory]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[internal dyld memory]", path_len);
+      return True;
     case VKI_VM_MEMORY_OS_ALLOC_ONCE:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[kernel alloc once]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[kernel alloc once]", path_len);
+      return True;
     case VKI_VM_MEMORY_MALLOC:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc memory]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc memory]", path_len);
+      return True;
     case VKI_VM_MEMORY_MALLOC_SMALL:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (small) memory]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (small) memory]", path_len);
+      return True;
     case VKI_VM_MEMORY_MALLOC_TINY:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (tiny) memory]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (tiny) memory]", path_len);
+      return True;
     case VKI_VM_MEMORY_MALLOC_NANO:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (nano) memory]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (nano) memory]", path_len);
+      return True;
     case VKI_VM_MEMORY_STACK:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[stack]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[stack]", path_len);
+      return True;
+    case VKI_VM_MEMORY_SHARED_PMAP:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[shared pmap]", path_len);
+      return True;
     case VKI_VM_MEMORY_UNSHARED_PMAP:
-      VG_(strncpy)(path, DARWIN_FAKE_MEMORY_PATH "[unshared pmap]", path_len);
-      return 1;
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[unshared pmap]", path_len);
+      return True;
     case VKI_VM_MEMORY_VALGRIND:
     case 0:
-      return 0;
+      return False;
     default:
       VG_(debugLog)(0,"aspacem", "unknown vm tag: %d\n", tag);
-      return 0;
+      return False;
   }
+}
+
+static void fill_segment(NSegment* seg) {
+  Int pid;
+  HChar name[VKI_PATH_MAX];
+  Int ret;
+
+  if (seg->fnIdx != -1 || seg->kind == SkFree || seg->kind == SkResvn) {
+    return;
+  }
+
+  pid = sr_Res(VG_(do_syscall0)(__NR_getpid));
+  ret = get_filename_for_region(pid, seg->start, name, sizeof(name), &seg->ino);
+  if (ret != 0) {
+    if (ret == -1) {
+      return;
+    }
+  } else if (get_name_from_tag(seg->ino, name, sizeof(name))) {
+    // these are owned by the kernel and are already initialized
+    // we flag them as client so m_main.c track them correctly
+    seg->kind = SkFileC;
+  } else {
+    return;
+  }
+  seg->fnIdx = ML_(am_allocate_segname)( name );
 }
 
 static UInt stats_machcalls = 0;
@@ -3818,9 +3863,9 @@ static void parse_procselfmaps (
    vm_address_t iter;
    unsigned int depth;
    vm_address_t last;
-   HChar name[MAXPATHLEN];
-   int ret;
-   int pid = sr_Res(VG_(do_syscall0)(__NR_getpid));
+   HChar name[VKI_PATH_MAX];
+   Bool ret;
+   Int pid = sr_Res(VG_(do_syscall0)(__NR_getpid));
 
    iter = 0;
    depth = 0;
@@ -3851,7 +3896,8 @@ static void parse_procselfmaps (
          (*record_gap)(last, addr - last);
       }
       if (record_mapping) {
-         ret = get_filename_for_region(pid, addr, name, sizeof(name));
+         // FIXME: not sure we should fill up anything here as it will added later anyway
+         ret = get_filename_for_region(pid, addr, name, sizeof(name), NULL);
          if (!ret) {
            ret = get_name_from_tag(info.user_tag, name, sizeof(name));
          }

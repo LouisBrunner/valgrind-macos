@@ -13,23 +13,32 @@
    fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
 }
 
-# Unknown issue: first call to forEachInsertedDylib > getFrameworkPartialPath reads past \0 during strncmp, no clue why
+# Temporary while I fix other things
 {
-   OSX1400:dyld_strrchr_overflow1
-   Memcheck:Cond
-   fun:strncmp
+   OSX1400:ejwekfwkefk
+   Memcheck:Param
+   shm_open("mode")
    ...
-   fun:_ZNK5dyld413ProcessConfig13PathOverrides23getFrameworkPartialPathEPKc
-   ...
-   fun:_ZNK5dyld413ProcessConfig13PathOverrides20forEachInsertedDylibEU13block_pointerFvPKcRbE
+   fun:_os_feature_table_once
 }
 
 {
-   OSX1400:dyld_strrchr_overflow2
+   OSX1400:fwefkl33
+   Memcheck:Cond
+   ...
+   fun:_xpc_strdup
+}
+
+{
+   OSX1400:fwefkl34
+   Memcheck:Cond
+   ...
+   fun:loadlocale
+}
+
+{
+   OSX1400:fwefkl343
    Memcheck:Value8
-   fun:strncmp
    ...
-   fun:_ZNK5dyld413ProcessConfig13PathOverrides23getFrameworkPartialPathEPKc
-   ...
-   fun:_ZNK5dyld413ProcessConfig13PathOverrides20forEachInsertedDylibEU13block_pointerFvPKcRbE
+   fun:loadlocale
 }

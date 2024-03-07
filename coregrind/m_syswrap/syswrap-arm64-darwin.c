@@ -387,7 +387,7 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, Addr stacks
    ThreadState *tst = (ThreadState *)func_arg;
    VexGuestARM64State *vex = &tst->arch.vex;
 
-   VG_(printf)("pthread_hijack pthread %p, machthread %p, func %p, arg %p, stacksize %p, flags %p, sp %p\n", self, kport, func, func_arg, stacksize, flags, sp);
+  //  VG_(printf)("pthread_hijack pthread %p, machthread %p, func %p, arg %p, stacksize %p, flags %p, sp %p\n", self, kport, func, func_arg, stacksize, flags, sp);
 
    // Wait for parent thread's permission.
    // The parent thread holds V's lock on our behalf.

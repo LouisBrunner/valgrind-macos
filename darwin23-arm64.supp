@@ -3,7 +3,9 @@
 
 ############################################
 
-# Real bug: dyld uses a std::move'd object
+# Bugs
+
+## Real bug: dyld uses a std::move'd object
 {
    OSX1400:dyld_faulty_std_move
    Memcheck:Param
@@ -13,11 +15,45 @@
    fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
 }
 
-# Most likely a bug: libsystem_featureflags doesn't initialize the 3rd argument to shm_open
+## Most likely a bug: libsystem_featureflags doesn't initialize the 3rd argument to shm_open
 {
    OSX1400:libsystem_featureflags_shm_open
    Memcheck:Param
    shm_open("mode")
    ...
    fun:_os_feature_table_once
+}
+
+# False positives
+
+## unclear how it's possible but libobj manages to get a hold of a REAL libsystem_malloc pointer
+## and when it tries to free it, we obviously complain because it's not in our malloc zones
+{
+   OSX1400:libobjc_libsystem_malloc
+   Memcheck:Free
+   fun:free
+   fun:_objc_atfork_child
+   ...
+}
+
+## same deal here
+{
+   OSX1400:libobjc_libsystem_malloc_2
+   Memcheck:Free
+   fun:free
+   fun:_ZN19AutoreleasePoolPage4killEv
+   ...
+   fun:__malloc_late_init
+}
+
+# Unclear
+
+## Happens when using OBJC_* env vars to print extra data, no clue why
+{
+   OSX1400:libsystem_kernel_sendto
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:sendto
+   ...
+   fun:__os_log_simple_offset
 }

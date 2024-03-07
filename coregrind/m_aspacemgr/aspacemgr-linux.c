@@ -3797,6 +3797,9 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
     case VKI_VM_MEMORY_OS_ALLOC_ONCE:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[kernel alloc once]", path_len);
       return True;
+    case VKI_VM_MEMORY_GENEALOGY:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[activity tracing]", path_len);
+      return True;
     case VKI_VM_MEMORY_MALLOC:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc memory]", path_len);
       return True;
@@ -3808,6 +3811,12 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
       return True;
     case VKI_VM_MEMORY_MALLOC_NANO:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (nano) memory]", path_len);
+      return True;
+    case VM_MEMORY_MACH_MSG:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[mach message]", path_len);
+      return True;
+    case VKI_VM_MEMORY_ANALYSIS_TOOL:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[analysis tool]", path_len);
       return True;
     case VKI_VM_MEMORY_STACK:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[stack]", path_len);

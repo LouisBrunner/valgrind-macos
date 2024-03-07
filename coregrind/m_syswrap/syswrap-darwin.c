@@ -11797,6 +11797,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_log_data),                                // 533
 // _____(__NR_memorystatus_available_memory),           // 534
 #endif
+#if defined(VGP_arm64_darwin)
+  // FIXME: no clue what it is but called by libsystem_kernel@_objc_bp_assist_cfg_np
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(535)),
+#endif
 #if DARWIN_VERS >= DARWIN_11_00
 // _____(__NR_shared_region_map_and_slide_2_np),        // 536
 // _____(__NR_pivot_root),                              // 537

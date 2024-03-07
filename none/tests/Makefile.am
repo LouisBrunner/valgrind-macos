@@ -289,7 +289,7 @@ if ! VGCONF_OS_IS_DARWIN_OR_FREEBSD
 endif
 
 if ! VGCONF_OS_IS_DARWIN
-   check_PROGRAMS += ppoll_alarm
+   check_PROGRAMS += ppoll_alarm mmap_o_direct
 endif
 
 # older (?) clang does not know -ansi

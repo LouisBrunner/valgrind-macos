@@ -245,7 +245,6 @@ check_PROGRAMS = \
 	libvexmultiarch_test \
 	manythreads \
 	mmap_fcntl_bug \
-	mmap_o_direct \
 	munmap_exe map_unaligned map_unmap mq \
 	nocwd \
 	pending \

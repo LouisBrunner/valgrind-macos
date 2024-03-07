@@ -1299,7 +1299,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGA_arm64)
    // This arm64_linux section of this function VG_(invalidate_icache)
    // is copied from
    // https://github.com/armvixl/vixl/blob/master/src/a64/cpu-a64.cc
@@ -1332,6 +1332,13 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    */
 
+#if defined(VGP_arm64_darwin)
+// see libplatform/src/cachecontrol/arm64/cache.s
+#define MMU_I_CLINE	6		// cache line size as 1<<MMU_I_CLINE (64)
+
+   const UInt dcache_line_size_ = 0; // we don't care about that one
+   const UInt icache_line_size_ = (1 << MMU_I_CLINE);
+#else
    // Ask what the I and D line sizes are
    UInt cache_type_register;
    // Copy the content of the cache type register to a core register.
@@ -1352,6 +1359,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 
    const UInt dcache_line_size_ = 4 * (1 << dcache_line_size_power_of_two);
    const UInt icache_line_size_ = 4 * (1 << icache_line_size_power_of_two);
+#endif
 
    Addr start = (Addr)ptr;
    // Sizes will be used to generate a mask big enough to cover a pointer.
@@ -1364,6 +1372,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr end    = start + nbytes;
 
    __asm__ __volatile__ (
+#if !defined(VGP_arm64_darwin)
      // Clean every line of the D cache containing the target data.
      "0: \n\t"
      // dc : Data Cache maintenance
@@ -1387,6 +1396,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
      // same copy of a memory location. See ARM DDI 0406B page B2-12 for more
      // information.
      "dsb ish \n\t"
+#endif
      // Invalidate every line of the I cache containing the target data.
      "1: \n\t"
      // ic : instruction cache maintenance
@@ -1413,10 +1423,6 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
      // move this code before the code is generated.
      : "cc", "memory"
    );
-
-#  elif defined(VGP_arm64_darwin)
-
-  VG_(mach_invalidate_icache)(ptr, nbytes);
 
 #  elif defined(VGA_mips32) || defined(VGA_mips64)
    SysRes sres = VG_(do_syscall3)(__NR_cacheflush, (UWord) ptr,

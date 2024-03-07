@@ -107,6 +107,9 @@
 #define VKI_MAX_PAGE_SHIFT VKI_PAGE_SHIFT
 #define VKI_MAX_PAGE_SIZE VKI_PAGE_SIZE
 
+// pthread
+#define VKI_PTHREAD_START_CUSTOM 0x01000000
+
 // types
 typedef uint32_t vki_u32;
 

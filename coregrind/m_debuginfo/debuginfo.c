@@ -1947,7 +1947,7 @@ ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
    const Bool       debug = VG_(debugLog_getLevel)() >= 3;
 
    if (debug)
-      VG_(dmsg)("di_notify_dsc-1: %s\n", filename);
+      VG_(dmsg)("di_notify_dsc-1: %s at %#lx-%#lx\n", filename, header, header+len);
 
    if (!ML_(check_macho_and_get_rw_loads)( (const void*) header, len, &rw_load_count ))
       return 0;

@@ -215,6 +215,15 @@ void VG_(dyld_cache_init)(void) {
     );
     return;
   }
+#if defined(VGP_arm64_darwin)
+  // We currently detect if dyld is loading/using a library by checking if stat64 fails.
+  // However, dyld doesn't seem to call stat64 for all of them anymore.
+  // Because dynamic binaries on arm64 are mandatory, they will necessarily include those,
+  // so we request them to be loaded right away to ensure we have their symbols.
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
+#endif
 }
 
 int VG_(dyld_cache_might_be_in)(const HChar* path) {

@@ -12,33 +12,3 @@
    ...
    fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
 }
-
-# Temporary while I fix other things
-{
-   OSX1400:ejwekfwkefk
-   Memcheck:Param
-   shm_open("mode")
-   ...
-   fun:_os_feature_table_once
-}
-
-{
-   OSX1400:fwefkl33
-   Memcheck:Cond
-   ...
-   fun:_xpc_strdup
-}
-
-{
-   OSX1400:fwefkl34
-   Memcheck:Cond
-   ...
-   fun:loadlocale
-}
-
-{
-   OSX1400:fwefkl343
-   Memcheck:Value8
-   ...
-   fun:loadlocale
-}

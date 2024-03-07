@@ -92,15 +92,11 @@ static void arm_thread_state64_from_vex(arm_thread_state64_t *mach,
   mach->__x[26] = vex->guest_X26;
   mach->__x[27] = vex->guest_X27;
   mach->__x[28] = vex->guest_X28;
-  // TODO: should we be using `arm_thread_state64_set_REG` here?
-  // seems like it might do ptrauth stuff for us, not sure if we want that
   mach->__fp = vex->guest_X29;
   mach->__lr = vex->guest_X30;
   mach->__sp = vex->guest_XSP;
   mach->__pc = vex->guest_PC;
   mach->__cpsr = LibVEX_GuestARM64_get_nzcv(vex);
-  // FIXME: not required?
-  // mach->__flags = ???;
 }
 
 
@@ -378,20 +374,20 @@ asm(
 asm(
 ".globl _pthread_hijack_asm\n"
 "_pthread_hijack_asm:\n"
+"   mov x6, sp\n"  // save sp
 "   mov x30, 0\n"  // fake return address
 "   b _pthread_hijack\n"
 );
 
 
 
-void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
-                    Addr stacksize, Addr flags, Addr sp)
+void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, Addr stacksize, Addr flags, Addr sp)
 {
    vki_sigset_t blockall;
    ThreadState *tst = (ThreadState *)func_arg;
    VexGuestARM64State *vex = &tst->arch.vex;
 
-   // VG_(printf)("pthread_hijack pthread %p, machthread %p, func %p, arg %p, stack %p, flags %p, stack %p\n", self, kport, func, func_arg, stacksize, flags, sp);
+   VG_(printf)("pthread_hijack pthread %p, machthread %p, func %p, arg %p, stacksize %p, flags %p, sp %p\n", self, kport, func, func_arg, stacksize, flags, sp);
 
    // Wait for parent thread's permission.
    // The parent thread holds V's lock on our behalf.
@@ -414,13 +410,14 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    vex->guest_X4 = stacksize;
    vex->guest_X5 = flags;
    vex->guest_XSP = sp;
+   vex->guest_TPIDR_EL0 = self + pthread_tsd_offset;
 
    // Record thread's stack and Mach port and pthread struct
    tst->os_state.pthread = self;
    tst->os_state.lwpid = kport;
    record_named_port(tst->tid, kport, MACH_PORT_RIGHT_SEND, "thread-%p");
 
-   if ((flags & 0x01000000) == 0) {
+   if ((flags & VKI_PTHREAD_START_CUSTOM) == 0) {
       // kernel allocated stack - needs mapping
       Addr stack = VG_PGROUNDUP(sp) - stacksize;
       tst->client_stack_highest_byte = stack+stacksize-1;

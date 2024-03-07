@@ -1455,14 +1455,15 @@ static void add_segment ( const NSegment* seg )
 #if defined(VGO_darwin)
    // FIXME: the cast is unfortunate but I don't want to change every callsite to call 2 functions
    fill_segment((NSegment*) (Addr) seg);
-   if (seg->ino == VKI_VM_MEMORY_OS_ALLOC_ONCE) {
-     // This segment is actually filled up by the kernel,
-     // so don't mark it as uninitialized.
-     VG_TRACK( new_mem_startup,
-       seg->start, seg->end+1-seg->start,
-       seg->hasR, seg->hasW, seg->hasX, 0
-     );
-   }
+  // TODO: remove?
+  //  if (seg->ino == VKI_VM_MEMORY_OS_ALLOC_ONCE) {
+  //    // This segment is actually filled up by the kernel,
+  //    // so don't mark it as uninitialized.
+  //    VG_TRACK( new_mem_startup,
+  //      seg->start, seg->end+1-seg->start,
+  //      seg->hasR, seg->hasW, seg->hasX, 0
+  //    );
+  //  }
 #endif
 
    aspacem_assert(sStart <= sEnd);

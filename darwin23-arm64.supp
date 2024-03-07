@@ -12,3 +12,12 @@
    ...
    fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
 }
+
+# Most likely a bug: libsystem_featureflags doesn't initialize the 3rd argument to shm_open
+{
+   OSX1400:libsystem_featureflags_shm_open
+   Memcheck:Param
+   shm_open("mode")
+   ...
+   fun:_os_feature_table_once
+}

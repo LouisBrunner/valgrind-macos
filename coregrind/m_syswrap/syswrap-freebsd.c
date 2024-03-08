@@ -3165,7 +3165,7 @@ PRE(sys_utrace)
 {
    PRINT("sys_utrace ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", ARG1, ARG2);
    PRE_REG_READ2(int, "utrace", const void *, addr, vki_size_t, len);
-   PRE_MEM_READ( "utrace(addr)", ARG2, ARG3 );
+   PRE_MEM_READ( "utrace(addr)", ARG1, ARG2 );
 }
 
 // SYS_kldsym  337

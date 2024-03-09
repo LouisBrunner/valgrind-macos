@@ -1,7 +1,7 @@
 Syscall param setcontext(ucp) points to unaddressable byte(s)
    ...
    by 0x........: main (get_set_context.c:47)
- Address 0x........ is 0 bytes inside a block of size 880 free'd
+ Address 0x........ is 0 bytes inside a block of size ... free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (get_set_context.c:46)
  Block was alloc'd at
@@ -11,7 +11,7 @@ Syscall param setcontext(ucp) points to unaddressable byte(s)
 Syscall param swapcontext(ucp) points to unaddressable byte(s)
    ...
    by 0x........: main (get_set_context.c:48)
- Address 0x........ is 0 bytes inside a block of size 880 free'd
+ Address 0x........ is 0 bytes inside a block of size ... free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (get_set_context.c:46)
  Block was alloc'd at
@@ -21,7 +21,7 @@ Syscall param swapcontext(ucp) points to unaddressable byte(s)
 Syscall param swapcontext(oucp) points to unaddressable byte(s)
    ...
    by 0x........: main (get_set_context.c:48)
- Address 0x........ is 0 bytes inside a block of size 880 free'd
+ Address 0x........ is 0 bytes inside a block of size ... free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (get_set_context.c:46)
  Block was alloc'd at
@@ -31,7 +31,7 @@ Syscall param swapcontext(oucp) points to unaddressable byte(s)
 Syscall param getcontext(ucp) points to unaddressable byte(s)
    ...
    by 0x........: main (get_set_context.c:49)
- Address 0x........ is 0 bytes inside a block of size 880 free'd
+ Address 0x........ is 0 bytes inside a block of size ... free'd
    at 0x........: free (vg_replace_malloc.c:...)
    by 0x........: main (get_set_context.c:46)
  Block was alloc'd at

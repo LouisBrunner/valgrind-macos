@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 	filter_scalar filter_realpathat filter_fstat filter_eventfd2 \
-	toucher1 toucher2 filter_getfsstat
+	toucher1 toucher2 filter_getfsstat filter_context
 
 EXTRA_DIST = \
 	access.vgtest \
@@ -53,7 +53,6 @@ EXTRA_DIST = \
 	file_locking_wait6.stderr.exp \
 	get_set_context.vgtest \
 	get_set_context.stderr.exp \
-	get_set_context.stderr.exp-x86 \
 	get_set_login.vgtest \
 	get_set_login.stderr.exp \
 	getfh.vgtest \

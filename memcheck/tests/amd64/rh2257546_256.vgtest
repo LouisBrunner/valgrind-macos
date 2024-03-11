@@ -1,0 +1,3 @@
+prereq: test -e rh2257546_256
+prog: rh2257546_256
+vgopts: -q

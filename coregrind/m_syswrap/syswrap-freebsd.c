@@ -5635,11 +5635,29 @@ PRE(sys_closefrom)
     * all of the host files like the log
     */
 
-   for (int i = ARG1; i < VG_(fd_soft_limit); ++i) {
-      VG_(close)(i);
+   for (int fd = ARG1; fd < VG_(fd_hard_limit); ++fd) {
+      if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
+          && fd != VG_(log_output_sink).fd
+          && fd != VG_(xml_output_sink).fd)
+         VG_(close)(fd);
    }
 
    SET_STATUS_Success(0);
+}
+
+POST(sys_closefrom)
+{
+   unsigned int fd;
+   unsigned int last = VG_(fd_hard_limit);
+
+   if (!VG_(clo_track_fds))
+      return;
+
+   for (fd = ARG1; fd <= last; fd++)
+      if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
+          && fd != VG_(log_output_sink).fd
+          && fd != VG_(xml_output_sink).fd)
+         ML_(record_fd_close)(tid, fd);
 }
 
 // SYS___semctl   510
@@ -7725,7 +7743,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDX_(__NR_jail_get,         sys_jail_get),          // 506
    BSDX_(__NR_jail_set,         sys_jail_set),          // 507
    BSDX_(__NR_jail_remove,      sys_jail_remove),       // 508
-   BSDX_(__NR_closefrom,        sys_closefrom),         // 509
+   BSDXY(__NR_closefrom,        sys_closefrom),         // 509
    BSDXY(__NR___semctl,         sys___semctl),          // 510
    BSDXY(__NR_msgctl,           sys_msgctl),            // 511
    BSDXY(__NR_shmctl,           sys_shmctl),            // 512

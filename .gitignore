@@ -1505,6 +1505,7 @@
 /none/tests/coolo_sigaction
 /none/tests/coolo_strlen
 /none/tests/discard
+/none/tests/double_close_range
 /none/tests/exec-sigmask
 /none/tests/execve
 /none/tests/faultstatus
@@ -1518,6 +1519,7 @@
 /none/tests/fdleak_open
 /none/tests/fdleak_pipe
 /none/tests/fdleak_socketpair
+/none/tests/file_dclose
 /none/tests/floored
 /none/tests/fork
 /none/tests/fucomip
@@ -1599,6 +1601,7 @@
 /none/tests/sigstackgrowth
 /none/tests/sigsusp
 /none/tests/smc1
+/none/tests/socket_close
 /none/tests/stackgrowth
 /none/tests/susphello
 /none/tests/syscall-restart1

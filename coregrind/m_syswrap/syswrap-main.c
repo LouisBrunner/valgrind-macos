@@ -1562,6 +1562,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    } else {
       gst->guest_r2 = sr_Res(canonical->sres);
    }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_s390x_r2, sizeof(UWord) );
 
 #  elif defined(VGP_mips32_linux)
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;

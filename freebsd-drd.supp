@@ -12,12 +12,6 @@
    fun:pthread_exit
 }
 {
-   DRD-PTHREAD_CREATE1
-   drd:ConflictingAccess
-   ...
-   fun:pthread_create
-}
-{
    DRD-PTHREAD-EXIT2
    drd:ConflictingAccess
    obj:*/lib*/libthr.so.3

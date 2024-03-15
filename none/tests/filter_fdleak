@@ -25,6 +25,8 @@ perl -p -e 's/ _close / close /;s/ _openat / creat /;s/internet/AF_INET socket 4
 # So we just cut out the entire stack trace.  It's coarse but effective;
 # before we did this we had a plethora of expected outputs, with only
 # painfully minor variations between them.
-perl -p -0 -e 's/(Open[^\n]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs'
+perl -p -0 -e 's/(Open[^\n]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs' |
 
-
+# With glibc debuginfo installed we might see syscal-template.S or close.c
+perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(close.c:[0-9]*\)/(in \/...libc...)/"

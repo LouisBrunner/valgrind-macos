@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/un.h>
+#include "fdleak.h"
 
 const char *SPATH = "/tmp/vgtest-foofrob";
 int socket_fd;
@@ -25,6 +26,8 @@ void open_socket()
 
 int main ()
 {
+  CLOSE_INHERITED_FDS;
+
   open_socket();
 
   if (socket_fd != -1)

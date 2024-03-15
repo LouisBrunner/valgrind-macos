@@ -2,12 +2,12 @@ close 3
 time passes and we close 3 again
 File descriptor 3: file_dclose.tmp is already closed
    at 0x........: close (in /...libc...)
-   by 0x........: closefile (file_dclose.c:16)
-   by 0x........: main (file_dclose.c:32)
+   by 0x........: closefile (file_dclose.c:17)
+   by 0x........: main (file_dclose.c:35)
  Previously closed
    at 0x........: close (in /...libc...)
-   by 0x........: main (file_dclose.c:28)
+   by 0x........: main (file_dclose.c:31)
  Originally opened
    at 0x........: creat (in /...libc...)
-   by 0x........: openfile (file_dclose.c:10)
-   by 0x........: main (file_dclose.c:25)
+   by 0x........: openfile (file_dclose.c:11)
+   by 0x........: main (file_dclose.c:28)

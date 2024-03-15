@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include "fdleak.h"
 
 static int
 openfile (const char *f)
@@ -19,6 +20,8 @@ closefile (const char *f, int fd)
 
 int main ()
 {
+   CLOSE_INHERITED_FDS;
+
    const char *TMPFILE = "file_dclose.tmp";
    int fd;
 

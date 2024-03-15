@@ -6,21 +6,21 @@
 #include <string.h>
 #include <sys/un.h>
 
-
+const char *SPATH = "/tmp/vgtest-foofrob";
 int socket_fd;
 
-void *open_socket()
+void open_socket()
 {
+  unlink (SPATH); /* Make sure socket path doesn't exist yet.  */
+
   socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   fprintf (stderr, "Open socket %d\n", socket_fd);
   struct sockaddr_un  my_addr;
 
   memset(&my_addr, 0, sizeof(my_addr));
   my_addr.sun_family = AF_UNIX;
-  strncpy(my_addr.sun_path, "/tmp/foofrob", sizeof(my_addr.sun_path) - 1);
+  strncpy(my_addr.sun_path, SPATH, sizeof(my_addr.sun_path) - 1);
   bind(socket_fd, (struct sockaddr *) &my_addr, sizeof(my_addr));
-
-  return NULL;
 }
 
 int main ()

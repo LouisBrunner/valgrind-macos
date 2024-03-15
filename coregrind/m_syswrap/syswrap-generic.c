@@ -620,7 +620,6 @@ void ML_(record_fd_close)(ThreadId tid, Int fd)
              Int len = sizeof(val);
              if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE,
                                  &val, &len) == -1) {
-                VG_(printf)("not sockopt: %d\n", i->fd);
                 HChar *pathname = VG_(malloc)("vg.record_fd_close.fd", 30);
                 VG_(snprintf)(pathname, 30, "file descriptor %d\n", i->fd);
                 i->pathname = pathname;

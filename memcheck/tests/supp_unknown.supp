@@ -1,23 +1,7 @@
 # This contains a match against a "???" entry
 {
-   <insert a suppression name here>
+   All jumps - there is only one
    Memcheck:Jump
    obj:*
-   fun:(below main)
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Jump
-   obj:*
-   fun:main
-}
-
-{
-   FreeBSD i386
-   Memcheck:Jump
-   obj:*
-   fun:_*_start1
-   fun:(below main)
 }
 

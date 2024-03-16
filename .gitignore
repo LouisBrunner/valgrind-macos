@@ -1071,6 +1071,8 @@
 /memcheck/tests/amd64/sh-mem-vec128
 /memcheck/tests/amd64/sh-mem-vec256
 /memcheck/tests/amd64/xsave-avx
+/memcheck/tests/amd64/rh2257546_128
+/memcheck/tests/amd64/rh2257546_256
 
 # /memcheck/tests/amd64-linux/
 /memcheck/tests/amd64-linux/.deps

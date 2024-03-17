@@ -25,9 +25,9 @@
 int main(void)
 {
    /* Uninitialised, but we know px[0] is 0x0. */
-   /* PJF why ? */
    long *px = malloc(2*sizeof(long));
    x0 = px[0];
+   const char* running_in_vgtest = getenv("RUNNING_IN_VGTEST");
 
    /* SYS_syscall                 0 */
    /* does this need a specific test? There are two diffeent IDs for syscall, see 198 */
@@ -556,7 +556,12 @@ int main(void)
 
    /* SYS_setsid                  147 */
    GO(SYS_setsid, "0s 0m");
-   SY(SYS_setsid); SUCC; /* FAIL when run standalone */
+   SY(SYS_setsid);
+   if (running_in_vgtest) {
+       SUCC;
+   } else {
+      FAIL;
+   }
 
    /* SYS_quotactl                148 */
    GO(SYS_quotactl, "(Q_QUOTAOFF) 2s 0m");

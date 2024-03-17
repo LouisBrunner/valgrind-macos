@@ -1,10 +1,12 @@
-
+#include "../../memcheck.h"
 #include <time.h>
 
 /* should complain about rqtp and rmtp */
 void valgrind_should_complain(void)
 {
-   struct timespec ts_uninitialized;
+   struct timespec ts_uninitialized = {0};
+
+   VALGRIND_MAKE_MEM_UNDEFINED(&ts_uninitialized, sizeof(ts_uninitialized));
 
    clock_nanosleep(CLOCK_MONOTONIC, 0, &ts_uninitialized, &ts_uninitialized);
 }

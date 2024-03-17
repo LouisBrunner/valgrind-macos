@@ -28,6 +28,7 @@ EXTRA_DIST = \
 	bug464476_rel_symlink.stdout.exp \
 	bug470713.vgtest bug470713.stderr.exp \
 		bug470713.stdout.exp \
+	bug483786.vgtest bug483786.stderr.exp \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
 	chflags.vgtest\
@@ -137,6 +138,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	access aio aio_read aligned_alloc bug464476 bug470713 \
+	bug483786 \
 	capsicum chflags \
 	chmod_chown delete_sized_mismatch errno_aligned_allocs \
 	extattr \

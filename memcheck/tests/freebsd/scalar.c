@@ -897,9 +897,8 @@ int main(void)
 
 #if (FREEBSD_VERS >= FREEBSD_11)
    /* SYS_clock_nanosleep         244 */
-   /* this succeeds ? */
    GO(SYS_clock_nanosleep, "4s 2m");
-   SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0, x0+1); SUCC;
+   SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0+3, x0+1); SUCC;
 #endif
 
    // SYS_clock_getcpuclockid2                             247

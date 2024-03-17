@@ -2526,18 +2526,18 @@ PRE(sys_clock_nanosleep)
    *flags |= SfMayBlock|SfPostOnFail;
    PRINT("sys_clock_nanosleep ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
          SARG1, SARG2, ARG3, ARG4);
-   PRE_REG_READ4(int, "clock_nanosleep", clockid_t, clock_id, int, flags,
+   PRE_REG_READ4(int, "clock_nanosleep", vki_clockid_t, clock_id, int, flags,
                  const struct timespec *, rqtp, struct timespec *, rmtp);
-   PRE_MEM_READ("clock_nanosleep(rqtp)", ARG1, sizeof(struct vki_timespec));
-   if (ARG2 != 0) {
-      PRE_MEM_WRITE( "clock_nanosleep(rmtp)", ARG2, sizeof(struct vki_timespec) );
+   PRE_MEM_READ("clock_nanosleep(rqtp)", ARG3, sizeof(struct vki_timespec));
+   if (ARG4 != 0) {
+      PRE_MEM_WRITE( "clock_nanosleep(rmtp)", ARG4, sizeof(struct vki_timespec) );
    }
 }
 
 POST(sys_clock_nanosleep)
 {
-   if (ARG2 != 0) {
-      POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
+   if (ARG4 != 0 && FAILURE && ERR == VKI_EINTR) {
+      POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
    }
 }
 

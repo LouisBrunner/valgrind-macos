@@ -1377,6 +1377,7 @@
 /memcheck/tests/freebsd/aligned_alloc
 /memcheck/tests/freebsd/bug464476
 /memcheck/tests/freebsd/bug470713
+/memcheck/tests/freebsd/bug483786
 /memcheck/tests/freebsd/capsicum
 /memcheck/tests/freebsd/chflags
 /memcheck/tests/freebsd/chmod_chown

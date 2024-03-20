@@ -121,6 +121,7 @@ EXTRA_DIST = \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.stderr.exp bug472219.vgtest \
+	bug484002.stderr.exp bug484002.stdout.exp bug484002.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
 	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
@@ -434,6 +435,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
 	vcpu_fnfns.stdout.exp-darwin vcpu_fnfns.stdout.exp-solaris \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
+	wcpncpy.stderr.exp wcpncpy.vgtest \
 	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
 	wcsncpy.vgtest wcsncpy.stderr.exp \
 	wmemcmp.vgtest wmemcmp.stderr.exp \
@@ -559,6 +561,10 @@ endif
 bug464969_d_demangle_SOURCES = bug464969_d_demangle.cpp
 bug464969_d_demangle_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
+if HAVE_WCSXFRM
+check_PROGRAMS += bug484002
+endif
+
 if GZ_ZLIB
 check_PROGRAMS += cdebug_zlib
 cdebug_zlib_SOURCES = cdebug.c
@@ -600,6 +606,10 @@ endif
 
 if HAVE_PTHREAD_SETNAME_NP
 check_PROGRAMS += threadname 
+endif
+
+if HAVE_WCPNCPY
+check_PROGRAMS += wcpncpy
 endif
 
 # are there still pre-C99 C compilers?

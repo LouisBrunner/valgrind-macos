@@ -70,6 +70,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 480706  Unhandled syscall 325 (mlock2)
 481131  [PATCH] x86 regtest: fix clobber lists in generated asm statements
 483786  Incorrect parameter indexing in FreeBSD clock_nanosleep syscall wrapper
+484002  Add suppression for invalid read in glibc's __wcpncpy_avx2() via wcsxfrm()
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

@@ -44,6 +44,8 @@ typedef
       // could detect them.  This example is left as an example should new
       // core errors ever be added.
       ThreadErr = -1,
+      FdBadClose = -2,
+      FdNotClosed = -3,
    }
    CoreErrorKind;
 

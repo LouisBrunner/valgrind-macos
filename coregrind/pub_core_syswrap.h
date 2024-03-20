@@ -105,6 +105,12 @@ extern void VG_(track_client_dataseg)(ThreadId tid);
 extern Bool VG_(get_capability_mode)(void);
 #endif
 
+// For the core errors
+extern Bool fd_eq_Error (VgRes, const Error*, const Error*);
+extern void fd_before_pp_Error (const Error*);
+extern void fd_pp_Error (const Error*);
+extern UInt fd_update_extra (const Error*);
+
 #endif   // __PUB_CORE_SYSWRAP_H
 
 /*--------------------------------------------------------------------*/

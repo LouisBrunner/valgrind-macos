@@ -40,7 +40,7 @@
 #include "pub_core_xarray.h"
 #include "pub_core_clientstate.h"   // VG_(brk_base), VG_(brk_limit)
 #include "pub_core_debuglog.h"
-#include "pub_core_errormgr.h"
+#include "pub_core_errormgr.h"      // For VG_(maybe_record_error)
 #include "pub_core_gdbserver.h"     // VG_(gdbserver)
 #include "pub_core_libcbase.h"
 #include "pub_core_libcassert.h"
@@ -581,6 +581,17 @@ void ML_(record_fd_close_range)(ThreadId tid, Int from_fd)
    }
 }
 
+struct BadCloseExtra {
+   Int fd;                        /* The file descriptor */
+   HChar *pathname;               /* NULL if not a regular file or unknown */
+   ExeContext *where_closed;      /* record the last close of fd */
+   ExeContext *where_opened;      /* recordwhere the fd  was opened */
+};
+
+struct NotClosedExtra {
+   Int fd;
+   HChar description[256];
+};
 
 /* Note the fact that a file descriptor was just closed. */
 void ML_(record_fd_close)(ThreadId tid, Int fd)
@@ -593,17 +604,13 @@ void ML_(record_fd_close)(ThreadId tid, Int fd)
    while(i) {
       if (i->fd == fd) {
         if (i->fd_closed) {
-          char *path = i->pathname;
-          // Note we might want to turn this into a "Core error"
-          // Or use pub_core_execontext later.
-          // VG_(print_ExeContext_stats) (True ...);
-          VG_(emit)("File descriptor %d: %s is already closed\n",
-              fd, path);
-          VG_(pp_ExeContext)(VG_(record_ExeContext)(tid, 0));
-          VG_(emit)(" Previously closed\n");
-          VG_(pp_ExeContext)(i->where_closed);
-          VG_(emit)(" Originally opened\n");
-          VG_(pp_ExeContext)(i->where);
+           struct BadCloseExtra bce;
+           bce.fd = i->fd;
+           bce.pathname = i->pathname;
+           bce.where_opened = i->where;
+           bce.where_closed = i->where_closed;
+           VG_(maybe_record_error)(tid, FdBadClose, 0,
+                                   "file descriptor already closed", &bce);
         } else {
           i->fd_closed = True;
           i->where_closed = ((tid == -1)
@@ -621,7 +628,7 @@ void ML_(record_fd_close)(ThreadId tid, Int fd)
              if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE,
                                  &val, &len) == -1) {
                 HChar *pathname = VG_(malloc)("vg.record_fd_close.fd", 30);
-                VG_(snprintf)(pathname, 30, "file descriptor %d\n", i->fd);
+                VG_(snprintf)(pathname, 30, "file descriptor %d", i->fd);
                 i->pathname = pathname;
              } else {
                 HChar *name = VG_(malloc)("vg.record_fd_close.sock", 256);
@@ -920,8 +927,10 @@ void VG_(show_open_fds) (const HChar* when)
        && (VG_(clo_verbosity) == 0))
       return;
 
-   VG_(message)(Vg_UserMsg, "FILE DESCRIPTORS: %d open (%d std) %s.\n",
+   if (!VG_(clo_xml)) {
+      VG_(umsg)("FILE DESCRIPTORS: %d open (%d std) %s.\n",
                 fd_count, fd_count - non_std, when);
+   }
 
    for (i = allocated_fds; i; i = i->next) {
       if (i->fd_closed)
@@ -930,30 +939,33 @@ void VG_(show_open_fds) (const HChar* when)
       if (i->fd <= 2 && VG_(clo_track_fds) < 2)
           continue;
 
+      struct NotClosedExtra nce;
       if (i->pathname) {
-         VG_(message)(Vg_UserMsg, "Open file descriptor %d: %s\n", i->fd,
-                      i->pathname);
+         VG_(snprintf) (nce.description, 256, "file descriptor %d: %s",
+                        i->fd, i->pathname);
       } else {
          Int val;
          Int len = sizeof(val);
 
          if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len)
              == -1) {
-            VG_(message)(Vg_UserMsg, "Open file descriptor %d:\n", i->fd);
+            VG_(sprintf)(nce.description, "file descriptor %d:", i->fd);
          } else {
-            HChar buf[256];
-            VG_(message)(Vg_UserMsg, "Open %s\n",
-                         getsockdetails(i->fd, 256, buf));
+            getsockdetails(i->fd, 256, nce.description);
          }
       }
 
-      if(i->where) {
-         VG_(pp_ExeContext)(i->where);
-         VG_(message)(Vg_UserMsg, "\n");
-      } else {
-         VG_(message)(Vg_UserMsg, "   <inherited from parent>\n");
-         VG_(message)(Vg_UserMsg, "\n");
-      }
+      nce.fd = i->fd;
+      VG_(unique_error) (1 /* Fake ThreadId */,
+                         FdNotClosed,
+                         0, /* Addr */
+                         "Still Open file descriptor",
+                         &nce, /* extra */
+                         i->where,
+                         True, /* print_error */
+                         False, /* allow_GDB_attach */
+                         True /* count_error */);
+
    }
 
    VG_(message)(Vg_UserMsg, "\n");
@@ -1069,6 +1081,68 @@ void VG_(init_preopened_fds)(void)
 #else
 #  error Unknown OS
 #endif
+}
+
+Bool fd_eq_Error (VgRes res, const Error *e1, const Error *e2)
+{
+   // XXX should we compare the fds?
+   return False;
+}
+
+void fd_before_pp_Error (const Error *err)
+{
+   // Nothing to do here
+}
+
+void fd_pp_Error (const Error *err)
+{
+   const Bool xml  = VG_(clo_xml);
+   const HChar* whatpre  = VG_(clo_xml) ? "  <what>" : "";
+   const HChar* whatpost = VG_(clo_xml) ? "</what>"  : "";
+   const HChar* auxpre  = VG_(clo_xml) ? "  <auxwhat>" : " ";
+   const HChar* auxpost = VG_(clo_xml) ? "</auxwhat>"  : "";
+   ExeContext *where = VG_(get_error_where)(err);
+   if (VG_(get_error_kind)(err) == FdBadClose) {
+      if (xml) VG_(emit)("  <kind>FdBadClose</kind>\n");
+      struct BadCloseExtra *bce = (struct BadCloseExtra *)
+         VG_(get_error_extra)(err);
+      VG_(emit)("%sFile descriptor %d: %s is already closed%s\n",
+                whatpre, bce->fd, bce->pathname, whatpost);
+      VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+      VG_(emit)("%sPreviously closed%s\n", auxpre, auxpost);
+      VG_(pp_ExeContext)(bce->where_closed);
+      VG_(emit)("%sOriginally opened%s\n", auxpre, auxpost);
+      VG_(pp_ExeContext)(bce->where_opened);
+   } else if (VG_(get_error_kind)(err) == FdNotClosed) {
+      if (xml) VG_(emit)("  <kind>FdNotClosed</kind>\n");
+      struct NotClosedExtra *nce = (struct NotClosedExtra *)
+         VG_(get_error_extra)(err);
+      VG_(emit)("%sOpen %s%s\n", whatpre, nce->description, whatpost);
+      if (where != NULL) {
+         VG_(pp_ExeContext)(where);
+         if (!xml) VG_(message)(Vg_UserMsg, "\n");
+      } else if (!xml) {
+         VG_(message)(Vg_UserMsg, "   <inherited from parent>\n");
+         VG_(message)(Vg_UserMsg, "\n");
+      }
+   } else {
+      vg_assert2 (False, "Unknown error kind: %d",
+                  VG_(get_error_kind)(err));
+   }
+}
+
+/* Called to see if there is any extra state to be saved with this
+   error. Must return the size of the extra struct.  */
+UInt fd_update_extra (const Error *err)
+{
+   if (VG_(get_error_kind)(err) == FdBadClose)
+      return sizeof (struct BadCloseExtra);
+   else if (VG_(get_error_kind)(err) == FdNotClosed)
+      return sizeof (struct NotClosedExtra);
+   else {
+      vg_assert2 (False, "Unknown error kind: %d",
+                  VG_(get_error_kind)(err));
+   }
 }
 
 static 

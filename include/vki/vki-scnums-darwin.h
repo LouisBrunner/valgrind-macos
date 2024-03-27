@@ -395,7 +395,11 @@
 #define	__NR_mount          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(167)
 			/* 168  old ustat */
 #define __NR_csops          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(169)
+#if DARWIN_VERS >= DARWIN_10_8
+#define __NR_csops_audittoken VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(170)
+#else
 			/* 170  old table */
+#endif
 			/* 171  old wait3 */
 			/* 172  old rpause */
 #define	__NR_waitid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(173)

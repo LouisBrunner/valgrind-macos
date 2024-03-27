@@ -440,6 +440,10 @@ void modify_macho_loadcmds ( HChar* filename,
                if (DEBUGPRINTING)
                   printf("LC_UNIXTHREAD");
                break;
+            case LC_SOURCE_VERSION:
+               if (DEBUGPRINTING)
+                  printf("LC_SOURCE_VERSION");
+               break;
             default:
                if (DEBUGPRINTING)
                   printf("???");

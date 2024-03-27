@@ -361,6 +361,9 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
    vex->guest_R8  = stacksize;
    vex->guest_R9  = flags;
    vex->guest_RSP = sp;
+#if DARWIN_VERS >= DARWIN_10_12
+   vex->guest_GS_CONST = self + pthread_tsd_offset;
+#endif
 
    // Record thread's stack and Mach port and pthread struct
    tst->os_state.pthread = self;

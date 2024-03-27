@@ -19723,6 +19723,113 @@ s390_irgen_VSTEBRG(UChar v1, IRTemp op2addr, UChar m3)
    return "vstebrg";
 }
 
+static const HChar *
+s390_irgen_VCxx(const HChar *mnem, s390x_vec_op_details_t details,
+                UShort v2_offs, UShort v2_size)
+{
+   s390_insn_assert(mnem, s390_host_has_nnpa);
+
+   IRDirty* d = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_vec_op",
+                                  &s390x_dirtyhelper_vec_op,
+                                  mkIRExprVec_2(IRExpr_GSPTR(),
+                                                mkU64(details.serialized)));
+   d->nFxState = 2;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+   d->fxState[0].fx = Ifx_Read;
+   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_v0)
+      + details.v2 * sizeof(V128) + v2_offs;
+   d->fxState[0].size = v2_size;
+   d->fxState[1].fx = Ifx_Write;
+   d->fxState[1].offset = S390X_GUEST_OFFSET(guest_v0)
+      + details.v1 * sizeof(V128);
+   d->fxState[1].size = sizeof(V128);
+
+   stmt(IRStmt_Dirty(d));
+   return mnem;
+}
+
+static const HChar *
+s390_irgen_VCNF(UChar v1, UChar v2, UChar m3, UChar m4)
+{
+   s390x_vec_op_details_t details = { .serialized = 0ULL };
+   details.op = S390_VEC_OP_VCNF;
+   details.v1 = v1;
+   details.v2 = v2;
+   details.m3 = m3;
+   details.m4 = m4;
+   return s390_irgen_VCxx("vcnf", details, 0, sizeof(V128));
+}
+
+static const HChar *
+s390_irgen_VCLFNH(UChar v1, UChar v2, UChar m3, UChar m4)
+{
+   s390x_vec_op_details_t details = { .serialized = 0ULL };
+   details.op = S390_VEC_OP_VCLFNH;
+   details.v1 = v1;
+   details.v2 = v2;
+   details.m3 = m3;
+   details.m4 = m4;
+   return s390_irgen_VCxx("vclfnh", details, 0, sizeof(V128) / 2);
+}
+
+static const HChar *
+s390_irgen_VCFN(UChar v1, UChar v2, UChar m3, UChar m4)
+{
+   s390x_vec_op_details_t details = { .serialized = 0ULL };
+   details.op = S390_VEC_OP_VCFN;
+   details.v1 = v1;
+   details.v2 = v2;
+   details.m3 = m3;
+   details.m4 = m4;
+   return s390_irgen_VCxx("vcfn", details, 0, sizeof(V128));
+}
+
+static const HChar *
+s390_irgen_VCLFNL(UChar v1, UChar v2, UChar m3, UChar m4)
+{
+   s390x_vec_op_details_t details = { .serialized = 0ULL };
+   details.op = S390_VEC_OP_VCLFNL;
+   details.v1 = v1;
+   details.v2 = v2;
+   details.m3 = m3;
+   details.m4 = m4;
+   return s390_irgen_VCxx("vclfnl", details, sizeof(V128) / 2,
+                          sizeof(V128) / 2);
+}
+
+static const HChar *
+s390_irgen_VCRNF(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
+{
+   s390_insn_assert("vcrnf", s390_host_has_nnpa);
+
+   s390x_vec_op_details_t details = { .serialized = 0ULL };
+   details.op = S390_VEC_OP_VCRNF;
+   details.v1 = v1;
+   details.v2 = v2;
+   details.v3 = v3;
+   details.m4 = m4;
+   details.m5 = m5;
+   details.m6 = 0;
+   IRDirty* d = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_vec_op",
+                                  &s390x_dirtyhelper_vec_op,
+                                  mkIRExprVec_2(IRExpr_GSPTR(),
+                                                mkU64(details.serialized)));
+   d->nFxState = 3;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+   d->fxState[0].fx = Ifx_Read;
+   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_v0) + v2 * sizeof(V128);
+   d->fxState[0].size = sizeof(V128);
+   d->fxState[1].fx = Ifx_Read;
+   d->fxState[1].offset = S390X_GUEST_OFFSET(guest_v0) + v3 * sizeof(V128);
+   d->fxState[1].size = sizeof(V128);
+   d->fxState[2].fx = Ifx_Write;
+   d->fxState[2].offset = S390X_GUEST_OFFSET(guest_v0) + v1 * sizeof(V128);
+   d->fxState[2].size = sizeof(V128);
+
+   stmt(IRStmt_Dirty(d));
+   return "vcrnf";
+}
+
 /* New insns are added here.
    If an insn is contingent on a facility being installed also
    check whether the list of supported facilities in function
@@ -21415,6 +21522,22 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe60000000049ULL: /* VLIP */ goto unimplemented;
    case 0xe60000000050ULL: /* VCVB */ goto unimplemented;
    case 0xe60000000052ULL: /* VCVBG */ goto unimplemented;
+   case 0xe60000000055ULL: s390_format_VRRa_VVMM(s390_irgen_VCNF,
+                                                 VRRa_v1(ovl), VRRa_v2(ovl),
+                                                 VRRa_m3(ovl), VRRa_m4(ovl),
+                                                 VRRa_rxb(ovl));  goto ok;
+   case 0xe60000000056ULL: s390_format_VRRa_VVMM(s390_irgen_VCLFNH,
+                                                 VRRa_v1(ovl), VRRa_v2(ovl),
+                                                 VRRa_m3(ovl), VRRa_m4(ovl),
+                                                 VRRa_rxb(ovl));  goto ok;
+   case 0xe6000000005dULL: s390_format_VRRa_VVMM(s390_irgen_VCFN,
+                                                 VRRa_v1(ovl), VRRa_v2(ovl),
+                                                 VRRa_m3(ovl), VRRa_m4(ovl),
+                                                 VRRa_rxb(ovl));  goto ok;
+   case 0xe6000000005eULL: s390_format_VRRa_VVMM(s390_irgen_VCLFNL,
+                                                 VRRa_v1(ovl), VRRa_v2(ovl),
+                                                 VRRa_m3(ovl), VRRa_m4(ovl),
+                                                 VRRa_rxb(ovl));  goto ok;
    case 0xe60000000058ULL: /* VCVD */ goto unimplemented;
    case 0xe60000000059ULL: /* VSRP */ goto unimplemented;
    case 0xe6000000005aULL: /* VCVDG */ goto unimplemented;
@@ -21422,6 +21545,11 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe6000000005fULL: /* VTP */ goto unimplemented;
    case 0xe60000000071ULL: /* VAP */ goto unimplemented;
    case 0xe60000000073ULL: /* VSP */ goto unimplemented;
+   case 0xe60000000075ULL: s390_format_VRRa_VVVMM(s390_irgen_VCRNF,
+                                                  VRRa_v1(ovl), VRRa_v2(ovl),
+                                                  VRRa_v3(ovl),
+                                                  VRRa_m3(ovl), VRRa_m4(ovl),
+                                                  VRRa_rxb(ovl)); goto ok;
    case 0xe60000000077ULL: /* VCP */ goto unimplemented;
    case 0xe60000000078ULL: /* VMP */ goto unimplemented;
    case 0xe60000000079ULL: /* VMSP */ goto unimplemented;

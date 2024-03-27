@@ -106,6 +106,7 @@
 #define S390_FAC_VXE     135 // vector enhancements facility 1
 #define S390_FAC_VXE2    148 // vector enhancements facility 2
 #define S390_FAC_DFLT    151 // deflate-conversion facility
+#define S390_FAC_NNPA    165 // NNPA facility
 
 
 /*--------------------------------------------------------------*/

@@ -278,6 +278,11 @@ typedef enum {
    S390_VEC_OP_VFMAX,
    S390_VEC_OP_VBPERM,
    S390_VEC_OP_VMSL,
+   S390_VEC_OP_VCNF,
+   S390_VEC_OP_VCLFNH,
+   S390_VEC_OP_VCFN,
+   S390_VEC_OP_VCLFNL,
+   S390_VEC_OP_VCRNF,
    S390_VEC_OP_LAST             // supposed to be the last element in enum
 } s390x_vec_op_t;
 
@@ -295,12 +300,13 @@ typedef union {
       unsigned int v4 : 5;        // argument two of operation or
                                   // zero for unary and binary operations
 
+      unsigned int m3 : 4;        // field m3 of insn or zero if it's missing
       unsigned int m4 : 4;        // field m4 of insn or zero if it's missing
       unsigned int m5 : 4;        // field m5 of insn or zero if it's missing
       unsigned int m6 : 4;        // field m6 of insn or zero if it's missing
       unsigned int i3 : 12;       // field i3 of insn or zero if it's missing
       unsigned int read_only: 1;  // don't write result to Guest State
-      unsigned int reserved : 11; // reserved for future
+      unsigned int reserved : 7; // reserved for future
    };
    ULong serialized;
 } s390x_vec_op_details_t;

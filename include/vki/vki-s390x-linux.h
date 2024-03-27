@@ -809,6 +809,7 @@ typedef vki_s390_regs vki_elf_gregset_t;
 #define VKI_HWCAP_S390_VXRS         2048
 #define VKI_HWCAP_S390_VXRS_EXT     8192
 #define VKI_HWCAP_S390_VXRS_EXT2   32768
+#define VKI_HWCAP_S390_NNPA       (1<<20)
 
 
 //----------------------------------------------------------------------

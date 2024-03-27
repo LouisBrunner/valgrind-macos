@@ -2593,6 +2593,11 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       [S390_VEC_OP_VFMAX] = {0xe7, 0xef},
       [S390_VEC_OP_VBPERM]= {0xe7, 0x85},
       [S390_VEC_OP_VMSL]  = {0xe7, 0xb8},
+      [S390_VEC_OP_VCNF]  = {0xe6, 0x55},
+      [S390_VEC_OP_VCLFNH]= {0xe6, 0x56},
+      [S390_VEC_OP_VCFN]  = {0xe6, 0x5d},
+      [S390_VEC_OP_VCLFNL]= {0xe6, 0x5e},
+      [S390_VEC_OP_VCRNF] = {0xe6, 0x75},
    };
 
    union {
@@ -2632,6 +2637,16 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
          UInt rxb : 4;
          UInt op2 : 8;
       } VRRc;
+      struct {
+         UInt op1 : 8;
+         UInt v1  : 4;
+         UInt v2  : 4;
+         UInt     : 12;
+         UInt m4  : 4;
+         UInt m3  : 4;
+         UInt rxb : 4;
+         UInt op2 : 8;
+      } VRRa;
       struct {
          UInt op1 : 8;
          UInt v1  : 4;
@@ -2687,6 +2702,7 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
    case S390_VEC_OP_VFMIN:
    case S390_VEC_OP_VFMAX:
    case S390_VEC_OP_VBPERM:
+   case S390_VEC_OP_VCRNF:
       the_insn.VRRc.v1 = 1;
       the_insn.VRRc.v2 = 2;
       the_insn.VRRc.v3 = 3;
@@ -2694,6 +2710,17 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       the_insn.VRRc.m4 = d->m4;
       the_insn.VRRc.m5 = d->m5;
       the_insn.VRRc.m6 = d->m6;
+      break;
+
+   case S390_VEC_OP_VCNF:
+   case S390_VEC_OP_VCLFNH:
+   case S390_VEC_OP_VCFN:
+   case S390_VEC_OP_VCLFNL:
+      the_insn.VRRa.v1 = 1;
+      the_insn.VRRa.v2 = 2;
+      the_insn.VRRa.rxb = 0b1100;
+      the_insn.VRRa.m3 = d->m3;
+      the_insn.VRRa.m4 = d->m4;
       break;
 
    case S390_VEC_OP_VFTCI:

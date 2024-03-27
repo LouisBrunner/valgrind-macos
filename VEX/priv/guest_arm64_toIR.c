@@ -15087,6 +15087,9 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
          case BITS3(1,0,0): ch = 'a'; irrmE = mkU32(Irrm_NEAREST); break;
          // I am unsure about the following, due to the "integral exact"
          // description in the manual.  What does it mean? (frintx, that is)
+         // PJF exact means that if the rounding can't be done without
+         // precision loss (dst numerically equal to src after the rounding)
+         // then an exception is raised / the IXC bit gets set in the FPSR
          case BITS3(1,1,0):
             ch = 'x'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
          case BITS3(1,1,1):

@@ -10100,10 +10100,17 @@ PRE(getentropy)
                   void*, buffer, size_t, size);
     PRE_MEM_WRITE( "getentropy(buffer)", ARG1, ARG2 );
 }
+
 POST(getentropy)
 {
     vg_assert(SUCCESS);
     POST_MEM_WRITE( ARG1, ARG2 );
+}
+
+PRE(necp_open)
+{
+   PRINT("necp_open(%#lx)", ARG1);
+   PRE_REG_READ1(int, "necp_open", int, flags);
 }
 
 static const HChar *ulop_name(int op)
@@ -10985,7 +10992,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_clonefileat),                             // 462
 // _____(__NR_renameatx_np),                            // 488
    MACXY(__NR_getentropy, getentropy),                  // 500
-// _____(__NR_necp_open),                               // 501
+   MACX_(__NR_necp_open, necp_open),                    // 501
 // _____(__NR_necp_client_action),                      // 502
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(503)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(504)),        // ???

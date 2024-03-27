@@ -74,6 +74,7 @@ dist_noinst_SCRIPTS = \
 	filter_allocs \
 	filter_leak_cases_possible \
 	filter_leak_cpp_interior \
+	filter_libc_variants \
 	filter_xml \
 	filter_strchr \
 	filter_varinfo3 \
@@ -268,7 +269,7 @@ EXTRA_DIST = \
 		memalign_args.stderr.exp-solaris \
 	memccpy1.stderr.exp memccpy1.stdout.exp memccpy1.vgtest \
 	memccpy2.stderr.exp memccpy2.vgtest \
-	memcmptest.stderr.exp memcmptest.stderr.exp2 \
+	memcmptest.stderr.exp \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \
 	mempool.stderr.exp mempool.vgtest \

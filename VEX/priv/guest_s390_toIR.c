@@ -20067,6 +20067,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0x8000: /* SSM */ goto unimplemented;
    case 0x8200: /* LPSW */ goto unimplemented;
    case 0x9300: /* TS */ goto unimplemented;
+   case 0xb200: /* LBEAR */ goto unimplemented;
+   case 0xb201: /* STBEAR */ goto unimplemented;
    case 0xb202: /* STIDP */ goto unimplemented;
    case 0xb204: /* SCK */ goto unimplemented;
    case 0xb205: s390_format_S_RD(s390_irgen_STCK, S_b2(ovl), S_d2(ovl));
@@ -20158,6 +20160,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb286: /* QSI */ goto unimplemented;
    case 0xb287: /* LSCTL */ goto unimplemented;
    case 0xb28e: /* QCTRI */ goto unimplemented;
+   case 0xb28f: /* QPACI */ goto unimplemented;
    case 0xb299: s390_format_S_RD(s390_irgen_SRNM, S_b2(ovl), S_d2(ovl));
                                  goto ok;
    case 0xb29c: s390_format_S_RD(s390_irgen_STFPC, S_b2(ovl), S_d2(ovl));
@@ -20604,6 +20607,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb938: /* SORTL */ goto unimplemented;
    case 0xb939: /* DFLTCC */ goto unimplemented;
    case 0xb93a: /* KDSA */ goto unimplemented;
+   case 0xb93b: /* NNPA */ goto unimplemented;
    case 0xb93c: s390_format_RRE_RR(s390_irgen_PPNO, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb93e: /* KIMD */ goto unimplemented;
@@ -20695,6 +20699,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb989: s390_format_RRE_RR(s390_irgen_SLBGR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb98a: /* CSPG */ goto unimplemented;
+   case 0xb98b: /* RDP */ goto unimplemented;
    case 0xb98d: /* EPSW */ goto unimplemented;
    case 0xb98e: /* IDTE */ goto unimplemented;
    case 0xb98f: /* CRDTE */ goto unimplemented;
@@ -21521,7 +21526,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 VRS_rxb(ovl));  goto ok;
    case 0xe60000000049ULL: /* VLIP */ goto unimplemented;
    case 0xe60000000050ULL: /* VCVB */ goto unimplemented;
+   case 0xe60000000051ULL: /* VCLZDP */ goto unimplemented;
    case 0xe60000000052ULL: /* VCVBG */ goto unimplemented;
+   case 0xe60000000054ULL: /* VUPKZH */ goto unimplemented;
    case 0xe60000000055ULL: s390_format_VRRa_VVMM(s390_irgen_VCNF,
                                                  VRRa_v1(ovl), VRRa_v2(ovl),
                                                  VRRa_m3(ovl), VRRa_m4(ovl),
@@ -21542,8 +21549,11 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe60000000059ULL: /* VSRP */ goto unimplemented;
    case 0xe6000000005aULL: /* VCVDG */ goto unimplemented;
    case 0xe6000000005bULL: /* VPSOP */ goto unimplemented;
+   case 0xe6000000005cULL: /* VUPKZL */ goto unimplemented;
    case 0xe6000000005fULL: /* VTP */ goto unimplemented;
+   case 0xe60000000070ULL: /* VPKZR */ goto unimplemented;
    case 0xe60000000071ULL: /* VAP */ goto unimplemented;
+   case 0xe60000000072ULL: /* VSRPR */ goto unimplemented;
    case 0xe60000000073ULL: /* VSP */ goto unimplemented;
    case 0xe60000000075ULL: s390_format_VRRa_VVVMM(s390_irgen_VCRNF,
                                                   VRRa_v1(ovl), VRRa_v2(ovl),
@@ -21553,8 +21563,11 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe60000000077ULL: /* VCP */ goto unimplemented;
    case 0xe60000000078ULL: /* VMP */ goto unimplemented;
    case 0xe60000000079ULL: /* VMSP */ goto unimplemented;
+   case 0xe60000000074ULL: /* VSCHP */ goto unimplemented;
    case 0xe6000000007aULL: /* VDP */ goto unimplemented;
    case 0xe6000000007bULL: /* VRP */ goto unimplemented;
+   case 0xe6000000007cULL: /* VSCSHP */ goto unimplemented;
+   case 0xe6000000007dULL: /* VCSPH */ goto unimplemented;
    case 0xe6000000007eULL: /* VSDP */ goto unimplemented;
    case 0xe70000000000ULL: s390_format_VRX_VRRDM(s390_irgen_VLEB, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
@@ -22202,6 +22215,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xeb000000006eULL: s390_format_SIY_IRD(s390_irgen_ALSI, SIY_i2(ovl),
                                                SIY_b1(ovl), SIY_dl1(ovl),
                                                SIY_dh1(ovl));  goto ok;
+   case 0xeb0000000071ULL: /* LPSWEY */ goto unimplemented;
    case 0xeb000000007aULL: s390_format_SIY_IRD(s390_irgen_AGSI, SIY_i2(ovl),
                                                SIY_b1(ovl), SIY_dl1(ovl),
                                                SIY_dh1(ovl));  goto ok;

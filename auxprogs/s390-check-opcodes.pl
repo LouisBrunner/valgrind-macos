@@ -14,13 +14,23 @@ use warnings;
 #------------------------------------------------------------------
 my $num_arg = $#ARGV + 1;
 
-if ($num_arg != 3) {
+my $csv_file;
+my $opc_file;
+my $toir_file;
+
+if ($num_arg == 0) {
+    my $cwd = `pwd`;
+    my ($basedir) = $cwd =~ m|(.*)/valgrind/|;
+    $csv_file  = "$basedir/valgrind/docs/internals/s390-opcodes.csv";
+    $opc_file  = "$basedir/binutils-gdb/opcodes/s390-opc.txt";
+    $toir_file = "$basedir/valgrind/VEX/priv/guest_s390_toIR.c";
+} elsif ($num_arg == 3) {
+    $csv_file  = $ARGV[0];
+    $opc_file  = $ARGV[1];
+    $toir_file = $ARGV[2];
+} else {
     die "usage: s390-check-opcodes s390-opcodes.csv s390-opc.txt guest_s390_toIR.c\n";
 }
-
-my $csv_file  = $ARGV[0];
-my $opc_file  = $ARGV[1];
-my $toir_file = $ARGV[2];
 
 my %opc_desc = ();
 my %csv_desc = ();
@@ -36,13 +46,19 @@ my %known_arch = map {($_ => 1)}
 my @extended_mnemonics = (
     "bi",			# extended mnemonic for bic
     'brul?',
+    'jc',			# brc
     'jasl?',
-    'jctg?',
+    'jct[gh]?',
     'jg?nop',
     'jxleg?',
     'jxhg?',
     'l[de]rv',
+    'lfi',			# iilf
+    'llg[fh]i',			# llilf, llill
+    'notg?r',			# nork, nogrk
     'risbgn?z',
+    'risb[hl]gz',
+    'r[onx]sbgt',
     'st[de]rv',
     "va[bhfgq]",
     "vacc[bhfgq]",
@@ -121,6 +137,7 @@ my @extended_mnemonics = (
     "vsbcbiq",
     "vsbiq",
     "vscbi[bhfgq]",
+    "vsch[sdx]p",		# vschp (short/long/extended)
     "vseg[bfh]",
     'vstbr[hfgq]',
     'vster[hfg]',
@@ -347,9 +364,9 @@ foreach my $opc (keys %csv_desc) {
 #----------------------------------------------------
 foreach my $opc (keys %opc_desc) {
     if (defined $csv_desc{$opc}) {
-	if ($opc_desc{$opc} ne $csv_desc{$opc}) {
+	if (lc($opc_desc{$opc}) ne lc($csv_desc{$opc})) {
 	    print "*** opcode $opc differs:\n";
-	print "    binutils:    $opc_desc{$opc}\n";
+	    print "    binutils:    $opc_desc{$opc}\n";
 	    print "    opcodes.csv: $csv_desc{$opc}\n";
 	}
     }

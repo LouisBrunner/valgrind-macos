@@ -1746,3 +1746,22 @@ wclfeb,"vector fp convert to logical 32 bit",implemented,arch13
 dfltcc,"deflate conversion call","not implemented",arch13
 sortl,"sort lists","not implemented",arch13
 kdsa,"compute digital signature authentication","not implemented",arch13
+vschp,"decimal scale and convert to hfp","not implemented",arch14
+vscshp,"decimal scale and convert and split to hfp","not implemented",arch14
+vcsph,"vector convert hfp to scaled decimal","not implemented",arch14
+vclzdp,"vector count leading zero digits","not implemented",arch14
+vpkzr,"vector pack zoned register","not implemented",arch14
+vsrpr,"vector shift and round decimal register","not implemented",arch14
+vupkzh,"vector unpack zoned high","not implemented",arch14
+vupkzl,"vector unpack zoned low","not implemented",arch14
+nnpa,"neural network processing assist","not implemented",arch14
+vclfnh,"vector fp convert and lengthen from nnp high","implemented",arch14
+vclfnl,"vector fp convert and lengthen from nnp low","implemented",arch14
+vcrnf,"vector fp convert and round to nnp","implemented",arch14
+vcfn,"vector fp convert from nnp","implemented",arch14
+vcnf,"vector fp convert to nnp","implemented",arch14
+rdp,"reset dat protection",N/A,"privileged instruction"
+lpswey,"load PSW extended",N/A,"privileged instruction"
+lbear,"load bear",N/A,"privileged instruction"
+stbear,"store bear",N/A,"privileged instruction"
+qpaci,"query processor activity counter information",N/A,"privileged instruction"

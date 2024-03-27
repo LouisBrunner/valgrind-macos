@@ -3,7 +3,11 @@
 // See https://bugzilla.redhat.com/show_bug.cgi?id=2257546
 
 #include <stdio.h>
+#if defined(__APPLE__)
+#include <stdlib.h>
+#else
 #include <malloc.h>
+#endif
 
 int main ( void ) 
 {

@@ -859,7 +859,7 @@ void read_elf_symtab__normal(
          disym.isText    = is_text;
          disym.isIFunc   = is_ifunc;
          disym.isGlobal  = is_global;
-         if (cstr) { ML_(dinfo_free)(cstr); cstr = NULL; }
+         ML_(dinfo_free)(cstr);
          vg_assert(disym.pri_name);
          vg_assert(GET_TOCPTR_AVMA(disym.avmas) == 0);
          /* has no role except on ppc64be-linux */
@@ -879,7 +879,6 @@ void read_elf_symtab__normal(
                             GET_LOCAL_EP_AVMA(disym.avmas));
 	    }
          }
-
       }
    }
 }

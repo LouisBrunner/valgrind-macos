@@ -2798,17 +2798,13 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
 
    /* Convert the segment selector onto a table index */
    seg_selector >>= 3;
-   vassert(seg_selector < 8192);
+   vassert(seg_selector < VEX_GUEST_X86_GDT_NENT);
 
    if (tiBit == 0) {
 
       /* GDT access. */
       /* Do we actually have a GDT to look at? */
       if (gdt == 0)
-         goto bad;
-
-      /* Check for access to non-existent entry. */
-      if (seg_selector >= VEX_GUEST_X86_GDT_NENT)
          goto bad;
 
       the_descrs = (VexGuestX86SegDescr*)gdt;

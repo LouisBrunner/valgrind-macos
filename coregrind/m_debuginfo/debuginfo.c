@@ -693,7 +693,6 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
                        "DiCfsi invariant (1) verification failed");
          }
       }
-      di2 = NULL;
    }
 
    /* degenerate case: all r-x sections are empty */
@@ -2822,7 +2821,7 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
                     ? VG_(get_fnname_w_offset) (ep, eip, &buf_fn)
                     : VG_(get_fnname) (ep, eip, &buf_fn);
    } else {
-      const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
+      const DiInlLoc *next_inl = iipc && iipc->di && iipc->next_inltab >= 0
          ? & iipc->di->inltab[iipc->next_inltab]
          : NULL;
       vg_assert (next_inl);

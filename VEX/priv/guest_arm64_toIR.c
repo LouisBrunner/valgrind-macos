@@ -8047,8 +8047,13 @@ static Bool AdvSIMDExpandImm ( /*OUT*/ULong* res,
       case 1:
          testimm8 = True; imm64 = Replicate32x2(imm8 << 8UL); break;
       case 2:
+         // Coverity is right but we want the overflow, Replicate32x2 expects
+         // (and asserts) that the top 32bits be zero so if we get rid of the
+         // overflow we would need to add a mask. So just let it overflow.
+         // coverity[OVERFLOW_BEFORE_WIDEN:FALSE]
          testimm8 = True; imm64 = Replicate32x2(imm8 << 16UL); break;
       case 3:
+         // coverity[OVERFLOW_BEFORE_WIDEN:FALSE]
          testimm8 = True; imm64 = Replicate32x2(imm8 << 24UL); break;
       case 4:
           testimm8 = False; imm64 = Replicate16x4(imm8); break;

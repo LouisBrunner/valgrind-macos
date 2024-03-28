@@ -3662,7 +3662,6 @@ ULong amd64g_calculate_RCR ( ULong arg,
          }
          break;
       case 4:
-         while (tempCOUNT >= 33) tempCOUNT -= 33;
          cf        = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
          of        = ((arg >> 31) ^ cf) & 1;
          while (tempCOUNT > 0) {
@@ -3730,7 +3729,6 @@ ULong amd64g_calculate_RCL ( ULong arg,
          of = ((arg >> 63) ^ cf) & 1;
          break;
       case 4:
-         while (tempCOUNT >= 33) tempCOUNT -= 33;
          cf = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
          while (tempCOUNT > 0) {
             tempcf = (arg >> 31) & 1;

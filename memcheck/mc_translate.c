@@ -5288,6 +5288,8 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_RoundF64toF64_NegINF:
       case Iop_RoundF64toF64_PosINF:
       case Iop_RoundF64toF64_ZERO:
+      case Iop_RoundF64toIntA0:
+      case Iop_RoundF64toIntE:
       case Iop_D32toD64:
       case Iop_I32StoD64:
       case Iop_I32UtoD64:
@@ -5305,7 +5307,9 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_TruncF64asF32:
       case Iop_NegF32:
       case Iop_AbsF32:
-      case Iop_F16toF32: 
+      case Iop_F16toF32:
+      case Iop_RoundF32toIntA0:
+      case Iop_RoundF32toIntE:
          return mkPCastTo(mce, Ity_I32, vatom);
 
       case Iop_AbsF16:

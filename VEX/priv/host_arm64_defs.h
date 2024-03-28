@@ -321,6 +321,8 @@ typedef
       ARM64fpu_ABS,
       ARM64fpu_SQRT,
       ARM64fpu_RINT,
+      ARM64fpu_RINTA0,
+      ARM64fpu_RINTE,
       ARM64fpu_RECPX,
       ARM64fpu_INVALID
    }

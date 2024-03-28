@@ -572,11 +572,13 @@ static const HChar* showARM64FpTriOp ( ARM64FpTriOp op ) {
 
 static const HChar* showARM64FpUnaryOp ( ARM64FpUnaryOp op ) {
    switch (op) {
-      case ARM64fpu_NEG:   return "neg  ";
-      case ARM64fpu_ABS:   return "abs  ";
-      case ARM64fpu_SQRT:  return "sqrt ";
-      case ARM64fpu_RINT:  return "rinti";
-      case ARM64fpu_RECPX: return "recpx";
+      case ARM64fpu_NEG:    return "neg  ";
+      case ARM64fpu_ABS:    return "abs  ";
+      case ARM64fpu_SQRT:   return "sqrt ";
+      case ARM64fpu_RINT:   return "rinti";
+      case ARM64fpu_RINTA0: return "rinta";
+      case ARM64fpu_RINTE:  return "rintn";
+      case ARM64fpu_RECPX:  return "recpx";
       default: vpanic("showARM64FpUnaryOp");
    }
 }
@@ -2968,6 +2970,7 @@ static inline UInt qregEnc ( HReg r )
 
 #define X00000   BITS8(0,0,0, 0,0,0,0,0)
 #define X00001   BITS8(0,0,0, 0,0,0,0,1)
+#define X00100   BITS8(0,0,0, 0,0,1,0,0)
 #define X00110   BITS8(0,0,0, 0,0,1,1,0)
 #define X00111   BITS8(0,0,0, 0,0,1,1,1)
 #define X01000   BITS8(0,0,0, 0,1,0,0,0)
@@ -4582,7 +4585,21 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
            *p++ = X_3_8_5_6_5_5(X000, X11110011, X00111, X110000, dN, dD);
            goto done;
          }
-         /* 
+         /*
+            000, 11110 01 1,001 10,0 10000 n d  FRINTA Dd, Dm (round away from zero)
+         */
+         if (i->ARM64in.VUnaryD.op == ARM64fpu_RINTA0) {
+           *p++ = X_3_8_5_6_5_5(X000, X11110011, X00110, X010000, dN, dD);
+           goto done;
+         }
+         /*
+            000, 11110 01 1,001 10,0 10000 n d  FRINTN Dd, Dm (round to even)
+         */
+         if (i->ARM64in.VUnaryD.op == ARM64fpu_RINTE) {
+           *p++ = X_3_8_5_6_5_5(X000, X11110011, X00100, X010000, dN, dD);
+           goto done;
+         }
+         /*
             010, 11110 11 1,0000 1,1111 10 n d  FRECPX Dd, Dm
          */
          if (i->ARM64in.VUnaryD.op == ARM64fpu_RECPX) {
@@ -4620,7 +4637,21 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
            *p++ = X_3_8_5_6_5_5(X000, X11110001, X00111, X110000, sN, sD);
            goto done;
          }
-         /* 
+         /*
+            000, 11110 00 1,001 11,1 10000 n d  FRINTA Sd, Sm (round away from zero)
+         */
+         if (i->ARM64in.VUnaryS.op == ARM64fpu_RINTA0) {
+           *p++ = X_3_8_5_6_5_5(X000, X11110001, X00110, X010000, sN, sD);
+           goto done;
+         }
+         /*
+            000, 11110 00 1,001 11,1 10000 n d  FRINTN Sd, Sm (round to even)
+         */
+         if (i->ARM64in.VUnaryS.op == ARM64fpu_RINTE) {
+           *p++ = X_3_8_5_6_5_5(X000, X11110001, X00100, X010000, sN, sD);
+           goto done;
+         }
+         /*
             010, 11110 10 1,0000 1,1111 10 n d  FRECPX Sd, Sm
          */
          if (i->ARM64in.VUnaryS.op == ARM64fpu_RECPX) {

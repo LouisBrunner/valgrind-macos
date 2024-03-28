@@ -1781,6 +1781,7 @@
 /none/tests/arm64/Makefile.in
 /none/tests/arm64/allexec
 /none/tests/arm64/atomics_v81
+/none/tests/arm64/bug484426
 /none/tests/arm64/crc32
 /none/tests/arm64/cvtf_imm
 /none/tests/arm64/fmadd_sub

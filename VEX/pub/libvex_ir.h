@@ -782,8 +782,13 @@ typedef
                              as F128) */
       Iop_RoundF64toInt, /* F64 value to nearest integral value (still
                             as F64) */
+      Iop_RoundF64toIntA0, /* As Iop_RoundF64toInt but ties to above zero*/
+
+      Iop_RoundF64toIntE, /* As Iop_RoundF64toInt but ties to even */
       Iop_RoundF32toInt, /* F32 value to nearest integral value (still
                             as F32) */
+      Iop_RoundF32toIntA0, /* As Iop_RoundF32toInt but ties to above zero*/
+      Iop_RoundF32toIntE, /* As Iop_RoundF32toInt but ties to even */
 
       /* --- guest s390 specifics, not mandated by 754. --- */
 

@@ -4,6 +4,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
+	bug484426.stdout.exp bug484426.stderr.exp bug484426.vgtest \
         crc32.stdout.exp crc32.stderr.exp crc32.vgtest \
         cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
@@ -22,6 +23,7 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	allexec \
+	bug484426 \
         cvtf_imm \
 	fp_and_simd \
 	integer \
@@ -50,6 +52,8 @@ AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
 allexec_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
+
+bug484426_SOURCES  = bug484426.cpp
 
 crc32_CFLAGS       = $(AM_CFLAGS) -march=armv8-a+crc
 atomics_v81_CFLAGS = $(AM_CFLAGS) -march=armv8.1-a

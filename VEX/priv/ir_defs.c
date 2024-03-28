@@ -440,7 +440,11 @@ void ppIROp ( IROp op )
 
       case Iop_RoundF128toInt: vex_printf("RoundF128toInt"); return;
       case Iop_RoundF64toInt: vex_printf("RoundF64toInt"); return;
+      case Iop_RoundF64toIntA0: vex_printf("RoundF64toIntA0"); return;
+      case Iop_RoundF64toIntE: vex_printf("RoundF64toIntE"); return;
       case Iop_RoundF32toInt: vex_printf("RoundF32toInt"); return;
+      case Iop_RoundF32toIntA0: vex_printf("RoundF32toIntA0"); return;
+      case Iop_RoundF32toIntE: vex_printf("RoundF32toIntE"); return;
       case Iop_RoundF64toF32: vex_printf("RoundF64toF32"); return;
 
       case Iop_ReinterpV128asI128: vex_printf("ReinterpV128asI128"); return;
@@ -1470,8 +1474,10 @@ Bool primopMightTrap ( IROp op )
    case Iop_Yl2xp1F64: case Iop_PRemF64: case Iop_PRemC3210F64:
    case Iop_PRem1F64: case Iop_PRem1C3210F64: case Iop_ScaleF64:
    case Iop_SinF64: case Iop_CosF64: case Iop_TanF64:
-   case Iop_2xm1F64: case Iop_RoundF128toInt: case Iop_RoundF64toInt:
-   case Iop_RoundF32toInt: case Iop_MAddF32: case Iop_MSubF32:
+   case Iop_2xm1F64: case Iop_RoundF128toInt:
+   case Iop_RoundF64toInt: case Iop_RoundF64toIntA0: case Iop_RoundF64toIntE:
+   case Iop_RoundF32toInt: case Iop_RoundF32toIntA0: case Iop_RoundF32toIntE:
+   case Iop_MAddF32: case Iop_MSubF32:
    case Iop_MAddF64: case Iop_MSubF64:
    case Iop_MAddF64r32: case Iop_MSubF64r32:
    case Iop_RSqrtEst5GoodF64: case Iop_RoundF64toF64_NEAREST:
@@ -3402,6 +3408,10 @@ void typeOfPrimop ( IROp op,
       case Iop_RecpExpF32:
          BINARY(ity_RMode,Ity_F32, Ity_F32);
 
+      case Iop_RoundF32toIntA0:
+      case Iop_RoundF32toIntE:
+         UNARY(Ity_F32, Ity_F32);
+
       case Iop_SqrtF16:
          BINARY(ity_RMode, Ity_F16, Ity_F16);
 
@@ -3478,6 +3488,9 @@ void typeOfPrimop ( IROp op,
       case Iop_SinF64: case Iop_CosF64: case Iop_TanF64: 
       case Iop_2xm1F64:
       case Iop_RoundF64toInt: BINARY(ity_RMode,Ity_F64, Ity_F64);
+
+      case Iop_RoundF64toIntA0: case Iop_RoundF64toIntE:
+         UNARY(Ity_F64, Ity_F64);
 
       case Iop_MAddF64: case Iop_MSubF64:
       case Iop_MAddF64r32: case Iop_MSubF64r32:

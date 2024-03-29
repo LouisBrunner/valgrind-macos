@@ -39,7 +39,7 @@ Syscall param timerfd_gettime(curr_value) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
-587:     SYS_timerfd_settime 3s 2m
+587:     SYS_timerfd_settime 4s 2m
 ---------------------------------------------------------
 Syscall param timerfd_settime(fd) contains uninitialised byte(s)
    ...
@@ -50,12 +50,14 @@ Syscall param timerfd_settime(flags) contains uninitialised byte(s)
 Syscall param timerfd_settime(new_value) contains uninitialised byte(s)
    ...
 
+Syscall param timerfd_settime(old_value) contains uninitialised byte(s)
+   ...
+
 Syscall param timerfd_settime(new_value) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param timerfd_settime(old_value) points to unaddressable byte(s)
    ...
- Address 0x........ is on thread 1's stack
- .... bytes below stack pointer
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

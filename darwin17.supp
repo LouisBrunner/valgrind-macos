@@ -16,7 +16,7 @@
 {
    OSX1013:2-Leak
    Memcheck:Leak
-   match-leak-kinds: definite
+   match-leak-kinds: all
    fun:malloc_zone_?alloc
    ...
    fun:_read_images
@@ -825,6 +825,43 @@ fun:pthread_rwlock_init
    Memcheck:Cond
    fun:ccaes_vng_ctr_crypt
 }
+
+{
+   OSX1013:helgrind:_pthread_deallocate
+   Helgrind:Race
+   fun:_pthread_deallocate
+}
+
+{
+   OSX1013:helgrind:_pthread_join_cleanup
+   Helgrind:Race
+   fun:_pthread_join_cleanup
+}
+
+{
+   OSX1013:helgrind:_pthread_join
+   Helgrind:Race
+   fun:_pthread_join
+}
+
+{
+   OSX1013:helgrind:_pthread_terminate
+   Helgrind:Race
+   fun:_pthread_terminate
+}
+
+{
+   OSX1013:helgrind:_pthread_exit
+   Helgrind:Race
+   fun:_pthread_exit
+}
+
+{
+   OSX1013:helgrind:_pthread_body
+   Helgrind:Race
+   fun:_pthread_body
+}
+
 {
    OSX1013:nanosleep
    drd:ConflictingAccess

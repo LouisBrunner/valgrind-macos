@@ -9,7 +9,7 @@ EXTRA_DIST = \
         cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
-	memory.stdout.exp memory.stderr.exp memory.vgtest \
+	memory_test.stdout.exp memory_test.stderr.exp memory_test.vgtest \
 	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
 	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest \
 	simd_dotprod.stdout.exp simd_dotprod.stderr.exp simd_dotprod.vgtest \
@@ -27,7 +27,7 @@ check_PROGRAMS = \
         cvtf_imm \
 	fp_and_simd \
 	integer \
-	memory \
+	memory_test \
 	fmadd_sub \
 	ldxp_stxp
 

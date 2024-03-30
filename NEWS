@@ -74,6 +74,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 483786  Incorrect parameter indexing in FreeBSD clock_nanosleep syscall wrapper
 484002  Add suppression for invalid read in glibc's __wcpncpy_avx2() via wcsxfrm()
 484426  aarch64: 0.5 gets rounded to 0
+484480  False positives when using sem_trywait
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

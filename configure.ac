@@ -4971,7 +4971,8 @@ AC_CHECK_FUNCS([     \
         wcsncpy      \
         free_aligned_sized \
         wcpncpy      \
-        wcsxfrm
+        wcsxfrm      \
+        sem_timedwait
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -5015,6 +5016,8 @@ AM_CONDITIONAL([HAVE_WCPNCPY],
                [test x$ac_cv_func_wcpncpy = xyes])
 AM_CONDITIONAL([HAVE_WCSXFRM],
                [test x$ac_cv_func_wcsxfrm = xyes])
+AM_CONDITIONAL([HAVE_SEM_TIMEDWAIT],
+               [test x$ac_cv_func_sem_timedwait = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

@@ -3192,6 +3192,132 @@ static int sem_wait_WRK(sem_t* sem)
 #  error "Unsupported OS"
 #endif
 
+//-----------------------------------------------------------
+// glibc:   sem_trywait
+// glibc:   sem_trywait@GLIBC_2.0
+// glibc:   sem_trywait@@GLIBC_2.1
+// darwin:  sem_trywait
+// Solaris: sema_trywait (sem_teywait is built on top of sema_trywait)
+// FreeBSD: sem_trywait (libc)
+//
+/* trywait: decrement semaphore if non-zero otherwise return error */
+__attribute__((noinline))
+static int sem_trywait_WRK(sem_t* sem)
+{
+   OrigFn fn;
+   int    ret;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, "<< sem_trywait(%p) ", sem);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_PRE, sem_t*,sem);
+
+   CALL_FN_W_W(ret, fn, sem);
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST, sem_t*,sem,
+                long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
+      DO_PthAPIerror( "sem_trywait", SEM_ERROR );
+   }
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, " sem_trywait -> %d >>\n", ret);
+      fflush(stderr);
+   }
+
+   return ret;
+}
+
+#if defined(VGO_linux)
+PTH_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */
+   return sem_trywait_WRK(sem);
+}
+PTH_FUNC(int, semZutrywaitZAZa, sem_t* sem) { /* sem_trywait@* */
+   return sem_trywait_WRK(sem);
+}
+#elif defined(VGO_darwin)
+PTH_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */
+   return sem_wait_WRK(sem);
+}
+#elif defined(VGO_freebsd)
+LIBC_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */
+   return sem_trywait_WRK(sem);
+}
+#elif defined(VGO_solaris)
+PTH_FUNC(int, semaZutrywait, sem_t *sem) { /* sema_trywait */
+   return sem_trywait_WRK(sem);
+}
+#else
+#  error "Unsupported OS"
+#endif
+
+//-----------------------------------------------------------
+// glibc:   sem_timedwait
+// glibc:   sem_timedwait@GLIBC_2.0
+// glibc:   sem_timedwait@@GLIBC_2.1
+// darwin:  does not exist
+// Solaris: sema_timedwait (sem_timedwait is built on top of sema_timedwait)
+// FreeBSD: sem_timedwait (libc)
+//
+/* trywait: decrement semaphore if non-zero otherwise return error */
+__attribute__((noinline))
+static int sem_timedwait_WRK(sem_t* sem, const struct timespec* abs_timeout)
+{
+   OrigFn fn;
+   int    ret;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, "<< sem_timedwait(%p, %p) ", sem, abs_timeout);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_PRE, sem_t*,sem);
+
+   CALL_FN_W_WW(ret, fn, sem, abs_timeout);
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST, sem_t*,sem,
+                long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
+      DO_PthAPIerror( "sem_timedwait", SEM_ERROR );
+   }
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, " sem_timedwait -> %d >>\n", ret);
+      fflush(stderr);
+   }
+
+   return ret;
+}
+
+#if defined(VGO_linux)
+PTH_FUNC(int, semZutimedwait, sem_t* sem, const struct timespec* abs_timeout) { /* sem_timedwait */
+   return sem_timedwait_WRK(sem, abs_timeout);
+}
+PTH_FUNC(int, semZutimedwaitZAZa, sem_t* sem, const struct timespec* abs_timeout) { /* sem_timedwait@* */
+   return sem_timedwait_WRK(sem, abs_timeout);
+}
+#elif defined(VGO_darwin)
+
+// does not exist
+
+#elif defined(VGO_freebsd)
+LIBC_FUNC(int, semZutimedwait, sem_t* sem, const struct timespec* abs_timeout) { /* sem_timedwait */
+   return sem_timedwait_WRK(sem, abs_timeout);
+}
+#elif defined(VGO_solaris)
+PTH_FUNC(int, semaZutimedwait, sem_t *sem, const struct timespec* abs_timeout) { /* sema_timedwait */
+   return sem_timedwait_WRK(sem, abs_timeout);
+}
+#else
+#  error "Unsupported OS"
+#endif
+
 
 //-----------------------------------------------------------
 // glibc:   sem_post

@@ -18,6 +18,12 @@ perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
 # FreeBSD specific fdleak filters
 perl -p -e 's/ _close / close /;s/ _openat / creat /;s/internet/AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:.../' |
 
+# Solaris specific fdleak filters
+perl -p -e 's/ __close / close /' |
+sed '/ _so_socket /d;' |
+awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
+awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |
+
 # Stack traces showing where fds were created have lots of variations:
 # different numbers of entries, line numbers or not depending on whether
 # libc debug info is present, 'main' vs. '(below main)', etc.  

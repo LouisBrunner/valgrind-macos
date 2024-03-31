@@ -3264,6 +3264,7 @@ PTH_FUNC(int, semaZutrywait, sem_t *sem) { /* sema_trywait */
 // FreeBSD: sem_timedwait (libc)
 //
 /* trywait: decrement semaphore if non-zero otherwise return error */
+#if !defined(VGO_darwin)
 __attribute__((noinline))
 static int sem_timedwait_WRK(sem_t* sem, const struct timespec* abs_timeout)
 {
@@ -3302,10 +3303,6 @@ PTH_FUNC(int, semZutimedwait, sem_t* sem, const struct timespec* abs_timeout) { 
 PTH_FUNC(int, semZutimedwaitZAZa, sem_t* sem, const struct timespec* abs_timeout) { /* sem_timedwait@* */
    return sem_timedwait_WRK(sem, abs_timeout);
 }
-#elif defined(VGO_darwin)
-
-// does not exist
-
 #elif defined(VGO_freebsd)
 LIBC_FUNC(int, semZutimedwait, sem_t* sem, const struct timespec* abs_timeout) { /* sem_timedwait */
    return sem_timedwait_WRK(sem, abs_timeout);
@@ -3317,6 +3314,7 @@ PTH_FUNC(int, semaZutimedwait, sem_t *sem, const struct timespec* abs_timeout) {
 #else
 #  error "Unsupported OS"
 #endif
+#endif // not VGO_darwin
 
 
 //-----------------------------------------------------------

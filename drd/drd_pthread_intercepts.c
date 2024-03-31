@@ -1636,6 +1636,28 @@ PTH_FUNCS(int, semaZureltimedwait, sem_timedwait_intercept,
           (sem, timeout));
 #endif /* VGO_solaris */
 
+#if defined(VGO_freebsd)
+static __always_inline
+   int sem_clockwait_np_intercept(sem_t* sem, clockid_t clock_id, int flags,
+                                  const struct timespec * rqtp, struct timespec * rmtp)
+{
+   int   ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_SEM_WAIT,
+                                   sem, 0, 0, 0, 0);
+   CALL_FN_W_5W(ret, fn, sem, clock_id, flags, rqtp, rmtp);
+   VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_SEM_WAIT,
+                                   sem, ret == 0, 0, 0, 0);
+   return ret;
+}
+
+LIBC_FUNC(int, semZuclockwaitZunp, sem_clockwait_np_intercept,
+          (sem_t* sem, clockid_t clock_id, int flags,
+           const struct timespec * rqtp, struct timespec * rmtp),
+          (sem, clock_id, flags, rqtp, rmtp));
+#endif
+
 static __always_inline int sem_post_intercept(sem_t *sem)
 {
    int   ret;

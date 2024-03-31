@@ -269,6 +269,9 @@ EXTRA_DIST =                                        \
 	sem_as_mutex3.stderr.exp-mips32-be          \
 	sem_as_mutex3.stderr.exp-mips32-le          \
 	sem_as_mutex3.vgtest                        \
+	sem_clockwait_np.stderr.exp                 \
+	sem_clockwait_np.stdout.exp                 \
+	sem_clockwait_np.vgtest                     \
 	sem_open.stderr.exp                         \
 	sem_open.stderr.exp-mips32-be               \
 	sem_open.stderr.exp-mips32-le               \

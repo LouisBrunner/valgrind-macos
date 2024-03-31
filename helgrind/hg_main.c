@@ -715,17 +715,24 @@ static void map_threads_delete ( ThreadId coretid )
 
 static void HG_(thread_enter_synchr)(Thread *thr) {
    tl_assert(thr->synchr_nesting >= 0);
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
    thr->synchr_nesting += 1;
 #endif /* VGO_solaris */
 }
 
 static void HG_(thread_leave_synchr)(Thread *thr) {
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
    thr->synchr_nesting -= 1;
 #endif /* VGO_solaris */
    tl_assert(thr->synchr_nesting >= 0);
 }
+
+#if defined(VGO_freebsd)
+static Int HG_(get_pthread_synchr_nesting_level)(ThreadId tid) {
+   Thread *thr = map_threads_maybe_lookup(tid);
+   return thr->synchr_nesting;
+}
+#endif
 
 static void HG_(thread_enter_pthread_create)(Thread *thr) {
    tl_assert(thr->pthread_create_nesting_level >= 0);
@@ -5373,6 +5380,11 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          map_pthread_t_to_Thread_INIT();
          my_thr = map_threads_maybe_lookup( tid );
          tl_assert(my_thr); /* See justification above in SET_MY_PTHREAD_T */
+#if defined(VGO_freebsd)
+         if (HG_(get_pthread_synchr_nesting_level)(tid) >= 1) {
+            break;
+         }
+#endif
          HG_(record_error_PthAPIerror)(
             my_thr, (HChar*)args[1], (UWord)args[2], (HChar*)args[3] );
          break;
@@ -5603,8 +5615,13 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_POSIX_SEM_WAIT_POST: /* sem_t*, long tookLock */
+#if defined(VGO_freebsd)
+      if (args[2] == True && HG_(get_pthread_synchr_nesting_level)(tid) == 1)
+         evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+#else
          if (args[2] == True)
             evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+#endif
          HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 

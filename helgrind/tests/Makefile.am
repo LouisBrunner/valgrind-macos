@@ -72,6 +72,8 @@ EXTRA_DIST = \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
+	sem_clockwait_np.vgtest sem_clockwait_np.stdout.exp \
+		sem_clockwait_np.stderr.exp \
 	sem_timedwait.vgtest sem_timedwait.stdout.exp sem_timedwait.stderr.exp \
 	shared_timed_mutex.vgtest shared_timed_mutex.stderr.exp \
 	shmem_abits.vgtest shmem_abits.stdout.exp shmem_abits.stderr.exp \
@@ -245,6 +247,10 @@ endif
 
 if HAVE_GETADDRINFO
 check_PROGRAMS += getaddrinfo
+endif
+
+if HAVE_SEM_CLOCKWAIT_NP
+check_PROGRAMS += sem_clockwait_np
 endif
 
 if HAVE_SEM_TIMEDWAIT

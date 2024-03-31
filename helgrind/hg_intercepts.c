@@ -3263,8 +3263,9 @@ PTH_FUNC(int, semaZutrywait, sem_t *sem) { /* sema_trywait */
 // Solaris: sema_timedwait (sem_timedwait is built on top of sema_timedwait)
 // FreeBSD: sem_timedwait (libc)
 //
-/* trywait: decrement semaphore if non-zero otherwise return error */
 #if !defined(VGO_darwin)
+/* timedwait: decrement semaphore if non-zero otherwise wait for specified
+   time then return an error */
 __attribute__((noinline))
 static int sem_timedwait_WRK(sem_t* sem, const struct timespec* abs_timeout)
 {
@@ -3316,6 +3317,53 @@ PTH_FUNC(int, semaZutimedwait, sem_t *sem, const struct timespec* abs_timeout) {
 #endif
 #endif // not VGO_darwin
 
+//-----------------------------------------------------------
+// glibc:   does not exist
+// darwin:  does not exist
+// Solaris: does not exist
+// FreeBSD: sem_clockwait_np (libc)
+//
+/* clockwait_np: decrement semaphore if non-zero otherwise wait for specified
+   time then return an error with a flag to select the kind of clock and
+   a timespec for the remaining time */
+#if defined (VGO_freebsd)
+__attribute__((noinline))
+static int sem_clockwait_np_WRK(sem_t* sem, clockid_t clock_id, int flags,
+                                const struct timespec * rqtp, struct timespec * rmtp)
+{
+   OrigFn fn;
+   int    ret;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, "<< sem_clockwait_np(%p, %d, %d, %p, %p) ", sem, clock_id, flags, rqtp, rmtp);
+      fflush(stderr);
+   }
+
+   DO_CREQ_v_W(_VG_USERREQ__HG_POSIX_SEM_WAIT_PRE, sem_t*,sem);
+
+   CALL_FN_W_5W(ret, fn, sem, clock_id, flags, rqtp, rmtp);
+
+   DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_WAIT_POST, sem_t*,sem,
+                long, (ret == 0) ? True : False);
+
+   if (ret != 0) {
+      DO_PthAPIerror( "sem_clockwait_np", SEM_ERROR );
+   }
+
+   if (TRACE_SEM_FNS) {
+      fprintf(stderr, " sem_clockwait_np -> %d >>\n", ret);
+      fflush(stderr);
+   }
+
+   return ret;
+}
+
+LIBC_FUNC(int, semZuclockwaitZunp, sem_t* sem, clockid_t clock_id, int flags,
+          const struct timespec * rqtp, struct timespec * rmtp) { /* sem_clockwait_np */
+   return sem_clockwait_np_WRK(sem, clock_id, flags, rqtp, rmtp);
+}
+#endif
 
 //-----------------------------------------------------------
 // glibc:   sem_post

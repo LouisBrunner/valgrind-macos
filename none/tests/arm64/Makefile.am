@@ -54,6 +54,7 @@ AM_CCASFLAGS += @FLAG_M64@
 allexec_CFLAGS     = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 
 bug484426_SOURCES  = bug484426.cpp
+bug484426_CXXFLAGS = ${AM_CXXFLAGS} -std=c++11
 
 crc32_CFLAGS       = $(AM_CFLAGS) -march=armv8-a+crc
 atomics_v81_CFLAGS = $(AM_CFLAGS) -march=armv8.1-a

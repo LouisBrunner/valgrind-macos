@@ -15,7 +15,9 @@ perl -p -e 's/^Open file descriptor [0-9]*: .*/Open file descriptor ...: .../' |
 perl -p -e 's/^Open file descriptor [0-9]*:$/Open file descriptor ...:/' |
 perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
 perl -p -e 's/socket\.c:[1-9][0-9]*/in \/...libc.../' |
+# arm systems substitute open for creat
 perl -p -e 's/open \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
+perl -p -e "s/: open \(/: creat (/" |
 
 # FreeBSD specific fdleak filters
 perl -p -e 's/ _close / close /;s/ _openat / creat /;s/internet/AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:.../' |

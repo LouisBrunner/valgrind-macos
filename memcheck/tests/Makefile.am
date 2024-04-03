@@ -66,7 +66,7 @@ if VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD
 SUBDIRS += amd64-freebsd
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
+DIST_SUBDIRS = x86 amd64 arm64 ppc32 ppc64 s390x linux \
 		darwin solaris x86-linux amd64-linux arm64-linux \
 		x86-solaris amd64-solaris mips32 mips64 \
 		freebsd amd64-freebsd x86-freebsd \

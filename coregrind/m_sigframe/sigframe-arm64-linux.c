@@ -197,8 +197,6 @@ void VG_(sigframe_create)( ThreadId tid,
    tst->arch.vex.guest_X2 = (Addr)&rsf->sig.uc;
 
    VG_(set_SP)(tid, sp);
-   VG_TRACK( post_reg_write, Vg_CoreSignal, tid, VG_O_STACK_PTR,
-             sizeof(Addr));
    tst->arch.vex.guest_X0 = sigNo; 
 
    if (flags & VKI_SA_RESTORER)
@@ -208,6 +206,19 @@ void VG_(sigframe_create)( ThreadId tid,
           = (Addr)&VG_(arm64_linux_SUBST_FOR_rt_sigreturn);
 
    tst->arch.vex.guest_PC = (Addr)handler;
+
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         VG_O_STACK_PTR, sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X0), sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X1), sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X2), sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X30), sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_PC), sizeof(Addr));
 }
 
 

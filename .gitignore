@@ -1104,6 +1104,15 @@
 /memcheck/tests/amd64-solaris/ldsoexec
 /memcheck/tests/amd64-solaris/scalar
 
+# /memcheck/tests/arm64/
+/memcheck/tests/arm64/*.diff*
+/memcheck/tests/arm64/*.dSYM
+/memcheck/tests/arm64/*.out
+/memcheck/tests/arm64/.deps
+/memcheck/tests/arm64/Makefile
+/memcheck/tests/arm64/Makefile.in
+/memcheck/tests/arm64/bug484935
+
 # /memcheck/tests/arm64-linux/
 /memcheck/tests/arm64-linux/.deps
 /memcheck/tests/arm64-linux/Makefile

@@ -5614,6 +5614,7 @@ AC_CONFIG_FILES([
    memcheck/tests/Makefile
    memcheck/tests/common/Makefile
    memcheck/tests/amd64/Makefile
+   memcheck/tests/arm64/Makefile
    memcheck/tests/x86/Makefile
    memcheck/tests/linux/Makefile
    memcheck/tests/linux/debuginfod-check.vgtest

@@ -75,6 +75,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 484002  Add suppression for invalid read in glibc's __wcpncpy_avx2() via wcsxfrm()
 484426  aarch64: 0.5 gets rounded to 0
 484480  False positives when using sem_trywait
+484935  [patch] Valgrind reports false "Conditional jump or move depends on
+        uninitialised value" errors for aarch64 signal handlers
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

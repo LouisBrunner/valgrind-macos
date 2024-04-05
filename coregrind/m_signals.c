@@ -2922,9 +2922,11 @@ void sync_signalhandler_from_kernel ( ThreadId tid,
       if (0)
          VG_(kill_self)(sigNo);  /* generate a core dump */
 
-      //if (tid == 0)            /* could happen after everyone has exited */
-      //  tid = VG_(master_tid);
-      vg_assert(tid != 0);
+      /* tid == 0 could happen after everyone has exited, which indicates
+         a bug in the core (cleanup) code.  Don't assert tid must be valid,
+         that will mess up the valgrind core backtrace if it fails, coming
+         from the signal handler. */
+      // vg_assert(tid != 0);
 
       UnwindStartRegs startRegs;
       VG_(memset)(&startRegs, 0, sizeof(startRegs));

@@ -228,4 +228,9 @@
    Helgrind:Race
    fun:_umtx_op_err
 }
+{
+   FREEBSD14-LIBSTDC++-STD::MUTEX::LOCK
+   Helgrind:Race
+   fun:_ZL18__gthread_active_pv
+}
 

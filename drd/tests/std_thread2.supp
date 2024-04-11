@@ -87,3 +87,8 @@
    fun:__tl_lock
 }
 
+{
+   drd-glibc-set-vma-name
+   drd:ConflictingAccess
+   fun:__set_vma_name
+}

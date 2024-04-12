@@ -31,8 +31,16 @@ if VGCONF_HAVE_PLATFORM_SEC
 TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@ += \
 	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
+else
+if VGCONF_PLATFORMS_INCLUDE_ARM64_LINUX
+TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@ += \
+	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+if VGCONF_HAVE_PLATFORM_SEC
+TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@ += \
+	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
-
+endif
+endif
 
 # -Wl,--build-id=none is needed when linking tools with a linker that only
 # knows -Ttext and not -Ttext-segment. Without this flag newer ld versions

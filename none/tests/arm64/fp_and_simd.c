@@ -1909,7 +1909,7 @@ void test_SMAXV ( void )
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmp d29, #0; " \
+        "fcmp d29, #0.0; " \
         "mrs x9, nzcv; str x9, [%0, 48]; " \
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
@@ -1930,7 +1930,7 @@ void test_SMAXV ( void )
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmp s29, #0; " \
+        "fcmp s29, #0.0; " \
         "mrs x9, nzcv; str x9, [%0, 48]; " \
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
@@ -1951,7 +1951,7 @@ void test_SMAXV ( void )
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmpe d29, #0; " \
+        "fcmpe d29, #0.0; " \
         "mrs x9, nzcv; str x9, [%0, 48]; " \
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
@@ -1972,7 +1972,7 @@ void test_SMAXV ( void )
      __asm__ __volatile__( \
         "ldr x9,  [%0, 48];  msr nzcv, x9; " \
         "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmpe s29, #0; " \
+        "fcmpe s29, #0.0; " \
         "mrs x9, nzcv; str x9, [%0, 48]; " \
         "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
@@ -3054,8 +3054,8 @@ GEN_BINARY_TEST(mul, 16b, 16b, 16b)
 GEN_BINARY_TEST(mul, 8b, 8b, 8b)
 
 /* overkill -- don't need two vecs, only one */
-GEN_TWOVEC_TEST(movi_16b_0x9C_lsl0, "movi v22.16b, #0x9C, LSL #0", 22, 23)
-GEN_TWOVEC_TEST(movi_8b_0x8B_lsl0,  "movi v22.8b,  #0x8B, LSL #0", 22, 23)
+GEN_TWOVEC_TEST(movi_16b_0x9C_lsl0, "movi v22.16b, #0x9C", 22, 23)
+GEN_TWOVEC_TEST(movi_8b_0x8B_lsl0,  "movi v22.8b,  #0x8B", 22, 23)
 
 GEN_TWOVEC_TEST(movi_8h_0x5A_lsl0,  "movi v22.8h,  #0x5A, LSL #0", 22, 23)
 GEN_TWOVEC_TEST(movi_8h_0xA5_lsl8,  "movi v22.8h,  #0xA5, LSL #8", 22, 23)

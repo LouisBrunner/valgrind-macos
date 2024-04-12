@@ -64,6 +64,14 @@
 }
 
 {
+   helgrind-glibc-__printf_buffer_write2
+   Helgrind:Race
+   fun:*memmove*
+   ...
+   fun:__printf_buffer_write
+}
+
+{
    helgrind-glibc2X-005
    Helgrind:Race
    obj:@GLIBC_LIBPTHREAD_PATH@

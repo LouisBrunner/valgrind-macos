@@ -212,38 +212,38 @@ printf("{LD,ST}R (vector register) (entirely MISSING)\n");
 ////////////////////////////////////////////////////////////////
 printf("LDRS{B,H,W} (integer register, SX)\n");
 
-TESTINST3_hide2and3("ldrsw x21, [x22,x23]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsw x21, [x22,x23, lsl #2]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsw x21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsw x21, [x22,w23,uxtw #2]", AREA_MID, 5, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsw x21, [x22,x23]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsw x21, [x22,x23, lsl #2]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsw x21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsw x21, [x22,w23,uxtw #2]", AREA_MID, 5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsw x21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsw x21, [x22,w23,sxtw #2]", AREA_MID, -5ULL, x21,x22,x23,0);
 
-TESTINST3_hide2and3("ldrsh x21, [x22,x23]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsh x21, [x22,x23, lsl #1]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsh x21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsh x21, [x22,w23,uxtw #1]", AREA_MID, 5, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh x21, [x22,x23]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh x21, [x22,x23, lsl #1]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh x21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh x21, [x22,w23,uxtw #1]", AREA_MID, 5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsh x21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsh x21, [x22,w23,sxtw #1]", AREA_MID, -5ULL, x21,x22,x23,0);
 
-TESTINST3_hide2and3("ldrsh w21, [x22,x23]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsh w21, [x22,x23, lsl #1]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsh w21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsh w21, [x22,w23,uxtw #1]", AREA_MID, 5, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh w21, [x22,x23]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh w21, [x22,x23, lsl #1]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh w21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsh w21, [x22,w23,uxtw #1]", AREA_MID, 5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsh w21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsh w21, [x22,w23,sxtw #1]", AREA_MID, -5ULL, x21,x22,x23,0);
 
-TESTINST3_hide2and3("ldrsb x21, [x22,x23]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsb x21, [x22,x23, lsl #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsb x21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsb x21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb x21, [x22,x23]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb x21, [x22,x23, lsl #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb x21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb x21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsb x21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsb x21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 
-TESTINST3_hide2and3("ldrsb w21, [x22,x23]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsb w21, [x22,x23, lsl #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsb w21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
-TESTINST3_hide2and3("ldrsb w21, [x22,w23,uxtw #0]", AREA_MID, 5, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb w21, [x22,x23]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb w21, [x22,x23, lsl #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb w21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
+TESTINST3_hide2and3("ldrsb w21, [x22,w23,uxtw #0]", AREA_MID, 5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsb w21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 TESTINST3_hide2and3("ldrsb w21, [x22,w23,sxtw #0]", AREA_MID, -5ULL, x21,x22,x23,0);
 

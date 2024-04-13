@@ -46,6 +46,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 474160  If errors-for-leak-kinds is specified, exit-on-first-error should only exit
         on one of the listed errors.
 475498  Add reallocarray wrapper
+476025  Vbit expected test results for Iop_CmpGT64Ux2 are wrong
 476320  Build failure with GCC
 476331  clean up generated/distributed filter scripts
 476535  Difference in allocation size for massif/tests/overloaded-new between

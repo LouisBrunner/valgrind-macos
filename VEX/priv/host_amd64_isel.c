@@ -42,6 +42,7 @@
 #include "host_generic_simd64.h"
 #include "host_generic_simd128.h"
 #include "host_generic_simd256.h"
+#include "host_amd64_maddf.h"
 #include "host_generic_maddf.h"
 #include "host_amd64_defs.h"
 
@@ -2832,6 +2833,13 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
       HReg argX = iselFltExpr(env, qop->arg2);
       HReg argY = iselFltExpr(env, qop->arg3);
       HReg argZ = iselFltExpr(env, qop->arg4);
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA3) {
+         vassert(dst.u32 != argY.u32 && dst.u32 != argZ.u32);
+         if (dst.u32 != argX.u32)
+            addInstr(env, AMD64Instr_SseReRg(Asse_MOV, argX, dst));
+         addInstr(env, AMD64Instr_Avx32FLo(Asse_VFMADD213, argY, argZ, dst));
+         return dst;
+      }
       /* XXXROUNDINGFIXME */
       /* set roundingmode here */
       /* subq $16, %rsp         -- make a space*/
@@ -2861,10 +2869,22 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
                                        AMD64AMode_IR(0, hregAMD64_RDX())));
       addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 4, argZ,
                                        AMD64AMode_IR(0, hregAMD64_RCX())));
-      /* call the helper */
-      addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
-                                     (ULong)(HWord)h_generic_calc_MAddF32,
-                                     4, mk_RetLoc_simple(RLPri_None) ));
+
+      /* call the helper with priority order : fma4 -> fallback generic
+         remark: the fma3 case is handled before without helper*/
+#if defined(VGA_amd64)
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA4) {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_amd64_calc_MAddF32_fma4,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }else
+#endif
+      {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_generic_calc_MAddF32,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }
+
       /* fetch the result from memory, using %r_argp, which the
          register allocator will keep alive across the call. */
       addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 4, dst,
@@ -3024,6 +3044,14 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e )
       HReg argX = iselDblExpr(env, qop->arg2);
       HReg argY = iselDblExpr(env, qop->arg3);
       HReg argZ = iselDblExpr(env, qop->arg4);
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA3) {
+         vassert(dst.u32 != argY.u32 && dst.u32 != argZ.u32);
+         if (dst.u32 != argX.u32)
+            addInstr(env, AMD64Instr_SseReRg(Asse_MOV, argX, dst));
+         addInstr(env, AMD64Instr_Avx64FLo(Asse_VFMADD213, argY, argZ, dst));
+         return dst;
+      }
+
       /* XXXROUNDINGFIXME */
       /* set roundingmode here */
       /* subq $32, %rsp         -- make a space*/
@@ -3053,10 +3081,22 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e )
                                        AMD64AMode_IR(0, hregAMD64_RDX())));
       addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 8, argZ,
                                        AMD64AMode_IR(0, hregAMD64_RCX())));
-      /* call the helper */
-      addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
-                                     (ULong)(HWord)h_generic_calc_MAddF64,
-                                     4, mk_RetLoc_simple(RLPri_None) ));
+
+      /* call the helper with priority order : fma4 -> fallback generic
+         remark: the fma3 case is handled before without helper*/
+#if defined(VGA_amd64)
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA4) {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_amd64_calc_MAddF64_fma4,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }else
+#endif
+      {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_generic_calc_MAddF64,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }
+
       /* fetch the result from memory, using %r_argp, which the
          register allocator will keep alive across the call. */
       addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 8, dst,
@@ -5372,7 +5412,9 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
                      | VEX_HWCAPS_AMD64_AVX2
                      | VEX_HWCAPS_AMD64_F16C
                      | VEX_HWCAPS_AMD64_RDRAND
-                     | VEX_HWCAPS_AMD64_RDSEED)));
+                     | VEX_HWCAPS_AMD64_RDSEED
+                     | VEX_HWCAPS_AMD64_FMA3
+                     | VEX_HWCAPS_AMD64_FMA4)));
 
    /* Check that the host's endianness is as expected. */
    vassert(archinfo_host->endness == VexEndnessLE);

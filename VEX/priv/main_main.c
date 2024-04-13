@@ -1650,6 +1650,8 @@ static const HChar* show_hwcaps_amd64 ( UInt hwcaps )
       { VEX_HWCAPS_AMD64_F16C,   "f16c"   },
       { VEX_HWCAPS_AMD64_RDRAND, "rdrand" },
       { VEX_HWCAPS_AMD64_RDSEED, "rdseed" },
+      { VEX_HWCAPS_AMD64_FMA3,   "fma"    }, /*fma to keep the same naming as /proc/cpuinfo*/
+      { VEX_HWCAPS_AMD64_FMA4,   "fma4"   },
    };
    /* Allocate a large enough buffer */
    static HChar buf[sizeof prefix + 

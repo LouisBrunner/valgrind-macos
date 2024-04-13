@@ -984,6 +984,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #elif defined(VGA_amd64)
    { Bool have_sse3, have_ssse3, have_cx8, have_cx16;
      Bool have_lzcnt, have_avx, have_bmi, have_avx2;
+     Bool have_fma3, have_fma4;
      Bool have_rdtscp, have_rdrand, have_f16c, have_rdseed;
      UInt eax, ebx, ecx, edx, max_basic, max_extended;
      ULong xgetbv_0 = 0;
@@ -992,7 +993,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
      have_sse3 = have_ssse3 = have_cx8 = have_cx16
                = have_lzcnt = have_avx = have_bmi = have_avx2
-               = have_rdtscp = have_rdrand = have_f16c = have_rdseed = False;
+               = have_rdtscp = have_rdrand = have_f16c = have_rdseed
+               = have_fma3 = have_fma4 = False;
 
      eax = ebx = ecx = edx = max_basic = max_extended = 0;
 
@@ -1022,7 +1024,7 @@ Bool VG_(machine_get_hwcaps)( void )
      // we assume that SSE1 and SSE2 are available by default
      have_sse3  = (ecx & (1<<0)) != 0;  /* True => have sse3 insns */
      have_ssse3 = (ecx & (1<<9)) != 0;  /* True => have Sup SSE3 insns */
-     // fma     is ecx:12
+     have_fma3  = (ecx & (1<<12))!= 0;  /* True => have fma3 insns */
      // sse41   is ecx:19
      // sse42   is ecx:20
      // xsave   is ecx:26
@@ -1032,7 +1034,7 @@ Bool VG_(machine_get_hwcaps)( void )
      have_rdrand = (ecx & (1<<30)) != 0; /* True => have RDRAND insns */
 
      have_avx = False;
-     /* have_fma = False; */
+
      if ( (ecx & ((1<<28)|(1<<27)|(1<<26))) == ((1<<28)|(1<<27)|(1<<26)) ) {
         /* Processor supports AVX instructions and XGETBV is enabled
            by OS and AVX instructions are enabled by the OS. */
@@ -1059,9 +1061,6 @@ Bool VG_(machine_get_hwcaps)( void )
            if (ebx2 == 576 && eax2 == 256) {
               have_avx = True;
            }
-           /* have_fma = (ecx & (1<<12)) != 0; */
-           /* have_fma: Probably correct, but gcc complains due to
-              unusedness. */
         }
      }
 
@@ -1087,6 +1086,11 @@ Bool VG_(machine_get_hwcaps)( void )
      if (max_extended >= 0x80000001) {
         VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
         have_rdtscp = (edx & (1<<27)) != 0; /* True => have RDTSVCP */
+     }
+
+     if (max_extended >= 0x80000001) {
+        VG_(cpuid)(0x80000001, 0, &eax, &ebx, &ecx, &edx);
+        have_fma4= (ecx & (1<<16)) != 0; /* True => have fma4 */
      }
 
      /* Check for BMI1 and AVX2.  If we have AVX1 (plus OS support). */
@@ -1120,7 +1124,9 @@ Bool VG_(machine_get_hwcaps)( void )
                  | (have_rdtscp ? VEX_HWCAPS_AMD64_RDTSCP : 0)
                  | (have_f16c   ? VEX_HWCAPS_AMD64_F16C   : 0)
                  | (have_rdrand ? VEX_HWCAPS_AMD64_RDRAND : 0)
-                 | (have_rdseed ? VEX_HWCAPS_AMD64_RDSEED : 0);
+                 | (have_rdseed ? VEX_HWCAPS_AMD64_RDSEED : 0)
+                 | (have_fma3   ? VEX_HWCAPS_AMD64_FMA3   : 0)
+                 | (have_fma4   ? VEX_HWCAPS_AMD64_FMA4   : 0);
 
      VG_(machine_get_cache_info)(&vai);
 

@@ -188,7 +188,7 @@ void map_vgdbshared(char* shared_mem, int check_trials)
    int err;
 
    /* valgrind might still be starting up, give it 5 seconds by
-    * default, or check_trails seconds if it is set by --wait
+    * default, or check_trials seconds if it is set by --wait
     * to more than a second.  */
    if (check_trials > 1) {
      DEBUG(1, "check_trials %d\n", check_trials);
@@ -1148,6 +1148,50 @@ static void count_len(char delim, char *buf, size_t *len)
    }
 }
 
+/* early_exit guesses if vgdb speaks with GDB by checking from_gdb is a FIFO
+   (as GDB is likely the only program that would write data to vgdb stdin).
+   If not speaking with GDB, early_exit will just call exit(exit_code).
+   If speaking with GDB, early_exit will ensure the GDB user sees
+   the error messages produced by vgdb:
+   early_exit should be used when vgdb exits due to an early error i.e.
+   error during arg processing, before it could succesfully process the
+   first packet from GDB.
+   early_exit will then read the first packet send by GDB (i.e.
+   the qSupported packet) and will reply to it with an error and then exit.
+   This should ensure the vgdb error messages are made visible to the user. */
+static void early_exit (int exit_code, const char* exit_info)
+{
+   char buf[PBUFSIZ+1];
+   int pkt_size;
+   struct stat fdstat;
+
+   if (fstat(from_gdb, &fdstat) != 0)
+      XERROR(errno, "fstat\n");
+
+   DEBUG(1, "early_exit %s ISFIFO  %d\n", exit_info, S_ISFIFO(fdstat.st_mode));
+
+   if (S_ISFIFO(fdstat.st_mode)) {
+      /* We assume that we speak with GDB when stdin is a FIFO, so we expect
+         to get a first packet from GDB. This should ensure the vgdb messages
+         are made visible.  In case the whole stuff is blocked for any reason or
+         GDB does not send a package or ..., schedule an alarm to exit in max 5
+         seconds anyway. */
+      alarm(5);
+      pkt_size = receive_packet(buf, 0);
+      if (pkt_size <= 0)
+         DEBUG(1, "early_exit receive_packet: %d\n", pkt_size);
+      else {
+         DEBUG(1, "packet received: '%s'\n", buf);
+         sprintf(buf, "E.%s", exit_info);
+         send_packet(buf, 0);
+      }
+   }
+   fflush(stdout);
+   fflush(stderr);
+   DEBUG(1, "early_exit exiting %d\n", exit_code);
+   exit(exit_code);
+}
+
 /* Declare here, will be used early, implementation follows later. */
 static void gdb_relay(int pid, int send_noack_mode, char *q_buf);
 
@@ -1336,7 +1380,7 @@ void do_multi_mode(int check_trials, int in_port)
           DEBUG(1, "receive_packet: %d\n", pkt_size);
           break;
        }
-       
+
        DEBUG(1, "packet received: '%s'\n", buf);
 
 #define QSUPPORTED "qSupported:"
@@ -1350,7 +1394,7 @@ void do_multi_mode(int check_trials, int in_port)
 #define QENVIRONMENTUNSET "QEnvironmentUnset"
 #define QSETWORKINGDIR "QSetWorkingDir"
 #define QTSTATUS "qTStatus"
-       
+
        if (strncmp(QSUPPORTED, buf, strlen(QSUPPORTED)) == 0) {
           DEBUG(1, "CASE %s\n", QSUPPORTED);
           // And here is our reply.
@@ -2029,7 +2073,7 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
 
    if (arg_pid == 0 || arg_pid < -1) {
       TSFPRINTF(stderr, "vgdb error: invalid pid %d given\n", arg_pid);
-      exit(1);
+      early_exit(1, "vgdb error: invalid pid given");
    } else {
       /* search for a matching named fifo.
          If we have been given a pid, we will check that the matching FIFO is
@@ -2130,9 +2174,11 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
             }
             errno = 0; /* avoid complain if at the end of vgdb_dir */
          }
-         if (f == NULL && errno != 0)
-            XERROR(errno, "vgdb error: reading directory %s for vgdb fifo\n",
-                   vgdb_dir_name);
+         if (f == NULL && errno != 0) {
+            ERROR(errno, "vgdb error: reading directory %s for vgdb fifo\n",
+                  vgdb_dir_name);
+            early_exit(1, "vgdb error reading vgdb fifo directory");
+         }
 
          closedir(vgdb_dir);
          if (pid != -1)
@@ -2146,20 +2192,23 @@ int search_arg_pid(int arg_pid, int check_trials, Bool show_list)
    if (show_list) {
       exit(1);
    } else if (pid == -1) {
-      if (arg_pid == -1)
+      if (arg_pid == -1) {
          TSFPRINTF(stderr, "vgdb error: no FIFO found and no pid given\n");
-      else
+         early_exit(1, "vgdb error: no FIFO found and no pid given");
+      } else {
          TSFPRINTF(stderr, "vgdb error: no FIFO found matching pid %d\n",
                    arg_pid);
-      exit(1);
+         early_exit(1, "vgdb error: no FIFO found matching the give pid");
+      }
    }
    else if (pid == -2) {
-      /* no arg_pid given, multiple FIFOs found */
-      exit(1);
+      early_exit(1, "no --pid= arg_pid given and multiple valgrind pids found.");
    }
    else {
       return pid;
    }
+
+   abort (); // Impossible
 }
 
 /* return true if the numeric value of an option of the
@@ -2227,7 +2276,7 @@ void parse_options(int argc, char** argv,
    for (i = 1; i < argc; i++) {
       if (is_opt(argv[i], "--help") || is_opt(argv[i], "-h")) {
          usage();
-         exit(0);
+         early_exit(0, "--help requested");
       } else if (is_opt(argv[i], "-d")) {
          debuglevel++;
       } else if (is_opt(argv[i], "-D")) {
@@ -2283,7 +2332,7 @@ void parse_options(int argc, char** argv,
           if (!valgrind_path) {
               TSFPRINTF(stderr, "%s is not a correct path. %s, exiting.\n",
 			path, strerror (errno));
-              exit(1);
+              early_exit(1, "incorrect valgrind path");
           }
           DEBUG(2, "valgrind's real path: %s\n", valgrind_path);
       } else if (is_opt(argv[i], "--vargs")) {
@@ -2339,7 +2388,7 @@ void parse_options(int argc, char** argv,
 		"Cannot use -D, -l or COMMANDs when using --multi mode\n");
    }
 
-   if (isatty(0)
+   if (isatty(from_gdb)
        && !show_shared_mem
        && !show_list
        && int_port == 0
@@ -2377,7 +2426,7 @@ void parse_options(int argc, char** argv,
 
    if (arg_errors > 0) {
       TSFPRINTF(stderr, "args error. Try `vgdb --help` for more information\n");
-      exit(1);
+      early_exit(1, "invalid args given to vgdb");
    }
 
    *p_show_shared_mem = show_shared_mem;
@@ -2423,7 +2472,7 @@ int main(int argc, char** argv)
    if (!multi_mode) {
       pid = search_arg_pid(arg_pid, check_trials, show_list);
 
-      /* We pass 1 for check_trails here, because search_arg_pid already waited.  */
+      /* We pass 1 for check_trials here, because search_arg_pid already waited.  */
       prepare_fifos_and_shared_mem(pid, 1);
    } else {
       pid = 0;
@@ -2441,11 +2490,11 @@ int main(int argc, char** argv)
                 VS_written_by_vgdb,
                 VS_seen_by_valgrind);
       TSFPRINTF(stderr, "vgdb pid %d\n", VS_vgdb_pid);
-      exit(0);
+      early_exit(0, "-D arg to show shared memory and exit given.");
    }
 
    if (multi_mode) {
-      /* check_trails is the --wait argument in seconds, defaulting to 1
+      /* check_trials is the --wait argument in seconds, defaulting to 1
        * if not given.  */
       do_multi_mode (check_trials, in_port);
    } else if (last_command >= 0) {

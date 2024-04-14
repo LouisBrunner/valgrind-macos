@@ -544,11 +544,10 @@ PRE(sys_setcontext)
    struct vki_ucontext *uc;
 
    PRINT("sys_setcontext ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ1(long, "setcontext",
+   PRE_REG_READ1(int, "setcontext",
                  struct vki_ucontext *, ucp);
 
    PRE_MEM_READ( "setcontext(ucp)", ARG1, sizeof(struct vki_ucontext) );
-   PRE_MEM_WRITE( "setcontext(ucp)", ARG1, sizeof(struct vki_ucontext) );
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);

@@ -27989,8 +27989,8 @@ static Long dis_FMA ( const VexAbiInfo* vbi, Prefix pfx, Long delta, UChar opc )
    }
 
    switch (vty) {
-      case Ity_F32:  putYMMRegLane32(rG, 1, mkU32(0)); /*fallthru*/
-      case Ity_F64:  putYMMRegLane64(rG, 1, mkU64(0)); /*fallthru*/
+      case Ity_F32:
+      case Ity_F64:
       case Ity_V128: putYMMRegLane128(rG, 1, mkV128(0)); /*fallthru*/
       case Ity_V256: break;
       default: vassert(0);

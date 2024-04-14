@@ -43,6 +43,7 @@ EXTRA_DIST = \
 	bug132918.stdout.exp-older-glibc \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
+	bug485148.vgtest bug485148.stdout.exp bug485148.stderr.exp \
 	cet_nops.vgtest cet_nops.stdout.exp cet_nops.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
@@ -160,7 +161,7 @@ if BUILD_BMI_TESTS
  check_PROGRAMS += bmi
 endif
 if BUILD_FMA_TESTS
- check_PROGRAMS += fma
+ check_PROGRAMS += fma bug485148
 endif
 if BUILD_MPX_TESTS
  check_PROGRAMS += mpx
@@ -201,6 +202,8 @@ allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 # generic C ones
 amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
+bug485148_CXXFLAGS      = ${AM_CXXFLAGS} -mfma
+bug485148_SOURCES       = bug485148.cpp
 cmpxchg_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 fb_test_amd64_CFLAGS	= $(AM_CFLAGS) -O -fno-strict-aliasing
 fb_test_amd64_LDADD	= -lm

@@ -3024,6 +3024,11 @@ PRE(sys_aio_error)
    PRINT("sys_aio_error ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(ssize_t, "aio_error", struct aiocb *, iocb);
    PRE_MEM_READ("aio_error(iocb)", ARG1, sizeof(struct vki_aiocb));
+   if (ARG1) {
+      if (!ML_(safe_to_deref)((struct vki_aiocb *)ARG1, sizeof(struct vki_aiocb))) {
+         SET_STATUS_Failure(VKI_EINVAL);
+      }
+   }
 }
 
 // SYS_yield   321

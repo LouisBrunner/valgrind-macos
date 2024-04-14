@@ -244,13 +244,12 @@ int main(void)
               char *ss_sp;
               size_t ss_size;
               int ss_flags;
-      } ss;
-      ss.ss_sp     = NULL;
-      ss.ss_flags  = 0;
-      ss.ss_size   = 0;
-      VALGRIND_MAKE_MEM_NOACCESS(& ss, sizeof(struct our_sigaltstack));
+      } ss = { NULL, 0, 0};
+      struct our_sigaltstack oss;
+      VALGRIND_MAKE_MEM_NOACCESS(&ss, sizeof(struct our_sigaltstack));
+      VALGRIND_MAKE_MEM_NOACCESS(&oss, sizeof(struct our_sigaltstack));
       GO(SYS_sigaltstack, "2s 2m");
-      SY(SYS_sigaltstack, x0+&ss, x0+&ss); SUCC; /* FAIL when run standalone */
+      SY(SYS_sigaltstack, x0+&ss, x0+&oss); FAIL;
    }
 
    /* SYS_ioctl                   54 */

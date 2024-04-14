@@ -52,8 +52,13 @@ extern Int   VG_(clo_error_exitcode);
 /* For tools that report errors, list detected errors and show suppression
    usage counts at exit. Default: No.
    Unless set explicitly by the user, the option is automatically
-   considered as set to yes for verbosity > 1. */
-extern Bool  VG_(clo_show_error_list);
+   considered as set to yes for verbosity > 1.
+   Note that in xml mode, errors are automatically printed as part of
+   the xml output. This option then only controls printing the used suppressions.
+   default: 0 (NO)
+            1 (yes)
+            2 (all meaning also print suppressed errors). */
+extern Int  VG_(clo_show_error_list);
 
 
 /* Markers used to mark the begin/end of an error, when errors are

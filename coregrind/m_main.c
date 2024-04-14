@@ -137,8 +137,9 @@ static void usage_NORETURN ( int need_help )
 "    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
 "    --error-markers=<begin>,<end> add lines with begin/end markers before/after\n"
 "                              each error output in plain text mode [none]\n"
-"    --show-error-list=no|yes  show detected errors list and\n"
-"                              suppression counts at exit [no]\n"
+"    --show-error-list=no|yes|all  show detected errors list and\n"
+"                              suppression counts at exit [no].\n"
+"                              all means to also print suppressed errors.\n"
 "    -s                        same as --show-error-list=yes\n"
 "    --keep-debuginfo=no|yes   Keep symbols etc for unloaded code [no]\n"
 "                              This allows saved stack traces (e.g. memory leaks)\n"
@@ -608,10 +609,19 @@ static void process_option (Clo_Mode mode,
          startpos = *nextpos ? nextpos + 1 : nextpos;
       }
    }
-   else if VG_BOOL_CLOM(cloPD, arg, "--show-error-list", VG_(clo_show_error_list)) {
+   else if VG_STR_CLOM(cloPD, arg, "--show-error-list", tmp_str) {
+      if (VG_(strcmp)(tmp_str, "yes") == 0)
+         VG_(clo_show_error_list) = 1;
+      else if (VG_(strcmp)(tmp_str, "all") == 0)
+         VG_(clo_show_error_list) = 2;
+      else if (VG_(strcmp)(tmp_str, "no") == 0)
+         VG_(clo_show_error_list) = 0;
+      else
+         VG_(fmsg_bad_option)(arg,
+            "Bad argument, should be 'yes', 'all' or 'no'\n");
       pos->show_error_list_set = True; }
    else if (VG_STREQ_CLOM(cloPD, arg, "-s")) {
-      VG_(clo_show_error_list) = True;
+      VG_(clo_show_error_list) = 1;
       pos->show_error_list_set = True;
    }
    else if VG_BOOL_CLO(arg, "--show-emwarns",   VG_(clo_show_emwarns)) {}
@@ -638,8 +648,8 @@ static void process_option (Clo_Mode mode,
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",
                         VG_(clo_child_silent_after_fork)) {}
-else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum", 
-                    VG_(clo_scheduling_quantum)) {}
+   else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum",
+                       VG_(clo_scheduling_quantum)) {}
    else if VG_STR_CLO(arg, "--fair-sched",        tmp_str) {
       if (VG_(Clo_Mode)() != cloP)
          ;
@@ -2325,7 +2335,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       }
 
       /* In XML mode, this merely prints the used suppressions. */
-      VG_(show_all_errors)(VG_(clo_verbosity), VG_(clo_xml));
+      VG_(show_all_errors)(VG_(clo_verbosity), VG_(clo_xml), VG_(clo_show_error_list));
    }
 
    if (VG_(clo_xml)) {

@@ -53,11 +53,20 @@ extern void VG_(add_suppression_file) (const HChar *filename);
 
 extern void VG_(load_suppressions)        ( void );
 
-// if verbosity == 0,           print nothing.
-// else if xml                  print suppressions used (in xml format)
-// else if verbosity == 1       print Error summary
-// else                         print all errors and suppressions used.
-extern void VG_(show_all_errors)          ( Int verbosity, Bool xml );
+// if verbosity == 0 && show_error_list == no (0)
+//       print nothing.
+// else if xml
+//       if show_error_list == yes (1)|all(2)
+//            print suppressions used (in xml format)
+// else
+//       print Error summary
+//       if show_error_list == yes|all
+//            print all errors and suppressions used.
+//            if show_error_list == all or also_suppressed,
+//                  also print the suppressed errors.
+extern void VG_(show_all_errors)          ( Int verbosity,
+                                            Bool xml,
+                                            Int show_error_list);
 
 /* Print (in readable format) the last error that occurred. */
 extern void VG_(show_last_error)          ( void );

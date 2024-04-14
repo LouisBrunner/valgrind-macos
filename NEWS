@@ -14,6 +14,14 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   descriptors. Printing the context where the file descriptor was
   originally opened and where it was previously closed.
 
+* The option --show-error-list=no|yes now accepts a new value all.
+  This indicates to also print the suppressed errors.
+  This is useful to analyse which errors are suppressed by which
+  suppression entries.
+  The valgrind monitor command 'v.info all_errors' similarly now
+  accepts a new optional argument 'also_suppressed' to show
+  all errors including the suppressed errors.
+
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ===================

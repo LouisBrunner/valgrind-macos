@@ -84,8 +84,9 @@ do
           fi
         done
 
-        # check that filter files (but nor ones derived from filter*.in) are in dist_noinst_SCRIPTS
-        for f in $(ls -d filter* 2>/dev/null | grep -v \.in)
+        # check that filter files (but nor ones derived from filter*.in and emacs backup files)
+        # are in dist_noinst_SCRIPTS
+        for f in $(ls -d filter* 2>/dev/null | grep -v -e \.in -e '.*~$')
         do
           if [ ! -e "$f".in ]; then
             if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *dist_noinst_SCRIPTS *=' |

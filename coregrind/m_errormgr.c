@@ -973,21 +973,20 @@ static Bool show_used_suppressions ( void )
    return any_supp;
 }
 
-/* Show all the errors that occurred, and possibly also the
-   suppressions used. */
-void VG_(show_all_errors) (  Int verbosity, Bool xml )
+/* See pub_core_errormgr.h. */
+void VG_(show_all_errors) (  Int verbosity, Bool xml, Int show_error_list)
 {
-   Int    i, n_min;
+   Int    i, n_min, n_errs;
    Error *p, *p_min;
    Bool   any_supp;
    Bool   any_error = False;
 
-   if (verbosity == 0 && !VG_(clo_show_error_list))
+   if (verbosity == 0 && show_error_list == 0)
       return;
 
    /* If we're printing XML, just show the suppressions and stop. */
    if (xml) {
-      if (VG_(clo_show_error_list))
+      if (show_error_list > 0)
          (void)show_used_suppressions();
       return;
    }
@@ -998,21 +997,25 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
              n_errs_found, n_err_contexts,
              n_errs_suppressed, n_supp_contexts );
 
-   if (!VG_(clo_show_error_list))
+   if (show_error_list == 0)
       return;
 
-   // We do the following if VG_(clo_show_error_list)
+   // We do the following if show_error_list > 0
    // or at -v or above, and only in non-XML mode.
 
    /* Print the contexts in order of increasing error count.
+      The below implements this in a quadratic algorithm based on the assumption
+      that there are not too many errors (including the suppressed if showing
+      the suppressed errors) !
       Once an error is shown, we add a huge value to its count to filter it
       out.
       After having shown all errors, we reset count to the original value. */
-   for (i = 0; i < n_err_contexts; i++) {
+   n_errs = n_err_contexts + (show_error_list < 2 ? 0 : n_errs_suppressed);
+   for (i = 0; i < n_errs; i++) {
       n_min = (1 << 30) - 1;
       p_min = NULL;
       for (p = errors; p != NULL; p = p->next) {
-         if (p->supp != NULL) continue;
+         if (show_error_list < 2 && p->supp != NULL) continue;
          if (p->count < n_min) {
             n_min = p->count;
             p_min = p;
@@ -1023,8 +1026,12 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
       any_error = True;
       VG_(umsg)("\n");
-      VG_(umsg)("%d errors in context %d of %u:\n",
-                p_min->count, i+1, n_err_contexts);
+      VG_(umsg)("%d errors%s%s%s in context %d of %u:\n",
+                p_min->count,
+                p_min->supp == NULL ? "" : " (suppressed by ",
+                p_min->supp == NULL ? "" : p_min->supp->sname,
+                p_min->supp == NULL ? "" : ")",
+                i+1, n_errs);
       pp_Error( p_min, False/*allow_db_attach*/, False /* xml */, True /* count_error */ );
 
       // We're not printing XML -- we'd have exited above if so.

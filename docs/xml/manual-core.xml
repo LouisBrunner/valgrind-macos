@@ -1288,12 +1288,13 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
   <varlistentry id="opt.show-error-list" xreflabel="--show-error-list">
     <term>
-      <option><![CDATA[--show-error-list=no|yes [default: no]]]></option>
+      <option><![CDATA[--show-error-list=no|yes|all [default: no]]]></option>
     </term>
     <listitem>
-      <para>If this option is enabled, for tools that report errors, valgrind
+      <para>If this option is yes, for tools that report errors, valgrind
         will show the list of detected errors and the list of used suppressions
-        at exit.
+        at exit. The value all indicates to also show the list of suppressed
+        errors.
       </para>
       <para>Note that at verbosity 2 and above, valgrind automatically shows
         the list of detected errors and the list of used suppressions

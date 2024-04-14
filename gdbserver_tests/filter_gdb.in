@@ -56,6 +56,12 @@ s/^\[?1034hReading symbols/Reading symbols/
 #       Anonymise pid numbers
 s/pid [0-9][0-9]*/pid ..../g
 
+#      Align the 'delete' prompt to the GDB 15 prompt
+s/Delete all breakpoints?/Delete all breakpoints, watchpoints, tracepoints, and catchpoints?/
+
+#      Align the 'remote failure reply' string to the GDB 15 behaviour.
+s/remote failure reply 'E\./remote failure reply '/
+
 #       filter 'remote target killed' messages (produced by gdb >= 8.2)
 /(Remote target) killed/d
 

@@ -77,6 +77,7 @@ extern Addr VG_(amd64_linux_REDIR_FOR_vgettimeofday);
 extern Addr VG_(amd64_linux_REDIR_FOR_vtime);
 extern Addr VG_(amd64_linux_REDIR_FOR_vgetcpu);
 extern UInt VG_(amd64_linux_REDIR_FOR_strlen)( void* );
+extern Int VG_(amd64_linux_REDIR_FOR_strcmp)( void*, void* );
 extern Char* VG_(amd64_linux_REDIR_FOR_index) ( const Char*, Int );
 #endif
 

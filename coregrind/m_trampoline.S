@@ -218,6 +218,29 @@ VG_(amd64_linux_REDIR_FOR_strlen):
 .LfnE5:
 .size VG_(amd64_linux_REDIR_FOR_strlen), .-VG_(amd64_linux_REDIR_FOR_strlen)
 
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strcmp.)
+*/
+.global VG_(amd64_linux_REDIR_FOR_strcmp)
+.type   VG_(amd64_linux_REDIR_FOR_strcmp), @function
+VG_(amd64_linux_REDIR_FOR_strcmp):
+	xorl	%ecx, %ecx
+1:
+	movzbl	(%rdi, %rcx), %eax
+	movzbl	(%rsi, %rcx), %edx
+	testb	%al, %al
+	jne	2f
+	movl	%edx, %eax
+	negl	%eax
+	ret
+2:
+	incq	%rcx
+	subl	%edx, %eax
+	je	1b
+	ret
+.size VG_(amd64_linux_REDIR_FOR_strcmp), .-VG_(amd64_linux_REDIR_FOR_strcmp)
+
 .global VG_(amd64_linux_REDIR_FOR_index)
 .type   VG_(amd64_linux_REDIR_FOR_index), @function
 VG_(amd64_linux_REDIR_FOR_index):

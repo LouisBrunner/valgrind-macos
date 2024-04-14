@@ -91,6 +91,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         uninitialised value" errors for aarch64 signal handlers
 485148  vfmadd213ss instruction is instrumented incorrectly (the remaining
         part of the register is cleared instead of kept unmodified)
+485487  glibc built with -march=x86-64-v3 does not work due to ld.so strcmp
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

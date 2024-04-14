@@ -1410,6 +1410,15 @@ void VG_(redir_initialise) ( void )
          complain_about_stripped_glibc_ldso
 #        endif
       );   
+      add_hardwired_spec(
+         "ld-linux-x86-64.so.2", "strcmp",
+         (Addr)&VG_(amd64_linux_REDIR_FOR_strcmp),
+#        ifndef GLIBC_MANDATORY_STRLEN_REDIRECT
+         NULL
+#        else
+         complain_about_stripped_glibc_ldso
+#        endif
+      );
    }
 
 #  elif defined(VGP_ppc32_linux)

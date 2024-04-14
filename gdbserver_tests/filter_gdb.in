@@ -1,4 +1,5 @@
 #! /bin/sh
+# @configure_input@
 
 # filter the output of gdb.
 

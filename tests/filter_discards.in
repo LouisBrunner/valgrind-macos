@@ -1,4 +1,5 @@
 #! /bin/sh
+# @configure_input@
 
 dir=`dirname $0`
 

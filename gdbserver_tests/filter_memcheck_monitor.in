@@ -1,4 +1,5 @@
 #! /bin/sh
+# @configure_input@
 
 # used to filter memcheck output shown by gdb/vgdb.
 

@@ -976,10 +976,11 @@ static Bool show_used_suppressions ( void )
 /* See pub_core_errormgr.h. */
 void VG_(show_all_errors) (  Int verbosity, Bool xml, Int show_error_list)
 {
-   Int    i, n_min, n_errs;
+   Int    i, n_min;
    Error *p, *p_min;
    Bool   any_supp;
    Bool   any_error = False;
+   UInt n_errs;
 
    if (verbosity == 0 && show_error_list == 0)
       return;

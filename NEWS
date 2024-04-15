@@ -83,6 +83,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 480706  Unhandled syscall 325 (mlock2)
 481127  amd64: Implement VFMADD213 for Iop_MAddF32
 481131  [PATCH] x86 regtest: fix clobber lists in generated asm statements
+481676  Build failure on Raspberry Pi 5 Ubuntu 23.10 with clang
 483786  Incorrect parameter indexing in FreeBSD clock_nanosleep syscall wrapper
 484002  Add suppression for invalid read in glibc's __wcpncpy_avx2() via wcsxfrm()
 484426  aarch64: 0.5 gets rounded to 0

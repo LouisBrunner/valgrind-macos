@@ -16588,20 +16588,11 @@ s390_irgen_VSCEG(UChar v1, IRTemp op2addr, UChar m3)
 static const HChar *
 s390_irgen_VPDI(UChar v1, UChar v2, UChar v3, UChar m4)
 {
-   /* Theese bits are reserved by specification */
-   vassert((m4 & 2) == 0);
-   vassert((m4 & 8) == 0);
+   /* These bits are reserved by specification */
+   s390_insn_assert("vpdi", (m4 & 2) == 0 && (m4 & 8) == 0);
 
-   if((m4 & 4) != 0)
-      put_vr_dw0(v1, get_vr_dw1(v2));
-   else
-      put_vr_dw0(v1, get_vr_dw0(v2));
-
-   if((m4 & 1) != 0)
-      put_vr_dw1(v1, get_vr_dw1(v3));
-   else
-      put_vr_dw1(v1, get_vr_dw0(v3));
-
+   put_vr_qw(v1, binop(Iop_64HLtoV128, m4 & 4 ? get_vr_dw1(v2) : get_vr_dw0(v2),
+                       m4 & 1 ? get_vr_dw1(v3) : get_vr_dw0(v3)));
    return "vpdi";
 }
 

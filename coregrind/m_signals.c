@@ -549,6 +549,21 @@ VgHashTable *ht_sigchld_ignore = NULL;
         (srP)->r_sp = (uc)->uc_mcontext.rsp;             \
         (srP)->misc.AMD64.r_rbp = (uc)->uc_mcontext.rbp; \
       }
+#elif defined(VGP_arm64_freebsd)
+
+#  define VG_UCONTEXT_INSTR_PTR(uc)       ((UWord)((uc)->uc_mcontext.mc_gpregs.gp_elr))
+#  define VG_UCONTEXT_STACK_PTR(uc)       ((UWord)((uc)->uc_mcontext.mc_gpregs.gp_sp))
+#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                        \
+      /* Convert the value in uc_mcontext.regs[0] into a SysRes. */ \
+      VG_(mk_SysRes_arm64_freebsd)( (uc)->uc_mcontext.mc_gpregs.gp_x[0], \
+         (uc)->uc_mcontext.mc_gpregs.gp_x[1], \
+         ((uc)->uc_mcontext.mc_gpregs.gp_spsr & VKI_PSR_C) != 0 ? True : False )
+#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)           \
+      { (srP)->r_pc = (uc)->uc_mcontext.mc_gpregs.gp_elr;   \
+        (srP)->r_sp = (uc)->uc_mcontext.mc_gpregs.gp_sp;    \
+        (srP)->misc.ARM64.x29 = (uc)->uc_mcontext.mc_gpregs.gp_x[29]; \
+        (srP)->misc.ARM64.x30 = (uc)->uc_mcontext.mc_gpregs.gp_lr; \
+      }
 
 #elif defined(VGP_s390x_linux)
 
@@ -1068,6 +1083,14 @@ extern void my_sigreturn(void);
     "my_sigreturn:\n" \
     "ud2\n" \
     ".previous\n"
+#elif defined(VGP_arm64_freebsd)
+/* Not used on FreeBSD */
+# define _MY_SIGRETURN(name) \
+".text\n" \
+   ".globl my_sigreturn\n" \
+   "my_sigreturn:\n" \
+   "udf #0\n" \
+   ".previous\n"
 #else
 #  error Unknown platform
 #endif

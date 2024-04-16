@@ -206,13 +206,6 @@ void
 LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
                                 /*MOD*/VexGuestAMD64State* vex_state );
 
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-void _______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ (void);
-extern Addr addr_amd64g_calculate_rflags_all_WRK;
-extern Addr addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______;
-#endif
-
-
 /* Do FXSAVE from the supplied VexGuestAMD64tate structure and store the
    result at the given address which represents a buffer of at least 416
    bytes. */

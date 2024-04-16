@@ -3463,6 +3463,37 @@ asm("\n"
     "\thlt\n"
     ".previous\n"
 );
+
+#elif defined(VGP_arm64_freebsd)
+
+
+// on entry
+// x0 contains a pointer to argc
+// sp contains a pointer either to the same address
+//    or 8 below it depending on whether the stack pointer
+//    was 16byte aligned
+//
+// before calling we want
+// x0 to contain a pointer to argc - just leave it alone
+// x1 to contain a pointer to the original stack in case we need it like amd64
+// sp to contain a pointer to the end of VG_(interim_stack)
+asm("\n"
+    ".text\n"
+    "\t.align 2\n"
+    "\t.type _start,#function\n"
+    "\t.global _start\n"
+    "_start:\n"
+    "\tadrp x2, vgPlain_interim_stack\n"
+    "\tadd  x2, x2, :lo12:vgPlain_interim_stack\n"
+    "\tldr  x3, ="VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tadd  x2, x2, x3\n"
+    "\tldr  x3, ="VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
+    "\tadd  x2, x2, x3\n"
+    "\tand  x2, x2, -16\n"
+    "\tmov  x1, sp\n"
+    "\tmov  sp, x2\n"
+    "\tb _start_in_C_freebsd\n"
+);
 #endif
 
 void *memcpy(void *dest, const void *src, size_t n);
@@ -3496,7 +3527,7 @@ void _start_in_C_freebsd ( UWord* pArgc, UWord *initial_sp )
    VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
 
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    the_iicii.sp_at_startup = (Addr)initial_sp;
 #else
    the_iicii.sp_at_startup = (Addr)pArgc;

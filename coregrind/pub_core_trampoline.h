@@ -64,6 +64,10 @@ extern void VG_(x86_freebsd_SUBST_FOR_sigreturn);
 extern void VG_(amd64_freebsd_SUBST_FOR_sigreturn);
 #endif
 
+#if defined(VGP_arm64_freebsd)
+extern void VG_(arm64_freebsd_SUBST_FOR_sigreturn);
+#endif
+
 #if defined(VGP_x86_linux)
 extern Addr VG_(x86_linux_SUBST_FOR_sigreturn);
 extern Addr VG_(x86_linux_SUBST_FOR_rt_sigreturn);

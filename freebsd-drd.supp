@@ -53,7 +53,6 @@
    drd:ConflictingAccess
    ...
    fun:dl_iterate_phdr
-   obj:*/lib*/libgcc_s.so.1
 }
 {
    DRD-PTHREAD-DETACH1
@@ -253,4 +252,14 @@
    drd:ConflictingAccess
    ...
    fun:_malloc_thread_cleanup
+}
+{
+   DRD-FREEEBSD14-ARM64-_UMTX_OP
+   drd:ConflictingAccess
+   fun:_umtx_op
+}
+{
+   DRD-FREEEBSD14-ARM64-PTHREAD_ONCE_INTERCEPT
+   drd:ConflictingAccess
+   fun:pthread_once_intercept
 }

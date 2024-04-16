@@ -80,6 +80,7 @@ typedef Int ArenaId;
       (defined(VGP_mips64_linux) && !defined(VGABI_N32)) || \
       defined(VGP_x86_freebsd)    || \
       defined(VGP_amd64_freebsd)  || \
+      defined(VGP_arm64_freebsd)  || \
       defined(VGP_x86_darwin)     || \
       defined(VGP_amd64_darwin)   || \
       defined(VGP_arm64_linux)    || \

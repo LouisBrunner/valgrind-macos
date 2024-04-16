@@ -6,54 +6,54 @@ Signal        Stop	Print	Pass to program	Description
 SIGFPE        Yes	Yes	Yes		Arithmetic exception
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:117
-117		*BADADDR = 'x';
+test1 () at faultstatus.c:121
+121		*BADADDR = 'x';
 Signal        Stop	Print	Pass to program	Description
 SIGSEGV       No	Yes	Yes		Segmentation fault
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
 Program received signal SIGBUS, Bus error.
-test3 () at faultstatus.c:127
-127		mapping[FILESIZE+10];
+test3 () at faultstatus.c:131
+131		mapping[FILESIZE+10];
 Continuing.
 Program received signal SIGFPE, Arithmetic exception.

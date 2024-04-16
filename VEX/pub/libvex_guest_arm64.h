@@ -166,9 +166,16 @@ typedef
       ULong guest_LLSC_DATA_LO64; // Original value at _ADDR+0.
       ULong guest_LLSC_DATA_HI64; // Original value at _ADDR+8.
 
+      /* Used for FreeBSD syscall dispatching. */
+      ULong guest_SC_CLASS;
+      /* Used for FreeBSD client syscall when putting the carry flag
+         value into VEX. */
+      UInt guest_SETC;
+      UInt pad_end_0;
       /* Padding to make it have an 16-aligned size */
-      /* UInt  pad_end_0; */
-      /* ULong pad_end_1; */
+      /* UInt  pad_end_1; */
+      /* ULong pad_end_2; */
+
    }
    VexGuestARM64State;
 
@@ -189,6 +196,11 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state );
 extern
 ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/
                                    const VexGuestARM64State* vex_state );
+
+/* Put a new value in the carry flag. */
+extern
+void LibVEX_GuestARM64_put_nzcv_c ( /*IN*/  ULong new_carry_flag,
+                                    /*MOD*/ VexGuestARM64State* vex_state );
 
 /* Calculate the ARM64 FPSR state from the saved data, in the format
    36x0:qc:27x0 */

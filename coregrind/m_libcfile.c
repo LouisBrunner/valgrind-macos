@@ -428,7 +428,7 @@ Int VG_(pipe) ( Int fd[2] )
 
 Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
 {
-#  if defined(VGO_linux) || defined(VGP_amd64_darwin) || defined(VGP_amd64_freebsd)
+#  if defined(VGO_linux) || defined(VGP_amd64_darwin) || defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
 #  if defined(__NR__llseek)
    Off64T result;
    SysRes res = VG_(do_syscall5)(__NR__llseek, fd,
@@ -1143,7 +1143,7 @@ SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
       || defined(VGP_mips64_linux) || defined(VGP_arm64_linux)
    res = VG_(do_syscall4)(__NR_pread64, fd, (UWord)buf, count, offset);
    return res;
-#  elif defined(VGP_amd64_freebsd)
+#  elif defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    vg_assert(sizeof(OffT) == 8);
    res = VG_(do_syscall4)(__NR_pread, fd, (UWord)buf, count, offset);
    return res;

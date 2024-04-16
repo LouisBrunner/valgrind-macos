@@ -587,6 +587,26 @@ ULong arm64g_calculate_flags_nzcv ( ULong cc_op, ULong cc_dep1,
    return res;
 }
 
+void LibVEX_GuestARM64_put_nzcv_c ( ULong new_carry_flag,
+                                  /*MOD*/VexGuestARM64State* vex_state )
+{
+   ULong nzcv = arm64g_calculate_flags_nzcv(
+      vex_state->guest_CC_OP,
+      vex_state->guest_CC_DEP1,
+      vex_state->guest_CC_DEP2,
+      vex_state->guest_CC_NDEP
+      );
+   if (new_carry_flag & 1) {
+      nzcv |= ARM64G_CC_MASK_C;
+   } else {
+      nzcv &= ~ARM64G_CC_MASK_C;
+   }
+   vex_state->guest_CC_OP   = ARM64G_CC_OP_COPY;
+   vex_state->guest_CC_DEP1 = nzcv;
+   vex_state->guest_CC_DEP2 = 0;
+   vex_state->guest_CC_NDEP = 0;
+}
+
 //ZZ 
 //ZZ /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 //ZZ /* Calculate the QC flag from the arguments, in the lowest bit
@@ -1774,6 +1794,7 @@ IRExpr* guest_arm64_spechelper ( const HChar* function_name,
 //ZZ }
 //ZZ #endif
 
+/* negative zero carry o-v-erflow flags */
 /* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
 {
@@ -1812,6 +1833,7 @@ ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
    return nzcv;
 }
 
+/* floating point status resgister */
 /* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_fpsr ( const VexGuestARM64State* vex_state )
 {

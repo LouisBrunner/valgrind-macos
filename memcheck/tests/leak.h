@@ -157,6 +157,30 @@
       __asm__ __volatile__ ("mov %r2, $0\n\t");                              \
       __asm__ __volatile__ ("mov %r3, $0\n\t");                              \
    } while (0)
+#elif defined(__aarch64__)
+/* 64bit arm */
+#define CLEAR_CALLER_SAVED_REGS                                              \
+   do {                                                                      \
+      __asm__ __volatile__ ("mov x0, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x1, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x2, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x3, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x4, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x5, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x6, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x7, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x8, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x9, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x10, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x11, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x12, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x13, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x14, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x15, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x16, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x17, 0\n\t");                              \
+      __asm__ __volatile__ ("mov x18, 0\n\t");                              \
+   } while (0)
 #else
 #define CLEAR_CALLER_SAVED_REGS  /*nothing*/
 #endif

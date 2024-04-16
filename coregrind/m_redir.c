@@ -1567,7 +1567,7 @@ void VG_(redir_initialise) ( void )
 #     endif
    }
 
-#  elif defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd)
+#  elif defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
 /* XXX do something real if needed */
 #  elif defined(VGP_x86_darwin)
    /* If we're using memcheck, use these intercepts right from

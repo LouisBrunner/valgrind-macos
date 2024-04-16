@@ -1003,7 +1003,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
 #  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
       || defined(VGP_nanomips_linux)
    tst->arch.vex.guest_LLaddr = (RegWord)(-1);
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    tst->arch.vex.guest_LLSC_SIZE = 0;
 #  endif
 

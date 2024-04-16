@@ -173,6 +173,7 @@ void foo ( void )
    GENOFFSET(ARM64,arm64,X8);
    GENOFFSET(ARM64,arm64,XSP);
    GENOFFSET(ARM64,arm64,PC);
+   GENOFFSET(ARM64,arm64,SETC);
 
    // s390x
    GENOFFSET(S390X,s390x,r2);

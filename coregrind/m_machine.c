@@ -1843,10 +1843,13 @@ Bool VG_(machine_get_hwcaps)( void )
 
      VG_(machine_get_cache_info)(&vai);
 
+     // @todo PJF ARM64 if we need this then we can't parse anything in /proc
+#if !defined(VGP_arm64_freebsd)
      /* Check whether we need to use the fallback LLSC implementation.
         If the check fails, give up. */
      if (! VG_(parse_cpuinfo)())
         return False;
+#endif
 
      /* 0 denotes 'not set'.  The range of legitimate values here,
         after being set that is, is 2 though 17 inclusive. */

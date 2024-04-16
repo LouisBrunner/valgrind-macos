@@ -196,6 +196,7 @@ int main(void)
    GO(SYS_dup, "1s 0m");
    SY(SYS_dup, x0-1); FAIL;
 
+#if !defined(VGP_arm64_freebsd)
    /* freebsd10_pipe              42 */
 #if (FREEBSD_VERS >= FREEBSD_11)
    GO(SYS_freebsd10_pipe, "0s 0m");
@@ -203,6 +204,7 @@ int main(void)
 #else
    GO(SYS_pipe, "0s 0m");
    SY(SYS_pipe, x0); SUCC;
+#endif
 #endif
 
    /* getegid                     43 */
@@ -624,6 +626,8 @@ int main(void)
 
    GO(SYS_sysarch, "2s 0m");
    SY(SYS_sysarch, x0+AMD64_SET_FSBASE, x0); FAIL;
+#elif defined(VGP_arm64_freebsd)
+// does not exist
 #else
 #error "freebsd platform not defined"
 #endif
@@ -965,7 +969,7 @@ int main(void)
    /* netbsd lstat                280 */
 
    /* SYS_preadv                  289 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_preadv, "4s 0m");
    /* 0m because of the bogus fd */
    SY(SYS_preadv, x0+9999999, x0+1, x0+16, x0+20); FAIL;
@@ -975,7 +979,7 @@ int main(void)
 #endif
 
    /* SYS_pwritev                    290 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_pwritev, "4s 0m");
    SY(SYS_pwritev, x0+9999999, x0+1, x0+16, x0+20); FAIL;
 #else
@@ -1617,7 +1621,7 @@ int main(void)
    SY(SYS_mmap, x0+1, x0, x0+123456, x0+234567, x0+99, x0+3); FAIL;
 
    /* SYS_lseek                   478 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_lseek, "3s 0m");
    SY(SYS_lseek, x0+99, x0+1, x0+55); FAIL;
 #else
@@ -1626,7 +1630,7 @@ int main(void)
 #endif
 
    /* SYS_truncate                479 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_truncate, "2s 1m");
    SY(SYS_truncate, x0+1, x0+1); FAIL;
 #else
@@ -1635,7 +1639,7 @@ int main(void)
 #endif
 
    /* SYS_ftruncate               480 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_ftruncate, "2s 0m");
    SY(SYS_ftruncate, x0+99, x0+1); FAIL;
 #else
@@ -1669,7 +1673,7 @@ int main(void)
    SY(SYS_cpuset, x0+1); FAIL;
 
    /* cpuset_setid                485 */
-#if defined (VGP_amd64_freebsd)
+#if defined (VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_cpuset_setid, "3s 0m");
    SY(SYS_cpuset_setid, x0, x0, x0); FAIL;
 #else
@@ -1867,7 +1871,7 @@ int main(void)
     SY(SYS_rctl_remove_rule, x0+1, x0+1, x0+2, x0+16); FAIL;
 
     /* SYS_posix_fallocate        530 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
     GO(SYS_posix_fallocate, "3s 0m");
     SY(SYS_posix_fallocate, x0+99999, x0+10, x0+20); SUCC;
 #else
@@ -1934,9 +1938,9 @@ int main(void)
     SY(SYS_aio_mlock, x0+1); FAIL;
 
     /* SYS_procctl                544 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
     GO(SYS_procctl, "(PROC_REAP_RELEASE) 3s 0m");
-    SY(SYS_procctl, x0+9999, x0+9999, x0+PROC_REAP_RELEASE); FAIL;
+    SY(SYS_procctl, x0+9999, x0+9999, x0+PROC_REAP_RELEASE, NULL); FAIL;
 
     GO(SYS_procctl, "(PROC_REAP_GETPIDS) 4s 1m");
     SY(SYS_procctl, x0+9999, x0+9999, x0+PROC_REAP_GETPIDS, x0+1); FAIL;

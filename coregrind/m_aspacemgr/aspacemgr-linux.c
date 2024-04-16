@@ -3942,6 +3942,12 @@ static char* maybe_merge_procmap_stack(char* p,  struct vki_kinfo_vmentry *kve, 
    if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 64ULL*1024ULL*1024ULL) {
       return p;
    }
+#elif defined(VGP_arm64_freebsd)
+   if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 1024ULL*1024ULL*1024ULL) {
+      return p;
+   }
+#else
+#    error Unknown platform
 #endif
 
    while (kve_next->kve_protection & VKI_KVME_PROT_READ &&

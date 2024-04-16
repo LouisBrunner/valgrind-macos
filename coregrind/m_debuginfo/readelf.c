@@ -2706,7 +2706,8 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
          || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
          || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
-         || defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd)
+         || defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd) \
+         || defined(VGP_arm64_freebsd)
       /* Accept .plt where mapped as rx (code) */
       if (0 == VG_(strcmp)(name, ".plt")) {
          if (inrx && !di->plt_present) {

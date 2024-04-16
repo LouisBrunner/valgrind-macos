@@ -278,6 +278,16 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "n" (VgTs_Empty), "n" (__NR_thr_exit), "m" (tst->os_state.exitcode)
          : "rax", "rdi"
       );
+#elif defined(VGP_arm64_freebsd)
+      __asm__ volatile (
+         "str  %w1, %0\n"     /* set tst->status = VgTs_Empty (32-bit store) */
+         "mov  x8,  %2\n"     /* set %x8 = __NR_thr_exit */
+         "ldr  x0,  %3\n"     /* set %x0 = tst->os_state.exitcode */
+         "svc  0x00000000\n"  /* exit(tst->os_state.exitcode) */
+         : "=m" (tst->status)
+         : "r" (VgTs_Empty), "n" (__NR_thr_exit), "m" (tst->os_state.exitcode)
+         : "x0", "x8"
+      );
 #else
 # error Unknown platform
 #endif
@@ -5438,7 +5448,7 @@ PRE(sys_mkdirat)
    *flags |= SfMayBlock;
    PRINT("sys_mkdirat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "mkdirat",
-                 int, fd, const char *, path, int, mode);
+                 int, fd, const char *, path, unsigned int, mode);
    PRE_MEM_RASCIIZ( "mkdirat(path)", ARG2 );
 }
 
@@ -5477,7 +5487,6 @@ PRE(sys_mknodat)
 // int openat(int fd, const char *path, int flags, ...);
 PRE(sys_openat)
 {
-
    if (ARG3 & VKI_O_CREAT) {
       // 4-arg version
       PRINT("sys_openat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,(char*)ARG2,ARG3,ARG4);
@@ -7188,7 +7197,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // 4.3 lstat                                            40
    GENXY(__NR_dup,              sys_dup),               // 41
 
+#if defined(VGP_arm64_freebsd)
+   GENX_(__NR_freebsd10_pipe,   sys_ni_syscall),        // 42
+#else
    BSDXY(__NR_freebsd10_pipe,   sys_pipe),              // 42
+#endif
    GENX_(__NR_getegid,          sys_getegid),           // 43
 
    GENX_(__NR_profil,           sys_ni_syscall),        // 44

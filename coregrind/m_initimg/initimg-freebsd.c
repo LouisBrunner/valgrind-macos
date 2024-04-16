@@ -1099,6 +1099,27 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_RDI = iifii.initial_client_SP;
    arch->vex.guest_RIP = iifii.initial_client_IP;
 
+#elif defined(VGP_arm64_freebsd)
+
+   vg_assert(0 == sizeof(VexGuestARM64State) % 16);
+
+   /* Zero out the initial state, and set up the simulated FPU in a
+      sane way. */
+   LibVEX_GuestARM64_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestARM64State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestARM64State));
+
+   /* Put essential stuff into the new state. */
+   //arch->vex.guest_XSP = ((iifii.initial_client_SP - 8) & ~0xFUL) + 8;
+   arch->vex.guest_XSP = iifii.initial_client_SP;
+   arch->vex.guest_X0 = iifii.initial_client_SP;
+   if (iifii.initial_client_SP % 16) {
+      arch->vex.guest_X0 += 8;
+   }
+   arch->vex.guest_PC = iifii.initial_client_IP;
+
 #  else
 #    error Unknown platform
 #  endif

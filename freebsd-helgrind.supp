@@ -233,4 +233,9 @@
    Helgrind:Race
    fun:_ZL18__gthread_active_pv
 }
+{
+   FREEBSD14-ARM64-_EXIT
+   Helgrind:Race
+   fun:thr_exit
+}
 

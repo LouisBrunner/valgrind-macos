@@ -389,6 +389,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-nanomips-linux.S \
 	m_dispatch/dispatch-x86-freebsd.S \
 	m_dispatch/dispatch-amd64-freebsd.S \
+	m_dispatch/dispatch-arm64-freebsd.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
 	m_dispatch/dispatch-x86-solaris.S \
@@ -430,6 +431,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_sigframe/sigframe-x86-freebsd.c \
 	m_sigframe/sigframe-amd64-freebsd.c \
+	m_sigframe/sigframe-arm64-freebsd.c \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_sigframe/sigframe-arm-linux.c \
@@ -454,6 +456,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-nanomips-linux.S \
 	m_syswrap/syscall-x86-freebsd.S \
 	m_syswrap/syscall-amd64-freebsd.S \
+	m_syswrap/syscall-arm64-freebsd.S \
 	m_syswrap/syscall-x86-darwin.S \
 	m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syscall-x86-solaris.S \
@@ -471,6 +474,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-ppc64-linux.c \
 	m_syswrap/syswrap-x86-freebsd.c \
 	m_syswrap/syswrap-amd64-freebsd.c \
+	m_syswrap/syswrap-arm64-freebsd.c \
 	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-arm64-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \

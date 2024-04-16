@@ -174,10 +174,11 @@ static const char *select_platform(const char *clientname)
       } else if ((size_t)n_bytes >= sizeof(Elf64_Ehdr) && header[EI_CLASS] == ELFCLASS64) {
          const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
 
-         if (header[EI_DATA] == ELFDATA2LSB) {
-            if (ehdr->e_machine == EM_X86_64 &&
-                  ehdr->e_ident[EI_OSABI] == ELFOSABI_FREEBSD) {
+         if (header[EI_DATA] == ELFDATA2LSB && ehdr->e_ident[EI_OSABI] == ELFOSABI_FREEBSD) {
+            if (ehdr->e_machine == EM_X86_64) {
                platform = "amd64-freebsd";
+            } else if (ehdr->e_machine == EM_AARCH64) {
+               platform = "arm64-freebsd";
             }
          }
       }

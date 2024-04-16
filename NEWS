@@ -4,8 +4,8 @@ Release 3.23.0 (?? Apr 2024)
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
-X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD and
-AMD64/FreeBSD.  There is also preliminary support for X86/macOS 10.13,
+X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD, AMD64/FreeBSD
+and ARM64/FreeBSD  There is also preliminary support for X86/macOS 10.13,
 AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
@@ -23,6 +23,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   all errors including the suppressed errors.
 
 * ================== PLATFORM CHANGES =================
+
+Added ARM64 support for FreeBSD.
 
 * ==================== TOOL CHANGES ===================
 
@@ -84,6 +86,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 481127  amd64: Implement VFMADD213 for Iop_MAddF32
 481131  [PATCH] x86 regtest: fix clobber lists in generated asm statements
 481676  Build failure on Raspberry Pi 5 Ubuntu 23.10 with clang
+481874  Add arm64 support for FreeBSD
 483786  Incorrect parameter indexing in FreeBSD clock_nanosleep syscall wrapper
 484002  Add suppression for invalid read in glibc's __wcpncpy_avx2() via wcsxfrm()
 484426  aarch64: 0.5 gets rounded to 0

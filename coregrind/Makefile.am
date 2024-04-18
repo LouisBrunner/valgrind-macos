@@ -203,6 +203,7 @@ noinst_HEADERS = \
 	pub_core_dispatch_asm.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
+	pub_core_extension.h    \
 	pub_core_gdbserver.h	\
 	pub_core_guest.h	\
 	pub_core_hashtable.h	\

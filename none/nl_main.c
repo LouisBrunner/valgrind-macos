@@ -62,6 +62,7 @@ static void nl_pre_clo_init(void)
    VG_(basic_tool_funcs)        (nl_post_clo_init,
                                  nl_instrument,
                                  nl_fini);
+   VG_(needs_xml_output)        ();
 
    /* No needs, no core events to track */
 }

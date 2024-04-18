@@ -40,6 +40,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 283429  ARM leak checking needs CLEAR_CALLER_SAVED_REGS
 281059  Cannot connect to Oracle using valgrind
+328563  make track-fds support xml output
 362680  --error-exitcode not honored when file descriptor leaks are found
 369723  __builtin_longjmp not supported in clang/llvm on Android arm64 target
 390269  unhandled amd64-darwin syscall: unix:464 (openat_nocancel)

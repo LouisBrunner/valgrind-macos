@@ -540,6 +540,7 @@ typedef struct OpenFd
 {
    Int fd;                        /* The file descriptor */
    HChar *pathname;               /* NULL if not a regular file or unknown */
+   HChar *description;            /* Description saved before close */
    ExeContext *where;             /* NULL if inherited from parent */
    ExeContext *where_closed;      /* record the last close of fd */
    Bool fd_closed;
@@ -584,13 +585,16 @@ void ML_(record_fd_close_range)(ThreadId tid, Int from_fd)
 struct BadCloseExtra {
    Int fd;                        /* The file descriptor */
    HChar *pathname;               /* NULL if not a regular file or unknown */
+   HChar *description;            /* Description of the file descriptor
+                                     might include the pathname */
    ExeContext *where_closed;      /* record the last close of fd */
    ExeContext *where_opened;      /* recordwhere the fd  was opened */
 };
 
 struct NotClosedExtra {
    Int fd;
-   HChar description[256];
+   HChar *pathname;
+   HChar *description;
 };
 
 /* Note the fact that a file descriptor was just closed. */
@@ -607,6 +611,7 @@ void ML_(record_fd_close)(ThreadId tid, Int fd)
            struct BadCloseExtra bce;
            bce.fd = i->fd;
            bce.pathname = i->pathname;
+           bce.description = i->description;
            bce.where_opened = i->where;
            bce.where_closed = i->where_closed;
            VG_(maybe_record_error)(tid, FdBadClose, 0,
@@ -629,11 +634,14 @@ void ML_(record_fd_close)(ThreadId tid, Int fd)
                                  &val, &len) == -1) {
                 HChar *pathname = VG_(malloc)("vg.record_fd_close.fd", 30);
                 VG_(snprintf)(pathname, 30, "file descriptor %d", i->fd);
-                i->pathname = pathname;
+                i->description = pathname;
              } else {
                 HChar *name = VG_(malloc)("vg.record_fd_close.sock", 256);
-                i->pathname = getsockdetails(i->fd, 256, name);
+                i->description = getsockdetails(i->fd, 256, name);
              }
+          } else {
+             i->description = VG_(strdup)("vg.record_fd_close.path",
+                                          i->pathname);
           }
           fd_count--;
         }
@@ -666,6 +674,10 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
             VG_(free)(i->pathname);
             i->pathname = NULL;
          }
+         if (i->description) {
+            VG_(free)(i->description);
+            i->description = NULL;
+         }
          if (i->fd_closed) /* now we will open it. */
             fd_count++;
          break;
@@ -686,6 +698,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
 
    i->fd = fd;
    i->pathname = VG_(strdup)("syswrap.rfdowgn.2", pathname);
+   i->description = NULL; /* Only set on close.  */
    i->where = (tid == -1) ? NULL : VG_(record_ExeContext)(tid, 0/*first_ip_delta*/);
    i->fd_closed = False;
    i->where_closed = NULL;
@@ -940,8 +953,12 @@ void VG_(show_open_fds) (const HChar* when)
           continue;
 
       struct NotClosedExtra nce;
+      /* The file descriptor was not yet closed, so the description field was
+         also not yet set. Set it now as if the file descriptor was closed at
+         this point.  */
+      i->description = VG_(malloc)("vg.notclosedextra.descriptor", 256);
       if (i->pathname) {
-         VG_(snprintf) (nce.description, 256, "file descriptor %d: %s",
+         VG_(snprintf) (i->description, 256, "file descriptor %d: %s",
                         i->fd, i->pathname);
       } else {
          Int val;
@@ -949,13 +966,17 @@ void VG_(show_open_fds) (const HChar* when)
 
          if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len)
              == -1) {
-            VG_(sprintf)(nce.description, "file descriptor %d:", i->fd);
+            /* Don't want the : at the end in xml */
+            UChar *colon = VG_(clo_xml) ? "" : ":";
+            VG_(sprintf)(i->description, "file descriptor %d%s", i->fd, colon);
          } else {
-            getsockdetails(i->fd, 256, nce.description);
+            getsockdetails(i->fd, 256, i->description);
          }
       }
 
       nce.fd = i->fd;
+      nce.pathname = i->pathname;
+      nce.description = i->description;
       VG_(unique_error) (1 /* Fake ThreadId */,
                          FdNotClosed,
                          0, /* Addr */
@@ -1106,8 +1127,13 @@ void fd_pp_Error (const Error *err)
       if (xml) VG_(emit)("  <kind>FdBadClose</kind>\n");
       struct BadCloseExtra *bce = (struct BadCloseExtra *)
          VG_(get_error_extra)(err);
+      if (xml) {
+         VG_(emit)("  <fd>%d</fd>\n", bce->fd);
+         if (bce->pathname)
+            VG_(emit)("  <path>%s</path>\n", bce->pathname);
+      }
       VG_(emit)("%sFile descriptor %d: %s is already closed%s\n",
-                whatpre, bce->fd, bce->pathname, whatpost);
+                whatpre, bce->fd, bce->description, whatpost);
       VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       VG_(emit)("%sPreviously closed%s\n", auxpre, auxpost);
       VG_(pp_ExeContext)(bce->where_closed);
@@ -1117,6 +1143,11 @@ void fd_pp_Error (const Error *err)
       if (xml) VG_(emit)("  <kind>FdNotClosed</kind>\n");
       struct NotClosedExtra *nce = (struct NotClosedExtra *)
          VG_(get_error_extra)(err);
+      if (xml) {
+         VG_(emit)("  <fd>%d</fd>\n", nce->fd);
+         if (nce->pathname)
+            VG_(emit)("  <path>%s</path>\n", nce->pathname);
+      }
       VG_(emit)("%sOpen %s%s\n", whatpre, nce->description, whatpost);
       if (where != NULL) {
          VG_(pp_ExeContext)(where);

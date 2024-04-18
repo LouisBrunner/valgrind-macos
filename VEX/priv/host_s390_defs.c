@@ -7706,6 +7706,7 @@ s390_jump_kind_as_string(IRJumpKind kind)
    case Ijk_SigSEGV:     return "SigSEGV";
    case Ijk_SigBUS:      return "SigBUS";
    case Ijk_Sys_syscall: return "Sys_syscall";
+   case Ijk_Extension:   return "Extension";
    default:
       vpanic("s390_jump_kind_as_string");
    }
@@ -11428,6 +11429,7 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
    switch (insn->variant.xassisted.kind) {
    case Ijk_ClientReq:   trcval = VEX_TRC_JMP_CLIENTREQ;   break;
    case Ijk_Sys_syscall: trcval = VEX_TRC_JMP_SYS_SYSCALL; break;
+   case Ijk_Extension:   trcval = VEX_TRC_JMP_EXTENSION;   break;
    case Ijk_Yield:       trcval = VEX_TRC_JMP_YIELD;       break;
    case Ijk_EmWarn:      trcval = VEX_TRC_JMP_EMWARN;      break;
    case Ijk_EmFail:      trcval = VEX_TRC_JMP_EMFAIL;      break;

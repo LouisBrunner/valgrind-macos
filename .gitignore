@@ -212,6 +212,13 @@
 /coregrind/m_dispatch/Makefile
 /coregrind/m_dispatch/Makefile.in
 
+# /coregrind/m_extension/
+/coregrind/m_extension/*.a
+/coregrind/m_extension/.deps
+/coregrind/m_extension/.dirstamp
+/coregrind/m_extension/Makefile
+/coregrind/m_extension/Makefile.in
+
 # /coregrind/m_gdbserver/
 /coregrind/m_gdbserver/.deps
 /coregrind/m_gdbserver/.dirstamp

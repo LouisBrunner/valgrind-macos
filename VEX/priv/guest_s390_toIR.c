@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2021
+   Copyright IBM Corp. 2010-2024
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -550,6 +550,27 @@ system_call(IRExpr *sysno)
       forces any TempRegs caching ArchRegs to be flushed. */
    dis_res->whatNext    = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_Sys_syscall;
+}
+
+/* An extension */
+static void
+extension(ULong id, ULong variant)
+{
+   vassert(id < (1 << S390_EXT_ID_NBITS));
+   vassert(variant <= ~((ULong) 0) >> S390_EXT_ID_NBITS);
+
+   /* Store the extension ID in the pseudo register. */
+   ULong ext_id = id | (variant << S390_EXT_ID_NBITS);
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_SYSNO), mkU64(ext_id)));
+
+   /* Store the current IA into guest_IP_AT_SYSCALL. */
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_IP_AT_SYSCALL),
+                   mkU64(guest_IA_curr_instr)));
+
+   put_IA(mkaddr_expr(guest_IA_next_instr));
+
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_Extension;
 }
 
 /* A side exit that branches back to the current insn if CONDITION is
@@ -17068,59 +17089,7 @@ s390_irgen_LCBB(UChar r1, IRTemp op2addr, UChar m3)
    return "lcbb";
 }
 
-/* Regarding the use of 
-   // Dummy helper which is used to signal VEX library that memory was loaded
-   sha512_loadparam 
-     = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_PPNO_sha512_load_param_block",
-                             &s390x_dirtyhelper_PPNO_sha512_load_param_block,
-                             mkIRExprVec_0());
-
-   in the following function (s390_irgen_PPNO).  This is a workaround to get
-   around the fact that IRDirty annotations cannot indicate two memory side
-   effects, which are unfortunately necessary here.  It will possibly lead to
-   losing undefinedness (undefinedness in some inputs might not be propagated
-   to the outputs as it shouod, in Memcheck).  The correct fix would be to
-   extend IRDirty to represent two memory side effects, but that's quite a bit
-   of work.
-
-   Here's a summary of what this insn does.
-
-   // getReg(RegisterNumber n) returns the value of GPR number 'n'
-
-   // reg1 and reg2 are even
-   void ppno(RegisterNumber reg1, RegisterNumber reg2) {
-
-       switch(getReg(0)) {
-       case 0x0:
-           // Query mode, ignore reg1 and reg2
-           // Write 16 bytes                    at  getReg(1)
-           break;
-
-       case 0x3:
-           // SHA-512 generate mode, ignore reg2
-
-           // Read 240 bytes                    at  getReg(1)
-           // Write getReg(reg1 + 1) bytes      at  getReg(reg1)
-           // Write some of 240 bytes starting  at  getReg(1)
-           break;
-
-       case 0x83:
-           // SHA-512 seed mode, ignore reg1
-
-           // Read some of 240 bytes starting  at  getReg(1)
-           // Read getReg(reg2 + 1) bytes      at  getReg(reg2)
-           // Write 240 bytes                  at  getReg(1)
-           break;
-
-       default:
-           // Specification exception, abort execution.
-       }
-   }
-*/
-/* Also known as "prno"
-   If you implement new functions please don't forget to update
-   "s390x_dirtyhelper_PPNO_query" function.
- */
+/* Also known as "PRNO" */
 static const HChar *
 s390_irgen_PPNO(UChar r1, UChar r2)
 {
@@ -17129,131 +17098,10 @@ s390_irgen_PPNO(UChar r1, UChar r2)
       return "ppno";
    }
 
-   /* Theese conditions lead to specification exception */
-   vassert(r1 % 2 == 0);
-   vassert(r2 % 2 == 0);
-   vassert((r1 != 0) && (r2 != 0));
+   /* Check for obvious specification exceptions */
+   s390_insn_assert("ppno", r1 % 2 == 0 && r2 % 2 == 0 && r1 != 0 && r2 != 0);
 
-   IRDirty *query, *sha512_gen, *sha512_seed, *sha512_loadparam;
-   IRTemp gpr1num = newTemp(Ity_I64);
-   IRTemp gpr2num = newTemp(Ity_I64);
-
-   IRTemp funcCode = newTemp(Ity_I8);
-   IRTemp is_query = newTemp(Ity_I1);
-   IRTemp is_sha512_gen = newTemp(Ity_I1);
-   IRTemp is_sha512_seed = newTemp(Ity_I1);
-   IRTemp is_sha512 = newTemp(Ity_I1);
-
-   assign(funcCode, unop(Iop_64to8, binop(Iop_And64, get_gpr_dw0(0),
-                                          mkU64(0xffULL))));
-   assign(gpr1num, mkU64(r1));
-   assign(gpr2num, mkU64(r2));
-
-   assign(is_query, binop(Iop_CmpEQ8, mkexpr(funcCode), mkU8(S390_PPNO_QUERY)));
-   assign(is_sha512_gen, binop(Iop_CmpEQ8, mkexpr(funcCode),
-                               mkU8(S390_PPNO_SHA512_GEN)));
-   assign(is_sha512_seed, binop(Iop_CmpEQ8, mkexpr(funcCode),
-                                mkU8(S390_PPNO_SHA512_SEED)));
-   assign(is_sha512, binop(Iop_CmpEQ8,
-                           mkU8(S390_PPNO_SHA512_GEN),
-                           binop(Iop_And8,
-                                 mkexpr(funcCode),
-                                 mkU8(S390_PPNO_SHA512_GEN)
-                                 )
-                           ));
-
-   query = unsafeIRDirty_0_N(0, "s390x_dirtyhelper_PPNO_query",
-                             &s390x_dirtyhelper_PPNO_query,
-                             mkIRExprVec_3(IRExpr_GSPTR(), mkexpr(gpr1num),
-                                           mkexpr(gpr2num)));
-   query->guard = mkexpr(is_query);
-   query->nFxState = 1;
-   vex_bzero(&query->fxState, sizeof(query->fxState));
-   query->fxState[0].fx     = Ifx_Read;
-   query->fxState[0].offset = S390X_GUEST_OFFSET(guest_r0);
-   query->fxState[0].size   = 2 * sizeof(ULong); /* gpr0 and gpr1 are read */
-   query->mAddr = get_gpr_dw0(1);
-   query->mSize = S390_PPNO_PARAM_BLOCK_SIZE_QUERY;
-   query->mFx   = Ifx_Write;
-
-   IRTemp gen_cc = newTemp(Ity_I64);
-   sha512_gen = unsafeIRDirty_1_N(gen_cc, 0, "s390x_dirtyhelper_PPNO_sha512",
-                             &s390x_dirtyhelper_PPNO_sha512,
-                             mkIRExprVec_3(IRExpr_GSPTR(), mkexpr(gpr1num),
-                                           mkexpr(gpr2num)));
-   sha512_gen->guard = mkexpr(is_sha512_gen);
-   sha512_gen->nFxState = 3;
-   vex_bzero(&sha512_gen->fxState, sizeof(sha512_gen->fxState));
-   sha512_gen->fxState[0].fx     = Ifx_Read;
-   sha512_gen->fxState[0].offset = S390X_GUEST_OFFSET(guest_r0);
-   sha512_gen->fxState[0].size   = 2 * sizeof(ULong); /* gpr0 and gpr1 are read */
-   sha512_gen->fxState[1].fx     = Ifx_Read;
-   sha512_gen->fxState[1].offset = S390X_GUEST_OFFSET(guest_r0) + r1 * sizeof(ULong);
-   sha512_gen->fxState[1].size   = sizeof(ULong);
-   sha512_gen->fxState[2].fx     = Ifx_Modify;
-   sha512_gen->fxState[2].offset = S390X_GUEST_OFFSET(guest_r0) + (r1 + 1) * sizeof(ULong);
-   sha512_gen->fxState[2].size   = sizeof(ULong);
-   sha512_gen->mAddr = get_gpr_dw0(r1);
-   sha512_gen->mSize = S390_PPNO_MAX_SIZE_SHA512_GEN;
-   sha512_gen->mFx   = Ifx_Write;
-
-   IRTemp unused = newTemp(Ity_I64);
-   sha512_seed = unsafeIRDirty_1_N(unused, 0, "s390x_dirtyhelper_PPNO_sha512",
-                             &s390x_dirtyhelper_PPNO_sha512,
-                             mkIRExprVec_3(IRExpr_GSPTR(), mkexpr(gpr1num),
-                                           mkexpr(gpr2num)));
-   sha512_seed->guard = mkexpr(is_sha512_seed);
-   sha512_seed->nFxState = 2;
-   vex_bzero(&sha512_seed->fxState, sizeof(sha512_seed->fxState));
-   sha512_seed->fxState[0].fx     = Ifx_Read;
-   sha512_seed->fxState[0].offset = S390X_GUEST_OFFSET(guest_r0);
-   sha512_seed->fxState[0].size   = 2 * sizeof(ULong); /* gpr0 and gpr1 are read */
-   sha512_seed->fxState[1].fx     = Ifx_Read;
-   sha512_seed->fxState[1].offset = S390X_GUEST_OFFSET(guest_r0) + r2 * sizeof(ULong);
-   sha512_seed->fxState[1].size   = 2 * sizeof(ULong); /* r2 and r2 + 1 are read */
-   sha512_seed->mAddr = get_gpr_dw0(r2);
-   sha512_seed->mSize = S390_PPNO_MAX_SIZE_SHA512_SEED;
-   sha512_seed->mFx   = Ifx_Write;
-
-   /* Dummy helper which is used to signal VEX library that memory was loaded */
-   sha512_loadparam =
-      unsafeIRDirty_0_N(0, "s390x_dirtyhelper_PPNO_sha512_load_param_block",
-                        &s390x_dirtyhelper_PPNO_sha512_load_param_block,
-                        mkIRExprVec_0());
-   sha512_loadparam->guard = mkexpr(is_sha512);
-   sha512_loadparam->nFxState = 0;
-   vex_bzero(&sha512_loadparam->fxState, sizeof(sha512_loadparam->fxState));
-   sha512_loadparam->mAddr = get_gpr_dw0(1);
-   sha512_loadparam->mSize = S390_PPNO_PARAM_BLOCK_SIZE_SHA512;
-   sha512_loadparam->mFx   = Ifx_Read;
-
-   IRDirty* sha512_saveparam =
-      unsafeIRDirty_0_N(0, "s390x_dirtyhelper_PPNO_sha512_save_param_block",
-                        &s390x_dirtyhelper_PPNO_sha512_load_param_block,
-                        mkIRExprVec_0());
-   sha512_saveparam->guard = mkexpr(is_sha512);
-   sha512_saveparam->nFxState = 0;
-   vex_bzero(&sha512_saveparam->fxState, sizeof(sha512_saveparam->fxState));
-   sha512_saveparam->mAddr = get_gpr_dw0(1);
-   sha512_saveparam->mSize = S390_PPNO_PARAM_BLOCK_SIZE_SHA512;
-   sha512_saveparam->mFx   = Ifx_Write;
-
-   stmt(IRStmt_Dirty(query));
-   stmt(IRStmt_Dirty(sha512_loadparam));
-   stmt(IRStmt_Dirty(sha512_gen));
-   stmt(IRStmt_Dirty(sha512_seed));
-   stmt(IRStmt_Dirty(sha512_saveparam));
-
-   IRTemp cc = newTemp(Ity_I64);
-   assign(cc,
-          mkite(mkexpr(is_sha512_gen),
-                mkexpr(gen_cc),
-                mkU64(0)
-               )
-         );
-
-   s390_cc_thunk_fill(mkU64(S390_CC_OP_SET), mkexpr(cc), mkU64(0), mkU64(0));
-
+   extension(S390_EXT_PRNO, r1 | (r2 << 4));
    return "ppno";
 }
 

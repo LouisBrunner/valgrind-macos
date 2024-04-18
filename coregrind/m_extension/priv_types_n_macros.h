@@ -35,7 +35,6 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_signals.h"
 #include "pub_core_tooliface.h"
-#include "pub_tool_tooliface.h"
 
 #define PRE_REG_READ(tst, name, reg, offset, len)                              \
    if (VG_(tdict).track_pre_reg_read) {                                        \

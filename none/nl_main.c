@@ -28,9 +28,14 @@
 
 #include "pub_tool_basics.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_options.h"
 
 static void nl_post_clo_init(void)
 {
+   /* Unless we are actually tracking file descriptors we act as if we don't
+      handle any errors.  */
+   if (!VG_(clo_track_fds))
+     VG_(needs_core_errors)(False);
 }
 
 static
@@ -63,6 +68,7 @@ static void nl_pre_clo_init(void)
                                  nl_instrument,
                                  nl_fini);
    VG_(needs_xml_output)        ();
+   VG_(needs_core_errors)       (True); /* Yes, but... see nl_post_clo_init  */
 
    /* No needs, no core events to track */
 }

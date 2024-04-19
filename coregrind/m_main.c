@@ -2321,7 +2321,8 @@ void shutdown_actions_NORETURN( ThreadId tid,
       the error management machinery. */
    VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
-   if (VG_(needs).core_errors || VG_(needs).tool_errors) {
+   if ((VG_(needs).core_errors && VG_(found_or_suppressed_errs)())
+       || VG_(needs).tool_errors) {
       if (VG_(clo_verbosity) == 1
           && !VG_(clo_xml)
           && !VG_(clo_show_error_list))

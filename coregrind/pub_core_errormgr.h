@@ -82,6 +82,8 @@ extern Bool VG_(showing_core_errors)      ( void );
 extern UInt VG_(get_n_errs_found)         ( void );
 extern UInt VG_(get_n_errs_shown)         ( void );
 
+extern Bool VG_(found_or_suppressed_errs) ( void );
+
 extern void VG_(print_errormgr_stats)     ( void );
 
 #endif   // __PUB_CORE_ERRORMGR_H

@@ -6063,7 +6063,7 @@ static void hg_pre_clo_init ( void )
                                    hg_instrument,
                                    hg_fini);
 
-   VG_(needs_core_errors)         ();
+   VG_(needs_core_errors)         (True);
    VG_(needs_tool_errors)         (HG_(eq_Error),
                                    HG_(before_pp_Error),
                                    HG_(pp_Error),

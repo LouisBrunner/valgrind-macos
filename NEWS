@@ -98,6 +98,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 485148  vfmadd213ss instruction is instrumented incorrectly (the remaining
         part of the register is cleared instead of kept unmodified)
 485487  glibc built with -march=x86-64-v3 does not work due to ld.so strcmp
+485778  Crash with --track-fds=all and --gen-suppressions=all
 n-i-bz  Add redirect for memccpy
 
 To see details of a given bug, visit

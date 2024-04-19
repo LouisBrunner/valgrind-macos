@@ -967,7 +967,7 @@ void VG_(show_open_fds) (const HChar* when)
          if (VG_(getsockopt)(i->fd, VKI_SOL_SOCKET, VKI_SO_TYPE, &val, &len)
              == -1) {
             /* Don't want the : at the end in xml */
-            UChar *colon = VG_(clo_xml) ? "" : ":";
+            const HChar *colon = VG_(clo_xml) ? "" : ":";
             VG_(sprintf)(i->description, "file descriptor %d%s", i->fd, colon);
          } else {
             getsockdetails(i->fd, 256, i->description);

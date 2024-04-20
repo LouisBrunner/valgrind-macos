@@ -127,3 +127,27 @@
    obj:*/lib*/libc.so.7
    fun:setlocale
 }
+{
+   MEMCHECK-LIBC-GETGRGID
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:getgrgid
+}
+{
+   MEMCHECK-LIBC-GMTIME
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   fun:gmtime
+}
+{
+   MEMCHECK-LIBC-TZSET
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*/lib*/libc.so.7
+   fun:tzset
+}

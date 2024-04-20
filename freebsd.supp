@@ -107,3 +107,12 @@
    obj:*/lib*/libc.so.7
    fun:__srget
 }
+{
+   MEMCHECK-LIBC-__SWBUF
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   fun:__swbuf
+}

@@ -49,6 +49,7 @@ $SED \
 -e "s/ (\([a-zA-Z_]*\.h\):[0-9]*)/ (\1:?)/" \
 -e "s/ (\([a-zA-Z_]*\.cpp\):[0-9]*)/ (\1:?)/" \
 -e "s/\( name [^ ]*\)-[0-9]*\( oflag \)/\1\2/" \
+-e "s/??? (in \/[A-Za-z0-9_/-]*)/???/" \
 -e '/^   by 0x[0-9a-fA-F]*: process_dl_debug (in \/lib[0-9]*\/ld-[0-9.]*\.so)$/d' \
 -e "/^For lists of detected and suppressed errors, rerun with: -s$/d" |
 

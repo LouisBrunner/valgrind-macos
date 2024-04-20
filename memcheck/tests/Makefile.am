@@ -174,15 +174,18 @@ EXTRA_DIST = \
 	sized_aligned_new_delete_misaligned2_supp.vgtest \
 		sized_aligned_new_delete_misaligned2_supp.supp \
 		sized_aligned_new_delete_misaligned2_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned2_supp.stderr.exp-32 \
 	sized_aligned_new_delete_misaligned3_supp.vgtest \
 		sized_aligned_new_delete_misaligned3_supp.supp \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
+		sized_aligned_new_delete_misaligned3_supp.stderr.exp-32 \
 	new_aligned_delete_default.stderr.exp \
 	new_aligned_delete_default.stderr.exp_32 \
 		new_aligned_delete_default.vgtest \
 	new_delete_mismatch_size.stderr.exp \
 		new_delete_mismatch_size.vgtest \
 	new_delete_mismatch_size_supp.stderr.exp \
+	new_delete_mismatch_size_supp.stderr.exp-32 \
 		new_delete_mismatch_size_supp.vgtest \
 		new_delete_mismatch_size_supp.supp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \

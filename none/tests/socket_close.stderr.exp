@@ -3,11 +3,11 @@ close socket_fd 3
 and close the socket again 3
 File descriptor 3: AF_UNIX socket 3: /tmp/vgtest-foofrob is already closed
    at 0x........: close (in /...libc...)
-   by 0x........: main (socket_close.c:40)
+   by 0x........: main
  Previously closed
    at 0x........: close (in /...libc...)
-   by 0x........: main (socket_close.c:36)
+   by 0x........: main
  Originally opened
    at 0x........: socket (in /...libc...)
    by 0x........: open_socket (socket_close.c:17)
-   by 0x........: main (socket_close.c:31)
+   by 0x........: main

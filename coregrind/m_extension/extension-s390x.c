@@ -154,7 +154,7 @@ static UWord do_extension_PRNO(ThreadState* tst, ULong variant)
    switch (fc) {
    case 0: // Query
       parms_len = 16;
-      PRE_MEM_WRITE(tst, "parms", parms, parms_len);
+      PRE_MEM_WRITE(tst, "PRNO(parms)", parms, parms_len);
       cc = do_PRNO_insn(func, parms, &addr1, &len1, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, PRNO_functions,
                             sizeof(PRNO_functions));
@@ -162,25 +162,25 @@ static UWord do_extension_PRNO(ThreadState* tst, ULong variant)
       break;
    case 112: // TRNG-Query-Raw-to-Conditioned-Ratio
       parms_len = 8;
-      PRE_MEM_WRITE(tst, "parms", parms, parms_len);
+      PRE_MEM_WRITE(tst, "PRNO(parms)", parms, parms_len);
       cc = do_PRNO_insn(func, parms, &addr1, &len1, &addr2, &len2);
       POST_MEM_WRITE(tst, parms, parms_len);
       break;
    case 3: // SHA-512-DRNG
       parms_len = 240;
-      PRE_MEM_READ(tst, "parms", parms, parms_len);
+      PRE_MEM_READ(tst, "PRNO(parms)", parms, parms_len);
       if (mflag == 0) {
          // Generate operation
-         addr1 = orig_addr1 = READ_GPR(tst, "op1_addr", r1);
-         len1 = orig_len1 = READ_GPR(tst, "op1_len", r1 + 1);
-         PRE_MEM_WRITE(tst, "operand1", addr1, len1);
+         addr1 = orig_addr1 = READ_GPR(tst, "PRNO(op1_addr)", r1);
+         len1 = orig_len1 = READ_GPR(tst, "PRNO(op1_len)", r1 + 1);
+         PRE_MEM_WRITE(tst, "PRNO(op1)", addr1, len1);
       } else {
          // Seed operation
-         addr2 = orig_addr2 = READ_GPR(tst, "op2_addr", r2);
-         len2 = orig_len2 = READ_GPR(tst, "op2_len", r2 + 1);
-         PRE_MEM_READ(tst, "operand2", addr2, len2);
+         addr2 = orig_addr2 = READ_GPR(tst, "PRNO(op2_addr)", r2);
+         len2 = orig_len2 = READ_GPR(tst, "PRNO(op2_len)", r2 + 1);
+         PRE_MEM_READ(tst, "PRNO(op2)", addr2, len2);
       }
-      PRE_MEM_WRITE(tst, "parms", parms, parms_len);
+      PRE_MEM_WRITE(tst, "PRNO(parms)", parms, parms_len);
       cc = do_PRNO_insn(func, parms, &addr1, &len1, &addr2, &len2);
       POST_MEM_WRITE(tst, parms, parms_len);
       if (mflag == 0) {
@@ -189,12 +189,12 @@ static UWord do_extension_PRNO(ThreadState* tst, ULong variant)
       }
       break;
    case 114: // TRNG
-      addr1 = orig_addr1 = READ_GPR(tst, "op1_addr", r1);
-      len1  = orig_len1 = READ_GPR(tst, "op1_len", r1 + 1);
-      PRE_MEM_WRITE(tst, "operand1", addr1, len1);
-      addr2 = orig_addr2 = READ_GPR(tst, "op2_addr", r2);
-      len2  = orig_len2 = READ_GPR(tst, "op2_len", r2 + 1);
-      PRE_MEM_WRITE(tst, "operand2", addr2, len2);
+      addr1 = orig_addr1 = READ_GPR(tst, "PRNO(op1_addr)", r1);
+      len1  = orig_len1 = READ_GPR(tst, "PRNO(op1_len)", r1 + 1);
+      PRE_MEM_WRITE(tst, "PRNO(op1)", addr1, len1);
+      addr2 = orig_addr2 = READ_GPR(tst, "PRNO(op2_addr)", r2);
+      len2  = orig_len2 = READ_GPR(tst, "PRNO(op2_len)", r2 + 1);
+      PRE_MEM_WRITE(tst, "PRNO(op2)", addr2, len2);
       cc = do_PRNO_insn(func, parms, &addr1, &len1, &addr2, &len2);
       WRITE_GPR(tst, r1, addr1);
       WRITE_GPR(tst, r1 + 1, len1);

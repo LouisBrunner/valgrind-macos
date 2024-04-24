@@ -339,7 +339,7 @@
    helgrind---gethostbyname2_r
    Helgrind:Race
    ...
-   fun:gethostbyname2_r
+   fun:*gethostbyname2_r
 }
 
 # * here for dns and files variants etc.

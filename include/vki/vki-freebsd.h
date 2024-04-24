@@ -1623,6 +1623,13 @@ struct vki_spacectl_range {
 
 #define VKI_RFSPAWN         (1U<<31U)
 
+/* kcmp() options. */
+#define VKI_KCMP_FILE       100
+#define VKI_KCMP_FILEOBJ    101
+#define VKI_KCMP_FILES      102
+#define VKI_KCMP_SIGHAND    103
+#define VKI_KCMP_VM         104
+
 #define VKI_CLOSE_RANGE_CLOEXEC     (1<<2)
 
 //----------------------------------------------------------------------

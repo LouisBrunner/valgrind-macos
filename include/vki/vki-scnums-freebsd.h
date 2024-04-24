@@ -687,6 +687,7 @@
 #define __NR_timerfd_create      585
 #define __NR_timerfd_gettime     586
 #define __NR_timerfd_settime     587
+#define __NR_kcmp                588
 
 #endif
 

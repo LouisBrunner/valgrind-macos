@@ -7138,6 +7138,32 @@ POST(sys_timerfd_settime)
       POST_MEM_WRITE(ARG4, sizeof(struct vki_itimerspec));
    }
 }
+
+// SYS_kcmp 588
+// int kcmp(pid_t pid1, pid_t pid2, int type, uintptr_t idx1, uintptr_t idx2);
+PRE(sys_kcmp)
+{
+   PRINT("kcmp(%ld, %ld, %ld, %" FMT_REGWORD "u, %" FMT_REGWORD "u)",
+         SARG1, SARG2, SARG3, ARG4, ARG5);
+   switch (ARG3) {
+   case VKI_KCMP_FILES:
+   case VKI_KCMP_VM:
+   case VKI_KCMP_SIGHAND:
+      /* Most of the comparison types don't look at |idx1| or |idx2|. */
+      PRE_REG_READ3(int, "kcmp",
+                    vki_pid_t, pid1, vki_pid_t, pid2, int, type);
+      break;
+   case VKI_KCMP_FILE:
+   case VKI_KCMP_FILEOBJ:
+   default:
+      PRE_REG_READ5(int, "kcmp",
+                    vki_pid_t, pid1, vki_pid_t, pid2, int, type,
+                    unsigned long, idx1, unsigned long, idx2);
+      break;
+   }
+}
+
+
 #endif
 
 #undef PRE
@@ -7873,6 +7899,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587
+   BSDX_(__NR_kcmp,             sys_kcmp),              // 588
 #endif
 
 

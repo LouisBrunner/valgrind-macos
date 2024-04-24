@@ -989,7 +989,8 @@ void VG_(show_open_fds) (const HChar* when)
 
    }
 
-   VG_(message)(Vg_UserMsg, "\n");
+   if (!VG_(clo_xml))
+      VG_(message)(Vg_UserMsg, "\n");
 }
 
 /* If /proc/self/fd doesn't exist (e.g. you've got a Linux kernel that doesn't

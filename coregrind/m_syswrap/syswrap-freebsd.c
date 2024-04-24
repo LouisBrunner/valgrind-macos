@@ -6689,8 +6689,8 @@ PRE(sys___sysctlbyname)
    // makes sense as the pid is variable and using
    // a MIB is easier than generating a string
 
-   // read number of ints specified in ARG2 from mem pointed to by ARG1
-   PRE_MEM_READ("__sysctlbyname(name)", (Addr)ARG1, ARG2 * sizeof(int));
+   // string length specified in ARG2 from mem pointed to by ARG1
+   PRE_MEM_READ("__sysctlbyname(name)", (Addr)ARG1, ARG2);
 
    // if 'newp' is not NULL can read namelen bytes from that addess
    if (ARG5 != (UWord)NULL) {

@@ -50,6 +50,8 @@ EXTRA_DIST = \
 	eventfd2.stderr.exp \
 	extattr.vgtest \
 	extattr.stderr.exp \
+	fbsd278566.vgtest \
+	fbsd278566.stderr.exp \
 	fexecve.vgtest \
 	fexecve.stderr.exp \
 	file_locking_wait6.vgtest \
@@ -145,7 +147,7 @@ check_PROGRAMS = \
 	capsicum chflags \
 	chmod_chown clock_nanosleep_interrupt \
 	delete_sized_mismatch errno_aligned_allocs \
-	extattr \
+	extattr fbsd278566 \
 	fexecve \
 	file_locking_wait6 \
 	get_set_context get_set_login getfh \

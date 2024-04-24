@@ -33,6 +33,7 @@ dist_noinst_SCRIPTS = \
 	filter_xml_frames \
 	platform_test \
 	post_regtest_checks \
+	python_test.sh \
 	vg_regtest
 
 noinst_SCRIPTS = \

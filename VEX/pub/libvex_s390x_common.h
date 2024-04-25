@@ -117,6 +117,7 @@
 #define S390_EXT_ID_NBITS 16
 
 #define S390_EXT_PRNO    1
+#define S390_EXT_NNPA    2
 
 /*--------------------------------------------------------------*/
 /*--- Miscellaneous                                          ---*/

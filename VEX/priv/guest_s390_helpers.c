@@ -391,7 +391,9 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
        /* 154: unassigned */
        /* 155: MSA9, not supported */
        | s390_stfle_range(156, 156)
-       /* 157-167: unassigned */
+       /* 157-164: unassigned */
+       | s390_stfle_range(165, 165)
+       /* 166-167: unassigned */
        | s390_stfle_range(168, 168)
        /* 168-191: unassigned */ ),
 

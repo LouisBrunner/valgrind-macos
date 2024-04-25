@@ -19669,6 +19669,14 @@ s390_irgen_VCRNF(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5)
    return "vcrnf";
 }
 
+static const HChar *
+s390_irgen_NNPA(void)
+{
+   s390_insn_assert("nnpa", s390_host_has_nnpa);
+   extension(S390_EXT_NNPA, 0);
+   return "nnpa";
+}
+
 /* New insns are added here.
    If an insn is contingent on a facility being installed also
    check whether the list of supported facilities in function
@@ -20446,7 +20454,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb938: /* SORTL */ goto unimplemented;
    case 0xb939: /* DFLTCC */ goto unimplemented;
    case 0xb93a: /* KDSA */ goto unimplemented;
-   case 0xb93b: /* NNPA */ goto unimplemented;
+   case 0xb93b: s390_format_E(s390_irgen_NNPA);  goto ok;
    case 0xb93c: s390_format_RRE_RR(s390_irgen_PPNO, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb93e: /* KIMD */ goto unimplemented;

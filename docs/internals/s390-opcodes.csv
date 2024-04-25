@@ -1754,7 +1754,7 @@ vpkzr,"vector pack zoned register","not implemented",arch14
 vsrpr,"vector shift and round decimal register","not implemented",arch14
 vupkzh,"vector unpack zoned high","not implemented",arch14
 vupkzl,"vector unpack zoned low","not implemented",arch14
-nnpa,"neural network processing assist","not implemented",arch14
+nnpa,"neural network processing assist",implemented,arch14
 vclfnh,"vector fp convert and lengthen from nnp high","implemented",arch14
 vclfnl,"vector fp convert and lengthen from nnp low","implemented",arch14
 vcrnf,"vector fp convert and round to nnp","implemented",arch14

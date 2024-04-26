@@ -981,7 +981,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         automatically sets the options <option>--leak-check=full</option>
         and <option>--show-leak-kinds=all</option>, to allow
         xtree visualisation tools such as kcachegrind to select what kind
-        to leak to visualise.
+        to leak to visualize.
         The produced file will contain the following events:</para>
       <itemizedlist>
         <listitem><para><option>RB</option> : Reachable Bytes</para></listitem> 

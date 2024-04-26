@@ -2904,7 +2904,7 @@ $]]></screen>
    </listitem>
 
    <listitem>
-    <para>From gdb, using the the monitor command
+    <para>From gdb, using the monitor command
      <computeroutput>v.clo</computeroutput>:</para>
 <screen><![CDATA[
 (gdb) monitor v.clo --trace-children=yes --child-silent-after-fork=no
@@ -3105,7 +3105,7 @@ will create a core dump in the usual way.</para>
   allocated indirectly via a call to function f1 and 140 bytes
   indirectly allocated via a call to function f2. f2 has allocated
   memory by calling g2, while f1 has allocated memory by calling g11
-  and g12. g11, g12 and g1 have directly called a memory allocation
+  and g12. g11, g12 and g2 have directly called a memory allocation
   function (malloc), and so have a non zero 'Self' value. Note that when
   kcachegrind shows an xtree, the 'Called' column and call nr indications in
   the Call Graph are not significant (always set to 0 or 1, independently
@@ -3175,7 +3175,7 @@ the "Massif Format".</para>
     <para>An xtree file in the Callgrind Format contains a single callgraph,
       associating each stack trace with the values recorded
       in the xtree. </para>
-    <para>Different Callgrind Format file visualisers are available:</para>
+    <para>Different Callgrind Format file visualizers are available:</para>
     <para>Valgrind distribution includes the <option>callgrind_annotate</option>
       command line utility that reads in the xtree data, and prints a sorted
       lists of functions, optionally with source annotation. Note that due to
@@ -3199,7 +3199,7 @@ the "Massif Format".</para>
       and <option>curBk</option>),
       while <option>--xtree-memory=full</option> will give a file
       with 6 detailed trees.</para>
-    <para>Different Massif Format file visualisers are available. Valgrind
+    <para>Different Massif Format file visualizers are available. Valgrind
       distribution includes the <option>ms_print</option>
       command line utility that produces an easy to read reprentation of
       a massif output file. See <xref linkend="ms-manual.using-print"/> and
@@ -3215,7 +3215,7 @@ the "Massif Format".</para>
 <para>Note that for equivalent information, the Callgrind Format is more compact
   than the Massif Format.  However, the Callgrind Format always contains the
   full data: there is no filtering done during file production, filtering is
-  done by visualisers such as kcachegrind. kcachegrind is particularly easy to
+  done by visualizers such as kcachegrind. kcachegrind is particularly easy to
   use to analyse big xtree data containing multiple events counts or resources
   consumption.  The Massif Format (optionally) only contains a part of the data.
   For example, the Massif tool might filter some of the data, according to the
@@ -3319,7 +3319,7 @@ curB curBk totB totBk totFdB totFdBk
   not reflect the fact that the same memory was over and over allocated
   then released.</para>
 
-<para>Finally, Xtree visualisers such as kcachegrind are helping to
+<para>Finally, Xtree visualizers such as kcachegrind are helping to
   identify big memory consumers, in order to possibly optimise the
   amount of memory needed by your program.</para>
 

@@ -319,7 +319,21 @@ Mismatched free() / delete / delete []
 ]]></programlisting>
 
 <para>In <literal>C++</literal> it's important to deallocate memory in a
-way compatible with how it was allocated.  The deal is:</para>
+way compatible with how it was allocated.</para>
+<para>Most of the time in C++ you will write code that
+uses <function>new expresions</function> and <function>delete
+expresions</function>
+(see <ulink url="https://en.cppreference.com/w/cpp/language/new">cppreference
+new expression</ulink>
+and <ulink url="https://en.cppreference.com/w/cpp/language/delete">cppreference
+delete expression</ulink>). A new expression will
+call <function>operator new</function> to perform the allocation and
+then call the constructor (if one exists) on the object. Similarly a
+delete expression will call the destructor on the object (if one
+exists) and then call <function>operator delete</function>. The array
+overloads call constructors/destructors for each object in the
+array.</para>
+<para>The deal is:</para>
 <itemizedlist>
   <listitem>
     <para>If allocated with
@@ -340,19 +354,26 @@ way compatible with how it was allocated.  The deal is:</para>
   </listitem>
 </itemizedlist>
 
-<para>The worst thing is that on Linux apparently it doesn't matter if
-you do mix these up, but the same program may then crash on a
-different platform, Solaris for example.  So it's best to fix it
-properly.  According to the KDE folks "it's amazing how many C++
-programmers don't know this".</para>
+<para>Mixing types of allocators and deallocators is undefined
+behaviour.  That means that on some platforms you might not have any
+problems, but the same program may then crash on a different platform,
+Solaris for example.  So it's best to fix it properly.  According to
+the KDE folks "it's amazing how many C++ programmers don't know
+this".</para>
 
 <para>The reason behind the requirement is as follows.  In some C++
 implementations, <function>delete[]</function> must be used for
 objects allocated by <function>new[]</function> because the compiler
 stores the size of the array and the pointer-to-member to the
 destructor of the array's content just before the pointer actually
-returned.  <function>delete</function> doesn't account for this and will get
-confused, possibly corrupting the heap.</para>
+returned.  <function>delete</function> doesn't account for this and
+will get confused, possibly corrupting the heap. Even if there is no
+corruption there are likely to be resource leaks since using the wrong
+delete may result in the wrong number of destructors being
+called.</para>
+
+<para>C++ aligned allocations need to be freed using aligned delete
+with the same alignment.</para>
 
 </sect2>
 

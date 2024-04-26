@@ -34,6 +34,8 @@
 /svn-commit.2.tmp
 /svn-commit.tmp
 /valgrind
+/valgrind-*tar.gz
+/valgrind-*tar.bz2
 /valgrind.pc
 /valgrind.spec
 /valt_load_address*.lds

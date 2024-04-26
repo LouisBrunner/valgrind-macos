@@ -31,6 +31,19 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * Added ARM64 support for FreeBSD.
 
+* ARM64 now supports dotprod instructions (sdot/udot).
+
+* AMD64 better supports code build with -march=x86-64-v3.
+  fused-multiple-add instructions (fma) are now emulated more
+  accurately. And memcheck now handles __builtin_strcmp using 128/256
+  bit vectors with sse4.1, avx/avx2.
+
+* S390X added support for NNPA (neural network processing assist)
+  facility vector instructions VCNF, VCLFNH, VCFN, VCLFNL, VCRNF and
+  NNPA (z16/arch14).
+
+* X86 recognizes new binutils-2.42 nop patterns.
+
 * ==================== TOOL CHANGES ===================
 
 * The none tool now also supports xml output.

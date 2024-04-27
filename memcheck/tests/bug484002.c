@@ -12,17 +12,17 @@ int main()
    };
 
    size_t res = wcsxfrm(out, in, 3);
-   printf("%lu\n", res);
+   printf("%zu\n", res);
 
    wchar_t* in2 = malloc(sizeof(wchar_t) * 4);
    memcpy(in2, in, sizeof(in));
    res = wcsxfrm(out, in2, 3);
-   printf("%lu\n", res);
+   printf("%zu\n", res);
    free(in2);
 
    wchar_t* in3 = malloc(sizeof(wchar_t) * 4);
    memcpy(in3, in, sizeof(in));
    res = wcsxfrm(out, in3, 3);
-   printf("%lu\n", res);
+   printf("%zu\n", res);
    free(in3);
 }

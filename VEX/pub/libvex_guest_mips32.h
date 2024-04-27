@@ -188,10 +188,10 @@ typedef
 
       /*  1016 */ UInt guest_MSACSR;
 
-      /*  1020 */ UInt _padding3;
+      /*  1020 */ UInt guest_IP_AT_SYSCALL;
 
-      /*  1020 */ ULong guest_LLdata64;
-      /*  1028 */ ULong _padding4;
+      /*  1024 */ ULong guest_LLdata64;
+      /*  1032 */ ULong _padding3;
 } VexGuestMIPS32State;
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS32 guest stuff.               ---*/

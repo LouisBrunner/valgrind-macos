@@ -25,6 +25,7 @@ unsigned long getauxval(unsigned long type)
          return (unsigned long)auxp->a_un.a_val;
       }
    }
+   return 0UL;
 }
 #endif
 

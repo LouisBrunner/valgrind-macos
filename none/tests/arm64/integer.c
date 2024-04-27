@@ -27,14 +27,6 @@ typedef  unsigned char           Bool;
 #define True  ((Bool)1)
 
 
-static inline UChar randUChar ( void )
-{
-   static UInt seed = 80021;
-   seed = 1103515245 * seed + 12345;
-   return (seed >> 17) & 0xFF;
-}
-
-
 #define TESTINST1(instruction, RD, carryin) \
 { \
    ULong out; \

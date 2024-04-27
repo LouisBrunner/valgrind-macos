@@ -3118,7 +3118,6 @@ static void parse_var_DIE (
       UWord  typeR       = D3_INVALID_CUOFF;
       Bool   global      = False;
       GExpr* gexpr       = NULL;
-      Int    n_attrs     = 0;
       UWord  abs_ori     = (UWord)D3_INVALID_CUOFF;
       Int    lineNo      = 0;
       UInt   fndn_ix     = 0;
@@ -3130,7 +3129,6 @@ static void parse_var_DIE (
          nf_i++;
          if (attr == 0 && form == 0) break;
          get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
-         n_attrs++;
          if (attr == DW_AT_name && cts.szB < 0) {
             name = ML_(addStrFromCursor)( cc->di, cts.u.cur );
          }

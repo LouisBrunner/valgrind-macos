@@ -321,8 +321,8 @@ Mismatched free() / delete / delete []
 <para>In <literal>C++</literal> it's important to deallocate memory in a
 way compatible with how it was allocated.</para>
 <para>Most of the time in C++ you will write code that
-uses <function>new expresions</function> and <function>delete
-expresions</function>
+uses <function>new expression</function> and <function>delete
+expression</function>
 (see <ulink url="https://en.cppreference.com/w/cpp/language/new">cppreference
 new expression</ulink>
 and <ulink url="https://en.cppreference.com/w/cpp/language/delete">cppreference

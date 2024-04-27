@@ -3,6 +3,9 @@ Building and installing it
 To build/install from the GIT repository or from a distribution
 tarball, refer to the section with the same name in README.
 
+Building Valgrind requires autoconf, GNU make and a suitable C
+compiler.
+
 
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,6 +45,10 @@ can be found in docs/README.
 
 Running the regression tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Running the regression tests requires GNU sed, python 3.9 or later, gdb,
+and a suitable C++ compiler
+
 To build and run all the regression tests, run "make [--quiet] regtest".
 
 To run a subset of the regression tests, execute:

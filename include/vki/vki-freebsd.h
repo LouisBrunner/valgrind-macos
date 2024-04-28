@@ -972,7 +972,7 @@ struct vki_termios {
 #define _VKI_IOC_SIZEMASK  ((1ul << _VKI_IOC_SIZEBITS)-1)
 #define _VKI_IOC_DIRMASK   ((1ul << _VKI_IOC_DIRBITS)-1)
 
-#define  _VKI_IOC_BASESHIFT   0U
+#define _VKI_IOC_BASESHIFT   0U
 #define _VKI_IOC_NRSHIFT   0U
 #define _VKI_IOC_TYPESHIFT (_VKI_IOC_NRSHIFT+_VKI_IOC_NRBITS)
 #define _VKI_IOC_SIZESHIFT (_VKI_IOC_TYPESHIFT+_VKI_IOC_TYPEBITS)
@@ -1097,7 +1097,6 @@ struct vki_fiodgname_arg {
 #define VKI_FIODGNAME   _VKI_IOW('f', 120, struct vki_fiodgname_arg) /* get dev. name */
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
-#if 0
 //----------------------------------------------------------------------
 // From net/if.h
 //----------------------------------------------------------------------
@@ -1113,12 +1112,17 @@ struct vki_ifmediareq {
    int     *ifm_ulist;
 };
 
+#define VKI_IFSTATMAX       800             /* 10 lines of text */
+struct vki_ifstat {
+   char    ifs_name[VKI_IFNAMSIZ];     /* if name, e.g. "en0" */
+   char    ascii[VKI_IFSTATMAX + 1];
+};
 
+#define VKI_SIOCGIFSTATUS _VKI_IOWR('i', 59, struct vki_ifstat)
 //----------------------------------------------------------------------
 // From sys/sockio.h
 //----------------------------------------------------------------------
 #define VKI_SIOCGIFMEDIA  _VKI_IOWR('i', 56, struct vki_ifmediareq)
-#endif
 
 //----------------------------------------------------------------------
 // From sys/poll.h
@@ -2614,7 +2618,6 @@ struct vki_ps_strings {
 #endif
 
 // See syswrap-freebsd.c PRE/POST(sys_ioctl)
-#if 0
 
 //----------------------------------------------------------------------
 // From sys/pciio.h
@@ -3347,7 +3350,7 @@ union vki_ccb {
 
 #define VKI_CAMIOCOMMAND    _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
 
-#endif
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

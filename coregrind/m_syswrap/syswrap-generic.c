@@ -1128,6 +1128,7 @@ void fd_pp_Error (const Error *err)
       if (xml) VG_(emit)("  <kind>FdBadClose</kind>\n");
       struct BadCloseExtra *bce = (struct BadCloseExtra *)
          VG_(get_error_extra)(err);
+      vg_assert(bce);
       if (xml) {
          VG_(emit)("  <fd>%d</fd>\n", bce->fd);
          if (bce->pathname)

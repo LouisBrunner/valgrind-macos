@@ -422,9 +422,8 @@ struct vki_stat {
 };
 
 
-
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/sched.h
+// From sys/sched.h
 //----------------------------------------------------------------------
 
 struct vki_sched_param {
@@ -1118,10 +1117,53 @@ struct vki_ifstat {
    char    ascii[VKI_IFSTATMAX + 1];
 };
 
+struct vki_ifreq_buffer {
+   vki_size_t  length;
+   void    *buffer;
+};
+
+struct vki_ifreq_nv_req {
+   u_int   buf_length;     /* Total size of buffer,
+                        u_int for ABI struct ifreq */
+   u_int   length;         /* Length of the filled part */
+   void    *buffer;        /* Buffer itself, containing packed nv */
+};
+
+struct vki_ifreq {
+   char    ifr_name[VKI_IFNAMSIZ];             /* if name, e.g. "en0" */
+   union {
+      struct  vki_sockaddr ifru_addr;
+      struct  vki_sockaddr ifru_dstaddr;
+      struct  vki_sockaddr ifru_broadaddr;
+      struct  vki_ifreq_buffer ifru_buffer;
+      short   ifru_flags[2];
+      short   ifru_index;
+      int     ifru_jid;
+      int     ifru_metric;
+      int     ifru_mtu;
+      int     ifru_phys;
+      int     ifru_media;
+      __vki_caddr_t ifru_data;
+      int     ifru_cap[2];
+      u_int   ifru_fib;
+      u_char  ifru_vlan_pcp;
+      struct  vki_ifreq_nv_req ifru_nv;
+   } ifr_ifru;
+};
+
+struct vki_ifconf {
+   int     ifc_len;                /* size of associated buffer */
+   union {
+      __vki_caddr_t ifcu_buf;
+      struct  vki_ifreq *ifcu_req;
+   } ifc_ifcu;
+};
+
 #define VKI_SIOCGIFSTATUS _VKI_IOWR('i', 59, struct vki_ifstat)
 //----------------------------------------------------------------------
 // From sys/sockio.h
 //----------------------------------------------------------------------
+#define	VKI_SIOCGIFCONF	_VKI_IOWR('i', 36, struct vki_ifconf)	/* get ifnet list */
 #define VKI_SIOCGIFMEDIA  _VKI_IOWR('i', 56, struct vki_ifmediareq)
 
 //----------------------------------------------------------------------
@@ -1726,163 +1768,6 @@ struct vki_shmid_ds {
 #define VKI_SHMDT               22
 #define VKI_SHMGET              23
 #define VKI_SHMCTL              24
-#endif
-
-#if 0
-//----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/sockios.h
-//----------------------------------------------------------------------
-
-#define VKI_SIOCOUTQ    VKI_TIOCOUTQ
-
-#define VKI_SIOCADDRT      0x890B   /* add routing table entry */
-#define VKI_SIOCDELRT      0x890C   /* delete routing table entry */
-
-#define VKI_SIOCGIFNAME    0x8910   /* get iface name    */
-#define VKI_SIOCGIFCONF    0x8912   /* get iface list    */
-#define VKI_SIOCGIFFLAGS   0x8913   /* get flags         */
-#define VKI_SIOCSIFFLAGS   0x8914   /* set flags         */
-#define VKI_SIOCGIFADDR    0x8915   /* get PA address    */
-#define VKI_SIOCSIFADDR    0x8916   /* set PA address    */
-#define VKI_SIOCGIFDSTADDR 0x8917   /* get remote PA address   */
-#define VKI_SIOCSIFDSTADDR 0x8918   /* set remote PA address   */
-#define VKI_SIOCGIFBRDADDR 0x8919   /* get broadcast PA address   */
-#define VKI_SIOCSIFBRDADDR 0x891a   /* set broadcast PA address   */
-#define VKI_SIOCGIFNETMASK 0x891b   /* get network PA mask     */
-#define VKI_SIOCSIFNETMASK 0x891c   /* set network PA mask     */
-#define VKI_SIOCGIFMETRIC  0x891d   /* get metric        */
-#define VKI_SIOCSIFMETRIC  0x891e   /* set metric        */
-#define VKI_SIOCGIFMTU     0x8921   /* get MTU size         */
-#define VKI_SIOCSIFMTU     0x8922   /* set MTU size         */
-#define  VKI_SIOCSIFHWADDR 0x8924   /* set hardware address    */
-#define VKI_SIOCGIFHWADDR  0x8927   /* Get hardware address    */
-#define VKI_SIOCGIFINDEX   0x8933   /* name -> if_index mapping   */
-
-#define VKI_SIOCGIFTXQLEN  0x8942   /* Get the tx queue length */
-#define VKI_SIOCSIFTXQLEN  0x8943   /* Set the tx queue length    */
-
-#define VKI_SIOCGMIIPHY    0x8947   /* Get address of MII PHY in use. */
-#define VKI_SIOCGMIIREG    0x8948   /* Read MII PHY register.  */
-#define VKI_SIOCSMIIREG    0x8949   /* Write MII PHY register. */
-
-#define VKI_SIOCDARP    0x8953   /* delete ARP table entry  */
-#define VKI_SIOCGARP    0x8954   /* get ARP table entry     */
-#define VKI_SIOCSARP    0x8955   /* set ARP table entry     */
-
-#define VKI_SIOCDRARP      0x8960   /* delete RARP table entry */
-#define VKI_SIOCGRARP      0x8961   /* get RARP table entry    */
-#define VKI_SIOCSRARP      0x8962   /* set RARP table entry    */
-
-#define VKI_SIOCGIFMAP     0x8970   /* Get device parameters   */
-#define VKI_SIOCSIFMAP     0x8971   /* Set device parameters   */
-
-//----------------------------------------------------------------------
-// From linux-2.6.9/include/linux/kb.h
-//----------------------------------------------------------------------
-
-#define VKI_GIO_FONT       0x4B60  /* gets font in expanded form */
-#define VKI_PIO_FONT       0x4B61  /* use font in expanded form */
-
-#define VKI_GIO_FONTX      0x4B6B  /* get font using struct consolefontdesc */
-#define VKI_PIO_FONTX      0x4B6C  /* set font using struct consolefontdesc */
-struct vki_consolefontdesc {
-   unsigned short charcount;  /* characters in font (256 or 512) */
-   unsigned short charheight; /* scan lines per character (1-32) */
-   char __user *chardata;     /* font data in expanded form */
-};
-
-#define VKI_PIO_FONTRESET  0x4B6D  /* reset to default font */
-
-#define VKI_GIO_CMAP       0x4B70  /* gets colour palette on VGA+ */
-#define VKI_PIO_CMAP       0x4B71  /* sets colour palette on VGA+ */
-
-#define VKI_KIOCSOUND      0x4B2F  /* start sound generation (0 for off) */
-#define VKI_KDMKTONE       0x4B30  /* generate tone */
-
-#define VKI_KDGETLED       0x4B31  /* return current led state */
-#define VKI_KDSETLED       0x4B32  /* set led state [lights, not flags] */
-
-#define VKI_KDGKBTYPE      0x4B33  /* get keyboard type */
-
-#define VKI_KDADDIO        0x4B34  /* add i/o port as valid */
-#define VKI_KDDELIO        0x4B35  /* del i/o port as valid */
-#define VKI_KDENABIO       0x4B36  /* enable i/o to video board */
-#define VKI_KDDISABIO      0x4B37  /* disable i/o to video board */
-
-#define VKI_KDSETMODE      0x4B3A  /* set text/graphics mode */
-#define VKI_KDGETMODE      0x4B3B  /* get current mode */
-
-#define VKI_KDMAPDISP      0x4B3C  /* map display into address space */
-#define VKI_KDUNMAPDISP    0x4B3D  /* unmap display from address space */
-
-#define     VKI_E_TABSZ    256
-#define VKI_GIO_SCRNMAP    0x4B40  /* get screen mapping from kernel */
-#define VKI_PIO_SCRNMAP    0x4B41  /* put screen mapping table in kernel */
-#define VKI_GIO_UNISCRNMAP 0x4B69  /* get full Unicode screen mapping */
-#define VKI_PIO_UNISCRNMAP 0x4B6A  /* set full Unicode screen mapping */
-
-#define VKI_GIO_UNIMAP     0x4B66  /* get unicode-to-font mapping from kernel */
-#define VKI_PIO_UNIMAP     0x4B67  /* put unicode-to-font mapping in kernel */
-#define VKI_PIO_UNIMAPCLR  0x4B68  /* clear table, possibly advise hash algorithm */
-
-#define VKI_KDGKBMODE      0x4B44  /* gets current keyboard mode */
-#define VKI_KDSKBMODE      0x4B45  /* sets current keyboard mode */
-
-#define VKI_KDGKBMETA      0x4B62  /* gets meta key handling mode */
-#define VKI_KDSKBMETA      0x4B63  /* sets meta key handling mode */
-
-#define VKI_KDGKBLED       0x4B64  /* get led flags (not lights) */
-#define VKI_KDSKBLED       0x4B65  /* set led flags (not lights) */
-
-struct vki_kbentry {
-   unsigned char kb_table;
-   unsigned char kb_index;
-   unsigned short kb_value;
-};
-#define VKI_KDGKBENT       0x4B46  /* gets one entry in translation table */
-#define VKI_KDSKBENT       0x4B47  /* sets one entry in translation table */
-
-struct vki_kbsentry {
-   unsigned char kb_func;
-   unsigned char kb_string[512];
-};
-#define VKI_KDGKBSENT      0x4B48  /* gets one function key string entry */
-#define VKI_KDSKBSENT      0x4B49  /* sets one function key string entry */
-
-struct vki_kbdiacr {
-   unsigned char diacr, base, result;
-};
-struct vki_kbdiacrs {
-   unsigned int kb_cnt;    /* number of entries in following array */
-   struct vki_kbdiacr kbdiacr[256];    /* MAX_DIACR from keyboard.h */
-};
-#define VKI_KDGKBDIACR     0x4B4A  /* read kernel accent table */
-#define VKI_KDSKBDIACR     0x4B4B  /* write kernel accent table */
-
-struct vki_kbkeycode {
-   unsigned int scancode, keycode;
-};
-#define VKI_KDGETKEYCODE   0x4B4C  /* read kernel keycode table entry */
-#define VKI_KDSETKEYCODE   0x4B4D  /* write kernel keycode table entry */
-
-#define VKI_KDSIGACCEPT    0x4B4E  /* accept kbd generated signals */
-
-struct vki_kbd_repeat {
-   int delay;  /* in msec; <= 0: don't change */
-   int period; /* in msec; <= 0: don't change */
-   /* earlier this field was misnamed "rate" */
-};
-#define VKI_KDKBDREP       0x4B52  /* set keyboard delay/repeat rate;
-                                    * actually used values are returned */
-
-#define VKI_KDFONTOP       0x4B72  /* font operations */
-
-//----------------------------------------------------------------------
-// From linux-2.6.9/include/linux/kb.h
-//----------------------------------------------------------------------
-
-typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory */
-
 #endif
 
 //----------------------------------------------------------------------

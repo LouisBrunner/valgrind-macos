@@ -1061,6 +1061,16 @@ PRE(sys_ioctl)
          }
       }
       break;
+   case VKI_SIOCGIFCONF:
+      // #define SIOCGIFCONF _IOWR('i', 36, struct ifconf)   /* get ifnet list */
+      // test with "traceroute www.siemens.com" (as root)
+      if (ARG3 && ML_(safe_to_deref)((const void*)ARG3, sizeof(struct vki_ifconf))) {
+         struct vki_ifconf* ifc = (struct vki_ifconf*)ARG3;
+         PRE_FIELD_READ("ioctl(SIOCGIFCONF).ifc_len", ifc->ifc_len);
+         PRE_FIELD_READ("ioctl(SIOCGIFCONF).ifcu_req", ifc->ifc_ifcu.ifcu_req);
+         PRE_MEM_WRITE("ioctl(SIOCGIFCONF).buf", (Addr)ifc->ifc_ifcu.ifcu_req, ifc->ifc_len);
+      }
+      break;
    case VKI_SIOCGIFSTATUS:
       // #define SIOCGIFSTATUS _IOWR('i', 59, struct ifstat) /* get IF status */
       // test with "ifconfig -a"
@@ -1083,16 +1093,24 @@ POST(sys_ioctl)
       buffers */
    case VKI_FIODGNAME:
       if (ARG3) {
-      struct vki_fiodgname_arg* data = (struct vki_fiodgname_arg*)(Addr)ARG3;
-      POST_MEM_WRITE((Addr)data->buf, data->len);      
+         struct vki_fiodgname_arg* data = (struct vki_fiodgname_arg*)(Addr)ARG3;
+         POST_MEM_WRITE((Addr)data->buf, data->len);
       }
       break;
-   case VKI_SIOCGIFSTATUS: {
-      // #define SIOCGIFSTATUS _IOWR('i', 59, struct ifstat) /* get IF status */
-      struct vki_ifstat* data = (struct vki_ifstat*)(Addr)ARG3;
-      POST_MEM_WRITE((Addr)data->ascii, sizeof(data->ascii));
+   case VKI_SIOCGIFCONF:
+      // #define SIOCGIFCONF _IOWR('i', 36, struct ifconf)   /* get ifnet list */
+      if (ARG3) {
+         struct vki_ifconf* ifc = (struct vki_ifconf*)ARG3;
+         POST_MEM_WRITE((Addr)ifc->ifc_ifcu.ifcu_req, ifc->ifc_len);
+      }
       break;
-   }
+   case VKI_SIOCGIFSTATUS:
+      // #define SIOCGIFSTATUS _IOWR('i', 59, struct ifstat) /* get IF status */
+      if (ARG3) {
+         struct vki_ifstat* data = (struct vki_ifstat*)(Addr)ARG3;
+         POST_MEM_WRITE((Addr)data->ascii, sizeof(data->ascii));
+      }
+      break;
    case VKI_SIOCGIFMEDIA:
       if (ARG3) {
          struct vki_ifmediareq* imr = (struct vki_ifmediareq*)ARG3;

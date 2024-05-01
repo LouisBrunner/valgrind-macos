@@ -1012,6 +1012,8 @@ PRE(sys_ioctl)
          if (ccb->ccb_h.func_code == VKI_XPT_DEV_MATCH) {
             PRE_FIELD_READ("ioctl(CAMIOCOMMAND).cdm.match_buf_len", ccb->cdm.match_buf_len);
             PRE_FIELD_READ("ioctl(CAMIOCOMMAND).cdm.matches", ccb->cdm.matches);
+            PRE_MEM_WRITE("ioctl(CAMIOCOMMAND:XPT_DEV_MATCH).num_matches",
+                          (Addr)(&ccb->cdm.num_matches), sizeof(ccb->cdm.num_matches));
             PRE_MEM_WRITE("ioctl(CAMIOCOMMAND:XPT_DEV_MATCH).matches",
                           (Addr)(ccb->cdm.matches), ccb->cdm.match_buf_len);
          } else if (ccb->ccb_h.func_code == VKI_XPT_SCSI_IO) {
@@ -1098,6 +1100,22 @@ POST(sys_ioctl)
    switch (ARG2/* request */) {
    /* Handle specific ioctls which pass structures which may have pointers to other
       buffers */
+   case VKI_CAMIOCOMMAND:
+      if (ARG3) {
+         union vki_ccb* ccb = (union vki_ccb*)ARG3;
+         if (ccb->ccb_h.func_code == VKI_XPT_DEV_MATCH) {
+            POST_MEM_WRITE((Addr)(&ccb->cdm.num_matches), sizeof(ccb->cdm.num_matches));
+            POST_MEM_WRITE((Addr)(ccb->cdm.matches), ccb->cdm.num_matches*sizeof(struct vki_dev_match_result));
+         } else if (ccb->ccb_h.func_code == VKI_XPT_SCSI_IO) {
+            struct vki_ccb_scsiio* scsiio = (struct vki_ccb_scsiio*)ccb;
+            if (scsiio->dxfer_len) {
+               if ((scsiio->ccb_h.flags & VKI_CAM_DIR_MASK) == VKI_CAM_DIR_IN) {
+                  POST_MEM_WRITE((Addr)(scsiio->data_ptr), scsiio->dxfer_len);
+               }
+            }
+         }
+      }
+      break;
    case VKI_FIODGNAME:
       if (ARG3) {
          struct vki_fiodgname_arg* data = (struct vki_fiodgname_arg*)(Addr)ARG3;
@@ -1111,19 +1129,19 @@ POST(sys_ioctl)
          POST_MEM_WRITE((Addr)ifc->ifc_ifcu.ifcu_req, ifc->ifc_len);
       }
       break;
-   case VKI_SIOCGIFSTATUS:
-      // #define SIOCGIFSTATUS _IOWR('i', 59, struct ifstat) /* get IF status */
-      if (ARG3) {
-         struct vki_ifstat* data = (struct vki_ifstat*)(Addr)ARG3;
-         POST_MEM_WRITE((Addr)data->ascii, sizeof(data->ascii));
-      }
-      break;
    case VKI_SIOCGIFMEDIA:
       if (ARG3) {
          struct vki_ifmediareq* imr = (struct vki_ifmediareq*)ARG3;
          if (imr->ifm_ulist) {
             POST_MEM_WRITE((Addr)(imr->ifm_ulist), imr->ifm_count * sizeof(int));
          }
+      }
+      break;
+   case VKI_SIOCGIFSTATUS:
+      // #define SIOCGIFSTATUS _IOWR('i', 59, struct ifstat) /* get IF status */
+      if (ARG3) {
+         struct vki_ifstat* data = (struct vki_ifstat*)(Addr)ARG3;
+         POST_MEM_WRITE((Addr)data->ascii, sizeof(data->ascii));
       }
       break;
    case VKI_PCIOCGETCONF:
@@ -1133,21 +1151,7 @@ POST(sys_ioctl)
       }
       break;
 
-   case VKI_CAMIOCOMMAND:
-      if (ARG3) {
-         union vki_ccb* ccb = (union vki_ccb*)ARG3;
-         if (ccb->ccb_h.func_code == VKI_XPT_DEV_MATCH) {
-            POST_MEM_WRITE((Addr)(ccb->cdm.matches), ccb->cdm.num_matches*sizeof(struct vki_dev_match_result));
-         } else if (ccb->ccb_h.func_code == VKI_XPT_SCSI_IO) {
-            struct vki_ccb_scsiio* scsiio = (struct vki_ccb_scsiio*)ccb;
-            if (scsiio->dxfer_len) {
-               if ((scsiio->ccb_h.flags & VKI_CAM_DIR_MASK) == VKI_CAM_DIR_IN) {
-                  POST_MEM_WRITE((Addr)(scsiio->data_ptr), scsiio->dxfer_len);
-               }
-            }
-         }
-      }
-      break;
+
    default:
       ML_(POST_unknown_ioctl)(tid, RES, ARG2, ARG3);
       break;

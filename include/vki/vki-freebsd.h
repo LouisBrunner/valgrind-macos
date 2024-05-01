@@ -2793,20 +2793,24 @@ struct {                                                                \
         struct type *stqe_next; /* next element */                      \
 }
 
-struct qm_trace {
+#ifdef VKI_QUEUE_MACRO_DEBUG_TRACE
+struct vki_qm_trace {
    unsigned long    lastline;
    unsigned long    prevline;
    const char      *lastfile;
    const char      *prevfile;
 };
 
-#define TRACEBUF        struct qm_trace trace;
+#define VKI_TRACEBUF        struct vki_qm_trace trace;
+#else
+#define VKI_TRACEBUF
+#endif
 
 #define TAILQ_ENTRY(type)                                               \
 struct {                                                                \
         struct type *tqe_next;  /* next element */                      \
         struct type **tqe_prev; /* address of previous next element */  \
-        TRACEBUF                                                        \
+        VKI_TRACEBUF                                                        \
 }
 
 
@@ -2814,7 +2818,7 @@ struct {                                                                \
 // From cam/cam_ccb.h
 //----------------------------------------------------------------------
 
-#define VKI_CAM_VERSION       0x15    /* Hex value for current version */
+#define VKI_CAM_VERSION 0x1a    /* Hex value for current version */
 
 typedef union {
    LIST_ENTRY(vki_ccb_hdr) le;
@@ -2924,7 +2928,11 @@ typedef enum {
    /* Notify Host Target driver of event */
    VKI_XPT_NOTIFY_ACKNOWLEDGE  = 0x37 | VKI_XPT_FC_QUEUED | VKI_XPT_FC_USER_CCB,
    /* Acknowledgement of event */
+   VKI_XPT_REPROBE_LUN		= 0x38 | VKI_XPT_FC_QUEUED | VKI_XPT_FC_USER_CCB,
+   /* Query device capacity and notify GEOM */
 
+   VKI_XPT_MMC_SET_TRAN_SETTINGS = 0x40 | VKI_XPT_FC_DEV_QUEUED,
+   VKI_XPT_MMC_GET_TRAN_SETTINGS = 0x41 | VKI_XPT_FC_DEV_QUEUED,
    /* Vendor Unique codes: 0x80->0x8F */
    VKI_XPT_VUNIQUE             = 0x80
 } vki_xpt_opcode;
@@ -2933,21 +2941,27 @@ typedef enum {
 /* CAM CCB flags */
 typedef enum {
    VKI_CAM_CDB_POINTER         = 0x00000001,/* The CDB field is a pointer    */
-   VKI_CAM_QUEUE_ENABLE        = 0x00000002,/* SIM queue actions are enabled */
-   VKI_CAM_CDB_LINKED          = 0x00000004,/* CCB contains a linked CDB     */
+   VKI_CAM_unused1             = 0x00000002,
+   VKI_CAM_unused2             = 0x00000004,
    VKI_CAM_NEGOTIATE           = 0x00000008,/*
                                               * Perform transport negotiation
                                               * with this command.
                                               */
-   VKI_CAM_SCATTER_VALID       = 0x00000010,/* Scatter/gather list is valid  */
+   VKI_CAM_DATA_ISPHYS         = 0x00000010,/* Data type with physical addrs */
    VKI_CAM_DIS_AUTOSENSE       = 0x00000020,/* Disable autosense feature     */
-   VKI_CAM_DIR_RESV            = 0x00000000,/* Data direction (00:reserved)  */
+   VKI_CAM_DIR_BOTH            = 0x00000000,/* Data direction (00:IN/OUT)  */
    VKI_CAM_DIR_IN              = 0x00000040,/* Data direction (01:DATA IN)   */
    VKI_CAM_DIR_OUT             = 0x00000080,/* Data direction (10:DATA OUT)  */
    VKI_CAM_DIR_NONE            = 0x000000C0,/* Data direction (11:no data)   */
    VKI_CAM_DIR_MASK            = 0x000000C0,/* Data direction Mask           */
-   VKI_CAM_SOFT_RST_OP         = 0x00000100,/* Use Soft reset alternative    */
-   VKI_CAM_ENG_SYNC            = 0x00000200,/* Flush resid bytes on complete */
+   VKI_CAM_DATA_VADDR		= 0x00000000,/* Data type (000:Virtual)       */
+   VKI_CAM_DATA_PADDR		= 0x00000010,/* Data type (001:Physical)      */
+   VKI_CAM_DATA_SG		= 0x00040000,/* Data type (010:sglist)        */
+   VKI_CAM_DATA_SG_PADDR	= 0x00040010,/* Data type (011:sglist phys)   */
+   VKI_CAM_DATA_BIO		= 0x00200000,/* Data type (100:bio)           */
+   VKI_CAM_DATA_MASK		= 0x00240010,/* Data type mask                */
+   VKI_CAM_unused3		= 0x00000100,
+   VKI_CAM_unused4		= 0x00000200,
    VKI_CAM_DEV_QFRZDIS         = 0x00000400,/* Disable DEV Q freezing        */
    VKI_CAM_DEV_QFREEZE         = 0x00000800,/* Freeze DEV Q on execution     */
    VKI_CAM_HIGH_POWER          = 0x00001000,/* Command takes a lot of power  */
@@ -2956,27 +2970,27 @@ typedef enum {
    VKI_CAM_TAG_ACTION_VALID    = 0x00008000,/* Use the tag action in this ccb*/
    VKI_CAM_PASS_ERR_RECOVER    = 0x00010000,/* Pass driver does err. recovery*/
    VKI_CAM_DIS_DISCONNECT      = 0x00020000,/* Disable disconnect            */
-   VKI_CAM_SG_LIST_PHYS        = 0x00040000,/* SG list has physical addrs.   */
-   VKI_CAM_MSG_BUF_PHYS        = 0x00080000,/* Message buffer ptr is physical*/
-   VKI_CAM_SNS_BUF_PHYS        = 0x00100000,/* Autosense data ptr is physical*/
-   VKI_CAM_DATA_PHYS           = 0x00200000,/* SG/Buffer data ptrs are phys. */
+   VKI_CAM_unused5             = 0x00080000,
+   VKI_CAM_unused6             = 0x00100000,
    VKI_CAM_CDB_PHYS            = 0x00400000,/* CDB poiner is physical        */
-   VKI_CAM_ENG_SGLIST          = 0x00800000,/* SG list is for the HBA engine */
+   VKI_CAM_unused7             = 0x00800000,
 
    /* Phase cognizant mode flags */
-   VKI_CAM_DIS_AUTOSRP         = 0x01000000,/* Disable autosave/restore ptrs */
-   VKI_CAM_DIS_AUTODISC        = 0x02000000,/* Disable auto disconnect       */
-   VKI_CAM_TGT_CCB_AVAIL       = 0x04000000,/* Target CCB available          */
-   VKI_CAM_TGT_PHASE_MODE      = 0x08000000,/* The SIM runs in phase mode    */
-   VKI_CAM_MSGB_VALID          = 0x10000000,/* Message buffer valid          */
-   VKI_CAM_STATUS_VALID        = 0x20000000,/* Status buffer valid           */
-   VKI_CAM_DATAB_VALID         = 0x40000000,/* Data buffer valid             */
+   VKI_CAM_unused8             = 0x01000000,
+   VKI_CAM_unused9             = 0x02000000,
+   VKI_CAM_unused10            = 0x04000000,
+   VKI_CAM_unused11            = 0x08000000,
+   VKI_CAM_unused12            = 0x10000000,
+   VKI_CAM_unused13            = 0x20000000,
+   VKI_CAM_unused14            = 0x40000000,
 
    /* Host target Mode flags */
    VKI_CAM_SEND_SENSE          = 0x08000000,/* Send sense data with status   */
-   VKI_CAM_TERM_IO             = 0x10000000,/* Terminate I/O Message sup.    */
-   VKI_CAM_DISCONNECT          = 0x20000000,/* Disconnects are mandatory     */
-   VKI_CAM_SEND_STATUS         = 0x40000000 /* Send status after data phase  */
+   VKI_CAM_unused15            = 0x10000000,
+   VKI_CAM_unused16            = 0x20000000,
+   VKI_CAM_SEND_STATUS         = 0x40000000, /* Send status after data phase  */
+
+   VKI_CAM_UNLOCKED		= 0x80000000 /* Call callback without lock.   */
 } vki_ccb_flags;
 
 typedef union {
@@ -3002,12 +3016,24 @@ typedef union {
 union vki_ccb;
 struct vki_cam_periph;
 
+typedef struct {
+   struct vki_timeval	*etime;
+   vki_uintptr_t	sim_data;
+   vki_uintptr_t	periph_data;
+} vki_ccb_qos_area;
+
 struct vki_ccb_hdr {
    vki_cam_pinfo   pinfo;          /* Info for priority scheduling */
    vki_camq_entry  xpt_links;      /* For chaining in the XPT layer */
    vki_camq_entry  sim_links;      /* For chaining in the SIM layer */
    vki_camq_entry  periph_links;   /* For chaining in the type driver */
-   vki_uint32_t    retry_count;
+#if BYTE_ORDER == LITTLE_ENDIAN
+   vki_uint16_t       retry_count;
+   vki_uint16_t       alloc_flags;	/* ccb_alloc_flags */
+#else
+   vki_uint16_t       alloc_flags;	/* ccb_alloc_flags */
+   vki_uint16_t       retry_count;
+#endif
    void         (*cbfcnp)(struct vki_cam_periph *, union vki_ccb *);
    /* Callback on completion function */
    vki_xpt_opcode  func_code;      /* XPT function code */
@@ -3017,15 +3043,12 @@ struct vki_ccb_hdr {
    vki_target_id_t target_id;      /* Target device ID */
    vki_lun_id_t    target_lun;     /* Target LUN number */
    vki_uint32_t    flags;          /* ccb_flags */
+   vki_uint32_t	xflags;		/* Extended flags */
    vki_ccb_ppriv_area  periph_priv;
    vki_ccb_spriv_area  sim_priv;
-   vki_uint32_t    timeout;        /* Timeout value */
-
-   /*
-    * Deprecated, only for use by non-MPSAFE SIMs.  All others must
-    * allocate and initialize their own callout storage.
-    */
-   struct      vki_callout_handle timeout_ch;
+   vki_ccb_qos_area	qos;
+   vki_uint32_t	timeout;	/* Hard timeout value in mseconds */
+   struct vki_timeval	softtimeout;	/* Soft timeout value in sec + usec */
 };
 
 typedef union {
@@ -3062,6 +3085,7 @@ struct vki_ccb_scsiio {
     * non-tagged transaction) or one of the defined scsi tag messages
     * from scsi_message.h.
     */
+   vki_uint8_t	   priority;		/* Command priority for SIMPLE tag */
    vki_u_int      tag_id;          /* tag id from initator (target mode) */
    vki_u_int      init_id;         /* initiator id of who selected */
 };
@@ -3100,6 +3124,9 @@ typedef enum {
    VKI_PROTO_ATA,      /* AT Attachment */
    VKI_PROTO_ATAPI,    /* AT Attachment Packetized Interface */
    VKI_PROTO_SATAPM,   /* SATA Port Multiplier */
+   VKI_PROTO_SEMB,	/* SATA Enclosure Management Bridge */
+   VKI_PROTO_NVME,	/* NVME */
+   VKI_PROTO_MMCSD,	/* MMC, SD, SDIO */
 } vki_cam_proto;
 
 typedef enum {
@@ -3220,10 +3247,10 @@ union vki_ccb {
    struct  ccb_debug               cdbg;
    struct  ccb_ataio               ataio;
 #endif
-   char make_union_right_size[0x4A8];
+   char make_union_right_size[0x4E0];
 };
 
-#define VKI_CAMIOCOMMAND    _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
+#define VKI_CAMIOCOMMAND _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
 
 
 /*--------------------------------------------------------------------*/

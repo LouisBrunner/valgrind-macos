@@ -126,8 +126,13 @@ typedef  vki_uint32_t   __vki_fixpt_t;
 
 
 //----------------------------------------------------------------------
-// sys/types.h
+// From sys/types.h
 //----------------------------------------------------------------------
+
+typedef	unsigned char	vki_u_char;
+typedef	unsigned short	vki_u_short;
+typedef	unsigned int	vki_u_int;
+typedef	unsigned long	vki_u_long;
 
 typedef  vki_uint8_t    vki_u_int8_t;
 typedef  vki_uint16_t      vki_u_int16_t;
@@ -1018,48 +1023,13 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 // From sys/termios.h
 //----------------------------------------------------------------------
 
-#if 0
-#define VKI_TCGETS   0x5401
-#define VKI_TCSETS   0x5402 /* Clashes with SNDCTL_TMR_START sound ioctl */
-#define VKI_TCSETSW  0x5403
-#define VKI_TCSETSF  0x5404
-#define VKI_TCGETA   0x5405   y
-#define VKI_TCSETA   0x5406   y
-#define VKI_TCSETAW  0x5407   y
-#define VKI_TCSETAF  0x5408   y
-#define VKI_TCSBRK   0x5409
-#define VKI_TCXONC   0x540A
-#define VKI_TCFLSH   0x540B   y
-#define VKI_TIOCSCTTY   0x540E
-#define VKI_TIOCGPGRP   0x540F   y
-#define VKI_TIOCSPGRP   0x5410   y
-#define VKI_TIOCOUTQ 0x5411
-#define VKI_TIOCGWINSZ  0x5413   y
-#define VKI_TIOCSWINSZ  0x5414   y
-#define VKI_TIOCMGET 0x5415   y
-#define VKI_TIOCMBIS 0x5416   y
-#define VKI_TIOCMBIC 0x5417   y
-#define VKI_TIOCMSET 0x5418   y
-#define VKI_FIONREAD 0x541B
-#define VKI_TIOCLINUX   0x541C
-#define VKI_FIONBIO  0x5421
-#define VKI_TCSBRKP  0x5425   /* Needed for POSIX tcsendbreak() */
-#define VKI_TIOCGPTN _VKI_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
-#define VKI_TIOCSPTLCK  _VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
+#define VKI_TIOCFLUSH  _VKI_IOW('t', 16, int);
+#define VKI_TIOCGETA   _VKI_IOR('t', 19, struct vki_termios)  /* get termios */
+#define VKI_TIOCSETA   _VKI_IOR('t', 20, struct vki_termios)  /* set termios */
+#define VKI_TIOCSETAW  _VKI_IOR('t', 21, struct vki_termios)  /* drain,set */
+#define VKI_TIOCSETAF  _VKI_IOR('t', 22, struct vki_termios)  /* flush,set */
 
-#define VKI_FIOASYNC 0x5452
-#define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
-
-#define VKI_TIOCGICOUNT 0x545D   /* read serial port inline interrupt counts */
-#endif
-
-#define  VKI_TIOCFLUSH  _VKI_IOW('t', 16, int);
-#define  VKI_TIOCGETA   _VKI_IOR('t', 19, struct vki_termios)  /* get termios */
-#define  VKI_TIOCSETA   _VKI_IOR('t', 20, struct vki_termios)  /* set termios */
-#define  VKI_TIOCSETAW  _VKI_IOR('t', 21, struct vki_termios)  /* drain,set */
-#define  VKI_TIOCSETAF  _VKI_IOR('t', 22, struct vki_termios)  /* flush,set */
-
-#define  _VKI_TIOCPTMASTER  _VKI_IO('t', 28)    /* pts master validation */
+#define _VKI_TIOCPTMASTER  _VKI_IO('t', 28)    /* pts master validation */
 
 #define VKI_TIOCSWINSZ  _VKI_IOW('t', 103, struct vki_winsize)  /* set window size */
 #define VKI_TIOCGWINSZ  _VKI_IOR('t', 104, struct vki_winsize)  /* get window size */
@@ -1095,7 +1065,27 @@ struct vki_fiodgname_arg {
 };
 #define VKI_FIODGNAME   _VKI_IOW('f', 120, struct vki_fiodgname_arg) /* get dev. name */
 
-// See syswrap-freebsd.c PRE/POST(sys_ioctl)
+//----------------------------------------------------------------------
+// From net/bpf.h
+//----------------------------------------------------------------------
+
+struct vki_bpf_program {
+   vki_u_int bf_len;
+   struct vki_bpf_insn *bf_insns;
+};
+
+typedef vki_u_int32_t vki_bpf_u_int32;
+
+struct vki_bpf_insn {
+   u_short         code;
+   u_char          jt;
+   u_char          jf;
+   vki_bpf_u_int32     k;
+};
+
+
+#define VKI_BIOCSETF _VKI_IOW('B', 103, struct vki_bpf_program)
+
 //----------------------------------------------------------------------
 // From net/if.h
 //----------------------------------------------------------------------
@@ -1123,9 +1113,9 @@ struct vki_ifreq_buffer {
 };
 
 struct vki_ifreq_nv_req {
-   u_int   buf_length;     /* Total size of buffer,
+   vki_u_int   buf_length;     /* Total size of buffer,
                         u_int for ABI struct ifreq */
-   u_int   length;         /* Length of the filled part */
+   vki_u_int   length;         /* Length of the filled part */
    void    *buffer;        /* Buffer itself, containing packed nv */
 };
 
@@ -1145,8 +1135,8 @@ struct vki_ifreq {
       int     ifru_media;
       __vki_caddr_t ifru_data;
       int     ifru_cap[2];
-      u_int   ifru_fib;
-      u_char  ifru_vlan_pcp;
+      vki_u_int   ifru_fib;
+      vki_u_char  ifru_vlan_pcp;
       struct  vki_ifreq_nv_req ifru_nv;
    } ifr_ifru;
 };
@@ -2365,29 +2355,29 @@ typedef struct vki_domainset vki_domainset_t;
 #define VKI_PROC_WXMAP_STATUS       22
 
 struct vki_procctl_reaper_status {
-   u_int   rs_flags;
-   u_int   rs_children;
-   u_int   rs_descendants;
+   vki_u_int   rs_flags;
+   vki_u_int   rs_children;
+   vki_u_int   rs_descendants;
    vki_pid_t   rs_reaper;
    vki_pid_t   rs_pid;
-   u_int   rs_pad0[15];
+   vki_u_int   rs_pad0[15];
 };
 
 struct vki_procctl_reaper_pidinfo;
 
 struct vki_procctl_reaper_pids {
-   u_int   rp_count;
-   u_int   rp_pad0[15];
+   vki_u_int   rp_count;
+   vki_u_int   rp_pad0[15];
    struct vki_procctl_reaper_pidinfo *rp_pids;
 };
 
 struct vki_procctl_reaper_kill {
    int     rk_sig;
-   u_int   rk_flags;
+   vki_u_int   rk_flags;
    vki_pid_t   rk_subtree;
-   u_int   rk_killed;
+   vki_u_int   rk_killed;
    vki_pid_t   rk_fpid;
-   u_int   rk_pad0[15];
+   vki_u_int   rk_pad0[15];
 };
 
 //----------------------------------------------------------------------

@@ -2364,9 +2364,9 @@ static inline void my_exit ( int x )
       \
       while (i-- > 0) \
          if ((*d++ = *s++) == x) { \
-            SizeT srclen = (i < len) ? i : len; \
+            SizeT srclen = len - i; \
             RECORD_COPY(srclen); \
-            if (is_overlap(dst, src, srclen, srclen)) \
+            if (is_overlap(dst, src, len, srclen)) \
                RECORD_OVERLAP_ERROR("memccpy", dst, src, len); \
             return d; \
          } \

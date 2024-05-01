@@ -994,7 +994,8 @@ PRE(sys_ioctl)
       buffers */
    case VKI_BIOCSETF:
       // #define BIOCSETF _IOW('B', 103, struct bpf_program)
-      // test with "usbdump" (as root)
+      // "usbconfig" to get a list of devices then
+      // test with "usbdump -i usbus0" (as root)
       if (ARG3 && ML_(safe_to_deref)((const void*)ARG3, sizeof(struct vki_bpf_program))) {
          struct vki_bpf_program* fp = (struct vki_bpf_program*)ARG3;
          PRE_FIELD_READ("ioctl(BIOCSETF).bf_len", fp->bf_len);

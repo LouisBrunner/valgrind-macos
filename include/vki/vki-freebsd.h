@@ -59,8 +59,8 @@
 #  error Unknown platform
 #endif
 
-#include <sys/fcntl.h>
-#include <sys/param.h>
+#include <sys/fcntl.h> // O_RDONLY
+#include <sys/param.h> // MAXPATHLEN
 
 
 //----------------------------------------------------------------------
@@ -717,11 +717,11 @@ static __inline struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, 
 
 #define VKI_SOCK_STREAM 1
 
-#include <netinet/tcp.h>
+#include <netinet/tcp.h> // TCP_NODELAY
 
 #define VKI_TCP_NODELAY  TCP_NODELAY
 
-#include <netinet/in.h>
+#include <netinet/in.h> // IPPROTO_TCP
 
 #define VKI_IPPROTO_TCP  IPPROTO_TCP
 
@@ -2019,14 +2019,14 @@ struct vki_uuid {
 #define VKI__SS_PAD1SIZE    (VKI__SS_ALIGNSIZE - sizeof(unsigned char) - \
                             sizeof(vki_sa_family_t))
 #define VKI__SS_PAD2SIZE    (VKI__SS_MAXSIZE - sizeof(unsigned char) - \
-                            sizeof(sa_family_t) - VKI__SS_PAD1SIZE - VKI__SS_ALIGNSIZE)
+                            sizeof(vki_sa_family_t) - VKI__SS_PAD1SIZE - VKI__SS_ALIGNSIZE)
 
 struct vki_sockaddr_storage {
         unsigned char   vki_ss_len;         /* address length */
         vki_sa_family_t     vki_ss_family;      /* address family */
         char            vki___ss_pad1[VKI__SS_PAD1SIZE];
         __int64_t       vki___ss_align;     /* force desired struct alignment */
-        char            vki___ss_pad2VKI_[_SS_PAD2SIZE];
+        char            vki___ss_pad2VKI_[VKI__SS_PAD2SIZE];
 };
 
 //----------------------------------------------------------------------
@@ -2222,7 +2222,6 @@ struct vki_kinfo_file {
 // From sys/sysctl.h (and related)
 //----------------------------------------------------------------------
 
-#include <sys/types.h>
 #include <sys/sysctl.h>
 
 #define VKI_CTL_KERN         CTL_KERN
@@ -2471,7 +2470,7 @@ struct vki_ps_strings {
  * registers.
  *
  * I can't just change mode_t to be 32bit. that will mess up
- * the 'stat' structures in thie file.
+ * the 'stat' structures in this file.
  *
  * Instead I'll just do what the compiler does, and promote
  * it to 32bits.
@@ -2491,8 +2490,6 @@ struct vki_ps_strings {
 #if defined(VGP_arm64_freebsd)
 #define vki_mode_t vki_int32_t
 #endif
-
-// See syswrap-freebsd.c PRE/POST(sys_ioctl)
 
 //----------------------------------------------------------------------
 // From sys/pciio.h
@@ -2777,18 +2774,18 @@ struct vki_scsi_inquiry_data {
 // From sys/queue.h
 //----------------------------------------------------------------------
 
-#define SLIST_ENTRY(type)                                               \
+#define VKI_SLIST_ENTRY(type)                                               \
 struct {                                                                \
         struct type *sle_next;  /* next element */                      \
 }
 
-#define LIST_ENTRY(type)                                                \
+#define VKI_LIST_ENTRY(type)                                                \
 struct {                                                                \
         struct type *le_next;   /* next element */                      \
         struct type **le_prev;  /* address of previous next element */  \
 }
 
-#define STAILQ_ENTRY(type)                                              \
+#define VKI_STAILQ_ENTRY(type)                                              \
 struct {                                                                \
         struct type *stqe_next; /* next element */                      \
 }
@@ -2806,7 +2803,7 @@ struct vki_qm_trace {
 #define VKI_TRACEBUF
 #endif
 
-#define TAILQ_ENTRY(type)                                               \
+#define VKI_TAILQ_ENTRY(type)                                               \
 struct {                                                                \
         struct type *tqe_next;  /* next element */                      \
         struct type **tqe_prev; /* address of previous next element */  \
@@ -2821,10 +2818,10 @@ struct {                                                                \
 #define VKI_CAM_VERSION 0x1a    /* Hex value for current version */
 
 typedef union {
-   LIST_ENTRY(vki_ccb_hdr) le;
-   SLIST_ENTRY(vki_ccb_hdr) sle;
-   TAILQ_ENTRY(vki_ccb_hdr) tqe;
-   STAILQ_ENTRY(vki_ccb_hdr) stqe;
+   VKI_LIST_ENTRY(vki_ccb_hdr) le;
+   VKI_SLIST_ENTRY(vki_ccb_hdr) sle;
+   VKI_TAILQ_ENTRY(vki_ccb_hdr) tqe;
+   VKI_STAILQ_ENTRY(vki_ccb_hdr) stqe;
 } vki_camq_entry;
 
 typedef enum {

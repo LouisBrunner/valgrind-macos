@@ -773,7 +773,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_keyctl,            sys_keyctl),         // 250
    LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 251
    LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 252
-   LINX_(__NR_inotify_init,	 sys_inotify_init),   // 253
+   LINXY(__NR_inotify_init,	 sys_inotify_init),   // 253
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 254
 
    LINX_(__NR_inotify_rm_watch,	 sys_inotify_rm_watch), // 255

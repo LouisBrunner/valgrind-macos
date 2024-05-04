@@ -25,6 +25,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 486180  [Valgrind][MIPS] 'VexGuestArchState' has no member named 'guest_IP_AT_SYSCALL'
 486293  memccpy false positives
+486569  linux inotify_init syscall wrapper missing POST entry in syscall_table
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

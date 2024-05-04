@@ -922,7 +922,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
 
 //   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290
-   LINX_(__NR_inotify_init,    sys_inotify_init),   // 291
+   LINXY(__NR_inotify_init,    sys_inotify_init),   // 291
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 292
    LINX_(__NR_inotify_rm_watch,    sys_inotify_rm_watch), // 293
 //   LINX_(__NR_migrate_pages,    sys_migrate_pages),    // 294

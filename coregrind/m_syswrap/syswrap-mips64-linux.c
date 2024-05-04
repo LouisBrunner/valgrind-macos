@@ -759,7 +759,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_request_key, sys_request_key),
    LINXY (__NR_keyctl, sys_keyctl),
    PLAX_ (__NR_set_thread_area, sys_set_thread_area),
-   LINX_ (__NR_inotify_init, sys_inotify_init),
+   LINXY (__NR_inotify_init, sys_inotify_init),
    LINX_ (__NR_inotify_add_watch, sys_inotify_add_watch),
    LINX_ (__NR_inotify_rm_watch, sys_inotify_rm_watch),
    LINXY (__NR_openat, sys_openat),

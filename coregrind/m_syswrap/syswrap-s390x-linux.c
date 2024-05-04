@@ -751,7 +751,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_waitid, sys_waitid),                                    // 281
    LINX_(__NR_ioprio_set,  sys_ioprio_set),                           // 282
    LINX_(__NR_ioprio_get,  sys_ioprio_get),                           // 283
-   LINX_(__NR_inotify_init,  sys_inotify_init),                       // 284
+   LINXY(__NR_inotify_init,  sys_inotify_init),                       // 284
 
    LINX_(__NR_inotify_add_watch,  sys_inotify_add_watch),             // 285
    LINX_(__NR_inotify_rm_watch,  sys_inotify_rm_watch),               // 286

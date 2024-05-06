@@ -96,9 +96,10 @@ When you add syscalls you will need to modify several files
       or only input arguments just need a BSDX_ macro (before only). Syscalls
       with output arguments need a BSDXY macro (before and after).
    d) If the syscall uses 64bit arguments (long long) then instead of putting
-      the wrapper definitions in syswrap-freebsd.c there will be one definition
-      for each platform amd64 and x86 in syswrap-x86-freebsd.c and
-      syswrap-amd64-freebsd.c.
+      the wrapper definitions in syswrap-freebsd.c there will be two kinds of
+      definition. A 32bit version with split 64bit arguments for x86 in
+      syswrap-x86-freebsd.c and 64bit versions without any splitting for amd64
+      and arm64 in syswrap-amd64-freebsd.c/syswrap-arm64-freebsd.c.
       Each long long needs to be split into two ARGs in the x86 version.
 
 The PRE (before) wrapper
@@ -144,6 +145,12 @@ They just contain a POST_MEM_WRITE macro for each output argument.
 - Additions to auxv. Depending on the entry it may need to be simply copied
   from the host to the guest, it may need to be modified for the guest or
   it may need to be ignored. See initimg-freebsd.c.
+- Versioned ioctls. ioctls such as CAMIOCOMMAND are versioned (with
+  CAM_VERSION). When the version number is increased the result is a new
+  ioctl ID. That means that the ioctl checking code no longer gets called.
+  New versions require updates to the version number and the structs that
+  are used. (Backwards compatibility is maintained by adding fixed macros
+  like CAM_VERSION_0x19, but these are not currently supported in Valgrind).
 - ELF PT_LOAD mappings. Either Valgrind will assert or there will be no source
   information in error reports. See VG_(di_notify_mmap) in debuginfo.c
 - Because they contain many deliberate errors the regression tests are prone
@@ -173,7 +180,7 @@ Feedback
 If you find any problems please create a bugzilla report at
 https://bugs.kde.org using the Valgrind product.
 
-Alternatively you can use the FreeBSD bugilla
+Alternatively you can use the FreeBSD bugzilla
 https://bugs.freebsd.org
 
 Credits

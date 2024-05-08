@@ -394,7 +394,11 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
    SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
 #endif
    if (!sr_isError(res)) {
-      *dev  = (ULong)buf.st_dev;
+      /*
+       * This gets compared to the value obtained by sysctl KERN_PROC_VMMAP.
+       * For some reson that only uses 32bits, so truncate this to match
+       */
+      *dev  = (UInt)buf.st_dev;
       *ino  = (ULong)buf.st_ino;
       *mode = (UInt) buf.st_mode;
       return True;

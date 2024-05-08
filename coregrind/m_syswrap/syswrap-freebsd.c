@@ -7106,7 +7106,7 @@ PRE(sys_membarrier)
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_14)
 
 // SYS_timerfd_create 585
 // int timerfd_create(int clockid, int flags);
@@ -7181,6 +7181,8 @@ POST(sys_timerfd_settime)
    }
 }
 
+#if (FREEBSD_VERS >= FREEBSD_14_1)
+
 // SYS_kcmp 588
 // int kcmp(pid_t pid1, pid_t pid2, int type, uintptr_t idx1, uintptr_t idx2);
 PRE(sys_kcmp)
@@ -7205,8 +7207,10 @@ PRE(sys_kcmp)
    }
 }
 
+#endif // FREEBSD_14_1
 
-#endif
+
+#endif // FREEBSD_14
 
 #undef PRE
 #undef POST
@@ -7937,11 +7941,13 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDXY(__NR_kqueuex,          sys_kqueuex),           // 583
    BSDX_(__NR_membarrier,       sys_membarrier),        // 584
 #endif
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (FREEBSD_VERS >= FREEBSD_14)
    BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587
+#if (FREEBSD_VERS >= FREEBSD_14_1)
    BSDX_(__NR_kcmp,             sys_kcmp),              // 588
+#endif
 #endif
 
 

@@ -263,3 +263,8 @@
    drd:ConflictingAccess
    fun:pthread_once_intercept
 }
+{
+   DRD-FREEBSD141-X86-THR_NEW
+   drd:ConflictingAccess
+   fun:thr_new
+}

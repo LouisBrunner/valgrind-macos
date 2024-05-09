@@ -13821,46 +13821,57 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,1x,11000 (apparently unassigned)    (7) -------- */
       /* -------- 1,1x,11001 FRINTI 2d_2d, 4s_4s, 2s_2s (8) -------- */
       /* rm plan:
-         FRINTN: tieeven -- !! FIXME KLUDGED !!
+         FRINTN: tieeven
          FRINTM: -inf
          FRINTP: +inf
          FRINTZ: zero
-         FRINTA: tieaway -- !! FIXME KLUDGED !!
+         FRINTA: tieaway
          FRINTX: per FPCR + "exact = TRUE"
          FRINTI: per FPCR
       */
       Bool isD = (size & 1) == 1;
       if (bitQ == 0 && isD) return False; // implied 1d case
 
-      IRTemp irrmRM = mk_get_IR_rounding_mode();
-
-      UChar ch = '?';
-      IRTemp irrm = newTemp(Ity_I32);
+      UChar   ch = '?';
+      IROp    op = isD ? Iop_RoundF64toInt : Iop_RoundF32toInt;
+      Bool    isBinop = True;
+      IRExpr* irrmE = NULL;
       switch (ix) {
-         case 1: ch = 'n'; assign(irrm, mkU32(Irrm_NEAREST)); break;
-         case 2: ch = 'm'; assign(irrm, mkU32(Irrm_NegINF)); break;
-         case 3: ch = 'p'; assign(irrm, mkU32(Irrm_PosINF)); break;
-         case 4: ch = 'z'; assign(irrm, mkU32(Irrm_ZERO)); break; 
+         case 1: ch = 'n'; isBinop = False; op = isD ? Iop_RoundF64toIntE : Iop_RoundF32toIntE; break;
+         case 2: ch = 'm'; irrmE = mkU32(Irrm_NegINF); break;
+         case 3: ch = 'p'; irrmE = mkU32(Irrm_PosINF); break;
+         case 4: ch = 'z'; irrmE = mkU32(Irrm_ZERO); break;
          // The following is a kludge.  Should be: Irrm_NEAREST_TIE_AWAY_0
-         case 5: ch = 'a'; assign(irrm, mkU32(Irrm_NEAREST)); break;
+         case 5: ch = 'a'; isBinop = False; op = isD ? Iop_RoundF64toIntA0 : Iop_RoundF32toIntA0; break;
          // I am unsure about the following, due to the "integral exact"
          // description in the manual.  What does it mean? (frintx, that is)
-         case 6: ch = 'x'; assign(irrm, mkexpr(irrmRM)); break;
-         case 8: ch = 'i'; assign(irrm, mkexpr(irrmRM)); break; 
+         case 6: ch = 'x'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
+         case 8: ch = 'i'; irrmE = mkexpr(mk_get_IR_rounding_mode()); break;
          default: vassert(0);
       }
 
-      IROp opRND = isD ? Iop_RoundF64toInt : Iop_RoundF32toInt;
       if (isD) {
          for (UInt i = 0; i < 2; i++) {
-            putQRegLane(dd, i, binop(opRND, mkexpr(irrm),
-                                            getQRegLane(nn, i, Ity_F64)));
+            if (isBinop) {
+               IRTemp irrm = newTemp(Ity_I32);
+               assign(irrm, irrmE);
+               putQRegLane(dd, i, binop(op, mkexpr(irrm),
+                                               getQRegLane(nn, i, Ity_F64)));
+            } else {
+                putQRegLane(dd, i, unop(op, getQRegLane(nn, i, Ity_F64)));
+            }
          }
       } else {
          UInt n = bitQ==1 ? 4 : 2;
          for (UInt i = 0; i < n; i++) {
-            putQRegLane(dd, i, binop(opRND, mkexpr(irrm),
-                                            getQRegLane(nn, i, Ity_F32)));
+            if (isBinop) {
+               IRTemp irrm = newTemp(Ity_I32);
+               assign(irrm, irrmE);
+               putQRegLane(dd, i, binop(op, mkexpr(irrm),
+                                               getQRegLane(nn, i, Ity_F32)));
+            } else {
+                putQRegLane(dd, i, unop(op, getQRegLane(nn, i, Ity_F32)));
+            }
          }
          if (bitQ == 0)
             putQRegLane(dd, 1, mkU64(0)); // zero out lanes 2 and 3

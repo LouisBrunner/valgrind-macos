@@ -63,8 +63,6 @@
 #  include "vki/vki-scnums-arm64-linux.h"
 
 #elif defined(VGP_mips32_linux)
-#  include "vki/vki-scnums-shared-linux.h"
-#  include "vki/vki-scnums-32bit-linux.h"
 #  include "vki/vki-scnums-mips32-linux.h"
 
 #elif defined(VGP_nanomips_linux)

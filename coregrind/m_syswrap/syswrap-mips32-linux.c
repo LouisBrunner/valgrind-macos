@@ -1110,6 +1110,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_pwritev2,               sys_pwritev2),                // 362
    //..
    LINXY(__NR_statx,                   sys_statx),                   // 366
+   GENX_(__NR_rseq,                    sys_ni_syscall),              // 367
 
    LINXY(__NR_clock_gettime64,         sys_clock_gettime64),         // 403
    LINX_(__NR_clock_settime64,         sys_clock_settime64),         // 404

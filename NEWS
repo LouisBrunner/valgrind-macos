@@ -24,6 +24,7 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 392146  aarch64: unhandled instruction 0xD5380001 (MRS rT, midr_el1)
+412377  SIGILL on cache flushes on arm64
 486180  [Valgrind][MIPS] 'VexGuestArchState' has no member named 'guest_IP_AT_SYSCALL'
 486293  memccpy false positives
 486569  linux inotify_init syscall wrapper missing POST entry in syscall_table

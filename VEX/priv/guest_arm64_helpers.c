@@ -932,11 +932,6 @@ ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR1_EL1 ( void )
 
    // only nibble 0 DBP
    w &= 0xF;
-   /* No dc cvadp only dc cvap */
-   if ( w & 0x2 ) {
-      w ^= 0x2;
-      w |= 0x1;
-   }
 
    return w;
 #  else

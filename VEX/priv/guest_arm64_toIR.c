@@ -8004,12 +8004,12 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       /* Round the requested address, in rT, down to the start of the
          containing block. */
       UInt   tt      = INSN(4,0);
-      ULong  lineszB = 1ULL << archinfo->arm64_cache_block_size;
+      ULong  clearszB = 1UL << (archinfo->arm64_cache_block_size + 2);
       IRTemp addr    = newTemp(Ity_I64);
       assign( addr, binop( Iop_And64,
                            getIReg64orZR(tt),
-                           mkU64(~(lineszB - 1))) );
-      for (ULong o = 0; o < lineszB; o += 8) {
+                           mkU64(~(clearszB - 1))) );
+      for (ULong o = 0; o < clearszB; o += 8) {
           storeLE(binop(Iop_Add64,mkexpr(addr),mkU64(o)), mkU64(0));
       }
       DIP("dc zva, %s\n", nameIReg64orZR(tt));

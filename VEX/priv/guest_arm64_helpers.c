@@ -911,7 +911,7 @@ ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1 ( void )
    w &= 0xF000F0FFFFFF;
    /* Degredate SHA2 from b0010 to b0001*/
    if ( (w >> 12) & 0x2 ) {
-      w ^= ~(0x2 << 12);
+      w ^= (0x2 << 12);
       w |= (0x1 << 12);
    }
 

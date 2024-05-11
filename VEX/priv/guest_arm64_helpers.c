@@ -776,6 +776,19 @@ ULong arm64g_calc_crc32cx ( ULong acc, ULong bits )
    return crc;
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_DCZID_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, dczid_el0" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */

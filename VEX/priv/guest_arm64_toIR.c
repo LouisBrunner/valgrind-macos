@@ -7877,14 +7877,25 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
    /* ---- Cases for DCZID_EL0 ----
-      Don't support arbitrary reads and writes to this register.  Just
-      return the value 16, which indicates that the DC ZVA instruction
-      is not permitted, so we don't have to emulate it.
+      This is the data cache zero ID register. It controls whether
+      DC ZVA is supported and if so the block size used. Support reads of it
+      only by passing through to the host.
       D5 3B 00 111 Rt  MRS rT, dczid_el0
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B00E0) {
       UInt tt = INSN(4,0);
-      putIReg64orZR(tt, mkU64(1<<4));
+      IRTemp   val  = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                         val,
+                         0/*regparms*/,
+                         "arm64g_dirtyhelper_MRS_DCZID_EL0",
+                         &arm64g_dirtyhelper_MRS_DCZID_EL0,
+                         args
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
       DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
       return True;
    }
@@ -7983,6 +7994,25 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_InvalICache;
       DIP("ic ivau, %s\n", nameIReg64orZR(tt));
+      return True;
+   }
+
+   /* ------------------ DC_ZVA ------------------ */
+   /* D5 0B 74 001 Rt  dc zva, rT
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7420) {
+      /* Round the requested address, in rT, down to the start of the
+         containing block. */
+      UInt   tt      = INSN(4,0);
+      ULong  lineszB = 1ULL << archinfo->arm64_cache_block_size;
+      IRTemp addr    = newTemp(Ity_I64);
+      assign( addr, binop( Iop_And64,
+                           getIReg64orZR(tt),
+                           mkU64(~(lineszB - 1))) );
+      for (ULong o = 0; o < lineszB; o += 8) {
+          storeLE(binop(Iop_Add64,mkexpr(addr),mkU64(o)), mkU64(0));
+      }
+      DIP("dc zva, %s\n", nameIReg64orZR(tt));
       return True;
    }
 

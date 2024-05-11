@@ -7547,6 +7547,228 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
 
    /* ------------------ M{SR,RS} ------------------ */
+   /* ---- Case for MIDR_EL1 (RO) ----
+      Read the Main ID register from host.
+      0xD53800 000 Rt   MRS rT, midr_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380000 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      IRTemp val = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                         val,
+                         0/*regparms*/,
+                         "arm64g_dirtyhelper_MRS_MIDR_EL1",
+                         &arm64g_dirtyhelper_MRS_MIDR_EL1,
+                         args
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, midr_el1\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for MPIDR_EL1 (RO) ----
+      Instead of returing a fake regiser, we use the same
+      value as does the kernel emulation.
+      0xD53800 101 Rt   MRS rT, mpidr_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53800A0 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64((1UL<<31)));
+      DIP("mrs %s, mpidr_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for REVDIR_EL1 (RO) ----
+      Instead of emulating the regiser, we just return the same
+      value as does the kernel emulation.
+      0xD53800 110 Rt   MRS rT, revdir_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53800C0 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg32orZR(tt, mkU32(0x0));
+      DIP("mrs %s, revdir_el1 (FAKED)\n", nameIReg32orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64PFR0_EL1 (RO) ----
+      Instead of returing a fake regiser, we use the same
+      value as does the kernel emulation. We set deprecate half
+      precission floating-point to normal floating-point support.
+      We set all other values to zero.
+      0xD53804 000 Rt   MRS rT, id_aa64pfr0_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380400 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      IRTemp val = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                        val,
+                        0/*regparms*/,
+                        "arm64g_dirtyhelper_MRS_ID_AA64PFR0_EL1",
+                        &arm64g_dirtyhelper_MRS_ID_AA64PFR0_EL1,
+                        args
+                     );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+
+      putIReg64orZR(tt, mkexpr(val));
+      return True;
+   }
+   /* ---- Case for ID_AA64PFR1_EL1 (RO) ----
+      We just return 0x0 here, as we don't support the opcodes of
+      new commands in the emulation environment.
+      0xD53804 001 Rt   MRS rT, id_aa64pfr1_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380420 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64pfr1_el1 (FAKED)\n", nameIReg32orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64ZFR0_EL1 (RO) ----
+      We just return 0x0 here, as we don't support the opcodes of
+      new commands in the emulation environment.
+      0xD53804 010 Rt   MRS rT, id_aa64zfr0_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380440 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64zfr0_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64DFR0_EL1 (RO) ----
+      Just return the value indicating the implementation of the
+      ARMv8 debug architecture without any extensions.
+      0xD53805 000 Rt   MRS rT, id_aa64dfr0_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380500 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x6));
+      DIP("mrs %s, id_aa64dfr0_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64DFR1_EL1 (RO) ----
+      We just return 0x0 here, as we don't support the opcodes of
+      new commands in the emulation environment.
+      0xD53805 001 Rt   MRS rT, id_aa64dfr1_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380520 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64dfr1_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64AFR0_EL1 (RO) ----
+      We just return 0x0 here, as we don't support the opcodes of
+      new commands in the emulation environment.
+      0xD53805 100 Rt   MRS rT, id_aa64afr0_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380580 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64afr0_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64AFR1_EL1 (RO) ----
+      We just return 0x0 here, as we don't support the opcodes of
+      new commands in the emulation environment.
+      0xD53805 101 Rt   MRS rT, id_aa64afr1_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53805A0 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64afr1_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64ISAR0_EL1 (RO) ----
+      We only take care of SHA2, SHA1 and AES bits, as all the other
+      commands are not part of the emulation environment.
+      We degredate SHA2 from 0x2 to 0x1 as we don't support the commands.
+      0xD53806 000 Rt   MRS rT, id_aa64isar0_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380600 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      IRTemp val = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                        val,
+                        0/*regparms*/,
+                        "arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1",
+                        &arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1,
+                        args
+                     );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, id_aa64isar0_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64ISAR1_EL1 (RO) ----
+      We just return 0x0 here, as we don't support the opcodes of
+      new commands in the emulation environment.
+      0xD53806 001 Rt   MRS rT, id_aa64isar1_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380620 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64isar1_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64MMFR0_EL1 (RO) ----
+      Instead of returing a fake regiser, we use the same
+      value as does the kernel emulation.
+      0xD53807 000 Rt   MRS rT, id_aa64mmfr0_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380700 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      IRTemp val = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                        val,
+                        0/*regparms*/,
+                        "arm64g_dirtyhelper_MRS_ID_AA64MMFR0_EL1",
+                        &arm64g_dirtyhelper_MRS_ID_AA64MMFR0_EL1,
+                        args
+                     );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, id_aa64mmfr0_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64MMFR1_EL1 (RO) ----
+      Instead of returing a fake regiser, we use the same
+      value as does the kernel emulation. Set VHE and HAFDBS
+      to not implemented.
+      0xD53807 001 Rt   MRS rT, id_aa64mmfr1_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380720 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      IRTemp val = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                        val,
+                        0/*regparms*/,
+                        "arm64g_dirtyhelper_MRS_ID_AA64MMFR1_EL1",
+                        &arm64g_dirtyhelper_MRS_ID_AA64MMFR1_EL1,
+                        args
+                     );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, id_aa64mmfr1_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
+   /* ---- Case for ID_AA64MMFR2_EL1 (RO) ----
+      Return faked value of not implemented ARMv8.2 and ARMv8.3
+      0xD53807 010 Rt   MRS rT, id_aa64mmfr2_el1
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380740 /*MRS*/) {
+      UInt tt    = INSN(4,0);
+      putIReg64orZR(tt, mkU64(0x0));
+      DIP("mrs %s, id_aa64mmfr2_el1 (FAKED)\n", nameIReg64orZR(tt));
+      return True;
+   }
    /* ---- Cases for TPIDR_EL0 ----
       0xD51BD0 010 Rt   MSR tpidr_el0, rT
       0xD53BD0 010 Rt   MRS rT, tpidr_el0

@@ -806,6 +806,121 @@ ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void )
 #  endif
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_MIDR_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, midr_el1" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64PFR0_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64pfr0_el1" : "=r"(w));
+
+   /* If half-precision fp is present we fall back to normal
+      half precision implementation because of missing support in the emulation.
+      If no AdvSIMD and FP are implemented, we preserve the value */
+   w = (w >> 16);
+   w &= 0xff;
+   switch(w) {
+     case 0x11:
+       w = 0x0;
+       break;
+     case 0xff:
+       w = (0xFF<<16);
+       break;
+     default:
+       w = 0x0;
+       break;
+   }
+
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64MMFR0_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64mmfr0_el1" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64MMFR1_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64mmfr1_el1" : "=r"(w));
+
+   /* Clear VH and HAFDBS bits */
+   w &= ~(0xF0F);
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64isar0_el1" : "=r"(w));
+
+   // In the mask below, nibbles are (higher nibbles all unsupported)
+   // 0 - RES0
+   // 1 - AES
+   // 2 - SHA1
+   // 3 - SHA2
+   // 4 - CRC32
+   // 5 - Atomic bits
+   // 6 - TME (unsupported)
+   // 7 - RDM
+   // 8 - SHA3 (unsupported)
+   // 9 - SM3 (unsupported)
+   // 10 - SM4 (unsupported)
+   // 11 - DP
+
+   //     10
+   //     109876543210
+   w &= 0xF000F0FFFFFF;
+   /* Degredate SHA2 from b0010 to b0001*/
+   if ( (w >> 12) & 0x2 ) {
+      w ^= ~(0x2 << 12);
+      w |= (0x1 << 12);
+   }
+
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
 
 void arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res, ULong arg1, ULong arg2 )
 {

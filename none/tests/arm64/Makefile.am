@@ -7,6 +7,7 @@ EXTRA_DIST = \
 	bug484426.stdout.exp bug484426.stderr.exp bug484426.vgtest \
         crc32.stdout.exp crc32.stderr.exp crc32.vgtest \
         cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
+        dc_cvax.vgtest dc_cvax.stderr.exp \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
 	frinta_frintn.stderr.exp frinta_frintn.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
@@ -27,6 +28,7 @@ check_PROGRAMS = \
 	allexec \
 	bug484426 \
         cvtf_imm \
+        dc_cvax \
 	fp_and_simd \
 	integer \
 	memory_test \

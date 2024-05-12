@@ -1807,6 +1807,7 @@
 /none/tests/arm64/bug484426
 /none/tests/arm64/crc32
 /none/tests/arm64/cvtf_imm
+/none/tests/arm64/dc_cvax
 /none/tests/arm64/fmadd_sub
 /none/tests/arm64/fp_and_simd
 /none/tests/arm64/fp_and_simd_v82

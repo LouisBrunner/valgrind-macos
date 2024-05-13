@@ -152,9 +152,13 @@ without too much problem by following these steps:
 
 (4) Set any breakpoints you want and proceed as normal for gdb. The
     macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you want to set
-    a breakpoint VG_(do_exec), you could do like this in GDB:
+    a breakpoint VG_(do_exec_inner), you could do like this in GDB:
 
-    (gdb) b vgPlain_do_exec
+    (gdb) b vgPlain_do_exec_inner
+
+    Note: This is just an example, for various reasons internal
+          function names might be renamed or optimized out
+          (for example when building with --enable-lto).
 
 (5) Run the tool with required options (the --tool option is required
     for correct setup), e.g.

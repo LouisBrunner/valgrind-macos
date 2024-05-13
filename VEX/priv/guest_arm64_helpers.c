@@ -842,13 +842,19 @@ ULong arm64g_dirtyhelper_MRS_ID_AA64PFR0_EL1 ( void )
    ULong w = 0x5555555555555555ULL; /* overwritten */
    __asm__ __volatile__("mrs %0, id_aa64pfr0_el1" : "=r"(w));
 
+   // The control word uses the following nibbles (as seen on RPi)
+   // unsupported unless indicated
+   // 0 to 3 - EL0 to EL3 exception level handling
+   // 4 - FP includes half-precision (partial support)
+   // 5 - AdvSIMD also includes haf-precision
+
    /* If half-precision fp is present we fall back to normal
       half precision implementation because of missing support in the emulation.
       If no AdvSIMD and FP are implemented, we preserve the value */
    w = (w >> 16);
    w &= 0xff;
    switch(w) {
-     case 0x11:
+     case 0x01:
        w = 0x0;
        break;
      case 0xff:

@@ -2312,6 +2312,7 @@
 /none/tests/x86/sigcontext
 /none/tests/x86/smc1
 /none/tests/x86/ssse3_misaligned
+/none/tests/x86/sse4-x86
 /none/tests/x86/x86locked
 /none/tests/x86/x87trigOOR
 /none/tests/x86/xadd

@@ -75,6 +75,7 @@ EXTRA_DIST = \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
+	sse4-x86.stdout.exp sse4-x86.stderr.exp sse4-x86.vgtest \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
 	x87trigOOR.vgtest x87trigOOR.stdout.exp x87trigOOR.stderr.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \
@@ -118,6 +119,9 @@ check_PROGRAMS = \
 	xadd
 if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
+endif
+if BUILD_SSE42_TESTS
+   check_PROGRAMS += sse4-x86
 endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32

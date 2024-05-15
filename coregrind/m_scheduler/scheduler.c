@@ -1237,8 +1237,7 @@ static void handle_extension(ThreadId tid)
       block_signals();
       VG_(poll_signals)(tid);
    } else if (err != ExtErr_OK) {
-      ThreadState* tst = VG_(get_ThreadState)(tid);
-      Addr addr = tst->arch.vex.guest_IP_AT_SYSCALL;
+      Addr addr = VG_(get_IP)(tid);
       switch (err) {
       case ExtErr_Illop:
          VG_(synth_sigill)(tid, addr);

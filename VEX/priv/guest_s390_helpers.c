@@ -385,7 +385,7 @@ s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
        /* 146: MSA8, not supported */
        | s390_stfle_range(147, 149)
        /* 150: unassigned */
-       /* 151: DEFLATE-conversion, not supported */
+       | s390_stfle_range(151, 151)
        /* 152: vector packed decimal enhancement, not supported */
        /* 153: unassigned */
        /* 154: unassigned */

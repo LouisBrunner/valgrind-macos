@@ -118,6 +118,7 @@
 
 #define S390_EXT_PRNO    1
 #define S390_EXT_NNPA    2
+#define S390_EXT_DFLT    3
 
 /*--------------------------------------------------------------*/
 /*--- Miscellaneous                                          ---*/

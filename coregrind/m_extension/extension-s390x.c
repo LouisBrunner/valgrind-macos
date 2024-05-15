@@ -586,6 +586,172 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
 }
 
 /*---------------------------------------------------------------*/
+/*--- DFLTCC (deflate conversion call)                        ---*/
+/*---------------------------------------------------------------*/
+
+static Int do_DFLTCC_insn(UChar  func,
+                          ULong  parms,
+                          ULong* addr1,
+                          ULong* len1,
+                          ULong* addr2,
+                          ULong* len2,
+                          ULong  addr3)
+{
+   register UChar reg0 asm("0") = func;
+   register void* reg1 asm("1") = (void*)parms;
+   union reg_pair op1           = {{*addr1, *len1}};
+   union reg_pair op2           = {{*addr2, *len2}};
+   Int            cc;
+
+   asm volatile(".insn rrf, 0xb9390000, %[op1], %[op2], %[op3], 0\n"
+                "ipm %[cc]\n"
+                "srl %[cc], 28\n"
+                : [cc] "=d"(cc), [op1] "+a"(op1.pair), [op2] "+a"(op2.pair)
+                : "d"(reg0), "d"(reg1), [op3] "d"(addr3)
+                : "cc", "memory");
+   *addr1 = op1.a;
+   *len1  = op1.b;
+   *addr2 = op2.a;
+   *len2  = op2.b;
+   return cc;
+}
+
+struct s390_DFLTCC_parms0 {
+   UShort pbvn;
+   UChar  mvn;
+   UChar  ribm[3];
+   UShort reserved0 : 15;
+   UShort cf : 1;
+   ULong  reserved1;
+   UShort nt : 1;
+   UShort reserved2 : 1;
+   UShort cvt : 1;
+   UShort reserved3 : 1;
+   UShort htt : 1;
+   UShort bcf : 1;
+   UShort bcc : 1;
+   UShort bhf : 1;
+   UShort reserved4 : 1;
+   UShort reserved5 : 1;
+   UShort dhtgc : 1;
+   UShort reserved6 : 5;
+   UChar  reserved7 : 5;
+   UChar  sbb : 3;
+   UChar  oesc : 8;
+   UShort reserved8 : 12;
+   UShort ifs : 4;
+   UShort ifl;
+   UChar  reserved9[20];
+   UShort hl;
+   UShort reserved10 : 1;
+   UShort ho : 15;
+   UChar  data[1488];
+};
+
+/* DFLTCC functions that we support if the hardware does. */
+static const ULong DFLTCC_functions[] = {
+   (S390_SETBIT(0)     // Query
+    | S390_SETBIT(1)   // GDHT
+    | S390_SETBIT(2)   // CMPR
+    | S390_SETBIT(4)), // XPND
+};
+
+static UWord do_extension_DFLTCC(ThreadState* tst, ULong variant)
+{
+   enum { circ_hist_len = 32768 };
+   UChar r1    = variant & 0xf;
+   UChar r2    = (variant >> 4) & 0xf;
+   UChar r3    = (variant >> 8) & 0xf;
+   UChar func  = READ_FUNCTION_CODE(tst, "DFLTCC");
+   UChar fc    = func & 0x7f;
+   Bool  hbt   = (func & 128) != 0;
+   ULong parms = READ_GPR(tst, "DFLTCC(r1)", 1);
+   ULong parms_len;
+   Int   cc         = 0;
+   ULong orig_addr1 = 0, orig_len1 = 0;
+   ULong addr1 = 0, len1 = 0, addr2 = 0, len2 = 0, addr3 = 0;
+   Bool  do_compress = 0;
+
+   switch (fc) {
+   case 0: // Query
+      parms_len = 32;
+      PRE_MEM_WRITE(tst, "DFLTCC(parms)", parms, parms_len);
+      cc = do_DFLTCC_insn(func, parms, &addr1, &len1, &addr2, &len2, addr3);
+      s390_filter_functions((ULong*)parms, 16, DFLTCC_functions,
+                            sizeof(DFLTCC_functions));
+      POST_MEM_WRITE(tst, parms, parms_len);
+      break;
+   case 1: // GDHT
+      parms_len = 384;
+      PRE_MEM_READ(tst, "DFLTCC(parms)", parms, parms_len);
+      PRE_MEM_WRITE(tst, "DFLTCC(parms)", parms, parms_len);
+      addr2 = READ_GPR(tst, "DFLTCC(op2_addr)", r2);
+      len2  = READ_GPR(tst, "DFLTCC(op2_len)", r2 + 1);
+      if (len2 > 32768)
+         len2 = 32768;
+      PRE_MEM_READ(tst, "DFLTCC(parms)", addr2, len2);
+      cc = do_DFLTCC_insn(func, parms, &addr1, &len1, &addr2, &len2, addr3);
+      POST_MEM_WRITE(tst, parms, parms_len);
+      break;
+   case 2: // CMPR
+      do_compress = 1;
+      /* fallthrough */
+   case 4: // XPND
+   {
+      struct s390_DFLTCC_parms0* p;
+      parms_len = 1536;
+      PRE_MEM_READ(tst, "DFLTCC(parms)", parms, parms_len);
+      p     = (void*)parms;
+      addr1 = orig_addr1 = READ_GPR(tst, "DFLTCC(op1_addr)", r1);
+      len1 = orig_len1 = READ_GPR(tst, "DFLTCC(op1_len)", r1 + 1);
+      PRE_MEM_WRITE(tst, "DFLTCC(op1)", addr1, len1);
+      addr2 = READ_GPR(tst, "DFLTCC(op2_addr)", r2);
+      len2  = READ_GPR(tst, "DFLTCC(op2_len)", r2 + 1);
+      PRE_MEM_READ(tst, "DFLTCC(op2)", addr2, len2);
+      addr3 = READ_GPR(tst, "DFLTCC(op3)", r3);
+      if (hbt) {
+         PRE_MEM_WRITE(tst, "DFLTCC(op3)", addr3, circ_hist_len);
+      }
+      if (!p->nt) {
+         if (hbt) {
+            ULong hl1 = circ_hist_len - p->ho;
+            if (hl1 >= p->hl) {
+               hl1 = p->hl;
+            } else {
+               PRE_MEM_READ(tst, "DFLTCC(op3)", addr3, p->hl - hl1);
+            }
+            PRE_MEM_READ(tst, "DFLTCC(op3)", addr3 + p->ho, hl1);
+         } else {
+            PRE_MEM_READ(tst, "DFLTCC(op2.hist)", addr2 - p->hl, p->hl);
+         }
+      }
+      cc = do_DFLTCC_insn(func, parms, &addr1, &len1, &addr2, &len2, addr3);
+      POST_MEM_WRITE(tst, parms, parms_len);
+      POST_MEM_WRITE(tst, orig_addr1,
+                     orig_len1 - len1 + (do_compress && p->sbb ? 1 : 0));
+      if (hbt) {
+         ULong hl1 = circ_hist_len - p->ho;
+         if (hl1 >= p->hl) {
+            hl1 = p->hl;
+         } else {
+            POST_MEM_WRITE(tst, addr3, p->hl - hl1);
+         }
+         POST_MEM_WRITE(tst, addr3 + p->ho, hl1);
+      }
+      WRITE_GPR(tst, r1, addr1);
+      WRITE_GPR(tst, r1 + 1, len1);
+      WRITE_GPR(tst, r2, addr2);
+      WRITE_GPR(tst, r2 + 1, len2);
+      break;
+   }
+   default:
+      return INSN_ERR("DFLTCC: unknown function code\n");
+   }
+   WRITE_CC(tst, cc);
+   return ExtErr_OK;
+}
+
+/*---------------------------------------------------------------*/
 /*--- Main function: select and call appropriate extension    ---*/
 /*---------------------------------------------------------------*/
 
@@ -600,6 +766,8 @@ enum ExtensionError ML_(do_client_extension)(ThreadState* tst)
       return do_extension_PRNO(tst, variant);
    case S390_EXT_NNPA:
       return do_extension_NNPA(tst, variant);
+   case S390_EXT_DFLT:
+      return do_extension_DFLTCC(tst, variant);
    default:
       VG_(core_panic)("unknown extension ID");
    }

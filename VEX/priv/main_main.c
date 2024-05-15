@@ -1824,7 +1824,8 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_MSA5,  "msa5" },
       { VEX_HWCAPS_S390X_MI2,   "mi2" },
       { VEX_HWCAPS_S390X_LSC2,  "lsc2" },
-      { VEX_HWCAPS_S390X_LSC2,  "vxe" },
+      { VEX_HWCAPS_S390X_VXE,   "vxe" },
+      { VEX_HWCAPS_S390X_DFLT,  "dflt" },
    };
    /* Allocate a large enough buffer */
    static HChar buf[sizeof prefix + 

@@ -1743,7 +1743,7 @@ wcfeb,"vector fp convert to fixed 32 bit",implemented,arch13
 vclfp,"vector fp convert to logical",implemented,arch13
 vclfeb,"vector fp convert to logical 32 bit",implemented,arch13
 wclfeb,"vector fp convert to logical 32 bit",implemented,arch13
-dfltcc,"deflate conversion call","not implemented",arch13
+dfltcc,"deflate conversion call",implemented,arch13
 sortl,"sort lists","not implemented",arch13
 kdsa,"compute digital signature authentication","not implemented",arch13
 vschp,"decimal scale and convert to hfp","not implemented",arch14

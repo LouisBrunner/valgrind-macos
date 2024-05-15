@@ -12,6 +12,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+* S390X added support for the DFLTCC instruction provided by the
+  deflate-conversion facility (z15/arch13).
+
 * ==================== TOOL CHANGES ===================
 
 * ==================== FIXED BUGS ====================

@@ -17105,6 +17105,19 @@ s390_irgen_PPNO(UChar r1, UChar r2)
    return "ppno";
 }
 
+static const HChar *
+s390_irgen_DFLTCC(UChar r3, UChar r1, UChar r2)
+{
+   s390_insn_assert("dfltcc", s390_host_has_dflt);
+
+   /* Check for obvious specification exceptions */
+   s390_insn_assert("dfltcc", r1 % 2 == 0 && r1 != 0 &&
+                    r2 % 2 == 0 && r2 != 0 && r3 >= 2);
+
+   extension(S390_EXT_DFLT, r1 | (r2 << 4) | (r3 << 8));
+   return "dfltcc";
+}
+
 enum s390_VStrX {
    s390_VStrX_VSTRC,
    s390_VStrX_VFAE,
@@ -20452,7 +20465,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb931: s390_format_RRE_RR(s390_irgen_CLGFR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb938: /* SORTL */ goto unimplemented;
-   case 0xb939: /* DFLTCC */ goto unimplemented;
+   case 0xb939: s390_format_RRF_R0RR2(s390_irgen_DFLTCC, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
    case 0xb93a: /* KDSA */ goto unimplemented;
    case 0xb93b: s390_format_E(s390_irgen_NNPA);  goto ok;
    case 0xb93c: s390_format_RRE_RR(s390_irgen_PPNO, RRE_r1(ovl),

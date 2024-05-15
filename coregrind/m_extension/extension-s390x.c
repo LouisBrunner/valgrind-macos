@@ -37,9 +37,9 @@
 
 #undef SYSNO
 
-#define READ_FUNCTION_CODE(tst)                                                \
+#define READ_FUNCTION_CODE(tst, extname)                                       \
    ({                                                                          \
-      PRE_REG_READ(tst, "func_code", r0, 7, sizeof(UChar));                    \
+      PRE_REG_READ(tst, extname "(func_code)", r0, 7, sizeof(UChar));          \
       tst->arch.vex.guest_r0 & 0xff;                                           \
    })
 
@@ -141,10 +141,10 @@ static enum ExtensionError do_extension_PRNO(ThreadState* tst, ULong variant)
 {
    UChar r1    = variant & 0xf;
    UChar r2    = (variant >> 4) & 0xf;
-   UChar func  = READ_FUNCTION_CODE(tst);
+   UChar func  = READ_FUNCTION_CODE(tst, "PRNO");
    UChar fc    = func & 0x7f;
    UChar mflag = func & 128;
-   ULong parms = READ_GPR(tst, "r1", 1);
+   ULong parms = READ_GPR(tst, "PRNO(r1)", 1);
    ULong parms_len;
    Int   cc         = 0;
    ULong orig_addr1 = 0, orig_len1 = 0, orig_addr2 = 0, orig_len2 = 0;
@@ -175,8 +175,8 @@ static enum ExtensionError do_extension_PRNO(ThreadState* tst, ULong variant)
          PRE_MEM_WRITE(tst, "PRNO(op1)", addr1, len1);
       } else {
          // Seed operation
-         addr2 = orig_addr2 = READ_GPR(tst, "PRNO(op2_addr)", r2);
-         len2 = orig_len2 = READ_GPR(tst, "PRNO(op2_len)", r2 + 1);
+         addr2 = READ_GPR(tst, "PRNO(op2_addr)", r2);
+         len2  = READ_GPR(tst, "PRNO(op2_len)", r2 + 1);
          PRE_MEM_READ(tst, "PRNO(op2)", addr2, len2);
       }
       PRE_MEM_WRITE(tst, "PRNO(parms)", parms, parms_len);
@@ -474,7 +474,7 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
 {
    ULong gpr0       = READ_GPR(tst, "NNPA(r0)", 0);
    UChar fc         = gpr0 & 0x7f;
-   ULong parms_addr = READ_GPR(tst, "r1", 1);
+   ULong parms_addr = READ_GPR(tst, "NNPA(r1)", 1);
    Int   cc         = 0;
    ULong parms_len;
 

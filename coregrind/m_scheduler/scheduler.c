@@ -1233,7 +1233,10 @@ static void handle_extension(ThreadId tid)
    SCHEDSETJMP(tid, jumped, err = VG_(client_extension)(tid));
    vg_assert(VG_(is_running_thread)(tid));
 
-   if (err != ExtErr_OK) {
+   if (jumped != (UWord)0) {
+      block_signals();
+      VG_(poll_signals)(tid);
+   } else if (err != ExtErr_OK) {
       ThreadState* tst = VG_(get_ThreadState)(tid);
       Addr addr = tst->arch.vex.guest_IP_AT_SYSCALL;
       switch (err) {
@@ -1243,11 +1246,6 @@ static void handle_extension(ThreadId tid)
       default:
          VG_(core_panic)("scheduler: bad return code from extension");
       }
-   }
-
-   if (jumped != (UWord)0) {
-      block_signals();
-      VG_(poll_signals)(tid);
    }
 }
 

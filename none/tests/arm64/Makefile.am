@@ -74,6 +74,9 @@ frinta_frintn_SOURCES  = frinta_frintn.cpp
 frinta_frintn_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
 
+fp_and_simd_SOURCES     = fp_and_simd.c simd.h simd.c
+fp_and_simd_v82_SOURCES = fp_and_simd_v82.c simd.h simd.c
+
 fp_and_simd_LDADD  = -lm
 simd_v81_LDADD     = -lm
 fp_and_simd_v82_LDADD  = -lm

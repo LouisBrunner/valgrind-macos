@@ -141,7 +141,13 @@ The easiest way to generate the expected files is to run the test. Create empty
 files with touch (otherwise the test won't run) then run the test from the
 top directory using perl and vg_regtest script (as in the "Running the
 regression tests" section. Then copy "tool/tests/newtest.stderr.out" to
-"tool/tests/newtest.stderr.exp". Do the same for the .stderr.exp file.
+"tool/tests/newtest.stderr.exp". It is better to generate the .stdout.exp
+file directly from the testcase. You can do that by redirecting stdout to
+the expected file, for instance (in the test directory)
+    ./newtest arg1 arg2 > newtest.stdout.exp
+This is not always possible - sometimes there are tests that depend on the use
+of client requests or have imperfect emulation of opcodes.
+Make sure that the test runs and passes.
 
 The last file to change is .gitignore in the top directory. Add a new entry,
 for example "/tool/tests/newtest".

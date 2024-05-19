@@ -1552,6 +1552,7 @@
 /none/tests/blockfault
 /none/tests/bug129866
 /none/tests/bug234814
+/none/tests/bug290061
 /none/tests/bug491394
 /none/tests/bug492678
 /none/tests/closeall

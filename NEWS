@@ -32,6 +32,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+290061  pie elf always loaded at 0x108000
 396415  Valgrind is not looking up $ORIGIN rpath of shebang programs
 420682  io_pgetevents is not supported
 469782  Valgrind does not support zstd-compressed debug sections

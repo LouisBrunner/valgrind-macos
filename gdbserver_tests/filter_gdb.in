@@ -48,6 +48,10 @@ s/^\[?1034hReading symbols/Reading symbols/
 #       errors get produced by GDB
 /\(rtld_start.S\|kill.S\|_exit.S\|_select.S\): No such file or directory/d
 
+#       FreeBSD syscall wrapper macros
+/PSEUDO(select)/d
+/RSYSCALL(kill)/d
+
 #       Remove some Suse package manager messages
 /^Try: zypper install -C/d
 

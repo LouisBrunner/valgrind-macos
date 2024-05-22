@@ -70,16 +70,6 @@ typedef struct {
 // Used by PTRACE and coredump-elf.h */
 //----------------------------------------------------------------------
 
-/*
-struct vki_reg {
-   vki_uint64_t x[30];
-   vki_uint64_t lr;
-   vki_uint64_t sp;
-   vki_uint64_t elr;
-   vki_uint64_t spsr;
-};
-*/
-
 struct vki_dbreg {
    vki_uint8_t db_debug_ver;
    vki_uint8_t db_nbkpts;
@@ -176,5 +166,62 @@ struct vki_vdso_timehands {
    struct vki_bintime th_boottime;
    VKI_VDSO_TIMEHANDS_MD
 };
+
+//----------------------------------------------------------------------
+// machine/elf.h
+//----------------------------------------------------------------------
+
+#define	VKI_HWCAP_FP		0x00000001
+#define	VKI_HWCAP_ASIMD		0x00000002
+#define	VKI_HWCAP_EVTSTRM		0x00000004
+#define	VKI_HWCAP_AES		0x00000008
+#define	VKI_HWCAP_PMULL		0x00000010
+#define	VKI_HWCAP_SHA1		0x00000020
+#define	VKI_HWCAP_SHA2		0x00000040
+#define	VKI_HWCAP_CRC32		0x00000080
+#define	VKI_HWCAP_ATOMICS		0x00000100
+#define	VKI_HWCAP_FPHP		0x00000200
+#define	VKI_HWCAP_ASIMDHP		0x00000400
+#define	VKI_HWCAP_CPUID		0x00000800
+#define	VKI_HWCAP_ASIMDRDM		0x00001000
+#define	VKI_HWCAP_JSCVT		0x00002000
+#define	VKI_HWCAP_FCMA		0x00004000
+#define	VKI_HWCAP_LRCPC		0x00008000
+#define	VKI_HWCAP_DCPOP		0x00010000
+#define	VKI_HWCAP_SHA3		0x00020000
+#define	VKI_HWCAP_SM3		0x00040000
+#define	VKI_HWCAP_SM4		0x00080000
+#define	VKI_HWCAP_ASIMDDP		0x00100000
+#define	VKI_HWCAP_SHA512		0x00200000
+#define	VKI_HWCAP_SVE		0x00400000
+#define	VKI_HWCAP_ASIMDFHM		0x00800000
+#define	VKI_HWCAP_DIT		0x01000000
+#define	VKI_HWCAP_USCAT		0x02000000
+#define	VKI_HWCAP_ILRCPC		0x04000000
+#define	VKI_HWCAP_FLAGM		0x08000000
+#define	VKI_HWCAP_SSBS		0x10000000
+#define	VKI_HWCAP_SB		0x20000000
+#define	VKI_HWCAP_PACA		0x40000000
+#define	VKI_HWCAP_PACG		0x80000000
+
+#define	VKI_HWCAP2_DCPODP		0x00000001
+#define	VKI_HWCAP2_SVE2		0x00000002
+#define	VKI_HWCAP2_SVEAES		0x00000004
+#define	VKI_HWCAP2_SVEPMULL		0x00000008
+#define	VKI_HWCAP2_SVEBITPERM	0x00000010
+#define	VKI_HWCAP2_SVESHA3		0x00000020
+#define	VKI_HWCAP2_SVESM4		0x00000040
+#define	VKI_HWCAP2_FLAGM2		0x00000080
+#define	VKI_HWCAP2_FRINT		0x00000100
+#define	VKI_HWCAP2_SVEI8MM		0x00000200
+#define	VKI_HWCAP2_SVEF32MM		0x00000400
+#define	VKI_HWCAP2_SVEF64MM		0x00000800
+#define	VKI_HWCAP2_SVEBF16		0x00001000
+#define	VKI_HWCAP2_I8MM		0x00002000
+#define	VKI_HWCAP2_BF16		0x00004000
+#define	VKI_HWCAP2_DGH		0x00008000
+#define	VKI_HWCAP2_RNG		0x00010000
+#define	VKI_HWCAP2_BTI		0x00020000
+
 
 #endif /* VKI_ARM64_FREEBSD_H */

@@ -713,12 +713,35 @@ static Addr setup_client_stack(const void*  init_sp,
       case VKI_AT_CANARYLEN:
 
 #if (FREEBSD_VERS >= FREEBSD_11)
-      // FreeBSD 11+ also have HWCAP and HWCAP2
       case VKI_AT_EHDRFLAGS:
 #endif
          /* All these are pointerless, so we don't need to do
             anything about them. */
          break;
+#if defined(VGP_arm64_freebsd)
+      // FreeBSD 11+ also have HWCAP and HWCAP2
+      // but they aren't used on amd64
+      case VKI_AT_HWCAP:
+#define ARM64_SUPPORTED_HWCAP (VKI_HWCAP_ATOMICS        \
+                               | VKI_HWCAP_AES          \
+                               | VKI_HWCAP_PMULL        \
+                               | VKI_HWCAP_SHA1         \
+                               | VKI_HWCAP_SHA2         \
+                               | VKI_HWCAP_SHA512       \
+                               | VKI_HWCAP_CRC32        \
+                               | VKI_HWCAP_ASIMDRDM     \
+                               | VKI_HWCAP_FP           \
+                               | VKI_HWCAP_ASIMD        \
+                               | VKI_HWCAP_ASIMDDP)
+               auxv->u.a_val &= ARM64_SUPPORTED_HWCAP;
+         break;
+#undef ARM64_SUPPORTED_HWCAP
+      // not yet
+      /*
+      case VKI_AT_HWCAP2:
+         break;
+      */
+#endif
 
       case VKI_AT_EXECPATH:
          auxv->u.a_ptr = copy_str(&strtab, resolved_name);

@@ -45,7 +45,11 @@ if BUILD_ARMV81_TESTS
 endif
 
 if BUILD_ARMV82_TESTS
-  check_PROGRAMS += fp_and_simd_v82 sha512_v82
+  check_PROGRAMS += fp_and_simd_v82
+endif
+
+if HAVE_SHA3
+  check_PROGRAMS += sha512_v82
 endif
 
 if HAVE_CXX17

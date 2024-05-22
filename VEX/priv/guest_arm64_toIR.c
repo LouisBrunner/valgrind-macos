@@ -7569,7 +7569,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
    /* ---- Case for MPIDR_EL1 (RO) ----
-      Instead of returing a fake regiser, we use the same
+      Instead of returing a fake register, we use the same
       value as does the kernel emulation.
       0xD53800 101 Rt   MRS rT, mpidr_el1
    */
@@ -7580,7 +7580,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
    /* ---- Case for REVDIR_EL1 (RO) ----
-      Instead of emulating the regiser, we just return the same
+      Instead of emulating the register, we just return the same
       value as does the kernel emulation.
       0xD53800 110 Rt   MRS rT, revdir_el1
    */
@@ -7591,7 +7591,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
    /* ---- Case for ID_AA64PFR0_EL1 (RO) ----
-      Instead of returing a fake regiser, we use the same
+      Instead of returing a fake register, we use the same
       value as does the kernel emulation. We set deprecate half
       precission floating-point to normal floating-point support.
       We set all other values to zero.
@@ -7726,7 +7726,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
    /* ---- Case for ID_AA64MMFR0_EL1 (RO) ----
-      Instead of returing a fake regiser, we use the same
+      Instead of returing a fake register, we use the same
       value as does the kernel emulation.
       0xD53807 000 Rt   MRS rT, id_aa64mmfr0_el1
    */
@@ -7748,7 +7748,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
    /* ---- Case for ID_AA64MMFR1_EL1 (RO) ----
-      Instead of returing a fake regiser, we use the same
+      Instead of returing a fake register, we use the same
       value as does the kernel emulation. Set VHE and HAFDBS
       to not implemented.
       0xD53807 001 Rt   MRS rT, id_aa64mmfr1_el1
@@ -14110,7 +14110,6 @@ Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
          case 2: ch = 'm'; irrmE = mkU32(Irrm_NegINF); break;
          case 3: ch = 'p'; irrmE = mkU32(Irrm_PosINF); break;
          case 4: ch = 'z'; irrmE = mkU32(Irrm_ZERO); break;
-         // The following is a kludge.  Should be: Irrm_NEAREST_TIE_AWAY_0
          case 5: ch = 'a'; isBinop = False; op = isD ? Iop_RoundF64toIntA0 : Iop_RoundF32toIntA0; break;
          // I am unsure about the following, due to the "integral exact"
          // description in the manual.  What does it mean? (frintx, that is)

@@ -31,6 +31,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         0x66 0xF 0x3A 0x2
 377966  arm64 unhandled instruction dc zva392146  aarch64: unhandled
         instruction 0xD5380001 (MRS rT, midr_el1)
+392146  aarch64: unhandled instruction 0xD5380001 (MRS rT, midr_el1)
 412377  SIGILL on cache flushes on arm64
 447989  Support Armv8.2 SHA-512 instructions
 486180  [Valgrind][MIPS] 'VexGuestArchState' has no member named

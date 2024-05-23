@@ -125,6 +125,7 @@ EXTRA_DIST = \
 	discard.vgtest \
 	double_close_range_xml.stderr.exp \
 	double_close_range_xml.vgtest \
+	double_close_range_sup.stderr.exp double_close_range_sup.vgtest \
 	empty-exe.vgtest empty-exe.stderr.exp \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp \
 	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 \
@@ -134,8 +135,12 @@ EXTRA_DIST = \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_cmsg_xml.stderr.exp fdleak_cmsg_xml.vgtest \
+	fdleak_cmsg_supp.stderr.exp fdleak_cmsg_supp.supp \
+	fdleak_cmsg_supp.vgtest \
 	fdleak_creat.stderr.exp fdleak_creat.vgtest \
 	fdleak_creat_xml.stderr.exp fdleak_creat_xml.vgtest \
+	fdleak_creat_sup.stderr.exp fdleak_creat_sup.supp \
+	fdleak_creat_sup.vgtest \
 	fdleak_dup.stderr.exp fdleak_dup.vgtest \
 	fdleak_dup_xml.stderr.exp fdleak_dup_xml.vgtest \
 	fdleak_dup2.stderr.exp fdleak_dup2.vgtest \
@@ -244,6 +249,7 @@ EXTRA_DIST = \
 	socket_close_xml.stderr.exp socket_close_xml.vgtest \
 	file_dclose.stderr.exp file_dclose.vgtest \
 	file_dclose_xml.stderr.exp file_dclose_xml.vgtest \
+	file_dclose.supp file_dclose_sup.stderr.exp file_dclose_sup.vgtest \
 	double_close_range.stderr.exp double_close_range.vgtest
 
 

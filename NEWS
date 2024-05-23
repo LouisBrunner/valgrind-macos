@@ -41,6 +41,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 486569  linux inotify_init syscall wrapper missing POST entry in syscall_table
 487993  Alignment error when using Eigen with Valgrind and -m32
 488026  Use of `sizeof` instead of `strlen
+488441  Add tests for --track-fds=yes --xml=yes and fd suppression tests
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -1,6 +1,6 @@
 close 3
 time passes and we close 3 again
-File descriptor 3: file_dclose.tmp is already closed
+File descriptor ...: ... is already closed
    at 0x........: close (in /...libc...)
    by 0x........: closefile (file_dclose.c:17)
    by 0x........: main

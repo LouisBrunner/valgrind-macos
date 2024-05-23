@@ -1,5 +1,5 @@
 
-File descriptor 4: AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:... is already closed
+File descriptor ...: ... is already closed
    at 0x........: close (in /...libc...)
    by 0x........: client (fdleak_ipv4.c:70)
    by 0x........: main

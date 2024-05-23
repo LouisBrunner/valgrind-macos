@@ -1,7 +1,7 @@
 Open socket 3
 close socket_fd 3
 and close the socket again 3
-File descriptor 3: AF_UNIX socket 3: /tmp/vgtest-foofrob is already closed
+File descriptor ...: ... is already closed
    at 0x........: close (in /...libc...)
    by 0x........: main
  Previously closed

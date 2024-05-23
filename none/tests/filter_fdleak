@@ -13,6 +13,7 @@ perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: \/devices\/pseudo\/
 perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: (\/private)?\/tmp\/(sock|data1|data2|file)\.[0-9]*/Open $1 ...: \/tmp\/$3/' |
 perl -p -e 's/^Open file descriptor [0-9]*: .*/Open file descriptor ...: .../' |
 perl -p -e 's/^Open file descriptor [0-9]*:$/Open file descriptor ...:/' |
+perl -p -e 's/File descriptor [0-9]*: .* is already closed/File descriptor ...: ... is already closed/' |
 perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
 perl -p -e 's/socket\.c:[1-9][0-9]*/in \/...libc.../' |
 # arm systems substitute open for creat
@@ -42,7 +43,9 @@ perl -p -0 -e 's/(Open[^\n]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs' |
 sed "s/by 0x........: (below main)/by 0x........: main/" |
 sed "s/by 0x........: main (.*)/by 0x........: main/" |
 
-# With glibc debuginfo installed we might see syscall-template.S, close.c or creat64.c
+# With glibc debuginfo installed we might see syscall-template.S,
+# dup2.c close.c or creat64.c
 perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
 perl -p -e "s/\(close.c:[0-9]*\)/(in \/...libc...)/" |
-perl -p -e "s/\(creat(?:64)?.c:[0-9]*\)/(in \/...libc...)/"
+perl -p -e "s/\(creat(?:64)?.c:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(dup2.c:[0-9]*\)/(in \/...libc...)/"

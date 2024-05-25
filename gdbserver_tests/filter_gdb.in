@@ -156,6 +156,7 @@ s/in _select ()/in syscall .../
 /sysv\/linux\/generic\/select.c/d
 /return SYSCALL_CANCEL /d
 /r = SYSCALL_CANCEL /d
+/result = SYSCALL_CANCEL /d
 
 #       a more specialised system call select stack trace part
 #             (on 32 bits, we have an int_80, on 64 bits, directly select)

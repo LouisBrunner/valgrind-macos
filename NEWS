@@ -34,6 +34,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 392146  aarch64: unhandled instruction 0xD5380001 (MRS rT, midr_el1)
 412377  SIGILL on cache flushes on arm64
 447989  Support Armv8.2 SHA-512 instructions
+453044  gbserver_tests failures in aarch64
 486180  [Valgrind][MIPS] 'VexGuestArchState' has no member named
         'guest_IP_AT_SYSCALL'
 486293  memccpy false positives

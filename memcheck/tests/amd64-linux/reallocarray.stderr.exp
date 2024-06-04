@@ -12,19 +12,19 @@ To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
 realloc() with size 0
    at 0x........: reallocarray (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:13)
+   by 0x........: main (reallocarray.c:14)
  Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: reallocarray (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:11)
+   by 0x........: main (reallocarray.c:12)
 
 All heap blocks were freed -- no leaks are possible
 
 realloc() with size 0
    at 0x........: reallocarray (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:16)
+   by 0x........: main (reallocarray.c:17)
  Address 0x........ is 0 bytes inside a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:15)
+   by 0x........: main (reallocarray.c:16)
 
 All heap blocks were freed -- no leaks are possible
 

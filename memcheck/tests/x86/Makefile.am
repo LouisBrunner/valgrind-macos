@@ -9,6 +9,7 @@ INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_ss
 
 EXTRA_DIST = \
 	bug152022.vgtest bug152022.stderr.exp bug152022.stdout.exp \
+	bug487993.vgtest bug487993.stderr.exp \
 	espindola2.vgtest espindola2.stderr.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \
 	fxsave.vgtest fxsave.stdout.exp fxsave.stderr.exp \
@@ -53,6 +54,11 @@ AM_CFLAGS    += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CCASFLAGS += @FLAG_M32@
 
+if HAVE_CXX17
+check_PROGRAMS += bug487993
+bug487993_SOURCES = bug487993.cpp
+bug487993_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+endif
 
 # fpeflags must use these flags -- bug only occurred with them.
 fpeflags_CFLAGS		= $(AM_CFLAGS) -march=i686

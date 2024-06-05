@@ -1330,6 +1330,7 @@
 /memcheck/tests/x86/Makefile.in
 /memcheck/tests/x86/bug133694
 /memcheck/tests/x86/bug152022
+/memcheck/tests/x86/bug487993
 /memcheck/tests/x86/espindola2
 /memcheck/tests/x86/fpeflags
 /memcheck/tests/x86/fprem

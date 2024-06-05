@@ -39,6 +39,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         'guest_IP_AT_SYSCALL'
 486293  memccpy false positives
 486569  linux inotify_init syscall wrapper missing POST entry in syscall_table
+488026  Use of `sizeof` instead of `strlen
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -1,0 +1,7 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+gsed '/MEMCHECK-RTLD-COND/d'
+
+exit 0

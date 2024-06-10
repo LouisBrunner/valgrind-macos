@@ -148,6 +148,16 @@ PRE(sys_sysarch)
 
 POST(sys_sysarch) {}
 
+// SYS_brk 17
+// void *break(char *nsize);
+PRE(sys_brk)
+{
+   PRINT("sys_brk ( %#" FMT_REGWORD "x )", ARG1);
+   // same name as generic rather than the same name as
+   // FreeBSD syscalls.master
+   PRE_REG_READ1(void*, "brk", char*, end_data_segment);
+}
+
 // SYS_clock_getcpuclockid2   247
 // no manpage for this, from syscalls.master
 // int clock_getcpuclockid2(id_t id, int which, _Out_ clockid_t *clock_id);

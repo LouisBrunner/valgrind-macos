@@ -1,2 +1,4 @@
 prog: realloc_size_zero_again
 vgopts: -q -s --realloc-zero-bytes-frees=yes
+stderr_filter: filter_supp
+

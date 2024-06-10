@@ -5760,6 +5760,8 @@ AC_CONFIG_FILES([memcheck/tests/filter_dw4],
                 [chmod +x memcheck/tests/filter_dw4])
 AC_CONFIG_FILES([memcheck/tests/filter_overlaperror],
                 [chmod +x memcheck/tests/filter_overlaperror])
+AC_CONFIG_FILES([memcheck/tests/filter_supp],
+                [chmod +x memcheck/tests/filter_supp])
 AC_CONFIG_FILES([memcheck/tests/x86/filter_pushfpopf],
                 [chmod +x memcheck/tests/x86/filter_pushfpopf])
 AC_CONFIG_FILES([gdbserver_tests/filter_gdb],

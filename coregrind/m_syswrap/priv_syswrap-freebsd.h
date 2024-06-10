@@ -60,7 +60,11 @@ DECL_TEMPLATE(freebsd, sys_fork) // 2
 // generic mknod 14
 // generic chmod 15
 // generic chown 16
+#if defined(VGP_arm64_freebsd)
+DECL_TEMPLATE(freebsd, sys_brk) // 17
+#else
 // generic brk 17
+#endif
 DECL_TEMPLATE(freebsd, sys_mount) // 21
 DECL_TEMPLATE(freebsd, sys_unmount) // 22
 DECL_TEMPLATE(freebsd, sys_ptrace) // 26
@@ -556,7 +560,7 @@ DECL_TEMPLATE(freebsd, sys_aio_readv)   // 579
 
 #if (FREEBSD_VERS >= FREEBSD_13_1)
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_14_0)
 // there was a hole in the numbering
 DECL_TEMPLATE(freebsd, sys_fspacectl) // 580
 #endif
@@ -569,7 +573,7 @@ DECL_TEMPLATE(freebsd, sys_kqueuex) // 583
 DECL_TEMPLATE(freebsd, sys_membarrier) // 584
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14)
+#if (FREEBSD_VERS >= FREEBSD_14_0)
 DECL_TEMPLATE(freebsd, sys_timerfd_create) // 585
 DECL_TEMPLATE(freebsd, sys_timerfd_gettime) // 586
 DECL_TEMPLATE(freebsd, sys_timerfd_settime) // 587

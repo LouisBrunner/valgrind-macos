@@ -92,7 +92,8 @@ dist_noinst_SCRIPTS = \
 noinst_SCRIPTS = \
 	filter_dw4 \
 	filter_overlaperror \
-	filter_stderr
+	filter_stderr \
+	filter_supp
 
 noinst_HEADERS = leak.h
 
@@ -432,6 +433,7 @@ EXTRA_DIST = \
 	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
 		varinfo5.stderr.exp-ppc64 \
 		varinfo5.stderr.exp-freebsd \
+		varinfo5.stderr.exp-freebsd2 \
 	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
 		varinfo6.stderr.exp-ppc64 \
 	varinforestrict.vgtest varinforestrict.stderr.exp \

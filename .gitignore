@@ -848,6 +848,7 @@
 /memcheck/tests/*.stdout.out
 /memcheck/tests/filter_dw4
 /memcheck/tests/filter_overlaperror
+/memcheck/tests/filter_supp
 /memcheck/tests/.deps
 /memcheck/tests/accounting
 /memcheck/tests/addressable

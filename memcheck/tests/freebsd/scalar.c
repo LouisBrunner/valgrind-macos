@@ -104,7 +104,12 @@ int main(void)
 
    /* break                       17 */
    GO(SYS_break, "1s 1m");
-   SY(SYS_break, x0+1); SUCC;
+   SY(SYS_break, x0+1);
+#if defined(VGP_arm64_freebsd)
+   FAILx(ENOSYS);
+#else
+   SUCC;
+#endif
 
    /* freebsd4 getfsstat          18 */
 
@@ -800,12 +805,14 @@ int main(void)
       SY(SYS_poll, &fds, 1, 1); SUCC;
    }
 
+#if (FREEBSD_VERS <= FREEBSD_14_0)
    /* SYS_freebsd7___semctl       220 */
    GO(SYS_freebsd7___semctl, "(IPC_STAT) 4s 1m");
    SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
 
    GO(SYS_freebsd7___semctl, "(bogus cmd) 3s 0m");
    SY(SYS_freebsd7___semctl, x0, x0, x0-1, x0+1); FAIL;
+#endif
 
    /* SYS_semget                  221 */
    GO(SYS_semget, "3s 0m");
@@ -817,12 +824,14 @@ int main(void)
 
    /* unimpl semconfig            223 */
 
+#if (FREEBSD_VERS <= FREEBSD_14_0)
    /* SYS_freebsd7_msgctl         224 */
    GO(SYS_freebsd7_msgctl, "(set) 3s 1m");
    SY(SYS_freebsd7_msgctl, x0, x0+1, x0); FAIL;
 
    GO(SYS_freebsd7_msgctl, "(stat) 3s 1m");
    SY(SYS_freebsd7_msgctl, x0, x0+2, x0); FAIL;
+#endif
 
    /* SYS_msgget                  225 */
    GO(SYS_msgget, "2s 0m");
@@ -840,13 +849,14 @@ int main(void)
    GO(SYS_shmat, "3s 0m");
    SY(SYS_shmat, x0, x0, x0); FAIL;
 
+#if (FREEBSD_VERS <= FREEBSD_14_0)
    /* SYS_freebsd7_shmctl         229 */
    GO(SYS_freebsd7_shmctl, "3s 0m");
    SY(SYS_freebsd7_shmctl, x0, x0, x0); FAIL;
 
    GO(SYS_freebsd7_shmctl, "(bogus cmd) 3s 0m");
    SY(SYS_freebsd7_shmctl, x0, x0-1, x0+1); FAIL;
-
+#endif
 
    /* SYS_shmdt                   230 */
    GO(SYS_shmdt, "1s 0m");

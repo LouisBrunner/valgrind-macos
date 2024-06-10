@@ -1255,11 +1255,18 @@ PRE(sys_vfork)
 }
 
 // SYS_sbrk 69
-// void * sbrk(intptr_t incr);
+// int sbrk(int incr);
 PRE(sys_sbrk)
 {
    PRINT("sys_sbrk ( %#" FMT_REGWORD "x )",ARG1);
-   PRE_REG_READ1(void*, "sbrk", vki_intptr_t, incr);
+   PRE_REG_READ1(int, "sbrk", int, incr);
+
+   // removed in FreeBSD 15
+   // prior to that it just returned EOPNOTSUPP
+   // with a comment "Not yet implemented"
+
+   // libc sbrk doesn't call this, it calls __sys_break
+   // which maps to sys_brk
 }
 
 // SYS_freebsd11_vadvise   72

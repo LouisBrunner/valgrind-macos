@@ -2,6 +2,12 @@
 
 dir=`dirname $0`
 
+# FreeBSD adds this one extra line
+# but after filter_xml_frames it will just be <path>...<\/path>
+# which matches other lines, so get rid of it while we can
+# uniquely match it
+sed "/<path>internet<\/path>/d" |
+
 $dir/../../tests/filter_xml_frames  |
 perl    -p -e "s/<time>.*<\/time>/<time>...<\/time>/s" |
 perl    -p -e "s/<what>.*<\/what>/<what>...<\/what>/s" |

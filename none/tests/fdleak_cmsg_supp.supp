@@ -1,7 +1,7 @@
 {
    sup1
    CoreError:FdNotClosed
-   fun:accept
+   fun:*accept
    fun:server
    fun:main
 }
@@ -15,33 +15,28 @@
 {
    sup3
    CoreError:FdNotClosed
-   fun:*open*
-   fun:server
-   fun:main
-}
-{
-   sup4
-   CoreError:FdNotClosed
+   ...
    fun:*open*
    fun:server
    #fun:main
 }
 {
+   sup4
+   CoreError:FdNotClosed
+   fun:recvmsg
+   fun:client
+   fun:main
+}
+{
    sup5
    CoreError:FdNotClosed
+   ...
    fun:recvmsg
    fun:client
    fun:main
 }
 {
    sup6
-   CoreError:FdNotClosed
-   fun:recvmsg
-   fun:client
-   fun:main
-}
-{
-   sup7
    CoreError:FdNotClosed
    fun:socket
    fun:client

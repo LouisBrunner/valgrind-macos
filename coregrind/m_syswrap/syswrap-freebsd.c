@@ -6862,7 +6862,7 @@ POST(sys___realpathat)
 #if (FREEBSD_VERS >= FREEBSD_12_2)
 
 // SYS_sys_close_range   575
-// int close_range(close_range(u_int lowfd, u_int highfd, int flags);
+// int close_range(u_int lowfd, u_int highfd, int flags);
 PRE(sys_close_range)
 {
    SysRes res = VG_(mk_SysRes_Success)(0);
@@ -6923,11 +6923,17 @@ POST(sys_close_range)
    if (last >= VG_(fd_hard_limit))
       last = VG_(fd_hard_limit) - 1;
 
-   for (fd = ARG1; fd <= last; fd++)
-      if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
-          && fd != VG_(log_output_sink).fd
-          && fd != VG_(xml_output_sink).fd)
-         ML_(record_fd_close)(tid, fd);
+   /* If the close_range range is too wide, we don't want to loop
+      through the whole range.  */
+   if (ARG2 == ~0U)
+     ML_(record_fd_close_range)(tid, ARG1);
+   else {
+      for (fd = ARG1; fd <= last; fd++)
+         if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
+             && fd != VG_(log_output_sink).fd
+             && fd != VG_(xml_output_sink).fd)
+            ML_(record_fd_close)(tid, fd);
+   }
 }
 #endif
 

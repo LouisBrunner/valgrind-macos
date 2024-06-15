@@ -149,7 +149,7 @@ EXTRA_DIST = \
 	fdleak_fcntl_xml.stderr.exp fdleak_fcntl_xml.vgtest \
 	fdleak_ipv4.stderr.exp fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
 	fdleak_ipv4_xml.stderr.exp fdleak_ipv4_xml.stdout.exp \
-	fdleak_ipv4_xml.vgtest \
+	fdleak_ipv4_xml.vgtest fdleak_ipv4_xml.stderr.exp-nomain \
 	fdleak_open.stderr.exp fdleak_open.vgtest \
 	fdleak_open_xml.stderr.exp fdleak_open_xml.vgtest \
 	fdleak_pipe.stderr.exp fdleak_pipe.vgtest \
@@ -249,6 +249,7 @@ EXTRA_DIST = \
 	socket_close_xml.stderr.exp socket_close_xml.vgtest \
 	file_dclose.stderr.exp file_dclose.vgtest \
 	file_dclose_xml.stderr.exp file_dclose_xml.vgtest \
+	file_dclose_xml.stderr.exp-nomain \
 	file_dclose.supp file_dclose_sup.stderr.exp file_dclose_sup.vgtest \
 	double_close_range.stderr.exp double_close_range.vgtest
 

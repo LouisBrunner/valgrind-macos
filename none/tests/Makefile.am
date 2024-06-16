@@ -251,7 +251,9 @@ EXTRA_DIST = \
 	file_dclose_xml.stderr.exp file_dclose_xml.vgtest \
 	file_dclose_xml.stderr.exp-nomain \
 	file_dclose.supp file_dclose_sup.stderr.exp file_dclose_sup.vgtest \
-	double_close_range.stderr.exp double_close_range.vgtest
+	double_close_range.stderr.exp double_close_range.vgtest \
+	log-track-fds.stderr.exp log-track-fds.vgtest \
+	xml-track-fds.stderr.exp xml-track-fds.vgtest
 
 
 check_PROGRAMS = \

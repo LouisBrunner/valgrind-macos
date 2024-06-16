@@ -1333,6 +1333,7 @@ Int VG_(connect_via_socket)( const HChar* str )
    res = my_connect(sd, &servAddr, sizeof(servAddr));
    if (res < 0) {
       /* connection failed */
+      VG_(close)(sd);
       return -2;
    }
 

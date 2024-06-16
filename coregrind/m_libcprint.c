@@ -425,6 +425,12 @@ static void finalize_sink_fd(OutputSink *sink, Int new_fd, Bool is_xml)
    } else {
       VG_(fcntl)(safe_fd, VKI_F_SETFD, VKI_FD_CLOEXEC);
       sink->fd = safe_fd;
+      /* If we created the new_fd (VgLogTo_File or VgLogTo_Socket), then we
+         don't need the original file descriptor open anymore. We only need
+         to keep it open if it was an existing fd given by the user (or
+         stderr).  */
+      if (sink->type != VgLogTo_Fd)
+         VG_(close)(new_fd);
    }
 }
 

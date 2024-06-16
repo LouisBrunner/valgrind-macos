@@ -26,9 +26,11 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+202770  open fd at exit --log-socket=127.0.0.1:1500 with --track-fds=yes
 276780  An instruction in fftw (Fast Fourier Transform) is unhandled by
         valgrind: vex x86->IR: unhandled instruction bytes:
         0x66 0xF 0x3A 0x2
+311655  --log-file=FILE leads to apparent fd leak
 377966  arm64 unhandled instruction dc zva392146  aarch64: unhandled
         instruction 0xD5380001 (MRS rT, midr_el1)
 392146  aarch64: unhandled instruction 0xD5380001 (MRS rT, midr_el1)
@@ -42,6 +44,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 487439  SIGILL in JDK11, JDK17
 487993  Alignment error when using Eigen with Valgrind and -m32
 488026  Use of `sizeof` instead of `strlen
+488379  --track-fds=yes errors that cannot be suppressed with --xml-file=
 488441  Add tests for --track-fds=yes --xml=yes and fd suppression tests
 
 To see details of a given bug, visit

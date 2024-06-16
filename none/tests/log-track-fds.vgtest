@@ -1,0 +1,4 @@
+# Simple test to make sure track-fds doesn't error on (internal) log-file
+# See https://bugs.kde.org/show_bug.cgi?id=311655
+prog: ../../tests/true
+vgopts: -q --track-fds=yes --log-file=/dev/stderr

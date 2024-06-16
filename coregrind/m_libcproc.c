@@ -905,6 +905,8 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
       return;
 
    if (pid == 0) {
+      /* We are the child, close writing fd that we don't use.  */
+      VG_(close)(fds[1]);
       /* Before proceeding, ensure parent has recorded child PID in map
          of SIGCHLD to ignore */
       while (child_wait == 1)
@@ -916,6 +918,7 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
          }
       }
 
+      /* Now close reading fd.  */
       VG_(close)(fds[0]);
       return;
    }
@@ -926,11 +929,15 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
       ht_sigchld_ignore = VG_(HT_construct)("ht.sigchld.ignore");
    VG_(HT_add_node)(ht_sigchld_ignore, n);
 
+   /* We are the parent process, close read fd that we don't use.  */
+   VG_(close)(fds[0]);
+
    child_wait = 0;
    if (VG_(write)(fds[1], &child_wait, sizeof(Int)) <= 0)
       VG_(message)(Vg_DebugMsg,
          "warning: Unable to record PID of internal process (write)\n");
 
+   /* Now close writing fd.  */
    VG_(close)(fds[1]);
 }
 

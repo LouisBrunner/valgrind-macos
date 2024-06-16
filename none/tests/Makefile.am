@@ -240,6 +240,7 @@ EXTRA_DIST = \
 	threadederrno.vgtest \
 	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
+	track-fds-exec-children.vgtest track-fds-exec-children.stderr.exp \
 	unit_debuglog.stderr.exp unit_debuglog.vgtest \
 	vgprintf.stderr.exp vgprintf.vgtest \
 	vgprintf_nvalgrind.stderr.exp vgprintf_nvalgrind.vgtest \
@@ -297,6 +298,7 @@ check_PROGRAMS = \
 	tls \
 	tls.so \
 	tls2.so \
+	track-fds-exec-children \
 	unit_debuglog \
 	valgrind_cpp_test \
 	vgprintf \
@@ -435,6 +437,7 @@ if VGCONF_OS_IS_DARWIN
 else
  tls2_so_LDFLAGS	= -shared
 endif
+track_fds_exec_children_SOURCES = track-fds-exec-children.c
 
 vgprintf_nvalgrind_SOURCES = vgprintf.c
 vgprintf_nvalgrind_CFLAGS = ${AM_CFLAGS} -DNVALGRIND

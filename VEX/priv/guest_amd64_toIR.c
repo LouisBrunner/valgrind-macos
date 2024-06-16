@@ -14138,7 +14138,7 @@ Long dis_ESC_0F__SSE2 ( Bool* decode_OK,
          goto decode_success;
       }
       /* 66 0F 73 /6 ib = PSLLQ by immediate */
-      if (have66noF2noF3(pfx) && sz == 2 
+      if (have66noF2noF3(pfx) && (sz == 2 || /* ignore redundant REX.W */ sz == 8)
           && epartIsReg(getUChar(delta))
           && gregLO3ofRM(getUChar(delta)) == 6) {
          delta = dis_SSE_shiftE_imm( pfx, delta, "psllq", Iop_ShlN64x2 );

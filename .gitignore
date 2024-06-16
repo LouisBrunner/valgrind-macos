@@ -1672,6 +1672,7 @@
 /none/tests/amd64/bug137714-amd64
 /none/tests/amd64/bug156404-amd64
 /none/tests/amd64/bug485148
+/none/tests/amd64/bug487439
 /none/tests/amd64/cet_nops
 /none/tests/amd64/clc
 /none/tests/amd64/cmpxchg

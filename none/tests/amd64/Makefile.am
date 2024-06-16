@@ -44,6 +44,7 @@ EXTRA_DIST = \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
 	bug485148.vgtest bug485148.stdout.exp bug485148.stderr.exp \
+	bug487439.vgtest bug487439.stdout.exp bug487439.stderr.exp \
 	cet_nops.vgtest cet_nops.stdout.exp cet_nops.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
@@ -107,6 +108,7 @@ check_PROGRAMS = \
 	amd64locked \
 	bt_flags \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
+	bug487439 \
 	cet_nops \
 	clc \
 	cmpxchg \
@@ -204,6 +206,7 @@ amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
 bug485148_CXXFLAGS      = ${AM_CXXFLAGS} -mfma
 bug485148_SOURCES       = bug485148.cpp
+bug487439_SOURCES	= bug487439.cpp
 cmpxchg_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 fb_test_amd64_CFLAGS	= $(AM_CFLAGS) -O -fno-strict-aliasing
 fb_test_amd64_LDADD	= -lm

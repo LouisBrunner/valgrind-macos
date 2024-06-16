@@ -39,6 +39,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         'guest_IP_AT_SYSCALL'
 486293  memccpy false positives
 486569  linux inotify_init syscall wrapper missing POST entry in syscall_table
+487439  SIGILL in JDK11, JDK17
 487993  Alignment error when using Eigen with Valgrind and -m32
 488026  Use of `sizeof` instead of `strlen
 488441  Add tests for --track-fds=yes --xml=yes and fd suppression tests

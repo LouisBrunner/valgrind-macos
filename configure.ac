@@ -416,7 +416,7 @@ case "${host_os}" in
         AC_DEFINE([FREEBSD_13_3], 1330, [FREEBSD_VERS value for FreeBSD 13.3])
         freebsd_13_3=1330
         AC_DEFINE([FREEBSD_14_0], 1400, [FREEBSD_VERS value for FreeBSD 14.0])
-        freebsd_14=1400
+        freebsd_14_0=1400
         AC_DEFINE([FREEBSD_14_1], 1410, [FREEBSD_VERS value for FreeBSD 14.1])
         freebsd_14_1=1410
         AC_DEFINE([FREEBSD_15], 1500, [FREEBSD_VERS value for FreeBSD 15.x])

@@ -6978,6 +6978,10 @@ PRE(sys_fcntl)
    if (ARG2 == VKI_F_SETLKW)
 #  endif
       *flags |= SfMayBlock;
+
+   if (!ML_(fd_allowed)(ARG1, "fcntl", tid, False)) {
+     SET_STATUS_Failure (VKI_EBADF);
+   }
 }
 
 POST(sys_fcntl)
@@ -7088,6 +7092,10 @@ PRE(sys_fcntl64)
    if (ARG2 == VKI_F_SETLKW)
 #  endif
       *flags |= SfMayBlock;
+
+   if (!ML_(fd_allowed)(ARG1, "fcntl64", tid, False)) {
+     SET_STATUS_Failure (VKI_EBADF);
+   }
 }
 
 POST(sys_fcntl64)

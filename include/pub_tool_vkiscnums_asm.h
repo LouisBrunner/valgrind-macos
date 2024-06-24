@@ -70,7 +70,6 @@
 #  include "vki/vki-scnums-shared-linux.h"
 
 #elif defined(VGP_mips64_linux)
-#  include "vki/vki-scnums-shared-linux.h"
 #  include "vki/vki-scnums-mips64-linux.h"
 
 #elif defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)

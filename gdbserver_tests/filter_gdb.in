@@ -55,6 +55,9 @@ s/^\[?1034hReading symbols/Reading symbols/
 #       Remove some Suse package manager messages
 /^Try: zypper install -C/d
 
+#      Remove python rpm module load warning
+/^Unable to load 'rpm' module.  Please install the python3-rpm package./d
+
 #       Remove vgdb message
 /relaying data between gdb and process/d
 

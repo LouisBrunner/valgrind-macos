@@ -36,6 +36,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         instruction 0xD5380001 (MRS rT, midr_el1)
 392146  aarch64: unhandled instruction 0xD5380001 (MRS rT, midr_el1)
 412377  SIGILL on cache flushes on arm64
+444781  MIPS: wrong syscall numbers used
 447989  Support Armv8.2 SHA-512 instructions
 453044  gbserver_tests failures in aarch64
 479661  Valgrind leaks file descriptors

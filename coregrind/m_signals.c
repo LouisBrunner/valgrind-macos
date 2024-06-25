@@ -1336,13 +1336,13 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Success)( 0 );
 
   bad_signo:
-   if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
+   if (VG_(showing_core_warnings)()) {
       VG_(umsg)("Warning: bad signal number %d in sigaction()\n", signo);
    }
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_signo_reserved:
-   if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
+   if (VG_(showing_core_warnings)()) {
       VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
                 VG_(signame)(signo));
       VG_(umsg)("         the %s signal is used internally by Valgrind\n", 
@@ -1351,7 +1351,7 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
   bad_sigkill_or_sigstop:
-   if (VG_(showing_core_errors)() && !VG_(clo_xml)) {
+   if (VG_(showing_core_warnings)()) {
       VG_(umsg)("Warning: ignored attempt to set %s handler in sigaction();\n",
                 VG_(signame)(signo));
       VG_(umsg)("         the %s signal is uncatchable\n", 

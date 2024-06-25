@@ -1,0 +1,3 @@
+Invalid file descriptor -1
+   at 0x........: close (in /...libc...)
+   by 0x........: main (fdbaduse.c:6)

@@ -10,6 +10,12 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* Bad file descriptor usage now generates a real error with
+  --track-fds=yes that is suppressible and shows up in the xml output
+  with full execution backtrace. The warnings shown without using the
+  option are deprecated and will be removed in a future valgrind
+  version.
+
 * ================== PLATFORM CHANGES =================
 
 * S390X added support for the DFLTCC instruction provided by the

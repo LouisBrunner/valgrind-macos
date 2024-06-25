@@ -297,9 +297,9 @@ void VG_(set_supp_extra)  ( Supp* su, void* extra )
 /*--- Helper fns                                           ---*/
 /*------------------------------------------------------------*/
 
-// Only show core errors if the tool wants to, we're not running with -q,
+// Only show core warnings if the tool wants to, we're not running with -q,
 // and were not outputting XML.
-Bool VG_(showing_core_errors)(void)
+Bool VG_(showing_core_warnings)(void)
 {
    return VG_(needs).core_errors && VG_(clo_verbosity) >= 1 && !VG_(clo_xml);
 }
@@ -967,7 +967,8 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
 
 static Bool is_fd_core_error (const Error *e)
 {
-   return e->ekind == FdBadClose || e->ekind == FdNotClosed;
+   return e->ekind == FdBadClose || e->ekind == FdNotClosed ||
+          e->ekind == FdBadUse;
 }
 
 static Bool core_eq_Error (VgRes res, const Error *e1, const Error *e2)
@@ -1017,6 +1018,8 @@ static const HChar *core_get_error_name(const Error *err)
       return "FdBadClose";
    case FdNotClosed:
       return "FdNotClosed";
+   case FdBadUse:
+      return "FdBadUse";
    default:
       VG_(umsg)("FATAL: unknown core error kind: %d\n", err->ekind );
       VG_(exit)(1);
@@ -1030,6 +1033,8 @@ static Bool core_error_matches_suppression(const Error* err, const Supp* su)
       return err->ekind == FdBadClose;
    case FdNotClosedSupp:
       return err->ekind == FdNotClosed;
+   case FdBadUse:
+      return err->ekind == FdBadUse;
    default:
       VG_(umsg)("FATAL: unknown core suppression kind: %d\n", su->skind );
       VG_(exit)(1);

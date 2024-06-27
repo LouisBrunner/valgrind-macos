@@ -1921,17 +1921,19 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
            UInt irrm = arg1con->Ico.U32;
            /* Find the ARM-encoded equivalent for |irrm|. */
            UInt armrm = 4; /* impossible */
+           Bool tiesToAway = False;
            switch (irrm) {
-              case Irrm_NEAREST: armrm = 0; break;
-              case Irrm_NegINF:  armrm = 2; break;
-              case Irrm_PosINF:  armrm = 1; break;
-              case Irrm_ZERO:    armrm = 3; break;
+              case Irrm_NEAREST:            armrm = 0; break;
+              case Irrm_NegINF:             armrm = 2; break;
+              case Irrm_PosINF:             armrm = 1; break;
+              case Irrm_ZERO:               armrm = 3; break;
+              case Irrm_NEAREST_TIE_AWAY_0: armrm = 0; tiesToAway = True; break;
               default: goto irreducible;
            }
            HReg src = (srcIsD ? iselDblExpr : iselFltExpr)
                          (env, e->Iex.Binop.arg2);
            HReg dst = newVRegI(env);
-           addInstr(env, ARM64Instr_VCvtF2I(cvt_op, dst, src, armrm));
+           addInstr(env, ARM64Instr_VCvtF2I(cvt_op, dst, src, armrm, tiesToAway));
            return dst;
         }
       } /* local scope */

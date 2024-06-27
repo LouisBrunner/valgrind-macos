@@ -1142,13 +1142,14 @@ ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS ) {
    return i;
 }
 ARM64Instr* ARM64Instr_VCvtF2I ( ARM64CvtOp how, HReg rD, HReg rS,
-                                 UChar armRM ) {
+                                 UChar armRM, Bool tiesToAway ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                   = ARM64in_VCvtF2I;
    i->ARM64in.VCvtF2I.how   = how;
    i->ARM64in.VCvtF2I.rD    = rD;
    i->ARM64in.VCvtF2I.rS    = rS;
    i->ARM64in.VCvtF2I.armRM = armRM;
+   i->ARM64in.VCvtF2I.tiesToAway = tiesToAway;
    vassert(armRM <= 3);
    return i;
 }
@@ -4463,47 +4464,51 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             ---------------- 01 --------------  FCVTP-------- (round to +inf)
             ---------------- 10 --------------  FCVTM-------- (round to -inf)
             ---------------- 11 --------------  FCVTZ-------- (round to zero)
+            ---------------- 00 100 ----------  FCVTAS------- (nearest, ties away)
+            ---------------- 00 101 ----------  FCVTAU------- (nearest, ties away)
 
             Rd is Xd when sf==1, Wd when sf==0
             Fn is Dn when x==1, Sn when x==0
             20:19 carry the rounding mode, using the same encoding as FPCR
+            18 enable translation to FCVTA{S,U}
          */
          UInt       rD    = iregEnc(i->ARM64in.VCvtF2I.rD);
          UInt       rN    = dregEnc(i->ARM64in.VCvtF2I.rS);
          ARM64CvtOp how   = i->ARM64in.VCvtF2I.how;
          UChar      armRM = i->ARM64in.VCvtF2I.armRM;
+         UChar      bit18 = i->ARM64in.VCvtF2I.tiesToAway ? 4 : 0;
          /* Just handle cases as they show up. */
          switch (how) {
             case ARM64cvt_F64_I32S: /* FCVTxS Wd, Dn */
-               *p++ = X_3_5_8_6_5_5(X000, X11110, X01100000 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X000, X11110, X01100000 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F64_I32U: /* FCVTxU Wd, Dn */
-               *p++ = X_3_5_8_6_5_5(X000, X11110, X01100001 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X000, X11110, X01100001 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F64_I64S: /* FCVTxS Xd, Dn */
-               *p++ = X_3_5_8_6_5_5(X100, X11110, X01100000 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X100, X11110, X01100000 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F64_I64U: /* FCVTxU Xd, Dn */
-               *p++ = X_3_5_8_6_5_5(X100, X11110, X01100001 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X100, X11110, X01100001 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F32_I32S: /* FCVTxS Wd, Sn */
-               *p++ = X_3_5_8_6_5_5(X000, X11110, X00100000 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X000, X11110, X00100000 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F32_I32U: /* FCVTxU Wd, Sn */
-               *p++ = X_3_5_8_6_5_5(X000, X11110, X00100001 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X000, X11110, X00100001 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F32_I64S: /* FCVTxS Xd, Sn */
-               *p++ = X_3_5_8_6_5_5(X100, X11110, X00100000 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X100, X11110, X00100000 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             case ARM64cvt_F32_I64U: /* FCVTxU Xd, Sn */
-               *p++ = X_3_5_8_6_5_5(X100, X11110, X00100001 | (armRM << 3),
+               *p++ = X_3_5_8_6_5_5(X100, X11110, X00100001 | (armRM << 3) | bit18,
                                     X000000, rN, rD);
                break;
             default:

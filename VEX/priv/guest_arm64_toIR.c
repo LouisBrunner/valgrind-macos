@@ -15937,7 +15937,7 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       } else {
          vassert(op == BITS3(1,0,0) || op == BITS3(1,0,1));
          switch (rm) {
-            case BITS2(0,0): ch = 'a'; irrm = Irrm_NEAREST; break;
+            case BITS2(0,0): ch = 'a'; irrm = Irrm_NEAREST_TIE_AWAY_0; break;
             default: vassert(0);
          }
       }
@@ -15961,45 +15961,53 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       IROp iop = iops[ix];
       // A bit of ATCery: bounce all cases we haven't seen an example of.
       if (/* F32toI32S */
-             (iop == Iop_F32toI32S && irrm == Irrm_ZERO)   /* FCVTZS Wd,Sn */
-          || (iop == Iop_F32toI32S && irrm == Irrm_NegINF) /* FCVTMS Wd,Sn */
-          || (iop == Iop_F32toI32S && irrm == Irrm_PosINF) /* FCVTPS Wd,Sn */
-          || (iop == Iop_F32toI32S && irrm == Irrm_NEAREST)/* FCVT{A,N}S W,S */
+             (iop == Iop_F32toI32S && irrm == Irrm_ZERO)              /* FCVTZS Wd,Sn */
+          || (iop == Iop_F32toI32S && irrm == Irrm_NegINF)            /* FCVTMS Wd,Sn */
+          || (iop == Iop_F32toI32S && irrm == Irrm_PosINF)            /* FCVTPS Wd,Sn */
+          || (iop == Iop_F32toI32S && irrm == Irrm_NEAREST)           /* FCVTNS W,S */
+          || (iop == Iop_F32toI32S && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAS W,S */
           /* F32toI32U */
-          || (iop == Iop_F32toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Sn */
-          || (iop == Iop_F32toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Sn */
-          || (iop == Iop_F32toI32U && irrm == Irrm_PosINF) /* FCVTPU Wd,Sn */
-          || (iop == Iop_F32toI32U && irrm == Irrm_NEAREST)/* FCVT{A,N}U W,S */
+          || (iop == Iop_F32toI32U && irrm == Irrm_ZERO)              /* FCVTZU Wd,Sn */
+          || (iop == Iop_F32toI32U && irrm == Irrm_NegINF)            /* FCVTMU Wd,Sn */
+          || (iop == Iop_F32toI32U && irrm == Irrm_PosINF)            /* FCVTPU Wd,Sn */
+          || (iop == Iop_F32toI32U && irrm == Irrm_NEAREST)           /* FCVTNU W,S */
+          || (iop == Iop_F32toI32U && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAU W,S */
           /* F32toI64S */
-          || (iop == Iop_F32toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Sn */
-          || (iop == Iop_F32toI64S && irrm == Irrm_NegINF) /* FCVTMS Xd,Sn */
-          || (iop == Iop_F32toI64S && irrm == Irrm_PosINF) /* FCVTPS Xd,Sn */
-          || (iop == Iop_F32toI64S && irrm == Irrm_NEAREST)/* FCVT{A,N}S X,S */
+          || (iop == Iop_F32toI64S && irrm == Irrm_ZERO)              /* FCVTZS Xd,Sn */
+          || (iop == Iop_F32toI64S && irrm == Irrm_NegINF)            /* FCVTMS Xd,Sn */
+          || (iop == Iop_F32toI64S && irrm == Irrm_PosINF)            /* FCVTPS Xd,Sn */
+          || (iop == Iop_F32toI64S && irrm == Irrm_NEAREST)           /* FCVTNS X,S */
+          || (iop == Iop_F32toI64S && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAS X,S */
           /* F32toI64U */
-          || (iop == Iop_F32toI64U && irrm == Irrm_ZERO)   /* FCVTZU Xd,Sn */
-          || (iop == Iop_F32toI64U && irrm == Irrm_NegINF) /* FCVTMU Xd,Sn */
-          || (iop == Iop_F32toI64U && irrm == Irrm_PosINF) /* FCVTPU Xd,Sn */
-          || (iop == Iop_F32toI64U && irrm == Irrm_NEAREST)/* FCVT{A,N}U X,S */
+          || (iop == Iop_F32toI64U && irrm == Irrm_ZERO)              /* FCVTZU Xd,Sn */
+          || (iop == Iop_F32toI64U && irrm == Irrm_NegINF)            /* FCVTMU Xd,Sn */
+          || (iop == Iop_F32toI64U && irrm == Irrm_PosINF)            /* FCVTPU Xd,Sn */
+          || (iop == Iop_F32toI64U && irrm == Irrm_NEAREST)           /* FCVTNU X,S */
+          || (iop == Iop_F32toI64U && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAU X,S */
           /* F64toI32S */
-          || (iop == Iop_F64toI32S && irrm == Irrm_ZERO)   /* FCVTZS Wd,Dn */
-          || (iop == Iop_F64toI32S && irrm == Irrm_NegINF) /* FCVTMS Wd,Dn */
-          || (iop == Iop_F64toI32S && irrm == Irrm_PosINF) /* FCVTPS Wd,Dn */
-          || (iop == Iop_F64toI32S && irrm == Irrm_NEAREST)/* FCVT{A,N}S W,D */
+          || (iop == Iop_F64toI32S && irrm == Irrm_ZERO)              /* FCVTZS Wd,Dn */
+          || (iop == Iop_F64toI32S && irrm == Irrm_NegINF)            /* FCVTMS Wd,Dn */
+          || (iop == Iop_F64toI32S && irrm == Irrm_PosINF)            /* FCVTPS Wd,Dn */
+          || (iop == Iop_F64toI32S && irrm == Irrm_NEAREST)           /* FCVTNS W,D */
+          || (iop == Iop_F64toI32S && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAS W,D */
           /* F64toI32U */
-          || (iop == Iop_F64toI32U && irrm == Irrm_ZERO)   /* FCVTZU Wd,Dn */
-          || (iop == Iop_F64toI32U && irrm == Irrm_NegINF) /* FCVTMU Wd,Dn */
-          || (iop == Iop_F64toI32U && irrm == Irrm_PosINF) /* FCVTPU Wd,Dn */
-          || (iop == Iop_F64toI32U && irrm == Irrm_NEAREST)/* FCVT{A,N}U W,D */
+          || (iop == Iop_F64toI32U && irrm == Irrm_ZERO)              /* FCVTZU Wd,Dn */
+          || (iop == Iop_F64toI32U && irrm == Irrm_NegINF)            /* FCVTMU Wd,Dn */
+          || (iop == Iop_F64toI32U && irrm == Irrm_PosINF)            /* FCVTPU Wd,Dn */
+          || (iop == Iop_F64toI32U && irrm == Irrm_NEAREST)           /* FCVTNU W,D */
+          || (iop == Iop_F64toI32U && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAU W,D */
           /* F64toI64S */
-          || (iop == Iop_F64toI64S && irrm == Irrm_ZERO)   /* FCVTZS Xd,Dn */
-          || (iop == Iop_F64toI64S && irrm == Irrm_NegINF) /* FCVTMS Xd,Dn */
-          || (iop == Iop_F64toI64S && irrm == Irrm_PosINF) /* FCVTPS Xd,Dn */
-          || (iop == Iop_F64toI64S && irrm == Irrm_NEAREST)/* FCVT{A,N}S X,D */
+          || (iop == Iop_F64toI64S && irrm == Irrm_ZERO)              /* FCVTZS Xd,Dn */
+          || (iop == Iop_F64toI64S && irrm == Irrm_NegINF)            /* FCVTMS Xd,Dn */
+          || (iop == Iop_F64toI64S && irrm == Irrm_PosINF)            /* FCVTPS Xd,Dn */
+          || (iop == Iop_F64toI64S && irrm == Irrm_NEAREST)           /* FCVTNS X,D */
+          || (iop == Iop_F64toI64S && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAS X,D */
           /* F64toI64U */
-          || (iop == Iop_F64toI64U && irrm == Irrm_ZERO)   /* FCVTZU Xd,Dn */
-          || (iop == Iop_F64toI64U && irrm == Irrm_NegINF) /* FCVTMU Xd,Dn */
-          || (iop == Iop_F64toI64U && irrm == Irrm_PosINF) /* FCVTPU Xd,Dn */
-          || (iop == Iop_F64toI64U && irrm == Irrm_NEAREST)/* FCVT{A,N}U X,D */
+          || (iop == Iop_F64toI64U && irrm == Irrm_ZERO)              /* FCVTZU Xd,Dn */
+          || (iop == Iop_F64toI64U && irrm == Irrm_NegINF)            /* FCVTMU Xd,Dn */
+          || (iop == Iop_F64toI64U && irrm == Irrm_PosINF)            /* FCVTPU Xd,Dn */
+          || (iop == Iop_F64toI64U && irrm == Irrm_NEAREST)           /* FCVTNU X,D */
+          || (iop == Iop_F64toI64U && irrm == Irrm_NEAREST_TIE_AWAY_0)/* FCVTAU X,D */
          ) {
         /* validated */
       } else {

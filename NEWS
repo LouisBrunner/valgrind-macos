@@ -49,6 +49,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 488026  Use of `sizeof` instead of `strlen
 488379  --track-fds=yes errors that cannot be suppressed with --xml-file=
 488441  Add tests for --track-fds=yes --xml=yes and fd suppression tests
+489040  massif trace change to show the location increasing the stack
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

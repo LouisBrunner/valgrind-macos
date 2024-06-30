@@ -1644,7 +1644,13 @@ static void update_stack_stats(SSizeT stack_szB_delta)
 static INLINE void new_mem_stack_2(SizeT len, const HChar* what)
 {
    if (have_started_executing_code) {
-      VERB(3, "<<< new_mem_stack (%lu)\n", len);
+      if (UNLIKELY(VG_(clo_verbosity) > 3)) {
+         const ThreadId cur_tid = VG_(get_running_tid) ();
+         const Addr cur_IP = VG_(get_IP) (cur_tid);
+         VERB(3, "<<< new_mem_stack (%lu) tid %u IP %s\n",
+              len, cur_tid,
+              VG_(describe_IP)(VG_(current_DiEpoch)(), cur_IP, NULL));
+      }
       n_stack_allocs++;
       update_stack_stats(len);
       maybe_take_snapshot(Normal, what);

@@ -1643,6 +1643,7 @@
 /none/tests/threadederrno
 /none/tests/timestamp
 /none/tests/tls
+/none/tests/track-fds-exec-children
 /none/tests/unit_debuglog
 /none/tests/valgrind_cpp_test
 /none/tests/vgcore.*

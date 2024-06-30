@@ -34,8 +34,10 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 337388  fcntl works on Valgrind's own file descriptors
 377966  arm64 unhandled instruction dc zva392146  aarch64: unhandled
         instruction 0xD5380001 (MRS rT, midr_el1)
+391148  Unhandled AVX instruction vmovq %xmm9,%xmm1
 392146  aarch64: unhandled instruction 0xD5380001 (MRS rT, midr_el1)
 412377  SIGILL on cache flushes on arm64
+417572  vex amd64->IR: unhandled instruction bytes: 0xC5 0x79 0xD6 0xED 0xC5
 444781  MIPS: wrong syscall numbers used
 447989  Support Armv8.2 SHA-512 instructions
 453044  gbserver_tests failures in aarch64
@@ -50,6 +52,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 488379  --track-fds=yes errors that cannot be suppressed with --xml-file=
 488441  Add tests for --track-fds=yes --xml=yes and fd suppression tests
 489040  massif trace change to show the location increasing the stack
+489088  Valgrind throws unhandled instruction bytes: 0xC5 0x79 0xD6 0xE0 0xC5
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

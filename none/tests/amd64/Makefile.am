@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
-# Used by avx-1.c and avx_estimate_insn.c
+# Used by avx-1.c, avx-vmovq and avx_estimate_insn.c
 noinst_HEADERS = avx_tests.h
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
@@ -29,6 +29,7 @@ EXTRA_DIST = \
 	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
 	avx_estimate_insn.vgtest avx_estimate_insn.stderr.exp \
 	avx_estimate_insn.stdout.exp avx_estimate_insn.stdout.exp-amd \
+	avx-vmovq.vgtest avx-vmovq.stdout.exp avx-vmovq.stderr.exp \
 	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
@@ -131,7 +132,8 @@ endif
 if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
   check_PROGRAMS += avx-1 \
-		    avx_estimate_insn
+		    avx_estimate_insn \
+		    avx-vmovq
 endif
 if BUILD_FMA4_TESTS
   check_PROGRAMS += fma4

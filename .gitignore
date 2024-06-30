@@ -1663,6 +1663,7 @@
 /none/tests/amd64/amd64locked
 /none/tests/amd64/asorep
 /none/tests/amd64/avx-1
+/none/tests/amd64/avx-vmovq
 /none/tests/amd64/avx2-1
 /none/tests/amd64/avx_estimate_insn
 /none/tests/amd64/bmi

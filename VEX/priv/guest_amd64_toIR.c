@@ -27015,7 +27015,6 @@ Long dis_ESC_0F__VEX (
       break;
 
    case 0xD6:
-      /* I can't even find any Intel docs for this one. */
       /* Basically: 66 0F D6 = MOVQ -- move 64 bits from G (lo half
          xmm) to E (mem or lo half xmm).  Looks like L==0(128), W==0
          (WIG, maybe?) */
@@ -27024,8 +27023,15 @@ Long dis_ESC_0F__VEX (
          UChar modrm = getUChar(delta);
          UInt  rG    = gregOfRexRM(pfx,modrm);
          if (epartIsReg(modrm)) {
-            /* fall through, awaiting test case */
             /* dst: lo half copied, hi half zeroed */
+            UInt rE = eregOfRexRM(pfx,modrm);
+            putXMMRegLane64( rE, 0, getXMMRegLane64( rG, 0 ));
+            /* zero bits 255:64 */
+            putXMMRegLane64( rE, 1, mkU64(0) );
+            putYMMRegLane128( rE, 1, mkV128(0) );
+            DIP("vmovq %s,%s\n", nameXMMReg(rG), nameXMMReg(rE));
+            delta += 1;
+            goto decode_success;
          } else {
             addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
             storeLE( mkexpr(addr), getXMMRegLane64( rG, 0 ));

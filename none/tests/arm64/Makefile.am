@@ -5,9 +5,11 @@ dist_noinst_SCRIPTS = filter_stderr filter_nan
 
 EXTRA_DIST = \
 	bug484426.stdout.exp bug484426.stderr.exp bug484426.vgtest \
-        crc32.stdout.exp crc32.stderr.exp crc32.vgtest \
-        cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
-        dc_cvax.vgtest dc_cvax.stderr.exp \
+	bug489338.stdout.exp bug489338.stderr.exp bug489338.vgtest \
+	crc32.stdout.exp crc32.stderr.exp crc32.vgtest \
+	cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
+	dc_cvax.vgtest dc_cvax.stderr.exp \
+	fcvta_s_u.vgtest fcvta_s_u.stderr.exp \
 	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
 	frinta_frintn.stderr.exp frinta_frintn.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
@@ -16,7 +18,7 @@ EXTRA_DIST = \
 	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
 	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest \
 	simd_dotprod.stdout.exp simd_dotprod.stderr.exp simd_dotprod.vgtest \
-        fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest \
+	fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest \
 	fp_and_simd_v82.stdout.exp fp_and_simd_v82.stderr.exp \
 	fp_and_simd_v82.vgtest \
 	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.stderr.exp \
@@ -28,6 +30,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	allexec \
 	bug484426 \
+	bug489338 \
         cvtf_imm \
         dc_cvax \
 	fp_and_simd \
@@ -53,7 +56,7 @@ if HAVE_SHA3
 endif
 
 if HAVE_CXX17
-  check_PROGRAMS += frinta_frintn
+  check_PROGRAMS += fcvta_s_u frinta_frintn
 endif
 
 if BUILD_ARMV82_DOTPROD_TESTS
@@ -78,6 +81,8 @@ fp_and_simd_v82_CFLAGS = $(AM_CFLAGS) -march=armv8.2-a+fp16+crypto
 # SHA-512 is not part of SHA-3, either as an algorithm or in Arm features, but
 # GCC lumps SHA-512 and SHA-3 extensions together as "sha3".
 sha512_v82_CFLAGS = $(AM_CFLAGS) -march=armv8.2-a+sha3
+fcvta_s_u_SOURCES  = fcvta_s_u.cpp
+fcvta_s_u_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 frinta_frintn_SOURCES  = frinta_frintn.cpp
 frinta_frintn_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0

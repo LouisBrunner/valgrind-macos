@@ -53,6 +53,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 488441  Add tests for --track-fds=yes --xml=yes and fd suppression tests
 489040  massif trace change to show the location increasing the stack
 489088  Valgrind throws unhandled instruction bytes: 0xC5 0x79 0xD6 0xE0 0xC5
+489338  arm64: Instruction fcvtas should round 322.5 to 323, but result is 322.
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -1810,9 +1810,11 @@
 /none/tests/arm64/allexec
 /none/tests/arm64/atomics_v81
 /none/tests/arm64/bug484426
+/none/tests/arm64/bug489338
 /none/tests/arm64/crc32
 /none/tests/arm64/cvtf_imm
 /none/tests/arm64/dc_cvax
+/none/tests/arm64/fcvta_s_u
 /none/tests/arm64/fmadd_sub
 /none/tests/arm64/fp_and_simd
 /none/tests/arm64/fp_and_simd_v82

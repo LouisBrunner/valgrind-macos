@@ -91,6 +91,7 @@ fp_and_simd_SOURCES     = fp_and_simd.c simd.h simd.c
 fp_and_simd_v82_SOURCES = fp_and_simd_v82.c simd.h simd.c
 sha512_v82_SOURCES      = sha512_v82.c simd.h simd.c
 
+bug489338_LDADD    = -lm
 fp_and_simd_LDADD  = -lm
 simd_v81_LDADD     = -lm
 fp_and_simd_v82_LDADD  = -lm

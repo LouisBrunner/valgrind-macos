@@ -14,7 +14,7 @@ The following ISA base and extensions are currently supported:
 | RV64A        | Atomic                            |   22/22 | (2)      |
 | RV64F        | Single-precision floating-point   |   30/30 | (3)      |
 | RV64D        | Double-precision floating-point   |   32/32 |          |
-| RV64Zicsr    | Control & status register         |     2/6 | (4), (5) |
+| RV64Zicsr    | Control & status register         |     3/6 | (4), (5) |
 | RV64Zifencei | Instruction-fetch fence           |     0/1 | (6)      |
 | RV64C        | Compressed                        |   37/37 |          |
 
@@ -22,7 +22,7 @@ Notes:
 (1) MULHSU is not recognized.
 (2) LR and SC use the VEX "fallback" method which suffers from the ABA problem.
 (3) Operations do not check if the input operands are correctly NaN-boxed.
-(4) CSRRC, CSRRWI, CSRRSI and CSRRCI are not recognized.
+(4) CSRRWI, CSRRSI and CSRRCI are not recognized.
 (5) Only registers fflags, frm and fcsr are accepted.
 (6) FENCE.I is not recognized.
 

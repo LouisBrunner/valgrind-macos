@@ -564,11 +564,10 @@ RISCV64Instr_FpLdSt(RISCV64FpLdStOp op, HReg reg, HReg base, Int soff12)
 }
 
 RISCV64Instr*
-RISCV64Instr_FpCSEL(IRType ty, HReg dst, HReg iftrue, HReg iffalse, HReg cond)
+RISCV64Instr_FpCSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond)
 {
    RISCV64Instr* i             = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
    i->tag                      = RISCV64in_FpCSEL;
-   i->RISCV64in.FpCSEL.ty      = ty;
    i->RISCV64in.FpCSEL.dst     = dst;
    i->RISCV64in.FpCSEL.iftrue  = iftrue;
    i->RISCV64in.FpCSEL.iffalse = iffalse;
@@ -797,14 +796,13 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf(")");
       return;
    case RISCV64in_FpCSEL: {
-      UChar suffix = i->RISCV64in.FpCSEL.ty == Ity_F32 ? 's' : 'd';
       vex_printf("(FpCSEL) beq ");
       ppHRegRISCV64(i->RISCV64in.FpCSEL.cond);
-      vex_printf(", zero, 1f; fmv.%c ", suffix);
+      vex_printf(", zero, 1f; fmv.d ");
       ppHRegRISCV64(i->RISCV64in.FpCSEL.dst);
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.FpCSEL.iftrue);
-      vex_printf("; c.j 2f; 1: fmv.%c ", suffix);
+      vex_printf("; c.j 2f; 1: fmv.d ");
       ppHRegRISCV64(i->RISCV64in.FpCSEL.dst);
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.FpCSEL.iffalse);
@@ -2268,23 +2266,20 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       break;
    }
    case RISCV64in_FpCSEL: {
-      /* ty = RISCV64in.FpCSEL.ty == Ity_F32 ? s : d
-
-            beq cond, zero, 1f
-            fmv.{ty} dst, iftrue
+      /*    beq cond, zero, 1f
+            fmv.d dst, iftrue
             c.j 2f
-         1: fmv.{ty} dst, iffalse
+         1: fmv.d dst, iffalse
          2:
-      */
+       */
       UInt dst     = fregEnc(i->RISCV64in.FpCSEL.dst);
       UInt iftrue  = fregEnc(i->RISCV64in.FpCSEL.iftrue);
       UInt iffalse = fregEnc(i->RISCV64in.FpCSEL.iffalse);
       UInt cond    = iregEnc(i->RISCV64in.FpCSEL.cond);
-      UInt fmt     = i->RISCV64in.FpCSEL.ty == Ity_F32 ? 0b0010000 : 0b0010001;
       p = emit_B(p, 0b1100011, (10 >> 1) & 0xfff, 0b000, cond, 0 /*x0/zero*/);
-      p = emit_R(p, 0b1010011, dst, 0b000, iftrue, iftrue, fmt);
+      p = emit_R(p, 0b1010011, dst, 0b000, iftrue, iftrue, 0b0010001);
       p = emit_CJ(p, 0b01, (6 >> 1) & 0x7ff, 0b101);
-      p = emit_R(p, 0b1010011, dst, 0b000, iffalse, iffalse, fmt);
+      p = emit_R(p, 0b1010011, dst, 0b000, iffalse, iffalse, 0b0010001);
       goto done;
    }
    case RISCV64in_CAS: {

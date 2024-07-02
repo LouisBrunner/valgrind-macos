@@ -458,11 +458,10 @@ typedef struct {
       } FpLdSt;
       /* Floating-point conditional-select pseudoinstruction. */
       struct {
-         IRType ty;
-         HReg   dst;
-         HReg   iftrue;
-         HReg   iffalse;
-         HReg   cond;
+         HReg dst;
+         HReg iftrue;
+         HReg iffalse;
+         HReg cond;
       } FpCSEL;
       /* Compare-and-swap pseudoinstruction. */
       struct {
@@ -562,7 +561,7 @@ RISCV64Instr_FpCompare(RISCV64FpCompareOp op, HReg dst, HReg src1, HReg src2);
 RISCV64Instr*
 RISCV64Instr_FpLdSt(RISCV64FpLdStOp op, HReg reg, HReg base, Int soff12);
 RISCV64Instr*
-RISCV64Instr_FpCSEL(IRType ty, HReg dst, HReg iftrue, HReg iffalse, HReg cond);
+RISCV64Instr_FpCSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond);
 RISCV64Instr*
 RISCV64Instr_CAS(RISCV64CASOp op, HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);

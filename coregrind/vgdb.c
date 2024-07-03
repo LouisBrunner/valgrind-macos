@@ -409,9 +409,9 @@ void acquire_lock(int fd, int valgrind_pid)
    Returns the nr of characters read, -1 if error.
    desc is a string used in tracing */
 static
-int read_buf(int fd, char* buf, const char* desc)
+size_t read_buf(int fd, char* buf, const char* desc)
 {
-   int nrread;
+   ssize_t nrread;
    DEBUG(2, "reading %s\n", desc);
    /* The file descriptor is on non-blocking mode and read_buf should only
       be called when poll gave us an POLLIN event signaling the file
@@ -420,8 +420,8 @@ int read_buf(int fd, char* buf, const char* desc)
       again.  */
    do {
       nrread = read(fd, buf, PBUFSIZ);
-   } while (nrread == -1 && errno == EAGAIN);
-   if (nrread == -1) {
+   } while (nrread == -1 && (errno == EINTR || errno == EAGAIN));
+   if (nrread < 0) {
       ERROR(errno, "error reading %s\n", desc);
       return -1;
    }
@@ -436,16 +436,20 @@ int read_buf(int fd, char* buf, const char* desc)
    valgrind process that there is new data.
    Returns True if write is ok, False if there was a problem. */
 static
-Bool write_buf(int fd, const char* buf, int size, const char* desc, Bool notify)
+Bool write_buf(int fd, const char* buf, size_t size, const char* desc,
+               Bool notify)
 {
-   int nrwritten;
-   int nrw;
+   size_t nrwritten;
+   ssize_t nrw;
    DEBUG(2, "writing %s len %d %.*s notify: %d\n", desc, size,
          size, buf, notify);
    nrwritten = 0;
    while (nrwritten < size) {
       nrw = write(fd, buf+nrwritten, size - nrwritten);
-      if (nrw == -1) {
+      if (nrw < 0) {
+         if (errno == EINTR || errno == EAGAIN)
+           continue;
+
          ERROR(errno, "error write %s\n", desc);
          return False;
       }
@@ -489,7 +493,7 @@ static
 Bool read_from_gdb_write_to_pid(int to_pid)
 {
    char buf[PBUFSIZ+1]; // +1 for trailing \0
-   int nrread;
+   ssize_t nrread;
    Bool ret;
 
    nrread = read_buf(from_gdb, buf, "from gdb on stdin");
@@ -729,7 +733,13 @@ getpkt(char *buf, int fromfd, int ackfd)
 
      TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
                (c1 << 4) + c2, csum, buf);
-     if (write(ackfd, "-", 1) != 1)
+     ssize_t res = 0;
+     while (res == 0) {
+        res = write(ackfd, "-", 1);
+        if (res == -1 && (errno == EINTR || errno == EAGAIN))
+          res = 0;
+     }
+     if (res < 0)
         ERROR(errno, "error when writing - (nack)\n");
      else
         add_written(1);
@@ -931,12 +941,15 @@ char *decode_hexstring (const char *buf, size_t prefixlen, size_t len)
 }
 
 static Bool
-write_to_gdb (const char *m, int cnt)
+write_to_gdb (const char *m, size_t cnt)
 {
-   int written = 0;
+   size_t written = 0;
    while (written < cnt) {
-      int res = write (to_gdb, m + written, cnt - written);
+      ssize_t res = write (to_gdb, m + written, cnt - written);
       if (res < 0) {
+         if (errno == EINTR || errno == EAGAIN)
+            continue;
+
          perror ("write_to_gdb");
          return False;
       }
@@ -987,12 +1000,12 @@ create_packet(const char *msg)
    return p;
 }
 
-static int read_one_char (char *c)
+static ssize_t read_one_char (char *c)
 {
-   int i;
+   ssize_t i;
    do
        i = read (from_gdb, c, 1);
-   while (i == -1 && errno == EINTR);
+   while (i < 0 && (errno == EINTR || errno == EAGAIN));
 
    return i;
 }
@@ -1000,7 +1013,7 @@ static int read_one_char (char *c)
 static Bool
 send_packet(const char *reply, int noackmode)
 {
-   int ret;
+   ssize_t ret;
    char c;
 
 send_packet_start:
@@ -1026,10 +1039,10 @@ send_packet_start:
 // Skipping any other characters.
 // Returns the size of the packet, 0 for end of input,
 // or -1 if no packet could be read.
-static int receive_packet(char *buf, int noackmode)
+static ssize_t receive_packet(char *buf, int noackmode)
 {
-   int bufcnt = 0;
-   int ret;
+   size_t bufcnt = 0;
+   ssize_t ret;
    char c;
    char c1 = '\0';
    char c2 = '\0';
@@ -1162,7 +1175,7 @@ static void count_len(char delim, char *buf, size_t *len)
 static void early_exit (int exit_code, const char* exit_info)
 {
    char buf[PBUFSIZ+1];
-   int pkt_size;
+   ssize_t pkt_size;
    struct stat fdstat;
 
    if (fstat(from_gdb, &fdstat) != 0)
@@ -1179,7 +1192,7 @@ static void early_exit (int exit_code, const char* exit_info)
       alarm(5);
       pkt_size = receive_packet(buf, 0);
       if (pkt_size <= 0)
-         DEBUG(1, "early_exit receive_packet: %d\n", pkt_size);
+         DEBUG(1, "early_exit receive_packet: %zd\n", pkt_size);
       else {
          DEBUG(1, "packet received: '%s'\n", buf);
          sprintf(buf, "E.%s", exit_info);
@@ -1241,12 +1254,14 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
       // Otherwise the child sent us an errno code about what went wrong.
       close (pipefd[1]);
 
+      size_t nr_read = 0;
       while (err == 0) {
-         int r = read (pipefd[0], &err, sizeof (int));
+         ssize_t r = read (pipefd[0], ((char *)&err) + nr_read,
+                           sizeof (int) - nr_read);
          if (r == 0) // end of file, good pipe closed after execve
             break;
          if (r == -1) {
-            if (errno == EINTR)
+            if (errno == EINTR || errno == EAGAIN)
                continue;
             else {
                err = errno;
@@ -1272,11 +1287,15 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
             err = errno;
             perror("chdir");
             // We try to write the result to the parent, but always exit.
-            int written = 0;
+            size_t written = 0;
             while (written < sizeof (int)) {
-               int nrw = write (pipefd[1], &err, sizeof (int) - written);
-               if (nrw == -1)
+               int nrw = write (pipefd[1], ((char *)&err) + 1,
+                                sizeof (int) - written);
+               if (nrw == -1) {
+                  if (errno == EINTR || errno == EAGAIN)
+                     continue;
                   break;
+               }
                written += nrw;
             }
             _exit (-1);
@@ -1347,11 +1366,15 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
       // perror ("execvp valgrind");
       // printf ("execve returned??? confusing: %d\n", res);
       // We try to write the result to the parent, but always exit.
-      int written = 0;
+      size_t written = 0;
       while (written < sizeof (int)) {
-         int nrw = write (pipefd[1], &err, sizeof (int) - written);
-         if (nrw == -1)
+         ssize_t nrw = write (pipefd[1], ((char *) &err) + 1,
+                              sizeof (int) - written);
+         if (nrw == -1) {
+            if (errno == EINTR || errno == EAGAIN)
+              continue;
             break;
+         }
          written += nrw;
       }
       _exit (-1);
@@ -1368,7 +1391,8 @@ void do_multi_mode(int check_trials, int in_port)
    char *q_buf = vmalloc(PBUFSIZ+1); //save the qSupported packet sent by gdb
                                      //to send it to the valgrind gdbserver later
    q_buf[0] = '\0';
-   int noackmode = 0, pkt_size = 0, bad_unknown_packets = 0;
+   int noackmode = 0, bad_unknown_packets = 0;
+   ssize_t pkt_size = 0;
    char *string = NULL;
    char *working_dir = NULL;
    DEBUG(1, "doing multi stuff...\n");
@@ -1377,7 +1401,7 @@ void do_multi_mode(int check_trials, int in_port)
          the pipe to gdb. */
        pkt_size = receive_packet(buf, noackmode);
        if (pkt_size <= 0) {
-          DEBUG(1, "receive_packet: %d\n", pkt_size);
+          DEBUG(1, "receive_packet: %zd\n", pkt_size);
           break;
        }
 
@@ -1554,7 +1578,7 @@ void do_multi_mode(int check_trials, int in_port)
              }
 
              free(len);
-             for (int i = 0; i < count; i++)
+             for (size_t i = 0; i < count; i++)
 		free (decoded_string[i]);
              free (decoded_string);
 	  } else {
@@ -1836,7 +1860,7 @@ void standalone_send_commands(int pid,
    int to_pid = -1; /* fd to write to pid */
 
    int i;
-   int hi;
+   size_t hi;
    char hex[3];
    unsigned char cksum;
    char *hexcommand;
@@ -1889,8 +1913,8 @@ void standalone_send_commands(int pid,
       hexcommand = vmalloc(packet_len_for_command(commands[nc]));
       hexcommand[0] = 0;
       strcat(hexcommand, "$qRcmd,");
-      for (i = 0; i < strlen(commands[nc]); i++) {
-         sprintf(hex, "%02x", (unsigned char) commands[nc][i]);
+      for (size_t nci = 0; nci < strlen(commands[nc]); nci++) {
+         sprintf(hex, "%02x", (unsigned char) commands[nc][nci]);
          // Need to use unsigned char, to avoid sign extension.
          strcat(hexcommand, hex);
       }
@@ -1970,7 +1994,8 @@ static
 void report_pid(int pid, Bool on_stdout)
 {
    char cmdline_file[50];   // large enough
-   int fd, i;
+   int fd;
+   size_t i;
    FILE *out = on_stdout ? stdout : stderr;
 
    TSFPRINTF(out, "use --pid=%d for ", pid);
@@ -1982,20 +2007,33 @@ void report_pid(int pid, Bool on_stdout)
             cmdline_file, strerror(errno));
       fprintf(out, "(could not open process command line)\n");
    } else {
-      char cmdline[100];
-      ssize_t sz;
-      while ((sz = read(fd, cmdline, sizeof cmdline - 1)) > 0) {
-         for (i = 0; i < sz; i++)
-            if (cmdline[i] == 0)
-               cmdline[i] = ' ';
-         cmdline[sz] = 0;
-         fprintf(out, "%s", cmdline);
+      #define MAX_CMDLINE 4096
+      char cmdline[MAX_CMDLINE];
+      size_t nr_read = 0;
+      while (nr_read < MAX_CMDLINE - 1) {
+	 ssize_t sz = read(fd, cmdline, MAX_CMDLINE - nr_read - 1);
+         if (sz == 0)
+	    break;
+	 if (sz < 0) {
+            if (errno == EINTR || errno == EAGAIN)
+               continue;
+            else {
+               DEBUG(1, "error reading cmdline file %s %s\n",
+                     cmdline_file, strerror(errno));
+               fprintf(out, "(error reading process command line)\n");
+               close (fd);
+               return;
+            }
+         }
+         nr_read += sz;
       }
-      if (sz == -1) {
-         DEBUG(1, "error reading cmdline file %s %s\n",
-               cmdline_file, strerror(errno));
-         fprintf(out, "(error reading process command line)");
-      }
+
+      for (i = 0; i < nr_read; i++)
+         if (cmdline[i] == 0)
+            cmdline[i] = ' ';
+      cmdline[nr_read] = 0;
+
+      fprintf(out, "%s", cmdline);
       fprintf(out, "\n");
       close(fd);
    }

@@ -47,8 +47,11 @@ $SED -e '/Use.*info auto-load python-scripts.*/d' |
 $SED -e '/warning: Invalid entry in .debug_gdb_scripts section/d' |
 $SED -e "/Use .info auto-load python .REGEXP.. to list them./d" |
 
-# Remove python rpm module load warning
-$SED -e "/^Unable to load 'rpm' module.  Please install the python3-rpm package./d" |
+# Remove python rpm module load warnings
+$SED -e "/^Unable to load /d" |
+$SED -e "/^the RPM suggestions /d" |
+$SED -e "/^installing missing debuginfo /d" |
+$SED -e "/^please install /d" |
 
 # and filter out any remaining empty lines
 $SED -e '/^$/d'

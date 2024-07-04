@@ -891,6 +891,19 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       /* hack apparently needed on MontaVista Linux */
       if (filename && VG_(strstr)(filename, "/.lib-ro/"))
          cmp_devino = False;
+
+      /* On linux systems we want to avoid dev/inode check on btrfs,
+         we can use the statfs call for that, except on nanomips
+         (which also doesn't have a sys_fstatfs syswrap).
+         See https://bugs.kde.org/show_bug.cgi?id=317127 */
+#if !defined(VGP_nanomips_linux)
+      struct vki_statfs statfs = {0};
+      SysRes res = VG_(do_syscall2)(__NR_statfs, (UWord)filename,
+                                    (UWord)&statfs);
+      if (!sr_isError(res) && statfs.f_type == VKI_BTRFS_SUPER_MAGIC) {
+         cmp_devino = False;
+      }
+#endif
 #endif
       
       /* If we are doing sloppy execute permission checks then we

@@ -2232,7 +2232,7 @@
 /none/tests/solaris/reserve_sysstat_zone_addr
 /none/tests/solaris/resolv
 /none/tests/solaris/sigresend
-/none/tests/solaris/stack-overflow
+/none/tests/solaris/stack_overflow
 /none/tests/solaris/stack_prot
 /none/tests/solaris/threads_exitall
 

@@ -169,9 +169,18 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 door_kill_LDADD = -lpthread
+name_service_door_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 ioctl_LDADD = -lsocket
+ldynsym_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_RESULT@
 ldynsym_LDFLAGS = -Wl,--strip-all
 pkcs11_LDADD = -lpkcs11
+scalar_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_UNUSED_FUNCTION@
+scalar_ioctl_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+scalar_obsolete_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+scalar_auditon_stat_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+scalar_getrandom_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+scalar_lwp_kill_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+scalar_utimesys_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 sendfilev_LDADD = -lsendfile
 
 inlinfo_SOURCES = inlinfo.c

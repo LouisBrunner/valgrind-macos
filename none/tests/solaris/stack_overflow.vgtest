@@ -1,2 +1,2 @@
-prog: stack-overflow
+prog: stack_overflow
 cleanup: rm -f vgcore.*

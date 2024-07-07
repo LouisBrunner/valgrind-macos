@@ -731,6 +731,8 @@ memalign2_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 if VGCONF_OS_IS_SOLARIS
 memalign2_CFLAGS	+= -D__EXTENSIONS__
 posix_memalign_CFLAGS	= ${AM_CFLAGS} -D__EXTENSIONS__
+else
+posix_memalign_CFLAGS	= ${AM_CFLAGS}
 endif
 
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp

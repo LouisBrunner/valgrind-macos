@@ -4163,6 +4163,54 @@ POST(sys_memfd_create)
    }
 }
 
+PRE(sys_landlock_create_ruleset)
+{
+   PRINT("sys_landlock_create_ruleset ( %#" FMT_REGWORD "x, %lu, %lu )",
+         ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "landlock_create_ruleset",
+                 const struct vki_landlock_ruleset_attr*, attr,
+                 vki_size_t, size, vki_uint32_t, flags);
+   PRE_MEM_READ( "landlock_create_ruleset(value)", ARG1, ARG2 );
+
+   /* XXX Alternatively we could always fail with EOPNOTSUPP
+      since the rules might interfere with valgrind itself.  */
+}
+
+POST(sys_landlock_create_ruleset)
+{
+   /* Returns either the abi version or a file descriptor.  */
+   if (ARG3 != VKI_LANDLOCK_CREATE_RULESET_VERSION) {
+      if (!ML_(fd_allowed)(RES, "landlock_create_ruleset", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless)(tid, RES);
+      }
+   }
+}
+
+PRE(sys_landlock_add_rule)
+{
+   PRINT("sys_landlock_add_rule ( %ld, %lu, %#" FMT_REGWORD "x, %lu )",
+         SARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "landlock_add_rule",
+                 int, ruleset_fd, enum vki_landlock_rule_type, rule_type,
+                 const void*, rule_attr, vki_uint32_t, flags);
+   if (!ML_(fd_allowed)(ARG1, "landlock_add_rule", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   /* XXX Depending on rule_type we should also check the given rule_attr.  */
+}
+
+PRE(sys_landlock_restrict_self)
+{
+   PRINT("sys_landlock_restrict_self ( %ld, %lu )", SARG1, ARG2);
+   PRE_REG_READ2(long, "landlock_create_ruleset",
+                 int, ruleset_fd, vki_uint32_t, flags);
+   if (!ML_(fd_allowed)(ARG1, "landlock_restrict_self", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+}
+
 PRE(sys_memfd_secret)
 {
    PRINT("sys_memfd_secret ( %#" FMT_REGWORD "x )", ARG1);

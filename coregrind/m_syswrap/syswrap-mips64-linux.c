@@ -824,7 +824,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_openat2, sys_openat2),
    LINXY (__NR_pidfd_getfd, sys_pidfd_getfd),
    LINX_ (__NR_faccessat2, sys_faccessat2),
-   LINXY(__NR_epoll_pwait2, sys_epoll_pwait2),
+   LINXY (__NR_epoll_pwait2, sys_epoll_pwait2),
+   LINXY (__NR_landlock_create_ruleset, sys_landlock_create_ruleset),
+   LINX_ (__NR_landlock_add_rule, sys_landlock_add_rule),
+   LINX_ (__NR_landlock_restrict_self, sys_landlock_restrict_self),
    LINX_ (__NR_fchmodat2, sys_fchmodat2),
 };
 

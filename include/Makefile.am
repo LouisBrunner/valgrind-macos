@@ -107,4 +107,5 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-xen-xsm.h		\
 	vki/vki-xen-x86.h		\
 	vki/vki-linux-drm.h		\
-	vki/vki-linux-io_uring.h
+	vki/vki-linux-io_uring.h	\
+	vki/vki-linux-landlock.h

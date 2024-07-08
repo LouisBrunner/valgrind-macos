@@ -328,6 +328,11 @@ DECL_TEMPLATE(linux, sys_pidfd_open);
 DECL_TEMPLATE(linux, sys_close_range);
 DECL_TEMPLATE(linux, sys_openat2);
 
+// Linux-specific (new in Linux 5.13)
+DECL_TEMPLATE(linux, sys_landlock_create_ruleset)
+DECL_TEMPLATE(linux, sys_landlock_add_rule)
+DECL_TEMPLATE(linux, sys_landlock_restrict_self)
+
 // Linux-specific (new in Linux 5.14)
 DECL_TEMPLATE(linux, sys_memfd_secret);
 

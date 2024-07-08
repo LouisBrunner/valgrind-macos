@@ -47,6 +47,7 @@
 #  include "vki/vki-linux.h"
 #  include "vki/vki-linux-drm.h"
 #  include "vki/vki-linux-io_uring.h"
+#  include "vki/vki-linux-landlock.h"
 #elif defined(VGO_darwin)
 #  include "vki/vki-darwin.h"
 #elif defined(VGO_solaris)

@@ -2542,7 +2542,7 @@ FLAG_MLONG_DOUBLE_128="-mlong-double-128"
 AC_SUBST(FLAG_MLONG_DOUBLE_128)
 
 # does this toolchain support lto ?
-# Not checked for if --enable-lto=no was given, or if LTO_AR or LTO_RANLIG
+# Not checked for if --enable-lto=no was given, or if LTO_AR or LTO_RANLIB
 # are not defined
 # If not enable-lto=* arg is provided, default to no, as  lto builds are
 # a lot slower, and so not appropriate for Valgrind developments.

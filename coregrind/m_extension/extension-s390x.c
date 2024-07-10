@@ -79,7 +79,8 @@ union reg_pair {
    unsigned __int128 pair;
 };
 
-#define S390_SETBIT(x) (1UL << (63 - (x % 64)))
+#define S390_SETBIT(x)       (1UL << (63 - (x % 64)))
+#define S390_SETBITS(lo, hi) (((1UL << (hi + 1 - lo)) - 1) << (63 - (hi % 64)))
 
 /* Helper routine for query functions: Filter the bit vector `fc' using a given
    `filter' vector */
@@ -753,6 +754,111 @@ static UWord do_extension_DFLTCC(ThreadState* tst, ULong variant)
 }
 
 /*---------------------------------------------------------------*/
+/*--- STFLE (store facility list extended)                    ---*/
+/*---------------------------------------------------------------*/
+
+static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
+{
+   Int    cc      = 0;
+   UChar  b2      = variant & 0xf;
+   UShort d2      = (variant >> 8) & 0xfff;
+   ULong  gpr0    = READ_GPR(tst, "STFLE(r0)", 0);
+   ULong  last_dw = gpr0 & 0xff;
+   ULong  addr    = READ_GPR(tst, "STFLE(b2)", b2) + d2;
+
+   PRE_MEM_WRITE(tst, "STFLE(bits)", addr, (last_dw + 1) * sizeof(ULong));
+   static const ULong accepted_facility[] = {
+      /* ===  0 .. 63  === */
+      (S390_SETBITS(0, 16)
+       /* 17: message-security-assist, not supported */
+       | S390_SETBITS(18, 19)
+       /* 20: HFP-multiply-and-add/subtract, not supported */
+       | S390_SETBITS(21, 22)
+       /* 23: HFP-unnormalized-extension, not supported */
+       | S390_SETBITS(24, 25)
+       /* 26: parsing-enhancement, not supported */
+       | S390_SETBITS(27, 28)
+       /* 29: unassigned */
+       | S390_SETBITS(30, 30)
+       /* 31: extract-CPU-time, not supported */
+       | S390_SETBITS(32, 41)
+       /* 42-43: DFP, not fully supported */
+       /* 44: PFPO, not fully supported */
+       | S390_SETBITS(45, 47)
+       /* 48: DFP zoned-conversion, not supported */
+       /* 49: includes PPA, not supported */
+       /* 50: constrained transactional-execution, not supported */
+       | S390_SETBITS(51, 55)
+       /* 56: unassigned */
+       /* 57: MSA5, not supported */
+       | S390_SETBITS(58, 63)),
+
+      /* ===  64 .. 127  === */
+      (S390_SETBITS(64, 72)
+       /* 73: transactional-execution, not supported */
+       | S390_SETBITS(74, 75)
+       /* 76: MSA3, not supported */
+       /* 77: MSA4, not supported */
+       | S390_SETBITS(78, 78)
+       /* 80: DFP packed-conversion, not supported */
+       /* 81: PPA-in-order, not supported */
+       | S390_SETBITS(82, 82)
+       /* 83-127: unassigned */),
+
+      /* ===  128 .. 191  === */
+      (S390_SETBITS(128, 131)
+       /* 132: unassigned */
+       /* 133: guarded-storage, not supported */
+       /* 134: vector packed decimal, not supported */
+       | S390_SETBITS(135, 135)
+       /* 136: unassigned */
+       /* 137: unassigned */
+       | S390_SETBITS(138, 142)
+       /* 143: unassigned */
+       | S390_SETBITS(144, 145)
+       /* 146: MSA8, not supported */
+       | S390_SETBITS(147, 149)
+       /* 150: unassigned */
+       | S390_SETBITS(151, 151)
+       /* 152: vector packed decimal enhancement, not supported */
+       /* 153: unassigned */
+       /* 154: unassigned */
+       /* 155: MSA9, not supported */
+       | S390_SETBITS(156, 156)
+       /* 157-164: unassigned */
+       | S390_SETBITS(165, 165)
+       /* 166-167: unassigned */
+       | S390_SETBITS(168, 168)
+       /* 168-191: unassigned */),
+
+      /* ===  192 .. 255  === */
+      /* 192: vector-packed-decimal, not supported */
+      (S390_SETBITS(193, 194)
+       /* 195: unassigned */
+       | S390_SETBITS(196, 197)),
+   };
+   asm("lgr 0,%[r0]\n"
+       ".insn s,0xb2b00000,%[out]\n" /* stfle */
+       "lgr %[r0],0\n"
+       "ipm %[cc]\n"
+       "srl %[cc],28\n"
+       : [out] "=Q"(*(ULong(*)[last_dw + 1])(void*)addr), [r0] "+d"(gpr0),
+         [cc] "=d"(cc)
+       :
+       : "cc");
+
+   WRITE_GPR(tst, 0, gpr0);
+   if (last_dw > (gpr0 & 0xff))
+      last_dw = gpr0 & 0xff;
+   s390_filter_functions((ULong*)addr, (last_dw + 1) * sizeof(ULong),
+                         accepted_facility, sizeof(accepted_facility));
+   POST_MEM_WRITE(tst, addr, (last_dw + 1) * sizeof(ULong));
+
+   WRITE_CC(tst, cc);
+   return ExtErr_OK;
+}
+
+/*---------------------------------------------------------------*/
 /*--- Main function: select and call appropriate extension    ---*/
 /*---------------------------------------------------------------*/
 
@@ -769,6 +875,8 @@ enum ExtensionError ML_(do_client_extension)(ThreadState* tst)
       return do_extension_NNPA(tst, variant);
    case S390_EXT_DFLT:
       return do_extension_DFLTCC(tst, variant);
+   case S390_EXT_STFLE:
+      return do_extension_STFLE(tst, variant);
    default:
       VG_(core_panic)("unknown extension ID");
    }

@@ -3529,6 +3529,18 @@ s390_format_S_RD(const HChar *(*irgen)(IRTemp op2addr),
 }
 
 static void
+s390_format_S_RD_raw(const HChar *(*irgen)(UChar b2, UShort d2),
+                     UChar b2, UShort d2)
+{
+   const HChar *mnm;
+
+   mnm = irgen(b2, d2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC2(MNM, UDXB), mnm, d2, 0, b2);
+}
+
+static void
 s390_format_SI_URD(const HChar *(*irgen)(UChar i2, IRTemp op1addr),
                    UChar i2, UChar b1, UShort d1)
 {
@@ -15287,37 +15299,13 @@ s390_irgen_STCKE(IRTemp op2addr)
 }
 
 static const HChar *
-s390_irgen_STFLE(IRTemp op2addr)
+s390_irgen_STFLE(UChar b2, UShort d2)
 {
    if (! s390_host_has_stfle) {
       emulation_failure(EmFail_S390X_stfle);
       return "stfle";
    }
-
-   IRDirty *d;
-   IRTemp cc = newTemp(Ity_I64);
-
-   /* IRExpr_GSPTR() => Need to pass pointer to guest state to helper */
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STFLE",
-                         &s390x_dirtyhelper_STFLE,
-                         mkIRExprVec_2(IRExpr_GSPTR(), mkexpr(op2addr)));
-
-   d->nFxState = 1;
-   vex_bzero(&d->fxState, sizeof(d->fxState));
-
-   d->fxState[0].fx     = Ifx_Modify;  /* read then write */
-   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_r0);
-   d->fxState[0].size   = sizeof(ULong);
-
-   d->mAddr = mkexpr(op2addr);
-   /* Pretend all double words are written */
-   d->mSize = S390_NUM_FACILITY_DW * sizeof(ULong);
-   d->mFx   = Ifx_Write;
-
-   stmt(IRStmt_Dirty(d));
-
-   s390_cc_set(cc);
-
+   extension(S390_EXT_STFLE, b2 | (d2 << 8));
    return "stfle";
 }
 
@@ -20034,7 +20022,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb2a7: s390_format_RRF_M0RERE(s390_irgen_CU12, RRF3_r3(ovl),
                                        RRF3_r1(ovl), RRF3_r2(ovl));
       goto ok;
-   case 0xb2b0: s390_format_S_RD(s390_irgen_STFLE, S_b2(ovl), S_d2(ovl));
+   case 0xb2b0: s390_format_S_RD_raw(s390_irgen_STFLE, S_b2(ovl), S_d2(ovl));
                                  goto ok;
    case 0xb2b1: /* STFL */ goto unimplemented;
    case 0xb2b2: /* LPSWE */ goto unimplemented;

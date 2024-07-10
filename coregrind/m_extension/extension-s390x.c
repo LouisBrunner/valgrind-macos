@@ -183,8 +183,9 @@ static enum ExtensionError do_extension_PRNO(ThreadState* tst, ULong variant)
       cc = do_PRNO_insn(func, parms, &addr1, &len1, &addr2, &len2);
       POST_MEM_WRITE(tst, parms, parms_len);
       if (mflag == 0) {
-         WRITE_GPR(tst, r2 + 1, len1);
-         POST_MEM_WRITE(tst, orig_addr1, orig_len1 - len1);
+         WRITE_GPR(tst, r1 + 1, len1);
+         // The operand is filled from right to left
+         POST_MEM_WRITE(tst, orig_addr1 + len1, orig_len1 - len1);
       }
       break;
    case 114: // TRNG

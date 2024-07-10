@@ -592,7 +592,12 @@ several ways we know of that an interior-pointer can occur:</para>
     this case, some compilers store a "magic cookie" containing the array
     length at the start of the allocated block, and return a pointer to just
     past that magic cookie, i.e. an interior-pointer.
+    <!--
+    The link below is to an old C++ feature and has rotted away.
+    There are various copies around the web, probably also likely to rot.
     See <ulink url="https://docs.freebsd.org/info/gxxint/gxxint.info.Free_Store.html">this
+    -->
+    See <ulink url="https://www.math.utah.edu/docs/info/gxxint_1.html#SEC17">this
     page</ulink> for more information.</para>
   </listitem>
 

@@ -63,6 +63,12 @@ file.  Eg:
   perl tests/vg_regtest memcheck/tests/badfree.vgtest
   perl tests/vg_regtest memcheck/tests/badfree
 
+The details of each vgtest run are logged to individual "vgtest.log"
+files.  These are listed, and non-passing tests detailed, in the
+test-suite-overall.log file.  (Token *.trs and test-suite.log files
+are also created, for emulating automake-style testsuites, as expected
+by tools such as bunsen.)
+
 
 Running the performance tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

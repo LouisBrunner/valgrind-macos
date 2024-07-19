@@ -2446,3 +2446,8 @@
 
 # /VEX/switchback/
 /VEX/switchback/switchback
+
+*.vgtest*.trs
+*.vgtest*.log
+/test-suite-overall.log
+test-suite.log

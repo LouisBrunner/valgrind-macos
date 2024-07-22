@@ -56,6 +56,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 489088  Valgrind throws unhandled instruction bytes: 0xC5 0x79 0xD6 0xE0 0xC5
 489338  arm64: Instruction fcvtas should round 322.5 to 323, but result is 322.
 489676  vgdb handle EINTR and EAGAIN more consistently
+490651  Stop using -flto-partition=one
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -72,7 +72,8 @@ static DisResult *dis_res;
 static Bool sigill_diag;
 
 /* The last seen execute target instruction */
-ULong last_execute_target;
+enum { Invalid_execute_target = 1 };
+ULong last_execute_target = Invalid_execute_target;
 
 /* The possible outcomes of a decoding operation */
 typedef enum {
@@ -13168,22 +13169,19 @@ s390_irgen_TR_EX(IRTemp length, IRTemp start1, IRTemp start2)
 
 
 static void
-s390_irgen_EX_SS(UChar r, IRTemp addr2,
+s390_irgen_EX_SS(UChar r, IRTemp addr2, IRTemp torun,
                  void (*irgen)(IRTemp length, IRTemp start1, IRTemp start2),
                  UInt lensize)
 {
    IRTemp cond;
    IRDirty *d;
-   IRTemp torun;
    ULong ovl;
 
    IRTemp start1 = newTemp(Ity_I64);
    IRTemp start2 = newTemp(Ity_I64);
    IRTemp len = newTemp(lensize == 64 ? Ity_I64 : Ity_I32);
    cond = newTemp(Ity_I1);
-   torun = newTemp(Ity_I64);
 
-   assign(torun, load(Ity_I64, mkexpr(addr2)));
    /* Start with a check that the saved code is still correct */
    assign(cond, binop(Iop_CmpNE64, mkexpr(torun), mkU64(last_execute_target)));
    /* If not, save the new value */
@@ -13207,21 +13205,37 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2,
           r != 0 ? get_gpr_b7(r): mkU8(0), mkU8(SS_l(ovl)))));
    irgen(len, start1, start2);
 
-   last_execute_target = 0;
+   last_execute_target = Invalid_execute_target;
 }
 
 static const HChar *
 s390_irgen_EX(UChar r1, IRTemp addr2)
 {
-   switch(last_execute_target & 0xff00000000000000ULL) {
-   case 0:
-   {
+   IRTemp  insn0, unmodified_insn;
+   IRExpr* incr_addr;
+   insn0           = newTemp(Ity_I64);
+   unmodified_insn = newTemp(Ity_I64);
+   assign(insn0, unop(Iop_16Uto64, load(Ity_I16, mkexpr(addr2))));
+   incr_addr = binop(Iop_Add64, mkexpr(addr2), mkU64(2));
+   assign(
+      unmodified_insn,
+      binop(
+         Iop_Or64, binop(Iop_Shl64, mkexpr(insn0), mkU8(48)),
+         mkite(
+            binop(Iop_CmpLT64U, mkexpr(insn0), mkU64(0x4000)), mkU64(0),
+            mkite(binop(Iop_CmpLT64U, mkexpr(insn0), mkU64(0xc000)),
+                  binop(Iop_Shl64, unop(Iop_16Uto64, load(Ity_I16, incr_addr)),
+                        mkU8(32)),
+                  binop(Iop_Shl64, unop(Iop_32Uto64, load(Ity_I32, incr_addr)),
+                        mkU8(16))))));
+
+   if (last_execute_target == Invalid_execute_target) {
       /* no code information yet */
       IRDirty *d;
 
       /* so safe the code... */
       d = unsafeIRDirty_0_N (0, "s390x_dirtyhelper_EX", &s390x_dirtyhelper_EX,
-                             mkIRExprVec_1(load(Ity_I64, mkexpr(addr2))));
+                             mkIRExprVec_1(mkexpr(unmodified_insn)));
       stmt(IRStmt_Dirty(d));
       /* and restart */
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
@@ -13233,42 +13247,43 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
       dis_res->jk_StopHere = Ijk_InvalICache;
-      break;
+      return "ex";
    }
 
+   switch (last_execute_target & 0xff00000000000000ULL) {
    case 0xd200000000000000ULL:
       /* special case MVC */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_MVC_EX, 64);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_MVC_EX, 64);
       return "ex@mvc";
 
    case 0xd500000000000000ULL:
       /* special case CLC */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_CLC_EX, 64);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_CLC_EX, 64);
       return "ex@clc";
 
    case 0xd700000000000000ULL:
       /* special case XC */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_XC_EX, 32);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_XC_EX, 32);
       return "ex@xc";
 
    case 0xd600000000000000ULL:
       /* special case OC */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_OC_EX, 32);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_OC_EX, 32);
       return "ex@oc";
 
    case 0xd400000000000000ULL:
       /* special case NC */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_NC_EX, 32);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_NC_EX, 32);
       return "ex@nc";
 
    case 0xdc00000000000000ULL:
       /* special case TR */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_TR_EX, 64);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_TR_EX, 64);
       return "ex@tr";
 
    case 0xe800000000000000ULL:
       /* special case MVCIN */
-      s390_irgen_EX_SS(r1, addr2, s390_irgen_MVCIN_EX, 64);
+      s390_irgen_EX_SS(r1, addr2, unmodified_insn, s390_irgen_MVCIN_EX, 64);
       return "ex@mvcin";
 
    default:
@@ -13290,8 +13305,8 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       else
          assign(orperand, unop(Iop_8Uto64,get_gpr_b7(r1)));
       /* This code is going to be translated */
-      assign(torun, binop(Iop_Or64, load(Ity_I64, mkexpr(addr2)),
-             binop(Iop_Shl64, mkexpr(orperand), mkU8(48))));
+      assign(torun, binop(Iop_Or64, mkexpr(unmodified_insn),
+                          binop(Iop_Shl64, mkexpr(orperand), mkU8(48))));
 
       /* Start with a check that saved code is still correct */
       assign(cond, binop(Iop_CmpNE64, mkexpr(torun),
@@ -13314,7 +13329,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
          vex_printf("    which was executed by\n");
       /* dont make useless translations in the next execute */
-      last_execute_target = 0;
+      last_execute_target = Invalid_execute_target;
    }
    }
    return "ex";
@@ -13327,10 +13342,13 @@ s390_irgen_EXRL(UChar r1, UInt offset)
    Addr64 bytes_addr = addr_rel_long(offset);
    UChar *bytes = (UChar *)(HWord)bytes_addr;
    /* we might save one round trip because we know the target */
-   if (!last_execute_target)
-      last_execute_target = ((ULong)bytes[0] << 56) | ((ULong)bytes[1] << 48) |
-                            ((ULong)bytes[2] << 40) | ((ULong)bytes[3] << 32) |
-                            ((ULong)bytes[4] << 24) | ((ULong)bytes[5] << 16);
+   if (last_execute_target == Invalid_execute_target) {
+      last_execute_target = ((ULong)bytes[0] << 56) | ((ULong)bytes[1] << 48);
+      if (bytes[0] >= 0x40)
+         last_execute_target |= ((ULong)bytes[2] << 40) | ((ULong)bytes[3] << 32);
+      if (bytes[0] >= 0xc0)
+         last_execute_target |= ((ULong)bytes[4] << 24) | ((ULong)bytes[5] << 16);
+   }
    assign(addr, mkU64(bytes_addr));
    s390_irgen_EX(r1, addr);
    return "exrl";
@@ -22827,7 +22845,9 @@ s390_decode_and_irgen(const UChar *bytes, UInt insn_length, DisResult *dres)
       }
    }
    /* If next instruction is execute, stop here */
-   if (dis_res->whatNext == Dis_Continue && bytes[insn_length] == 0x44) {
+   if (dis_res->whatNext == Dis_Continue &&
+       (bytes[insn_length] == 0x44 ||
+        (bytes[insn_length] == 0xc6 && (bytes[insn_length + 1] & 0xf) == 0))) {
       put_IA(mkaddr_expr(guest_IA_next_instr));
       dis_res->whatNext = Dis_StopHere;
       dis_res->jk_StopHere = Ijk_Boring;

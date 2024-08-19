@@ -11,3 +11,9 @@ after:  target = |0123456789aXXXXX|
 ------- EX to OR in the syscall number (writes out target)
         target = |0123456789aXXXXX|
 
+------- EX targeting a PC-relative instruction
+        offset = |0000000000000000|
+
+------- EX targeting a branch-and-link instruction
+        offset = |0000000000000002|
+

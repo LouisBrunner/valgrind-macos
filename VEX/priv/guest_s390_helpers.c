@@ -260,9 +260,10 @@ VexGuestLayout s390xGuest_layout = {
 /*--- Dirty helper for EXecute                             ---*/
 /*------------------------------------------------------------*/
 void
-s390x_dirtyhelper_EX(ULong torun)
+s390x_dirtyhelper_EX(ULong torun, Addr64 addr)
 {
    last_execute_target = torun;
+   guest_IA_rel_base = addr;
 }
 
 

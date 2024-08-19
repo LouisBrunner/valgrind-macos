@@ -75,6 +75,9 @@ static Bool sigill_diag;
 enum { Invalid_execute_target = 1 };
 ULong last_execute_target = Invalid_execute_target;
 
+/* The guest address to be used as the base for relative addresses. */
+Addr64 guest_IA_rel_base;
+
 /* The possible outcomes of a decoding operation */
 typedef enum {
    S390_DECODE_OK,
@@ -405,7 +408,7 @@ mkF64i(ULong value)
 static __inline__ Addr64
 addr_rel_long(UInt offset)
 {
-   return guest_IA_curr_instr + ((Addr64)(Long)(Int)offset << 1);
+   return guest_IA_rel_base + ((Addr64)(Long)(Int)offset << 1);
 }
 
 /* Return the 64-bit address with the given 16-bit "relative" offset from the
@@ -413,7 +416,7 @@ addr_rel_long(UInt offset)
 static __inline__ Addr64
 addr_relative(UShort offset)
 {
-   return guest_IA_curr_instr + ((Addr64)(Long)(Short)offset << 1);
+   return guest_IA_rel_base + ((Addr64)(Long)(Short)offset << 1);
 }
 
 /* Little helper function for my sanity. ITE = if-then-else */
@@ -5375,14 +5378,14 @@ s390_irgen_BASR(UChar r1, UChar r2)
    IRTemp target = newTemp(Ity_I64);
 
    if (r2 == 0) {
-      put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 2ULL));
+      put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
    } else {
       if (r1 != r2) {
-         put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 2ULL));
+         put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
          call_function(get_gpr_dw0(r2));
       } else {
          assign(target, get_gpr_dw0(r2));
-         put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 2ULL));
+         put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
          call_function(mkexpr(target));
       }
    }
@@ -5395,7 +5398,7 @@ s390_irgen_BAS(UChar r1, IRTemp op2addr)
 {
    IRTemp target = newTemp(Ity_I64);
 
-   put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 4ULL));
+   put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
    assign(target, mkexpr(op2addr));
    call_function(mkexpr(target));
 
@@ -5565,7 +5568,7 @@ s390_irgen_BXLEG(UChar r1, UChar r3, IRTemp op2addr)
 static const HChar *
 s390_irgen_BRAS(UChar r1, UShort i2)
 {
-   put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 4ULL));
+   put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
    call_function_and_chase(addr_relative(i2));
 
    return "bras";
@@ -5574,7 +5577,7 @@ s390_irgen_BRAS(UChar r1, UShort i2)
 static const HChar *
 s390_irgen_BRASL(UChar r1, UInt i2)
 {
-   put_gpr_dw0(r1, mkU64(guest_IA_curr_instr + 6ULL));
+   put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
    call_function_and_chase(addr_rel_long(i2));
 
    return "brasl";
@@ -13186,7 +13189,7 @@ s390_irgen_EX_SS(UChar r, IRTemp addr2, IRTemp torun,
    assign(cond, binop(Iop_CmpNE64, mkexpr(torun), mkU64(last_execute_target)));
    /* If not, save the new value */
    d = unsafeIRDirty_0_N (0, "s390x_dirtyhelper_EX", &s390x_dirtyhelper_EX,
-                          mkIRExprVec_1(mkexpr(torun)));
+                          mkIRExprVec_2(mkexpr(torun), mkexpr(addr2)));
    d->guard = mkexpr(cond);
    stmt(IRStmt_Dirty(d));
 
@@ -13235,7 +13238,7 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
 
       /* so safe the code... */
       d = unsafeIRDirty_0_N (0, "s390x_dirtyhelper_EX", &s390x_dirtyhelper_EX,
-                             mkIRExprVec_1(mkexpr(unmodified_insn)));
+                             mkIRExprVec_2(mkexpr(unmodified_insn), mkexpr(addr2)));
       stmt(IRStmt_Dirty(d));
       /* and restart */
       stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
@@ -13308,12 +13311,16 @@ s390_irgen_EX(UChar r1, IRTemp addr2)
       assign(torun, binop(Iop_Or64, mkexpr(unmodified_insn),
                           binop(Iop_Shl64, mkexpr(orperand), mkU8(48))));
 
-      /* Start with a check that saved code is still correct */
-      assign(cond, binop(Iop_CmpNE64, mkexpr(torun),
-             mkU64(last_execute_target)));
-      /* If not, save the new value */
+      /* Start with a check that saved code is still correct. Compare the target
+       * address as well, since it may be relevant to relative addressing. */
+      assign(
+         cond,
+         binop(Iop_Or1,
+               binop(Iop_CmpNE64, mkexpr(torun), mkU64(last_execute_target)),
+               binop(Iop_CmpNE64, mkexpr(addr2), mkU64(guest_IA_rel_base))));
+      /* If not, save the new values */
       d = unsafeIRDirty_0_N (0, "s390x_dirtyhelper_EX", &s390x_dirtyhelper_EX,
-                             mkIRExprVec_1(mkexpr(torun)));
+                             mkIRExprVec_2(mkexpr(torun), mkexpr(addr2)));
       d->guard = mkexpr(cond);
       stmt(IRStmt_Dirty(d));
 
@@ -13339,16 +13346,20 @@ static const HChar *
 s390_irgen_EXRL(UChar r1, UInt offset)
 {
    IRTemp addr = newTemp(Ity_I64);
-   Addr64 bytes_addr = addr_rel_long(offset);
-   UChar *bytes = (UChar *)(HWord)bytes_addr;
+   Addr64 bytes_addr;
+   UChar *bytes;
    /* we might save one round trip because we know the target */
    if (last_execute_target == Invalid_execute_target) {
+      bytes_addr = addr_rel_long(offset);
+      bytes = (UChar *)(HWord)bytes_addr;
       last_execute_target = ((ULong)bytes[0] << 56) | ((ULong)bytes[1] << 48);
       if (bytes[0] >= 0x40)
          last_execute_target |= ((ULong)bytes[2] << 40) | ((ULong)bytes[3] << 32);
       if (bytes[0] >= 0xc0)
          last_execute_target |= ((ULong)bytes[4] << 24) | ((ULong)bytes[5] << 16);
-   }
+      guest_IA_rel_base = bytes_addr;
+   } else
+      bytes_addr = guest_IA_rel_base;
    assign(addr, mkU64(bytes_addr));
    s390_irgen_EX(r1, addr);
    return "exrl";
@@ -22994,6 +23005,8 @@ disInstr_S390(IRSB        *irsb_IN,
 
    /* Set globals (see top of this file) */
    guest_IA_curr_instr = guest_IP;
+   if (last_execute_target == Invalid_execute_target)
+      guest_IA_rel_base = guest_IA_curr_instr;
    irsb = irsb_IN;
    sigill_diag = sigill_diag_IN;
 

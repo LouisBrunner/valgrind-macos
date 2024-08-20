@@ -1531,6 +1531,7 @@
 /none/tests/blockfault
 /none/tests/bug129866
 /none/tests/bug234814
+/none/tests/bug491394
 /none/tests/closeall
 /none/tests/coolo_sigaction
 /none/tests/coolo_strlen

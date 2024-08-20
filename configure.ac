@@ -5205,6 +5205,27 @@ CFLAGS=$saved_CFLAGS
 LDFLAGS="$saved_LDFLAGS"
 AM_CONDITIONAL(BUILD_MPIWRAP_SEC, test x$ac_have_mpi2_sec = xyes)
 
+#----------------------------------------------------------------------------
+# static libc check
+#----------------------------------------------------------------------------
+AC_MSG_CHECKING([if static libc is available])
+
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="-nostdlib -lc -static"
+AC_LINK_IFELSE([AC_LANG_SOURCE([[
+int main(void)
+{
+}
+]])], [
+ac_have_static_libc=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_static_libc=no
+AC_MSG_RESULT([no])
+])
+LDFLAGS="$saved_LDFLAGS"
+AM_CONDITIONAL(HAVE_STATIC_LIBC, test x$ac_have_static_libc = xyes)
+
 
 #----------------------------------------------------------------------------
 # Other library checks

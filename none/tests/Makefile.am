@@ -102,6 +102,7 @@ EXTRA_DIST = \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
 	bug234814.vgtest bug234814.stderr.exp bug234814.stdout.exp \
+	bug491394.vgtest bug491394.stderr.exp \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
@@ -310,6 +311,17 @@ check_PROGRAMS = \
 	socket_close \
 	file_dclose
 
+if HAVE_STATIC_LIBC
+if ! VGCONF_OS_IS_LINUX
+   check_PROGRAMS += bug491394
+endif
+if VGCONF_OS_IS_LINUX
+if VGCONF_ARCHS_INCLUDE_AMD64
+   check_PROGRAMS += bug491394
+endif
+endif
+endif
+
 if HAVE_CLOSE_RANGE
    check_PROGRAMS += double_close_range
 endif
@@ -341,6 +353,9 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Extra stuff for C tests
 ansi_CFLAGS		= $(AM_CFLAGS) -ansi
+bug491394_LDADD		= -lc
+bug491394_LDFLAGS	= -nostdlib -static
+bug491394_CFLAGS	= ${AM_CFLAGS} -Os
 execve_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 if VGCONF_OS_IS_SOLARIS
 fcntl_setown_LDADD	= -lsocket -lnsl

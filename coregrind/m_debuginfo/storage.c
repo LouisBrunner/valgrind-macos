@@ -793,7 +793,7 @@ void ML_(addDiCfSI) ( struct _DebugInfo* di,
                    "warning: DiCfSI %#lx .. %#lx is huge; length = %u (%s)\n",
                    base, base + len - 1, len, di->soname);
 
-   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
+   vg_assert(di->fsm.have_rx_map);
    /* Find mapping where at least one end of the CFSI falls into. */
    map  = ML_(find_rx_mapping)(di, base, base);
    map2 = ML_(find_rx_mapping)(di, base + len - 1,
@@ -1298,7 +1298,7 @@ void ML_(addVar)( struct _DebugInfo* di,
       seems a reasonable assumption to me. */
    /* This is assured us by top level steering logic in debuginfo.c,
       and it is re-checked at the start of ML_(read_elf_object). */
-   vg_assert(di->fsm.have_rx_map && di->fsm.rw_map_count);
+   vg_assert(di->fsm.have_rx_map);
    if (level > 0 && ML_(find_rx_mapping)(di, aMin, aMax) == NULL) {
       if (VG_(clo_verbosity) > 1) {
          VG_(message)(Vg_DebugMsg, 

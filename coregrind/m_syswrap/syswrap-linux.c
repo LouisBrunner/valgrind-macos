@@ -4209,8 +4209,12 @@ PRE(sys_statx)
    // in which it passes NULL for both filename and buf, and then looks at the
    // return value, so as to determine whether or not this syscall is supported.
    Bool both_filename_and_buf_are_null = ARG2 == 0 && ARG5 == 0;
+   Bool statx_null_path = (ARG2 == 0) && (ARG3 & VKI_AT_EMPTY_PATH);
    if (!both_filename_and_buf_are_null) {
-      PRE_MEM_RASCIIZ( "statx(filename)", ARG2 );
+      // Since Linux 6.11, the kernel allows passing a NULL filename when
+      // the AT_EMPTY_PATH flag is set.
+      if (!statx_null_path)
+         PRE_MEM_RASCIIZ( "statx(filename)", ARG2 );
       PRE_MEM_WRITE( "statx(buf)", ARG5, sizeof(struct vki_statx) );
    }
 }

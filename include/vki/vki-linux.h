@@ -1472,7 +1472,12 @@ struct vki_statx {
         __vki_u32   stx_dev_major;  /* ID of device containing file [uncond] */
         __vki_u32   stx_dev_minor;
         /* 0x90 */
-        __vki_u64   __spare2[14];   /* Spare space for future expansion */
+        __vki_u64   stx_mnt_id;
+        __vki_u32   stx_dio_mem_align;      /* Memory buffer alignment for direct I/O */
+        __vki_u32   stx_dio_offset_align;   /* File offset alignment for direct I/O */
+        /* 0xa0 */
+
+        __vki_u64   __spare2[12];   /* Spare space for future expansion */
         /* 0x100 */
 };
 

@@ -7258,6 +7258,29 @@ PRE(sys_ioctl)
       PRE_FIELD_READ ("ioctl(SYNC_IOC_MERGE).fd2",   data->fd2);
       PRE_MEM_RASCIIZ("ioctl(SYNC_IOC_MERGE).name",  (Addr)(&data->name[0]));
       PRE_FIELD_WRITE("ioctl(SYNC_IOC_MERGE).fence", data->fence);
+      PRE_FIELD_READ("ioctl(SYNC_IOC_MERGE).flags",  data->flags);
+      break;
+   }
+
+   case VKI_SYNC_IOC_FILE_INFO: {
+      struct vki_sync_file_info* data =
+         (struct vki_sync_file_info*)(Addr)ARG3;
+      PRE_FIELD_READ ("ioctl(SYNC_IOC_FILE_INFO).flags",      data->flags);
+      PRE_FIELD_READ ("ioctl(SYNC_IOC_FILE_INFO).num_fences", data->num_fences);
+      PRE_FIELD_WRITE("ioctl(SYNC_IOC_FILE_INFO).status",     data->status);
+      if (data->num_fences)
+         PRE_MEM_WRITE("ioctl(SYNC_IOC_FILE_INFO).sync_fence_info",
+                       (Addr)data->sync_fence_info,
+                       (data->num_fences
+                        * sizeof(sizeof(struct vki_sync_fence_info))));
+      break;
+   }
+
+   case VKI_SYNC_IOC_SET_DEADLINE: {
+      struct vki_sync_set_deadline* data =
+         (struct vki_sync_set_deadline*)(Addr)ARG3;
+      PRE_FIELD_READ ("ioctl(SYNC_IOC_SET_DEADLINE).deadline_ns",
+                      data->deadline_ns);
       break;
    }
 
@@ -10454,6 +10477,18 @@ POST(sys_ioctl)
       struct vki_sync_merge_data* data =
          (struct vki_sync_merge_data*)(Addr)ARG3;
       POST_FIELD_WRITE(data->fence);
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless) (tid, data->fence);
+      break;
+   }
+
+   case VKI_SYNC_IOC_FILE_INFO: {
+      struct vki_sync_file_info* data =
+         (struct vki_sync_file_info*)(Addr)ARG3;
+      POST_FIELD_WRITE(data->status);
+      if (data->num_fences > 0 && (Addr)data->sync_fence_info != (Addr)NULL)
+         POST_MEM_WRITE(data->sync_fence_info,
+                        data->num_fences * sizeof(struct vki_sync_fence_info));
       break;
    }
 

@@ -59,6 +59,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 490651  Stop using -flto-partition=one
 491394  (vgModuleLocal_addDiCfSI): Assertion 'di->fsm.have_rx_map &&
         di->fsm.rw_map_count' failed
+492214  statx(fd, NULL, AT_EMPTY_PATH) is supported since Linux 6.11
+        but not supported in valgrind
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

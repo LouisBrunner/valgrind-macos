@@ -830,7 +830,7 @@ while (1) { # we will exit after one loop, unless looptillfail
                while (<LOGFILE>) { print TSLOG "|\t$_"; }
                close(LOGFILE);
             }
-            open(VGTESTTRS,">","$dir/$file.trs") or die $!;
+            open(VGTESTTRS,">","$file.trs") or die $!;
             print VGTESTTRS ":test-result: $result\n";
             print VGTESTTRS ":global-test-result: $result\n";
             print VGTESTTRS ":recheck: no\n"; # ?

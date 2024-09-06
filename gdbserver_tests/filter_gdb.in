@@ -263,6 +263,8 @@ s/^0x........ in \(\w\+ (\)/\1/
 #           finishes with a new line, sometimes not ???).
 /^$/d
 
+#	delete any missing debuginfo messages
+/^Missing debuginfo.*/d
 
 EOF
 

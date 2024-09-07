@@ -3852,7 +3852,8 @@ Bool ML_(read_elf_debug) ( struct _DebugInfo* di )
    /* NOTREACHED */
 }
 
-Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_load_count )
+Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename,
+                                       Int * rw_load_count, Bool from_nsegments )
 {
    Bool     res, ok;
    UWord    i;
@@ -3924,9 +3925,10 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_l
                 * Hold your horses
                 * Just because The ELF file contains 2 RW PT_LOAD segments
                 * doesn't mean that Valgrind will also make 2 calls to
-                * VG_(di_notify_mmap): in some cases, the 2 NSegments will get
-                * merged and VG_(di_notify_mmap) only gets called once.
-                * How to detect that the segments will be merged ?
+                * VG_(di_notify_mmap): in some cases, the 2 NSegments will
+                * have been merged and VG_(di_notify_mmap) only gets called
+                * once.
+                * How to detect that the segments were be merged ?
                 * Logically, they will be merged if the first segment ends
                 * at the beginning of the second segment:
                 *   Seg1 virtual address + Seg1 segment_size
@@ -3949,12 +3951,12 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_l
                 * the 2 different segments loaded separately are both counted
                 * here, we use the non rounded up p_filesz.
                 * This is all a nightmare/hack. Something cleaner should be
-                * done than trying to guess here if segments will or will not
-                * be merged later depending on how the loader will load
-                * with or without rounding up.
-                * */
+                * done than other than reverse engineering whether this call
+                * results from merged nsegments or not. Particularly as
+                * the mmap'ing and nsegment merging is all under our control.
+                */
                if (previous_rw_a_phdr.p_memsz > 0 &&
-                   ehdr_m.e_type == ET_EXEC &&
+                   from_nsegments &&
                    previous_rw_a_phdr.p_vaddr + previous_rw_a_phdr.p_filesz
                      == a_phdr.p_vaddr)
                {

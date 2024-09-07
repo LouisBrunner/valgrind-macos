@@ -1072,7 +1072,8 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
           exe_handlers->load_fn ( == VG_(load_ELF) )
           [or load_MACHO].
 
-       This does the mmap'ing and creates the associated NSegments.
+       This does the mmap'ing with VG_(am_do_mmap_NO_NOTIFY)
+       and creates the associated NSegments.
 
        The NSegments may get merged, (see maybe_merge_nsegments)
        so there could be more PT_LOADs than there are NSegments.
@@ -1125,7 +1126,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 {
    NSegment const * seg;
-   Int rw_load_count;
+   Int expected_rw_load_count;
    const HChar* filename;
    Bool       is_rx_map, is_rw_map, is_ro_map;
 
@@ -1372,9 +1373,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
-   rw_load_count = 0;
+   expected_rw_load_count = 0;
 
-   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &rw_load_count );
+   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
 
    if (use_fd == -1) {
       VG_(close)( actual_fd );
@@ -1444,7 +1445,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    /* So, finally, are we in an accept state? */
    vg_assert(!di->have_dinfo);
    if (di->fsm.have_rx_map &&
-       di->fsm.rw_map_count == rw_load_count) {
+       di->fsm.rw_map_count == expected_rw_load_count) {
       /* Ok, so, finally, we found what we need, and we haven't
          already read debuginfo for this object.  So let's do so now.
          Yee-ha! */
@@ -1457,7 +1458,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       /* If we don't have an rx and rw mapping, go no further. */
       if (debug)
          VG_(dmsg)("di_notify_mmap-6: "
-                   "no dinfo loaded %s (no rx or no rw mapping)\n", filename);
+                   "no dinfo loaded %s (no rx or rw mappings (%d) not reached expected count (%d))\n",
+                   filename, di->fsm.rw_map_count, expected_rw_load_count);
       return 0;
    }
 }

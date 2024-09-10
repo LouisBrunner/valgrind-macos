@@ -15,6 +15,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * S390X added support for the DFLTCC instruction provided by the
   deflate-conversion facility (z15/arch13).
 
+* S390X added support for the instructions provided by the MSA facility
+  and MSA extensions 1-9.
+
 * ==================== TOOL CHANGES ===================
 
 * ==================== FIXED BUGS ====================

@@ -19707,6 +19707,99 @@ s390_irgen_NNPA(void)
    return "nnpa";
 }
 
+static const HChar *
+s390_irgen_KM(UChar r1, UChar r2)
+{
+   s390_insn_assert("km", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KM, r1 | (r2 << 4));
+   return "km";
+}
+
+static const HChar *
+s390_irgen_KMC(UChar r1, UChar r2)
+{
+   s390_insn_assert("kmc", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KMC, r1 | (r2 << 4));
+   return "kmc";
+}
+
+static const HChar *
+s390_irgen_KIMD(UChar r1, UChar r2)
+{
+   /* r1 is reserved */
+   s390_insn_assert("kimd", r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KIMD, r1 | (r2 << 4));
+   return "kimd";
+}
+
+static const HChar *
+s390_irgen_KLMD(UChar r1, UChar r2)
+{
+   /* r1 is only used by some functions */
+   s390_insn_assert("klmd", r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KLMD, r1 | (r2 << 4));
+   return "klmd";
+}
+
+static const HChar *
+s390_irgen_KMAC(UChar r1, UChar r2)
+{
+   /* r1 is ignored */
+   s390_insn_assert("kmac", r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KMAC, r1 | (r2 << 4));
+   return "kmac";
+}
+
+static const HChar *
+s390_irgen_PCC(void)
+{
+   extension(S390_EXT_PCC, 0);
+   return "pcc";
+}
+
+static const HChar *
+s390_irgen_KMCTR(UChar r3, UChar r1, UChar r2)
+{
+   s390_insn_assert("kmctr", r1 % 2 == 0 && r1 != 0 && r2 % 2 == 0 && r2 != 0 &&
+                    r3 % 2 == 0 && r3 != 0);
+   extension(S390_EXT_KMCTR, r1 | (r2 << 4) | (r3 << 8));
+   return "kmctr";
+}
+
+static const HChar *
+s390_irgen_KMO(UChar r1, UChar r2)
+{
+   s390_insn_assert("kmo", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KMO, r1 | (r2 << 4));
+   return "kmo";
+}
+
+static const HChar *
+s390_irgen_KMF(UChar r1, UChar r2)
+{
+   s390_insn_assert("kmf", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KMF, r1 | (r2 << 4));
+   return "kmf";
+}
+
+static const HChar *
+s390_irgen_KMA(UChar r3, UChar r1, UChar r2)
+{
+   s390_insn_assert("kma", r1 % 2 == 0 && r1 != 0 && r2 % 2 == 0 && r2 != 0 &&
+                    r3 % 2 == 0 && r3 != 0);
+   extension(S390_EXT_KMA, r1 | (r2 << 4) | (r3 << 8));
+   return "kma";
+}
+
+static const HChar *
+s390_irgen_KDSA(UChar r1, UChar r2)
+{
+   /* r1 is reserved */
+   s390_insn_assert("kdsa", r2 != 0 && r2 % 2 == 0);
+   extension(S390_EXT_KDSA, r1 | (r2 << 4));
+   return "kdsa";
+}
+
 /* New insns are added here.
    If an insn is contingent on a facility being installed also
    check whether the list of supported facilities in function
@@ -20457,7 +20550,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                    RRE_r2(ovl));  goto ok;
    case 0xb91d: s390_format_RRE_RR(s390_irgen_DSGFR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
-   case 0xb91e: /* KMAC */ goto unimplemented;
+   case 0xb91e: s390_format_RRE_RR(s390_irgen_KMAC, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb91f: s390_format_RRE_RR(s390_irgen_LRVR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb920: s390_format_RRE_RR(s390_irgen_CGR, RRE_r1(ovl),
@@ -20470,13 +20564,19 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb927: s390_format_RRE_RR(s390_irgen_LHR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb928: /* PCKMO */ goto unimplemented;
-   case 0xb929: /* KMA */ goto unimplemented;
-   case 0xb92a: /* KMF */ goto unimplemented;
-   case 0xb92b: /* KMO */ goto unimplemented;
-   case 0xb92c: /* PCC */ goto unimplemented;
-   case 0xb92d: /* KMCTR */ goto unimplemented;
-   case 0xb92e: /* KM */ goto unimplemented;
-   case 0xb92f: /* KMC */ goto unimplemented;
+   case 0xb929: s390_format_RRF_R0RR2(s390_irgen_KMA, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb92a: s390_format_RRE_RR(s390_irgen_KMF, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
+   case 0xb92b: s390_format_RRE_RR(s390_irgen_KMO, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
+   case 0xb92c: s390_format_E(s390_irgen_PCC);  goto ok;
+   case 0xb92d: s390_format_RRF_R0RR2(s390_irgen_KMCTR, RRF4_r3(ovl),
+                                      RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb92e: s390_format_RRE_RR(s390_irgen_KM, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
+   case 0xb92f: s390_format_RRE_RR(s390_irgen_KMC, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb930: s390_format_RRE_RR(s390_irgen_CGFR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb931: s390_format_RRE_RR(s390_irgen_CLGFR, RRE_r1(ovl),
@@ -20484,12 +20584,15 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb938: /* SORTL */ goto unimplemented;
    case 0xb939: s390_format_RRF_R0RR2(s390_irgen_DFLTCC, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
-   case 0xb93a: /* KDSA */ goto unimplemented;
+   case 0xb93a: s390_format_RRE_RR(s390_irgen_KDSA, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb93b: s390_format_E(s390_irgen_NNPA);  goto ok;
    case 0xb93c: s390_format_RRE_RR(s390_irgen_PPNO, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
-   case 0xb93e: /* KIMD */ goto unimplemented;
-   case 0xb93f: /* KLMD */ goto unimplemented;
+   case 0xb93e: s390_format_RRE_RR(s390_irgen_KIMD, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
+   case 0xb93f: s390_format_RRE_RR(s390_irgen_KLMD, RRE_r1(ovl),
+                                   RRE_r2(ovl));  goto ok;
    case 0xb941: s390_format_RRF_UURF(s390_irgen_CFDTR, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;

@@ -120,6 +120,17 @@
 #define S390_EXT_NNPA    2
 #define S390_EXT_DFLT    3
 #define S390_EXT_STFLE   4
+#define S390_EXT_KM      5
+#define S390_EXT_KMC     6
+#define S390_EXT_KIMD    7
+#define S390_EXT_KLMD    8
+#define S390_EXT_KMAC    9
+#define S390_EXT_PCC    10
+#define S390_EXT_KMCTR  11
+#define S390_EXT_KMO    12
+#define S390_EXT_KMF    13
+#define S390_EXT_KMA    14
+#define S390_EXT_KDSA   15
 
 /*--------------------------------------------------------------*/
 /*--- Miscellaneous                                          ---*/

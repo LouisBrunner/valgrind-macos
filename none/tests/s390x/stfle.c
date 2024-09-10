@@ -53,11 +53,11 @@ int main()
   else
     printf("The z/Architecture architectural mode is not installed\n");
 
-  /* Test #4: Message security assist */
-  if (stfle(dw, 17)) {
-     printf("MSA facility is present\n");
+  /* Test #4: Constrained transactional-execution */
+  if (stfle(dw, 50)) {
+     printf("Constrained transactional-execution is supported\n");
   } else {
-     printf("No MSA facility available\n");
+     printf("No constrained transactional-execution facility available\n");
   }
   return 0;
 }

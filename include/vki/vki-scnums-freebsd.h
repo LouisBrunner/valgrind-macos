@@ -683,13 +683,17 @@
 
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14_0)
+#if (FREEBSD_VERS >= FREEBSD_14_0)  || (FREEBSD_VERS >= FREEBSD_13_4)
+
 #define __NR_timerfd_create      585
 #define __NR_timerfd_gettime     586
 #define __NR_timerfd_settime     587
-#if (FREEBSD_VERS >= FREEBSD_14_1)
-#define __NR_kcmp                588
+
 #endif
+
+#if (FREEBSD_VERS >= FREEBSD_14_1) || (FREEBSD_VERS >= FREEBSD_13_3)
+
+#define __NR_kcmp                588
 
 #endif
 

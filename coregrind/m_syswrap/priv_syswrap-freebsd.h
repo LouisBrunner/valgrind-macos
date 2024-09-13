@@ -573,13 +573,14 @@ DECL_TEMPLATE(freebsd, sys_kqueuex) // 583
 DECL_TEMPLATE(freebsd, sys_membarrier) // 584
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_14_0)
+#if (FREEBSD_VERS >= FREEBSD_14_0) || (FREEBSD_VERS >= FREEBSD_13_4)
 DECL_TEMPLATE(freebsd, sys_timerfd_create) // 585
 DECL_TEMPLATE(freebsd, sys_timerfd_gettime) // 586
 DECL_TEMPLATE(freebsd, sys_timerfd_settime) // 587
-#if (FREEBSD_VERS >= FREEBSD_14_1)
-DECL_TEMPLATE(freebsd, sys_kcmp) // 588
 #endif
+
+#if (FREEBSD_VERS >= FREEBSD_14_1) || (FREEBSD_VERS >= FREEBSD_13_4)
+DECL_TEMPLATE(freebsd, sys_kcmp) // 588
 #endif
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)

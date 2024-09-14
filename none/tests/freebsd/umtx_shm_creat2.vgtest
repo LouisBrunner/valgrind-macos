@@ -1,0 +1,4 @@
+prog: umtx_shm_creat 
+vgopts: -q --track-fds=all
+args: 1
+stderr_filter: filter_fdleak

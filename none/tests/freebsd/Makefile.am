@@ -52,13 +52,17 @@ EXTRA_DIST = \
 	swapcontext.stdout.exp \
 	umtx_op_timeout.vgtest \
 	umtx_op_timeout.stderr.exp \
+	umtx_shm_creat1.vgtest \
+	umtx_shm_creat1.stderr.exp \
+	umtx_shm_creat2.vgtest \
+	umtx_shm_creat2.stderr.exp \
 	usrstack.vgtest \
 	usrstack.stderr.exp \
 	usrstack.stdout.exp
 
 check_PROGRAMS = \
 	auxv osrel swapcontext hello_world fexecve 452275 usrstack \
-	proc_pid_file sanity_level_thread
+	proc_pid_file sanity_level_thread umtx_shm_creat
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -73,3 +77,5 @@ proc_pid_file_SOURCES = proc_pid_file.cpp
 
 sanity_level_thread_SOURCES = sanity_level_thread.cpp
 sanity_level_thread_LDFLAGS = ${AM_LDFLAGS} -pthread
+
+umtx_shm_creat_SOURCES = umtx_shm_creat.cpp

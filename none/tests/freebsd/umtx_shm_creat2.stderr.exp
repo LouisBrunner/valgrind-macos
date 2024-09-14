@@ -1,0 +1,14 @@
+FILE DESCRIPTORS: 4 open (3 std) at exit.
+Open file descriptor ...:
+   ...
+
+Open file descriptor ...: ...
+   <inherited from parent>
+
+Open file descriptor ...: ...
+   <inherited from parent>
+
+Open file descriptor ...: ...
+   <inherited from parent>
+
+

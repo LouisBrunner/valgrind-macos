@@ -4860,6 +4860,11 @@ POST(sys__umtx_op)
       }
       break;
    case VKI_UMTX_OP_SHM:
+      if (SUCCESS && ARG3 == VKI_UMTX_SHM_CREAT) {
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless) (tid, RES);
+      }
+      break;
    case VKI_UMTX_OP_ROBUST_LISTS:
       break;
 #if (FREEBSD_VERS >= FREEBSD_13_3)

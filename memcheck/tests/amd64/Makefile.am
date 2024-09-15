@@ -13,6 +13,8 @@ EXTRA_DIST = \
 		bt_everything.vgtest \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
 	bug279698.vgtest bug279698.stderr.exp bug279698.stdout.exp \
+	bug492210_1.vgtest bug492210_1.stderr.exp \
+	bug492210_2.vgtest bug492210_2.stderr.exp \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
 	insn-bsfl.vgtest insn-bsfl.stdout.exp insn-bsfl.stderr.exp \
 	insn-pcmpistri.vgtest insn-pcmpistri.stdout.exp insn-pcmpistri.stderr.exp \
@@ -46,6 +48,7 @@ check_PROGRAMS = \
 	bt_everything \
 	bug132146 \
 	bug279698 \
+	bug492210 \
 	fxsave-amd64 \
 	insn-bsfl \
 	insn-pmovmskb \

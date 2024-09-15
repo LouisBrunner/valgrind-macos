@@ -1062,6 +1062,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
 #  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
 #  define mkU64(_n) IRExpr_Const(IRConst_U64(_n))
 #  define mkU32(_n) IRExpr_Const(IRConst_U32(_n))
+#  define mkU16(_n) IRExpr_Const(IRConst_U16(_n))
 #  define mkU8(_n)  IRExpr_Const(IRConst_U8(_n))
 
    Int i, arity = 0;
@@ -1140,6 +1141,15 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
 
       }
 
+      /* 4, */
+      if (isU64(cc_op, AMD64G_CC_OP_ADDL) && isU64(cond, AMD64CondZ)) {
+         /* long long add, then Z --> test ((int)(dst+src) == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32,
+                           unop(Iop_64to32, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           mkU32(0)));
+      }
+
       /* 8, 9 */
       if (isU64(cc_op, AMD64G_CC_OP_ADDL) && isU64(cond, AMD64CondS)) {
          /* long add, then S (negative)
@@ -1164,6 +1174,29 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                                   mkU8(31)),
                             mkU64(1)),
                       mkU64(1));
+      }
+
+      /*---------------- ADDW ----------------*/
+
+      /* 4, */
+      if (isU64(cc_op, AMD64G_CC_OP_ADDW) && isU64(cond, AMD64CondZ)) {
+
+         /* long long add, then Z --> test ((short)(dst+src) == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ16,
+                           unop(Iop_64to16, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           mkU16(0)));
+      }
+
+      /*---------------- ADDB ----------------*/
+
+      /* 4, */
+      if (isU64(cc_op, AMD64G_CC_OP_ADDB) && isU64(cond, AMD64CondZ)) {
+         /* long long add, then Z --> test ((char)(dst+src) == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ8,
+                           unop(Iop_64to8, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           mkU8(0)));
       }
 
       /*---------------- SUBQ ----------------*/
@@ -1307,6 +1340,8 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                         mkU8(31)),
                   mkU64(1));
       }
+
+      /* 1, */
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondNO)) {
          /* No action.  Never yet found a test case. */
       }
@@ -1578,7 +1613,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondZ)) {
          /* byte sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto64,
-                     binop(Iop_CmpEQ8, 
+                     binop(Iop_CmpEQ8,
                            unop(Iop_64to8,cc_dep1),
                            unop(Iop_64to8,cc_dep2)));
       }

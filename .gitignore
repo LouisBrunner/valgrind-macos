@@ -1070,6 +1070,7 @@
 /memcheck/tests/amd64/bt_everything
 /memcheck/tests/amd64/bug132146
 /memcheck/tests/amd64/bug279698
+/memcheck/tests/amd64/bug492210
 /memcheck/tests/amd64/defcfaexpr
 /memcheck/tests/amd64/fxsave-amd64
 /memcheck/tests/amd64/int3-amd64

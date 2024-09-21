@@ -5869,6 +5869,7 @@ PRE(sys_mkdirat)
 
 PRE(sys_mknodat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_mknodat ( %ld, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
          FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4 );
    PRE_REG_READ4(long, "mknodat",
@@ -5878,6 +5879,7 @@ PRE(sys_mknodat)
 
 PRE(sys_fchownat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchownat ( %ld, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
           FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "fchownat",
@@ -5888,6 +5890,7 @@ PRE(sys_fchownat)
 
 PRE(sys_futimesat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_futimesat ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "futimesat",
@@ -5900,6 +5903,7 @@ PRE(sys_futimesat)
 
 PRE(sys_utimensat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_utimensat ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, 0x%"
           FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "utimensat",
@@ -5929,6 +5933,7 @@ PRE(sys_utimensat)
 
 PRE(sys_utimensat_time64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_utimensat_time64 ( %ld, %#" FMT_REGWORD "x(%s), %#"
          FMT_REGWORD "x, 0x%" FMT_REGWORD "x )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
@@ -5992,6 +5997,7 @@ PRE(sys_unlinkat)
 
 PRE(sys_renameat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_renameat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %#"
          FMT_REGWORD "x(%s) )", SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3,
          ARG4, (HChar*)(Addr)ARG4);
@@ -6004,6 +6010,7 @@ PRE(sys_renameat)
 
 PRE(sys_renameat2)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_renameat2 ( %ld, %#" FMT_REGWORD "x(%s), %ld, %#" FMT_REGWORD
          "x(%s), %" FMT_REGWORD "u )", SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3,
          ARG4, (HChar*)(Addr)ARG4, ARG5);
@@ -6045,6 +6052,8 @@ PRE(sys_readlinkat)
    HChar name[30];       // large enough
    Word  saved = SYSNO;
 
+   FUSE_COMPATIBLE_MAY_BLOCK();
+
    PRINT("sys_readlinkat ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %"
           FMT_REGWORD "u )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "readlinkat",
@@ -6074,6 +6083,7 @@ PRE(sys_readlinkat)
 
 PRE(sys_fchmodat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchmodat ( %ld, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "fchmodat",
@@ -6083,6 +6093,7 @@ PRE(sys_fchmodat)
 
 PRE(sys_fchmodat2)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchmodat2 ( %ld, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
 	  FMT_REGWORD "u )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
@@ -6094,6 +6105,7 @@ PRE(sys_fchmodat2)
 
 PRE(sys_faccessat)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_faccessat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
    PRE_REG_READ3(long, "faccessat",
@@ -6103,6 +6115,7 @@ PRE(sys_faccessat)
 
 PRE(sys_faccessat2)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_faccessat2 ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
    PRE_REG_READ4(long, "faccessat2",

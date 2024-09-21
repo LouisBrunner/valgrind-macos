@@ -3457,6 +3457,7 @@ PRE(sys_execve)
 
 PRE(sys_access)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_access ( %#" FMT_REGWORD "x(%s), %ld )", ARG1,
          (HChar*)(Addr)ARG1, SARG2);
    PRE_REG_READ2(long, "access", const char *, pathname, int, mode);
@@ -4846,6 +4847,7 @@ POST(sys_statfs)
 
 PRE(sys_statfs64)
 {
+   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_statfs64 ( %#" FMT_REGWORD "x(%s), %llu, %#" FMT_REGWORD "x )",
          ARG1, (char*)(Addr)ARG1, (ULong)ARG2, ARG3);
    PRE_REG_READ3(long, "statfs64",

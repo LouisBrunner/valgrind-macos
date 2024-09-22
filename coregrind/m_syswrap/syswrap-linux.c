@@ -6049,17 +6049,19 @@ PRE(sys_symlinkat)
 
 PRE(sys_readlinkat)
 {
-   HChar name[30];       // large enough
-   Word  saved = SYSNO;
-
    FUSE_COMPATIBLE_MAY_BLOCK();
-
    PRINT("sys_readlinkat ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %"
           FMT_REGWORD "u )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "readlinkat",
                  int, dfd, const char *, path, char *, buf, vki_size_t, bufsiz);
    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
    PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
+}
+
+POST(sys_readlinkat)
+{
+   HChar name[30];       // large enough
+   Word  saved = SYSNO;
 
    /*
     * Handle the case where readlinkat is looking at /proc/self/exe or
@@ -6071,10 +6073,7 @@ PRE(sys_readlinkat)
            || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
       VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_exec_fd));
       SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, (UWord)name, 
-                                                      ARG3, ARG4));
-   } else {
-      /* Normal case */
-      SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
+                                               ARG3, ARG4));
    }
 
    if (SUCCESS && RES > 0)

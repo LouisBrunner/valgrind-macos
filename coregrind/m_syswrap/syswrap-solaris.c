@@ -10905,7 +10905,7 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(SOLARIS_OLD_SYSCALLS)
    SOLXY(__NR_lstat,                sys_lstat),                 /*  88 */
    GENX_(__NR_symlink,              sys_symlink),               /*  89 */
-   GENX_(__NR_readlink,             sys_readlink),              /*  90 */
+   GENXY(__NR_readlink,             sys_readlink),              /*  90 */
 #endif /* SOLARIS_OLD_SYSCALLS */
    GENX_(__NR_setgroups,            sys_setgroups),             /*  91 */
    GENXY(__NR_getgroups,            sys_getgroups),             /*  92 */

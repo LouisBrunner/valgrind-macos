@@ -4566,18 +4566,19 @@ POST(sys_poll)
 PRE(sys_readlink)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
-   Word saved = SYSNO;
-
    PRINT("sys_readlink ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )",
          ARG1, (char*)(Addr)ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ( "readlink(path)", ARG1 );
    PRE_MEM_WRITE( "readlink(buf)", ARG2,ARG3 );
+}
 
-
-   {
+POST(sys_readlink)
+{
 #if defined(VGO_linux) || defined(VGO_solaris)
+   {
+      Word saved = SYSNO;
 #if defined(VGO_linux)
 #define PID_EXEPATH  "/proc/%d/exe"
 #define SELF_EXEPATH "/proc/self/exe"
@@ -4598,15 +4599,10 @@ PRE(sys_readlink)
           && (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, SELF_EXEPATH))) {
          VG_(sprintf)(name, SELF_EXEFD, VG_(cl_exec_fd));
          SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name, 
-                                                         ARG2, ARG3));
-      } else
-#endif
-      {
-         /* Normal case */
-         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
+                                                  ARG2, ARG3));
       }
    }
-
+#endif
    if (SUCCESS && RES > 0)
       POST_MEM_WRITE( ARG2, RES );
 }

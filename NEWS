@@ -68,6 +68,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         but not supported in valgrind
 492663  Valgrind ignores debug info for some binaries
 493454  Missing FUSE_COMPATIBLE_MAY_BLOCK markers
+493507  direct readlink syscall from PRE handler is incompatible with
+        FUSE_COMPATIBLE_MAY_BLOCK
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

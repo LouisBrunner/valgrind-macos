@@ -649,7 +649,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_symlink,           sys_symlink),        // 83
 //zz    //   (__NR_oldlstat,          sys_lstat),          // 84 -- obsolete
 //zz 
-   GENX_(__NR_readlink,          sys_readlink),       // 85
+   GENXY(__NR_readlink,          sys_readlink),       // 85
 //zz    //   (__NR_uselib,            sys_uselib),         // 86 */Linux
 //zz    //   (__NR_swapon,            sys_swapon),         // 87 */Linux
 //zz    //   (__NR_reboot,            sys_reboot),         // 88 */Linux
@@ -939,7 +939,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_linkat,       sys_linkat),           // 303
    LINX_(__NR_symlinkat,    sys_symlinkat),        // 304
 
-   LINX_(__NR_readlinkat,    sys_readlinkat),       // 
+   LINXY(__NR_readlinkat,    sys_readlinkat),       // 
    LINX_(__NR_fchmodat,       sys_fchmodat),         //
    LINX_(__NR_faccessat,    sys_faccessat),        //
    LINXY(__NR_shmat,             sys_shmat),       //305

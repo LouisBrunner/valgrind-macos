@@ -626,7 +626,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_vmsplice,          sys_vmsplice),          // 75
    LINX_(__NR_splice,            sys_splice),            // 76
    LINX_(__NR_tee,               sys_tee),               // 77
-   LINX_(__NR_readlinkat,        sys_readlinkat),        // 78
+   LINXY(__NR_readlinkat,        sys_readlinkat),        // 78
    LINXY(__NR_newfstatat,        sys_newfstatat),        // 79
    GENXY(__NR_fstat,             sys_newfstat),          // 80
    GENX_(__NR_sync,              sys_sync),              // 81

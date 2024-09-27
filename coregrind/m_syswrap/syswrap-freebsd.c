@@ -1713,49 +1713,14 @@ POST(sys_getfh)
    POST_MEM_WRITE(ARG2, sizeof(vki_fhandle_t));
 }
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-// 162
-// int getdomainname(char *domainname, int len);
-PRE(sys_freebsd4_getdomainname)
-{
-   PRINT("sys_freebsd4_getdomainname ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",ARG1,ARG2);
-   PRE_REG_READ2(int, "getdomainname",
-                 char *, domainname, int, len);
-   PRE_MEM_WRITE( "getdomainname(domainname)", ARG1, ARG2 );
-}
+// freebsd4 getdomainname 162
+// removed
 
-POST(sys_freebsd4_getdomainname)
-{
-   if (ARG1 != 0) {
-      POST_MEM_WRITE( ARG1, ARG2 );
-   }
-}
+// freebsd4 setdomainname 163
+// removed
 
-// 163
-// int setdomainname(char *domainname, int len);
-PRE(sys_freebsd4_setdomainname)
-{
-   PRINT("sys_freebsd4_setdomainname ( %#" FMT_REGWORD "x )",ARG1);
-   PRE_REG_READ2(int, "setdomainname", char *, domainname, int, len);
-   PRE_MEM_RASCIIZ( "setdomainname(domainname)", ARG1 );
-}
-
-// 164
-// int uname(struct utsname *name);
-PRE(sys_freebsd4_uname)
-{
-   PRINT("sys_freebsd4_uname ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ1(int, "uname", struct utsname *, name);
-   PRE_MEM_WRITE( "uname(name)", ARG1, sizeof(struct vki_utsname) );
-}
-
-POST(sys_freebsd4_uname)
-{
-   if (ARG1 != 0) {
-      POST_MEM_WRITE( ARG1, sizeof(struct vki_utsname) );
-   }
-}
-#endif
+// freebsd4 uname 164
+// removed
 
 // SYS_sysarch 165
 // x86/amd64
@@ -4345,39 +4310,11 @@ POST(sys_thr_kill)
    }
 }
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-// SYS__umtx_lock 434
-PRE(sys__umtx_lock)
-{
-   PRINT( "sys__umtx_lock ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ1(long, "_umtx_lock", struct vki_umtx *, umtx);
-   PRE_MEM_READ( "_umtx_lock(mtx)", ARG1, sizeof(struct vki_umtx) );
-   PRE_MEM_WRITE( "_umtx_lock(mtx)", ARG1, sizeof(struct vki_umtx) );
-}
+// SYS_freebsd10__umtx_lock 434
+// removed
 
-POST(sys__umtx_lock)
-{
-   if (SUCCESS) {
-      POST_MEM_WRITE(ARG1, sizeof(struct vki_umtx));
-   }
-}
-
-// SYS__umtx_unlock 434
-PRE(sys__umtx_unlock)
-{
-   PRINT( "sys__umtx_unlock ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ1(long, "_umtx_unlock", struct vki_umtx *, umtx);
-   PRE_MEM_READ( "_umtx_unlock(mtx)", ARG1, sizeof(struct vki_umtx) );
-   PRE_MEM_WRITE( "_umtx_unlock(mtx)", ARG1, sizeof(struct vki_umtx) );
-}
-
-POST(sys__umtx_unlock)
-{
-   if (SUCCESS) {
-      POST_MEM_WRITE(ARG1, sizeof(struct vki_umtx));
-   }
-}
-#endif
+// SYS_freebsd10__umtx_unlock 434
+// removed
 
 // SYS_jail_attach   436
 // int jail_attach(int jid);
@@ -7446,11 +7383,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    BSDXY(__NR_lgetfh,           sys_lgetfh),            // 160
    BSDXY(__NR_getfh,            sys_getfh),             // 161
-#if (FREEBSD_VERS <= FREEBSD_10)
-   BSDXY(__NR_freebsd4_getdomainname, sys_freebsd4_getdomainname), // 162
-   BSDX_(__NR_freebsd4_setdomainname, sys_freebsd4_setdomainname), // 163
-   BSDXY(__NR_freebsd4_uname,   sys_freebsd4_uname),    // 164
-#endif
+   //BSDXY(__NR_freebsd4_getdomainname, sys_freebsd4_getdomainname), // 162
+   //BSDX_(__NR_freebsd4_setdomainname, sys_freebsd4_setdomainname), // 163
+   //BSDXY(__NR_freebsd4_uname,   sys_freebsd4_uname),    // 164
    BSDXY(__NR_sysarch,          sys_sysarch),           // 165
    BSDXY(__NR_rtprio,           sys_rtprio),            // 166
 
@@ -7459,10 +7394,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // msgsys                                               170
    // shmsys                                               171
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-   BSDXY(__NR_freebsd6_pread,   sys_freebsd6_pread),    // 173
-   BSDX_(__NR_freebsd6_pwrite,  sys_freebsd6_pwrite),   // 174
-#endif
+   //BSDXY(__NR_freebsd6_pread,   sys_freebsd6_pread),    // 173
+   //BSDX_(__NR_freebsd6_pwrite,  sys_freebsd6_pwrite),   // 174
    BSDX_(__NR_setfib,           sys_setfib),            // 175
 
    // @todo PJF this exists on Darwin and Solaris as well
@@ -7502,15 +7435,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #else
    BSDXY(__NR_getdirentries,    sys_getdirentries),     // 196
 #endif
-#if (FREEBSD_VERS <= FREEBSD_10)
-   BSDX_(__NR_freebsd6_mmap,    sys_freebsd6_mmap),     // 197
-#endif
+   //BSDX_(__NR_freebsd6_mmap,    sys_freebsd6_mmap),     // 197
    // __syscall (handled specially)                     // 198
-#if (FREEBSD_VERS <= FREEBSD_10)
-   BSDX_(__NR_freebsd6_lseek,   sys_freebsd6_lseek),   // 199
-   BSDX_(__NR_freebsd6_truncate, sys_freebsd6_truncate), // 200
-   BSDX_(__NR_freebsd6_ftruncate, sys_freebsd6_ftruncate), // 201
-#endif
+   //BSDX_(__NR_freebsd6_lseek,   sys_freebsd6_lseek),   // 199
+   //BSDX_(__NR_freebsd6_truncate, sys_freebsd6_truncate), // 200
+   //BSDX_(__NR_freebsd6_ftruncate, sys_freebsd6_ftruncate), // 201
    BSDXY(__NR___sysctl,         sys___sysctl),          // 202
    GENX_(__NR_mlock,            sys_mlock),             // 203
 
@@ -7757,10 +7686,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    BSDXY(__NR_thr_self,         sys_thr_self),          // 432
    BSDXY(__NR_thr_kill,         sys_thr_kill),          // 433
-#if (FREEBSD_VERS <= FREEBSD_10)
-   BSDXY(__NR__umtx_lock,       sys__umtx_lock),        // 434
-   BSDXY(__NR__umtx_unlock,     sys__umtx_unlock),      // 435
-#endif
+   //BSDXY(__NR__umtx_lock,       sys__umtx_lock),        // 434
+   //BSDXY(__NR__umtx_unlock,     sys__umtx_unlock),      // 435
 
    BSDX_(__NR_jail_attach,      sys_jail_attach),       // 436
    BSDXY(__NR_extattr_list_fd,  sys_extattr_list_fd),   // 437
@@ -7892,13 +7819,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    // 544 is the highest syscall on FreeBSD 9
 
-#if (FREEBSD_VERS >= FREEBSD_10)
-
    BSDXY(__NR_ppoll,            sys_ppoll),             // 545
    BSDX_(__NR_futimens,         sys_futimens),          // 546
    BSDX_(__NR_utimensat,        sys_utimensat),         // 547
 
-#endif // FREEBSD_VERS >= FREEBSD_10
+   // 547 is the highest syscall on FreeBSD 10
 
 #if (FREEBSD_VERS >= FREEBSD_11)
 

@@ -153,20 +153,16 @@ DECL_TEMPLATE(freebsd, sys_quotactl) // 148
 //DECL_TEMPLATE(freebsd, sys_nfssvc) 155
 DECL_TEMPLATE(freebsd, sys_lgetfh) // 160
 DECL_TEMPLATE(freebsd, sys_getfh) // 161
-#if (FREEBSD_VERS <= FREEBSD_10)
-DECL_TEMPLATE(freebsd, sys_freebsd4_getdomainname) // 162
-DECL_TEMPLATE(freebsd, sys_freebsd4_setdomainname) // 163
-DECL_TEMPLATE(freebsd, sys_freebsd4_uname) // 164
-#endif
+//DECL_TEMPLATE(freebsd, sys_freebsd4_getdomainname) // 162
+//DECL_TEMPLATE(freebsd, sys_freebsd4_setdomainname) // 163
+//DECL_TEMPLATE(freebsd, sys_freebsd4_uname) // 164
 DECL_TEMPLATE(freebsd, sys_sysarch) // 165
 DECL_TEMPLATE(freebsd, sys_rtprio) // 166
 //DECL_TEMPLATE(freebsd, sys_semsys) 169
 //DECL_TEMPLATE(freebsd, sys_msgsys) 170
 //DECL_TEMPLATE(freebsd, sys_shmsys) 171
-#if (FREEBSD_VERS <= FREEBSD_10)
-DECL_TEMPLATE(freebsd, sys_freebsd6_pread) // 173
-DECL_TEMPLATE(freebsd, sys_freebsd6_pwrite) // 174
-#endif
+//DECL_TEMPLATE(freebsd, sys_freebsd6_pread) // 173
+//DECL_TEMPLATE(freebsd, sys_freebsd6_pwrite) // 174
 DECL_TEMPLATE(freebsd, sys_setfib) // 175
 //DECL_TEMPLATE(freebsd, sys_ntp_adjtime) 176
 // generic setgid 181
@@ -191,15 +187,11 @@ DECL_TEMPLATE(freebsd, sys_freebsd11_getdirentries) // 196
 DECL_TEMPLATE(freebsd, sys_getdirentries) // 196
 #endif
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-DECL_TEMPLATE(freebsd, sys_freebsd6_mmap) // 197
-#endif
+//DECL_TEMPLATE(freebsd, sys_freebsd6_mmap) // 197
+//DECL_TEMPLATE(freebsd, sys_freebsd6_lseek) // 199
+//DECL_TEMPLATE(freebsd, sys_freebsd6_truncate) // 200
+//DECL_TEMPLATE(freebsd, sys_freebsd6_ftruncate) // 201
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-DECL_TEMPLATE(freebsd, sys_freebsd6_lseek) // 199
-DECL_TEMPLATE(freebsd, sys_freebsd6_truncate) // 200
-DECL_TEMPLATE(freebsd, sys_freebsd6_ftruncate) // 201
-#endif
 DECL_TEMPLATE(freebsd, sys___sysctl) // 202
 // generic mlock 202
 // generic munlock 203

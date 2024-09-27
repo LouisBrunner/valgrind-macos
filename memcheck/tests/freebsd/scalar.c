@@ -604,19 +604,9 @@ int main(void)
    GO(SYS_getfh, "2s 2m");
    SY(SYS_getfh, x0, x0); FAIL;
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-   /* SYS_getdomainname          162 */
-   GO(SYS_freebsd4_getdomainname, "2s 1m");
-   SY(SYS_freebsd4_getdomainname, x0, x0); FAIL;
-
-   /* SYS_setdomainname           163 */
-   GO(SYS_freebsd4_setdomainname, "2s 0m");
-   SY(SYS_freebsd4_setdomainname, x0, x0); FAIL;
-
-   /* SYS_uname                   164 */
-   GO(SYS_freebsd4_uname, "1s 1m");
-   SY(SYS_freebsd4_uname, x0); FAIL;
-#endif
+   /* SYS_freebsd4_getdomainname  162 */
+   /* SYS_freebsd4_setdomainname  163 */
+   /* SYS_freebsd_4uname          164 */
 
    /* SYS_sysarch                 165 */
 #if defined (VGP_x86_freebsd)
@@ -645,21 +635,12 @@ int main(void)
    SY(SYS_rtprio, x0+1, x0, x0); FAIL;
 
    /* following 3 not implemented in OS */
-
    /* SYS_semsys                  169 */
-
    /* SYS_msgsys                  170 */
-
    /* SYS_shmsys                  171 */
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-
-   /* @todo PJF maybe one day */
-
    /* SYS_freebsd6_pread          173 */
-
    /* SYS_freebsd6_pwrite         174 */
-#endif
 
    /* SYS_setfib                  175 */
    GO(SYS_setfib, "1s 0m");
@@ -668,9 +649,7 @@ int main(void)
    // BSDXY(__NR_ntp_adjtime,   sys_ntp_adjtime),       // 176
 
    /* bsd/os sfork                177 */
-
    /* bsd/os getdescriptor        178 */
-
    /* bsd/os setdescriptor        179 */
 
    /* SYS_setgid,                 181 */
@@ -748,19 +727,13 @@ int main(void)
    SY(SYS_getdirentries, x0, x0, x0+3, x0+1); FAIL;
 #endif
 
-#if (FREEBSD_VERS <= FREEBSD_10)
    /* SYS_freebsd6_mmap           197*/
-#endif
 
    /* __syscall (handled specially) 198 */
 
-#if (FREEBSD_VERS <= FREEBSD_10)
    /* SYS_freebsd6_lseek          199 */
-
    /* SYS_freebsd6_truncate       200 */
-
    /* SYS_freebsd6_ftruncate      201 */
-#endif
 
    /* SYS___sysctl                202 */
    GO(SYS___sysctl, "(getoldlen) 3s 2m");
@@ -1464,13 +1437,8 @@ int main(void)
    GO(SYS_thr_kill, "2s 0m");
    SY(SYS_thr_kill, x0-10, x0-20); FAIL;
 
-#if (FREEBSD_VERS <= FREEBSD_10)
-
-   /* @todo PJF (maybe) FreeBSD 10 or earlier, hmmm */
-   // BSDXY(__NR__umtx_lock,       sys__umtx_lock),        // 434
-
-   // BSDXY(__NR__umtx_unlock,     sys__umtx_unlock),      // 435
-#endif
+   /* SYS_freebsd10__umtx_lock    434 */
+   /* SYS_freebsd10__umtx_unlock  435 */
 
    /* SYS_jail_attach             436 */
    GO(SYS_jail_attach, "1s 0m");
@@ -1964,8 +1932,6 @@ int main(void)
 
     // 544 is the highest syscall on FreeBSD 9
 
-#if (FREEBSD_VERS >= FREEBSD_10)
-
    /* SYS_ppoll                   545 */
    GO(SYS_ppoll, "4s 2m");
    SY(SYS_ppoll, x0+8, x0+1, x0+1, x0+1); FAIL;
@@ -1984,8 +1950,6 @@ int main(void)
    /* SYS_utimensat               547 */
    GO(SYS_utimensat, "4s 2m");
    SY(SYS_utimensat, x0+99999999, x0+1, x0+1, x0); FAIL;
-
-#endif // FREEBSD_VERS >= FREEBSD_11
 
 #if (FREEBSD_VERS >= FREEBSD_11)
 

@@ -3902,6 +3902,8 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename,
 
    /* Sets p_memsz to 0 to indicate we have not yet a previous a_phdr. */
    previous_rw_a_phdr.p_memsz = 0;
+   /* and silence compiler warnings */
+   previous_rw_a_phdr.p_filesz = 0;
 
    for (i = 0U; i < phdr_mnent; i++) {
       ElfXX_Phdr a_phdr;

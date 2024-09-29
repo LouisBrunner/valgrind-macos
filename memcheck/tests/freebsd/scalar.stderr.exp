@@ -4953,10 +4953,10 @@ Syscall param procctl(id) contains uninitialised byte(s)
 Syscall param procctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param procctl(arg) contains uninitialised byte(s)
+Syscall param procctl(data) contains uninitialised byte(s)
    ...
 
-Syscall param procctl(arg) points to unaddressable byte(s)
+Syscall param procctl(data) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

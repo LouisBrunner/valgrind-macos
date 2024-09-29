@@ -881,17 +881,13 @@ POST(sys_wait6)
    }
 }
 
-// the man page is inconsistent for the last argument
-// See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=247386
-// will stick to 'arg' for simplicity
-
 // SYS_procctl 544
-// int procctl(idtype_t idtype, id_t id, int cmd, void *arg);
+// int procctl(idtype_t idtype, id_t id, int cmd, void *data);
 PRE(sys_procctl)
 {
    PRINT("sys_procctl ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %" FMT_REGWORD"d, %#" FMT_REGWORD "x )",
          SARG1, SARG2, SARG3, ARG4);
-   PRE_REG_READ4(int, "procctl", vki_idtype_t, idtype, vki_id_t, id, int, cmd, void *, arg);
+   PRE_REG_READ4(int, "procctl", vki_idtype_t, idtype, vki_id_t, id, int, cmd, void *, data);
    switch (ARG3) {
    case VKI_PROC_ASLR_CTL:
    case VKI_PROC_SPROTECT:
@@ -901,13 +897,13 @@ PRE(sys_procctl)
    case VKI_PROC_STACKGAP_CTL:
    case VKI_PROC_NO_NEW_PRIVS_CTL:
    case VKI_PROC_WXMAP_CTL:
-      PRE_MEM_READ("procctl(arg)", ARG4, sizeof(int));
+      PRE_MEM_READ("procctl(data)", ARG4, sizeof(int));
       break;
    case VKI_PROC_REAP_STATUS:
-      PRE_MEM_READ("procctl(arg)", ARG4, sizeof(struct vki_procctl_reaper_status));
+      PRE_MEM_READ("procctl(data)", ARG4, sizeof(struct vki_procctl_reaper_status));
       break;
    case VKI_PROC_REAP_GETPIDS:
-      PRE_MEM_READ("procctl(arg)", ARG4, sizeof(struct vki_procctl_reaper_pids));
+      PRE_MEM_READ("procctl(data)", ARG4, sizeof(struct vki_procctl_reaper_pids));
       break;
    case VKI_PROC_REAP_KILL:
       /* The first three fields are reads
@@ -921,8 +917,8 @@ PRE(sys_procctl)
        *
        * There is also a pad field
        */
-      PRE_MEM_READ("procctl(arg)", ARG4, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
-      PRE_MEM_WRITE("procctl(arg)", ARG4+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
+      PRE_MEM_READ("procctl(data)", ARG4, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
+      PRE_MEM_WRITE("procctl(data)", ARG4+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
    case VKI_PROC_ASLR_STATUS:
    case VKI_PROC_PDEATHSIG_STATUS:
@@ -931,7 +927,7 @@ PRE(sys_procctl)
    case VKI_PROC_TRACE_STATUS:
    case VKI_PROC_NO_NEW_PRIVS_STATUS:
    case VKI_PROC_WXMAP_STATUS:
-      PRE_MEM_WRITE("procctl(arg)", ARG4, sizeof(int));
+      PRE_MEM_WRITE("procctl(data)", ARG4, sizeof(int));
    case VKI_PROC_REAP_ACQUIRE:
    case VKI_PROC_REAP_RELEASE:
    default:

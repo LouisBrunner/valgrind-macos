@@ -93,6 +93,7 @@ extern SysRes VG_(mk_SysRes_ppc32_linux) ( UInt  val, UInt  cr0so );
 extern SysRes VG_(mk_SysRes_ppc64_linux) ( ULong val, ULong cr0so, UInt flag );
 extern SysRes VG_(mk_SysRes_x86_freebsd) ( UInt val, UInt val2, Bool err);
 extern SysRes VG_(mk_SysRes_amd64_freebsd)( ULong val, ULong val2, Bool err );
+extern SysRes VG_(mk_SysRes_arm64_freebsd)( ULong val, ULong val2, Bool err );
 extern SysRes VG_(mk_SysRes_arm_linux)   ( Int val );
 extern SysRes VG_(mk_SysRes_arm64_linux) ( Long val );
 extern SysRes VG_(mk_SysRes_x86_darwin)  ( UChar scclass, Bool isErr,

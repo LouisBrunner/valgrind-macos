@@ -473,7 +473,7 @@ static SyscallTableEntry syscall_table[] = {
    GENXY(__NR_read,              sys_read),           // 0 
    GENX_(__NR_write,             sys_write),          // 1 
    GENXY(__NR_open,              sys_open),           // 2 
-   GENXY(__NR_close,             sys_close),          // 3 
+   GENX_(__NR_close,             sys_close),          // 3
    GENXY(__NR_stat,              sys_newstat),        // 4 
 
    GENXY(__NR_fstat,             sys_newfstat),       // 5 
@@ -773,7 +773,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_keyctl,            sys_keyctl),         // 250
    LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 251
    LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 252
-   LINX_(__NR_inotify_init,	 sys_inotify_init),   // 253
+   LINXY(__NR_inotify_init,	 sys_inotify_init),   // 253
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 254
 
    LINX_(__NR_inotify_rm_watch,	 sys_inotify_rm_watch), // 255

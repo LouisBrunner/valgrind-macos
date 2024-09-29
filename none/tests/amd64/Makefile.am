@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
-# Used by avx-1.c and avx_estimate_insn.c
+# Used by avx-1.c, avx-vmovq and avx_estimate_insn.c
 noinst_HEADERS = avx_tests.h
 
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
@@ -29,6 +29,7 @@ EXTRA_DIST = \
 	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
 	avx_estimate_insn.vgtest avx_estimate_insn.stderr.exp \
 	avx_estimate_insn.stdout.exp avx_estimate_insn.stdout.exp-amd \
+	avx-vmovq.vgtest avx-vmovq.stdout.exp avx-vmovq.stderr.exp \
 	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
 	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
 	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
@@ -43,6 +44,8 @@ EXTRA_DIST = \
 	bug132918.stdout.exp-older-glibc \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
+	bug485148.vgtest bug485148.stdout.exp bug485148.stderr.exp \
+	bug487439.vgtest bug487439.stdout.exp bug487439.stderr.exp \
 	cet_nops.vgtest cet_nops.stdout.exp cet_nops.stderr.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
 	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
@@ -106,6 +109,7 @@ check_PROGRAMS = \
 	amd64locked \
 	bt_flags \
 	bug127521-64 bug132813-amd64 bug132918 bug137714-amd64 \
+	bug487439 \
 	cet_nops \
 	clc \
 	cmpxchg \
@@ -128,7 +132,8 @@ endif
 if BUILD_AVX_TESTS
 if BUILD_VPCLMULQDQ_TESTS
   check_PROGRAMS += avx-1 \
-		    avx_estimate_insn
+		    avx_estimate_insn \
+		    avx-vmovq
 endif
 if BUILD_FMA4_TESTS
   check_PROGRAMS += fma4
@@ -160,7 +165,7 @@ if BUILD_BMI_TESTS
  check_PROGRAMS += bmi
 endif
 if BUILD_FMA_TESTS
- check_PROGRAMS += fma
+ check_PROGRAMS += fma bug485148
 endif
 if BUILD_MPX_TESTS
  check_PROGRAMS += mpx
@@ -201,6 +206,9 @@ allexec_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_NONNULL@
 # generic C ones
 amd64locked_CFLAGS	= $(AM_CFLAGS) -O
 bug132918_LDADD		= -lm
+bug485148_CXXFLAGS      = ${AM_CXXFLAGS} -mfma
+bug485148_SOURCES       = bug485148.cpp
+bug487439_SOURCES	= bug487439.cpp
 cmpxchg_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
 fb_test_amd64_CFLAGS	= $(AM_CFLAGS) -O -fno-strict-aliasing
 fb_test_amd64_LDADD	= -lm

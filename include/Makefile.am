@@ -52,6 +52,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-solaris.h		\
 	vki/vki-solaris-repcache.h	\
 	vki/vki-machine-types-amd64-freebsd.h	\
+	vki/vki-machine-types-arm64-freebsd.h	\
 	vki/vki-machine-types-x86-freebsd.h	\
 	vki/vki-posixtypes-amd64-linux.h \
 	vki/vki-posixtypes-arm64-linux.h \
@@ -69,6 +70,7 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-ppc64-linux.h		\
 	vki/vki-x86-linux.h		\
 	vki/vki-amd64-freebsd.h		\
+	vki/vki-arm64-freebsd.h		\
 	vki/vki-x86-freebsd.h		\
 	vki/vki-arm-linux.h		\
 	vki/vki-s390x-linux.h		\

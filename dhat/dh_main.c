@@ -1843,7 +1843,7 @@ static void dh_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a dynamic heap analysis tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2010-2018, and GNU GPL'd, by Mozilla Foundation");
+      "Copyright (C) 2010-2024, and GNU GPL'd, by Mozilla Foundation et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 600 );
 

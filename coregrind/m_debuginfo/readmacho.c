@@ -755,8 +755,6 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
      from_memory = True;
      kernel_slide = VG_(dyld_cache_get_slide)();
    }
-#else
-   vg_assert(di->fsm.rw_map_count);
 #endif
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
@@ -769,7 +767,6 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          break;
    }
    vg_assert(rx_map);
-   vg_assert(rw_map || from_memory);
 
    if (VG_(clo_verbosity) > 1) {
       if (from_memory) {

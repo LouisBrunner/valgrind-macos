@@ -91,11 +91,13 @@ EXTRA_DIST =                                        \
 	bug322621.vgtest			    \
 	bug322621.stderr.exp			    \
 	bar_bad.stderr.exp			    \
+	bar_bad.stderr.exp-no-barrier		    \
 	bar_bad.stderr.exp-nohang		    \
 	bar_bad.stderr.exp-solaris		    \
 	bar_bad.stderr.exp-freebsd		    \
 	bar_bad.vgtest				    \
 	bar_bad_xml.stderr.exp			    \
+	bar_bad_xml.stderr.exp-no-barrier	    \
 	bar_bad_xml.stderr.exp-nohang		    \
 	bar_bad_xml.stderr.exp-solaris		    \
 	bar_bad_xml.stderr.exp-freebsd		    \
@@ -269,6 +271,9 @@ EXTRA_DIST =                                        \
 	sem_as_mutex3.stderr.exp-mips32-be          \
 	sem_as_mutex3.stderr.exp-mips32-le          \
 	sem_as_mutex3.vgtest                        \
+	sem_clockwait_np.stderr.exp                 \
+	sem_clockwait_np.stdout.exp                 \
+	sem_clockwait_np.vgtest                     \
 	sem_open.stderr.exp                         \
 	sem_open.stderr.exp-mips32-be               \
 	sem_open.stderr.exp-mips32-le               \
@@ -353,6 +358,7 @@ EXTRA_DIST =                                        \
 	tc18_semabuse.vgtest                        \
 	tc19_shadowmem.stderr.exp-32bit             \
 	tc19_shadowmem.stderr.exp-32bit-BE          \
+	tc19_shadowmem.stderr.exp-32on64            \
 	tc19_shadowmem.stderr.exp-64bit             \
 	tc19_shadowmem.vgtest                       \
 	tc21_pthonce.stderr.exp                     \

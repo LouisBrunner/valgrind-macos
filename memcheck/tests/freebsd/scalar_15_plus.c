@@ -23,8 +23,8 @@ int main(void)
    SY(SYS_timerfd_gettime, x0+100, x0); FAIL;
 
    /* SYS_timerfd_settime                587 */
-   GO(SYS_timerfd_settime, "3s 2m");
-   SY(SYS_timerfd_settime, x0+321, x0, x0+10); FAIL;
+   GO(SYS_timerfd_settime, "4s 2m");
+   SY(SYS_timerfd_settime, x0+321, x0, x0+10, x0+5); FAIL;
    
    return(0);
 }

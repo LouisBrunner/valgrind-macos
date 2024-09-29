@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>5</protocolversion>
+<protocoltool>none</protocoltool>
+
+<preamble>
+  <line>Nulgrind, the minimal Valgrind tool</line>
+  <line>Copyright...</line>
+  <line>Using Valgrind...</line>
+  <line>Command: ./../../tests/true</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>none</tool>
+
+<args>
+  <vargv>
+    <exe>...</exe>
+    <arg>--command-line-only=yes</arg>
+    <arg>--memcheck:leak-check=no</arg>
+    <arg>--tool=none</arg>
+    <arg>--track-fds=yes</arg>
+    <arg>--xml=yes</arg>
+    <arg>--xml-file=/dev/stderr</arg>
+  </vargv>
+  <argv>
+    <exe>...</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+
+</valgrindoutput>
+

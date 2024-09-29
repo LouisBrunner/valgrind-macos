@@ -1,10 +1,22 @@
 
+File descriptor ...: ... is already closed
+   at 0x........: close (in /...libc...)
+   by 0x........: client (fdleak_ipv4.c:70)
+   by 0x........: main
+ Previously closed
+   at 0x........: close (in /...libc...)
+   by 0x........: client (fdleak_ipv4.c:69)
+   by 0x........: main
+ Originally opened
+   at 0x........: dup (in /...libc...)
+   by 0x........: client (fdleak_ipv4.c:68)
+   by 0x........: main
 
 FILE DESCRIPTORS: 5 open (3 std) at exit.
 Open AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:...
    ...
 
-Open AF_INET socket 3: 127.0.0.1:... <-> unbound
+Open AF_INET socket 3: 127.0.0.1:... <-> <unbound>
    ...
 
 
@@ -14,3 +26,5 @@ Open AF_INET socket 3: 127.0.0.1:... <-> 127.0.0.1:...
    ...
 
 
+For lists of detected and suppressed errors, rerun with: -s
+ERROR SUMMARY: 2 errors from 2 contexts (suppressed: 0 from 0)

@@ -528,6 +528,43 @@ static void fill_prstatus(const ThreadState *tst,
    regs->fs     = arch->vex.guest_FS;
    regs->gs     = arch->vex.guest_GS;
 
+#elif defined(VGP_arm64_freebsd)
+   regs->gp_x[0]  = arch->vex.guest_X0;
+   regs->gp_x[1]  = arch->vex.guest_X1;
+   regs->gp_x[2]  = arch->vex.guest_X2;
+   regs->gp_x[3]  = arch->vex.guest_X3;
+   regs->gp_x[4]  = arch->vex.guest_X4;
+   regs->gp_x[5]  = arch->vex.guest_X5;
+   regs->gp_x[6]  = arch->vex.guest_X6;
+   regs->gp_x[7]  = arch->vex.guest_X7;
+   regs->gp_x[8]  = arch->vex.guest_X8;
+   regs->gp_x[9]  = arch->vex.guest_X9;
+   regs->gp_x[10] = arch->vex.guest_X10;
+   regs->gp_x[11] = arch->vex.guest_X11;
+   regs->gp_x[12] = arch->vex.guest_X12;
+   regs->gp_x[13] = arch->vex.guest_X13;
+   regs->gp_x[14] = arch->vex.guest_X14;
+   regs->gp_x[15] = arch->vex.guest_X15;
+   regs->gp_x[16] = arch->vex.guest_X16;
+   regs->gp_x[17] = arch->vex.guest_X17;
+   regs->gp_x[18] = arch->vex.guest_X18;
+   regs->gp_x[19] = arch->vex.guest_X19;
+   regs->gp_x[20] = arch->vex.guest_X20;
+   regs->gp_x[21] = arch->vex.guest_X21;
+   regs->gp_x[22] = arch->vex.guest_X22;
+   regs->gp_x[23] = arch->vex.guest_X23;
+   regs->gp_x[24] = arch->vex.guest_X24;
+   regs->gp_x[25] = arch->vex.guest_X25;
+   regs->gp_x[26] = arch->vex.guest_X26;
+   regs->gp_x[27] = arch->vex.guest_X27;
+   regs->gp_x[28] = arch->vex.guest_X28;
+   regs->gp_x[29] = arch->vex.guest_X29;
+   regs->gp_lr    = arch->vex.guest_X30;
+   regs->gp_sp    = arch->vex.guest_XSP;
+   regs->gp_elr   = arch->vex.guest_PC;
+   regs->gp_spsr  = LibVEX_GuestARM64_get_nzcv( &arch->vex ); /* is this correct? */
+
+
 #else
 #  error Unknown ELF platform
 #endif
@@ -663,6 +700,42 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
 #  undef DO
+
+#elif defined(VGP_arm64_freebsd)
+   fpu->fp_q[0]  = *(const __uint128_t*)arch->vex.guest_Q0;
+   fpu->fp_q[1]  = *(const __uint128_t*)arch->vex.guest_Q1;
+   fpu->fp_q[2]  = *(const __uint128_t*)arch->vex.guest_Q2;
+   fpu->fp_q[3]  = *(const __uint128_t*)arch->vex.guest_Q3;
+   fpu->fp_q[4]  = *(const __uint128_t*)arch->vex.guest_Q4;
+   fpu->fp_q[5]  = *(const __uint128_t*)arch->vex.guest_Q5;
+   fpu->fp_q[6]  = *(const __uint128_t*)arch->vex.guest_Q6;
+   fpu->fp_q[7]  = *(const __uint128_t*)arch->vex.guest_Q7;
+   fpu->fp_q[8]  = *(const __uint128_t*)arch->vex.guest_Q8;
+   fpu->fp_q[9]  = *(const __uint128_t*)arch->vex.guest_Q9;
+   fpu->fp_q[10] = *(const __uint128_t*)arch->vex.guest_Q10;
+   fpu->fp_q[11] = *(const __uint128_t*)arch->vex.guest_Q11;
+   fpu->fp_q[12] = *(const __uint128_t*)arch->vex.guest_Q12;
+   fpu->fp_q[13] = *(const __uint128_t*)arch->vex.guest_Q13;
+   fpu->fp_q[14] = *(const __uint128_t*)arch->vex.guest_Q14;
+   fpu->fp_q[15] = *(const __uint128_t*)arch->vex.guest_Q15;
+   fpu->fp_q[16] = *(const __uint128_t*)arch->vex.guest_Q16;
+   fpu->fp_q[17] = *(const __uint128_t*)arch->vex.guest_Q17;
+   fpu->fp_q[18] = *(const __uint128_t*)arch->vex.guest_Q18;
+   fpu->fp_q[19] = *(const __uint128_t*)arch->vex.guest_Q19;
+   fpu->fp_q[20] = *(const __uint128_t*)arch->vex.guest_Q20;
+   fpu->fp_q[21] = *(const __uint128_t*)arch->vex.guest_Q21;
+   fpu->fp_q[22] = *(const __uint128_t*)arch->vex.guest_Q22;
+   fpu->fp_q[23] = *(const __uint128_t*)arch->vex.guest_Q23;
+   fpu->fp_q[24] = *(const __uint128_t*)arch->vex.guest_Q24;
+   fpu->fp_q[25] = *(const __uint128_t*)arch->vex.guest_Q25;
+   fpu->fp_q[26] = *(const __uint128_t*)arch->vex.guest_Q26;
+   fpu->fp_q[27] = *(const __uint128_t*)arch->vex.guest_Q27;
+   fpu->fp_q[28] = *(const __uint128_t*)arch->vex.guest_Q28;
+   fpu->fp_q[29] = *(const __uint128_t*)arch->vex.guest_Q29;
+   fpu->fp_q[30] = *(const __uint128_t*)arch->vex.guest_Q30;
+   fpu->fp_q[31] = *(const __uint128_t*)arch->vex.guest_Q31;
+   fpu->fp_sr     = *(const vki_uint32_t*)arch->vex.guest_QCFLAG;
+   fpu->fp_cr     = arch->vex.guest_FPCR;
 
 #else
 #  error Unknown ELF platform

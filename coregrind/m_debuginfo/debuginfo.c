@@ -549,32 +549,6 @@ static Bool ranges_overlap (Addr s1, SizeT len1, Addr s2, SizeT len2 )
    return True;
 }
 
-/*
- * PJF 2023-09-23
- *
- * FreeBSD can perform a temporary mapping when loading exes
- * and shared libraries. This is seen as a single page mapped
- * before the ro/rx/rw mappings from the ELF file itself. More
- * importantly, FreeBSD can reuse that same page when loading
- * subsequent shared libraries. That means that we see this
- * page as an overlap. Previously we noted that the mapping
- * was not fixed and ignored it by returning early from
- * VG_(di_notify_mmap).
- *
- * That works OK in general, but not for the tool itself.
- * In order to read symbols for the tool, ML_(read_elf_object)
- * needs to match up the ELF headers with the DebugInfo maps
- * (populated from the global nsegments array).
- *
- * Two possible solutions would be to hack parse_procselfmaps
- * even more so that it doesn't record the ro segment (is
- * that info in kve_flags?). The other, which was also my
- * original fix for this problem, is to just ignore identical
- * ro mappings for different files on FreeBSD. I'm not certain
- * that the size is always one page - that could be used to
- * tighten the check even more.
- */
-
 /* Do the basic mappings of the two DebugInfos overlap in any way? */
 static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
 {
@@ -603,16 +577,6 @@ static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
       for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
          const DebugInfoMapping* map2 = VG_(indexXA)(di2->fsm.maps, j);
          if (ranges_overlap(map1->avma, map1->size, map2->avma, map2->size)) {
-#if defined(VGO_freebsd)
-            if (di1 != di2 && map1->ro && map2->ro &&
-                map1->avma == map2->avma && map1->size == map2->size) {
-               if (VG_(debugLog_getLevel)() >= 3) {
-                   VG_(dmsg)("do_DebugInfos_overlap-0: identical ro mappings from files %s and %s\n",
-                            di1->fsm.filename, di2->fsm.filename);
-               }
-               continue;
-            }
-#endif
             return True;
          }
       }
@@ -719,15 +683,6 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
       been successfully read.  And that shouldn't happen until we have
       both a r-x and rw- mapping for the object.  Hence: */
    vg_assert(di->fsm.have_rx_map);
-#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
-   // not required, in the case of a DSC map we only have r-x
-   // (technically the DSC has multiple mappings but what's the point of adding all of them?)
-   if (di->fsm.have_ro_map) {
-     vg_assert(di->fsm.rw_map_count);
-   }
-#else
-   vg_assert(di->fsm.rw_map_count);
-#endif
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
       /* We are interested in r-x mappings only */
@@ -756,7 +711,6 @@ static void check_CFSI_related_invariants ( const DebugInfo* di )
                        "DiCfsi invariant (1) verification failed");
          }
       }
-      di2 = NULL;
    }
 
    /* degenerate case: all r-x sections are empty */
@@ -1136,7 +1090,8 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
           exe_handlers->load_fn ( == VG_(load_ELF) )
           [or load_MACHO].
 
-       This does the mmap'ing and creates the associated NSegments.
+       This does the mmap'ing with VG_(am_do_mmap_NO_NOTIFY)
+       and creates the associated NSegments.
 
        The NSegments may get merged, (see maybe_merge_nsegments)
        so there could be more PT_LOADs than there are NSegments.
@@ -1189,7 +1144,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 {
    NSegment const * seg;
-   Int rw_load_count;
+   Int expected_rw_load_count;
    const HChar* filename;
    Bool       is_rx_map, is_rw_map, is_ro_map;
 
@@ -1204,6 +1159,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    HChar      buf4k[4096];
 #else
    Bool       elf_ok;
+#endif
+#if defined(VGO_freebsd)
+   static Bool first_fixed_file = True;
 #endif
 
    const Bool       debug = VG_(debugLog_getLevel)() >= 3;
@@ -1363,8 +1321,18 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #if defined(VGO_freebsd)
    /* Ignore non-fixed read-only mappings.  The dynamic linker may be
     * mapping something for its own transient purposes. */
-   if (!seg->isFF && is_ro_map && debug) {
-      VG_(dmsg)("di_notify_mmap-4: non-fixed ro map\n");
+   if (!seg->isFF && is_ro_map) {
+      if (first_fixed_file) {
+         if (debug) {
+            VG_(dmsg)("di_notify_mmap-4: first non-fixed ro map\n");
+         }
+         first_fixed_file = False;
+      } else {
+         if (debug) {
+            VG_(dmsg)("di_notify_mmap-5: not first non-fixed ro map, ignored\n");
+         }
+         return 0;
+      }
    }
 #endif
 
@@ -1423,9 +1391,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
-   rw_load_count = 0;
+   expected_rw_load_count = 0;
 
-   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &rw_load_count );
+   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
 
    if (use_fd == -1) {
       VG_(close)( actual_fd );
@@ -1495,7 +1463,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    /* So, finally, are we in an accept state? */
    vg_assert(!di->have_dinfo);
    if (di->fsm.have_rx_map &&
-       di->fsm.rw_map_count == rw_load_count) {
+       di->fsm.rw_map_count == expected_rw_load_count) {
       /* Ok, so, finally, we found what we need, and we haven't
          already read debuginfo for this object.  So let's do so now.
          Yee-ha! */
@@ -1508,7 +1476,8 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       /* If we don't have an rx and rw mapping, go no further. */
       if (debug)
          VG_(dmsg)("di_notify_mmap-6: "
-                   "no dinfo loaded %s (no rx or no rw mapping)\n", filename);
+                   "no dinfo loaded %s (no rx or rw mappings (%d) not reached expected count (%d))\n",
+                   filename, di->fsm.rw_map_count, expected_rw_load_count);
       return 0;
    }
 }
@@ -2926,7 +2895,7 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
                     ? VG_(get_fnname_w_offset) (ep, eip, &buf_fn)
                     : VG_(get_fnname) (ep, eip, &buf_fn);
    } else {
-      const DiInlLoc *next_inl = iipc && iipc->next_inltab >= 0
+      const DiInlLoc *next_inl = iipc && iipc->di && iipc->next_inltab >= 0
          ? & iipc->di->inltab[iipc->next_inltab]
          : NULL;
       vg_assert (next_inl);
@@ -3194,7 +3163,7 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_MIPS_RA: return eec->uregs->ra;
 #           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
                || defined(VGA_ppc64le)
-#           elif defined(VGP_arm64_linux)
+#           elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;
@@ -3471,6 +3440,14 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
       case CFIC_ARM64_X29REL:
          cfa = cfsi_m->cfa_off + uregs->x29;
          break;
+#     elif defined(VGP_arm64_freebsd)
+   case CFIC_ARM64_SPREL:
+      cfa = cfsi_m->cfa_off + uregs->sp;
+      break;
+   case CFIC_ARM64_X29REL:
+      cfa = cfsi_m->cfa_off + uregs->x29;
+      break;
+
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -3616,6 +3593,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
    ipHere = uregsHere->pc;
+#  elif defined(VGP_arm64_freebsd)
+   ipHere = uregsHere->pc;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -3756,7 +3735,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
    COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    COMPUTE(uregsPrev.pc,  uregsHere->pc,  cfsi_m->ra_how,  cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);

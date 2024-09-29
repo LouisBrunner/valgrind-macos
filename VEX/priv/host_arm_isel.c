@@ -683,7 +683,7 @@ Bool doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
                addInstr(env, ARMInstr_Imm32( argregs[nextArgReg], 0xAA ));
                nextArgReg++;
             }
-            if (nextArgReg >= ARM_N_ARGREGS)
+            if (nextArgReg + 1 >= ARM_N_ARGREGS)
                return False; /* out of argregs */
             HReg raHi, raLo;
             iselInt64Expr(&raHi, &raLo, env, arg);

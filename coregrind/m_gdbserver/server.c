@@ -230,7 +230,7 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
 "general valgrind monitor commands:\n"
 "  help [debug]            : monitor command help. With debug: + debugging commands\n"
 "  v.wait [<ms>]           : sleep <ms> (default 0) then continue\n"
-"  v.info all_errors       : show all errors found so far\n"
+"  v.info all_errors [also_suppressed] : show all errors found so far\n"
 "  v.info last_error       : show last error found\n"
 "  v.info location <addr>  : show information about location <addr>\n"
 "  v.info n_errs_found [msg] : show the nr of errors found so far and the given msg\n"
@@ -375,9 +375,23 @@ int handle_gdb_valgrind_command (char *mon, OutputSink *sink_wanted_at_return)
       case -1:
          break;
       case 0: // all_errors
+      {
+         Int show_error_list = 1;
+         wcmd = strtok_r (NULL, " ", &ssaveptr);
+         if (wcmd != NULL) {
+            switch (VG_(keyword_id) ("also_suppressed", wcmd, kwd_report_all)) {
+            case -2:
+            case -1: break;
+            case  0:
+               show_error_list = 2;
+               break;
+            default: vg_assert (0);
+            }
+         }
          // A verbosity of minimum 2 is needed to show the errors.
-         VG_(show_all_errors)(/* verbosity */ 2, /* xml */ False);
-         break;
+         VG_(show_all_errors)(/* verbosity */ 2, /* xml */ False, show_error_list);
+      }
+      break;
       case  1: // n_errs_found
          VG_(printf) ("n_errs_found %u n_errs_shown %u (vgdb-error %d) %s\n",
                       VG_(get_n_errs_found) (),

@@ -223,3 +223,19 @@
    ...
    fun:getaddrinfo
 }
+{
+   FREEBSD15-LIB*-_UMTX_OP_ERR
+   Helgrind:Race
+   fun:_umtx_op_err
+}
+{
+   FREEBSD14-LIBSTDC++-STD::MUTEX::LOCK
+   Helgrind:Race
+   fun:_ZL18__gthread_active_pv
+}
+{
+   FREEBSD14-ARM64-_EXIT
+   Helgrind:Race
+   fun:thr_exit
+}
+

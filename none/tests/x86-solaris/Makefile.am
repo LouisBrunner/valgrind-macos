@@ -25,3 +25,5 @@ AM_CFLAGS    += @FLAG_M32@
 AM_CXXFLAGS  += @FLAG_M32@
 AM_CCASFLAGS += @FLAG_M32@
 
+coredump_single_thread_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED@
+

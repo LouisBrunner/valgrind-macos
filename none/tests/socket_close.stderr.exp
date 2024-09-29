@@ -1,0 +1,13 @@
+Open socket 3
+close socket_fd 3
+and close the socket again 3
+File descriptor ...: ... is already closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+ Previously closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+ Originally opened
+   at 0x........: socket (in /...libc...)
+   by 0x........: open_socket (socket_close.c:17)
+   by 0x........: main

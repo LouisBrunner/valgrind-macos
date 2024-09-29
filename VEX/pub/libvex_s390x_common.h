@@ -106,7 +106,31 @@
 #define S390_FAC_VXE     135 // vector enhancements facility 1
 #define S390_FAC_VXE2    148 // vector enhancements facility 2
 #define S390_FAC_DFLT    151 // deflate-conversion facility
+#define S390_FAC_NNPA    165 // NNPA facility
 
+/*--------------------------------------------------------------*/
+/*--- Extensions                                             ---*/
+/*--------------------------------------------------------------*/
+
+/* The extension ID is stored in the low 16 bits of the guest_SYSNO pseudo
+   register. */
+#define S390_EXT_ID_NBITS 16
+
+#define S390_EXT_PRNO    1
+#define S390_EXT_NNPA    2
+#define S390_EXT_DFLT    3
+#define S390_EXT_STFLE   4
+#define S390_EXT_KM      5
+#define S390_EXT_KMC     6
+#define S390_EXT_KIMD    7
+#define S390_EXT_KLMD    8
+#define S390_EXT_KMAC    9
+#define S390_EXT_PCC    10
+#define S390_EXT_KMCTR  11
+#define S390_EXT_KMO    12
+#define S390_EXT_KMF    13
+#define S390_EXT_KMA    14
+#define S390_EXT_KDSA   15
 
 /*--------------------------------------------------------------*/
 /*--- Miscellaneous                                          ---*/

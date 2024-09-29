@@ -1,0 +1,3 @@
+prereq: ../../../tests/x86_amd64_features amd64-avx
+prog: rh2257546_256
+vgopts: -q

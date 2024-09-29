@@ -1,0 +1,5 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+gsed 's/frame #2/frame #1/'

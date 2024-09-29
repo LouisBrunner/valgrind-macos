@@ -2042,7 +2042,7 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         12
 #  define SP_REG         13
 #  define RA_REG_DEFAULT 14
-#elif defined(VGP_arm64_linux)
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
 #  define FP_REG         29
 #  define SP_REG         31
 #  define RA_REG_DEFAULT 30
@@ -2080,7 +2080,7 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 72
 #elif defined(VGP_arm_linux)
 # define N_CFI_REGS 320
-#elif defined(VGP_arm64_linux)
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
 # define N_CFI_REGS 128
 #elif defined(VGP_s390x_linux)
 # define N_CFI_REGS 66

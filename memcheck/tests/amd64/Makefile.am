@@ -13,6 +13,8 @@ EXTRA_DIST = \
 		bt_everything.vgtest \
 	bug132146.vgtest bug132146.stderr.exp bug132146.stdout.exp \
 	bug279698.vgtest bug279698.stderr.exp bug279698.stdout.exp \
+	bug492210_1.vgtest bug492210_1.stderr.exp \
+	bug492210_2.vgtest bug492210_2.stderr.exp \
 	fxsave-amd64.vgtest fxsave-amd64.stdout.exp fxsave-amd64.stderr.exp \
 	insn-bsfl.vgtest insn-bsfl.stdout.exp insn-bsfl.stderr.exp \
 	insn-pcmpistri.vgtest insn-pcmpistri.stdout.exp insn-pcmpistri.stderr.exp \
@@ -20,6 +22,10 @@ EXTRA_DIST = \
 		insn-pmovmskb.stderr.exp-clang \
 	more_x87_fp.stderr.exp more_x87_fp.stdout.exp more_x87_fp.vgtest \
 	pcmpgt.stderr.exp pcmpgt.vgtest \
+	rh2257546_128.vgtest \
+		rh2257546_128.stderr.exp rh2257546_128.stdout.exp \
+	rh2257546_256.vgtest \
+		rh2257546_256.stderr.exp rh2257546_256.stdout.exp \
 	sh-mem-vec128-plo-no.vgtest \
 		sh-mem-vec128-plo-no.stderr.exp \
 		sh-mem-vec128-plo-no.stdout.exp \
@@ -42,16 +48,18 @@ check_PROGRAMS = \
 	bt_everything \
 	bug132146 \
 	bug279698 \
+	bug492210 \
 	fxsave-amd64 \
 	insn-bsfl \
 	insn-pmovmskb \
 	pcmpgt \
+	rh2257546_128 \
 	sh-mem-vec128 \
 	sse_memory \
 	xor-undef-amd64
 
 if BUILD_AVX_TESTS
- check_PROGRAMS += sh-mem-vec256 xsave-avx
+ check_PROGRAMS += rh2257546_256 sh-mem-vec256 xsave-avx
 endif
 if HAVE_ASM_CONSTRAINT_P
  check_PROGRAMS += insn-pcmpistri

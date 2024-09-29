@@ -5,7 +5,7 @@
 # other stuff.  They should be removed.
 
 ##----------------------------------------------------------------------##
-# Suppressions for the Helgrind tool when using 
+# Suppressions for the Helgrind tool when using
 # a glibc-2.{3,4,5,6,7,8,9} system
 
 ####################################################
@@ -20,7 +20,7 @@
 #   which has various deliberate (harmless) races
 #
 # - suppress anything that has its top frame in libc.so.
-#   This really isn't clever, since it could hide some 
+#   This really isn't clever, since it could hide some
 #   legitimate races.  But the problem is, if we don't do
 #   this, then loads of errors to do with stdio are reported, because
 #   H fails to see glibc's internal locking/unlocking of FILE*s
@@ -58,7 +58,15 @@
 {
    helgrind-glibc-__printf_buffer_write
    Helgrind:Race
-   fun:memcpy*
+   fun:*memcpy*
+   ...
+   fun:__printf_buffer_write
+}
+
+{
+   helgrind-glibc-__printf_buffer_write2
+   Helgrind:Race
+   fun:*memmove*
    ...
    fun:__printf_buffer_write
 }
@@ -175,11 +183,11 @@
    fun:_ZN6QMutex4lockEv
 }
 
-{                                                               
+{
    helgrind-qt4---QMutex::unlock()-QMutex::unlock()
-   Helgrind:Race                                                
+   Helgrind:Race
    ...
-   fun:_ZN6QMutex6unlockEv                                      
+   fun:_ZN6QMutex6unlockEv
    fun:_ZN6QMutex6unlockEv
 }
 
@@ -196,7 +204,7 @@
 #
 # pthread_exit apparently calls some kind of unwind
 # mechanism - maybe to remove some number of frames
-# from the thread's stack, so as to get back to the 
+# from the thread's stack, so as to get back to the
 # outermost frame for the thread?  Anyway..
 
 {
@@ -268,7 +276,7 @@
 # helgrind---ld.so-...-dlsym was merged into helgrind-glibc2X-001
 
 {
-   helgrind---_dl_allocate_tls 
+   helgrind---_dl_allocate_tls
    Helgrind:Race
    fun:mempcpy
    fun:_dl_allocate_tls_init
@@ -327,6 +335,13 @@
    fun:getaddrinfo
 }
 
+{
+   helgrind---gethostbyname2_r
+   Helgrind:Race
+   ...
+   fun:*gethostbyname2_r
+}
+
 # * here for dns and files variants etc.
 {
    helgrind---_nss_*_gethostbyname4_r
@@ -337,6 +352,6 @@
 {
    helgrind--- libnss without debuginfo
    Helgrind:Race
+   ...
    obj:/usr/lib/*/libnss_mdns4*.so.*
 }
-

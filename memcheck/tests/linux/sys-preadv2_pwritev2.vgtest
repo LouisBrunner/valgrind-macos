@@ -1,4 +1,3 @@
-prereq: test -e sys-preadv2_pwritev2
-prereq: ./check_preadv2_pwritev2
+prereq: ( test -e sys-preadv2_pwritev2 ) && ./check_preadv2_pwritev2
 prog: sys-preadv2_pwritev2
 vgopts: -q

@@ -12,12 +12,6 @@
    fun:pthread_exit
 }
 {
-   DRD-PTHREAD_CREATE1
-   drd:ConflictingAccess
-   ...
-   fun:pthread_create
-}
-{
    DRD-PTHREAD-EXIT2
    drd:ConflictingAccess
    obj:*/lib*/libthr.so.3
@@ -59,7 +53,6 @@
    drd:ConflictingAccess
    ...
    fun:dl_iterate_phdr
-   obj:*/lib*/libgcc_s.so.1
 }
 {
    DRD-PTHREAD-DETACH1
@@ -248,4 +241,30 @@
    fun:nsdispatch
    obj:*/lib*/libc.so.7
    fun:getaddrinfo
+}
+{
+   DRD-FREEEBSD15-_UMTX_OP_ERR
+   drd:ConflictingAccess
+   fun:_umtx_op_err
+}
+{
+   DRD-FREEEBSD15-_MALLOC_THREAD_CLEANUP
+   drd:ConflictingAccess
+   ...
+   fun:_malloc_thread_cleanup
+}
+{
+   DRD-FREEEBSD14-ARM64-_UMTX_OP
+   drd:ConflictingAccess
+   fun:_umtx_op
+}
+{
+   DRD-FREEEBSD14-ARM64-PTHREAD_ONCE_INTERCEPT
+   drd:ConflictingAccess
+   fun:pthread_once_intercept
+}
+{
+   DRD-FREEBSD141-X86-THR_NEW
+   drd:ConflictingAccess
+   fun:thr_new
 }

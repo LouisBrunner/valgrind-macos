@@ -602,107 +602,22 @@ POST(sys_sysarch)
 }
 
 // freebsd6_pread 173
-#if (FREEBSD_VERS <= FREEBSD_10)
-PRE(sys_freebsd6_pread)
-{
-   *flags |= SfMayBlock;
-   PRINT("sys_freebsd6_pread ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3, ARG5, ARG6);
-   PRE_REG_READ6(ssize_t, "pread",
-                 unsigned int, fd, char *, buf, vki_size_t, count,
-                 int, pad, unsigned int, off_low, unsigned int, off_high);
-
-   if (!ML_(fd_allowed)(ARG1, "freebsd6_pread", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
-   else
-      PRE_MEM_WRITE( "freebsd6_pread(buf)", ARG2, ARG3 );
-}
-
-POST(sys_freebsd6_pread)
-{
-   vg_assert(SUCCESS);
-   POST_MEM_WRITE( ARG2, RES );
-}
-#endif
+// removed
 
 // freebsd6_pwrite 174
-#if (FREEBSD_VERS <= FREEBSD_10)
-PRE(sys_freebsd6_pwrite)
-{
-   Bool ok;
-   *flags |= SfMayBlock;
-   PRINT("sys_freebsd6_pwrite ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3, ARG5, ARG6);
-   PRE_REG_READ6(ssize_t, "freebsd6_pwrite",
-                 unsigned int, fd, const char *, buf, vki_size_t, count,
-                 int, pad, unsigned int, off_low, unsigned int, off_high);
-   /* check to see if it is allowed.  If not, try for an exemption from
-      --sim-hints=enable-outer (used for self hosting). */
-   ok = ML_(fd_allowed)(ARG1, "freebsd6_pwrite", tid, False);
-   if (!ok && ARG1 == 2/*stderr*/
-         && SimHintiS(SimHint_enable_outer, VG_(clo_sim_hints)))
-      ok = True;
-   if (!ok)
-      SET_STATUS_Failure( VKI_EBADF );
-   else
-      PRE_MEM_READ( "freebsd6_write(buf)", ARG2, ARG3 );
-}
-#endif
+// removed
 
 // SYS_freebsd6_mmap 197
-#if (FREEBSD_VERS <= FREEBSD_10)
-/* This is here because on x86 the off_t is passed in 2 regs. Don't ask about pad.  */
-
-/* caddr_t mmap(caddr_t addr, size_t len, int prot, int flags, int fd, int pad, off_t pos); */
-/*              ARG1           ARG2       ARG3      ARG4       ARG5    ARG6     ARG7+ARG8 */
-
-PRE(sys_freebsd6_mmap)
-{
-   SysRes r;
-
-   PRINT("sys_freebsd6_mmap ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, pad%" FMT_REGWORD "u, lo0x%" FMT_REGWORD "x hi0x%" FMT_REGWORD "x)",
-         ARG1, (UWord)ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8 );
-   PRE_REG_READ8(long, "mmap",
-                 char *, addr, unsigned long, len, int, prot,  int, flags,
-                 int, fd,  int, pad, unsigned long, lo, unsigned long, hi);
-
-   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, MERGE64(ARG7,ARG8) );
-   SET_STATUS_from_SysRes(r);
-}
-#endif
+// removed
 
 // freebsd6_lseek 199
-#if (FREEBSD_VERS <= FREEBSD_10)
-PRE(sys_freebsd6_lseek)
-{
-   PRINT("sys_freebsd6_lseek ( %" FMT_REGWORD "u, 0x%" FMT_REGWORD "x, 0x%" FMT_REGWORD "x, %" FMT_REGWORD "u )", ARG1,ARG3,ARG4,ARG5);
-   PRE_REG_READ5(long, "lseek",
-                 unsigned int, fd, int, pad, unsigned int, offset_low,
-                 unsigned int, offset_high, unsigned int, whence);
-}
-#endif
+// removed
 
 // freebsd6_truncate 200
-#if (FREEBSD_VERS <= FREEBSD_10)
-PRE(sys_freebsd6_truncate)
-{
-   *flags |= SfMayBlock;
-   PRINT("sys_truncate ( %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1,(char *)ARG1,ARG3,ARG4);
-   PRE_REG_READ4(long, "truncate",
-                 const char *, path, int, pad,
-                 unsigned int, length_low, unsigned int, length_high);
-   PRE_MEM_RASCIIZ( "truncate(path)", ARG1 );
-}
-#endif
+// removed
 
 // freebsd6_ftruncate 201
-#if (FREEBSD_VERS <= FREEBSD_10)
-PRE(sys_freebsd6_ftruncate)
-{
-   *flags |= SfMayBlock;
-   PRINT("sys_ftruncate ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1,ARG3,ARG4);
-   PRE_REG_READ4(long, "ftruncate", unsigned int, fd, int, pad,
-                 unsigned int, length_low, unsigned int, length_high);
-}
-#endif
+// removed
 
 // SYS_clock_getcpuclockid2   247
 // no manpage for this, from syscalls.master
@@ -959,7 +874,6 @@ PRE(sys_setcontext)
                  struct vki_ucontext *, ucp);
 
    PRE_MEM_READ( "setcontext(ucp)", ARG1, sizeof(struct vki_ucontext) );
-   PRE_MEM_WRITE( "setcontext(ucp)", ARG1, sizeof(struct vki_ucontext) );
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);

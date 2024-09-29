@@ -77,11 +77,25 @@ Valgrind.  The following notes may save you some trouble.
    from valgrind.
 
 
--- Don't strip symbols from lib/valgrind/* in the installation tree.
+-- Don't strip symbols from libexec/valgrind/* in the installation tree.
    Doing so will likely cause problems.  Removing the line number info is
    probably OK (at least for some of the files in that directory), although
    that has not been tested by the Valgrind developers.
 
+   One consequence of stripping these binaries is that if Valgrind crashes
+   it won't be able to print out a useful callstack. Here is an example
+   posted on Stack Overflow
+
+      valgrind: the 'impossible' happened: Killed by fatal signal
+
+      host stacktrace:
+      ==7732== at 0x38091C12: ??? (in /usr/lib/valgrind/memcheck-amd64-linux)
+      ==7732== by 0x38050E84: ??? (in /usr/lib/valgrind/memcheck-amd64-linux)
+      ==7732== by 0x380510A9: ??? (in /usr/lib/valgrind/memcheck-amd64-linux)
+      ==7732== by 0x380D4F7B: ??? (in /usr/lib/valgrind/memcheck-amd64-linux)
+      ==7732== by 0x380E3946: ??? (in /usr/lib/valgrind/memcheck-amd64-linux)
+
+  Bug reports like this are less likely to be resolved.
 
 -- Please test the final installation works by running it on something
    huge.  I suggest checking that it can start and exit successfully

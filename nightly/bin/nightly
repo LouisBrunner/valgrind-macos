@@ -149,7 +149,7 @@ for logfile in old new ; do
    # Change 68cf3b5dbfecb96c618c371359000daaaf4293b5 added time information to the
    # logs, which is fairly variable. The sed filter deletes this so that we don't
    # generate spurious diffs.
-   egrep -q '^== [0-9]+ tests' $logfile.verbose && (
+   grep -E -q '^== [0-9]+ tests' $logfile.verbose && (
       echo >> $logfile.short
       echo "Regression test results follow" >> $logfile.short
       echo >> $logfile.short

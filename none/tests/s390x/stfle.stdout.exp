@@ -7,4 +7,4 @@ the value of cc is 3 and #double words is 3
 the value of cc is 3 and #double words is 3
 The z/Architecture architectural mode is installed and active
 the value of cc is 3 and #double words is 3
-No MSA facility available
+No constrained transactional-execution facility available

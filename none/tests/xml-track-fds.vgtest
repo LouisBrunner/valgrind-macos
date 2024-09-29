@@ -1,0 +1,5 @@
+# Simple test to make sure track-fds doesn't error on (internal) xml-file
+# See https://bugs.kde.org/show_bug.cgi?id=488379
+prog: ../../tests/true
+vgopts: --track-fds=yes --xml=yes --xml-file=/dev/stderr
+stderr_filter: filter_xml

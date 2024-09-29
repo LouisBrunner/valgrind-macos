@@ -1742,7 +1742,7 @@ Bool VG_(translate) ( ThreadId tid,
          = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
 #endif
 
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    vex_abiinfo.guest__use_fallback_LLSC
       = /* The user asked explicitly */
         SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints))

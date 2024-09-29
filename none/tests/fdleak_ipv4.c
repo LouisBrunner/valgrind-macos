@@ -63,9 +63,16 @@ void client ()
       exit(1);
    }
 
+   // Extra double close test...
+   // Just to see that the description is OK.
+   int fd2 = DO( dup (s) );
+   close (fd2);
+   close (fd2); // oops.
+
    (void) DO( read(s, buf, sizeof(buf)) );
 
    printf("%s\n", buf);
+
 }
 
 

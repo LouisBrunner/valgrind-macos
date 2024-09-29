@@ -219,10 +219,11 @@ typedef
          been interrupted by a signal. */
       UInt guest_IP_AT_SYSCALL;
 
+      UInt guest_SETC;
+
       /* Padding to make it have an 16-aligned size */
       UInt padding1;
       UInt padding2;
-      UInt padding3;
    }
    VexGuestX86State;
 
@@ -291,12 +292,6 @@ extern
 void
 LibVEX_GuestX86_put_eflag_c ( UInt new_carry_flag,
                               /*MOD*/VexGuestX86State* vex_state );
-
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-extern void _______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______ (void);
-extern Addr addr_x86g_calculate_eflags_all_WRK;
-extern Addr addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______;
-#endif
 
 /* Do x87 save from the supplied VexGuestX86State structure and store the
    result at the given address which represents a buffer of at least 108

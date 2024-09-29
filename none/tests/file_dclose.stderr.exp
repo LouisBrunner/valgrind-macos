@@ -1,0 +1,13 @@
+close 3
+time passes and we close 3 again
+File descriptor ...: ... is already closed
+   at 0x........: close (in /...libc...)
+   by 0x........: closefile (file_dclose.c:17)
+   by 0x........: main
+ Previously closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+ Originally opened
+   at 0x........: creat (in /...libc...)
+   by 0x........: openfile (file_dclose.c:11)
+   by 0x........: main

@@ -347,6 +347,8 @@ typedef
       // Only for F16C capable hosts:
       Asse_F32toF16, // F32 to F16 conversion, aka vcvtps2ph
       Asse_F16toF32, // F16 to F32 conversion, aka vcvtph2ps
+      // Only for FMA (FMA3) capable hosts:
+      Asse_VFMADD213, // Fused Multiply-Add, aka vfmadd213ss
    }
    AMD64SseOp;
 
@@ -412,6 +414,8 @@ typedef
       //uu Ain_AvxLdSt,     /* AVX load/store 256 bits,
       //uu                     no alignment constraints */
       //uu Ain_AvxReRg,     /* AVX binary general reg-reg, Re, Rg */
+      Ain_Avx32FLo,    /* AVX binary 3 operand, 32F in lowest lane only */
+      Ain_Avx64FLo,    /* AVX binary 3 operand, 64F in lowest lane only */
       Ain_EvCheck,     /* Event check */
       Ain_ProfInc      /* 64-bit profile counter increment */
    }
@@ -730,6 +734,18 @@ typedef
          //uu    HReg       dst;
          //uu } AvxReRg;
          struct {
+            AMD64SseOp op;
+            HReg       src1;
+            HReg       src2;
+            HReg       dst;
+         } Avx32FLo;
+         struct {
+            AMD64SseOp op;
+            HReg       src1;
+            HReg       src2;
+            HReg       dst;
+         } Avx64FLo;
+         struct {
             AMD64AMode* amCounter;
             AMD64AMode* amFailAddr;
          } EvCheck;
@@ -803,6 +819,8 @@ extern AMD64Instr* AMD64Instr_SseShiftN  ( AMD64SseOp,
 extern AMD64Instr* AMD64Instr_SseMOVQ    ( HReg gpr, HReg xmm, Bool toXMM );
 //uu extern AMD64Instr* AMD64Instr_AvxLdSt    ( Bool isLoad, HReg, AMD64AMode* );
 //uu extern AMD64Instr* AMD64Instr_AvxReRg    ( AMD64SseOp, HReg, HReg );
+extern AMD64Instr* AMD64Instr_Avx32FLo   ( AMD64SseOp, HReg, HReg, HReg );
+extern AMD64Instr* AMD64Instr_Avx64FLo   ( AMD64SseOp, HReg, HReg, HReg );
 extern AMD64Instr* AMD64Instr_EvCheck    ( AMD64AMode* amCounter,
                                            AMD64AMode* amFailAddr );
 extern AMD64Instr* AMD64Instr_ProfInc    ( void );

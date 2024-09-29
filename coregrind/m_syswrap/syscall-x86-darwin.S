@@ -156,7 +156,10 @@ L_$0_3:	/* In the range [3, 4), the syscall result is in %eax and %edx and C,
 	movl	$$0, 0(%esp)
 	movb	12(%esp), %al
 	movb	%al, 0(%esp)
+        movl    $$1, OFFSET_x86_SETC(%ecx)
 	call	_LibVEX_GuestX86_put_eflag_c
+        movl	12(%ebp), %ecx
+        movl    $$0, OFFSET_x86_SETC(%ecx)
 	addl	$$12, %esp
 .endif
 

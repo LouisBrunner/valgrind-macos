@@ -10,6 +10,9 @@ endif
 if VGCONF_ARCHS_INCLUDE_AMD64
 SUBDIRS += amd64
 endif
+if VGCONF_ARCHS_INCLUDE_ARM64
+SUBDIRS += arm64
+endif
 if VGCONF_ARCHS_INCLUDE_MIPS32
 SUBDIRS += mips32
 endif
@@ -63,7 +66,7 @@ if VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD
 SUBDIRS += amd64-freebsd
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 s390x linux \
+DIST_SUBDIRS = x86 amd64 arm64 ppc32 ppc64 s390x linux \
 		darwin solaris x86-linux amd64-linux arm64-linux \
 		x86-solaris amd64-solaris mips32 mips64 \
 		freebsd amd64-freebsd x86-freebsd \
@@ -74,6 +77,7 @@ dist_noinst_SCRIPTS = \
 	filter_allocs \
 	filter_leak_cases_possible \
 	filter_leak_cpp_interior \
+	filter_libc_variants \
 	filter_xml \
 	filter_strchr \
 	filter_varinfo3 \
@@ -88,7 +92,8 @@ dist_noinst_SCRIPTS = \
 noinst_SCRIPTS = \
 	filter_dw4 \
 	filter_overlaperror \
-	filter_stderr
+	filter_stderr \
+	filter_supp
 
 noinst_HEADERS = leak.h
 
@@ -121,6 +126,7 @@ EXTRA_DIST = \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.stderr.exp bug472219.vgtest \
+	bug484002.stderr.exp bug484002.stdout.exp bug484002.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
 	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
@@ -132,6 +138,8 @@ EXTRA_DIST = \
 	clireq_nofill.stdout.exp clireq_nofill.vgtest \
 	clo_redzone_default.vgtest clo_redzone_128.vgtest \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
+	close_range.vgtest close_range.stderr.exp \
+	close_range.stderr.exp.linux \
 	cond_ld.vgtest cond_ld.stdout.exp cond_ld.stderr.exp-arm \
 		cond_ld.stderr.exp-64bit-non-arm \
 		cond_ld.stderr.exp-32bit-non-arm \
@@ -139,6 +147,8 @@ EXTRA_DIST = \
 		cond_st.stderr.exp-64bit-non-arm \
 		cond_st.stderr.exp-32bit-non-arm \
 	leak_cpp_interior.stderr.exp leak_cpp_interior.stderr.exp-64bit leak_cpp_interior.vgtest libstdc++.supp \
+	leak_cpp_interior.stderr.exp-freebsd leak_cpp_interior.stderr.exp-freebsd-32bit \
+		leak_cpp_interior.stderr.exp-arm \
 	custom_alloc.stderr.exp custom_alloc.vgtest \
 		custom_alloc.stderr.exp-s390x-mvc \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
@@ -162,22 +172,21 @@ EXTRA_DIST = \
 	sized_aligned_new_delete_misaligned1_supp.vgtest \
 		sized_aligned_new_delete_misaligned1_supp.supp \
 		sized_aligned_new_delete_misaligned1_supp.stderr.exp \
-		sized_aligned_new_delete_misaligned1_supp.stderr.exp_32 \
 	sized_aligned_new_delete_misaligned2_supp.vgtest \
 		sized_aligned_new_delete_misaligned2_supp.supp \
 		sized_aligned_new_delete_misaligned2_supp.stderr.exp \
-		sized_aligned_new_delete_misaligned2_supp.stderr.exp_32 \
+		sized_aligned_new_delete_misaligned2_supp.stderr.exp-32 \
 	sized_aligned_new_delete_misaligned3_supp.vgtest \
 		sized_aligned_new_delete_misaligned3_supp.supp \
 		sized_aligned_new_delete_misaligned3_supp.stderr.exp \
-		sized_aligned_new_delete_misaligned3_supp.stderr.exp_32 \
+		sized_aligned_new_delete_misaligned3_supp.stderr.exp-32 \
 	new_aligned_delete_default.stderr.exp \
 	new_aligned_delete_default.stderr.exp_32 \
 		new_aligned_delete_default.vgtest \
 	new_delete_mismatch_size.stderr.exp \
 		new_delete_mismatch_size.vgtest \
 	new_delete_mismatch_size_supp.stderr.exp \
-		new_delete_mismatch_size_supp.stderr.exp_32 \
+	new_delete_mismatch_size_supp.stderr.exp-32 \
 		new_delete_mismatch_size_supp.vgtest \
 		new_delete_mismatch_size_supp.supp \
 	deep-backtrace.vgtest deep-backtrace.stderr.exp \
@@ -219,6 +228,7 @@ EXTRA_DIST = \
 	inltemplate.stderr.exp inltemplate.stdout.exp inltemplate.vgtest \
 		inltemplate.stderr.exp-old-gcc \
 	leak-0.vgtest leak-0.stderr.exp \
+	leak-cases-exit-on-definite.vgtest leak-cases-exit-on-definite.stderr.exp \
 	leak-cases-full.vgtest leak-cases-full.stderr.exp \
 	leak-cases-possible.vgtest leak-cases-possible.stderr.exp \
 	leak-cases-summary.vgtest leak-cases-summary.stderr.exp \
@@ -255,7 +265,6 @@ EXTRA_DIST = \
 	malloc2.stderr.exp malloc2.vgtest \
 	malloc3.stderr.exp malloc3.stdout.exp malloc3.vgtest \
 	manuel1.stderr.exp manuel1.stdout.exp manuel1.vgtest \
-		manuel1.stderr.exp-freebsd-clang \
 	manuel2.stderr.exp manuel2.stderr.exp64 manuel2.stdout.exp \
 		manuel2.vgtest \
 	manuel3.stderr.exp manuel3.vgtest \
@@ -267,7 +276,7 @@ EXTRA_DIST = \
 		memalign_args.stderr.exp-solaris \
 	memccpy1.stderr.exp memccpy1.stdout.exp memccpy1.vgtest \
 	memccpy2.stderr.exp memccpy2.vgtest \
-	memcmptest.stderr.exp memcmptest.stderr.exp2 \
+	memcmptest.stderr.exp \
 	memcmptest.stdout.exp memcmptest.vgtest \
 	memmem.stderr.exp memmem.vgtest \
 	mempool.stderr.exp mempool.vgtest \
@@ -304,10 +313,12 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc212-s390x \
 	origin5-bz2.stderr.exp-glibc234-s390x \
 	origin5-bz2.stderr.exp-glibc218-mips32 \
+	origin5-bz2.stderr.exp-glibc236-arm \
 	origin6-fp.vgtest origin6-fp.stdout.exp \
 	origin6-fp.stderr.exp-glibc25-amd64 \
 	origin6-fp.stderr.exp-glibc27-ppc64 \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
+		overlap.stderr.exp-no_memcpy \
 	partiallydefinedeq.vgtest partiallydefinedeq.stderr.exp \
 	partiallydefinedeq.stderr.exp4 \
 	partiallydefinedeq.stderr.exp3 \
@@ -422,6 +433,7 @@ EXTRA_DIST = \
 	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
 		varinfo5.stderr.exp-ppc64 \
 		varinfo5.stderr.exp-freebsd \
+		varinfo5.stderr.exp-freebsd2 \
 	varinfo6.vgtest varinfo6.stdout.exp varinfo6.stderr.exp \
 		varinfo6.stderr.exp-ppc64 \
 	varinforestrict.vgtest varinforestrict.stderr.exp \
@@ -430,6 +442,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stdout.exp vcpu_fnfns.stdout.exp-glibc28-amd64 \
 	vcpu_fnfns.stdout.exp-darwin vcpu_fnfns.stdout.exp-solaris \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
+	wcpncpy.stderr.exp wcpncpy.vgtest \
 	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
 	wcsncpy.vgtest wcsncpy.stderr.exp \
 	wmemcmp.vgtest wmemcmp.stderr.exp \
@@ -446,8 +459,7 @@ EXTRA_DIST = \
 	wrapmallocstatic.vgtest wrapmallocstatic.stdout.exp \
 	wrapmallocstatic.stderr.exp \
 	writev1.stderr.exp writev1.stderr.exp-solaris writev1.vgtest \
-	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc \
-	leak_cpp_interior.stderr.exp-freebsd leak_cpp_interior.stderr.exp-freebsd-32bit
+	xml1.stderr.exp xml1.stdout.exp xml1.vgtest xml1.stderr.exp-s390x-mvc
 
 check_PROGRAMS = \
 	accounting \
@@ -458,7 +470,6 @@ check_PROGRAMS = \
 	badpoll \
 	badrw \
 	big_blocks_freed_list \
-	brk2 \
 	buflen_check \
 	bug155125 \
 	bug287260 \
@@ -550,11 +561,17 @@ check_PROGRAMS += long_namespace_xml
 endif
 
 if DWARF4
+if HAVE_SBRK
 check_PROGRAMS += dw4
+endif
 endif
 
 bug464969_d_demangle_SOURCES = bug464969_d_demangle.cpp
 bug464969_d_demangle_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
+
+if HAVE_WCSXFRM
+check_PROGRAMS += bug484002
+endif
 
 if GZ_ZLIB
 check_PROGRAMS += cdebug_zlib
@@ -568,6 +585,10 @@ cdebug_zlib_gnu_SOURCES = cdebug.c
 cdebug_zlib_gnu_CFLAGS = $(AM_CFLAGS) -g -gz=zlib-gnu @FLAG_W_NO_UNINITIALIZED@
 endif
 
+if HAVE_SBRK
+check_PROGRAMS += brk2
+endif
+
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
 	new_aligned_delete_default \
@@ -575,6 +596,13 @@ check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
 	sized_aligned_new_delete_misaligned2 \
 	sized_aligned_new_delete_misaligned3
 endif
+
+if HAVE_CLOSE_RANGE
+check_PROGRAMS += close_range
+endif
+
+close_range_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@ \
+		     @FLAG_W_NO_UNINITIALIZED@
 
 if HAVE_PTHREAD_BARRIER
 check_PROGRAMS += reach_thread_register
@@ -589,7 +617,11 @@ check_PROGRAMS += stpncpy
 endif
 
 if HAVE_PTHREAD_SETNAME_NP
-check_PROGRAMS += threadname 
+check_PROGRAMS += threadname
+endif
+
+if HAVE_WCPNCPY
+check_PROGRAMS += wcpncpy
 endif
 
 # are there still pre-C99 C compilers?
@@ -694,9 +726,13 @@ malloc1_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
 manuel1_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 manuel3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
+memalign_args_CFLAGS	= $(AM_CFLAGS) -std=gnu11
 memalign2_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 if VGCONF_OS_IS_SOLARIS
 memalign2_CFLAGS	+= -D__EXTENSIONS__
+posix_memalign_CFLAGS	= ${AM_CFLAGS} -D__EXTENSIONS__
+else
+posix_memalign_CFLAGS	= ${AM_CFLAGS}
 endif
 
 memcmptest_CFLAGS	= $(AM_CFLAGS) -fno-builtin-memcmp
@@ -809,7 +845,7 @@ else
 endif
 
 varinfo5so_so_SOURCES   = varinfo5so.c
-varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow @FLAG_W_NO_MAYBE_UNINITIALIZED@
+varinfo5so_so_CFLAGS    = $(AM_CFLAGS) -fpic -O -Wno-shadow -fno-optimize-sibling-calls @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if VGCONF_OS_IS_DARWIN
  varinfo5so_so_LDFLAGS  = -fpic $(AM_FLAG_M3264_PRI) -dynamic \
 				-dynamiclib -all_load
@@ -865,4 +901,3 @@ endif
 
 writev1_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@ @FLAG_W_NO_STRINGOP_OVERREAD@
 xml1_CFLAGS             = $(AM_CFLAGS) -D_GNU_SOURCE @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
-

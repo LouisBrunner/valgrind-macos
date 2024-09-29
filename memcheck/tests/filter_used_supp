@@ -1,7 +1,14 @@
 #! /bin/sh
 
+# the usual stuff
 ./filter_stderr "$@" |
 
+# no suppressions from default
 grep -v default\.supp |
 
-grep used_suppression
+# just the list of used suppressions
+grep used_suppression |
+
+# ignore the line numbers, allows having more than one stanza for the
+# same kind of suppression (to accommodate Darwin using zones)
+sed 's/:[0-9]*$//'

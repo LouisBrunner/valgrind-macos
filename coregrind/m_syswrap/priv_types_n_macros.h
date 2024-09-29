@@ -50,9 +50,6 @@
 /* Arguments for a syscall. */
 typedef
    struct SyscallArgs {
-#if defined(VGO_freebsd)
-      Word klass;
-#endif
       Word sysno;
       RegWord arg1;
       RegWord arg2;
@@ -62,6 +59,9 @@ typedef
       RegWord arg6;
       RegWord arg7;
       RegWord arg8;
+#if defined(VGO_freebsd)
+      Word klass;
+#endif
    }
    SyscallArgs;
 
@@ -137,6 +137,15 @@ typedef
       Int s_arg7;
       Int s_arg8;
       Bool arg6_is_reg;
+#     elif defined(VGP_arm64_freebsd)
+      Int o_arg1;
+      Int o_arg2;
+      Int o_arg3;
+      Int o_arg4;
+      Int o_arg5;
+      Int o_arg6;
+      Int o_arg7;
+      Int o_arg8;
 #     elif defined(VGP_mips32_linux)
       Int o_arg1;
       Int o_arg2;
@@ -498,6 +507,17 @@ static inline UWord getERR ( SyscallStatus* st ) {
    } while (0)
 #  define PRA7(s,t,a) PSRAn(7,s,t,a)
 #  define PRA8(s,t,a) PSRAn(8,s,t,a)
+
+#elif defined(VGP_arm64_freebsd)
+   /* Up to 7 parameters, all in registers. */
+#  define PRA1(s,t,a) PRRAn(1,s,t,a)
+#  define PRA2(s,t,a) PRRAn(2,s,t,a)
+#  define PRA3(s,t,a) PRRAn(3,s,t,a)
+#  define PRA4(s,t,a) PRRAn(4,s,t,a)
+#  define PRA5(s,t,a) PRRAn(5,s,t,a)
+#  define PRA6(s,t,a) PRRAn(6,s,t,a)
+#  define PRA7(s,t,a) PRRAn(7,s,t,a)
+#  define PRA8(s,t,a) PRRAn(8,s,t,a)
 
 #elif defined(VGP_x86_darwin) || defined(VGP_x86_solaris)
    /* Up to 8 parameters, all on the stack. */

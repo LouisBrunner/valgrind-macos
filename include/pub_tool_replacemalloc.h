@@ -103,7 +103,9 @@ typedef enum {
    AllocKindDeleteAligned,
    AllocKindVecDeleteAligned,
    AllocKindDeleteSizedAligned,
-   AllocKindVecDeleteSizedAligned
+   AllocKindVecDeleteSizedAligned,
+   AllocKindFreeSized,
+   AllocKindFreeAlignedSized
 } AlignedAllocKind;
 
 struct AlignedAllocInfo {

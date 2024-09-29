@@ -554,7 +554,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_write,             sys_write),          // 4
 
    GENXY(__NR_open,              sys_open),           // 5
-   GENXY(__NR_close,             sys_close),          // 6
+   GENX_(__NR_close,             sys_close),          // 6
 //   GENXY(__NR_waitpid,           sys_waitpid),        // 7
    GENXY(__NR_creat,             sys_creat),          // 8
    GENX_(__NR_link,              sys_link),           // 9
@@ -922,7 +922,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
 
 //   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290
-   LINX_(__NR_inotify_init,    sys_inotify_init),   // 291
+   LINXY(__NR_inotify_init,    sys_inotify_init),   // 291
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 292
    LINX_(__NR_inotify_rm_watch,    sys_inotify_rm_watch), // 293
 //   LINX_(__NR_migrate_pages,    sys_migrate_pages),    // 294

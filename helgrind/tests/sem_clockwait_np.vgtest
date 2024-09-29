@@ -1,0 +1,3 @@
+prereq: test -e ./sem_clockwait_np
+vgopts: -q
+prog: sem_clockwait_np

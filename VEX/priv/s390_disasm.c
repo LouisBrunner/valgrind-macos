@@ -251,8 +251,8 @@ cls_operand(Int kind, UInt mask)
    case S390_XMNM_STOC:   prefix = "stoc";  break;
    case S390_XMNM_STOCG:  prefix = "stocg"; break;
    case S390_XMNM_STOCFH: prefix = "stocfh"; break;
-   case S390_XMNM_LOCFH:  prefix = "locgh"; break;
-   case S390_XMNM_LOCFHR: prefix = "locghr"; break;
+   case S390_XMNM_LOCFH:  prefix = "locfh"; break;
+   case S390_XMNM_LOCFHR: prefix = "locfhr"; break;
    case S390_XMNM_LOCHI:  prefix = "lochi"; break;
    case S390_XMNM_LOCGHI: prefix = "locghi"; break;
    case S390_XMNM_LOCHHI: prefix = "lochhi"; break;

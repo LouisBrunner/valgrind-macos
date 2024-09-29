@@ -143,7 +143,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname, Bool u
       paths.  We might not need the space for vgpreload_<tool>.so, but it
       doesn't hurt to over-allocate briefly.  The 16s are just cautious
       slop. */
-   Int preload_core_path_len = vglib_len + sizeof(preload_core)
+   Int preload_core_path_len = vglib_len + VG_(strlen)(preload_core)
                                          + sizeof(VG_PLATFORM) + 16;
    Int preload_tool_path_len = vglib_len + VG_(strlen)(toolname)
                                          + sizeof(VG_PLATFORM) + 16;
@@ -721,7 +721,9 @@ Addr setup_client_stack( void*  init_sp,
                auxv->u.a_val &= ((VKI_HWCAP_S390_TE - 1)
                                  | VKI_HWCAP_S390_VXRS
                                  | VKI_HWCAP_S390_VXRS_EXT
-                                 | VKI_HWCAP_S390_VXRS_EXT2);
+                                 | VKI_HWCAP_S390_VXRS_EXT2
+                                 | VKI_HWCAP_S390_DFLT
+                                 | VKI_HWCAP_S390_NNPA);
             }
 #           elif defined(VGP_arm64_linux)
             {
@@ -732,6 +734,7 @@ Addr setup_client_stack( void*  init_sp,
                                | VKI_HWCAP_PMULL        \
                                | VKI_HWCAP_SHA1         \
                                | VKI_HWCAP_SHA2         \
+                               | VKI_HWCAP_SHA512       \
                                | VKI_HWCAP_CRC32        \
                                | VKI_HWCAP_FP           \
                                | VKI_HWCAP_ASIMD        \

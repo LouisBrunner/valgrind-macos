@@ -587,6 +587,26 @@ ULong arm64g_calculate_flags_nzcv ( ULong cc_op, ULong cc_dep1,
    return res;
 }
 
+void LibVEX_GuestARM64_put_nzcv_c ( ULong new_carry_flag,
+                                  /*MOD*/VexGuestARM64State* vex_state )
+{
+   ULong nzcv = arm64g_calculate_flags_nzcv(
+      vex_state->guest_CC_OP,
+      vex_state->guest_CC_DEP1,
+      vex_state->guest_CC_DEP2,
+      vex_state->guest_CC_NDEP
+      );
+   if (new_carry_flag & 1) {
+      nzcv |= ARM64G_CC_MASK_C;
+   } else {
+      nzcv &= ~ARM64G_CC_MASK_C;
+   }
+   vex_state->guest_CC_OP   = ARM64G_CC_OP_COPY;
+   vex_state->guest_CC_DEP1 = nzcv;
+   vex_state->guest_CC_DEP2 = 0;
+   vex_state->guest_CC_NDEP = 0;
+}
+
 //ZZ 
 //ZZ /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 //ZZ /* Calculate the QC flag from the arguments, in the lowest bit
@@ -756,6 +776,19 @@ ULong arm64g_calc_crc32cx ( ULong acc, ULong bits )
    return crc;
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_DCZID_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, dczid_el0" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
 
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */
@@ -786,6 +819,139 @@ ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void )
 #  endif
 }
 
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_MIDR_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, midr_el1" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64PFR0_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64pfr0_el1" : "=r"(w));
+
+   // The control word uses the following nibbles (as seen on RPi)
+   // unsupported unless indicated
+   // 0 to 3 - EL0 to EL3 exception level handling
+   // 4 - FP includes half-precision (partial support)
+   // 5 - AdvSIMD also includes haf-precision
+
+   /* If half-precision fp is present we fall back to normal
+      half precision implementation because of missing support in the emulation.
+      If no AdvSIMD and FP are implemented, we preserve the value */
+   w = (w >> 16);
+   w &= 0xff;
+   switch(w) {
+     case 0x01:
+       w = 0x0;
+       break;
+     case 0xff:
+       w = (0xFF<<16);
+       break;
+     default:
+       w = 0x0;
+       break;
+   }
+
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64MMFR0_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64mmfr0_el1" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64MMFR1_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64mmfr1_el1" : "=r"(w));
+
+   /* Clear VH and HAFDBS bits */
+   w &= ~(0xF0F);
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64isar0_el1" : "=r"(w));
+
+   // In the mask below, nibbles are (higher nibbles all unsupported)
+   // 0 - RES0
+   // 1 - AES
+   // 2 - SHA1
+   // 3 - SHA2
+   // 4 - CRC32
+   // 5 - Atomic bits
+   // 6 - TME (unsupported)
+   // 7 - RDM
+   // 8 - SHA3 (unsupported)
+   // 9 - SM3 (unsupported)
+   // 10 - SM4 (unsupported)
+   // 11 - DP
+
+   //     10
+   //     109876543210
+   w &= 0xF000F0FFFFFF;
+
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR1_EL1 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, id_aa64isar1_el1" : "=r"(w));
+
+   // only nibble 0 DBP
+   w &= 0xF;
+
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
 
 void arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res, ULong arg1, ULong arg2 )
 {
@@ -1056,6 +1222,11 @@ static inline UInt ROR32 ( UInt x, UInt sh ) {
    return (x >> sh) | (x << (32 - sh));
 }
 
+static inline ULong ROR64 ( ULong x, ULong sh ) {
+   vassert(sh > 0 && sh < 64);
+   return (x >> sh) | (x << (64 - sh));
+}
+
 static inline UInt SHAchoose ( UInt x, UInt y, UInt z ) {
    return ((y ^ z) & x) ^ z;
 }
@@ -1287,6 +1458,70 @@ void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
       elt = elt + op1.w32[e] + T0.w32[e];
       res->w32[e] = elt;
    }
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512H2 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                   ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   vassert(nHi == 0);
+   ULong X = nLo;
+   V128 Y; Y.w64[1] = mHi; Y.w64[0] = mLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong NSigma0 = ROR64(Y.w64[0], 28) ^ ROR64(Y.w64[0], 34)
+      ^ ROR64(Y.w64[0], 39);
+   res->w64[1] = (X & Y.w64[1]) ^ (X & Y.w64[0]) ^ (Y.w64[1] & Y.w64[0]);
+   res->w64[1] += NSigma0 + W.w64[1];
+   NSigma0 = ROR64(res->w64[1], 28) ^ ROR64(res->w64[1], 34)
+      ^ ROR64(res->w64[1], 39);
+   res->w64[0] = (res->w64[1] & Y.w64[0]) ^ (res->w64[1] & Y.w64[1])
+      ^ (Y.w64[0] & Y.w64[1]);
+   res->w64[0] += NSigma0 + W.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512H ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo )
+{
+   V128 X; X.w64[1] = nHi; X.w64[0] = nLo;
+   V128 Y; Y.w64[1] = mHi; Y.w64[0] = mLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong MSigma1 = ROR64(Y.w64[1], 14) ^ ROR64(Y.w64[1], 18)
+      ^ ROR64(Y.w64[1], 41);
+   res->w64[1] = (Y.w64[1] & X.w64[0]) ^ (~Y.w64[1] & X.w64[1]);
+   res->w64[1] += MSigma1 + W.w64[1];
+   ULong tmp = res->w64[1] + Y.w64[0];
+   MSigma1 = ROR64(tmp, 14) ^ ROR64(tmp, 18) ^ ROR64(tmp, 41);
+   res->w64[0] = (tmp & Y.w64[1]) ^ (~tmp & X.w64[0]);
+   res->w64[0] += MSigma1 + W.w64[0];
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo )
+
+{
+   vassert(nHi == 0);
+   ULong X = nLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong sig0 = ROR64(W.w64[1], 1) ^ ROR64(W.w64[1], 8) ^ (W.w64[1] >> 7);
+   res->w64[0] = W.w64[0] + sig0;
+   sig0 = ROR64(X, 1) ^ ROR64(X, 8) ^ (X >> 7);
+   res->w64[1] = W.w64[1] + sig0;
+}
+
+/* CALLED FROM GENERATED CODE */
+void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo,
+                                    ULong mHi, ULong mLo )
+{
+   V128 X; X.w64[1] = nHi; X.w64[0] = nLo;
+   V128 Y; Y.w64[1] = mHi; Y.w64[0] = mLo;
+   V128 W; W.w64[1] = dHi; W.w64[0] = dLo;
+   ULong sig1 = ROR64(X.w64[1], 19) ^ ROR64(X.w64[1], 61) ^ (X.w64[1] >> 6);
+   res->w64[1] = W.w64[1] + sig1 + Y.w64[1];
+   sig1 = ROR64(X.w64[0], 19) ^ ROR64(X.w64[0], 61) ^ (X.w64[0] >> 6);
+   res->w64[0] = W.w64[0] + sig1 + Y.w64[0];
 }
 
 
@@ -1774,6 +2009,7 @@ IRExpr* guest_arm64_spechelper ( const HChar* function_name,
 //ZZ }
 //ZZ #endif
 
+/* negative zero carry o-v-erflow flags */
 /* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
 {
@@ -1812,6 +2048,7 @@ ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
    return nzcv;
 }
 
+/* floating point status resgister */
 /* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_fpsr ( const VexGuestARM64State* vex_state )
 {

@@ -703,6 +703,13 @@ various places online.
       true, but doing otherwise accurately is difficult.  Furthermore,
       starting at zero better indicates the size of the part of the main
       stack that a user program actually has control over.</para>
+      <para>If you give at least 4 <option>-v</option> verbosity arguments,
+        then massif produces a trace for each stack increase and decrease.
+        The stack increase trace contains the IP address that increased the stack.
+        Note that to get fully precise IP address, you must specify the options
+        <option>-px-default=unwindregs-at-mem-access
+          --px-file-backed=unwindregs-at-mem-access</option>.
+      </para>
     </listitem>
   </varlistentry>
 

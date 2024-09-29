@@ -12,3 +12,21 @@
    fun:posix_memalign
    fun:main
 }
+
+# Darwin uses zones
+{
+   posix_memalign size
+   Memcheck:BadSize
+   fun:malloc_zone_memalign
+   fun:posix_memalign
+   fun:main
+}
+
+{
+   posix_memalign align
+   Memcheck:BadAlign
+   fun:malloc_zone_memalign
+   fun:posix_memalign
+   fun:main
+}
+

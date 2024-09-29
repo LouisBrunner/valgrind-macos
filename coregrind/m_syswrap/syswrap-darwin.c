@@ -67,6 +67,7 @@
 #include <mach/mach.h>
 #include <mach/mach_vm.h>
 #include <semaphore.h>
+#include <sys/kdebug.h>
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 #define msgh_request_port      msgh_remote_port
@@ -719,6 +720,186 @@ void VG_(show_open_ports)(void)
    }
 
    VG_(message)(Vg_UserMsg, "\n");
+}
+
+
+/* ---------------------------------------------------------------------
+   kdebug helpers
+   ------------------------------------------------------------------ */
+
+// From https://newosxbook.com/tools/kdv.html
+static const HChar *kdebug_std_codes[] =
+{
+  NULL,
+  "MACH",    // #define DBG_MACH                1
+  "NETWORK", // #define DBG_NETWORK             2
+  "FSYSTEM", // #define DBG_FSYSTEM             3
+  "BSD",     // #define DBG_BSD                 4
+  "IOKIT",   // #define DBG_IOKIT               5
+  "DRIVERS", // #define DBG_DRIVERS             6
+  "TRACE",   // #define DBG_TRACE               7
+  "DLIL",    // #define DBG_DLIL                8
+  "PTHREAD", // #define DBG_PTHREAD             9
+  "CORESTORAGE", // #define DBG_CORESTORAGE         10
+  "COREGRAPHICS", // #define DBG_CG                  11
+  "MONOTONICS", // #define DBG_MONOTONIC           12
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  "MISC",    // #define DBG_MISC                20
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  "SECURITY", // As of 10.10
+  "DYLD",    // #define DBG_DYLD                31
+  "QT",      // #define DBG_QT                  32
+  "APPS",    // #define DBG_APPS                33
+  "LAUNCHD", // #define DBG_LAUNCHD             34
+  "SILICON", // #define DBG_SILICON             35
+  "HANGTRACER",      // iOS 9: undocumented
+  "PERF" ,    // #define DBG_PERF                37
+  // added in 10.9
+  "IMPORTANCE",  // #define DBG_IMPORTANCE          38
+  NULL,  // Apparently present in iOS?
+  // Added in 10.10
+  "BANK",    // #define DBG_BANK                40
+  "XPC",     //#define DBG_XPC                 41
+  "ATM" ,    // #define DBG_ATM                 42
+  "ARIADNE", // #define DBG_ARIADNE             43
+  // Added in 10.11
+  "DAEMON",  // #define DBG_DAEMON              44
+  "ENERGYTRACE",  // #define DBG_ENERGYTRACE         45
+  "DISPATCH", // #define DBG_DISPATCH            46
+  NULL, NULL,
+  "IMG", // #define DBG_IMG                 49
+  NULL,
+  "UMALLOC", // #define DBG_UMALLOC             51
+  NULL,
+  "TURNSTILE", // #define DBG_TURNSTILE           53
+  "AUDIO", // #define DBG_AUDIO               54
+  NULL, NULL, NULL, NULL, NULL, // 55-59
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 60-69
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 70-79
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 80-89
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 90-99
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 100-109
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 110-119
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 120-129
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 130-139
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 140-149
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 150-159
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 160-169
+  "WINDOWSERVER", // apparently deprecated in 10.11 and merged with 49
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 171-179
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 180-189
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 190-199
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 200-209
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 210-219
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 220-229
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 230-238
+  "IOS_APPS", // iOS: Used by tons of Apps, undocumented
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 240-249
+  NULL, NULL, NULL, NULL, NULL, // 250-254
+  "MIG", // #define DBG_MIG                 255
+};
+
+struct KDebugTraceCode {
+  ULong code;
+  const HChar name[64];
+};
+static Bool kdebug_trace_codes_initd = False;
+static UInt kdebug_trace_codes_count = 0;
+static struct KDebugTraceCode* kdebug_trace_codes = NULL;
+
+static const HChar *kdebug_debugid(ULong did)
+{
+  static HChar buf[64];
+  Int class = KDBG_EXTRACT_CLASS(did);
+  ULong event_id = did & KDBG_EVENTID_MASK;
+  HChar dir = '\0';
+  const HChar* found_class = NULL;
+
+  if (!kdebug_trace_codes_initd) {
+    HChar rbuf[1024];
+    Int leftover = 0;
+
+    kdebug_trace_codes_initd = True;
+    SysRes fd = VG_(open)("/usr/share/misc/trace.codes", O_RDONLY, 0);
+    if (sr_isError(fd)) {
+      VG_(close)(sr_Res(fd));
+    } else {
+      kdebug_trace_codes_count = 0;
+      while (1) {
+        Int count = VG_(read)(sr_Res(fd), rbuf, sizeof(rbuf));
+        if (count <= 0) {
+          break;
+        }
+        for (HChar* p = rbuf; p < rbuf + count; p += 1) {
+          if (*p == '\n') {
+            kdebug_trace_codes_count += 1;
+          }
+        }
+      }
+      kdebug_trace_codes = VG_(malloc)("kdebug_trace_codes",
+                                       kdebug_trace_codes_count *
+                                       sizeof(struct KDebugTraceCode));
+      VG_(lseek)(sr_Res(fd), 0, VKI_SEEK_SET);
+      kdebug_trace_codes_count = 0;
+      while (1) {
+        Int count = VG_(read)(sr_Res(fd), rbuf+leftover, sizeof(rbuf)-leftover);
+        if (count <= 0) {
+          break;
+        }
+        count += leftover;
+        Int start = 0;
+        for (HChar* p = rbuf; p < rbuf + count; p += 1) {
+          if (*p != '\n') {
+            continue;
+          }
+
+          HChar* end = NULL;
+          *p = '\0';
+          kdebug_trace_codes[kdebug_trace_codes_count].code = VG_(strtoll16)(rbuf+start, &end);
+          while (*end == ' ' || *end == '\t') {
+            end += 1;
+          }
+          VG_(strlcpy)((HChar*)kdebug_trace_codes[kdebug_trace_codes_count].name, end, sizeof(kdebug_trace_codes[kdebug_trace_codes_count].name));
+          kdebug_trace_codes_count += 1;
+          start = p - rbuf + 1;
+        }
+        if (start < count) {
+          leftover = count - start;
+          VG_(memmove)(rbuf, rbuf+start, leftover);
+        }
+      }
+      VG_(close)(sr_Res(fd));
+    }
+  }
+
+  for (Int i = 0; i < kdebug_trace_codes_count; i += 1) {
+    const struct KDebugTraceCode* entry = &kdebug_trace_codes[i];
+    if (entry->code == event_id) {
+      found_class = entry->name;
+      break;
+    }
+  }
+  if (found_class == NULL) {
+    found_class = kdebug_std_codes[class];
+  }
+  if (found_class == NULL) {
+    found_class = "UNKNOWN";
+  }
+
+  if (did & DBG_FUNC_START) {
+    dir = '>';
+  }
+  if (did & DBG_FUNC_END) {
+    dir = '<';
+  }
+
+  if (dir) {
+    VG_(sprintf)(buf, "%c%s", dir, found_class);
+  } else {
+    VG_(sprintf)(buf, "%s", found_class);
+  }
+
+  return buf;
 }
 
 
@@ -10389,6 +10570,12 @@ POST(openat)
 
 #if DARWIN_VERS >= DARWIN_10_11
 
+PRE(kdebug_trace_string)
+{
+  PRINT("kdebug_trace_string(%#lx (%s), %#lx, %s)", ARG1, kdebug_debugid(ARG1), ARG2, (HChar*)(Addr)ARG3);
+  SET_STATUS_Success(0);
+}
+
 PRE(kevent_qos)
 {
    PRINT("kevent_qos( %ld, %#lx, %ld, %#lx, %ld, %#lx, %ld, %ld )",
@@ -11109,6 +11296,22 @@ PRE(map_with_linking_np)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 15.0 (Sequoia)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_15_00
+
+PRE(kdebug_trace64)
+{
+  PRINT("kdebug_trace64(%#lx (%s), %#lx, %#lx, %#lx, %#lx)",
+         ARG1, kdebug_debugid(ARG1), ARG2, ARG3, ARG4, ARG5);
+  SET_STATUS_Success(0);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_15_00 */
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -11318,8 +11521,16 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(175)),   // old gc_control
 // _____(__NR_add_profil),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)),   // ???
+#if DARWIN_VERS >= DARWIN_10_11
+   MACX_(__NR_kdebug_trace_string, kdebug_trace_string), // 178
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
+#endif
+#if DARWIN_VERS >= DARWIN_15_00
+   MACX_(__NR_kdebug_trace64, kdebug_trace64), // 179
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(179)),   // ???
+#endif
    MACX_(__NR_kdebug_trace, kdebug_trace),     // 180
    GENX_(__NR_setgid,      sys_setgid),
    MACX_(__NR_setegid,     setegid),

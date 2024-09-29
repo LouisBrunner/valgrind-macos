@@ -425,7 +425,11 @@
 #if DARWIN_VERS >= DARWIN_10_11
 #define __NR_kdebug_trace_string VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
+#if DARWIN_VERS >= DARWIN_15_00
+#define __NR_kdebug_trace64 VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(179)
+#else
 			/* 179  */
+#endif
 #define	__NR_kdebug_trace   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(180)
 #define	__NR_setgid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(181)
 #define	__NR_setegid        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(182)

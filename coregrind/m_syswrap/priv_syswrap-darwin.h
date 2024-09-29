@@ -240,9 +240,13 @@ DECL_TEMPLATE(darwin, csops_audittoken);        // 170
 // NYI kdebug_typefilter                        // 177
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_11
-// NYI kdebug_trace_string                      // 178
+DECL_TEMPLATE(darwin, kdebug_trace_string); // 178
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
+#if DARWIN_VERS >= DARWIN_15_00
+DECL_TEMPLATE(darwin, kdebug_trace64);     // 179
+#else
 // 179
+#endif
 DECL_TEMPLATE(darwin, kdebug_trace);            // 180
 // GEN setgid 181
 DECL_TEMPLATE(darwin, setegid);                 // 182

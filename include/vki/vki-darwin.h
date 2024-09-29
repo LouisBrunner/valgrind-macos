@@ -1074,29 +1074,29 @@ struct ByteRangeLockPB2
 
 #include <bsm/audit.h>
 
-#define	VKI_A_GETPOLICY	A_GETPOLICY	
-#define	VKI_A_SETPOLICY	A_SETPOLICY	
-#define	VKI_A_GETKMASK	A_GETKMASK	
-#define	VKI_A_SETKMASK	A_SETKMASK	
-#define	VKI_A_GETQCTRL	A_GETQCTRL	
-#define	VKI_A_SETQCTRL	A_SETQCTRL	
-#define	VKI_A_GETCWD	A_GETCWD	
-#define	VKI_A_GETCAR	A_GETCAR	
-#define	VKI_A_GETSTAT	A_GETSTAT	
-#define	VKI_A_SETSTAT	A_SETSTAT	
-#define	VKI_A_SETUMASK	A_SETUMASK	
-#define	VKI_A_SETSMASK	A_SETSMASK	
-#define	VKI_A_GETCOND	A_GETCOND	
-#define	VKI_A_SETCOND	A_SETCOND	
-#define	VKI_A_GETCLASS	A_GETCLASS	
-#define	VKI_A_SETCLASS	A_SETCLASS	
-#define	VKI_A_GETPINFO	A_GETPINFO	
-#define	VKI_A_SETPMASK	A_SETPMASK	
-#define	VKI_A_SETFSIZE	A_SETFSIZE	
-#define	VKI_A_GETFSIZE	A_GETFSIZE	
-#define	VKI_A_GETPINFO_ADDR	A_GETPINFO_ADDR	
-#define	VKI_A_GETKAUDIT	A_GETKAUDIT	
-#define	VKI_A_SETKAUDIT	A_SETKAUDIT	
+#define	VKI_A_GETPOLICY	A_GETPOLICY
+#define	VKI_A_SETPOLICY	A_SETPOLICY
+#define	VKI_A_GETKMASK	A_GETKMASK
+#define	VKI_A_SETKMASK	A_SETKMASK
+#define	VKI_A_GETQCTRL	A_GETQCTRL
+#define	VKI_A_SETQCTRL	A_SETQCTRL
+#define	VKI_A_GETCWD	A_GETCWD
+#define	VKI_A_GETCAR	A_GETCAR
+#define	VKI_A_GETSTAT	A_GETSTAT
+#define	VKI_A_SETSTAT	A_SETSTAT
+#define	VKI_A_SETUMASK	A_SETUMASK
+#define	VKI_A_SETSMASK	A_SETSMASK
+#define	VKI_A_GETCOND	A_GETCOND
+#define	VKI_A_SETCOND	A_SETCOND
+#define	VKI_A_GETCLASS	A_GETCLASS
+#define	VKI_A_SETCLASS	A_SETCLASS
+#define	VKI_A_GETPINFO	A_GETPINFO
+#define	VKI_A_SETPMASK	A_SETPMASK
+#define	VKI_A_SETFSIZE	A_SETFSIZE
+#define	VKI_A_GETFSIZE	A_GETFSIZE
+#define	VKI_A_GETPINFO_ADDR	A_GETPINFO_ADDR
+#define	VKI_A_GETKAUDIT	A_GETKAUDIT
+#define	VKI_A_SETKAUDIT	A_SETKAUDIT
 #if DARWIN_VERS >= DARWIN_10_6
 #define VKI_A_SENDTRIGGER A_SENDTRIGGER
 #define VKI_A_GETSINFO_ADDR A_GETSINFO_ADDR
@@ -1220,68 +1220,5 @@ struct vki_necp_agent_use_parameters {
 #define VKI_NECP_STAT_COUNTS_SIZE 68
 
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
-
-#if DARWIN_VERS >= DARWIN_10_15
-#define VKI_NECP_CLIENT_ACTION_ADD                     1
-#define VKI_NECP_CLIENT_ACTION_REMOVE                  2
-#define VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS         3
-#define VKI_NECP_CLIENT_ACTION_COPY_RESULT             4
-#define VKI_NECP_CLIENT_ACTION_COPY_LIST               5
-#define VKI_NECP_CLIENT_ACTION_AGENT                   7
-#define VKI_NECP_CLIENT_ACTION_COPY_AGENT              8
-#define VKI_NECP_CLIENT_ACTION_COPY_INTERFACE          9
-#define VKI_NECP_CLIENT_ACTION_COPY_ROUTE_STATISTICS  11
-#define VKI_NECP_CLIENT_ACTION_AGENT_USE              12
-#define VKI_NECP_CLIENT_ACTION_UPDATE_CACHE           14
-#define VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE     15
-#define VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT    16
-#define VKI_NECP_CLIENT_ACTION_CLAIM                  19
-#define VKI_NECP_CLIENT_ACTION_SIGN                   20
-
-#define VKI_NECP_MAX_CLIENT_PARAMETERS_SIZE    1024
-#define VKI_NECP_CLIENT_ACTION_SIGN_TAG_LENGTH   32
-
-#define VKI_IFXNAMSIZ     IFNAMSIZ + 8
-#define VKI_IFNET_SIGNATURELEN      20
-
-struct vki_necp_client_signable {
-	uuid_t client_id;
-	u_int32_t sign_type;
-} __attribute__((__packed__));
-
-struct vki_necp_cache_buffer {
-	u_int8_t                necp_cache_buf_type;    //  NECP_CLIENT_CACHE_TYPE_*
-	u_int8_t                necp_cache_buf_ver;     //  NECP_CLIENT_CACHE_TYPE_*_VER
-	u_int32_t               necp_cache_buf_size;
-	mach_vm_address_t       necp_cache_buf_addr;
-};
-
-struct vki_necp_interface_signature {
-  u_int8_t signature[VKI_IFNET_SIGNATURELEN];
-  u_int8_t signature_len;
-};
-
-struct vki_necp_interface_details_legacy {
-	char name[VKI_IFXNAMSIZ];
-	u_int32_t index;
-	u_int32_t generation;
-	u_int32_t functional_type;
-	u_int32_t delegate_index;
-	u_int32_t flags; // see NECP_INTERFACE_FLAG_*
-	u_int32_t mtu;
-	struct vki_necp_interface_signature ipv4_signature;
-	struct vki_necp_interface_signature ipv6_signature;
-};
-
-struct vki_necp_agent_use_parameters {
-	uuid_t agent_uuid;
-	uint64_t out_use_count;
-};
-
-// Precalculated as the struct are really big
-#define VKI_IFNET_STATS_PER_FLOW_SIZE 96
-#define VKI_NECP_STAT_COUNTS_SIZE 68
-
-#endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 #endif

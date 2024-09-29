@@ -1,0 +1,88 @@
+
+# Suppressions for Darwin 24.x / macOS 15.0 Sequoia
+
+############################################
+
+# I don't understand how chkstk works so no clue how to properly handle it
+
+{
+   OSX1500:chkstk
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+}
+
+
+{
+   OSX1500:dyld_validMagic
+   Memcheck:Cond
+   fun:_ZN5dyld3L10validMagicERKNS_18SharedCacheOptionsEPK15DyldSharedCache
+   ...
+   fun:(below main)
+}
+
+{
+   OSX1500:dyld_checksOSBinary
+   Memcheck:Value8
+   fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+}
+
+{
+   OSX1500:dyld_GradedArchs_grade
+   Memcheck:Value8
+   fun:_ZNK5dyld311GradedArchs5gradeEjjb
+   ...
+   fun:___ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE_block_invoke
+}
+
+{
+   OSX1500:dyld_FileRecord_stat64
+   Memcheck:Param
+   stat64(path)
+   fun:stat$INODE64
+   fun:_ZNK5dyld410FileRecord4statEv
+   ...
+   fun:_ZZN5dyld45startEPNS_10KernelArgsEPvS2_ENK3$_0clEv
+   fun:(below main)
+}
+
+{
+   OSX1500:dyld_CRC32cSW
+   Memcheck:Value8
+   fun:_ZN3lsl8CRC32cSW8checksumEjNSt3__14spanISt4byteLm18446744073709551615EEE
+   ...
+   fun:_ZZN5dyld45startEPNS_10KernelArgsEPvS2_ENK3$_0clEv
+   fun:(below main)
+}
+
+{
+   OSX1500:dyld_CRC32cSW_2
+   Memcheck:Value8
+   fun:_ZN3lsl8CRC32cSW8checksumEjNSt3__14spanISt4byteLm18446744073709551615EEE
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+}
+
+{
+   OSX1500:dyld_setUpPageInLinkingRegions_map_with_linking
+   Memcheck:Param
+   map_with_linking_np(link_info)
+   fun:__map_with_linking_np
+   fun:_ZN5dyld4L25setUpPageInLinkingRegionsERNS_12RuntimeStateEPKNS_6LoaderEmttbRKN5dyld35ArrayINS_18PageInLinkingRangeEEERKNS6_IPKvEE
+   ...
+   fun:_ZZN5dyld45startEPNS_10KernelArgsEPvS2_ENK3$_0clEv
+   fun:(below main)
+}
+
+{
+   OSX1500:libSystem_clock_port
+   Memcheck:Cond
+   obj:*
+   fun:_init_clock_port
+   fun:_libc_initializer
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}

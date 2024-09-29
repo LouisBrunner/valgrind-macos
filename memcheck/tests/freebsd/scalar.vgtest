@@ -8,4 +8,7 @@ stderr_filter: filter_scalar
 # 'syscall (in libc)' stack frame and this is then filtered out completely.
 stderr_filter_args: libc
 args: < scalar.c
-
+# this is for 'setsid', when run by vg_regtest the process isn't
+# process group leader and succeeds
+# but when run from a shell the process is group leader and it fails
+env: RUNNING_IN_VGTEST=1

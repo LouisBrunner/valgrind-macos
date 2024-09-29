@@ -260,9 +260,10 @@ VexGuestLayout s390xGuest_layout = {
 /*--- Dirty helper for EXecute                             ---*/
 /*------------------------------------------------------------*/
 void
-s390x_dirtyhelper_EX(ULong torun)
+s390x_dirtyhelper_EX(ULong torun, Addr64 addr)
 {
    last_execute_target = torun;
+   guest_IA_rel_base = addr;
 }
 
 
@@ -310,127 +311,6 @@ ULong s390x_dirtyhelper_STCKF(ULong *addr) {return 3;}
 ULong s390x_dirtyhelper_STCKE(ULong *addr) {return 3;}
 #endif /* VGA_s390x */
 
-/*------------------------------------------------------------*/
-/*--- Dirty helper for Store Facility instruction          ---*/
-/*------------------------------------------------------------*/
-#if defined(VGA_s390x)
-
-static ULong
-s390_stfle_range(UInt lo, UInt hi)
-{
-   return ((1UL << (hi + 1 - lo)) - 1) << (63 - (hi % 64));
-}
-
-ULong
-s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
-{
-   ULong hoststfle[S390_NUM_FACILITY_DW], cc, last_dw, i;
-   register ULong reg0 asm("0") = guest_state->guest_r0;
-   last_dw = reg0 & 0xf;
-
-   /* Restrict to facilities that we know about and that we assume to be
-      compatible with Valgrind.  Of course, in this way we may reject features
-      that Valgrind is not really involved in (and thus would be compatible
-      with), but quering for such features doesn't seem like a typical use
-      case. */
-   ULong accepted_facility[S390_NUM_FACILITY_DW] = {
-      /* ===  0 .. 63  === */
-      (s390_stfle_range(0, 16)
-       /* 17: message-security-assist, not supported */
-       | s390_stfle_range(18, 19)
-       /* 20: HFP-multiply-and-add/subtract, not supported */
-       | s390_stfle_range(21, 22)
-       /* 23: HFP-unnormalized-extension, not supported */
-       | s390_stfle_range(24, 25)
-       /* 26: parsing-enhancement, not supported */
-       | s390_stfle_range(27, 28)
-       /* 29: unassigned */
-       | s390_stfle_range(30, 30)
-       /* 31: extract-CPU-time, not supported */
-       | s390_stfle_range(32, 41)
-       /* 42-43: DFP, not fully supported */
-       /* 44: PFPO, not fully supported */
-       | s390_stfle_range(45, 47)
-       /* 48: DFP zoned-conversion, not supported */
-       /* 49: includes PPA, not supported */
-       /* 50: constrained transactional-execution, not supported */
-       | s390_stfle_range(51, 55)
-       /* 56: unassigned */
-       /* 57: MSA5, not supported */
-       | s390_stfle_range(58, 63)),
-
-      /* ===  64 .. 127  === */
-      (s390_stfle_range(64, 72)
-       /* 73: transactional-execution, not supported */
-       | s390_stfle_range(74, 75)
-       /* 76: MSA3, not supported */
-       /* 77: MSA4, not supported */
-       | s390_stfle_range(78, 78)
-       /* 80: DFP packed-conversion, not supported */
-       /* 81: PPA-in-order, not supported */
-       | s390_stfle_range(82, 82)
-       /* 83-127: unassigned */ ),
-
-      /* ===  128 .. 191  === */
-      (s390_stfle_range(128, 131)
-       /* 132: unassigned */
-       /* 133: guarded-storage, not supported */
-       /* 134: vector packed decimal, not supported */
-       | s390_stfle_range(135, 135)
-       /* 136: unassigned */
-       /* 137: unassigned */
-       | s390_stfle_range(138, 142)
-       /* 143: unassigned */
-       | s390_stfle_range(144, 145)
-       /* 146: MSA8, not supported */
-       | s390_stfle_range(147, 149)
-       /* 150: unassigned */
-       /* 151: DEFLATE-conversion, not supported */
-       /* 152: vector packed decimal enhancement, not supported */
-       /* 153: unassigned */
-       /* 154: unassigned */
-       /* 155: MSA9, not supported */
-       | s390_stfle_range(156, 156)
-       /* 157-167: unassigned */
-       | s390_stfle_range(168, 168)
-       /* 168-191: unassigned */ ),
-
-      /* ===  192 .. 255  === */
-      /* 192: vector-packed-decimal, not supported */
-      (s390_stfle_range(193, 194)
-       /* 195: unassigned */
-       | s390_stfle_range(196, 197)),
-   };
-
-   asm(".insn s,0xb2b00000,%0\n" /* stfle */
-       "ipm   %2\n"
-       "srl   %2,28\n"
-       : "=Q"(hoststfle), "+d"(reg0), "=d"(cc)
-       :
-       : "cc");
-
-   /* Update guest register 0  with what STFLE set r0 to */
-   guest_state->guest_r0 = reg0;
-
-   /* VM facilities = host facilities, filtered by acceptance */
-   for (i = 0; i <= last_dw; ++i) {
-      if (i < S390_NUM_FACILITY_DW)
-         addr[i] = hoststfle[i] & accepted_facility[i];
-      else
-         addr[i] = 0; /* mask out any excess doublewords */
-   }
-
-   return cc;
-}
-
-#else
-
-ULong
-s390x_dirtyhelper_STFLE(VexGuestS390XState *guest_state, ULong *addr)
-{
-   return 3;
-}
-#endif /* VGA_s390x */
 
 /*------------------------------------------------------------*/
 /*--- Dirty helper for the "convert unicode" insn family.  ---*/
@@ -2593,6 +2473,11 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       [S390_VEC_OP_VFMAX] = {0xe7, 0xef},
       [S390_VEC_OP_VBPERM]= {0xe7, 0x85},
       [S390_VEC_OP_VMSL]  = {0xe7, 0xb8},
+      [S390_VEC_OP_VCNF]  = {0xe6, 0x55},
+      [S390_VEC_OP_VCLFNH]= {0xe6, 0x56},
+      [S390_VEC_OP_VCFN]  = {0xe6, 0x5d},
+      [S390_VEC_OP_VCLFNL]= {0xe6, 0x5e},
+      [S390_VEC_OP_VCRNF] = {0xe6, 0x75},
    };
 
    union {
@@ -2632,6 +2517,16 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
          UInt rxb : 4;
          UInt op2 : 8;
       } VRRc;
+      struct {
+         UInt op1 : 8;
+         UInt v1  : 4;
+         UInt v2  : 4;
+         UInt     : 12;
+         UInt m4  : 4;
+         UInt m3  : 4;
+         UInt rxb : 4;
+         UInt op2 : 8;
+      } VRRa;
       struct {
          UInt op1 : 8;
          UInt v1  : 4;
@@ -2687,6 +2582,7 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
    case S390_VEC_OP_VFMIN:
    case S390_VEC_OP_VFMAX:
    case S390_VEC_OP_VBPERM:
+   case S390_VEC_OP_VCRNF:
       the_insn.VRRc.v1 = 1;
       the_insn.VRRc.v2 = 2;
       the_insn.VRRc.v3 = 3;
@@ -2694,6 +2590,17 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       the_insn.VRRc.m4 = d->m4;
       the_insn.VRRc.m5 = d->m5;
       the_insn.VRRc.m6 = d->m6;
+      break;
+
+   case S390_VEC_OP_VCNF:
+   case S390_VEC_OP_VCLFNH:
+   case S390_VEC_OP_VCFN:
+   case S390_VEC_OP_VCLFNL:
+      the_insn.VRRa.v1 = 1;
+      the_insn.VRRa.v2 = 2;
+      the_insn.VRRa.rxb = 0b1100;
+      the_insn.VRRa.m3 = d->m3;
+      the_insn.VRRa.m4 = d->m4;
       break;
 
    case S390_VEC_OP_VFTCI:

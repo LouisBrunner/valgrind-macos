@@ -1644,7 +1644,13 @@ static void update_stack_stats(SSizeT stack_szB_delta)
 static INLINE void new_mem_stack_2(SizeT len, const HChar* what)
 {
    if (have_started_executing_code) {
-      VERB(3, "<<< new_mem_stack (%lu)\n", len);
+      if (UNLIKELY(VG_(clo_verbosity) > 3)) {
+         const ThreadId cur_tid = VG_(get_running_tid) ();
+         const Addr cur_IP = VG_(get_IP) (cur_tid);
+         VERB(3, "<<< new_mem_stack (%lu) tid %u IP %s\n",
+              len, cur_tid,
+              VG_(describe_IP)(VG_(current_DiEpoch)(), cur_IP, NULL));
+      }
       n_stack_allocs++;
       update_stack_stats(len);
       maybe_take_snapshot(Normal, what);
@@ -2171,7 +2177,7 @@ static void ms_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a heap profiler");
    VG_(details_copyright_author)(
-      "Copyright (C) 2003-2017, and GNU GPL'd, by Nicholas Nethercote");
+      "Copyright (C) 2003-2024, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    VG_(details_avg_translation_sizeB) ( 330 );

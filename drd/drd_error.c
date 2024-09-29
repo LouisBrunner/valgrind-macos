@@ -629,6 +629,7 @@ void  drd_update_extra_suppresion_use(const Error* e, const Supp* supp)
 /** Tell the Valgrind core about DRD's error handlers. */
 void DRD_(register_error_handlers)(void)
 {
+   VG_(needs_core_errors)(True);
    VG_(needs_tool_errors)(drd_compare_error_contexts,
                           drd_tool_error_before_pp,
                           drd_tool_error_pp,

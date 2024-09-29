@@ -1,5 +1,5 @@
 
-On s390 we might see 2 or 3 errors.
+On s390/arm we might see 2 or 3 errors.
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: foo (partiallydefinedeq.c:15)
    by 0x........: main (partiallydefinedeq.c:37)

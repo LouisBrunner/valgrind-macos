@@ -62,7 +62,8 @@ extern Bool ML_(read_elf_object) ( DebugInfo* di );
    function.  */
 extern Bool ML_(read_elf_debug) ( DebugInfo* di );
 
-extern Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename, Int * rw_load_count );
+extern Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename,
+                                            Int * rw_load_count, Bool from_nsegments );
 
 
 #endif /* ndef __PRIV_READELF_H */

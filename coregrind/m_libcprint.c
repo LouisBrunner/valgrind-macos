@@ -151,7 +151,11 @@ void VG_(print_preamble)(Bool logging_to_fd)
       VG_(printf_xml)("\n");
       VG_(printf_xml)("<valgrindoutput>\n");
       VG_(printf_xml)("\n");
-      VG_(printf_xml)("<protocolversion>4</protocolversion>\n");
+      /* track-fds introduced some new elements.  */
+      if (VG_(clo_track_fds))
+         VG_(printf_xml)("<protocolversion>5</protocolversion>\n");
+      else
+         VG_(printf_xml)("<protocolversion>4</protocolversion>\n");
       VG_(printf_xml)("<protocoltool>%s</protocoltool>\n", VG_(clo_toolname));
       VG_(printf_xml)("\n");
    }
@@ -421,6 +425,12 @@ static void finalize_sink_fd(OutputSink *sink, Int new_fd, Bool is_xml)
    } else {
       VG_(fcntl)(safe_fd, VKI_F_SETFD, VKI_FD_CLOEXEC);
       sink->fd = safe_fd;
+      /* If we created the new_fd (VgLogTo_File or VgLogTo_Socket), then we
+         don't need the original file descriptor open anymore. We only need
+         to keep it open if it was an existing fd given by the user (or
+         stderr).  */
+      if (sink->type != VgLogTo_Fd)
+         VG_(close)(new_fd);
    }
 }
 

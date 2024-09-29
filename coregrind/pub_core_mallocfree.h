@@ -61,8 +61,7 @@ typedef Int ArenaId;
 // This is both the minimum payload size of a malloc'd block, and its
 // minimum alignment.  Must be a power of 2 greater than 4, and should be
 // greater than 8.
-#if   defined(VGP_x86_linux)    || \
-      defined(VGP_arm_linux)    || \
+#if   defined(VGP_arm_linux)    || \
       defined(VGP_mips32_linux) || \
       (defined(VGP_mips64_linux) && defined(VGABI_N32)) || \
       defined(VGP_nanomips_linux) || \
@@ -72,7 +71,8 @@ typedef Int ArenaId;
 // for any AltiVec- or SSE-related type.  This matches the Darwin libc.
 // Also, use 16 bytes for any PPC variant, since 16 is required to make
 // Altiveccery work right.
-#elif defined(VGP_amd64_linux)    || \
+#elif defined(VGP_x86_linux)    || \
+      defined(VGP_amd64_linux)    || \
       defined(VGP_ppc32_linux)    || \
       defined(VGP_ppc64be_linux)  || \
       defined(VGP_ppc64le_linux)  || \
@@ -80,6 +80,7 @@ typedef Int ArenaId;
       (defined(VGP_mips64_linux) && !defined(VGABI_N32)) || \
       defined(VGP_x86_freebsd)    || \
       defined(VGP_amd64_freebsd)  || \
+      defined(VGP_arm64_freebsd)  || \
       defined(VGP_x86_darwin)     || \
       defined(VGP_amd64_darwin)   || \
       defined(VGP_arm64_linux)    || \

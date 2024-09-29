@@ -153,7 +153,10 @@ ML_(do_syscall_for_client_WRK):
    movq  %rax, %rdi      /* arg1 = new flag */
    movq  %r11, %rsi      /* arg2 = vex state */
    addq  $24, %rsp       /* remove syscall parameters */
+   movl  $1, OFFSET_amd64_SETC(%r11)
    call  LibVEX_GuestAMD64_put_rflag_c
+   movq  -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
+   movl  $0, OFFSET_amd64_SETC(%r11)
 
 4: /* Re-block signals.  If eip is in [4,5), then the syscall
       is complete and we needn't worry about it. */

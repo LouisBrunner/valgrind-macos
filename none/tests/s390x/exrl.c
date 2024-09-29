@@ -5,6 +5,8 @@ char target[] ="XXXXXXXXXXXXXXXX";
 
 int main(void)
 {
+   unsigned long offset;
+
    setbuf(stdout, NULL);
 
    printf("------- Copy 10+1 bytes from buffer to target\n");
@@ -64,6 +66,30 @@ int main(void)
                  : : "a" (target)
                  : "1", "2", "3", "4");
    printf("        target = |%s|\n", target);
+   printf("\n");
+
+   printf("------- EXRL targeting a PC-relative instruction\n");
+   asm volatile( "basr 1,0\n\t"
+                 "j    2f\n\t"
+                 "1:\n\t"
+                 "larl 2,1b\n\t"
+                 "2:\n\t"
+                 ".insn ril,0xc60000000000,0,1b\n\t" // exrl 0, 1b
+                 "sgrk %0,2,1\n\t"
+                 : "=d" (offset) :
+                 : "1", "2");
+   printf("        offset = |%016lx|\n", offset);
+   printf("\n");
+
+   printf("------- EXRL targeting a branch-and-link instruction\n");
+   asm volatile( "1:\n\t"
+                 "basr 1,0\n\t"
+                 "lgr  2,1\n\t"
+                 ".insn ril,0xc60000000000,0,1b\n\t" // exrl 0, 1b
+                 "sgrk %0,1,2\n\t"
+                 : "=&d" (offset) :
+                 : "1", "2");
+   printf("        offset = |%016lx|\n", offset);
 
    return 0;
 }

@@ -46,6 +46,7 @@
 #include "pub_core_tooliface.h"
 #include "pub_core_translate.h"        // for VG_(translate)()
 #include "pub_core_xarray.h"           // VG_(xaprintf) et al
+#include "pub_core_syswrap.h"          // for core callbacks (Fds)
 
 #define DEBUG_ERRORMGR 0 // set to 1 for heavyweight tracing
 
@@ -94,6 +95,14 @@ static UInt n_supp_contexts = 0;
 
 /* forwards ... */
 static Supp* is_suppressible_error ( const Error* err );
+
+static Bool core_eq_Error (VgRes, const Error*, const Error*);
+static void core_before_pp_Error (const Error*);
+static void core_pp_Error (const Error*);
+static UInt core_update_extra (const Error*);
+
+static const HChar *core_get_error_name(const Error*);
+static SizeT core_get_extra_suppression_info(const Error*,HChar*,Int);
 
 static ThreadId last_tid_printed = 1;
 
@@ -179,6 +188,11 @@ UInt VG_(get_n_errs_shown)( void )
    return n_errs_shown;
 }
 
+Bool VG_(found_or_suppressed_errs)( void )
+{
+   return errors != NULL;
+}
+
 /*------------------------------------------------------------*/
 /*--- Suppression type                                     ---*/
 /*------------------------------------------------------------*/
@@ -191,6 +205,8 @@ typedef
       // could detect them.  This example is left commented-out as an
       // example should new core errors ever be added.
       ThreadSupp = -1,    /* Matches ThreadErr */
+      FdBadCloseSupp = -2,
+      FdNotClosedSupp = -3
    }
    CoreSuppKind;
 
@@ -297,20 +313,17 @@ static Bool eq_Error ( VgRes res, const Error* e1, const Error* e2 )
    if (!VG_(eq_ExeContext)(res, e1->where, e2->where))
       return False;
 
-   switch (e1->ekind) {
-      //(example code, see comment on CoreSuppKind above)
-      //case ThreadErr:
-      //   vg_assert(VG_(needs).core_errors);
-      //   return <something>
-      default: 
-         if (VG_(needs).tool_errors) {
-            return VG_TDICT_CALL(tool_eq_Error, res, e1, e2);
-         } else {
-            VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
-                        "probably needs to be set.\n",
-                        (UInt)e1->ekind);
-            VG_(core_panic)("unhandled error type");
-         }
+   if (e1->ekind >= 0) {
+      if (VG_(needs).tool_errors) {
+         return VG_TDICT_CALL(tool_eq_Error, res, e1, e2);
+      } else {
+         VG_(printf)("\nUnhandled error type: %u. VG_(needs).tool_errors\n"
+                     "probably needs to be set.\n",
+                     (UInt)e1->ekind);
+         VG_(core_panic)("unhandled error type");
+      }
+   } else {
+      return core_eq_Error(res, e1, e2);
    }
 }
 
@@ -362,6 +375,7 @@ static void printSuppForIp_nonXML(UInt n, DiEpoch ep, Addr ip, void* textV)
 static void gen_suppression(const Error* err)
 {
    const HChar* name;
+   const HChar* component;
    ExeContext* ec;
    XArray* /* HChar */ text;
 
@@ -370,13 +384,27 @@ static void gen_suppression(const Error* err)
    vg_assert(err);
 
    ec = VG_(get_error_where)(err);
-   vg_assert(ec);
-
-   name = VG_TDICT_CALL(tool_get_error_name, err);
-   if (NULL == name) {
-      VG_(umsg)("(%s does not allow error to be suppressed)\n",
-                VG_(details).name);
+   if (ec == NULL) {
+      /* This can happen with core errors for --track-fds=all
+         with "leaked" inherited file descriptors, which aren't
+         created in the current program.  */
+      VG_(umsg)("(No origin, error cannot be suppressed)\n");
       return;
+   }
+
+   if (err->ekind >= 0) {
+      name = VG_TDICT_CALL(tool_get_error_name, err);
+      if (NULL == name) {
+         VG_(umsg)("(%s does not allow error to be suppressed)\n",
+                   VG_(details).name);
+         return;
+      }
+   } else {
+      name = core_get_error_name(err);
+      if (NULL == name) {
+         VG_(umsg)("(core error cannot be suppressed)\n");
+         return;
+      }
    }
 
    /* In XML mode, we also need to print the plain text version of the
@@ -387,9 +415,13 @@ static void gen_suppression(const Error* err)
                       VG_(free), sizeof(HChar) );
 
    /* Ok.  Generate the plain text version into TEXT. */
+   if (err->ekind >= 0)
+      component = VG_(details).name;
+   else
+      component = "CoreError";
    VG_(xaprintf)(text, "{\n");
    VG_(xaprintf)(text, "   <%s>\n", dummy_name);
-   VG_(xaprintf)(text, "   %s:%s\n", VG_(details).name, name);
+   VG_(xaprintf)(text, "   %s:%s\n", component, name);
 
    HChar       *xtra = NULL;
    SizeT       xtra_size = 0;
@@ -398,8 +430,11 @@ static void gen_suppression(const Error* err)
    do {
       xtra_size += 256;
       xtra = VG_(realloc)("errormgr.gen_suppression.2", xtra,xtra_size);
-      num_written = VG_TDICT_CALL(tool_get_extra_suppression_info,
-                                  err, xtra, xtra_size);
+      if (err->ekind >= 0)
+         num_written = VG_TDICT_CALL(tool_get_extra_suppression_info,
+                                     err, xtra, xtra_size);
+      else
+         num_written = core_get_extra_suppression_info(err, xtra, xtra_size);
    } while (num_written == xtra_size);  // resize buffer and retry
 
    // Ensure buffer is properly terminated
@@ -436,7 +471,7 @@ static void gen_suppression(const Error* err)
       VG_(printf_xml)("  <suppression>\n");
       VG_(printf_xml)("    <sname>%s</sname>\n", dummy_name);
       VG_(printf_xml)(
-                      "    <skind>%pS:%pS</skind>\n", VG_(details).name, name);
+                      "    <skind>%pS:%pS</skind>\n", component, name);
       if (num_written)
          VG_(printf_xml)("    <skaux>%pS</skaux>\n", xtra);
 
@@ -518,7 +553,7 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
    * possibly, generate a suppression.
 */
 static 
-void do_actions_on_error(const Error* err, Bool allow_db_attach)
+void do_actions_on_error(const Error* err, Bool allow_db_attach, Bool count_error)
 {
    Bool still_noisy = True;
 
@@ -543,7 +578,7 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    if (VG_(clo_gen_suppressions) == 1 && !still_noisy)
       VG_(clo_gen_suppressions) = 0;
 
-   if (VG_(clo_exit_on_first_error)) {
+   if (count_error && VG_(clo_exit_on_first_error)) {
       if (VG_(clo_xml))
          VG_(printf_xml)("</valgrindoutput>\n");
       VG_(umsg)("\n");
@@ -581,11 +616,11 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach)
    * calls do_actions_on_error.  This optionally does a gdbserver call
      and optionally prints a suppression; both of these may require user input.
 */
-static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
+static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml, Bool count_error )
 {
    /* If this fails, you probably specified your tool's method
       dictionary incorrectly. */
-   vg_assert(VG_(needs).tool_errors);
+   vg_assert(VG_(needs).tool_errors || err->ekind < 0 /* core errors */);
 
    if (xml) {
 
@@ -597,7 +632,10 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
                  || VG_(clo_gen_suppressions) == 2 /* for all errors */ );
 
       /* Pre-show it to the tool */
-      VG_TDICT_CALL( tool_before_pp_Error, err );
+      if (err->ekind >= 0)
+         VG_TDICT_CALL( tool_before_pp_Error, err );
+      else
+         core_before_pp_Error (err);
    
       /* standard preamble */
       VG_(printf_xml)("<error>\n");
@@ -609,7 +647,10 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
       }
 
       /* actually print it */
-      VG_TDICT_CALL( tool_pp_Error, err );
+      if (err->ekind >= 0)
+         VG_TDICT_CALL( tool_pp_Error, err );
+      else
+         core_pp_Error (err);
 
       if (VG_(clo_gen_suppressions) > 0)
         gen_suppression(err);
@@ -622,7 +663,10 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
 
       if (VG_(clo_error_markers)[0])
          VG_(umsg)("%s\n", VG_(clo_error_markers)[0]);
-      VG_TDICT_CALL( tool_before_pp_Error, err );
+      if (err->ekind >= 0)
+         VG_TDICT_CALL( tool_before_pp_Error, err );
+      else
+         core_before_pp_Error(err);
 
       if (VG_(tdict).tool_show_ThreadIDs_for_errors
           && err->tid > 0 && err->tid != last_tid_printed) {
@@ -634,15 +678,19 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml )
          }
          last_tid_printed = err->tid;
       }
-   
-      VG_TDICT_CALL( tool_pp_Error, err );
-      VG_(umsg)("\n");
+
+      if (err->ekind >= 0) {
+         VG_TDICT_CALL( tool_pp_Error, err );
+         VG_(umsg)("\n");
+      } else {
+         core_pp_Error(err);
+      }
       if (VG_(clo_error_markers)[1])
          VG_(umsg)("%s\n", VG_(clo_error_markers)[1]);
 
    }
 
-   do_actions_on_error(err, allow_db_attach);
+   do_actions_on_error(err, allow_db_attach, count_error);
 }
 
 
@@ -662,7 +710,7 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
    err->supp     = NULL;
    err->count    = 1;
    err->tid      = tid;
-   if (NULL == where)
+   if (NULL == where && VG_(is_valid_tid)(tid))
       err->where = VG_(record_ExeContext)( tid, 0 );
    else
       err->where = where;
@@ -813,16 +861,12 @@ void VG_(maybe_record_error) ( ThreadId tid,
    *p = err;
 
    /* update 'extra' */
-   switch (ekind) {
-      //(example code, see comment on CoreSuppKind above)
-      //case ThreadErr:
-      //   vg_assert(VG_(needs).core_errors);
-      //   extra_size = <something>
-      //   break;
-      default:
-         vg_assert(VG_(needs).tool_errors);
-         extra_size = VG_TDICT_CALL(tool_update_extra, p);
-         break;
+   if (ekind < 0) {
+      /* core error */
+      extra_size = core_update_extra (p);
+   } else {
+      vg_assert(VG_(needs).tool_errors);
+      extra_size = VG_TDICT_CALL(tool_update_extra, p);
    }
 
    /* copy the error string, if there is one.
@@ -849,7 +893,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       n_errs_found++;
       n_errs_shown++;
       /* Actually show the error; more complex than you might think. */
-      pp_Error( p, /*allow_db_attach*/True, VG_(clo_xml) );
+      pp_Error( p, /*allow_db_attach*/True, VG_(clo_xml), /* count_error */ True );
    } else {
       n_supp_contexts++;
       n_errs_suppressed++;
@@ -886,7 +930,10 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
       because that can have an affect on whether it's suppressed.  Ignore
       the size return value of VG_(tdict).tool_update_extra, because we're
       not copying 'extra'. Similarly, 's' is also not copied. */
-   (void)VG_TDICT_CALL(tool_update_extra, &err);
+   if (ekind >= 0)
+      (void)VG_TDICT_CALL(tool_update_extra, &err);
+   else
+      (void)core_update_extra(&err);
 
    su = is_suppressible_error(&err);
    if (NULL == su) {
@@ -899,7 +946,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
          /* update stats */
          n_errs_shown++;
          /* Actually show the error; more complex than you might think. */
-         pp_Error(&err, allow_db_attach, VG_(clo_xml));
+         pp_Error(&err, allow_db_attach, VG_(clo_xml), count_error);
       }
       return False;
 
@@ -911,6 +958,98 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
       su->count++;
       return True;
    }
+}
+
+
+/*------------------------------------------------------------*/
+/*--- Core error fns                                       ---*/
+/*------------------------------------------------------------*/
+
+static Bool is_fd_core_error (const Error *e)
+{
+   return e->ekind == FdBadClose || e->ekind == FdNotClosed;
+}
+
+static Bool core_eq_Error (VgRes res, const Error *e1, const Error *e2)
+{
+   if (is_fd_core_error(e1))
+      return fd_eq_Error (res, e1, e2);
+   else {
+      VG_(umsg)("FATAL: unknown core error kind: %d\n", e1->ekind );
+      VG_(exit)(1);
+   }
+}
+
+static void core_before_pp_Error (const Error *err)
+{
+   if (is_fd_core_error(err))
+      fd_before_pp_Error(err);
+   else {
+      VG_(umsg)("FATAL: unknown core error kind: %d\n", err->ekind );
+      VG_(exit)(1);
+   }
+}
+
+static void core_pp_Error (const Error *err)
+{
+   if (is_fd_core_error(err))
+      fd_pp_Error(err);
+   else {
+      VG_(umsg)("FATAL: unknown core error kind: %d\n", err->ekind );
+      VG_(exit)(1);
+   }
+}
+
+static UInt core_update_extra (const Error *err)
+{
+   if (is_fd_core_error(err))
+      return fd_update_extra(err);
+   else {
+      VG_(umsg)("FATAL: unknown core error kind: %d\n", err->ekind );
+      VG_(exit)(1);
+   }
+}
+
+static const HChar *core_get_error_name(const Error *err)
+{
+   switch (err->ekind) {
+   case FdBadClose:
+      return "FdBadClose";
+   case FdNotClosed:
+      return "FdNotClosed";
+   default:
+      VG_(umsg)("FATAL: unknown core error kind: %d\n", err->ekind );
+      VG_(exit)(1);
+   }
+}
+
+static Bool core_error_matches_suppression(const Error* err, const Supp* su)
+{
+   switch (su->skind) {
+   case FdBadCloseSupp:
+      return err->ekind == FdBadClose;
+   case FdNotClosedSupp:
+      return err->ekind == FdNotClosed;
+   default:
+      VG_(umsg)("FATAL: unknown core suppression kind: %d\n", su->skind );
+      VG_(exit)(1);
+   }
+}
+
+static SizeT core_get_extra_suppression_info(const Error *err,
+                                             HChar* buf, Int nBuf)
+{
+   /* No core error has any extra suppression info at the moment.  */
+   buf[0] = '\0';
+   return 0;
+}
+
+static SizeT core_print_extra_suppression_use(const Supp* su,
+                                              HChar* buf, Int nBuf)
+{
+   /* No core error has any extra suppression info at the moment.  */
+   buf[0] = '\0';
+   return 0;
 }
 
 
@@ -949,8 +1088,12 @@ static Bool show_used_suppressions ( void )
          do {
             xtra_size += 256;
             xtra = VG_(realloc)("errormgr.sus.1", xtra, xtra_size);
-            num_written = VG_TDICT_CALL(tool_print_extra_suppression_use,
-                                        su, xtra, xtra_size);
+	    if (su->skind >= 0)
+               num_written = VG_TDICT_CALL(tool_print_extra_suppression_use,
+                                           su, xtra, xtra_size);
+            else
+               num_written = core_print_extra_suppression_use(su,
+                                                              xtra, xtra_size);
          } while (num_written == xtra_size); // resize buffer and retry
 
          // Ensure buffer is properly terminated
@@ -973,21 +1116,21 @@ static Bool show_used_suppressions ( void )
    return any_supp;
 }
 
-/* Show all the errors that occurred, and possibly also the
-   suppressions used. */
-void VG_(show_all_errors) (  Int verbosity, Bool xml )
+/* See pub_core_errormgr.h. */
+void VG_(show_all_errors) (  Int verbosity, Bool xml, Int show_error_list)
 {
    Int    i, n_min;
    Error *p, *p_min;
    Bool   any_supp;
    Bool   any_error = False;
+   UInt n_errs;
 
-   if (verbosity == 0 && !VG_(clo_show_error_list))
+   if (verbosity == 0 && show_error_list == 0)
       return;
 
    /* If we're printing XML, just show the suppressions and stop. */
    if (xml) {
-      if (VG_(clo_show_error_list))
+      if (show_error_list > 0)
          (void)show_used_suppressions();
       return;
    }
@@ -998,21 +1141,25 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
              n_errs_found, n_err_contexts,
              n_errs_suppressed, n_supp_contexts );
 
-   if (!VG_(clo_show_error_list))
+   if (show_error_list == 0)
       return;
 
-   // We do the following if VG_(clo_show_error_list)
+   // We do the following if show_error_list > 0
    // or at -v or above, and only in non-XML mode.
 
    /* Print the contexts in order of increasing error count.
+      The below implements this in a quadratic algorithm based on the assumption
+      that there are not too many errors (including the suppressed if showing
+      the suppressed errors) !
       Once an error is shown, we add a huge value to its count to filter it
       out.
       After having shown all errors, we reset count to the original value. */
-   for (i = 0; i < n_err_contexts; i++) {
+   n_errs = n_err_contexts + (show_error_list < 2 ? 0 : n_errs_suppressed);
+   for (i = 0; i < n_errs; i++) {
       n_min = (1 << 30) - 1;
       p_min = NULL;
       for (p = errors; p != NULL; p = p->next) {
-         if (p->supp != NULL) continue;
+         if (show_error_list < 2 && p->supp != NULL) continue;
          if (p->count < n_min) {
             n_min = p->count;
             p_min = p;
@@ -1023,9 +1170,13 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml )
 
       any_error = True;
       VG_(umsg)("\n");
-      VG_(umsg)("%d errors in context %d of %u:\n",
-                p_min->count, i+1, n_err_contexts);
-      pp_Error( p_min, False/*allow_db_attach*/, False /* xml */ );
+      VG_(umsg)("%d errors%s%s%s in context %d of %u:\n",
+                p_min->count,
+                p_min->supp == NULL ? "" : " (suppressed by ",
+                p_min->supp == NULL ? "" : p_min->supp->sname,
+                p_min->supp == NULL ? "" : ")",
+                i+1, n_errs);
+      pp_Error( p_min, False/*allow_db_attach*/, False /* xml */, True /* count_error */ );
 
       // We're not printing XML -- we'd have exited above if so.
       vg_assert(! xml);
@@ -1068,7 +1219,7 @@ void VG_(show_last_error) ( void )
       return;
    }
 
-   pp_Error( errors, False/*allow_db_attach*/, False/*xml*/ );
+   pp_Error( errors, False/*allow_db_attach*/, False/*xml*/, True/*count_error*/ );
 }
 
 
@@ -1359,12 +1510,14 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       tool_names = & buf[0];
       supp_name  = & buf[i+1];
 
-      if (VG_(needs).core_errors && tool_name_present("core", tool_names)) {
+      if (VG_(needs).core_errors
+	  && tool_name_present("CoreError", tool_names)) {
          // A core suppression
-         //(example code, see comment on CoreSuppKind above)
-         //if (VG_STREQ(supp_name, "Thread"))
-         //   supp->skind = ThreadSupp;
-         //else
+         if (VG_STREQ(supp_name, "FdBadClose"))
+            supp->skind = FdBadCloseSupp;
+         else if (VG_STREQ(supp_name, "FdNotClosed"))
+            supp->skind = FdNotClosedSupp;
+         else
             BOMB("unknown core suppression type");
       }
       else if (VG_(needs).tool_errors 
@@ -1397,6 +1550,8 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
                             fd, &buf, &nBuf, &lineno, supp)) {
          BOMB("bad or missing extra suppression info");
       }
+
+      // No core errors need to read extra suppression info
 
       got_a_location_line_read_by_tool = buf[0] != 0 && is_location_line(buf);
 
@@ -1936,20 +2091,18 @@ static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo,
 static
 Bool supp_matches_error(const Supp* su, const Error* err)
 {
-   switch (su->skind) {
-      //(example code, see comment on CoreSuppKind above)
-      //case ThreadSupp:
-      //   return (err->ekind == ThreadErr);
-      default:
-         if (VG_(needs).tool_errors) {
-            return VG_TDICT_CALL(tool_error_matches_suppression, err, su);
-         } else {
-            VG_(printf)(
-               "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"
-               "probably needs to be set.\n",
-               (UInt)err->ekind);
-            VG_(core_panic)("unhandled suppression type");
-         }
+   if (su->skind >= 0) {
+      if (VG_(needs).tool_errors) {
+         return VG_TDICT_CALL(tool_error_matches_suppression, err, su);
+      } else {
+         VG_(printf)(
+            "\nUnhandled suppression type: %u.  VG_(needs).tool_errors\n"
+            "probably needs to be set.\n",
+            (UInt)err->ekind);
+         VG_(core_panic)("unhandled suppression type");
+      }
+   } else {
+      return core_error_matches_suppression(err, su);
    }
 }
 
@@ -1979,6 +2132,9 @@ static Supp* is_suppressible_error ( const Error* err )
       IP is needed (i.e. for the matching with the next suppr pattern), then
       the fun or obj name will not be searched again in the debug info. */
 
+   if (err->where == NULL)
+      return NULL;
+
    /* stats gathering */
    em_supplist_searches++;
 
@@ -2006,7 +2162,9 @@ static Supp* is_suppressible_error ( const Error* err )
           && supp_matches_callers(&ip2fo, su)) {
          /* got a match.  */
          /* Inform the tool that err is suppressed by su. */
-         (void)VG_TDICT_CALL(tool_update_extra_suppression_use, err, su);
+         if (su->skind >= 0)
+            (void)VG_TDICT_CALL(tool_update_extra_suppression_use, err, su);
+         /* No core errors need to update extra suppression info */
          /* Move this entry to the head of the list
             in the hope of making future searches cheaper. */
          if (su_prev) {

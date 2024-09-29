@@ -3,7 +3,8 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 	filter_scalar filter_realpathat filter_fstat filter_eventfd2 \
-	toucher1 toucher2
+	toucher1 toucher2 filter_getfsstat filter_context filter_frame \
+	filter_supp
 
 EXTRA_DIST = \
 	access.vgtest \
@@ -28,6 +29,7 @@ EXTRA_DIST = \
 	bug464476_rel_symlink.stdout.exp \
 	bug470713.vgtest bug470713.stderr.exp \
 		bug470713.stdout.exp \
+	bug483786.vgtest bug483786.stderr.exp \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
 	chflags.vgtest\
@@ -35,7 +37,8 @@ EXTRA_DIST = \
 		chflags.stderr.exp-x86 \
 	chmod_chown.vgtest \
 	chmod_chown.stderr.exp \
-	close_range.vgtest close_range.stderr.exp \
+	clock_nanosleep_interrupt.vgtest \
+	clock_nanosleep_interrupt.stderr.exp \
 	delete_sized_mismatch.vgtest \
 	delete_sized_mismatch.stderr.exp \
 	delete_sized_mismatch_xml.vgtest \
@@ -48,13 +51,14 @@ EXTRA_DIST = \
 	eventfd2.stderr.exp \
 	extattr.vgtest \
 	extattr.stderr.exp \
+	fbsd278566.vgtest \
+	fbsd278566.stderr.exp \
 	fexecve.vgtest \
 	fexecve.stderr.exp \
 	file_locking_wait6.vgtest \
 	file_locking_wait6.stderr.exp \
 	get_set_context.vgtest \
 	get_set_context.stderr.exp \
-	get_set_context.stderr.exp-x86 \
 	get_set_login.vgtest \
 	get_set_login.stderr.exp \
 	getfh.vgtest \
@@ -86,7 +90,10 @@ EXTRA_DIST = \
 	revoke.stderr.exp \
 	scalar.h scalar.vgtest \
 	scalar.stderr.exp \
+		scalar.stderr.exp-arm64 \
+		scalar.stderr.exp-arm64_2 \
 		scalar.stderr.exp-x86 \
+		scalar.stderr.exp-amd64-141 \
 	scalar_abort2.vgtest \
 	scalar_13_plus.vgtest \
 	scalar_13_plus.stderr.exp \
@@ -139,9 +146,11 @@ EXTRA_DIST = \
 
 check_PROGRAMS = \
 	access aio aio_read aligned_alloc bug464476 bug470713 \
+	bug483786 \
 	capsicum chflags \
-	chmod_chown delete_sized_mismatch errno_aligned_allocs \
-	extattr \
+	chmod_chown clock_nanosleep_interrupt \
+	delete_sized_mismatch errno_aligned_allocs \
+	extattr fbsd278566 \
 	fexecve \
 	file_locking_wait6 \
 	get_set_context get_set_login getfh \
@@ -189,10 +198,6 @@ if FREEBSD_VERS_15_PLUS
 check_PROGRAMS += kqueuex scalar_15_plus timerfd
 scalar_15_plus_CFLAGS = ${AM_CFLAGS} -g
 timerfd_LDFLAGS = -lm
-endif
-
-if HAVE_CLOSE_RANGE
-check_PROGRAMS += close_range
 endif
 
 aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@

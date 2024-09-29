@@ -255,19 +255,19 @@ GEN_THREEVEC_TEST(sqrdmlah_4h_4h_4h_PI_16, "sqrdmlah v0.4h, v1.4h, v2.4h", 0, 1,
 GEN_THREEVEC_TEST(sqrdmlah_4h_4h_4h_E_16, "sqrdmlah v0.4h, v1.4h, v2.4h", 0, 1, 2)
 
 /* sqrdmlah (vector version, with index) */
-GEN_THREEVEC_TEST_RND(sqrdmlah_i_4h_4h_4h, "sqrdmlah v0.4h, v1.4h, v2.4h[0]", 0, 1, 2)
-GEN_THREEVEC_TEST_RND(sqrdmlah_i_8h_8h_8h, "sqrdmlah v0.8h, v1.8h, v2.8h[1]", 0, 1, 2)
-GEN_THREEVEC_TEST_RND(sqrdmlah_i_2s_2s_2s, "sqrdmlah v0.2s, v1.2s, v2.2s[2]", 0, 1, 2)
-GEN_THREEVEC_TEST_RND(sqrdmlah_i_4s_4s_4s, "sqrdmlah v0.4s, v1.4s, v2.4s[3]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlah_i_4h_4h_4h, "sqrdmlah v0.4h, v1.4h, v2.h[0]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlah_i_8h_8h_8h, "sqrdmlah v0.8h, v1.8h, v2.h[1]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlah_i_2s_2s_2s, "sqrdmlah v0.2s, v1.2s, v2.s[2]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlah_i_4s_4s_4s, "sqrdmlah v0.4s, v1.4s, v2.s[3]", 0, 1, 2)
 
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_0, "sqrdmlah v0.4h, v1.4h, v2.4h[0]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_ALL5s_16, "sqrdmlah v0.4h, v1.4h, v2.4h[1]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_ALLas_16, "sqrdmlah v0.4h, v1.4h, v2.4h[2]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_ALLfs_16, "sqrdmlah v0.4h, v1.4h, v2.4h[3]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_UP_16, "sqrdmlah v0.4h, v1.4h, v2.4h[0]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_DOWN_16, "sqrdmlah v0.4h, v1.4h, v2.4h[1]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_PI_16, "sqrdmlah v0.4h, v1.4h, v2.4h[2]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_E_16, "sqrdmlah v0.4h, v1.4h, v2.4h[3]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_0, "sqrdmlah v0.4h, v1.4h, v2.h[0]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_ALL5s_16, "sqrdmlah v0.4h, v1.4h, v2.h[1]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_ALLas_16, "sqrdmlah v0.4h, v1.4h, v2.h[2]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_ALLfs_16, "sqrdmlah v0.4h, v1.4h, v2.h[3]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_UP_16, "sqrdmlah v0.4h, v1.4h, v2.h[0]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_DOWN_16, "sqrdmlah v0.4h, v1.4h, v2.h[1]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_PI_16, "sqrdmlah v0.4h, v1.4h, v2.h[2]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlah_i_4h_4h_4h_E_16, "sqrdmlah v0.4h, v1.4h, v2.h[3]", 0, 1, 2)
 
 /* sqrdmlah (scalar version) */
 GEN_THREEVEC_TEST_RND(sqrdmlah_h0_h1_h2, "sqrdmlah h0, h1, h2", 0, 1, 2)
@@ -315,19 +315,19 @@ GEN_THREEVEC_TEST(sqrdmlsh_4h_4h_4h_PI_16, "sqrdmlsh v0.4h, v1.4h, v2.4h", 0, 1,
 GEN_THREEVEC_TEST(sqrdmlsh_4h_4h_4h_E_16, "sqrdmlsh v0.4h, v1.4h, v2.4h", 0, 1, 2)
 
 /* sqrdmlsh (vector version, with index) */
-GEN_THREEVEC_TEST_RND(sqrdmlsh_i_4h_4h_4h, "sqrdmlsh v0.4h, v1.4h, v2.4h[0]", 0, 1, 2)
-GEN_THREEVEC_TEST_RND(sqrdmlsh_i_8h_8h_8h, "sqrdmlsh v0.8h, v1.8h, v2.8h[1]", 0, 1, 2)
-GEN_THREEVEC_TEST_RND(sqrdmlsh_i_2s_2s_2s, "sqrdmlsh v0.2s, v1.2s, v2.2s[2]", 0, 1, 2)
-GEN_THREEVEC_TEST_RND(sqrdmlsh_i_4s_4s_4s, "sqrdmlsh v0.4s, v1.4s, v2.4s[3]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlsh_i_4h_4h_4h, "sqrdmlsh v0.4h, v1.4h, v2.h[0]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlsh_i_8h_8h_8h, "sqrdmlsh v0.8h, v1.8h, v2.h[1]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlsh_i_2s_2s_2s, "sqrdmlsh v0.2s, v1.2s, v2.s[2]", 0, 1, 2)
+GEN_THREEVEC_TEST_RND(sqrdmlsh_i_4s_4s_4s, "sqrdmlsh v0.4s, v1.4s, v2.s[3]", 0, 1, 2)
 
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_0, "sqrdmlsh v0.4h, v1.4h, v2.4h[0]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_ALL5s_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[1]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_ALLas_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[2]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_ALLfs_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[3]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_UP_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[0]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_DOWN_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[1]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_PI_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[2]", 0, 1, 2)
-GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_E_16, "sqrdmlsh v0.4h, v1.4h, v2.4h[3]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_0, "sqrdmlsh v0.4h, v1.4h, v2.h[0]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_ALL5s_16, "sqrdmlsh v0.4h, v1.4h, v2.h[1]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_ALLas_16, "sqrdmlsh v0.4h, v1.4h, v2.h[2]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_ALLfs_16, "sqrdmlsh v0.4h, v1.4h, v2.h[3]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_UP_16, "sqrdmlsh v0.4h, v1.4h, v2.h[0]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_DOWN_16, "sqrdmlsh v0.4h, v1.4h, v2.h[1]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_PI_16, "sqrdmlsh v0.4h, v1.4h, v2.h[2]", 0, 1, 2)
+GEN_THREEVEC_TEST(sqrdmlsh_i_4h_4h_4h_E_16, "sqrdmlsh v0.4h, v1.4h, v2.h[3]", 0, 1, 2)
 
 /* sqrdmlsh (scalar version) */
 GEN_THREEVEC_TEST_RND(sqrdmlsh_h0_h1_h2, "sqrdmlsh h0, h1, h2", 0, 1, 2)

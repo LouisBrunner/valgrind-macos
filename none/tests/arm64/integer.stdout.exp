@@ -914,161 +914,161 @@ cmp w17,w18 ; csneg w16,w17,w18,pl :: rd 00000000aedb9b6b rm afa6ef803bc9291c, r
 cmp w17,w18 ; csneg w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
 cmp w17,w18 ; csneg w16,w17,w18,vs :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
 ADD/SUB(extended reg)(64)
-add x21,x22,x23,uxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtb #2 :: rd 52d448b3d56f5615 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-add x21,x22,x23,uxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-add x21,x22,x23,uxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-add x21,x22,x23,uxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-add x21,x22,x23,uxth #3 :: rd a7e754e8ff3ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-add x21,x22,x23,uxth #4 :: rd 2e10f2a4056782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtw #0 :: rd a3ca7e670aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtw #1 :: rd 09fb0ab7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtw #2 :: rd 52d448b67c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-add x21,x22,x23,uxtw #4 :: rd 2e10f2b0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtb #2 :: rd 52d448b3d56f5615 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+add x21,x22,w23,uxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+add x21,x22,w23,uxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+add x21,x22,w23,uxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+add x21,x22,w23,uxth #3 :: rd a7e754e8ff3ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+add x21,x22,w23,uxth #4 :: rd 2e10f2a4056782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtw #0 :: rd a3ca7e670aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtw #1 :: rd 09fb0ab7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtw #2 :: rd 52d448b67c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+add x21,x22,w23,uxtw #4 :: rd 2e10f2b0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
 add x21,x22,x23,uxtx #0 :: rd 4a48881f0aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
 add x21,x22,x23,uxtx #1 :: rd 550438d7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
 add x21,x22,x23,uxtx #2 :: rd b908c93e7c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
 add x21,x22,x23,uxtx #3 :: rd 7d79e501135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
 add x21,x22,x23,uxtx #4 :: rd ad4c8070786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtb #2 :: rd 52d448b3d56f5215 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-add x21,x22,x23,sxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-add x21,x22,x23,sxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-add x21,x22,x23,sxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-add x21,x22,x23,sxth #3 :: rd a7e754e8ff36f596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-add x21,x22,x23,sxth #4 :: rd 2e10f2a4055782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtw #0 :: rd a3ca7e660aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtw #1 :: rd 09fb0ab5b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtw #2 :: rd 52d448b27c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-add x21,x22,x23,sxtw #4 :: rd 2e10f2a0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtb #2 :: rd 52d448b3d56f5215 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+add x21,x22,w23,sxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+add x21,x22,w23,sxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+add x21,x22,w23,sxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+add x21,x22,w23,sxth #3 :: rd a7e754e8ff36f596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+add x21,x22,w23,sxth #4 :: rd 2e10f2a4055782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtw #0 :: rd a3ca7e660aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtw #1 :: rd 09fb0ab5b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtw #2 :: rd 52d448b27c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+add x21,x22,w23,sxtw #4 :: rd 2e10f2a0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
 add x21,x22,x23,sxtx #0 :: rd 4a48881f0aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
 add x21,x22,x23,sxtx #1 :: rd 550438d7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
 add x21,x22,x23,sxtx #2 :: rd b908c93e7c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
 add x21,x22,x23,sxtx #3 :: rd 7d79e501135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
 add x21,x22,x23,sxtx #4 :: rd ad4c8070786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,uxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxtb #2 :: rd 52d448b3d56f5615 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,uxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,uxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxth #3 :: rd a7e754e8ff3ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,uxth #4 :: rd 2e10f2a4056782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxtw #0 :: rd a3ca7e670aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,uxtw #1 :: rd 09fb0ab7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxtw #2 :: rd 52d448b67c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-adds x21,x22,x23,uxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,uxtw #4 :: rd 2e10f2b0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,uxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxtb #2 :: rd 52d448b3d56f5615 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,uxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,uxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxth #3 :: rd a7e754e8ff3ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,uxth #4 :: rd 2e10f2a4056782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxtw #0 :: rd a3ca7e670aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,uxtw #1 :: rd 09fb0ab7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxtw #2 :: rd 52d448b67c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+adds x21,x22,w23,uxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,uxtw #4 :: rd 2e10f2b0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
 adds x21,x22,x23,uxtx #0 :: rd 4a48881f0aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 30000000   CV
 adds x21,x22,x23,uxtx #1 :: rd 550438d7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
 adds x21,x22,x23,uxtx #2 :: rd b908c93e7c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 90000000 N  V
 adds x21,x22,x23,uxtx #3 :: rd 7d79e501135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 30000000   CV
 adds x21,x22,x23,uxtx #4 :: rd ad4c8070786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 90000000 N  V
-adds x21,x22,x23,sxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,sxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-adds x21,x22,x23,sxtb #2 :: rd 52d448b3d56f5215 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
-adds x21,x22,x23,sxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,sxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-adds x21,x22,x23,sxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,sxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-adds x21,x22,x23,sxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-adds x21,x22,x23,sxth #3 :: rd a7e754e8ff36f596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
-adds x21,x22,x23,sxth #4 :: rd 2e10f2a4055782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
-adds x21,x22,x23,sxtw #0 :: rd a3ca7e660aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
-adds x21,x22,x23,sxtw #1 :: rd 09fb0ab5b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
-adds x21,x22,x23,sxtw #2 :: rd 52d448b27c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
-adds x21,x22,x23,sxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
-adds x21,x22,x23,sxtw #4 :: rd 2e10f2a0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
+adds x21,x22,w23,sxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,sxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+adds x21,x22,w23,sxtb #2 :: rd 52d448b3d56f5215 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
+adds x21,x22,w23,sxtb #3 :: rd a7e754e8ff3a5596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,sxtb #4 :: rd 2e10f2a4055bf2ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+adds x21,x22,w23,sxth #0 :: rd a3ca7e66297ca007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,sxth #1 :: rd 09fb0ab6a60b470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+adds x21,x22,w23,sxth #2 :: rd 52d448b3d5712e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+adds x21,x22,w23,sxth #3 :: rd a7e754e8ff36f596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
+adds x21,x22,w23,sxth #4 :: rd 2e10f2a4055782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
+adds x21,x22,w23,sxtw #0 :: rd a3ca7e660aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
+adds x21,x22,w23,sxtw #1 :: rd 09fb0ab5b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
+adds x21,x22,w23,sxtw #2 :: rd 52d448b27c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
+adds x21,x22,w23,sxtw #3 :: rd a7e754e9135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
+adds x21,x22,w23,sxtw #4 :: rd 2e10f2a0786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
 adds x21,x22,x23,sxtx #0 :: rd 4a48881f0aa2a007 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 30000000   CV
 adds x21,x22,x23,sxtx #1 :: rd 550438d7b7bd470b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
 adds x21,x22,x23,sxtx #2 :: rd b908c93e7c512e15 rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 90000000 N  V
 adds x21,x22,x23,sxtx #3 :: rd 7d79e501135ef596 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 30000000   CV
 adds x21,x22,x23,sxtx #4 :: rd ad4c8070786782ae rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 90000000 N  V
-sub x21,x22,x23,uxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtb #2 :: rd 52d448b3d56f50bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxth #3 :: rd a7e754e8ff35b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxth #4 :: rd 2e10f2a40550556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtw #0 :: rd a3ca7e654855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtw #1 :: rd 09fb0ab59459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtw #2 :: rd 52d448b12e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-sub x21,x22,x23,uxtw #4 :: rd 2e10f2979250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtb #2 :: rd 52d448b3d56f50bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxth #3 :: rd a7e754e8ff35b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxth #4 :: rd 2e10f2a40550556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtw #0 :: rd a3ca7e654855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtw #1 :: rd 09fb0ab59459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtw #2 :: rd 52d448b12e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+sub x21,x22,w23,uxtw #4 :: rd 2e10f2979250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
 sub x21,x22,x23,uxtx #0 :: rd fd4c74ad4855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
 sub x21,x22,x23,uxtx #1 :: rd bef1dc959459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
 sub x21,x22,x23,uxtx #2 :: rd ec9fc8292e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
 sub x21,x22,x23,uxtx #3 :: rd d254c4d0eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
 sub x21,x22,x23,uxtx #4 :: rd aed564d79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtb #2 :: rd 52d448b3d56f54bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxth #3 :: rd a7e754e8ff3db506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxth #4 :: rd 2e10f2a40560556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtw #0 :: rd a3ca7e664855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtw #1 :: rd 09fb0ab79459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtw #2 :: rd 52d448b52e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
-sub x21,x22,x23,sxtw #4 :: rd 2e10f2a79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtb #2 :: rd 52d448b3d56f54bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxth #3 :: rd a7e754e8ff3db506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxth #4 :: rd 2e10f2a40560556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtw #0 :: rd a3ca7e664855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtw #1 :: rd 09fb0ab79459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtw #2 :: rd 52d448b52e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
+sub x21,x22,w23,sxtw #4 :: rd 2e10f2a79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
 sub x21,x22,x23,sxtx #0 :: rd fd4c74ad4855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
 sub x21,x22,x23,sxtx #1 :: rd bef1dc959459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
 sub x21,x22,x23,sxtx #2 :: rd ec9fc8292e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
 sub x21,x22,x23,sxtx #3 :: rd d254c4d0eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 00000000     
 sub x21,x22,x23,sxtx #4 :: rd aed564d79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-subs x21,x22,x23,uxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,uxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxtb #2 :: rd 52d448b3d56f50bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,uxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,uxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxth #3 :: rd a7e754e8ff35b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,uxth #4 :: rd 2e10f2a40550556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxtw #0 :: rd a3ca7e654855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,uxtw #1 :: rd 09fb0ab59459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxtw #2 :: rd 52d448b12e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,uxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,uxtw #4 :: rd 2e10f2979250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,uxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxtb #2 :: rd 52d448b3d56f50bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,uxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,uxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxth #3 :: rd a7e754e8ff35b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,uxth #4 :: rd 2e10f2a40550556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxtw #0 :: rd a3ca7e654855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,uxtw #1 :: rd 09fb0ab59459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxtw #2 :: rd 52d448b12e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,uxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,uxtw #4 :: rd 2e10f2979250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
 subs x21,x22,x23,uxtx #0 :: rd fd4c74ad4855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
 subs x21,x22,x23,uxtx #1 :: rd bef1dc959459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 80000000 N   
 subs x21,x22,x23,uxtx #2 :: rd ec9fc8292e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 80000000 N   
 subs x21,x22,x23,uxtx #3 :: rd d254c4d0eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
 subs x21,x22,x23,uxtx #4 :: rd aed564d79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 80000000 N   
-subs x21,x22,x23,sxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,sxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,sxtb #2 :: rd 52d448b3d56f54bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-subs x21,x22,x23,sxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,sxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,sxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,sxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,sxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
-subs x21,x22,x23,sxth #3 :: rd a7e754e8ff3db506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
-subs x21,x22,x23,sxth #4 :: rd 2e10f2a40560556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
-subs x21,x22,x23,sxtw #0 :: rd a3ca7e664855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
-subs x21,x22,x23,sxtw #1 :: rd 09fb0ab79459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
-subs x21,x22,x23,sxtw #2 :: rd 52d448b52e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
-subs x21,x22,x23,sxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
-subs x21,x22,x23,sxtw #4 :: rd 2e10f2a79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+subs x21,x22,w23,sxtb #0 :: rd a3ca7e66297c462f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,sxtb #1 :: rd 09fb0ab6a60b347b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,sxtb #2 :: rd 52d448b3d56f54bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+subs x21,x22,w23,sxtb #3 :: rd a7e754e8ff3a5506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,sxtb #4 :: rd 2e10f2a4055be56e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,sxth #0 :: rd a3ca7e66297bed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,sxth #1 :: rd 09fb0ab6a60b227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,sxth #2 :: rd 52d448b3d56d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 20000000   C 
+subs x21,x22,w23,sxth #3 :: rd a7e754e8ff3db506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv 80000000 N   
+subs x21,x22,w23,sxth #4 :: rd 2e10f2a40560556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
+subs x21,x22,w23,sxtw #0 :: rd a3ca7e664855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
+subs x21,x22,w23,sxtw #1 :: rd 09fb0ab79459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     
+subs x21,x22,w23,sxtw #2 :: rd 52d448b52e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 00000000     
+subs x21,x22,w23,sxtw #3 :: rd a7e754e8eb15b506 rm a7e754e8ff3a554e, rn 7ab2520302849409, cin 0, nzcv a0000000 N C 
+subs x21,x22,w23,sxtw #4 :: rd 2e10f2a79250556e rm 2e10f2a4055bec0e, rn 77f3b8dcc730b96a, cin 0, nzcv 00000000     
 subs x21,x22,x23,sxtx #0 :: rd fd4c74ad4855ed2f rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 80000000 N   
 subs x21,x22,x23,sxtx #1 :: rd bef1dc959459227b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 80000000 N   
 subs x21,x22,x23,sxtx #2 :: rd ec9fc8292e8d78bd rm 52d448b3d56f5369, rn d98d2022a9b876ab, cin 0, nzcv 80000000 N   
@@ -1273,51 +1273,51 @@ msr nzcv,x24; ccmp x25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 msr nzcv,x24; ccmp x25,#17,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmp x25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,#17,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,#17,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp x25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,#17,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#17,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp x25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#18,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#18,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,#18,#0x3,eq; mrs x23,nzcv :: rd 0000000080000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
-msr nzcv,x24; ccmp x25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,#18,#0x6,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,#18,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,#18,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmp x25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,#18,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,#18,#0x5,gt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,#18,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,#18,#0x6,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,#18,#0x5,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,#18,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
-msr nzcv,x24; ccmn x25,#17,#0x0,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x1,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x2,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x4,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x5,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x6,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x8,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x9,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0xA,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0xB,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0xC,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0xD,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0xE,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmp x25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmn x25,#17,#0x0,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x1,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x2,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x4,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x5,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x8,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x9,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0xA,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0xB,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0xC,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0xD,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0xE,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 
 msr nzcv,x24; ccmn x25,#17,#0x0,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
 msr nzcv,x24; ccmn x25,#17,#0x1,ne; mrs x23,nzcv :: rd 0000000010000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 10000000    V
@@ -1338,36 +1338,36 @@ msr nzcv,x24; ccmn x25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 
 msr nzcv,x24; ccmn x25,#17,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#17,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
-msr nzcv,x24; ccmn x25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,#17,#0x6,lt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,#17,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#17,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn x25,#17,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#17,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmn x25,#17,#0x5,gt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#17,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#17,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,#17,#0x6,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#17,#0x5,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,#17,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,#17,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#17,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#18,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#18,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
-msr nzcv,x24; ccmn x25,#18,#0x3,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,#18,#0x6,lt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#18,#0x3,eq; mrs x23,nzcv :: rd 0000000020000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn x25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,#18,#0x6,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,#18,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn x25,#18,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,#18,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmn x25,#18,#0x5,gt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#18,#0x5,gt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,#18,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,#18,#0x6,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,#18,#0x5,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,#18,#0x6,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn x25,#18,#0x5,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,#18,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 CCMP/CCMN(imm)(32)
 msr nzcv,x24; ccmp w25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv f0000000 NZCV
@@ -1414,40 +1414,40 @@ msr nzcv,x24; ccmp w25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 msr nzcv,x24; ccmp w25,#17,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmp w25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,#17,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,#17,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp w25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,#17,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#17,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp w25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#18,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#18,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,#18,#0x3,eq; mrs x23,nzcv :: rd 0000000080000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
-msr nzcv,x24; ccmp w25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,#18,#0x6,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,#18,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,#18,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmp w25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,#18,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,#18,#0x5,gt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,#18,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,#18,#0x6,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,#18,#0x5,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,#18,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmp w25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmn w25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv f0000000 NZCV
 msr nzcv,x24; ccmn w25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffeeffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffeeffffffef, cin 0, nzcv f0000000 NZCV
-msr nzcv,x24; ccmn x25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv f0000000 NZCV
 msr nzcv,x24; ccmn x25,#17,#0xF,eq; mrs x23,nzcv :: rd 0000000080000000 rm 0000000040000000, rn ffffffeeffffffef, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmn x25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffeeffffffef, cin 0, nzcv f0000000 NZCV
@@ -1488,35 +1488,35 @@ msr nzcv,x24; ccmn w25,#17,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 msr nzcv,x24; ccmn w25,#17,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,#17,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmn w25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,#17,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,#17,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,#17,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn w25,#17,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,#17,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,#17,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#17,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn w25,#17,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#18,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#18,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,#18,#0x3,eq; mrs x23,nzcv :: rd 0000000020000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
-msr nzcv,x24; ccmn w25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,#18,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,#18,#0x6,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,#18,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,#18,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000020000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn w25,#18,#0x7,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,#18,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,#18,#0x5,gt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,#18,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,#18,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,#18,#0x6,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,#18,#0x5,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,#18,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000020000000 rm ffffffff80000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn w25,#18,#0x7,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, cin 0, nzcv 20000000   C 
 CCMP/CCMN(reg)(64)
 msr nzcv,x24; ccmp x25,x26,#0x0,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x1,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
@@ -1555,51 +1555,51 @@ msr nzcv,x24; ccmp x25,x26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 msr nzcv,x24; ccmp x25,x26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmp x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,x26,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,x26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,x26,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000080000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
-msr nzcv,x24; ccmp x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,x26,#0x6,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,x26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp x25,x26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmp x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,x26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp x25,x26,#0x5,gt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,x26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp x25,x26,#0x6,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,x26,#0x5,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp x25,x26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
-msr nzcv,x24; ccmn x25,x26,#0x0,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x1,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x2,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x4,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x5,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x6,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x8,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x9,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0xA,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0xB,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0xC,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0xD,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0xE,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0xF,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmp x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmn x25,x26,#0x0,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x1,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x2,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x4,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x5,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x8,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x9,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0xA,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0xB,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0xC,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0xD,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0xE,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 
 msr nzcv,x24; ccmn x25,x26,#0x0,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
 msr nzcv,x24; ccmn x25,x26,#0x1,ne; mrs x23,nzcv :: rd 0000000010000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 10000000    V
@@ -1620,36 +1620,36 @@ msr nzcv,x24; ccmn x25,x26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 
 msr nzcv,x24; ccmn x25,x26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 50000000  Z V
-msr nzcv,x24; ccmn x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,x26,#0x6,lt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,x26,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn x25,x26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmn x25,x26,#0x5,gt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,x26,#0x6,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x5,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,x26,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn x25,x26,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 50000000  Z V
-msr nzcv,x24; ccmn x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,x26,#0x6,lt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x3,eq; mrs x23,nzcv :: rd 0000000020000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn x25,x26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,x26,#0x6,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,x26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn x25,x26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x7,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,x26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmn x25,x26,#0x5,gt; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x5,gt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,x26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
-msr nzcv,x24; ccmn x25,x26,#0x6,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
-msr nzcv,x24; ccmn x25,x26,#0x5,ne; mrs x23,nzcv :: rd 0000000000000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn x25,x26,#0x6,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn x25,x26,#0x5,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn x25,x26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000000000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0x7,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 CCMP/CCMN(reg)(32)
 msr nzcv,x24; ccmp w25,w26,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv f0000000 NZCV
@@ -1696,40 +1696,40 @@ msr nzcv,x24; ccmp w25,w26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 msr nzcv,x24; ccmp w25,w26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,w26,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmp w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,w26,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,w26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,w26,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmp w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,w26,#0x3,eq; mrs x23,nzcv :: rd 0000000080000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
-msr nzcv,x24; ccmp w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,w26,#0x6,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,w26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmp w25,w26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmp w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,w26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmp w25,w26,#0x5,gt; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,w26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmp w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmp w25,w26,#0x6,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000010000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,w26,#0x5,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000020000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmp w25,w26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmp w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm ffffffff80000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
+msr nzcv,x24; ccmp w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000080000000 rm 0000000080000000, rn 0000000000000011, ra 0000000000000012, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmn w25,w26,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv f0000000 NZCV
 msr nzcv,x24; ccmn w25,w26,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffeeffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffeeffffffef, ra 0000000000000011, cin 0, nzcv f0000000 NZCV
-msr nzcv,x24; ccmn x25,x26,#0xF,eq; mrs x23,nzcv :: rd 0000000000000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 00000000     
+msr nzcv,x24; ccmn x25,x26,#0xF,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn x25,x26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv f0000000 NZCV
 msr nzcv,x24; ccmn x25,x26,#0xF,eq; mrs x23,nzcv :: rd 0000000080000000 rm 0000000040000000, rn ffffffeeffffffef, ra 0000000000000011, cin 0, nzcv 80000000 N   
 msr nzcv,x24; ccmn x25,x26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 0000000040000000, rn ffffffeeffffffef, ra 0000000000000011, cin 0, nzcv f0000000 NZCV
@@ -1770,35 +1770,35 @@ msr nzcv,x24; ccmn w25,w26,#0xF,ne; mrs x23,nzcv :: rd 00000000f0000000 rm 00000
 msr nzcv,x24; ccmn w25,w26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,w26,#0x3,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
-msr nzcv,x24; ccmn w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,w26,#0x6,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,w26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x5,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,w26,#0x6,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x5,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
+msr nzcv,x24; ccmn w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000060000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000011, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x6,eq; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x5,eq; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,w26,#0x3,eq; mrs x23,nzcv :: rd 0000000020000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
-msr nzcv,x24; ccmn w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,w26,#0x7,eq; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,w26,#0x6,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,w26,#0x5,lt; mrs x23,nzcv :: rd 0000000050000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 50000000  Z V
 msr nzcv,x24; ccmn w25,w26,#0x3,lt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000020000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn w25,w26,#0x7,lt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,w26,#0x6,gt; mrs x23,nzcv :: rd 0000000060000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 60000000  ZC 
 msr nzcv,x24; ccmn w25,w26,#0x5,gt; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,w26,#0x3,gt; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
+msr nzcv,x24; ccmn w25,w26,#0x7,gt; mrs x23,nzcv :: rd 0000000070000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 70000000  ZCV
 msr nzcv,x24; ccmn w25,w26,#0x6,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000010000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,w26,#0x5,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000020000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 msr nzcv,x24; ccmn w25,w26,#0x3,ne; mrs x23,nzcv :: rd 0000000030000000 rm 0000000040000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 30000000   CV
-msr nzcv,x24; ccmn w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000020000000 rm ffffffff80000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
+msr nzcv,x24; ccmn w25,w26,#0x7,ne; mrs x23,nzcv :: rd 0000000020000000 rm 0000000080000000, rn ffffffffffffffef, ra 0000000000000012, cin 0, nzcv 20000000   C 
 REV
 rev x11,x23 :: rd 88b450e5aeba79fd rn fd79baaee550b488, cin 0, nzcv 00000000     
 rev x11,x23 :: rd 73174245095461e8 rn e861540945421773, cin 0, nzcv 00000000     

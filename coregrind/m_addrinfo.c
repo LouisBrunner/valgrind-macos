@@ -241,6 +241,19 @@ void VG_(describe_addr) ( DiEpoch ep, Addr a, /*OUT*/AddrInfo* ai )
             if (tid != VG_INVALID_THREADID)
                stackPos = StackPos_guard_page;
          }
+         /*
+          * On FreeBSD the above heuristic fails since version 14.0
+          *
+          * I think that is because of a bug or at least a misfeature
+          * in the way that the kernel grows mmap'd MAP_STACK memory
+          * See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=277382
+          *
+          * I could add a lot of ugliness like
+          * "if the address is RW and sysctl security.bsd.stack_guard_page
+          * times the page size is PROT_NONE then it's a wonky guard page"
+          *
+          * Naaah.
+          */
       }
 
       if (tid != VG_INVALID_THREADID) {

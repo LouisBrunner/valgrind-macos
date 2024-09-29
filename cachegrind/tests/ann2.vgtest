@@ -4,6 +4,7 @@
 # The `prog` doesn't matter because we don't use its output. Instead we test
 # the post-processing of the cgout file.
 prog: ../../tests/true
+prereq: ../../tests/python_test.sh
 vgopts: --cachegrind-out-file=cachegrind.out
 
 # The `sleep` is to ensure the mtime of the second touched file is greater than

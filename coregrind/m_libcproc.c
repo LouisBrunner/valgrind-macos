@@ -905,6 +905,8 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
       return;
 
    if (pid == 0) {
+      /* We are the child, close writing fd that we don't use.  */
+      VG_(close)(fds[1]);
       /* Before proceeding, ensure parent has recorded child PID in map
          of SIGCHLD to ignore */
       while (child_wait == 1)
@@ -916,6 +918,7 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
          }
       }
 
+      /* Now close reading fd.  */
       VG_(close)(fds[0]);
       return;
    }
@@ -926,11 +929,15 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
       ht_sigchld_ignore = VG_(HT_construct)("ht.sigchld.ignore");
    VG_(HT_add_node)(ht_sigchld_ignore, n);
 
+   /* We are the parent process, close read fd that we don't use.  */
+   VG_(close)(fds[0]);
+
    child_wait = 0;
    if (VG_(write)(fds[1], &child_wait, sizeof(Int)) <= 0)
       VG_(message)(Vg_DebugMsg,
          "warning: Unable to record PID of internal process (write)\n");
 
+   /* Now close writing fd.  */
    VG_(close)(fds[1]);
 }
 
@@ -1236,7 +1243,7 @@ Int VG_(getosreldate)(void)
 
 Bool VG_(is32on64)(void)
 {
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    return False;
 #elif defined(VGP_x86_freebsd)
    SysRes res;
@@ -1298,7 +1305,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    // This arm64_linux section of this function VG_(invalidate_icache)
    // is copied from
    // https://github.com/armvixl/vixl/blob/master/src/a64/cpu-a64.cc
@@ -1332,11 +1339,12 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    */
 
    // Ask what the I and D line sizes are
-   UInt cache_type_register;
+   ULong read_mrs;
    // Copy the content of the cache type register to a core register.
    __asm__ __volatile__ ("mrs %[ctr], ctr_el0" // NOLINT
-                         : [ctr] "=r" (cache_type_register));
+                         : [ctr] "=r" (read_mrs));
 
+   UInt cache_type_register = read_mrs;
    const Int kDCacheLineSizeShift = 16;
    const Int kICacheLineSizeShift = 0;
    const UInt kDCacheLineSizeMask = 0xf << kDCacheLineSizeShift;

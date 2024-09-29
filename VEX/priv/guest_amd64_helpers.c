@@ -768,26 +768,6 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
    }
 }
 
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-
-/* This dummy function is just used to have an address just after
-   amd64g_calculate_rflags_all_WRK */
-
-static
-void _______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ (void)
-{
-}
-
-/* Export addresses of amd64g_calculate_rflags_all_WRK and
-   _______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______
-   Used in syswrap-main.c / VG_(post_syscall) in the case where
-   the above function was interrupted and we need to work out
-   what needs to be done for the resumption */
-
-Addr addr_amd64g_calculate_rflags_all_WRK = (Addr)amd64g_calculate_rflags_all_WRK;
-Addr addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ = (Addr)_______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______;
-#endif
-
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
 ULong amd64g_calculate_rflags_all ( ULong cc_op, 
@@ -1013,16 +993,6 @@ LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
    vex_state->guest_CC_NDEP = 0;
 }
 
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-/* Used in syswrap-main.c / VG_(post_syscall) in the case where
-   the above function was interrupted and we need to work out
-   what needs to be done for the resumption. These functions
-   are extern so no need for 'addr' global variables */
-void _______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ (void)
-{
-}
-#endif
-
 /*---------------------------------------------------------------*/
 /*--- %rflags translation-time function specialisers.         ---*/
 /*--- These help iropt specialise calls the above run-time    ---*/
@@ -1092,6 +1062,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
 #  define binop(_op,_a1,_a2) IRExpr_Binop((_op),(_a1),(_a2))
 #  define mkU64(_n) IRExpr_Const(IRConst_U64(_n))
 #  define mkU32(_n) IRExpr_Const(IRConst_U32(_n))
+#  define mkU16(_n) IRExpr_Const(IRConst_U16(_n))
 #  define mkU8(_n)  IRExpr_Const(IRConst_U8(_n))
 
    Int i, arity = 0;
@@ -1170,6 +1141,15 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
 
       }
 
+      /* 4, */
+      if (isU64(cc_op, AMD64G_CC_OP_ADDL) && isU64(cond, AMD64CondZ)) {
+         /* long add, then Z --> test ((int)(dst+src) == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32,
+                           unop(Iop_64to32, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           mkU32(0)));
+      }
+
       /* 8, 9 */
       if (isU64(cc_op, AMD64G_CC_OP_ADDL) && isU64(cond, AMD64CondS)) {
          /* long add, then S (negative)
@@ -1194,6 +1174,29 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                                   mkU8(31)),
                             mkU64(1)),
                       mkU64(1));
+      }
+
+      /*---------------- ADDW ----------------*/
+
+      /* 4, */
+      if (isU64(cc_op, AMD64G_CC_OP_ADDW) && isU64(cond, AMD64CondZ)) {
+
+         /* word add, then Z --> test ((short)(dst+src) == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ16,
+                           unop(Iop_64to16, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           mkU16(0)));
+      }
+
+      /*---------------- ADDB ----------------*/
+
+      /* 4, */
+      if (isU64(cc_op, AMD64G_CC_OP_ADDB) && isU64(cond, AMD64CondZ)) {
+         /* byte add, then Z --> test ((char)(dst+src) == 0) */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ8,
+                           unop(Iop_64to8, binop(Iop_Add64, cc_dep1, cc_dep2)),
+                           mkU8(0)));
       }
 
       /*---------------- SUBQ ----------------*/
@@ -1304,7 +1307,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                      binop(Iop_CmpLE64S, cc_dep1, cc_dep2));
       }
       if (isU64(cc_op, AMD64G_CC_OP_SUBQ) && isU64(cond, AMD64CondNLE)) {
-         /* long sub/cmp, then NLE (signed greater than) 
+         /* long long sub/cmp, then NLE (signed greater than)
             --> test !(dst <=s src)
             --> test (dst >s src)
             --> test (src <s dst) */
@@ -1337,6 +1340,8 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
                         mkU8(31)),
                   mkU64(1));
       }
+
+      /* 1, */
       if (isU64(cc_op, AMD64G_CC_OP_SUBL) && isU64(cond, AMD64CondNO)) {
          /* No action.  Never yet found a test case. */
       }
@@ -1608,7 +1613,7 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       if (isU64(cc_op, AMD64G_CC_OP_SUBB) && isU64(cond, AMD64CondZ)) {
          /* byte sub/cmp, then Z --> test dst==src */
          return unop(Iop_1Uto64,
-                     binop(Iop_CmpEQ8, 
+                     binop(Iop_CmpEQ8,
                            unop(Iop_64to8,cc_dep1),
                            unop(Iop_64to8,cc_dep2)));
       }
@@ -3692,7 +3697,6 @@ ULong amd64g_calculate_RCR ( ULong arg,
          }
          break;
       case 4:
-         while (tempCOUNT >= 33) tempCOUNT -= 33;
          cf        = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
          of        = ((arg >> 31) ^ cf) & 1;
          while (tempCOUNT > 0) {
@@ -3760,7 +3764,6 @@ ULong amd64g_calculate_RCL ( ULong arg,
          of = ((arg >> 63) ^ cf) & 1;
          break;
       case 4:
-         while (tempCOUNT >= 33) tempCOUNT -= 33;
          cf = (rflags_in >> AMD64G_CC_SHIFT_C) & 1;
          while (tempCOUNT > 0) {
             tempcf = (arg >> 31) & 1;
@@ -4815,6 +4818,8 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 #  undef AVXZERO
 
    vex_state->guest_EMNOTE = EmNote_NONE;
+
+   vex_state->guest_SETC = 0;
 
    /* These should not ever be either read or written, but we
       initialise them anyway. */

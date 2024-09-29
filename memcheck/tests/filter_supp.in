@@ -1,0 +1,10 @@
+#! /bin/sh
+# @configure_input@
+
+SED=@SED@
+
+./filter_stderr "$@" |
+
+$SED 'N;/^used_suppression/M{/^used_suppression/d;$!N;d};P;D'
+
+exit 0

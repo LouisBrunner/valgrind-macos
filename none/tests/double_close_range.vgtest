@@ -1,0 +1,4 @@
+prog: double_close_range
+prereq: test -x double_close_range
+stderr_filter: filter_fdleak
+vgopts: -q --track-fds=yes

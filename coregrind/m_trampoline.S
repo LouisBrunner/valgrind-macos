@@ -218,6 +218,29 @@ VG_(amd64_linux_REDIR_FOR_strlen):
 .LfnE5:
 .size VG_(amd64_linux_REDIR_FOR_strlen), .-VG_(amd64_linux_REDIR_FOR_strlen)
 
+/* There's no particular reason that this needs to be handwritten
+   assembly, but since that's what this file contains, here's a
+   simple strcmp.)
+*/
+.global VG_(amd64_linux_REDIR_FOR_strcmp)
+.type   VG_(amd64_linux_REDIR_FOR_strcmp), @function
+VG_(amd64_linux_REDIR_FOR_strcmp):
+	xorl	%ecx, %ecx
+1:
+	movzbl	(%rdi, %rcx), %eax
+	movzbl	(%rsi, %rcx), %edx
+	testb	%al, %al
+	jne	2f
+	movl	%edx, %eax
+	negl	%eax
+	ret
+2:
+	incq	%rcx
+	subl	%edx, %eax
+	je	1b
+	ret
+.size VG_(amd64_linux_REDIR_FOR_strcmp), .-VG_(amd64_linux_REDIR_FOR_strcmp)
+
 .global VG_(amd64_linux_REDIR_FOR_index)
 .type   VG_(amd64_linux_REDIR_FOR_index), @function
 VG_(amd64_linux_REDIR_FOR_index):
@@ -938,6 +961,48 @@ VG_(trampoline_stuff_end):
 #	undef UD2_256
 #	undef UD2_1024
 #	undef UD2_PAGE
+
+/*---------------- arm64-freebsd ----------------*/
+#else
+#if defined(VGP_arm64_freebsd)
+
+#       define UD2_4      .word 0xFFFFFFFF
+#	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(arm64_freebsd_SUBST_FOR_sigreturn)
+.type   VG_(arm64_freebsd_SUBST_FOR_sigreturn),#function
+VG_(arm64_freebsd_SUBST_FOR_sigreturn):
+	mov x8, # __NR_fake_sigreturn
+        mov x0, sp
+        svc #0
+        .long 0xFFFFFFFF /*illegal insn*/
+.size VG_(arm64_freebsd_SUBST_FOR_sigreturn), \
+        .-VG_(arm64_freebsd_SUBST_FOR_sigreturn)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_4
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
+
 
 /*---------------- x86-darwin ----------------*/
 #else
@@ -1703,6 +1768,7 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

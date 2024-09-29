@@ -543,6 +543,14 @@ get_cache_info(VexArchInfo *vai)
 static Bool
 get_cache_info(VexArchInfo *vai)
 {
+#if defined(VGA_arm64)
+   unsigned long val;
+   asm volatile("mrs %0, dczid_el0" : "=r" (val));
+   val &= 0xf;
+   // The ARM manual says that 4 bits are used but 9 is the maximum
+   vg_assert(val <= 9);
+   vai->arm64_cache_block_size = val;
+#endif
    vai->hwcache_info.icaches_maintain_coherence = False;
 
    return False;   // not yet

@@ -1,0 +1,6 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+gsed 's/size ... free/size ... free/' |
+gsed 's/size ... alloc/size ... alloc/'

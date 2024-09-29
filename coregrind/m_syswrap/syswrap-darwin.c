@@ -10272,6 +10272,10 @@ PRE(bsdthread_ctl)
                  void*, cmd, void*, arg1, void*, arg2, void*, arg3);
 }
 
+// syscalls.master says
+// int csrctl(uint32_t op, user_addr_t useraddr, user_addr_t usersize) NO_SYSCALL_STUB;
+// but https://github.com/search?q=repo%3Aapple-open-source%2Fmacos%20__csrctl&type=code says
+// int __csrctl(csr_op_t op, void *buffer, size_t size);
 PRE(csrctl)
 {
    switch (ARG1) {
@@ -10463,6 +10467,139 @@ POST(getentropy)
 {
     vg_assert(SUCCESS);
     POST_MEM_WRITE( ARG1, ARG2 );
+}
+
+PRE(necp_open)
+{
+   PRINT("necp_open(%#lx)", ARG1);
+   PRE_REG_READ1(int, "necp_open", int, flags);
+}
+
+PRE(necp_client_action)
+{
+   PRINT("necp_client_action(%lu, %#lx, %#lx, %lu, %#lx, %lu)",
+     ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(int, "necp_client_action",
+     int, necp_fd, uint32_t, action,
+     unsigned char*, client_id, size_t, client_id_len,
+     uint8_t*, buffer, size_t, buffer_size);
+
+   switch (ARG2 /* request */) {
+   case VKI_NECP_CLIENT_ACTION_ADD:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0 || ARG6 > VKI_NECP_MAX_CLIENT_PARAMETERS_SIZE) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_WRITE( "necp_client_action(ADD, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(ADD, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_CLAIM:
+      if (ARG4 != sizeof(uuid_t)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(CLAIM, client_id)", ARG3, ARG4);
+      break;
+   case VKI_NECP_CLIENT_ACTION_REMOVE:
+      if (ARG4 != sizeof(uuid_t) || (ARG5 != 0 && ARG6 != VKI_IFNET_STATS_PER_FLOW_SIZE)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(REMOVE, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(REMOVE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS:
+      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      if (ARG3 != 0) {
+        PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, client_id)", ARG3, ARG4);
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_RESULT:
+      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      if (ARG3 != 0) {
+        PRE_MEM_READ( "necp_client_action(COPY_RESULT, client_id)", ARG3, ARG4);
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_RESULT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT:
+      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      if (ARG3 != 0) {
+        PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, client_id)", ARG3, ARG4);
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_LIST:
+      if (ARG6 < sizeof(u_int32_t)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_LIST, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_AGENT:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(AGENT, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(AGENT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_AGENT:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_AGENT, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
+      PRE_MEM_WRITE( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_AGENT_USE:
+      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_agent_use_parameters)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(AGENT_USE, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
+      PRE_MEM_WRITE( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_INTERFACE:
+      if (ARG4 != sizeof(u_int32_t) || ARG6 < sizeof(struct vki_necp_interface_details_legacy)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_INTERFACE, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(COPY_INTERFACE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_ROUTE_STATISTICS:
+      if (ARG4 != sizeof(uuid_t) || ARG6 < VKI_NECP_STAT_COUNTS_SIZE) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_ROUTE_STATISTICS, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(COPY_ROUTE_STATISTICS, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_UPDATE_CACHE:
+      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_cache_buffer)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_SIGN:
+      if (ARG4 < sizeof(struct vki_necp_client_signable) || ARG6 != VKI_NECP_CLIENT_ACTION_SIGN_TAG_LENGTH) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(SIGN, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(SIGN, buffer)", ARG5, ARG6);
+      break;
+   default:
+      VG_(printf)("UNKNOWN necp_client_action action %#lx\n", ARG2);
+      break;
+   }
 }
 
 static const HChar *ulop_name(int op)
@@ -10675,6 +10812,47 @@ POST(mach_generate_activity_id)
 
 #if DARWIN_VERS >= DARWIN_10_13
 
+PRE(openat_nocancel)
+{
+   if (ARG3 & VKI_O_CREAT) {
+      // 4-arg version
+      PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+      PRE_REG_READ4(long, "openat_nocancel",
+                    int, dfd, const char *, filename, int, flags, int, mode);
+   } else {
+     // 3-arg version
+     PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+     PRE_REG_READ3(long, "openat_nocancel",
+                   int, dfd, const char *, filename, int, flags);
+   }
+   PRE_MEM_RASCIIZ( "openat_nocancel(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+POST(openat_nocancel)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
 PRE(kevent_id)
 {
   PRINT("kevent_id(id:%ld, changelist:%#lx, nchanges:%ld, eventlist:%#lx, nevents:%ld, data_out:%#lx, data_available:%ld, flags:%lx)",
@@ -10718,46 +10896,6 @@ POST(thread_get_special_reply_port)
    PRINT("special reply port %s", name_for_port(RES));
 }
 
-PRE(openat_nocancel)
-{
-   if (ARG3 & VKI_O_CREAT) {
-      // 4-arg version
-      PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
-            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
-      PRE_REG_READ4(long, "openat_nocancel",
-                    int, dfd, const char *, filename, int, flags, int, mode);
-   } else {
-     // 3-arg version
-     PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
-           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
-     PRE_REG_READ3(long, "openat_nocancel",
-                   int, dfd, const char *, filename, int, flags);
-   }
-   PRE_MEM_RASCIIZ( "openat_nocancel(filename)", ARG2 );
-
-   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
-      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
-      be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
-
-   /* Otherwise handle normally */
-   *flags |= SfMayBlock;
-}
-POST(openat_nocancel)
-{
-   vg_assert(SUCCESS);
-   if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
-      VG_(close)(RES);
-      SET_STATUS_Failure( VKI_EMFILE );
-   } else {
-      if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
-   }
-}
 
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 
@@ -10820,139 +10958,6 @@ POST(task_restartable_ranges_register)
    if (!reply->RetCode) {
    } else {
       PRINT("mig return %d", reply->RetCode);
-   }
-}
-
-PRE(necp_open)
-{
-   PRINT("necp_open(%#lx)", ARG1);
-   PRE_REG_READ1(int, "necp_open", int, flags);
-}
-
-PRE(necp_client_action)
-{
-   PRINT("necp_client_action(%lu, %#lx, %#lx, %lu, %#lx, %lu)",
-     ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
-   PRE_REG_READ6(int, "necp_client_action",
-     int, necp_fd, uint32_t, action,
-     unsigned char*, client_id, size_t, client_id_len,
-     uint8_t*, buffer, size_t, buffer_size);
-
-   switch (ARG2 /* request */) {
-   case VKI_NECP_CLIENT_ACTION_ADD:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0 || ARG6 > VKI_NECP_MAX_CLIENT_PARAMETERS_SIZE) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_WRITE( "necp_client_action(ADD, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(ADD, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_CLAIM:
-      if (ARG4 != sizeof(uuid_t)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(CLAIM, client_id)", ARG3, ARG4);
-      break;
-   case VKI_NECP_CLIENT_ACTION_REMOVE:
-      if (ARG4 != sizeof(uuid_t) || (ARG5 != 0 && ARG6 != VKI_IFNET_STATS_PER_FLOW_SIZE)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(REMOVE, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(REMOVE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS:
-      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      if (ARG3 != 0) {
-        PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, client_id)", ARG3, ARG4);
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_RESULT:
-      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      if (ARG3 != 0) {
-        PRE_MEM_READ( "necp_client_action(COPY_RESULT, client_id)", ARG3, ARG4);
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_RESULT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT:
-      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      if (ARG3 != 0) {
-        PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, client_id)", ARG3, ARG4);
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_LIST:
-      if (ARG6 < sizeof(u_int32_t)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_LIST, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_AGENT:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(AGENT, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(AGENT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_AGENT:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_AGENT, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
-      PRE_MEM_WRITE( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_AGENT_USE:
-      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_agent_use_parameters)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(AGENT_USE, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
-      PRE_MEM_WRITE( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_INTERFACE:
-      if (ARG4 != sizeof(u_int32_t) || ARG6 < sizeof(struct vki_necp_interface_details_legacy)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_INTERFACE, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(COPY_INTERFACE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_ROUTE_STATISTICS:
-      if (ARG4 != sizeof(uuid_t) || ARG6 < VKI_NECP_STAT_COUNTS_SIZE) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_ROUTE_STATISTICS, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(COPY_ROUTE_STATISTICS, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_UPDATE_CACHE:
-      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_cache_buffer)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_SIGN:
-      if (ARG4 < sizeof(struct vki_necp_client_signable) || ARG6 != VKI_NECP_CLIENT_ACTION_SIGN_TAG_LENGTH) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(SIGN, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(SIGN, buffer)", ARG5, ARG6);
-      break;
-   default:
-      VG_(printf)("UNKNOWN necp_client_action action %#lx\n", ARG2);
-      break;
    }
 }
 
@@ -11133,7 +11138,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read,        sys_read),
    GENX_(__NR_write,       sys_write),
    GENXY(__NR_open,        sys_open),
-   GENXY(__NR_close,       sys_close),
+   GENX_(__NR_close,       sys_close),
    GENXY(__NR_wait4,       sys_wait4),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(8)),     // old creat
    GENX_(__NR_link,        sys_link),
@@ -11597,7 +11602,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read_nocancel,     sys_read),
    GENX_(__NR_write_nocancel,    sys_write),
    GENXY(__NR_open_nocancel,     sys_open),
-   GENXY(__NR_close_nocancel,    sys_close),
+   GENX_(__NR_close_nocancel,    sys_close),
    GENXY(__NR_wait4_nocancel,    sys_wait4),   // 400
    MACXY(__NR_recvmsg_nocancel,  recvmsg),
    MACX_(__NR_sendmsg_nocancel,  sendmsg),
@@ -11693,12 +11698,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_clonefileat),                             // 462
 // _____(__NR_renameatx_np),                            // 488
    MACXY(__NR_getentropy, getentropy),                  // 500
-#endif
-#if DARWIN_VERS >= DARWIN_10_15
    MACX_(__NR_necp_open, necp_open),                    // 501
    MACX_(__NR_necp_client_action, necp_client_action),  // 502
-#endif
-#if DARWIN_VERS >= DARWIN_10_12
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(503)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(504)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(505)),        // ???

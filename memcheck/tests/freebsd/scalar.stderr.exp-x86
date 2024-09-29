@@ -1560,7 +1560,7 @@ Syscall param poll(ufds.events) points to uninitialised byte(s)
  Address 0x........ is on thread 1's stack
 
 ---------------------------------------------------------
-220:   SYS_freebsd7___semctl (IPC_INFO) 4s 1m
+220:   SYS_freebsd7___semctl (IPC_STAT) 4s 1m
 ---------------------------------------------------------
 Syscall param semctl(semid) contains uninitialised byte(s)
    ...
@@ -1574,7 +1574,7 @@ Syscall param semctl(cmd) contains uninitialised byte(s)
 Syscall param semctl(arg) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(IPC_INFO, arg.buf) points to unaddressable byte(s)
+Syscall param sys_freebsd7___semctl(arg) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -4430,7 +4430,7 @@ Syscall param closefrom(lowfd) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-510:            SYS___semctl (IPC_INFO) 4s 1m
+510:            SYS___semctl (IPC_STAT) 4s 1m
 ---------------------------------------------------------
 Syscall param semctl(semid) contains uninitialised byte(s)
    ...
@@ -4444,7 +4444,7 @@ Syscall param semctl(cmd) contains uninitialised byte(s)
 Syscall param semctl(arg) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(IPC_INFO, arg.buf) points to unaddressable byte(s)
+Syscall param sys___sysctl(arg) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -4990,7 +4990,7 @@ Syscall param procctl(id_high) contains uninitialised byte(s)
 Syscall param procctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param procctl(arg) contains uninitialised byte(s)
+Syscall param procctl(data) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
@@ -5008,10 +5008,10 @@ Syscall param procctl(id_high) contains uninitialised byte(s)
 Syscall param procctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param procctl(arg) contains uninitialised byte(s)
+Syscall param procctl(data) contains uninitialised byte(s)
    ...
 
-Syscall param procctl(arg) points to unaddressable byte(s)
+Syscall param procctl(data) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

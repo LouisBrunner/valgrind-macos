@@ -53,12 +53,14 @@
 #  include "vki-machine-types-x86-freebsd.h"
 #elif defined(VGA_amd64)
 #  include "vki-machine-types-amd64-freebsd.h"
+#elif defined(VGA_arm64)
+#  include "vki-machine-types-arm64-freebsd.h"
 #else
 #  error Unknown platform
 #endif
 
-#include <sys/fcntl.h>
-#include <sys/param.h>
+#include <sys/fcntl.h> // O_RDONLY
+#include <sys/param.h> // MAXPATHLEN
 
 
 //----------------------------------------------------------------------
@@ -124,8 +126,13 @@ typedef  vki_uint32_t   __vki_fixpt_t;
 
 
 //----------------------------------------------------------------------
-// sys/types.h
+// From sys/types.h
 //----------------------------------------------------------------------
+
+typedef	unsigned char	vki_u_char;
+typedef	unsigned short	vki_u_short;
+typedef	unsigned int	vki_u_int;
+typedef	unsigned long	vki_u_long;
 
 typedef  vki_uint8_t    vki_u_int8_t;
 typedef  vki_uint16_t      vki_u_int16_t;
@@ -195,6 +202,8 @@ typedef __vki_fd_set    vki_fd_set;
 #  include "vki-x86-freebsd.h"
 #elif defined(VGA_amd64)
 #  include "vki-amd64-freebsd.h"
+#elif defined(VGA_arm64)
+#  include "vki-arm64-freebsd.h"
 #else
 #  error Unknown platform
 #endif
@@ -418,9 +427,8 @@ struct vki_stat {
 };
 
 
-
 //----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/sched.h
+// From sys/sched.h
 //----------------------------------------------------------------------
 
 struct vki_sched_param {
@@ -709,11 +717,11 @@ static __inline struct vki_cmsghdr * vki_cmsg_nxthdr (struct vki_msghdr *__msg, 
 
 #define VKI_SOCK_STREAM 1
 
-#include <netinet/tcp.h>
+#include <netinet/tcp.h> // TCP_NODELAY
 
 #define VKI_TCP_NODELAY  TCP_NODELAY
 
-#include <netinet/in.h>
+#include <netinet/in.h> // IPPROTO_TCP
 
 #define VKI_IPPROTO_TCP  IPPROTO_TCP
 
@@ -968,7 +976,7 @@ struct vki_termios {
 #define _VKI_IOC_SIZEMASK  ((1ul << _VKI_IOC_SIZEBITS)-1)
 #define _VKI_IOC_DIRMASK   ((1ul << _VKI_IOC_DIRBITS)-1)
 
-#define  _VKI_IOC_BASESHIFT   0U
+#define _VKI_IOC_BASESHIFT   0U
 #define _VKI_IOC_NRSHIFT   0U
 #define _VKI_IOC_TYPESHIFT (_VKI_IOC_NRSHIFT+_VKI_IOC_NRBITS)
 #define _VKI_IOC_SIZESHIFT (_VKI_IOC_TYPESHIFT+_VKI_IOC_TYPEBITS)
@@ -1015,48 +1023,13 @@ extern unsigned int __vki_invalid_size_argument_for_IOC;
 // From sys/termios.h
 //----------------------------------------------------------------------
 
-#if 0
-#define VKI_TCGETS   0x5401
-#define VKI_TCSETS   0x5402 /* Clashes with SNDCTL_TMR_START sound ioctl */
-#define VKI_TCSETSW  0x5403
-#define VKI_TCSETSF  0x5404
-#define VKI_TCGETA   0x5405   y
-#define VKI_TCSETA   0x5406   y
-#define VKI_TCSETAW  0x5407   y
-#define VKI_TCSETAF  0x5408   y
-#define VKI_TCSBRK   0x5409
-#define VKI_TCXONC   0x540A
-#define VKI_TCFLSH   0x540B   y
-#define VKI_TIOCSCTTY   0x540E
-#define VKI_TIOCGPGRP   0x540F   y
-#define VKI_TIOCSPGRP   0x5410   y
-#define VKI_TIOCOUTQ 0x5411
-#define VKI_TIOCGWINSZ  0x5413   y
-#define VKI_TIOCSWINSZ  0x5414   y
-#define VKI_TIOCMGET 0x5415   y
-#define VKI_TIOCMBIS 0x5416   y
-#define VKI_TIOCMBIC 0x5417   y
-#define VKI_TIOCMSET 0x5418   y
-#define VKI_FIONREAD 0x541B
-#define VKI_TIOCLINUX   0x541C
-#define VKI_FIONBIO  0x5421
-#define VKI_TCSBRKP  0x5425   /* Needed for POSIX tcsendbreak() */
-#define VKI_TIOCGPTN _VKI_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
-#define VKI_TIOCSPTLCK  _VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
+#define VKI_TIOCFLUSH  _VKI_IOW('t', 16, int);
+#define VKI_TIOCGETA   _VKI_IOR('t', 19, struct vki_termios)  /* get termios */
+#define VKI_TIOCSETA   _VKI_IOR('t', 20, struct vki_termios)  /* set termios */
+#define VKI_TIOCSETAW  _VKI_IOR('t', 21, struct vki_termios)  /* drain,set */
+#define VKI_TIOCSETAF  _VKI_IOR('t', 22, struct vki_termios)  /* flush,set */
 
-#define VKI_FIOASYNC 0x5452
-#define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
-
-#define VKI_TIOCGICOUNT 0x545D   /* read serial port inline interrupt counts */
-#endif
-
-#define  VKI_TIOCFLUSH  _VKI_IOW('t', 16, int);
-#define  VKI_TIOCGETA   _VKI_IOR('t', 19, struct vki_termios)  /* get termios */
-#define  VKI_TIOCSETA   _VKI_IOR('t', 20, struct vki_termios)  /* set termios */
-#define  VKI_TIOCSETAW  _VKI_IOR('t', 21, struct vki_termios)  /* drain,set */
-#define  VKI_TIOCSETAF  _VKI_IOR('t', 22, struct vki_termios)  /* flush,set */
-
-#define  _VKI_TIOCPTMASTER  _VKI_IO('t', 28)    /* pts master validation */
+#define _VKI_TIOCPTMASTER  _VKI_IO('t', 28)    /* pts master validation */
 
 #define VKI_TIOCSWINSZ  _VKI_IOW('t', 103, struct vki_winsize)  /* set window size */
 #define VKI_TIOCGWINSZ  _VKI_IOR('t', 104, struct vki_winsize)  /* get window size */
@@ -1092,8 +1065,27 @@ struct vki_fiodgname_arg {
 };
 #define VKI_FIODGNAME   _VKI_IOW('f', 120, struct vki_fiodgname_arg) /* get dev. name */
 
-// See syswrap-freebsd.c PRE/POST(sys_ioctl)
-#if 0
+//----------------------------------------------------------------------
+// From net/bpf.h
+//----------------------------------------------------------------------
+
+struct vki_bpf_program {
+   vki_u_int bf_len;
+   struct vki_bpf_insn *bf_insns;
+};
+
+typedef vki_u_int32_t vki_bpf_u_int32;
+
+struct vki_bpf_insn {
+   u_short         code;
+   u_char          jt;
+   u_char          jf;
+   vki_bpf_u_int32     k;
+};
+
+
+#define VKI_BIOCSETF _VKI_IOW('B', 103, struct vki_bpf_program)
+
 //----------------------------------------------------------------------
 // From net/if.h
 //----------------------------------------------------------------------
@@ -1109,12 +1101,60 @@ struct vki_ifmediareq {
    int     *ifm_ulist;
 };
 
+#define VKI_IFSTATMAX       800             /* 10 lines of text */
+struct vki_ifstat {
+   char    ifs_name[VKI_IFNAMSIZ];     /* if name, e.g. "en0" */
+   char    ascii[VKI_IFSTATMAX + 1];
+};
 
+struct vki_ifreq_buffer {
+   vki_size_t  length;
+   void    *buffer;
+};
+
+struct vki_ifreq_nv_req {
+   vki_u_int   buf_length;     /* Total size of buffer,
+                        u_int for ABI struct ifreq */
+   vki_u_int   length;         /* Length of the filled part */
+   void    *buffer;        /* Buffer itself, containing packed nv */
+};
+
+struct vki_ifreq {
+   char    ifr_name[VKI_IFNAMSIZ];             /* if name, e.g. "en0" */
+   union {
+      struct  vki_sockaddr ifru_addr;
+      struct  vki_sockaddr ifru_dstaddr;
+      struct  vki_sockaddr ifru_broadaddr;
+      struct  vki_ifreq_buffer ifru_buffer;
+      short   ifru_flags[2];
+      short   ifru_index;
+      int     ifru_jid;
+      int     ifru_metric;
+      int     ifru_mtu;
+      int     ifru_phys;
+      int     ifru_media;
+      __vki_caddr_t ifru_data;
+      int     ifru_cap[2];
+      vki_u_int   ifru_fib;
+      vki_u_char  ifru_vlan_pcp;
+      struct  vki_ifreq_nv_req ifru_nv;
+   } ifr_ifru;
+};
+
+struct vki_ifconf {
+   int     ifc_len;                /* size of associated buffer */
+   union {
+      __vki_caddr_t ifcu_buf;
+      struct  vki_ifreq *ifcu_req;
+   } ifc_ifcu;
+};
+
+#define VKI_SIOCGIFSTATUS _VKI_IOWR('i', 59, struct vki_ifstat)
 //----------------------------------------------------------------------
 // From sys/sockio.h
 //----------------------------------------------------------------------
+#define	VKI_SIOCGIFCONF	_VKI_IOWR('i', 36, struct vki_ifconf)	/* get ifnet list */
 #define VKI_SIOCGIFMEDIA  _VKI_IOWR('i', 56, struct vki_ifmediareq)
-#endif
 
 //----------------------------------------------------------------------
 // From sys/poll.h
@@ -1241,12 +1281,12 @@ struct vki_mq_attr {
 #define  VKI_UCF_SWAPPED   1
 
 struct vki_ucontext {
-   vki_sigset_t      uc_sigmask;
+   vki_sigset_t         uc_sigmask;
    struct vki_mcontext  uc_mcontext;
-   struct vki_ucontext  *uc_link;
-   vki_stack_t    uc_stack;
-   int         uc_flags;
-   unsigned int      __spare__[4];
+   struct vki_ucontext* uc_link;
+   vki_stack_t          uc_stack;
+   int                  uc_flags;
+   unsigned int         __spare__[4];
 };
 
 //----------------------------------------------------------------------
@@ -1270,7 +1310,7 @@ struct vki_utsname {
 #define VKI_IPC_RMID 0     /* remove resource */
 #define VKI_IPC_SET  1     /* set ipc_perm options */
 #define VKI_IPC_STAT 2     /* get ipc_perm options */
-#define VKI_IPC_INFO 3     /* see ipcs */
+#define VKI_IPC_INFO 3     /* only used by Linux compatibilty shm_ctl */
 
 //----------------------------------------------------------------------
 // From sys/ipc.h
@@ -1619,6 +1659,13 @@ struct vki_spacectl_range {
 
 #define VKI_RFSPAWN         (1U<<31U)
 
+/* kcmp() options. */
+#define VKI_KCMP_FILE       100
+#define VKI_KCMP_FILEOBJ    101
+#define VKI_KCMP_FILES      102
+#define VKI_KCMP_SIGHAND    103
+#define VKI_KCMP_VM         104
+
 #define VKI_CLOSE_RANGE_CLOEXEC     (1<<2)
 
 //----------------------------------------------------------------------
@@ -1711,163 +1758,6 @@ struct vki_shmid_ds {
 #define VKI_SHMDT               22
 #define VKI_SHMGET              23
 #define VKI_SHMCTL              24
-#endif
-
-#if 0
-//----------------------------------------------------------------------
-// From linux-2.6.8.1/include/linux/sockios.h
-//----------------------------------------------------------------------
-
-#define VKI_SIOCOUTQ    VKI_TIOCOUTQ
-
-#define VKI_SIOCADDRT      0x890B   /* add routing table entry */
-#define VKI_SIOCDELRT      0x890C   /* delete routing table entry */
-
-#define VKI_SIOCGIFNAME    0x8910   /* get iface name    */
-#define VKI_SIOCGIFCONF    0x8912   /* get iface list    */
-#define VKI_SIOCGIFFLAGS   0x8913   /* get flags         */
-#define VKI_SIOCSIFFLAGS   0x8914   /* set flags         */
-#define VKI_SIOCGIFADDR    0x8915   /* get PA address    */
-#define VKI_SIOCSIFADDR    0x8916   /* set PA address    */
-#define VKI_SIOCGIFDSTADDR 0x8917   /* get remote PA address   */
-#define VKI_SIOCSIFDSTADDR 0x8918   /* set remote PA address   */
-#define VKI_SIOCGIFBRDADDR 0x8919   /* get broadcast PA address   */
-#define VKI_SIOCSIFBRDADDR 0x891a   /* set broadcast PA address   */
-#define VKI_SIOCGIFNETMASK 0x891b   /* get network PA mask     */
-#define VKI_SIOCSIFNETMASK 0x891c   /* set network PA mask     */
-#define VKI_SIOCGIFMETRIC  0x891d   /* get metric        */
-#define VKI_SIOCSIFMETRIC  0x891e   /* set metric        */
-#define VKI_SIOCGIFMTU     0x8921   /* get MTU size         */
-#define VKI_SIOCSIFMTU     0x8922   /* set MTU size         */
-#define  VKI_SIOCSIFHWADDR 0x8924   /* set hardware address    */
-#define VKI_SIOCGIFHWADDR  0x8927   /* Get hardware address    */
-#define VKI_SIOCGIFINDEX   0x8933   /* name -> if_index mapping   */
-
-#define VKI_SIOCGIFTXQLEN  0x8942   /* Get the tx queue length */
-#define VKI_SIOCSIFTXQLEN  0x8943   /* Set the tx queue length    */
-
-#define VKI_SIOCGMIIPHY    0x8947   /* Get address of MII PHY in use. */
-#define VKI_SIOCGMIIREG    0x8948   /* Read MII PHY register.  */
-#define VKI_SIOCSMIIREG    0x8949   /* Write MII PHY register. */
-
-#define VKI_SIOCDARP    0x8953   /* delete ARP table entry  */
-#define VKI_SIOCGARP    0x8954   /* get ARP table entry     */
-#define VKI_SIOCSARP    0x8955   /* set ARP table entry     */
-
-#define VKI_SIOCDRARP      0x8960   /* delete RARP table entry */
-#define VKI_SIOCGRARP      0x8961   /* get RARP table entry    */
-#define VKI_SIOCSRARP      0x8962   /* set RARP table entry    */
-
-#define VKI_SIOCGIFMAP     0x8970   /* Get device parameters   */
-#define VKI_SIOCSIFMAP     0x8971   /* Set device parameters   */
-
-//----------------------------------------------------------------------
-// From linux-2.6.9/include/linux/kb.h
-//----------------------------------------------------------------------
-
-#define VKI_GIO_FONT       0x4B60  /* gets font in expanded form */
-#define VKI_PIO_FONT       0x4B61  /* use font in expanded form */
-
-#define VKI_GIO_FONTX      0x4B6B  /* get font using struct consolefontdesc */
-#define VKI_PIO_FONTX      0x4B6C  /* set font using struct consolefontdesc */
-struct vki_consolefontdesc {
-   unsigned short charcount;  /* characters in font (256 or 512) */
-   unsigned short charheight; /* scan lines per character (1-32) */
-   char __user *chardata;     /* font data in expanded form */
-};
-
-#define VKI_PIO_FONTRESET  0x4B6D  /* reset to default font */
-
-#define VKI_GIO_CMAP       0x4B70  /* gets colour palette on VGA+ */
-#define VKI_PIO_CMAP       0x4B71  /* sets colour palette on VGA+ */
-
-#define VKI_KIOCSOUND      0x4B2F  /* start sound generation (0 for off) */
-#define VKI_KDMKTONE       0x4B30  /* generate tone */
-
-#define VKI_KDGETLED       0x4B31  /* return current led state */
-#define VKI_KDSETLED       0x4B32  /* set led state [lights, not flags] */
-
-#define VKI_KDGKBTYPE      0x4B33  /* get keyboard type */
-
-#define VKI_KDADDIO        0x4B34  /* add i/o port as valid */
-#define VKI_KDDELIO        0x4B35  /* del i/o port as valid */
-#define VKI_KDENABIO       0x4B36  /* enable i/o to video board */
-#define VKI_KDDISABIO      0x4B37  /* disable i/o to video board */
-
-#define VKI_KDSETMODE      0x4B3A  /* set text/graphics mode */
-#define VKI_KDGETMODE      0x4B3B  /* get current mode */
-
-#define VKI_KDMAPDISP      0x4B3C  /* map display into address space */
-#define VKI_KDUNMAPDISP    0x4B3D  /* unmap display from address space */
-
-#define     VKI_E_TABSZ    256
-#define VKI_GIO_SCRNMAP    0x4B40  /* get screen mapping from kernel */
-#define VKI_PIO_SCRNMAP    0x4B41  /* put screen mapping table in kernel */
-#define VKI_GIO_UNISCRNMAP 0x4B69  /* get full Unicode screen mapping */
-#define VKI_PIO_UNISCRNMAP 0x4B6A  /* set full Unicode screen mapping */
-
-#define VKI_GIO_UNIMAP     0x4B66  /* get unicode-to-font mapping from kernel */
-#define VKI_PIO_UNIMAP     0x4B67  /* put unicode-to-font mapping in kernel */
-#define VKI_PIO_UNIMAPCLR  0x4B68  /* clear table, possibly advise hash algorithm */
-
-#define VKI_KDGKBMODE      0x4B44  /* gets current keyboard mode */
-#define VKI_KDSKBMODE      0x4B45  /* sets current keyboard mode */
-
-#define VKI_KDGKBMETA      0x4B62  /* gets meta key handling mode */
-#define VKI_KDSKBMETA      0x4B63  /* sets meta key handling mode */
-
-#define VKI_KDGKBLED       0x4B64  /* get led flags (not lights) */
-#define VKI_KDSKBLED       0x4B65  /* set led flags (not lights) */
-
-struct vki_kbentry {
-   unsigned char kb_table;
-   unsigned char kb_index;
-   unsigned short kb_value;
-};
-#define VKI_KDGKBENT       0x4B46  /* gets one entry in translation table */
-#define VKI_KDSKBENT       0x4B47  /* sets one entry in translation table */
-
-struct vki_kbsentry {
-   unsigned char kb_func;
-   unsigned char kb_string[512];
-};
-#define VKI_KDGKBSENT      0x4B48  /* gets one function key string entry */
-#define VKI_KDSKBSENT      0x4B49  /* sets one function key string entry */
-
-struct vki_kbdiacr {
-   unsigned char diacr, base, result;
-};
-struct vki_kbdiacrs {
-   unsigned int kb_cnt;    /* number of entries in following array */
-   struct vki_kbdiacr kbdiacr[256];    /* MAX_DIACR from keyboard.h */
-};
-#define VKI_KDGKBDIACR     0x4B4A  /* read kernel accent table */
-#define VKI_KDSKBDIACR     0x4B4B  /* write kernel accent table */
-
-struct vki_kbkeycode {
-   unsigned int scancode, keycode;
-};
-#define VKI_KDGETKEYCODE   0x4B4C  /* read kernel keycode table entry */
-#define VKI_KDSETKEYCODE   0x4B4D  /* write kernel keycode table entry */
-
-#define VKI_KDSIGACCEPT    0x4B4E  /* accept kbd generated signals */
-
-struct vki_kbd_repeat {
-   int delay;  /* in msec; <= 0: don't change */
-   int period; /* in msec; <= 0: don't change */
-   /* earlier this field was misnamed "rate" */
-};
-#define VKI_KDKBDREP       0x4B52  /* set keyboard delay/repeat rate;
-                                    * actually used values are returned */
-
-#define VKI_KDFONTOP       0x4B72  /* font operations */
-
-//----------------------------------------------------------------------
-// From linux-2.6.9/include/linux/kb.h
-//----------------------------------------------------------------------
-
-typedef __vki_kernel_uid32_t vki_qid_t; /* Type in which we store ids in memory */
-
 #endif
 
 //----------------------------------------------------------------------
@@ -1977,7 +1867,7 @@ typedef union vki_modspecific {
 #if defined(VGP_x86_freebsd)
    vki_int32_t longval;
    vki_uint32_t   u_longval;
-#elif defined(VGP_amd64_freebsd)
+#elif defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    vki_int64_t longval;
    vki_uint64_t   u_longval;
 #else
@@ -2084,6 +1974,9 @@ struct vki_umtx_robust_lists_params {
 #define VKI_UMTX_OP_SEM2_WAKE       24
 #define VKI_UMTX_OP_SHM             25
 #define VKI_UMTX_OP_ROBUST_LISTS    26
+
+#define VKI_UMTX_SHM_CREAT          0x0001
+
 #if (FREEBSD_VERS >= FREEBSD_13_3)
 #define VKI_UMTX_OP_GET_MIN_TIMEOUT 27
 #define VKI_UMTX_OP_SET_MIN_TIMEOUT 28
@@ -2129,14 +2022,14 @@ struct vki_uuid {
 #define VKI__SS_PAD1SIZE    (VKI__SS_ALIGNSIZE - sizeof(unsigned char) - \
                             sizeof(vki_sa_family_t))
 #define VKI__SS_PAD2SIZE    (VKI__SS_MAXSIZE - sizeof(unsigned char) - \
-                            sizeof(sa_family_t) - VKI__SS_PAD1SIZE - VKI__SS_ALIGNSIZE)
+                            sizeof(vki_sa_family_t) - VKI__SS_PAD1SIZE - VKI__SS_ALIGNSIZE)
 
 struct vki_sockaddr_storage {
         unsigned char   vki_ss_len;         /* address length */
         vki_sa_family_t     vki_ss_family;      /* address family */
         char            vki___ss_pad1[VKI__SS_PAD1SIZE];
         __int64_t       vki___ss_align;     /* force desired struct alignment */
-        char            vki___ss_pad2VKI_[_SS_PAD2SIZE];
+        char            vki___ss_pad2VKI_[VKI__SS_PAD2SIZE];
 };
 
 //----------------------------------------------------------------------
@@ -2164,6 +2057,8 @@ typedef struct vki_cap_rights       vki_cap_rights_t;
 #define VKI_KVME_TYPE_DEVICE        4
 #define VKI_KVME_TYPE_PHYS          5
 #define VKI_KVME_TYPE_DEAD          6
+#define VKI_KVME_TYPE_MGTDEVICE     8
+#define VKI_KVME_TYPE_GUARD         9
 #define VKI_KVME_TYPE_UNKNOWN       255
 
 #define VKI_KVME_PROT_READ          0x00000001
@@ -2172,6 +2067,11 @@ typedef struct vki_cap_rights       vki_cap_rights_t;
 
 #define VKI_KVME_FLAG_COW           0x00000001
 #define VKI_KVME_FLAG_NEEDS_COPY    0x00000002
+#define VKI_KVME_FLAG_NOCOREDUMP    0x00000004
+#define VKI_KVME_FLAG_SUPER         0x00000008
+#define VKI_KVME_FLAG_GROWS_UP      0x00000010
+#define VKI_KVME_FLAG_GROWS_DOWN    0x00000020
+#define VKI_KVME_FLAG_USER_WIRED    0x00000040
 
 struct vki_kinfo_vmentry {
    int   kve_structsize;
@@ -2325,7 +2225,6 @@ struct vki_kinfo_file {
 // From sys/sysctl.h (and related)
 //----------------------------------------------------------------------
 
-#include <sys/types.h>
 #include <sys/sysctl.h>
 
 #define VKI_CTL_KERN         CTL_KERN
@@ -2458,29 +2357,29 @@ typedef struct vki_domainset vki_domainset_t;
 #define VKI_PROC_WXMAP_STATUS       22
 
 struct vki_procctl_reaper_status {
-   u_int   rs_flags;
-   u_int   rs_children;
-   u_int   rs_descendants;
+   vki_u_int   rs_flags;
+   vki_u_int   rs_children;
+   vki_u_int   rs_descendants;
    vki_pid_t   rs_reaper;
    vki_pid_t   rs_pid;
-   u_int   rs_pad0[15];
+   vki_u_int   rs_pad0[15];
 };
 
 struct vki_procctl_reaper_pidinfo;
 
 struct vki_procctl_reaper_pids {
-   u_int   rp_count;
-   u_int   rp_pad0[15];
+   vki_u_int   rp_count;
+   vki_u_int   rp_pad0[15];
    struct vki_procctl_reaper_pidinfo *rp_pids;
 };
 
 struct vki_procctl_reaper_kill {
    int     rk_sig;
-   u_int   rk_flags;
+   vki_u_int   rk_flags;
    vki_pid_t   rk_subtree;
-   u_int   rk_killed;
+   vki_u_int   rk_killed;
    vki_pid_t   rk_fpid;
-   u_int   rk_pad0[15];
+   vki_u_int   rk_pad0[15];
 };
 
 //----------------------------------------------------------------------
@@ -2559,11 +2458,41 @@ struct vki_ps_strings {
 
 
 #define VKI_NT_FREEBSD_ABI_TAG 1
-#define VKI_NT_FREEBSD_FEATURE_CTL	4
-#define VKI_NT_FREEBSD_FCTL_WXNEEDED	0x00000008
+#define VKI_NT_FREEBSD_FEATURE_CTL 4
+#define VKI_NT_FREEBSD_FCTL_STKGAP_DISABLE 0x00000004
+#define VKI_NT_FREEBSD_FCTL_WXNEEDED 0x00000008
 
-// See syswrap-freebsd.c PRE/POST(sys_ioctl)
-#if 0
+
+/*
+ * PJF this is a bit messy
+ *
+ * mode_t is uint16_t
+ * No problem on x86/amd64
+ * On arm64 there are syscalls that take mode_t but that doesn't
+ * work with memcheck validation - arm64 doesn't have any 16bit
+ * registers.
+ *
+ * I can't just change mode_t to be 32bit. that will mess up
+ * the 'stat' structures in this file.
+ *
+ * Instead I'll just do what the compiler does, and promote
+ * it to 32bits.
+ *
+ * In the kernel, the syscall interface just pushes all
+ * possible syscall args onto the stack and then
+ * memcpy's them into an array of register sized args.
+ * There's a struct defined for each syscall's arguments
+ * that uses padding to type pun the values back to
+ * the type passed in from userland. The structs are
+ * generated from the syscall table.
+ *
+ * vki_mode_t is only used in syswrap files so there shouldn't
+ * be any other side effects.
+ */
+
+#if defined(VGP_arm64_freebsd)
+#define vki_mode_t vki_int32_t
+#endif
 
 //----------------------------------------------------------------------
 // From sys/pciio.h
@@ -2848,36 +2777,40 @@ struct vki_scsi_inquiry_data {
 // From sys/queue.h
 //----------------------------------------------------------------------
 
-#define SLIST_ENTRY(type)                                               \
+#define VKI_SLIST_ENTRY(type)                                               \
 struct {                                                                \
         struct type *sle_next;  /* next element */                      \
 }
 
-#define LIST_ENTRY(type)                                                \
+#define VKI_LIST_ENTRY(type)                                                \
 struct {                                                                \
         struct type *le_next;   /* next element */                      \
         struct type **le_prev;  /* address of previous next element */  \
 }
 
-#define STAILQ_ENTRY(type)                                              \
+#define VKI_STAILQ_ENTRY(type)                                              \
 struct {                                                                \
         struct type *stqe_next; /* next element */                      \
 }
 
-struct qm_trace {
+#ifdef VKI_QUEUE_MACRO_DEBUG_TRACE
+struct vki_qm_trace {
    unsigned long    lastline;
    unsigned long    prevline;
    const char      *lastfile;
    const char      *prevfile;
 };
 
-#define TRACEBUF        struct qm_trace trace;
+#define VKI_TRACEBUF        struct vki_qm_trace trace;
+#else
+#define VKI_TRACEBUF
+#endif
 
-#define TAILQ_ENTRY(type)                                               \
+#define VKI_TAILQ_ENTRY(type)                                               \
 struct {                                                                \
         struct type *tqe_next;  /* next element */                      \
         struct type **tqe_prev; /* address of previous next element */  \
-        TRACEBUF                                                        \
+        VKI_TRACEBUF                                                        \
 }
 
 
@@ -2885,13 +2818,13 @@ struct {                                                                \
 // From cam/cam_ccb.h
 //----------------------------------------------------------------------
 
-#define VKI_CAM_VERSION       0x15    /* Hex value for current version */
+#define VKI_CAM_VERSION 0x1a    /* Hex value for current version */
 
 typedef union {
-   LIST_ENTRY(vki_ccb_hdr) le;
-   SLIST_ENTRY(vki_ccb_hdr) sle;
-   TAILQ_ENTRY(vki_ccb_hdr) tqe;
-   STAILQ_ENTRY(vki_ccb_hdr) stqe;
+   VKI_LIST_ENTRY(vki_ccb_hdr) le;
+   VKI_SLIST_ENTRY(vki_ccb_hdr) sle;
+   VKI_TAILQ_ENTRY(vki_ccb_hdr) tqe;
+   VKI_STAILQ_ENTRY(vki_ccb_hdr) stqe;
 } vki_camq_entry;
 
 typedef enum {
@@ -2995,7 +2928,11 @@ typedef enum {
    /* Notify Host Target driver of event */
    VKI_XPT_NOTIFY_ACKNOWLEDGE  = 0x37 | VKI_XPT_FC_QUEUED | VKI_XPT_FC_USER_CCB,
    /* Acknowledgement of event */
+   VKI_XPT_REPROBE_LUN		= 0x38 | VKI_XPT_FC_QUEUED | VKI_XPT_FC_USER_CCB,
+   /* Query device capacity and notify GEOM */
 
+   VKI_XPT_MMC_SET_TRAN_SETTINGS = 0x40 | VKI_XPT_FC_DEV_QUEUED,
+   VKI_XPT_MMC_GET_TRAN_SETTINGS = 0x41 | VKI_XPT_FC_DEV_QUEUED,
    /* Vendor Unique codes: 0x80->0x8F */
    VKI_XPT_VUNIQUE             = 0x80
 } vki_xpt_opcode;
@@ -3004,21 +2941,27 @@ typedef enum {
 /* CAM CCB flags */
 typedef enum {
    VKI_CAM_CDB_POINTER         = 0x00000001,/* The CDB field is a pointer    */
-   VKI_CAM_QUEUE_ENABLE        = 0x00000002,/* SIM queue actions are enabled */
-   VKI_CAM_CDB_LINKED          = 0x00000004,/* CCB contains a linked CDB     */
+   VKI_CAM_unused1             = 0x00000002,
+   VKI_CAM_unused2             = 0x00000004,
    VKI_CAM_NEGOTIATE           = 0x00000008,/*
                                               * Perform transport negotiation
                                               * with this command.
                                               */
-   VKI_CAM_SCATTER_VALID       = 0x00000010,/* Scatter/gather list is valid  */
+   VKI_CAM_DATA_ISPHYS         = 0x00000010,/* Data type with physical addrs */
    VKI_CAM_DIS_AUTOSENSE       = 0x00000020,/* Disable autosense feature     */
-   VKI_CAM_DIR_RESV            = 0x00000000,/* Data direction (00:reserved)  */
+   VKI_CAM_DIR_BOTH            = 0x00000000,/* Data direction (00:IN/OUT)  */
    VKI_CAM_DIR_IN              = 0x00000040,/* Data direction (01:DATA IN)   */
    VKI_CAM_DIR_OUT             = 0x00000080,/* Data direction (10:DATA OUT)  */
    VKI_CAM_DIR_NONE            = 0x000000C0,/* Data direction (11:no data)   */
    VKI_CAM_DIR_MASK            = 0x000000C0,/* Data direction Mask           */
-   VKI_CAM_SOFT_RST_OP         = 0x00000100,/* Use Soft reset alternative    */
-   VKI_CAM_ENG_SYNC            = 0x00000200,/* Flush resid bytes on complete */
+   VKI_CAM_DATA_VADDR		= 0x00000000,/* Data type (000:Virtual)       */
+   VKI_CAM_DATA_PADDR		= 0x00000010,/* Data type (001:Physical)      */
+   VKI_CAM_DATA_SG		= 0x00040000,/* Data type (010:sglist)        */
+   VKI_CAM_DATA_SG_PADDR	= 0x00040010,/* Data type (011:sglist phys)   */
+   VKI_CAM_DATA_BIO		= 0x00200000,/* Data type (100:bio)           */
+   VKI_CAM_DATA_MASK		= 0x00240010,/* Data type mask                */
+   VKI_CAM_unused3		= 0x00000100,
+   VKI_CAM_unused4		= 0x00000200,
    VKI_CAM_DEV_QFRZDIS         = 0x00000400,/* Disable DEV Q freezing        */
    VKI_CAM_DEV_QFREEZE         = 0x00000800,/* Freeze DEV Q on execution     */
    VKI_CAM_HIGH_POWER          = 0x00001000,/* Command takes a lot of power  */
@@ -3027,27 +2970,27 @@ typedef enum {
    VKI_CAM_TAG_ACTION_VALID    = 0x00008000,/* Use the tag action in this ccb*/
    VKI_CAM_PASS_ERR_RECOVER    = 0x00010000,/* Pass driver does err. recovery*/
    VKI_CAM_DIS_DISCONNECT      = 0x00020000,/* Disable disconnect            */
-   VKI_CAM_SG_LIST_PHYS        = 0x00040000,/* SG list has physical addrs.   */
-   VKI_CAM_MSG_BUF_PHYS        = 0x00080000,/* Message buffer ptr is physical*/
-   VKI_CAM_SNS_BUF_PHYS        = 0x00100000,/* Autosense data ptr is physical*/
-   VKI_CAM_DATA_PHYS           = 0x00200000,/* SG/Buffer data ptrs are phys. */
+   VKI_CAM_unused5             = 0x00080000,
+   VKI_CAM_unused6             = 0x00100000,
    VKI_CAM_CDB_PHYS            = 0x00400000,/* CDB poiner is physical        */
-   VKI_CAM_ENG_SGLIST          = 0x00800000,/* SG list is for the HBA engine */
+   VKI_CAM_unused7             = 0x00800000,
 
    /* Phase cognizant mode flags */
-   VKI_CAM_DIS_AUTOSRP         = 0x01000000,/* Disable autosave/restore ptrs */
-   VKI_CAM_DIS_AUTODISC        = 0x02000000,/* Disable auto disconnect       */
-   VKI_CAM_TGT_CCB_AVAIL       = 0x04000000,/* Target CCB available          */
-   VKI_CAM_TGT_PHASE_MODE      = 0x08000000,/* The SIM runs in phase mode    */
-   VKI_CAM_MSGB_VALID          = 0x10000000,/* Message buffer valid          */
-   VKI_CAM_STATUS_VALID        = 0x20000000,/* Status buffer valid           */
-   VKI_CAM_DATAB_VALID         = 0x40000000,/* Data buffer valid             */
+   VKI_CAM_unused8             = 0x01000000,
+   VKI_CAM_unused9             = 0x02000000,
+   VKI_CAM_unused10            = 0x04000000,
+   VKI_CAM_unused11            = 0x08000000,
+   VKI_CAM_unused12            = 0x10000000,
+   VKI_CAM_unused13            = 0x20000000,
+   VKI_CAM_unused14            = 0x40000000,
 
    /* Host target Mode flags */
    VKI_CAM_SEND_SENSE          = 0x08000000,/* Send sense data with status   */
-   VKI_CAM_TERM_IO             = 0x10000000,/* Terminate I/O Message sup.    */
-   VKI_CAM_DISCONNECT          = 0x20000000,/* Disconnects are mandatory     */
-   VKI_CAM_SEND_STATUS         = 0x40000000 /* Send status after data phase  */
+   VKI_CAM_unused15            = 0x10000000,
+   VKI_CAM_unused16            = 0x20000000,
+   VKI_CAM_SEND_STATUS         = 0x40000000, /* Send status after data phase  */
+
+   VKI_CAM_UNLOCKED		= 0x80000000 /* Call callback without lock.   */
 } vki_ccb_flags;
 
 typedef union {
@@ -3073,12 +3016,24 @@ typedef union {
 union vki_ccb;
 struct vki_cam_periph;
 
+typedef struct {
+   struct vki_timeval	*etime;
+   vki_uintptr_t	sim_data;
+   vki_uintptr_t	periph_data;
+} vki_ccb_qos_area;
+
 struct vki_ccb_hdr {
    vki_cam_pinfo   pinfo;          /* Info for priority scheduling */
    vki_camq_entry  xpt_links;      /* For chaining in the XPT layer */
    vki_camq_entry  sim_links;      /* For chaining in the SIM layer */
    vki_camq_entry  periph_links;   /* For chaining in the type driver */
-   vki_uint32_t    retry_count;
+#if BYTE_ORDER == LITTLE_ENDIAN
+   vki_uint16_t       retry_count;
+   vki_uint16_t       alloc_flags;	/* ccb_alloc_flags */
+#else
+   vki_uint16_t       alloc_flags;	/* ccb_alloc_flags */
+   vki_uint16_t       retry_count;
+#endif
    void         (*cbfcnp)(struct vki_cam_periph *, union vki_ccb *);
    /* Callback on completion function */
    vki_xpt_opcode  func_code;      /* XPT function code */
@@ -3088,15 +3043,12 @@ struct vki_ccb_hdr {
    vki_target_id_t target_id;      /* Target device ID */
    vki_lun_id_t    target_lun;     /* Target LUN number */
    vki_uint32_t    flags;          /* ccb_flags */
+   vki_uint32_t	xflags;		/* Extended flags */
    vki_ccb_ppriv_area  periph_priv;
    vki_ccb_spriv_area  sim_priv;
-   vki_uint32_t    timeout;        /* Timeout value */
-
-   /*
-    * Deprecated, only for use by non-MPSAFE SIMs.  All others must
-    * allocate and initialize their own callout storage.
-    */
-   struct      vki_callout_handle timeout_ch;
+   vki_ccb_qos_area	qos;
+   vki_uint32_t	timeout;	/* Hard timeout value in mseconds */
+   struct vki_timeval	softtimeout;	/* Soft timeout value in sec + usec */
 };
 
 typedef union {
@@ -3133,6 +3085,7 @@ struct vki_ccb_scsiio {
     * non-tagged transaction) or one of the defined scsi tag messages
     * from scsi_message.h.
     */
+   vki_uint8_t	   priority;		/* Command priority for SIMPLE tag */
    vki_u_int      tag_id;          /* tag id from initator (target mode) */
    vki_u_int      init_id;         /* initiator id of who selected */
 };
@@ -3171,6 +3124,9 @@ typedef enum {
    VKI_PROTO_ATA,      /* AT Attachment */
    VKI_PROTO_ATAPI,    /* AT Attachment Packetized Interface */
    VKI_PROTO_SATAPM,   /* SATA Port Multiplier */
+   VKI_PROTO_SEMB,	/* SATA Enclosure Management Bridge */
+   VKI_PROTO_NVME,	/* NVME */
+   VKI_PROTO_MMCSD,	/* MMC, SD, SDIO */
 } vki_cam_proto;
 
 typedef enum {
@@ -3291,12 +3247,12 @@ union vki_ccb {
    struct  ccb_debug               cdbg;
    struct  ccb_ataio               ataio;
 #endif
-   char make_union_right_size[0x4A8];
+   char make_union_right_size[0x4E0];
 };
 
-#define VKI_CAMIOCOMMAND    _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
+#define VKI_CAMIOCOMMAND _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
 
-#endif
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -166,8 +166,8 @@ typedef enum
 #define S390_PPNO_MAX_SIZE_SHA512_GEN  64
 
 
-/* The length of the longest mnemonic: locgrnhe */
-#define S390_MAX_MNEMONIC_LEN  8
+/* The length of the longest mnemonic: locfhrnhe */
+#define S390_MAX_MNEMONIC_LEN  9
 
 
 /*---------------------------------------------------------------*/

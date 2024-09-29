@@ -1,0 +1,3 @@
+prog: bug483786
+vgopts: -q
+stderr_filter: filter_frame

@@ -52,8 +52,13 @@ extern Int   VG_(clo_error_exitcode);
 /* For tools that report errors, list detected errors and show suppression
    usage counts at exit. Default: No.
    Unless set explicitly by the user, the option is automatically
-   considered as set to yes for verbosity > 1. */
-extern Bool  VG_(clo_show_error_list);
+   considered as set to yes for verbosity > 1.
+   Note that in xml mode, errors are automatically printed as part of
+   the xml output. This option then only controls printing the used suppressions.
+   default: 0 (NO)
+            1 (yes)
+            2 (all meaning also print suppressed errors). */
+extern Int  VG_(clo_show_error_list);
 
 
 /* Markers used to mark the begin/end of an error, when errors are
@@ -291,9 +296,6 @@ extern const HChar* VG_(clo_prefix_to_strip);
    the entire flag in quotes to stop shells messing up the * and ?
    wildcards. */
 extern XArray *VG_(clo_req_tsyms);
-
-/* Track open file descriptors? 0 = No, 1 = Yes, 2 = All (including std)  */
-extern UInt  VG_(clo_track_fds);
 
 /* Should we run __libc_freeres at exit?  Sometimes causes crashes.
    Default: YES.  Note this is subservient to VG_(needs).libc_freeres;

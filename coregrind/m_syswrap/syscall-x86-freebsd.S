@@ -143,7 +143,10 @@ ML_(do_syscall_for_client_WRK):
    movl  $0, 0(%esp)
    movb  12(%esp), %al
    movb  %al, 0(%esp)
+   movl  $1, OFFSET_x86_SETC(%ecx)
    call  LibVEX_GuestX86_put_eflag_c
+   movl  12(%ebp), %ecx
+   movl  $0, OFFSET_x86_SETC(%ecx)
    addl  $12, %esp
 
 4: /* Re-block signals.  If eip is in [4,5), then the syscall is

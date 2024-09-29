@@ -1,0 +1,39 @@
+
+====================================================================
+
+18 April 2024
+
+Protocol 5 is identical to protocol 4 but adds core-error elements for
+tool agnostic output. Currently only set when using the --track-fds
+option (otherwise the protocolversion is set to 4).
+
+====================================================================
+
+core-errors can appear where TOOLSPECIFIC definitions can occur.  This
+is always an ERROR which follows the generic ERROR definition with the
+following extra details.
+
+ERROR details for file-tracking core errors
+-------------------------------------------
+
+The KIND is a new unique string described below.
+There can be an fd and (option) PATH element.
+
+* <fd>INT</fd>, file descriptor number associated with error.
+
+* <path>TEXT</path>, (optional) file path associated with fd (if known).
+
+KIND for file-tracking core errors
+----------------------------------
+
+This is a small enumeration indicating roughly the nature of an error.
+The possible values are:
+
+   FdBadClose
+
+      The file descriptor was already closed previously
+
+   FdNotClosed
+
+      On exit the file descriptor is still open
+

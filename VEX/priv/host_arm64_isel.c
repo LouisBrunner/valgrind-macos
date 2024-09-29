@@ -1921,17 +1921,19 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
            UInt irrm = arg1con->Ico.U32;
            /* Find the ARM-encoded equivalent for |irrm|. */
            UInt armrm = 4; /* impossible */
+           Bool tiesToAway = False;
            switch (irrm) {
-              case Irrm_NEAREST: armrm = 0; break;
-              case Irrm_NegINF:  armrm = 2; break;
-              case Irrm_PosINF:  armrm = 1; break;
-              case Irrm_ZERO:    armrm = 3; break;
+              case Irrm_NEAREST:            armrm = 0; break;
+              case Irrm_NegINF:             armrm = 2; break;
+              case Irrm_PosINF:             armrm = 1; break;
+              case Irrm_ZERO:               armrm = 3; break;
+              case Irrm_NEAREST_TIE_AWAY_0: armrm = 0; tiesToAway = True; break;
               default: goto irreducible;
            }
            HReg src = (srcIsD ? iselDblExpr : iselFltExpr)
                          (env, e->Iex.Binop.arg2);
            HReg dst = newVRegI(env);
-           addInstr(env, ARM64Instr_VCvtF2I(cvt_op, dst, src, armrm));
+           addInstr(env, ARM64Instr_VCvtF2I(cvt_op, dst, src, armrm, tiesToAway));
            return dst;
         }
       } /* local scope */
@@ -3438,6 +3440,18 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_VCvtI2F(cvt_op, dst, src));
             return dst;
          }
+         case Iop_RoundF64toIntA0: {
+            HReg src = iselDblExpr(env, e->Iex.Unop.arg);
+            HReg dst = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryD(ARM64fpu_RINTA0, dst, src));
+            return dst;
+         }
+         case Iop_RoundF64toIntE: {
+            HReg src = iselDblExpr(env, e->Iex.Unop.arg);
+            HReg dst = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryD(ARM64fpu_RINTE, dst, src));
+            return dst;
+         }
          default:
             break;
       }
@@ -3624,6 +3638,18 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, IRExpr* e )
             HReg src = iselF16Expr(env, e->Iex.Unop.arg);
             HReg dst = newVRegD(env);
             addInstr(env, ARM64Instr_VCvtHS(True/*hToS*/, dst, src));
+            return dst;
+         }
+         case Iop_RoundF32toIntA0: {
+            HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+            HReg dst = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryS(ARM64fpu_RINTA0, dst, src));
+            return dst;
+         }
+         case Iop_RoundF32toIntE: {
+            HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+            HReg dst = newVRegD(env);
+            addInstr(env, ARM64Instr_VUnaryS(ARM64fpu_RINTE, dst, src));
             return dst;
          }
          default:

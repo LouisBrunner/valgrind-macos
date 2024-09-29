@@ -1,0 +1,4 @@
+prog: fdleak_open
+vgopts: --track-fds=yes --xml=yes --xml-fd=2
+args: < /dev/null
+stderr_filter: filter_xml

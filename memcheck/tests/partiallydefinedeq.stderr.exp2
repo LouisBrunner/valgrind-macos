@@ -1,5 +1,5 @@
 
-Currently running on ppc32/64/arm: this test should give 3 errors, not 2.
+Currently running on ppc32/64: this test should give 3 errors, not 2.
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: foo (partiallydefinedeq.c:15)
    by 0x........: main (partiallydefinedeq.c:37)

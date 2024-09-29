@@ -159,6 +159,15 @@ typedef enum {
     */
    UNDEF_NARROW256_AtoB,
 
+   UNDEF_GT_S_8x16,
+   UNDEF_GT_S_16x8,
+   UNDEF_GT_S_32x4,
+   UNDEF_GT_S_64x2,
+   UNDEF_GT_U_8x16,
+   UNDEF_GT_U_16x8,
+   UNDEF_GT_U_32x4,
+   UNDEF_GT_U_64x2,
+
    // For IROps I don't know anything about
    UNDEF_UNKNOWN
 } undef_t;

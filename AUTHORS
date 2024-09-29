@@ -86,6 +86,9 @@ s390.
 
 Rhys Kidd updated and maintains the macOS port.
 
+Paul Floyd maintains the FreeBSD port and occasionally fixes Solaris
+and macOS issues.
+
 Many, many people sent bug reports, patches, and helpful feedback.
 
 Development of Valgrind was supported in part by the Tri-Lab Partners

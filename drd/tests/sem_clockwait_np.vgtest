@@ -1,0 +1,3 @@
+prereq: test -e ../../helgrind/tests/sem_clockwait_np
+vgopts: -q
+prog: ../../helgrind/tests/sem_clockwait_np

@@ -13,8 +13,9 @@
 #include <assert.h>
 #include <unistd.h>
 #include <assert.h>
+#include "../../memcheck.h"
 
-int main()
+int main(void)
 {
    ucontext_t uc;
    volatile int flag = 0;
@@ -42,9 +43,36 @@ int main()
    assert(flag == 5);
  
    // error section
-   ucontext_t* ucp = malloc(sizeof(ucontext_t));
+   ucontext_t* ucp = malloc(sizeof(*ucp));
+   ucontext_t* ucp2 = malloc(sizeof(*ucp2));
+   (void)VALGRIND_MAKE_MEM_NOACCESS(ucp, sizeof(*ucp));
+   (void)VALGRIND_MAKE_MEM_NOACCESS(ucp2, sizeof(*ucp2));
+   flag = 0;
+   if (-1 == getcontext(ucp)) {
+      perror("getcontext failed: ");
+   }
+
+   flag++;
+
+   if (flag == 1) {
+      (void)VALGRIND_MAKE_MEM_NOACCESS(ucp, sizeof(*ucp));
+      if (-1 == setcontext(ucp)) {
+         perror("setcontext failed: ");
+      }
+      fprintf(stderr, "should never see setcontext return\n");
+   }
+
+   flag++;
+
+   if (flag == 3) {
+      (void)VALGRIND_MAKE_MEM_NOACCESS(ucp, sizeof(*ucp));
+      if (-1 == swapcontext(ucp2, ucp)) {
+         perror("swapcontext failed: ");
+      }
+      fprintf(stderr, "should never see swapcontest return\n");
+   }
+
+   assert(flag == 5);
    free(ucp);
-   setcontext(ucp);
-   swapcontext(ucp, ucp);
-   getcontext(ucp);
+   free(ucp2);
 }

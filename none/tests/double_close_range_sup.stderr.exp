@@ -1,0 +1,34 @@
+close fd 3
+Closing range (3, -1).
+Closing range (5, 7).
+Double closing range (5, 7).
+File descriptor ...: ... is already closed
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main
+ Previously closed
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main
+ Originally opened
+   at 0x........: dup2 (in /...libc...)
+   by 0x........: main
+{
+   <insert_a_suppression_name_here>
+   CoreError:FdBadClose
+   fun:close_range
+   fun:main
+}
+File descriptor ...: ... is already closed
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main
+ Previously closed
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main
+ Originally opened
+   at 0x........: dup2 (in /...libc...)
+   by 0x........: main
+{
+   <insert_a_suppression_name_here>
+   CoreError:FdBadClose
+   fun:close_range
+   fun:main
+}

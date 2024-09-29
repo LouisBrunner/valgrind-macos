@@ -83,6 +83,8 @@
    10030 ALLOC_or_BOMB
    10040 ZONEFREE
    10050 FREE
+   10051 FREE_SIZED
+   10052 FREE_ALIGNED_SIZED
    10060 ZONECALLOC
    10070 CALLOC
    10080 ZONEREALLOC
@@ -1003,7 +1005,83 @@ extern int * __error(void) __attribute__((weak));
 
 #endif
 
+ /*------------------- free_sized -------------------*/
 
+ /* Generate a replacement for 'fnname' in object 'soname', which calls
+    'vg_replacement' to free previously allocated memory.
+ */
+
+#define FREE_SIZED(soname, fnname, vg_replacement, tag) \
+ \
+    void VG_REPLACE_FUNCTION_EZU(10051,soname,fnname) (void *p, SizeT size); \
+    void VG_REPLACE_FUNCTION_EZU(10051,soname,fnname) (void *p, SizeT size)  \
+ { \
+       struct AlignedAllocInfo aligned_alloc_info = { .size=size, .mem=p, .alloc_kind=AllocKind##tag }; \
+       \
+       DO_INIT; \
+       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
+       VERIFY_ALIGNMENT(&aligned_alloc_info); \
+       MALLOC_TRACE(#fnname "(%p)\n", p ); \
+       if (p == NULL)  \
+       return; \
+       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
+ }
+
+
+#if defined(VGO_linux)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#elif defined(VGO_freebsd)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#elif defined(VGO_darwin)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#elif defined(VGO_solaris)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#endif
+
+
+ /*--------------- free_aligned_sized ---------------*/
+
+ /* Generate a replacement for 'fnname' in object 'soname', which calls
+    'vg_replacement' to free previously allocated memory.
+ */
+
+#define FREE_ALIGNED_SIZED(soname, fnname, vg_replacement, tag) \
+ \
+    void VG_REPLACE_FUNCTION_EZU(10052,soname,fnname) (void *p, SizeT alignment, SizeT size); \
+    void VG_REPLACE_FUNCTION_EZU(10052,soname,fnname) (void *p, SizeT alignment, SizeT size)  \
+ { \
+       struct AlignedAllocInfo aligned_alloc_info = { .orig_alignment=alignment, .size=size, .mem=p, .alloc_kind=AllocKind##tag }; \
+       \
+       DO_INIT; \
+       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)alignment); \
+       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
+       VERIFY_ALIGNMENT(&aligned_alloc_info); \
+       MALLOC_TRACE(#fnname "(%p)\n", p ); \
+       if (p == NULL)  \
+       return; \
+       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
+ }
+
+
+#if defined(VGO_linux)
+
+#elif defined(VGO_freebsd)
+ FREE_ALIGNED_SIZED(VG_Z_LIBC_SONAME,       free_aligned_sized,                 free, FreeAlignedSized );
+ FREE_ALIGNED_SIZED(SO_SYN_MALLOC,          free_aligned_sized,                 free, FreeAlignedSized );
+
+#elif defined(VGO_darwin)
+
+#elif defined(VGO_solaris)
+
+#endif
 /*---------------------- cfree ----------------------*/
 
 // cfree

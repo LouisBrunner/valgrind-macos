@@ -30,7 +30,7 @@ Old value = 100 'd'
 New value = 68 'D'
 main (argc=1, argv=0x........) at watchpoints.c:49
 49	   fprintf(stderr, "after writing 8\n");
-Delete all breakpoints? (y or n) [answered Y; input not from terminal]
+Delete all breakpoints, watchpoints, tracepoints, and catchpoints? (y or n) [answered Y; input not from terminal]
 Breakpoint 8 at 0x........: file watchpoints.c, line 70.
 Continuing.
 Breakpoint 8, main (argc=1, argv=0x........) at watchpoints.c:70

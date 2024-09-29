@@ -3,6 +3,9 @@ Building and installing it
 To build/install from the GIT repository or from a distribution
 tarball, refer to the section with the same name in README.
 
+Building Valgrind requires autoconf, GNU make and a suitable C
+compiler.
+
 
 Building and not installing it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42,6 +45,10 @@ can be found in docs/README.
 
 Running the regression tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Running the regression tests requires GNU sed, python 3.9 or later, gdb,
+and a suitable C++ compiler
+
 To build and run all the regression tests, run "make [--quiet] regtest".
 
 To run a subset of the regression tests, execute:
@@ -55,6 +62,12 @@ file.  Eg:
   perl tests/vg_regtest memcheck
   perl tests/vg_regtest memcheck/tests/badfree.vgtest
   perl tests/vg_regtest memcheck/tests/badfree
+
+The details of each vgtest run are logged to individual "vgtest.log"
+files.  These are listed, and non-passing tests detailed, in the
+test-suite-overall.log file.  (Token *.trs and test-suite.log files
+are also created, for emulating automake-style testsuites, as expected
+by tools such as bunsen.)
 
 
 Running the performance tests
@@ -80,6 +93,78 @@ compare them on all the performance tests:
 
   perl perf/vg_perf --vg=../trunk1 --vg=../trunk2 perf/
 
+Writing regression tests
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each tool has a tests directory containing regression tests. There is also
+the gdbserver_tests directory at the top level. Test directories may have
+architecture, OS and and architecture-OS sub-directories for tests that are
+specific to one architecture, OS or both.
+
+Once you have written a C or C++ executable that performs the required
+tests you will have to modify and create several files. The new files that
+will need adding are
+(a) a .vgtest file, which controls the test
+(b) a .stderr.exp file, which is the golden reference for any Valgrind output
+    Note that even if Valgrind doesn't produce any output you will need to
+    create an empty .stderr.exp file.
+(c) [optional] a .stdout.exp file, the golden reference for any output from the
+    test executable
+(d) [optional] filter files (see the test directories for examples).
+
+Quite often the output will depend on the platform the test is run on.
+Getting the tests to be 'portable' can require filtering or adding multiple
+.stderr.exp reference files.
+
+If the test only runs under certain conditions like the availability of functions
+in libc or C++ standard versions you will need to modify configure.ac in the
+top level directory. See AC_CHECK_FUNCS and the various blocks starting with
+AC_MSG_CHECKING.
+
+In the test directory, modify Makefile.am. Add to EXTRA_DIST the .vgtest,
+.stderr.exp and .stderr.out files. Add any filters to dist_noinst_SCRIPTS.
+Add the test executable name to check_PROGRAMS. Try to respect the
+formatting and alphabetical ordering of the Makefile.am. For simple C files that is
+sufficient. If you needed to add a feature test to configure.ac then you should
+use the same condition to add the executable name to check_PROGRAMS. If the
+executable uses C++ you need to add exename_SOURCES. If the executable needs
+special compilation or link options, use exename_CFLAGS, exename_CXXFLAGS,
+exename_LDFLAGS or exename_LDADD. Finally in Makefile.am it's nice not to
+have any warnings, even if they were done on purpose. See configure.ac
+and various Makefile.am files for examples of using FLAG_W_*.
+
+The vgtest file contains the instructions for running the test. Typically
+it will contain (with examples in quotes)
+(a) the name of the test executable:      "prog: exename"
+(b) arguments for the test executable:    "args: hello world"
+(c) arguments for the Valgrind tool:      "vgopts: -q"
+(d) [optional] a check for prerequisites: "prereq: ! ../../tests/os_test darwin"
+(e) [optional] a filter:                  "stderr_filter: filter_fdleak"
+
+See tests/vg_regtest for a full description of all possible vgtest directives.
+
+The easiest way to generate the expected files is to run the test. Create empty
+files with touch (otherwise the test won't run) then run the test from the
+top directory using perl and vg_regtest script (as in the "Running the
+regression tests" section. Then copy "tool/tests/newtest.stderr.out" to
+"tool/tests/newtest.stderr.exp". It is better to generate the .stdout.exp
+file directly from the testcase. You can do that by redirecting stdout to
+the expected file, for instance (in the test directory)
+    ./newtest arg1 arg2 > newtest.stdout.exp
+This is not always possible - sometimes there are tests that depend on the use
+of client requests or have imperfect emulation of opcodes.
+Make sure that the test runs and passes.
+
+The last file to change is .gitignore in the top directory. Add a new entry,
+for example "/tool/tests/newtest".
+
+Check for mistakes in Makefile.am. In the top directory run
+    make post-regtest-checks
+
+You should only see
+    ...checking makefile consistency
+    ...checking header files and include directives
+and no messages related to EXTRA_DIST.
 
 Commit access and try branches
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,9 +230,13 @@ without too much problem by following these steps:
 
 (4) Set any breakpoints you want and proceed as normal for gdb. The
     macro VG_(FUNC) is expanded to vgPlain_FUNC, so If you want to set
-    a breakpoint VG_(do_exec), you could do like this in GDB:
+    a breakpoint VG_(do_exec_inner), you could do like this in GDB:
 
-    (gdb) b vgPlain_do_exec
+    (gdb) b vgPlain_do_exec_inner
+
+    Note: This is just an example, for various reasons internal
+          function names might be renamed or optimized out
+          (for example when building with --enable-lto).
 
 (5) Run the tool with required options (the --tool option is required
     for correct setup), e.g.

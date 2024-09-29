@@ -1,0 +1,7 @@
+Syscall param clock_nanosleep(rqtp) points to uninitialised byte(s)
+   ...
+   by 0x........: valgrind_should_complain (bug483786.c:11)
+   by 0x........: main (bug483786.c:34)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by valgrind_should_complain (bug483786.c:6)
+

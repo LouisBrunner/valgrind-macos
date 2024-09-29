@@ -1,0 +1,3 @@
+env: DEBUGINFOD_URLS=file:/dev/null
+prog: track-fds-exec-children
+vgopts: -q --track-fds=yes --trace-children=yes

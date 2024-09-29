@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275 filter_auxv
+dist_noinst_SCRIPTS = filter_stderr test.sh filter_452275 filter_auxv filter_fdleak
 
 EXTRA_DIST = \
 	auxv.vgtest \
@@ -10,14 +10,12 @@ EXTRA_DIST = \
 	auxv.stderr.exp-freebsd13 \
 	auxv.stderr.exp-freebsd131 \
 	auxv.stderr.exp-freebsd14 \
+	auxv.stderr.exp-arm64 \
 	cp.vgtest \
 	cp.stderr.exp \
 	osrel.vgtest \
 	osrel.stderr.exp \
 	osrel.stdout.exp \
-	swapcontext.vgtest \
-	swapcontext.stderr.exp \
-	swapcontext.stdout.exp \
 	fexecve_hw1.vgtest \
 	fexecve_hw1.stdout.exp \
 	fexecve_hw1.stderr.exp \
@@ -33,9 +31,6 @@ EXTRA_DIST = \
 	fexecve_txt.stderr.exp \
 	452275.vgtest \
 	452275.stderr.exp \
-	usrstack.vgtest \
-	usrstack.stderr.exp \
-	usrstack.stdout.exp \
 	proc_pid_file.vgtest \
 	proc_pid_file.stderr.exp \
 	bash_test.vgtest \
@@ -50,12 +45,24 @@ EXTRA_DIST = \
 	ksh_test.ksh \
 	ksh_test.stderr.exp \
 	ksh_test.stdout.exp \
+	sanity_level_thread.vgtest \
+	sanity_level_thread.stderr.exp \
+	swapcontext.vgtest \
+	swapcontext.stderr.exp \
+	swapcontext.stdout.exp \
 	umtx_op_timeout.vgtest \
-	umtx_op_timeout.stderr.exp
+	umtx_op_timeout.stderr.exp \
+	umtx_shm_creat1.vgtest \
+	umtx_shm_creat1.stderr.exp \
+	umtx_shm_creat2.vgtest \
+	umtx_shm_creat2.stderr.exp \
+	usrstack.vgtest \
+	usrstack.stderr.exp \
+	usrstack.stdout.exp
 
 check_PROGRAMS = \
 	auxv osrel swapcontext hello_world fexecve 452275 usrstack \
-	proc_pid_file
+	proc_pid_file sanity_level_thread umtx_shm_creat
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
@@ -67,3 +74,8 @@ swapcontext_CFLAGS = ${AM_CFLAGS}
 hello_world_SOURCES = hello_world.cpp
 
 proc_pid_file_SOURCES = proc_pid_file.cpp
+
+sanity_level_thread_SOURCES = sanity_level_thread.cpp
+sanity_level_thread_LDFLAGS = ${AM_LDFLAGS} -pthread
+
+umtx_shm_creat_SOURCES = umtx_shm_creat.cpp

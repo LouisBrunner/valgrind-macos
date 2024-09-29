@@ -1,7 +1,7 @@
 general valgrind monitor commands:
   help [debug]            : monitor command help. With debug: + debugging commands
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
-  v.info all_errors       : show all errors found so far
+  v.info all_errors [also_suppressed] : show all errors found so far
   v.info last_error       : show last error found
   v.info location <addr>  : show information about location <addr>
   v.info n_errs_found [msg] : show the nr of errors found so far and the given msg
@@ -60,7 +60,7 @@ memcheck monitor commands:
 general valgrind monitor commands:
   help [debug]            : monitor command help. With debug: + debugging commands
   v.wait [<ms>]           : sleep <ms> (default 0) then continue
-  v.info all_errors       : show all errors found so far
+  v.info all_errors [also_suppressed] : show all errors found so far
   v.info last_error       : show last error found
   v.info location <addr>  : show information about location <addr>
   v.info n_errs_found [msg] : show the nr of errors found so far and the given msg

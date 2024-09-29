@@ -1,0 +1,3 @@
+prereq: test -x frinta_frintn
+prog: frinta_frintn
+vgopts: -q

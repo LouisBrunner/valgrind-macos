@@ -11,7 +11,7 @@ while (<>)
     s/ __([a-z]*)_nocancel / $1 /;
 
     # "lib[S|s]ystem*" occurs on Darwin, "libsocket" on older Solaris/illumos.
-    s/\(in \/.*(libc|libSystem|libsystem|libsocket).*\)$/(in \/...libc...)/;
+    s/\(in \/.*(libc|libSystem|libsystem|libsocket|libsys).*\)$/(in \/...libc...)/;
     s/\(within \/.*(libc|libSystem|libsystem|libsocket).*\)$/(within \/...libc...)/;
 
     # Filter out dynamic loader

@@ -1,0 +1,4 @@
+prog: fdleak_creat
+vgopts: --track-fds=all --suppressions=fdleak_creat_sup.supp
+stderr_filter: filter_fdleak
+args: < /dev/null

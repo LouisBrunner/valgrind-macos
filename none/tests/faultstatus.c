@@ -21,7 +21,11 @@
  */
 #if defined(__powerpc__) || defined(__aarch64__)
 #  define DIVISION_BY_ZERO_TRIGGERS_FPE 0
+#if defined(VGO_freebsd)
+#  define DIVISION_BY_ZERO_SI_CODE      SI_LWP
+#else
 #  define DIVISION_BY_ZERO_SI_CODE      SI_TKILL
+#endif
 #elif defined(__arm__)
 #  define DIVISION_BY_ZERO_TRIGGERS_FPE 1
 #  define DIVISION_BY_ZERO_SI_CODE      SI_TKILL

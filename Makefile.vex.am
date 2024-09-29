@@ -54,6 +54,7 @@ noinst_HEADERS = \
 	priv/host_generic_simd128.h \
 	priv/host_generic_simd256.h \
 	priv/host_generic_maddf.h \
+	priv/host_amd64_maddf.h \
 	priv/host_x86_defs.h \
 	priv/host_amd64_defs.h \
 	priv/host_ppc_defs.h \
@@ -156,6 +157,7 @@ LIBVEX_SOURCES_COMMON = \
 	priv/host_generic_simd128.c \
 	priv/host_generic_simd256.c \
 	priv/host_generic_maddf.c \
+	priv/host_amd64_maddf.c \
 	priv/host_generic_reg_alloc2.c \
 	priv/host_generic_reg_alloc3.c \
 	priv/host_x86_defs.c \

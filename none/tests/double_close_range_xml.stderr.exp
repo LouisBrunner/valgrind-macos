@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>5</protocolversion>
+<protocoltool>none</protocoltool>
+
+<preamble>
+  <line>Nulgrind, the minimal Valgrind tool</line>
+  <line>Copyright...</line>
+  <line>Using Valgrind...</line>
+  <line>Command: ./double_close_range</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>none</tool>
+
+<args>
+  <vargv>
+    <exe>...</exe>
+    <arg>--command-line-only=yes</arg>
+    <arg>--memcheck:leak-check=no</arg>
+    <arg>--tool=none</arg>
+    <arg>-q</arg>
+    <arg>--track-fds=yes</arg>
+    <arg>--xml=yes</arg>
+    <arg>--xml-fd=2</arg>
+  </vargv>
+  <argv>
+    <exe>...</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+close fd 3
+Closing range (3, -1).
+Closing range (5, 7).
+Double closing range (5, 7).
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>FdBadClose</kind>
+  <fd>5</fd>
+  <path>...</path>
+  <what>...</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>double_close_range.c</file>
+      <line>33</line>
+    </frame>
+  </stack>
+  <auxwhat>Previously closed</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>double_close_range.c</file>
+      <line>29</line>
+    </frame>
+  </stack>
+  <auxwhat>Originally opened</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>double_close_range.c</file>
+      <line>26</line>
+    </frame>
+  </stack>
+</error>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>FdBadClose</kind>
+  <fd>7</fd>
+  <path>...</path>
+  <what>...</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>double_close_range.c</file>
+      <line>33</line>
+    </frame>
+  </stack>
+  <auxwhat>Previously closed</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>double_close_range.c</file>
+      <line>29</line>
+    </frame>
+  </stack>
+  <auxwhat>Originally opened</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>double_close_range.c</file>
+      <line>27</line>
+    </frame>
+  </stack>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>1</count>
+    <unique>0x........</unique>
+  </pair>
+  <pair>
+    <count>1</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+
+</valgrindoutput>
+

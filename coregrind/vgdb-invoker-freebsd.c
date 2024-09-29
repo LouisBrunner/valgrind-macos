@@ -470,6 +470,8 @@ Bool invoker_invoke_gdbserver (pid_t pid)
      DEBUG(1, "Sign extending %8.8lx to %8.8lx\n",
            reg_mod.r_rax, reg_save.r_rax);
    }
+#elif defined(VGA_arm64)
+   sp = reg_mod.sp;
 #else
    I_die_here : (sp) architecture missing in vgdb-invoker-freebsd.c
 #endif
@@ -519,10 +521,10 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       reg_mod.r_rbp = sp; // bp set to sp
       reg_mod.r_rsp = sp;
       reg_mod.r_rip = shared32->invoke_gdbserver;
-#else
-      I_die_here : not x86 or amd64 in x86/amd64 section/
 #endif
 
+#elif defined(VGA_arm64)
+      XERROR(0, "TBD arm64: vgdb a 32 bits executable with a 64 bits exe\n");
 #else
       I_die_here : architecture missing in vgdb-invoker-freebsd.c
 #endif
@@ -557,6 +559,12 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       reg_mod.r_rbp = sp; // bp set to sp
       reg_mod.r_rsp = sp;
       reg_mod.r_rip = shared64->invoke_gdbserver;
+#elif defined(VGA_arm64)
+      reg_mod.x[0] = check;
+      reg_mod.sp = sp;
+      reg_mod.elr = shared64->invoke_gdbserver;
+      /* put NULL return address in Link Register */
+      reg_mod.lr = bad_return;
 
 #else
       I_die_here: architecture missing in vgdb-invoker-freebsd.c

@@ -1160,6 +1160,19 @@ cmp_eq_ne_vbits(vbits_t vbits1, vbits_t vbits2, value_t val1, value_t val2)
    return res;
 }
 
+/* Given unsigned vbits and value, return the minimum possible value. */
+uint64_t min_vbits(uint64_t vbits, uint64_t value)
+{
+   // This is derived from expensiveAddSub() in mc_translate.c.
+   return value & ~vbits;
+}
+
+/* Given unsigned vbits and value, return the maximum possible value. */
+uint64_t max_vbits(uint64_t vbits, uint64_t value)
+{
+   // This is derived from expensiveAddSub() in mc_translate.c.
+   return value | vbits;
+}
 
 /* Deal with precise integer ADD and SUB. */
 vbits_t
@@ -1170,11 +1183,10 @@ int_add_or_sub_vbits(int isAdd,
    get_binary_vbits_and_vals64(&vaa, &aa, &vbb, &bb,
                                vbits1, vbits2, val1, val2);
 
-   // This is derived from expensiveAddSub() in mc_translate.c.
-   uint64_t a_min = aa & ~vaa;
-   uint64_t b_min = bb & ~vbb;
-   uint64_t a_max = aa | vaa;
-   uint64_t b_max = bb | vbb;
+   uint64_t a_min = min_vbits(vaa, aa);
+   uint64_t b_min = min_vbits(vbb, bb);
+   uint64_t a_max = max_vbits(vaa, aa);
+   uint64_t b_max = max_vbits(vbb, bb);
 
    uint64_t result;
    if (isAdd) {
@@ -1192,5 +1204,62 @@ int_add_or_sub_vbits(int isAdd,
       default: panic(__func__);
    }
 
+   return res;
+}
+
+/* Deal with precise CmpGTsbxe.
+ *
+ * b is the number of bits per element and e is the number of elements.  x is
+ * either S for signed or U for unsigned.
+ */
+
+vbits_t
+cmp_gt_vbits(int is_signed, int bits_per_element, int element_count,
+             vbits_t vbits1, vbits_t vbits2, value_t val1, value_t val2) {
+   assert(vbits1.num_bits == vbits2.num_bits);
+   assert(bits_per_element*element_count == vbits1.num_bits);
+   assert(vbits1.num_bits == 128); // All the known variants are 128-bit.
+
+   vbits_t res = { .num_bits = vbits1.num_bits, .bits.u128 = {0,0} };
+   for (int word = 0; word < 2; word++) {
+      for (int element_in_word = 0; element_in_word < element_count/2; element_in_word++) {
+         // We don't have to worry about little-endian vs big-endian because the
+         // max bits_per_element is 64 and fits in a word.  Extract a word.
+         uint64_t element1 = (val1.u128[word] >> (bits_per_element*element_in_word)) & (((uint64_t) -1) >> (64 - bits_per_element));
+         uint64_t element2 = (val2.u128[word] >> (bits_per_element*element_in_word)) & (((uint64_t) -1) >> (64 - bits_per_element));
+         uint64_t velement1 = (vbits1.bits.u128[word] >> (bits_per_element*element_in_word)) & (((uint64_t) -1) >> (64 - bits_per_element));
+         uint64_t velement2 = (vbits2.bits.u128[word] >> (bits_per_element*element_in_word)) & (((uint64_t) -1) >> (64 - bits_per_element));
+
+         // If we are doing a signed comparison then we add one to the MSB of
+         // the element.  This converts the signed value into an unsigned value
+         // in such a way that the greater than operation continues to return
+         // the same value when done in unsigned math.  We don't want the
+         // addition to overflow so we jsut use XOR instead.
+         if (is_signed) {
+            element1 ^= (((uint64_t) 1) << (bits_per_element-1));
+            element2 ^= (((uint64_t) 1) << (bits_per_element-1));
+         }
+
+         uint64_t min1 = min_vbits(velement1, element1);
+         uint64_t min2 = min_vbits(velement2, element2);
+         uint64_t max1 = max_vbits(velement1, element1);
+         uint64_t max2 = max_vbits(velement2, element2);
+
+         // If the minimum possible value of element1 is greater than the
+         // maximum possible value of element2 then element1 is surely greater
+         // than element2.
+         int is_definitely_greater = min1 > max2;
+         // If the maximum value of element1 less than or equal to the minimum
+         // value of element2 then there is no way that element1 is greater than
+         // element2.
+         int is_definitely_not_greater = max1 <= min2;
+         int is_definite = is_definitely_greater || is_definitely_not_greater;
+         // If the answer is definite then the vbits should indicate that all
+         // bits are known, so 0.  Otherwise, all 1s.
+         if (!is_definite) {
+            res.bits.u128[word] |= (((uint64_t) -1) >> (64 - bits_per_element)) << (bits_per_element*element_in_word);
+         }
+      }
+   }
    return res;
 }

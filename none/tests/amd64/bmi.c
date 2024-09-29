@@ -372,11 +372,12 @@ void do_shrx32 ( /*OUT*/ULong* res, UInt arg1, UInt arg2 )
      printf ("Flags changed\n");
 }
 
+ULong g_ulong_arg;
 
 __attribute__((noinline))
 void do_rorx64 ( /*OUT*/ULong* res1, /*OUT*/ULong* res2, ULong arg )
 {
-  ULong tem, flag1, flag2, flag3, flag4;
+  ULong tem, flag1, flag2, flag3, flag4, flag5, flag6;
   __asm__ __volatile__(
     "movabsq $0x5555555555555555, %0" "\n\t"
     "pushfq"                  "\n\t"
@@ -405,14 +406,37 @@ void do_rorx64 ( /*OUT*/ULong* res1, /*OUT*/ULong* res2, ULong arg )
     : "=&r" (tem), "=&r" (flag3), "=r" (flag4) : "m" (arg) : "cc"
   );
   *res2 = tem;
-  if (((flag1 ^ flag2) | (flag3 ^ flag4)) & 0x8d5)
+  /* rip-relative memory access */
+  g_ulong_arg = arg;
+  __asm__ __volatile__(
+    "movabsq $0x5555555555555555, %0" "\n\t"
+    "pushfq"                  "\n\t"
+    "xorq $0x8d5, (%%rsp)"    "\n\t"
+    "movq (%%rsp), %1"        "\n\t"
+    "popfq"                   "\n\t"
+#if defined(__APPLE__)
+    "rorx $67, _g_ulong_arg(%%rip), %0" "\n\t"
+#else
+    "rorx $67, g_ulong_arg(%%rip), %0" "\n\t"
+#endif
+    "pushfq"                  "\n\t"
+    "movq (%%rsp), %2"        "\n\t"
+    "xorq $0x8d5, (%%rsp)"    "\n\t"
+    "popfq"                   "\n"
+    : "=&r" (tem), "=&r" (flag5), "=r" (flag6) : : "memory", "cc"
+  );
+  if (*res2 != tem)
+     printf ("Difference between m-variants\n");
+  if (((flag1 ^ flag2) | (flag3 ^ flag4) | (flag5 ^ flag6)) & 0x8d5)
      printf ("Flags changed\n");
 }
+
+UInt g_uint_arg;
 
 __attribute__((noinline))
 void do_rorx32 ( /*OUT*/ULong* res1, /*OUT*/ULong* res2, UInt arg )
 {
-  ULong tem, flag1, flag2, flag3, flag4;
+  ULong tem, flag1, flag2, flag3, flag4, flag5, flag6;
   __asm__ __volatile__(
     "movabsq $0x5555555555555555, %0" "\n\t"
     "pushfq"                  "\n\t"
@@ -441,7 +465,28 @@ void do_rorx32 ( /*OUT*/ULong* res1, /*OUT*/ULong* res2, UInt arg )
     : "=&r" (tem), "=&r" (flag3), "=r" (flag4) : "m" (arg) : "cc"
   );
   *res2 = tem;
-  if (((flag1 ^ flag2) | (flag3 ^ flag4)) & 0x8d5)
+  /* rip-relative memory access */
+  g_uint_arg = arg;
+  __asm__ __volatile__(
+    "movabsq $0x5555555555555555, %0" "\n\t"
+    "pushfq"                  "\n\t"
+    "xorq $0x8d5, (%%rsp)"    "\n\t"
+    "movq (%%rsp), %1"        "\n\t"
+    "popfq"                   "\n\t"
+#if defined(__APPLE__)
+    "rorx $67, _g_uint_arg(%%rip), %k0" "\n\t"
+#else
+    "rorx $67, g_uint_arg(%%rip), %k0" "\n\t"
+#endif
+    "pushfq"                  "\n\t"
+    "movq (%%rsp), %2"        "\n\t"
+    "xorq $0x8d5, (%%rsp)"    "\n\t"
+    "popfq"                   "\n"
+    : "=&r" (tem), "=&r" (flag5), "=r" (flag6) : : "memory", "cc"
+  );
+  if (*res2 != tem)
+     printf ("Difference between m-variants\n");
+  if (((flag1 ^ flag2) | (flag3 ^ flag4) | (flag5 ^ flag6)) & 0x8d5)
      printf ("Flags changed\n");
 }
 

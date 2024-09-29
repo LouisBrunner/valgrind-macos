@@ -1161,7 +1161,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 /* ------------------------ arm64 ------------------------- */
 
-#if defined(VGP_arm64_linux)
+#if defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -1207,14 +1207,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* vg_assert(fp_min <= fp_max);*/
    // On Darwin, this kicks in for pthread-related stack traces, so they're
    // only 1 entry long which is wrong.
+#  if defined(VGO_linux)
    if (fp_min + 512 >= fp_max) {
+#  elif defined(VGO_freebsd)
+   if (fp_max == 0) {
+#endif
+#  if defined(VGO_linux) || defined(VGO_freebsd)
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
       if (sps) sps[0] = uregs.sp;
       if (fps) fps[0] = uregs.x29;
       ips[0] = uregs.pc;
       return 1;
-   } 
+   }
+#endif
 
    /* */
 

@@ -1,0 +1,5 @@
+#! /bin/sh
+
+./filter_stderr "$@" |
+
+sed 's/ _platform_memcmp / memcmp /;s/ bcmp / memcmp /'

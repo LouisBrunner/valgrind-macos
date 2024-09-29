@@ -16,6 +16,10 @@ if [ "$(uname)" = "Linux" ]; then
     # NPTL
     exit 0
   fi
+  if [ -x /lib/ld-musl-*.so.1 ] ; then
+    # musl
+    exit 0
+  fi
   # configuration string is empty or does start with "linuxthreads".
   exit 1
 fi

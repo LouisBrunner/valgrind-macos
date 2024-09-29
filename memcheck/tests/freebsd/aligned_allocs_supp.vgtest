@@ -1,4 +1,5 @@
 prog: errno_aligned_allocs
 vgopts: --suppressions=aligned_allocs_supp.supp -s
+stderr_filter: filter_supp
 
 

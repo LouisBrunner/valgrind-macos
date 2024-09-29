@@ -1,4 +1,5 @@
 #! /bin/sh
+# @configure_input@
 
 dir=`dirname $0`
 
@@ -45,6 +46,12 @@ $SED -e '/of file .*vgpreload.*so.*/d' |
 $SED -e '/Use.*info auto-load python-scripts.*/d' |
 $SED -e '/warning: Invalid entry in .debug_gdb_scripts section/d' |
 $SED -e "/Use .info auto-load python .REGEXP.. to list them./d" |
+
+# Remove python rpm module load warnings
+$SED -e "/^Unable to load /d" |
+$SED -e "/^the RPM suggestions /d" |
+$SED -e "/^installing missing debuginfo /d" |
+$SED -e "/^please install /d" |
 
 # and filter out any remaining empty lines
 $SED -e '/^$/d'

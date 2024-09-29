@@ -1,2 +1,3 @@
+prereq: ! ../../tests/os_test darwin
 vgopts: -q
 prog: bug484480

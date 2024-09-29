@@ -56,7 +56,7 @@ jobs:
         run: |
           awk '/^== [0-9]+ tests, .* ==$/{flag=1;next}/^$/{flag=0}flag' < ${{ env.TEST_FOLDER }}/raw-results.txt | tee ${{ env.TEST_FOLDER }}/results.txt | while read line; do
             TEST_NAME=$(echo "$line" | cut -f 1 -d' ')
-            if grep -q $TEST_NAME .github/flaky-tests.txt && [ "${{ matrix.os != 'ubuntu-20.04' }}" == "true" ]; then
+            if grep -q $TEST_NAME .github/flaky-tests.txt && [ "${{ matrix.os != 'ubuntu-24.04' }}" == "true" ]; then
               echo "skipping flaky test $TEST_NAME"
             else
               echo "$line" >> ${{ env.TEST_FOLDER }}/filtered-results.txt

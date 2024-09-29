@@ -49,7 +49,7 @@ check_PROGRAMS = \
 	bug132146 \
 	bug279698 \
 	# bug492210 \ # broken on GitHub Linux runners
-  fxsave-amd64 \
+	fxsave-amd64 \
 	insn-bsfl \
 	insn-pmovmskb \
 	pcmpgt \

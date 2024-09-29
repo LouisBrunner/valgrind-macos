@@ -86,7 +86,7 @@ int main(void)
    SY(SYS_fchdir, x0-1); FAIL;
 
    /* SYS_freebsd11_mknod         14 */
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(SYS_freebsd11_mknod)
    GO(SYS_freebsd11_mknod, "3s 1m");
    SY(SYS_freebsd11_mknod, x0, x0, x0); FAIL;
 #else
@@ -203,7 +203,7 @@ int main(void)
 
 #if !defined(VGP_arm64_freebsd)
    /* freebsd10_pipe              42 */
-#if (FREEBSD_VERS >= FREEBSD_11)
+#if defined(SYS_freebsd10_pipe)
    GO(SYS_freebsd10_pipe, "0s 0m");
    SY(SYS_freebsd10_pipe, x0); SUCC;
 #else
@@ -309,7 +309,7 @@ int main(void)
 
    /* obsol vwrite                68 */
 
-#if (FREEBSD_VERS < FREEBSD_15)
+#if defined(SYS_sbrk)
    /* SYS_sbrk                    69 */
    GO(SYS_sbrk, "1s 1m");
    SY(SYS_sbrk, x0); FAIL;
@@ -673,32 +673,35 @@ int main(void)
 
    /* unimpl lfs_segwait          187 */
 
- #if (FREEBSD_VERS >= FREEBSD_12)
+ #if defined(SYS_freebsd11_stat)
    /* SYS_freebsd11_stat          188 */
    GO(SYS_freebsd11_stat, "2s 2m");
    SY(SYS_freebsd11_stat, x0, x0); FAIL;
-
-   /* SYS_freebsd11_fstat         189 */
-   GO(SYS_freebsd11_fstat, "2s 1m");
-   SY(SYS_freebsd11_fstat, x0, x0); FAIL;
-
-   /* SYS_freebsd11_lstat         190 */
-   GO(SYS_freebsd11_lstat, "2s 2m");
-   SY(SYS_freebsd11_lstat, x0, x0); FAIL;
-
- #else
+#else
    /* SYS_stat          188 */
    GO(SYS_stat, "2s 2m");
    SY(SYS_stat, x0, x0); FAIL;
+#endif
 
+#if defined(SYS_freebsd11_fstat)
+   /* SYS_freebsd11_fstat         189 */
+   GO(SYS_freebsd11_fstat, "2s 1m");
+   SY(SYS_freebsd11_fstat, x0, x0); FAIL;
+#else
    /* SYS_fstat                   189 */
    GO(SYS_fstat, "2s 1m");
    SY(SYS_fstat, x0, x0); FAIL;
+#endif
 
+#if defined(SYS_freebsd11_lstat)
+   /* SYS_freebsd11_lstat         190 */
+   GO(SYS_freebsd11_lstat, "2s 2m");
+   SY(SYS_freebsd11_lstat, x0, x0); FAIL;
+#else
    /* SYS_lstat         190 */
    GO(SYS_lstat, "2s 2m");
    SY(SYS_lstat, x0, x0); FAIL;
- #endif
+#endif
 
    /* SYS_pathconf                191 */
    GO(SYS_pathconf, "2s 1m");
@@ -719,7 +722,7 @@ int main(void)
    SY(SYS_setrlimit, x0, x0); FAIL;
 
    /* SYS_freebsd11_getdirentries 196 */
- #if (FREEBSD_VERS >= FREEBSD_12)
+ #if defined(SYS_freebsd11_getdirentries)
    GO(SYS_freebsd11_getdirentries, "4s 2m");
    SY(SYS_freebsd11_getdirentries, x0, x0, x0+3, x0+1); FAIL;
 #else
@@ -778,7 +781,7 @@ int main(void)
       SY(SYS_poll, &fds, 1, 1); SUCC;
    }
 
-#if (FREEBSD_VERS <= FREEBSD_14_0)
+#if defined(SYS_freebsd7___semctl)
    /* SYS_freebsd7___semctl       220 */
    GO(SYS_freebsd7___semctl, "(IPC_STAT) 4s 1m");
    SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
@@ -797,7 +800,7 @@ int main(void)
 
    /* unimpl semconfig            223 */
 
-#if (FREEBSD_VERS <= FREEBSD_14_0)
+#if defined(SYS_freebsd7_msgctl)
    /* SYS_freebsd7_msgctl         224 */
    GO(SYS_freebsd7_msgctl, "(set) 3s 1m");
    SY(SYS_freebsd7_msgctl, x0, x0+1, x0); FAIL;
@@ -822,7 +825,7 @@ int main(void)
    GO(SYS_shmat, "3s 0m");
    SY(SYS_shmat, x0, x0, x0); FAIL;
 
-#if (FREEBSD_VERS <= FREEBSD_14_0)
+#if defined(SYS_freebsd7_shmctl)
    /* SYS_freebsd7_shmctl         229 */
    GO(SYS_freebsd7_shmctl, "3s 0m");
    SY(SYS_freebsd7_shmctl, x0, x0, x0); FAIL;
@@ -881,7 +884,7 @@ int main(void)
 
    // unimpl SYS_ffclock_getestimate                       243
 
-#if (FREEBSD_VERS >= FREEBSD_11)
+#if defined(SYS_clock_nanosleep)
    /* SYS_clock_nanosleep         244 */
    GO(SYS_clock_nanosleep, "4s 2m");
    SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0+3, x0+1); SUCC;
@@ -925,7 +928,7 @@ int main(void)
    SY(SYS_lio_listio, x0+0, x0+1, x0+10, x0+1); FAIL;
 
    /* SYS_freebsd11_getdents      272 */
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(SYS_freebsd11_getdents)
    GO(SYS_freebsd11_getdents, "3s 1m");
    SY(SYS_freebsd11_getdents, x0+9, x0+1, x0+2); FAIL;
 #else
@@ -1216,7 +1219,7 @@ int main(void)
    SY(SYS_kqueue); SUCC;
 
    /* SYS_freebsd11_kevent        363 */
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(SYS_freebsd11_kevent)
    GO(SYS_freebsd11_kevent, "6s 3m");
    SY(SYS_freebsd11_kevent, x0+1, x0+2, x0+3, x0+4, x0+5, x0+6); FAIL;
 #else
@@ -1300,39 +1303,44 @@ int main(void)
 
    // mac_syscall                                          394
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(SYS_freebsd11_getfsstat)
    /* SYS_freebsd11_getfsstat     395*/
    GO(SYS_freebsd11_getfsstat, "3s 1m");
    SY(SYS_freebsd11_getfsstat, x0+1, x0+2, x0+3); FAIL;
-
-   /* SYS_freebsd11_statfs        396 */
-   GO(SYS_freebsd11_statfs, "2s 2m");
-   SY(SYS_freebsd11_statfs, x0+1, x0+2); FAIL;
-
-   /* SYS_freebsd11_fstatfs       397 */
-   GO(SYS_freebsd11_fstatfs, "2s 1m");
-   SY(SYS_freebsd11_fstatfs, x0+1, x0+2); FAIL;
-
-   /* SYS_freebsd11_fhstatfs      398 */
-   GO(SYS_freebsd11_fhstatfs, "2s 2m");
-   SY(SYS_freebsd11_fhstatfs, x0+1, x0+2); FAIL;
 #else
    /* SYS_getfsstat     395*/
    GO(SYS_getfsstat, "3s 1m");
    SY(SYS_getfsstat, x0+1, x0+2, x0+3); FAIL;
+#endif
 
+#if defined(SYS_freebsd11_statfs)
+   /* SYS_freebsd11_statfs        396 */
+   GO(SYS_freebsd11_statfs, "2s 2m");
+   SY(SYS_freebsd11_statfs, x0+1, x0+2); FAIL;
+#else
    /* SYS_statfs        396 */
    GO(SYS_statfs, "2s 2m");
    SY(SYS_statfs, x0+1, x0+2); FAIL;
+#endif
 
+#if defined(SYS_freebsd11_fstatfs)
+   /* SYS_freebsd11_fstatfs       397 */
+   GO(SYS_freebsd11_fstatfs, "2s 1m");
+   SY(SYS_freebsd11_fstatfs, x0+1, x0+2); FAIL;
+#else
    /* SYS_fstatfs       397 */
    GO(SYS_fstatfs, "2s 1m");
    SY(SYS_fstatfs, x0+1, x0+2); FAIL;
+#endif
 
+#if defined(SYS_freebsd11_fhstatfs)
+   /* SYS_freebsd11_fhstatfs      398 */
+   GO(SYS_freebsd11_fhstatfs, "2s 2m");
+   SY(SYS_freebsd11_fhstatfs, x0+1, x0+2); FAIL;
+#else
    /* SYS_fhstatfs      398 */
    GO(SYS_fhstatfs, "2s 2m");
    SY(SYS_fhstatfs, x0+1, x0+2); FAIL;
-
 #endif
 
    // ksem_close                                           400
@@ -1394,7 +1402,7 @@ int main(void)
    GO(SYS_swapcontext, "2s 2m");
    SY(SYS_swapcontext, x0+1, x0+2); FAIL;
 
-#if (FREEBSD_VERS >= FREEBSD_13_1)
+#if defined(SYS_freebsd13_swapoff)
    /* SYS_freebsd13_swapoff                 424 */
    GO(SYS_freebsd13_swapoff, "1s 1m");
    SY(SYS_freebsd13_swapoff, x0+1); FAIL;
@@ -1630,7 +1638,7 @@ int main(void)
    SY(SYS_thr_kill2, x0-1, x0-1, x0+9999); FAIL;
 
    /* SYS_shm_open                482 */
-#if (FREEBSD_VERS >= FREEBSD_13_0)
+#if defined(SYS_freebsd12_shm_open)
    GO(SYS_freebsd12_shm_open, "(SHM_ANON) 3s 0m");
    SY(SYS_freebsd12_shm_open, x0+SHM_ANON, x0+2, x0+9); SUCC;
 #else
@@ -1688,7 +1696,7 @@ int main(void)
    SY(SYS_fexecve, x0-1, x0+1, x0+1); FAIL;
 
    /* SYS_freebsd11_fstatat       493 */
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(SYS_freebsd11_fstatat)
    GO(SYS_freebsd11_fstatat, "4s 2m");
    SY(SYS_freebsd11_fstatat, x0, x0+1, x0+1, x0); FAIL;
 #else
@@ -1713,7 +1721,7 @@ int main(void)
    SY(SYS_mkfifoat, x0, x0, x0); FAIL;
 
    /* SYS_freebsd11_mknodat       498 */
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(SYS_freebsd11_mknodat)
    GO(SYS_freebsd11_mknodat, "4s 1m");
    SY(SYS_freebsd11_mknodat, x0, x0+1, x0, x0); FAIL;
 #else
@@ -1763,7 +1771,7 @@ int main(void)
    SY(SYS_jail_remove, x0+1); FAIL;
 
    /* SYS_closefrom               509 */
-#if (FREEBSD_VERS >= FREEBSD_13_0)
+#if defined(SYS_freebsd12_closefrom)
    GO(SYS_freebsd12_closefrom, "1s 0m");
    SY(SYS_freebsd12_closefrom, x0+100000); SUCC;
 #else
@@ -1951,8 +1959,6 @@ int main(void)
    GO(SYS_utimensat, "4s 2m");
    SY(SYS_utimensat, x0+99999999, x0+1, x0+1, x0); FAIL;
 
-#if (FREEBSD_VERS >= FREEBSD_11)
-
     // 548 is obsolete numa_getaffinity
 
     // 549 is obsolete numa_setaffinity
@@ -1960,8 +1966,6 @@ int main(void)
    /* SYS_fdatasync              550 */
    GO(SYS_fdatasync, "1s 0m");
    SY(SYS_fdatasync, x0+99999999); FAIL;
-
-#endif // FREEBSD_VERS >= FREEBSD_11
 
 #if (FREEBSD_VERS >= FREEBSD_12)
 

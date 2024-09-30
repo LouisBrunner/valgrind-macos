@@ -12,6 +12,7 @@
    ...
 }
 
+# Related to DSC and other dyld memory access
 
 {
    OSX1500:dyld_validMagic
@@ -48,6 +49,8 @@
    fun:(below main)
 }
 
+# New in 15.0
+
 {
    OSX1500:dyld_CRC32cSW
    Memcheck:Value8
@@ -77,12 +80,172 @@
 }
 
 {
-   OSX1500:libSystem_clock_port
+   OSX1500:libc_clock_port
    Memcheck:Cond
    obj:*
    fun:_init_clock_port
    fun:_libc_initializer
    fun:libSystem_initializer
    fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX1500:libxpc_init
+   Memcheck:Cond
+   obj:*
+   fun:_libxpc_initializer
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX:libsecinit_fetch_self_token
+   Memcheck:Cond
+   fun:_fetch_self_token
+   ...
+   fun:_libsecinit_initializer
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX1500:libtrace_create_debug_control_port
+   Memcheck:Cond
+   obj:*
+   fun:_os_trace_create_debug_control_port
+   fun:_libtrace_init
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+# Happens during a fork
+
+{
+   OSX1500:fork_xpc_cond
+   Memcheck:Cond
+   ...
+   fun:bootstrap_look_up2
+   ...
+}
+
+{
+   OSX1500:fork_xpc_addr16
+   Memcheck:Addr16
+   ...
+   fun:bootstrap_look_up2
+   ...
+}
+
+{
+   OSX1500:ns_initialize_platform_cond
+   Memcheck:Cond
+   ...
+   fun:_NSInitializePlatform
+   ...
+}
+
+{
+   OSX1500:ns_initialize_platform_value8
+   Memcheck:Value8
+   obj:*
+   ...
+   fun:_NSInitializePlatform
+   ...
+}
+
+{
+   OSX1500:ns_initialize_platform_param
+   Memcheck:Param
+   open(filename)
+   obj:*
+   obj:*
+   ...
+   fun:_NSInitializePlatform
+   ...
+}
+
+# Unclear, most likely because of fork
+
+{
+   OSX1500:notify_register_check
+   Memcheck:Cond
+   ...
+   fun:notify_register_check
+   ...
+   fun:si_module_config_modules_for_category
+   ...
+}
+
+{
+   OSX1500:getpwuid_r_addr16
+   Memcheck:Addr16
+   obj:*
+   ...
+   fun:search_user_byuid
+   fun:getpwuid_r
+}
+
+{
+   OSX1500:getpwuid_r_value8
+   Memcheck:Value8
+   obj:*
+   ...
+   fun:search_user_byuid
+   ...
+}
+
+{
+   OSX1500:getpwuid_r_cond
+   Memcheck:Cond
+   ...
+   fun:search_user_byuid
+}
+
+{
+   OSX1500:getpwuid_r_cond_2
+   Memcheck:Cond
+   obj:*
+   obj:*
+   ...
+   fun:ds_user_byuid
+}
+
+{
+   OSX1500:getpwuid_r_value8_2
+   Memcheck:Value8
+   obj:*
+   ...
+   fun:ds_user_byuid
+}
+
+{
+   OSX1500:firehose_param_mach_msg2_1
+   Memcheck:Param
+   mach_msg2(msgh_bits_and_send_size)
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:firehose_drain_notifications_once
+   ...
+   fun:___ZN5dyld44APIs33_dyld_register_func_for_add_imageEPFvPK11mach_headerlE_block_invoke
+   ...
+}
+
+{
+   OSX1500:firehose_param_mach_msg2_1
+   Memcheck:Param
+   mach_msg2(msgh_voucher_and_id)
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:firehose_drain_notifications_once
+   ...
+   fun:___ZN5dyld44APIs33_dyld_register_func_for_add_imageEPFvPK11mach_headerlE_block_invoke
    ...
 }

@@ -272,7 +272,7 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
     return 0;
   }
 
-  VG_(debugLog)(2, "dyld_cache", "image is valid, forwarding to debuginfo: %s\n", path);
+  VG_(debugLog)(2, "dyld_cache", "image (%p) is valid, forwarding to debuginfo: %s\n", image, path);
   res = VG_(di_notify_dsc)(path, (Addr)image, len);
   if (res == 0) {
     VG_(debugLog)(2, "dyld_cache", "failed to load debuginfo from: %s\n", path);

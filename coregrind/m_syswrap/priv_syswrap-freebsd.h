@@ -199,15 +199,21 @@ DECL_TEMPLATE(freebsd, sys_undelete) // 205
 DECL_TEMPLATE(freebsd, sys_futimes) // 206
 // generic getpgod 207
 // generic poll 209
+#if !defined(VGP_arm64_freebsd)
 DECL_TEMPLATE(freebsd, sys_freebsd7___semctl) // 220
+#endif
 DECL_TEMPLATE(freebsd, sys_semget) // 221
 DECL_TEMPLATE(freebsd, sys_semop) // 222
+#if !defined(VGP_arm64_freebsd)
 DECL_TEMPLATE(freebsd, sys_freebsd7_msgctl) // 224
+#endif
 DECL_TEMPLATE(freebsd, sys_msgget) // 225
 DECL_TEMPLATE(freebsd, sys_msgsnd) // 226
 DECL_TEMPLATE(freebsd, sys_msgrcv) // 227
 DECL_TEMPLATE(freebsd, sys_shmat) // 228
+#if !defined(VGP_arm64_freebsd)
 DECL_TEMPLATE(freebsd, sys_freebsd7_shmctl) // 229
+#endif
 DECL_TEMPLATE(freebsd, sys_shmdt) // 230
 DECL_TEMPLATE(freebsd, sys_shmget) // 231
 DECL_TEMPLATE(freebsd, sys_clock_gettime) // 232

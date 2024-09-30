@@ -2208,6 +2208,7 @@ PRE(sys_futimes)
 
 // SYS_freebsd7___semctl   220
 // int semctl(int semid, int semnum, int cmd, ...);
+#if !defined(VGP_arm64_freebsd)
 PRE(sys_freebsd7___semctl)
 {
    union vki_semun* semun;
@@ -2243,6 +2244,7 @@ POST(sys_freebsd7___semctl)
       ML_(generic_POST_sys_semctl)(tid, RES, ARG1,ARG2,ARG3,ARG4);
    }
 }
+#endif
 
 // SYS_semget  221
 // int semget(key_t key, int nsems, int flag);
@@ -2265,6 +2267,7 @@ PRE(sys_semop)
 
 // SYS_freebsd7_msgctl  224
 // int msgctl(int msqid, int cmd, struct msqid_ds_old *buf);
+#if !defined(VGP_arm64_freebsd)
 PRE(sys_freebsd7_msgctl)
 {
    PRINT("sys_freebsd7_msgctl ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1,SARG2,ARG3 );
@@ -2291,6 +2294,7 @@ POST(sys_freebsd7_msgctl)
       break;
    }
 }
+#endif
 
 // SYS_msgget  225
 // int msgget(key_t key, int msgflg);
@@ -2354,6 +2358,7 @@ POST(sys_shmat)
 
 // SYS_freebsd7_shmctl  229
 // int shmctl(int shmid, int cmd, struct shmid_ds *buf);
+#if !defined(VGP_arm64_freebsd)
 PRE(sys_freebsd7_shmctl)
 {
    PRINT("sys_freebsd7_shmctl ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",SARG1,SARG2,ARG3);
@@ -2377,6 +2382,7 @@ POST(sys_freebsd7_shmctl)
       POST_MEM_WRITE( ARG3, sizeof(struct vki_shmid_ds_old) );
    }
 }
+#endif
 
 // SYS_shmdt   230
 // int shmdt(const void *addr);
@@ -6264,7 +6270,7 @@ PRE(sys_aio_mlock)
 }
 
 // SYS_procctl 544
-// amd64 / x86
+// amd64 / x86 / arm64
 
 // SYS_ppoll   545
 // int ppoll(struct pollfd fds[], nfds_t nfds,
@@ -7451,18 +7457,24 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // netbsd newreboot                                     208
    GENXY(__NR_poll,             sys_poll),              // 209
 
+#if !defined(VGP_arm64_freebsd)
    BSDXY(__NR_freebsd7___semctl, sys_freebsd7___semctl), // 220
+#endif
    BSDX_(__NR_semget,           sys_semget),            // 221
    BSDX_(__NR_semop,            sys_semop),             // 222
    // obs semconfig                                        223
 
+#if !defined(VGP_arm64_freebsd)
    BSDXY(__NR_freebsd7_msgctl,  sys_freebsd7_msgctl),   // 224
+#endif
    BSDX_(__NR_msgget,           sys_msgget),            // 225
    BSDX_(__NR_msgsnd,           sys_msgsnd),            // 226
    BSDXY(__NR_msgrcv,           sys_msgrcv),            // 227
 
    BSDXY(__NR_shmat,            sys_shmat),             // 228
+#if !defined(VGP_arm64_freebsd)
    BSDXY(__NR_freebsd7_shmctl,  sys_freebsd7_shmctl),   // 229
+#endif
    BSDXY(__NR_shmdt,            sys_shmdt),             // 230
    BSDX_(__NR_shmget,           sys_shmget),            // 231
 

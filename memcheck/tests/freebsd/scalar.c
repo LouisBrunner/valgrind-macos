@@ -781,7 +781,10 @@ int main(void)
       SY(SYS_poll, &fds, 1, 1); SUCC;
    }
 
-#if defined(SYS_freebsd7___semctl)
+// On aarch64 this is defined in the header but
+// the kernel returns ENOSYS
+// The aarch64 port postdates FreeBSD 7
+#if defined(SYS_freebsd7___semctl) && !defined(VGP_arm64_freebsd)
    /* SYS_freebsd7___semctl       220 */
    GO(SYS_freebsd7___semctl, "(IPC_STAT) 4s 1m");
    SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
@@ -800,7 +803,7 @@ int main(void)
 
    /* unimpl semconfig            223 */
 
-#if defined(SYS_freebsd7_msgctl)
+#if defined(SYS_freebsd7_msgctl) && !defined(VGP_arm64_freebsd)
    /* SYS_freebsd7_msgctl         224 */
    GO(SYS_freebsd7_msgctl, "(set) 3s 1m");
    SY(SYS_freebsd7_msgctl, x0, x0+1, x0); FAIL;
@@ -825,7 +828,7 @@ int main(void)
    GO(SYS_shmat, "3s 0m");
    SY(SYS_shmat, x0, x0, x0); FAIL;
 
-#if defined(SYS_freebsd7_shmctl)
+#if defined(SYS_freebsd7_shmctl) && !defined(VGP_arm64_freebsd)
    /* SYS_freebsd7_shmctl         229 */
    GO(SYS_freebsd7_shmctl, "3s 0m");
    SY(SYS_freebsd7_shmctl, x0, x0, x0); FAIL;

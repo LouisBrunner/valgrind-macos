@@ -3,3 +3,5 @@ none/tests/allexec32
 none/tests/allexec64
 none/tests/exec-sigmask
 memcheck/tests/sem
+# seen on macOS 13
+none/tests/sem

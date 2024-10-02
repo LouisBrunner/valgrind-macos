@@ -590,6 +590,7 @@ const HChar* showAMD64SseOp ( AMD64SseOp op ) {
       case Asse_PMADDUBSW: return "pmaddubsw";
       case Asse_F32toF16: return "vcvtps2ph(rm_field=$0x4).";
       case Asse_F16toF32: return "vcvtph2ps.";
+      case Asse_VFMADD213: return "vfmadd213";
       default: vpanic("showAMD64SseOp");
    }
 }
@@ -1056,6 +1057,28 @@ AMD64Instr* AMD64Instr_SseMOVQ ( HReg gpr, HReg xmm, Bool toXMM ) {
 //uu    i->Ain.AvxReRg.dst = rg;
 //uu    return i;
 //uu }
+AMD64Instr* AMD64Instr_Avx32FLo ( AMD64SseOp op, HReg src1, HReg src2, HReg dst ) {
+   AMD64Instr* i        = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag               = Ain_Avx32FLo;
+   i->Ain.Avx32FLo.op   = op;
+   i->Ain.Avx32FLo.src1 = src1;
+   i->Ain.Avx32FLo.src2 = src2;
+   i->Ain.Avx32FLo.dst  = dst;
+   vassert(op != Asse_MOV);
+   return i;
+}
+
+AMD64Instr* AMD64Instr_Avx64FLo ( AMD64SseOp op, HReg src1, HReg src2, HReg dst ) {
+   AMD64Instr* i        = LibVEX_Alloc_inline(sizeof(AMD64Instr));
+   i->tag               = Ain_Avx64FLo;
+   i->Ain.Avx64FLo.op   = op;
+   i->Ain.Avx64FLo.src1 = src1;
+   i->Ain.Avx64FLo.src2 = src2;
+   i->Ain.Avx64FLo.dst  = dst;
+   vassert(op != Asse_MOV);
+   return i;
+}
+
 AMD64Instr* AMD64Instr_EvCheck ( AMD64AMode* amCounter,
                                  AMD64AMode* amFailAddr ) {
    AMD64Instr* i             = LibVEX_Alloc_inline(sizeof(AMD64Instr));
@@ -1434,6 +1457,22 @@ void ppAMD64Instr ( const AMD64Instr* i, Bool mode64 )
       //uu    vex_printf(",");
       //uu    ppHRegAMD64(i->Ain.AvxReRg.dst);
       //uu    return;
+      case Ain_Avx32FLo:
+         vex_printf("%sss ", showAMD64SseOp(i->Ain.Avx32FLo.op));
+         ppHRegAMD64(i->Ain.Avx32FLo.src2);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Avx32FLo.src1);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Avx32FLo.dst);
+         return;
+      case Ain_Avx64FLo:
+         vex_printf("%ssd ", showAMD64SseOp(i->Ain.Avx64FLo.op));
+         ppHRegAMD64(i->Ain.Avx64FLo.src2);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Avx64FLo.src1);
+         vex_printf(",");
+         ppHRegAMD64(i->Ain.Avx64FLo.dst);
+         return;
       case Ain_EvCheck:
          vex_printf("(evCheck) decl ");
          ppAMD64AMode(i->Ain.EvCheck.amCounter);
@@ -1790,6 +1829,18 @@ void getRegUsage_AMD64Instr ( HRegUsage* u, const AMD64Instr* i, Bool mode64 )
       //uu       }
       //uu    }
       //uu    return;
+      case Ain_Avx32FLo:
+         vassert(i->Ain.Avx32FLo.op != Asse_MOV);
+         addHRegUse(u, HRmRead, i->Ain.Avx32FLo.src1);
+         addHRegUse(u, HRmRead, i->Ain.Avx32FLo.src2);
+         addHRegUse(u, HRmModify, i->Ain.Avx32FLo.dst);
+         return;
+      case Ain_Avx64FLo:
+         vassert(i->Ain.Avx64FLo.op != Asse_MOV);
+         addHRegUse(u, HRmRead, i->Ain.Avx64FLo.src1);
+         addHRegUse(u, HRmRead, i->Ain.Avx64FLo.src2);
+         addHRegUse(u, HRmModify, i->Ain.Avx64FLo.dst);
+         return;
       case Ain_EvCheck:
          /* We expect both amodes only to mention %rbp, so this is in
             fact pointless, since %rbp isn't allocatable, but anyway.. */
@@ -1999,6 +2050,16 @@ void mapRegs_AMD64Instr ( HRegRemap* m, AMD64Instr* i, Bool mode64 )
       //uu    mapReg(m, &i->Ain.AvxReRg.src);
       //uu    mapReg(m, &i->Ain.AvxReRg.dst);
       //uu    return;
+      case Ain_Avx32FLo:
+         mapReg(m, &i->Ain.Avx32FLo.src1);
+         mapReg(m, &i->Ain.Avx32FLo.src2);
+         mapReg(m, &i->Ain.Avx32FLo.dst);
+         return;
+      case Ain_Avx64FLo:
+         mapReg(m, &i->Ain.Avx64FLo.src1);
+         mapReg(m, &i->Ain.Avx64FLo.src2);
+         mapReg(m, &i->Ain.Avx64FLo.dst);
+         return;
       case Ain_EvCheck:
          /* We expect both amodes only to mention %rbp, so this is in
             fact pointless, since %rbp isn't allocatable, but anyway.. */
@@ -4060,6 +4121,53 @@ Int emit_AMD64Instr ( /*MB_MOD*/Bool* is_profInc,
    //uu    p = doAMode_M(p, dvreg2ireg(i->Ain.AvxLdSt.reg), i->Ain.AvxLdSt.addr);
    //uu      goto done;
    //uu }
+
+   case Ain_Avx32FLo: {
+      UInt d = vregEnc3210(i->Ain.Avx32FLo.dst);
+      UInt v = vregEnc3210(i->Ain.Avx32FLo.src1);
+      UInt s = vregEnc3210(i->Ain.Avx32FLo.src2);
+      UInt m = 2, pp = 1;
+      UInt opcode;
+      switch (i->Ain.Avx32FLo.op) {
+         case Asse_VFMADD213:
+            // VFMADD213SS %xmmS2, %xmmS1, %xmmD (xmm regs range 0 .. 15)
+            opcode = 0xa9;
+            break;
+         default:
+            goto bad;
+      }
+      // 0xC4 : ~d3 1 ~s3 o4 o3 o2 o1 o0 : 0 ~v3 ~v2 ~v1 ~v0 0 p1 p0 : opcode_byte
+      //      :   1 1  d2 d1 d0 s2 s1 s0
+      *p++ = 0xC4; // 3-byte VEX
+      *p++ = ((((~d)>>3)&1)<<7) | (1<<6) | ((((~s)>>3)&1)<<5) | m;
+      *p++ = ((~v&0x0f) << 3) | pp;
+      *p++ = opcode;
+      *p++ = (1<<7) | (1<<6) | ((d&7) << 3) | ((s&7) << 0);
+      goto done;
+   }
+   case Ain_Avx64FLo: {
+      UInt d = vregEnc3210(i->Ain.Avx64FLo.dst);
+      UInt v = vregEnc3210(i->Ain.Avx64FLo.src1);
+      UInt s = vregEnc3210(i->Ain.Avx64FLo.src2);
+      UInt m = 2, pp = 1;
+      UInt opcode;
+      switch (i->Ain.Avx64FLo.op) {
+         case Asse_VFMADD213:
+            // VFMADD213SD %xmmS2, %xmmS1, %xmmD (xmm regs range 0 .. 15)
+            opcode = 0xa9;
+            break;
+         default:
+            goto bad;
+      }
+      // 0xC4 : ~d3 1 ~s3 o4 o3 o2 o1 o0 : 1 ~v3 ~v2 ~v1 ~v0 0 p1 p0 : opcode_byte
+      //      :   1 1  d2 d1 d0 s2 s1 s0
+      *p++ = 0xC4; // 3-byte VEX
+      *p++ = ((((~d)>>3)&1)<<7) | (1<<6) | ((((~s)>>3)&1)<<5) | m;
+      *p++ = (1<<7)|((~v&0x0f) << 3) | pp;
+      *p++ = opcode;
+      *p++ = (1<<7) | (1<<6) | ((d&7) << 3) | ((s&7) << 0);
+      goto done;
+   }
 
    case Ain_EvCheck: {
       /* We generate:

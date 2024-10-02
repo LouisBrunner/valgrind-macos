@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -89,7 +89,7 @@ do {                                                                  \
   is the oldSP+8. So, effectively, the BP is found 8 bytes below the SP.
   The fp_min must take this into account, otherwise, VG_(use_CF_info) will
   not unwind the BP. */
-   
+
 /* ------------------------ x86 ------------------------- */
 
 #if defined(VGP_x86_linux) || defined(VGP_x86_darwin) \
@@ -175,7 +175,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       UInt Ck; // unwind fp invalid+store FPUNWIND
       UInt MS; // microsoft unwind
    } stats;
-   
+
    const Bool   debug = False;
    //                 = VG_(debugLog_getLevel) () > 3;
    //                 = True;
@@ -251,7 +251,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (fps) fps[0] = uregs.xbp;
       ips[0] = uregs.xip;
       return 1;
-   } 
+   }
 #  endif
 
    if (UNLIKELY (fp_CF_verif_generation != VG_(debuginfo_generation)())) {
@@ -404,7 +404,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          }
 
          old_xsp = uregs.xsp;
-         uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %ebp*/ 
+         uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %ebp*/
                                + sizeof(Addr) /*ra*/;
          uregs.xbp = (((UWord*)uregs.xbp)[0]);
          if (xip_verif > CFUNWIND) {
@@ -499,9 +499,9 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                  "CF %u (xi %u xs %u xb %u) "
                  "Ck %u MS %u\n",
                  stats.nr, stats.nf,
-                 stats.Ca, stats.FF, 
+                 stats.Ca, stats.FF,
                  stats.Cf,
-                 stats.Fw, stats.FO, 
+                 stats.Fw, stats.FO,
                  stats.CF, stats.xi, stats.xs, stats.xb,
                  stats.Ck, stats.MS);
    }
@@ -581,7 +581,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (fps) fps[0] = uregs.xbp;
       ips[0] = uregs.xip;
       return 1;
-   } 
+   }
 #  endif
 
    /* fp is %rbp.  sp is %rsp.  ip is %rip. */
@@ -612,7 +612,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       i++;
    }
 #  endif
-       
+
    /* Loop unwinding the stack. Note that the IP value we get on
     * each pass (whether from CFI info or a stack frame) is a
     * return address so is actually after the calling instruction
@@ -675,7 +675,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          /* fp looks sane, so use it. */
          uregs.xip = (((UWord*)uregs.xbp)[1]);
          if (0 == uregs.xip || 1 == uregs.xip) break;
-         uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %rbp*/ 
+         uregs.xsp = uregs.xbp + sizeof(Addr) /*saved %rbp*/
                                + sizeof(Addr) /*ra*/;
          if (old_xsp >= uregs.xsp) {
             if (debug)
@@ -703,7 +703,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          - check that the supposed return address is in
            an executable page
          - check that the supposed return address is just after a call insn
-         - given those two checks, don't just consider *sp as the return 
+         - given those two checks, don't just consider *sp as the return
            address; instead scan a likely section of stack (eg sp .. sp+256)
            and use suitable values found there.
       */
@@ -712,7 +712,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          if (0 == uregs.xip || 1 == uregs.xip) break;
          if (sps) sps[i] = uregs.xsp;
          if (fps) fps[i] = uregs.xbp;
-         ips[i++] = uregs.xip == 0 
+         ips[i++] = uregs.xip == 0
                     ? 0 /* sp[0] == 0 ==> stuck at the bottom of a
                            thread stack */
                     : uregs.xip - 1;
@@ -800,7 +800,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (fps) fps[0] = fp;
       ips[0] = ip;
       return 1;
-   } 
+   }
 
    /* fp is %r1.  ip is %cia.  Note, ppc uses r1 as both the stack and
       frame pointers. */
@@ -968,7 +968,7 @@ static Bool looks_like_Thumb_call32 ( UShort w0, UShort w1 )
 {
    if (0)
       VG_(printf)("isT32call %04x %04x\n", (UInt)w0, (UInt)w1);
-   // BL  simm26 
+   // BL  simm26
    if ((w0 & 0xF800) == 0xF000 && (w1 & 0xC000) == 0xC000) return True;
    // BLX simm26
    if ((w0 & 0xF800) == 0xF000 && (w1 & 0xC000) == 0xC000) return True;
@@ -1070,7 +1070,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (fps) fps[0] = 0;
       ips[0] = uregs.r15;
       return 1;
-   } 
+   }
 
    /* */
 
@@ -1161,7 +1161,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 /* ------------------------ arm64 ------------------------- */
 
-#if defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
+#if defined(VGP_arm64_linux) || defined(VGP_arm64_darwin) || defined(VGP_arm64_freebsd)
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -1207,14 +1207,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* vg_assert(fp_min <= fp_max);*/
    // On Darwin, this kicks in for pthread-related stack traces, so they're
    // only 1 entry long which is wrong.
+#  if defined(VGO_linux)
    if (fp_min + 512 >= fp_max) {
+#  elif defined(VGO_freebsd)
+   if (fp_max == 0) {
+#endif
+#  if defined(VGO_linux) || defined(VGO_freebsd)
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
       if (sps) sps[0] = uregs.sp;
       if (fps) fps[0] = uregs.x29;
       ips[0] = uregs.pc;
       return 1;
-   } 
+   }
+#endif
 
    /* */
 
@@ -1516,7 +1522,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
             sps[i] = uregs.sp + frame_offset;
          }
          uregs.sp = uregs.sp + frame_offset;
-         
+
          if (fps) {
             fps[i] = fps[0];
             uregs.fp = fps[0];
@@ -1564,7 +1570,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 /*------------------------------------------------------------*/
 
 UInt VG_(get_StackTrace_with_deltas)(
-         ThreadId tid, 
+         ThreadId tid,
          /*OUT*/StackTrace ips, UInt n_ips,
          /*OUT*/StackTrace sps,
          /*OUT*/StackTrace fps,
@@ -1622,13 +1628,13 @@ UInt VG_(get_StackTrace_with_deltas)(
                   tid, stack_highest_byte,
                   startRegs.r_pc, startRegs.r_sp);
 
-   return VG_(get_StackTrace_wrk)(tid, ips, n_ips, 
+   return VG_(get_StackTrace_wrk)(tid, ips, n_ips,
                                        sps, fps,
                                        &startRegs,
                                        stack_highest_byte);
 }
 
-UInt VG_(get_StackTrace) ( ThreadId tid, 
+UInt VG_(get_StackTrace) ( ThreadId tid,
                            /*OUT*/StackTrace ips, UInt max_n_ips,
                            /*OUT*/StackTrace sps,
                            /*OUT*/StackTrace fps,
@@ -1652,10 +1658,10 @@ static void printIpDesc(UInt n, DiEpoch ep, Addr ip, void* uu_opaque)
       if (VG_(clo_xml)) {
          VG_(printf_xml)("    %s\n", buf);
       } else {
-         VG_(message)(Vg_UserMsg, "   %s %s\n", 
+         VG_(message)(Vg_UserMsg, "   %s %s\n",
                       ( n == 0 ? "at" : "by" ), buf);
       }
-      n++; 
+      n++;
       // Increase n to show "at" for only one level.
    } while (VG_(next_IIPC)(iipc));
    VG_(delete_IIPC)(iipc);

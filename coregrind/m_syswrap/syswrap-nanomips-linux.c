@@ -610,7 +610,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_fchownat,               sys_fchownat),
    GENX_ (__NR_fchown,                 sys_fchown),
    LINXY (__NR_openat,                 sys_openat),
-   GENXY (__NR_close,                  sys_close),
+   GENX_ (__NR_close,                  sys_close),
    LINX_ (__NR_vhangup,                sys_vhangup),
    LINXY (__NR_pipe2,                  sys_pipe2),
    LINX_ (__NR_quotactl,               sys_quotactl),

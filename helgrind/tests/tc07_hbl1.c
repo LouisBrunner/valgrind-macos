@@ -10,6 +10,7 @@
 #undef PLAT_amd64_darwin
 #undef PLAT_x86_freebsd
 #undef PLAT_amd64_freebsd
+#undef PLAT_arm64_freebsd
 #undef PLAT_x86_linux
 #undef PLAT_amd64_linux
 #undef PLAT_ppc32_linux
@@ -29,6 +30,8 @@
 #  define PLAT_x86_freebsd 1
 #elif defined(__FreeBSD__) && defined(__amd64__)
 #  define PLAT_amd64_freebsd 1
+#elif defined(__FreeBSD__) && defined(__aarch64__)
+#  define PLAT_arm64_freebsd 1
 #elif defined(__linux__) && defined(__i386__)
 #  define PLAT_x86_linux 1
 #elif defined(__linux__) && defined(__x86_64__)
@@ -83,7 +86,7 @@
       : /*out*/ : /*in*/ "r"(&(_lval))       \
       : /*trash*/ "r8", "r9", "cc", "memory" \
   );
-#elif defined(PLAT_arm64_linux)
+#elif defined(PLAT_arm64_linux) || defined(PLAT_arm64_freebsd)
 #  define INC(_lval,_lqual) \
   __asm__ __volatile__( \
       "1:\n"                                 \

@@ -67,6 +67,7 @@
 #include <mach/mach.h>
 #include <mach/mach_vm.h>
 #include <semaphore.h>
+#include <sys/kdebug.h>
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 #define msgh_request_port      msgh_remote_port
@@ -733,6 +734,186 @@ void VG_(show_open_ports)(void)
    }
 
    VG_(message)(Vg_UserMsg, "\n");
+}
+
+
+/* ---------------------------------------------------------------------
+   kdebug helpers
+   ------------------------------------------------------------------ */
+
+// From https://newosxbook.com/tools/kdv.html
+static const HChar *kdebug_std_codes[] =
+{
+  NULL,
+  "MACH",    // #define DBG_MACH                1
+  "NETWORK", // #define DBG_NETWORK             2
+  "FSYSTEM", // #define DBG_FSYSTEM             3
+  "BSD",     // #define DBG_BSD                 4
+  "IOKIT",   // #define DBG_IOKIT               5
+  "DRIVERS", // #define DBG_DRIVERS             6
+  "TRACE",   // #define DBG_TRACE               7
+  "DLIL",    // #define DBG_DLIL                8
+  "PTHREAD", // #define DBG_PTHREAD             9
+  "CORESTORAGE", // #define DBG_CORESTORAGE         10
+  "COREGRAPHICS", // #define DBG_CG                  11
+  "MONOTONICS", // #define DBG_MONOTONIC           12
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  "MISC",    // #define DBG_MISC                20
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  "SECURITY", // As of 10.10
+  "DYLD",    // #define DBG_DYLD                31
+  "QT",      // #define DBG_QT                  32
+  "APPS",    // #define DBG_APPS                33
+  "LAUNCHD", // #define DBG_LAUNCHD             34
+  "SILICON", // #define DBG_SILICON             35
+  "HANGTRACER",      // iOS 9: undocumented
+  "PERF" ,    // #define DBG_PERF                37
+  // added in 10.9
+  "IMPORTANCE",  // #define DBG_IMPORTANCE          38
+  NULL,  // Apparently present in iOS?
+  // Added in 10.10
+  "BANK",    // #define DBG_BANK                40
+  "XPC",     //#define DBG_XPC                 41
+  "ATM" ,    // #define DBG_ATM                 42
+  "ARIADNE", // #define DBG_ARIADNE             43
+  // Added in 10.11
+  "DAEMON",  // #define DBG_DAEMON              44
+  "ENERGYTRACE",  // #define DBG_ENERGYTRACE         45
+  "DISPATCH", // #define DBG_DISPATCH            46
+  NULL, NULL,
+  "IMG", // #define DBG_IMG                 49
+  NULL,
+  "UMALLOC", // #define DBG_UMALLOC             51
+  NULL,
+  "TURNSTILE", // #define DBG_TURNSTILE           53
+  "AUDIO", // #define DBG_AUDIO               54
+  NULL, NULL, NULL, NULL, NULL, // 55-59
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 60-69
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 70-79
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 80-89
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 90-99
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 100-109
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 110-119
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 120-129
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 130-139
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 140-149
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 150-159
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 160-169
+  "WINDOWSERVER", // apparently deprecated in 10.11 and merged with 49
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 171-179
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 180-189
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 190-199
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 200-209
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 210-219
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 220-229
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 230-238
+  "IOS_APPS", // iOS: Used by tons of Apps, undocumented
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 240-249
+  NULL, NULL, NULL, NULL, NULL, // 250-254
+  "MIG", // #define DBG_MIG                 255
+};
+
+struct KDebugTraceCode {
+  ULong code;
+  const HChar name[64];
+};
+static Bool kdebug_trace_codes_initd = False;
+static UInt kdebug_trace_codes_count = 0;
+static struct KDebugTraceCode* kdebug_trace_codes = NULL;
+
+static const HChar *kdebug_debugid(ULong did)
+{
+  static HChar buf[64];
+  Int class = KDBG_EXTRACT_CLASS(did);
+  ULong event_id = did & KDBG_EVENTID_MASK;
+  HChar dir = '\0';
+  const HChar* found_class = NULL;
+
+  if (!kdebug_trace_codes_initd) {
+    HChar rbuf[1024];
+    Int leftover = 0;
+
+    kdebug_trace_codes_initd = True;
+    SysRes fd = VG_(open)("/usr/share/misc/trace.codes", O_RDONLY, 0);
+    if (sr_isError(fd)) {
+      VG_(close)(sr_Res(fd));
+    } else {
+      kdebug_trace_codes_count = 0;
+      while (1) {
+        Int count = VG_(read)(sr_Res(fd), rbuf, sizeof(rbuf));
+        if (count <= 0) {
+          break;
+        }
+        for (HChar* p = rbuf; p < rbuf + count; p += 1) {
+          if (*p == '\n') {
+            kdebug_trace_codes_count += 1;
+          }
+        }
+      }
+      kdebug_trace_codes = VG_(malloc)("kdebug_trace_codes",
+                                       kdebug_trace_codes_count *
+                                       sizeof(struct KDebugTraceCode));
+      VG_(lseek)(sr_Res(fd), 0, VKI_SEEK_SET);
+      kdebug_trace_codes_count = 0;
+      while (1) {
+        Int count = VG_(read)(sr_Res(fd), rbuf+leftover, sizeof(rbuf)-leftover);
+        if (count <= 0) {
+          break;
+        }
+        count += leftover;
+        Int start = 0;
+        for (HChar* p = rbuf; p < rbuf + count; p += 1) {
+          if (*p != '\n') {
+            continue;
+          }
+
+          HChar* end = NULL;
+          *p = '\0';
+          kdebug_trace_codes[kdebug_trace_codes_count].code = VG_(strtoll16)(rbuf+start, &end);
+          while (*end == ' ' || *end == '\t') {
+            end += 1;
+          }
+          VG_(strlcpy)((HChar*)kdebug_trace_codes[kdebug_trace_codes_count].name, end, sizeof(kdebug_trace_codes[kdebug_trace_codes_count].name));
+          kdebug_trace_codes_count += 1;
+          start = p - rbuf + 1;
+        }
+        if (start < count) {
+          leftover = count - start;
+          VG_(memmove)(rbuf, rbuf+start, leftover);
+        }
+      }
+      VG_(close)(sr_Res(fd));
+    }
+  }
+
+  for (Int i = 0; i < kdebug_trace_codes_count; i += 1) {
+    const struct KDebugTraceCode* entry = &kdebug_trace_codes[i];
+    if (entry->code == event_id) {
+      found_class = entry->name;
+      break;
+    }
+  }
+  if (found_class == NULL) {
+    found_class = kdebug_std_codes[class];
+  }
+  if (found_class == NULL) {
+    found_class = "UNKNOWN";
+  }
+
+  if (did & DBG_FUNC_START) {
+    dir = '>';
+  }
+  if (did & DBG_FUNC_END) {
+    dir = '<';
+  }
+
+  if (dir) {
+    VG_(sprintf)(buf, "%c%s", dir, found_class);
+  } else {
+    VG_(sprintf)(buf, "%s", found_class);
+  }
+
+  return buf;
 }
 
 
@@ -10317,6 +10498,10 @@ PRE(bsdthread_ctl)
                  void*, cmd, void*, arg1, void*, arg2, void*, arg3);
 }
 
+// syscalls.master says
+// int csrctl(uint32_t op, user_addr_t useraddr, user_addr_t usersize) NO_SYSCALL_STUB;
+// but https://github.com/search?q=repo%3Aapple-open-source%2Fmacos%20__csrctl&type=code says
+// int __csrctl(csr_op_t op, void *buffer, size_t size);
 PRE(csrctl)
 {
    switch (ARG1) {
@@ -10430,6 +10615,12 @@ POST(openat)
 
 #if DARWIN_VERS >= DARWIN_10_11
 
+PRE(kdebug_trace_string)
+{
+  PRINT("kdebug_trace_string(%#lx (%s), %#lx, %s)", ARG1, kdebug_debugid(ARG1), ARG2, (HChar*)(Addr)ARG3);
+  SET_STATUS_Success(0);
+}
+
 PRE(kevent_qos)
 {
    PRINT("kevent_qos( %ld, %#lx, %ld, %#lx, %ld, %#lx, %ld, %ld )",
@@ -10508,6 +10699,139 @@ POST(getentropy)
 {
     vg_assert(SUCCESS);
     POST_MEM_WRITE( ARG1, ARG2 );
+}
+
+PRE(necp_open)
+{
+   PRINT("necp_open(%#lx)", ARG1);
+   PRE_REG_READ1(int, "necp_open", int, flags);
+}
+
+PRE(necp_client_action)
+{
+   PRINT("necp_client_action(%lu, %#lx, %#lx, %lu, %#lx, %lu)",
+     ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   PRE_REG_READ6(int, "necp_client_action",
+     int, necp_fd, uint32_t, action,
+     unsigned char*, client_id, size_t, client_id_len,
+     uint8_t*, buffer, size_t, buffer_size);
+
+   switch (ARG2 /* request */) {
+   case VKI_NECP_CLIENT_ACTION_ADD:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0 || ARG6 > VKI_NECP_MAX_CLIENT_PARAMETERS_SIZE) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_WRITE( "necp_client_action(ADD, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(ADD, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_CLAIM:
+      if (ARG4 != sizeof(uuid_t)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(CLAIM, client_id)", ARG3, ARG4);
+      break;
+   case VKI_NECP_CLIENT_ACTION_REMOVE:
+      if (ARG4 != sizeof(uuid_t) || (ARG5 != 0 && ARG6 != VKI_IFNET_STATS_PER_FLOW_SIZE)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(REMOVE, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(REMOVE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS:
+      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      if (ARG3 != 0) {
+        PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, client_id)", ARG3, ARG4);
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_RESULT:
+      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      if (ARG3 != 0) {
+        PRE_MEM_READ( "necp_client_action(COPY_RESULT, client_id)", ARG3, ARG4);
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_RESULT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT:
+      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      if (ARG3 != 0) {
+        PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, client_id)", ARG3, ARG4);
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_LIST:
+      if (ARG6 < sizeof(u_int32_t)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_LIST, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_AGENT:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(AGENT, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(AGENT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_AGENT:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_AGENT, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
+      PRE_MEM_WRITE( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_AGENT_USE:
+      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_agent_use_parameters)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(AGENT_USE, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
+      PRE_MEM_WRITE( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_INTERFACE:
+      if (ARG4 != sizeof(u_int32_t) || ARG6 < sizeof(struct vki_necp_interface_details_legacy)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_INTERFACE, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(COPY_INTERFACE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_ROUTE_STATISTICS:
+      if (ARG4 != sizeof(uuid_t) || ARG6 < VKI_NECP_STAT_COUNTS_SIZE) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(COPY_ROUTE_STATISTICS, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(COPY_ROUTE_STATISTICS, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_UPDATE_CACHE:
+      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_cache_buffer)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE:
+      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, buffer)", ARG5, ARG6);
+      break;
+   case VKI_NECP_CLIENT_ACTION_SIGN:
+      if (ARG4 < sizeof(struct vki_necp_client_signable) || ARG6 != VKI_NECP_CLIENT_ACTION_SIGN_TAG_LENGTH) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(SIGN, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(SIGN, buffer)", ARG5, ARG6);
+      break;
+   default:
+      VG_(printf)("UNKNOWN necp_client_action action %#lx\n", ARG2);
+      break;
+   }
 }
 
 static const HChar *ulop_name(int op)
@@ -10720,6 +11044,47 @@ POST(mach_generate_activity_id)
 
 #if DARWIN_VERS >= DARWIN_10_13
 
+PRE(openat_nocancel)
+{
+   if (ARG3 & VKI_O_CREAT) {
+      // 4-arg version
+      PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+      PRE_REG_READ4(long, "openat_nocancel",
+                    int, dfd, const char *, filename, int, flags, int, mode);
+   } else {
+     // 3-arg version
+     PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+     PRE_REG_READ3(long, "openat_nocancel",
+                   int, dfd, const char *, filename, int, flags);
+   }
+   PRE_MEM_RASCIIZ( "openat_nocancel(filename)", ARG2 );
+
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+POST(openat_nocancel)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
 PRE(kevent_id)
 {
   PRINT("kevent_id(id:%ld, changelist:%#lx, nchanges:%ld, eventlist:%#lx, nevents:%ld, data_out:%#lx, data_available:%ld, flags:%lx)",
@@ -10763,46 +11128,6 @@ POST(thread_get_special_reply_port)
    PRINT("special reply port %s", name_for_port(RES));
 }
 
-PRE(openat_nocancel)
-{
-   if (ARG3 & VKI_O_CREAT) {
-      // 4-arg version
-      PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
-            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
-      PRE_REG_READ4(long, "openat_nocancel",
-                    int, dfd, const char *, filename, int, flags, int, mode);
-   } else {
-     // 3-arg version
-     PRINT("openat_nocancel ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
-           SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
-     PRE_REG_READ3(long, "openat_nocancel",
-                   int, dfd, const char *, filename, int, flags);
-   }
-   PRE_MEM_RASCIIZ( "openat_nocancel(filename)", ARG2 );
-
-   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
-      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
-      be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
-
-   /* Otherwise handle normally */
-   *flags |= SfMayBlock;
-}
-POST(openat_nocancel)
-{
-   vg_assert(SUCCESS);
-   if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
-      VG_(close)(RES);
-      SET_STATUS_Failure( VKI_EMFILE );
-   } else {
-      if (VG_(clo_track_fds))
-         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
-   }
-}
 
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 
@@ -10865,139 +11190,6 @@ POST(task_restartable_ranges_register)
    if (!reply->RetCode) {
    } else {
       PRINT("mig return %d", reply->RetCode);
-   }
-}
-
-PRE(necp_open)
-{
-   PRINT("necp_open(%#lx)", ARG1);
-   PRE_REG_READ1(int, "necp_open", int, flags);
-}
-
-PRE(necp_client_action)
-{
-   PRINT("necp_client_action(%lu, %#lx, %#lx, %lu, %#lx, %lu)",
-     ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
-   PRE_REG_READ6(int, "necp_client_action",
-     int, necp_fd, uint32_t, action,
-     unsigned char*, client_id, size_t, client_id_len,
-     uint8_t*, buffer, size_t, buffer_size);
-
-   switch (ARG2 /* request */) {
-   case VKI_NECP_CLIENT_ACTION_ADD:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0 || ARG6 > VKI_NECP_MAX_CLIENT_PARAMETERS_SIZE) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_WRITE( "necp_client_action(ADD, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(ADD, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_CLAIM:
-      if (ARG4 != sizeof(uuid_t)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(CLAIM, client_id)", ARG3, ARG4);
-      break;
-   case VKI_NECP_CLIENT_ACTION_REMOVE:
-      if (ARG4 != sizeof(uuid_t) || (ARG5 != 0 && ARG6 != VKI_IFNET_STATS_PER_FLOW_SIZE)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(REMOVE, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(REMOVE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS:
-      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      if (ARG3 != 0) {
-        PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, client_id)", ARG3, ARG4);
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_PARAMETERS, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_RESULT:
-      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      if (ARG3 != 0) {
-        PRE_MEM_READ( "necp_client_action(COPY_RESULT, client_id)", ARG3, ARG4);
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_RESULT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT:
-      if ((ARG3 != 0 && ARG4 != sizeof(uuid_t)) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      if (ARG3 != 0) {
-        PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, client_id)", ARG3, ARG4);
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_UPDATED_RESULT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_LIST:
-      if (ARG6 < sizeof(u_int32_t)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_LIST, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_AGENT:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(AGENT, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(AGENT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_AGENT:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_AGENT, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
-      PRE_MEM_WRITE( "necp_client_action(COPY_AGENT, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_AGENT_USE:
-      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_agent_use_parameters)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(AGENT_USE, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
-      PRE_MEM_WRITE( "necp_client_action(AGENT_USE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_INTERFACE:
-      if (ARG4 != sizeof(u_int32_t) || ARG6 < sizeof(struct vki_necp_interface_details_legacy)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_INTERFACE, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(COPY_INTERFACE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_ROUTE_STATISTICS:
-      if (ARG4 != sizeof(uuid_t) || ARG6 < VKI_NECP_STAT_COUNTS_SIZE) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(COPY_ROUTE_STATISTICS, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(COPY_ROUTE_STATISTICS, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_UPDATE_CACHE:
-      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_cache_buffer)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, client_id)", ARG3, ARG4);
-      PRE_MEM_READ( "necp_client_action(UPDATE_CACHE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE:
-      if (ARG4 != sizeof(uuid_t) || ARG6 == 0) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(COPY_CLIENT_UPDATE, buffer)", ARG5, ARG6);
-      break;
-   case VKI_NECP_CLIENT_ACTION_SIGN:
-      if (ARG4 < sizeof(struct vki_necp_client_signable) || ARG6 != VKI_NECP_CLIENT_ACTION_SIGN_TAG_LENGTH) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-      PRE_MEM_READ( "necp_client_action(SIGN, client_id)", ARG3, ARG4);
-      PRE_MEM_WRITE( "necp_client_action(SIGN, buffer)", ARG5, ARG6);
-      break;
-   default:
-      VG_(printf)("UNKNOWN necp_client_action action %#lx\n", ARG2);
-      break;
    }
 }
 
@@ -11157,6 +11349,22 @@ PRE(map_with_linking_np)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 15.0 (Sequoia)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_15_00
+
+PRE(kdebug_trace64)
+{
+  PRINT("kdebug_trace64(%#lx (%s), %#lx, %#lx, %#lx, %#lx)",
+         ARG1, kdebug_debugid(ARG1), ARG2, ARG3, ARG4, ARG5);
+  SET_STATUS_Success(0);
+}
+
+#endif /* DARWIN_VERS >= DARWIN_15_00 */
+
+
+/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -11186,7 +11394,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read,        sys_read),
    GENX_(__NR_write,       sys_write),
    GENXY(__NR_open,        sys_open),
-   GENXY(__NR_close,       sys_close),
+   GENX_(__NR_close,       sys_close),
    GENXY(__NR_wait4,       sys_wait4),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(8)),     // old creat
    GENX_(__NR_link,        sys_link),
@@ -11370,8 +11578,16 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(175)),   // old gc_control
 // _____(__NR_add_profil),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)),   // ???
+#if DARWIN_VERS >= DARWIN_10_11
+   MACX_(__NR_kdebug_trace_string, kdebug_trace_string), // 178
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
+#endif
+#if DARWIN_VERS >= DARWIN_15_00
+   MACX_(__NR_kdebug_trace64, kdebug_trace64), // 179
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(179)),   // ???
+#endif
    MACX_(__NR_kdebug_trace, kdebug_trace),     // 180
    GENX_(__NR_setgid,      sys_setgid),
    MACX_(__NR_setegid,     setegid),
@@ -11654,7 +11870,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read_nocancel,     sys_read),
    GENX_(__NR_write_nocancel,    sys_write),
    GENXY(__NR_open_nocancel,     sys_open),
-   GENXY(__NR_close_nocancel,    sys_close),
+   GENX_(__NR_close_nocancel,    sys_close),
    GENXY(__NR_wait4_nocancel,    sys_wait4),   // 400
    MACXY(__NR_recvmsg_nocancel,  recvmsg),
    MACX_(__NR_sendmsg_nocancel,  sendmsg),
@@ -11750,12 +11966,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_clonefileat),                             // 462
 // _____(__NR_renameatx_np),                            // 488
    MACXY(__NR_getentropy, getentropy),                  // 500
-#endif
-#if DARWIN_VERS >= DARWIN_10_15
    MACX_(__NR_necp_open, necp_open),                    // 501
    MACX_(__NR_necp_client_action, necp_client_action),  // 502
-#endif
-#if DARWIN_VERS >= DARWIN_10_12
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(503)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(504)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(505)),        // ???

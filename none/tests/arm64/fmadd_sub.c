@@ -34,9 +34,9 @@ print_double(const char *ident, double x)
 int
 main(int argc, char **argv)
 {
-  float x[] = { 55,                  0.98076171874999996, 0, 1, 0xFFFFFFFF } ;
-  float y[] = { 0.69314718055994529, 1.015625,            0, 1, 0xFFFFFFFF };
-  float z[] = { 38.123094930796988,  1,                   0, 1, 0xFFFFFFFF };
+  float x[] = { 55,                  0.98076171874999996, 0, 1, (float)0xFFFFFFFF } ;
+  float y[] = { 0.69314718055994529, 1.015625,            0, 1, (float)0xFFFFFFFF };
+  float z[] = { 38.123094930796988,  1,                   0, 1, (float)0xFFFFFFFF };
   float dst = -5;
 
   double dx[] = { 55,                  0.98076171874999996, 0, 1, 0xFFFFFFFF } ;

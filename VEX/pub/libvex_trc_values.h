@@ -77,6 +77,8 @@
 #define VEX_TRC_JMP_NODECODE   69  /* next instruction is not decodable */
 #define VEX_TRC_JMP_MAPFAIL    71  /* address translation failed */
 
+#define VEX_TRC_JMP_EXTENSION 114  /* invoke extension before continuing */
+
 #define VEX_TRC_JMP_SYS_SYSCALL  73 /* do syscall before continuing */
 #define VEX_TRC_JMP_SYS_INT32    75 /* do syscall before continuing */
 #define VEX_TRC_JMP_SYS_INT128   77 /* do syscall before continuing */

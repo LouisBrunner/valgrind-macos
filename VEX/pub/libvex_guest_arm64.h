@@ -124,7 +124,7 @@ typedef
       /* A 128-bit value which is used to represent the FPSR.QC (sticky
          saturation) flag, when necessary.  If the value stored here
          is zero, FPSR.QC is currently zero.  If it is any other value,
-         FPSR.QC is currently one.  We don't currently represent any 
+         FPSR.QC is currently one.  We don't currently represent any
          other bits of FPSR, so this is all that that is for FPSR. */
       U128 guest_QCFLAG;
 
@@ -169,6 +169,12 @@ typedef
       ULong guest_LLSC_DATA_LO64; // Original value at _ADDR+0.
       ULong guest_LLSC_DATA_HI64; // Original value at _ADDR+8.
 
+      /* Used for FreeBSD syscall dispatching. */
+      ULong guest_SC_CLASS;
+      /* Used for FreeBSD client syscall when putting the carry flag
+         value into VEX. */
+      UInt guest_SETC;
+      UInt pad_end_0;
       /* Padding to make it have an 16-aligned size */
       UInt  pad_end_0;
       /* ULong pad_end_1; */
@@ -193,11 +199,10 @@ extern
 ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/
                                    const VexGuestARM64State* vex_state );
 
-/* Set the carry flag in the given state to 'new_carry_flag', which
-   should be zero or one. */
+/* Put a new value in the carry flag. */
 extern
-void LibVEX_GuestARM64_put_nzcv_c ( /*MOD*/VexGuestARM64State* vex_state,
-                                    ULong new_carry_flag );
+void LibVEX_GuestARM64_put_nzcv_c ( /*IN*/  ULong new_carry_flag,
+                                    /*MOD*/ VexGuestARM64State* vex_state );
 
 /* Calculate the ARM64 FPSR state from the saved data, in the format
    36x0:qc:27x0 */
@@ -209,7 +214,7 @@ ULong LibVEX_GuestARM64_get_fpsr ( /*IN*/
 extern
 void LibVEX_GuestARM64_set_fpsr ( /*MOD*/VexGuestARM64State* vex_state,
                                   ULong fpsr );
-                                  
+
 
 #endif /* ndef __LIBVEX_PUB_GUEST_ARM64_H */
 

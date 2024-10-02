@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>5</protocolversion>
+<protocoltool>none</protocoltool>
+
+<preamble>
+  <line>Nulgrind, the minimal Valgrind tool</line>
+  <line>Copyright...</line>
+  <line>Using Valgrind...</line>
+  <line>Command: ./fdleak_open</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>none</tool>
+
+<args>
+  <vargv>
+    <exe>...</exe>
+    <arg>--command-line-only=yes</arg>
+    <arg>--memcheck:leak-check=no</arg>
+    <arg>--tool=none</arg>
+    <arg>--track-fds=yes</arg>
+    <arg>--xml=yes</arg>
+    <arg>--xml-fd=2</arg>
+  </vargv>
+  <argv>
+    <exe>...</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>FdNotClosed</kind>
+  <fd>3</fd>
+  <path>...</path>
+  <what>...</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>fdleak_open.c</file>
+      <line>9</line>
+    </frame>
+  </stack>
+</error>
+
+
+</valgrindoutput>
+

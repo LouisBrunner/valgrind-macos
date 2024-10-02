@@ -1288,12 +1288,13 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
   <varlistentry id="opt.show-error-list" xreflabel="--show-error-list">
     <term>
-      <option><![CDATA[--show-error-list=no|yes [default: no]]]></option>
+      <option><![CDATA[--show-error-list=no|yes|all [default: no]]]></option>
     </term>
     <listitem>
-      <para>If this option is enabled, for tools that report errors, valgrind
+      <para>If this option is yes, for tools that report errors, valgrind
         will show the list of detected errors and the list of used suppressions
-        at exit.
+        at exit. The value all indicates to also show the list of suppressed
+        errors.
       </para>
       <para>Note that at verbosity 2 and above, valgrind automatically shows
         the list of detected errors and the list of used suppressions
@@ -1795,11 +1796,15 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <para>The behaviour of <computeroutput>realloc()</computeroutput> is
       implementation defined (in C17, in C23 it is likely to become
       undefined). Valgrind tries to work in the same way as the
-      underlying OS and C runtime library. However, if you use a
-      different C runtime library then this default may be wrong.
-      For instance, if you use Valgrind on Linux installed via a package
-      and use the musl C runtime or the JEMalloc library then
-      consider using
+      underlying system and C runtime library that it was configured and built on.
+      However, if you use a different C runtime library then this default may be wrong.
+      If the value is <option>yes</option> then <varname>realloc</varname> will
+      deallocate the memory and return NULL. If the value is <option>no</option> then
+      <varname>realloc</varname> will not deallocate the memory and
+      the size will be handled as though it were one byte.</para>
+      <para>As an example, if you use Valgrind installed via a package on a
+      Linux distro using GNU libc but link your test executable with musl libc or
+      the JEMalloc library then consider using
       <computeroutput>--realloc-zero-bytes-frees=no</computeroutput>.
       </para>
       <para>Address Sanitizer has a similar and even wordier option
@@ -2013,7 +2018,7 @@ need to use them.</para>
       startup and makes it use more memory (typically for each inlined
       piece of code, 6 words and space for the function name), but it
       results in more descriptive stacktraces.  Currently,
-      this functionality is enabled by default only for Linux,
+      this functionality is enabled by default only for Linux, FreeBSD,
       Android and Solaris targets and only for the tools Memcheck, Massif,
       Helgrind and DRD.  Here is an example of some stacktraces with
       <option>--read-inline-info=no</option>:
@@ -2143,7 +2148,8 @@ need to use them.</para>
       <option><![CDATA[--run-libc-freeres=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>This option is only relevant when running Valgrind on Linux.</para>
+      <para>This option is only relevant when running Valgrind on Linux with
+      GNU libc.</para>
 
       <para>The GNU C library (<function>libc.so</function>), which is
       used by all programs, may allocate memory for its own uses.
@@ -2177,8 +2183,8 @@ need to use them.</para>
       <option><![CDATA[--run-cxx-freeres=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>This option is only relevant when running Valgrind on Linux
-            or Solaris C++ programs.</para>
+      <para>This option is only relevant when running Valgrind on Linux,
+      FreeBSD or Solaris C++ programs using libstdc++.</para>
 
       <para>The GNU Standard C++ library (<function>libstdc++.so</function>),
       which is used by all C++ programs compiled with g++, may allocate memory
@@ -2698,13 +2704,6 @@ need to use them.</para>
           any shared library having no soname. </para>
         </listitem>
 
-        <listitem>
-          <para>To run a "default" Firefox build for Linux, in which
-          JEMalloc is linked in to the main executable,
-          use <option>--soname-synonyms=somalloc=NONE</option>.
-          </para>
-        </listitem>
-
 	<listitem>
 	  <para>To only intercept allocation symbols in the default
 	  system libraries, but not in any other shared library or the
@@ -2905,7 +2904,7 @@ $]]></screen>
    </listitem>
 
    <listitem>
-    <para>From gdb, using the the monitor command
+    <para>From gdb, using the monitor command
      <computeroutput>v.clo</computeroutput>:</para>
 <screen><![CDATA[
 (gdb) monitor v.clo --trace-children=yes --child-silent-after-fork=no
@@ -3106,7 +3105,7 @@ will create a core dump in the usual way.</para>
   allocated indirectly via a call to function f1 and 140 bytes
   indirectly allocated via a call to function f2. f2 has allocated
   memory by calling g2, while f1 has allocated memory by calling g11
-  and g12. g11, g12 and g1 have directly called a memory allocation
+  and g12. g11, g12 and g2 have directly called a memory allocation
   function (malloc), and so have a non zero 'Self' value. Note that when
   kcachegrind shows an xtree, the 'Called' column and call nr indications in
   the Call Graph are not significant (always set to 0 or 1, independently
@@ -3176,7 +3175,7 @@ the "Massif Format".</para>
     <para>An xtree file in the Callgrind Format contains a single callgraph,
       associating each stack trace with the values recorded
       in the xtree. </para>
-    <para>Different Callgrind Format file visualisers are available:</para>
+    <para>Different Callgrind Format file visualizers are available:</para>
     <para>Valgrind distribution includes the <option>callgrind_annotate</option>
       command line utility that reads in the xtree data, and prints a sorted
       lists of functions, optionally with source annotation. Note that due to
@@ -3200,7 +3199,7 @@ the "Massif Format".</para>
       and <option>curBk</option>),
       while <option>--xtree-memory=full</option> will give a file
       with 6 detailed trees.</para>
-    <para>Different Massif Format file visualisers are available. Valgrind
+    <para>Different Massif Format file visualizers are available. Valgrind
       distribution includes the <option>ms_print</option>
       command line utility that produces an easy to read reprentation of
       a massif output file. See <xref linkend="ms-manual.using-print"/> and
@@ -3216,7 +3215,7 @@ the "Massif Format".</para>
 <para>Note that for equivalent information, the Callgrind Format is more compact
   than the Massif Format.  However, the Callgrind Format always contains the
   full data: there is no filtering done during file production, filtering is
-  done by visualisers such as kcachegrind. kcachegrind is particularly easy to
+  done by visualizers such as kcachegrind. kcachegrind is particularly easy to
   use to analyse big xtree data containing multiple events counts or resources
   consumption.  The Massif Format (optionally) only contains a part of the data.
   For example, the Massif tool might filter some of the data, according to the
@@ -3320,7 +3319,7 @@ curB curBk totB totBk totFdB totFdBk
   not reflect the fact that the same memory was over and over allocated
   then released.</para>
 
-<para>Finally, Xtree visualisers such as kcachegrind are helping to
+<para>Finally, Xtree visualizers such as kcachegrind are helping to
   identify big memory consumers, in order to possibly optimise the
   amount of memory needed by your program.</para>
 

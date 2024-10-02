@@ -300,7 +300,7 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 
 static UInt local_sys_getpid ( void )
 {
-   UInt __res;
+   ULong __res;
    __asm__ volatile (
       "mov  x8, #"VG_STRINGIFY(__NR_getpid)"\n"
       "svc  0x0\n"      /* getpid() */
@@ -553,6 +553,42 @@ static UInt local_sys_getpid ( void )
       :
       : "rax", "rcx");//, "r11" );
    return __res;
+}
+
+#elif defined(VGP_arm64_freebsd)
+
+static UInt local_sys_write_stderr ( const HChar* buf, SizeT n )
+{
+   volatile ULong block[2];
+   block[0] = (ULong)buf;
+   block[1] = (ULong)n;
+   __asm__ volatile (
+      "mov  x0, #2\n"          /* stderr */
+      "ldr  x1, [%0]\n"        /* buf */
+      "ldr  x2, [%0, #8]\n"    /* n */
+      "mov  x8, #"VG_STRINGIFY(__NR_write)"\n"
+      "svc  0x0\n"             /* write() */
+      "str  x0, [%0]\n"
+      :
+      : "r" (block)
+      : "x0","x1","x2","x8","cc","memory"
+      );
+   if (block[0] < 0)
+      block[0] = -1;
+   return (UInt)block[0];
+}
+
+static UInt local_sys_getpid ( void )
+{
+   ULong res;
+   __asm__ volatile (
+      "mov x8, #"VG_STRINGIFY(__NR_getpid)"\n"
+      "svc 0x0\n"             /* getpid() */
+      "mov %0, x0\n"          /* set res = x0 */
+      : "=r" (res)
+      :
+      : "x8", "x0", "x1", "cc" );
+   return (UInt)res;
 }
 
 #elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux)

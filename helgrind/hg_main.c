@@ -715,17 +715,24 @@ static void map_threads_delete ( ThreadId coretid )
 
 static void HG_(thread_enter_synchr)(Thread *thr) {
    tl_assert(thr->synchr_nesting >= 0);
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
    thr->synchr_nesting += 1;
 #endif /* VGO_solaris */
 }
 
 static void HG_(thread_leave_synchr)(Thread *thr) {
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
    thr->synchr_nesting -= 1;
 #endif /* VGO_solaris */
    tl_assert(thr->synchr_nesting >= 0);
 }
+
+#if defined(VGO_freebsd)
+static Int HG_(get_pthread_synchr_nesting_level)(ThreadId tid) {
+   Thread *thr = map_threads_maybe_lookup(tid);
+   return thr->synchr_nesting;
+}
+#endif
 
 static void HG_(thread_enter_pthread_create)(Thread *thr) {
    tl_assert(thr->pthread_create_nesting_level >= 0);
@@ -5373,6 +5380,11 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          map_pthread_t_to_Thread_INIT();
          my_thr = map_threads_maybe_lookup( tid );
          tl_assert(my_thr); /* See justification above in SET_MY_PTHREAD_T */
+#if defined(VGO_freebsd)
+         if (HG_(get_pthread_synchr_nesting_level)(tid) >= 1) {
+            break;
+         }
+#endif
          HG_(record_error_PthAPIerror)(
             my_thr, (HChar*)args[1], (UWord)args[2], (HChar*)args[3] );
          break;
@@ -5603,8 +5615,13 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_POSIX_SEM_WAIT_POST: /* sem_t*, long tookLock */
+#if defined(VGO_freebsd)
+      if (args[2] == True && HG_(get_pthread_synchr_nesting_level)(tid) == 1)
+         evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+#else
          if (args[2] == True)
             evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+#endif
          HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
@@ -6038,7 +6055,7 @@ static void hg_pre_clo_init ( void )
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2007-2017, and GNU GPL'd, by OpenWorks LLP et al.");
+      "Copyright (C) 2007-2024, and GNU GPL'd, by OpenWorks LLP et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 320 );
 
@@ -6046,7 +6063,7 @@ static void hg_pre_clo_init ( void )
                                    hg_instrument,
                                    hg_fini);
 
-   VG_(needs_core_errors)         ();
+   VG_(needs_core_errors)         (True);
    VG_(needs_tool_errors)         (HG_(eq_Error),
                                    HG_(before_pp_Error),
                                    HG_(pp_Error),

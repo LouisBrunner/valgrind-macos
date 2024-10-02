@@ -1,0 +1,4 @@
+prog: double_close_range
+prereq: test -x double_close_range
+vgopts: -q --track-fds=yes --xml=yes --xml-fd=2
+stderr_filter: filter_xml

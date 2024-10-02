@@ -1,4 +1,5 @@
 #! /bin/sh
+# @configure_input@
 
 SED=@SED@
 
@@ -44,6 +45,10 @@ $dir/filter_libc |
 # Remove line info out of order warnings
 $SED "/warning: line info addresses out of order/d" |
 
+# FreeBSD sanity level >= 3 warnings
+$SED "/main Warning: due to transparent memory mappings with MAP_STACK/d" |
+$SED "/main --sanity-level=3 and above may give spurious errors./d" |
+
 # Older bash versions print abnormal termination messages on the stderr
 # of the bash process. Newer bash versions redirect such messages properly.
 # Suppress any redirected abnormal termination messages. You can find the
@@ -74,10 +79,7 @@ $SED '/warning: the debug information found in "[^"]*" does not match/d' |
 $SED '/warning: no debug symbols in executable/d' | # macOS
 
 # Suppress warnings from Dwarf reader
-$SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d' |
-
-# Remove macOS dsymutil
-$SED '/^run: \/usr\/bin\/dsymutil.*/d' |
+$SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d'
 
 # Suppress Darwin dyld errors
 $SED '/^used_suppression:.*OSX.*dyld.*default.supp:*/d'

@@ -27,7 +27,7 @@ EXTRA_DIST = \
 	reserve_sysstat_zone_addr.map reserve_sysstat_zone_addr.stderr.exp reserve_sysstat_zone_addr.vgtest \
 	resolv.stdout.exp resolv.stderr.exp resolv.vgtest \
 	sigresend.stderr.exp sigresend.stdout.exp sigresend.vgtest \
-	stack-overflow.stderr.exp stack-overflow.vgtest \
+	stack_overflow.stderr.exp stack_overflow.vgtest \
 	stack_prot.stderr.exp stack_prot.stdout.exp stack_prot.vgtest \
 	threads_exitall.stderr.exp threads_exitall.stdout.exp threads_exitall.vgtest
 
@@ -49,7 +49,7 @@ check_PROGRAMS = \
 	pthread-stack \
 	resolv \
 	sigresend \
-	stack-overflow \
+	stack_overflow \
 	stack_prot \
 	threads_exitall
 
@@ -58,6 +58,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 pthread_stack_LDADD = -lpthread
 resolv_LDADD = -lresolv
+stack_overflow_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_INFINITE_RECURSION@
 stack_prot_LDFLAGS = -Wl,-M,/usr/lib/ld/map.noexstk
 threads_exitall_LDADD = -lpthread
 

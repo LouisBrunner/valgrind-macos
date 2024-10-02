@@ -319,7 +319,21 @@ Mismatched free() / delete / delete []
 ]]></programlisting>
 
 <para>In <literal>C++</literal> it's important to deallocate memory in a
-way compatible with how it was allocated.  The deal is:</para>
+way compatible with how it was allocated.</para>
+<para>Most of the time in C++ you will write code that
+uses <function>new expression</function> and <function>delete
+expression</function>
+(see <ulink url="https://en.cppreference.com/w/cpp/language/new">cppreference
+new expression</ulink>
+and <ulink url="https://en.cppreference.com/w/cpp/language/delete">cppreference
+delete expression</ulink>). A new expression will
+call <function>operator new</function> to perform the allocation and
+then call the constructor (if one exists) on the object. Similarly a
+delete expression will call the destructor on the object (if one
+exists) and then call <function>operator delete</function>. The array
+overloads call constructors/destructors for each object in the
+array.</para>
+<para>The deal is:</para>
 <itemizedlist>
   <listitem>
     <para>If allocated with
@@ -340,19 +354,26 @@ way compatible with how it was allocated.  The deal is:</para>
   </listitem>
 </itemizedlist>
 
-<para>The worst thing is that on Linux apparently it doesn't matter if
-you do mix these up, but the same program may then crash on a
-different platform, Solaris for example.  So it's best to fix it
-properly.  According to the KDE folks "it's amazing how many C++
-programmers don't know this".</para>
+<para>Mixing types of allocators and deallocators is undefined
+behaviour.  That means that on some platforms you might not have any
+problems, but the same program may then crash on a different platform,
+Solaris for example.  So it's best to fix it properly.  According to
+the KDE folks "it's amazing how many C++ programmers don't know
+this".</para>
 
 <para>The reason behind the requirement is as follows.  In some C++
 implementations, <function>delete[]</function> must be used for
 objects allocated by <function>new[]</function> because the compiler
 stores the size of the array and the pointer-to-member to the
 destructor of the array's content just before the pointer actually
-returned.  <function>delete</function> doesn't account for this and will get
-confused, possibly corrupting the heap.</para>
+returned.  <function>delete</function> doesn't account for this and
+will get confused, possibly corrupting the heap. Even if there is no
+corruption there are likely to be resource leaks since using the wrong
+delete may result in the wrong number of destructors being
+called.</para>
+
+<para>C++ aligned allocations need to be freed using aligned delete
+with the same alignment.</para>
 
 </sect2>
 
@@ -571,7 +592,12 @@ several ways we know of that an interior-pointer can occur:</para>
     this case, some compilers store a "magic cookie" containing the array
     length at the start of the allocated block, and return a pointer to just
     past that magic cookie, i.e. an interior-pointer.
+    <!--
+    The link below is to an old C++ feature and has rotted away.
+    There are various copies around the web, probably also likely to rot.
     See <ulink url="https://docs.freebsd.org/info/gxxint/gxxint.info.Free_Store.html">this
+    -->
+    See <ulink url="https://www.math.utah.edu/docs/info/gxxint_1.html#SEC17">this
     page</ulink> for more information.</para>
   </listitem>
 
@@ -981,7 +1007,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         automatically sets the options <option>--leak-check=full</option>
         and <option>--show-leak-kinds=all</option>, to allow
         xtree visualisation tools such as kcachegrind to select what kind
-        to leak to visualise.
+        to leak to visualize.
         The produced file will contain the following events:</para>
       <itemizedlist>
         <listitem><para><option>RB</option> : Reachable Bytes</para></listitem> 
@@ -1344,6 +1370,20 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       reports.  <varname>--show-mismatched-frees=no</varname> disables
       these checks.  It is not generally advisable to disable them,
       though, because you may miss real errors as a result.</para>
+    </listitem>
+  </varlistentry>
+
+   <varlistentry id="opt.show-realloc-size-zero"
+                xreflabel="--show-realloc-size-zero">
+    <term>
+      <option><![CDATA[--show-realloc-size-zero=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Memcheck checks for uses of <varname>realloc</varname> with a size of zero.
+      This usage of <varname>realloc</varname> is unsafe since it is not portable. On some systems it
+      will behave like <varname>free</varname>. On other systems it will either do nothing or else
+      behave like a call to <varname>free</varname> followed by a call to <varname>malloc</varname>
+      with a size of zero.</para>
     </listitem>
   </varlistentry>
 

@@ -5361,6 +5361,7 @@ no_memcpy_put:
       case Ijk_NoDecode:
       case Ijk_InvalICache:
       case Ijk_Sys_syscall:
+      case Ijk_Extension:
       case Ijk_ClientReq:
       case Ijk_NoRedir:
       case Ijk_Yield:
@@ -5477,6 +5478,7 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, Int offsIP)
    case Ijk_NoDecode:
    case Ijk_InvalICache:
    case Ijk_Sys_syscall:
+   case Ijk_Extension:
    case Ijk_ClientReq:
    case Ijk_NoRedir:
    case Ijk_Yield:

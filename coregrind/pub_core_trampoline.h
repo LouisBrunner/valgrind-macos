@@ -64,6 +64,10 @@ extern void VG_(x86_freebsd_SUBST_FOR_sigreturn);
 extern void VG_(amd64_freebsd_SUBST_FOR_sigreturn);
 #endif
 
+#if defined(VGP_arm64_freebsd)
+extern void VG_(arm64_freebsd_SUBST_FOR_sigreturn);
+#endif
+
 #if defined(VGP_x86_linux)
 extern Addr VG_(x86_linux_SUBST_FOR_sigreturn);
 extern Addr VG_(x86_linux_SUBST_FOR_rt_sigreturn);
@@ -77,6 +81,7 @@ extern Addr VG_(amd64_linux_REDIR_FOR_vgettimeofday);
 extern Addr VG_(amd64_linux_REDIR_FOR_vtime);
 extern Addr VG_(amd64_linux_REDIR_FOR_vgetcpu);
 extern UInt VG_(amd64_linux_REDIR_FOR_strlen)( void* );
+extern Int VG_(amd64_linux_REDIR_FOR_strcmp)( void*, void* );
 extern Char* VG_(amd64_linux_REDIR_FOR_index) ( const Char*, Int );
 #endif
 

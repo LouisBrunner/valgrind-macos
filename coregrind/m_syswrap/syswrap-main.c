@@ -351,7 +351,7 @@ void do_syscall_for_client ( Int syscallno,
    vki_sigset_t saved;
    UWord err;
 #  if defined(VGO_freebsd)
-   Int real_syscallno;
+   Word real_syscallno;
 #  endif
 #  if defined(VGO_linux)
    err = ML_(do_syscall_for_client_WRK)(
@@ -626,6 +626,40 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = gst->guest_R9;
       canonical->arg7  = stack[1];
       canonical->arg8  = stack[2];
+   }
+
+#elif defined(VGP_arm64_freebsd)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   switch (gst->guest_X8) {
+   case __NR_syscall:
+      canonical->klass = VG_FREEBSD_SYSCALL0;
+      canonical->sysno = gst->guest_X0;
+      break;
+   case __NR___syscall:
+      canonical->klass = VG_FREEBSD_SYSCALL198;
+      canonical->sysno = gst->guest_X0;
+      break;
+   default:
+      canonical->klass = 0;
+      canonical->sysno = gst->guest_X8;
+      break;
+   }
+   if (canonical->klass == VG_FREEBSD_SYSCALL0 || canonical->klass == VG_FREEBSD_SYSCALL198) {
+      canonical->arg1  = gst->guest_X1;
+      canonical->arg2  = gst->guest_X2;
+      canonical->arg3  = gst->guest_X3;
+      canonical->arg4  = gst->guest_X4;
+      canonical->arg5  = gst->guest_X5;
+      canonical->arg6  = gst->guest_X6;
+      canonical->arg7  = gst->guest_X7;
+   } else {
+      canonical->arg1  = gst->guest_X0;
+      canonical->arg2  = gst->guest_X1;
+      canonical->arg3  = gst->guest_X2;
+      canonical->arg4  = gst->guest_X3;
+      canonical->arg5  = gst->guest_X4;
+      canonical->arg6  = gst->guest_X5;
+      canonical->arg7  = gst->guest_X6;
    }
 
 #elif defined(VGP_arm_linux)
@@ -1044,6 +1078,38 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
        stack[2]       = canonical->arg8;
    }
 
+#elif defined(VGP_arm64_freebsd)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   switch (canonical->klass) {
+   case VG_FREEBSD_SYSCALL0:
+      gst->guest_X8 = __NR_syscall;
+      break;
+   case VG_FREEBSD_SYSCALL198:
+      gst->guest_X8 = __NR___syscall;
+      break;
+   default:
+      gst->guest_X8 = canonical->sysno;
+      break;
+   }
+   if (canonical->klass == VG_FREEBSD_SYSCALL0 || canonical->klass == VG_FREEBSD_SYSCALL198) {
+      gst->guest_X0 = canonical->sysno;
+      gst->guest_X1 = canonical->arg1;
+      gst->guest_X2 = canonical->arg2;
+      gst->guest_X3 = canonical->arg3;
+      gst->guest_X4 = canonical->arg4;
+      gst->guest_X5 = canonical->arg5;
+      gst->guest_X6 = canonical->arg6;
+      gst->guest_X7 = canonical->arg7;
+   } else {
+      gst->guest_X0 = canonical->arg1;
+      gst->guest_X1 = canonical->arg2;
+      gst->guest_X2 = canonical->arg3;
+      gst->guest_X3 = canonical->arg4;
+      gst->guest_X4 = canonical->arg5;
+      gst->guest_X5 = canonical->arg6;
+      gst->guest_X6 = canonical->arg7;
+   }
+
 #elif defined(VGP_arm_linux)
    VexGuestARMState* gst = (VexGuestARMState*)gst_vanilla;
    gst->guest_R7 = canonical->sysno;
@@ -1283,12 +1349,20 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
    RegWord  a0 = gst->guest_r4;    // a0
    canonical->sres = VG_(mk_SysRes_nanomips_linux)(a0);
    canonical->what = SsComplete;
+
 #  elif defined(VGP_amd64_freebsd)
    /* duplicates logic in m_signals.VG_UCONTEXT_SYSCALL_SYSRES */
    VexGuestAMD64State* gst = (VexGuestAMD64State*)gst_vanilla;
    ULong flags = LibVEX_GuestAMD64_get_rflags(gst);
    canonical->sres = VG_(mk_SysRes_amd64_freebsd)(gst->guest_RAX, gst->guest_RDX,
                         (flags & 1) != 0 ? True : False);
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_arm64_freebsd)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   ULong flags = LibVEX_GuestARM64_get_nzcv(gst);
+   canonical->sres = VG_(mk_SysRes_arm64_freebsd)(gst->guest_X0, gst->guest_X1,
+                                                  (flags & VKI_PSR_C) != 0 ? True : False);
    canonical->what = SsComplete;
 
 #  elif defined(VGP_x86_darwin)
@@ -1565,6 +1639,26 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    // GrP fixme sets defined for entire eflags, not just bit c
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
       offsetof(VexGuestAMD64State, guest_CC_DEP1), sizeof(ULong) );
+
+#  elif defined(VGP_arm64_freebsd)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   if (sr_isError(canonical->sres)) {
+      gst->guest_X0 = sr_Err(canonical->sres);
+      LibVEX_GuestARM64_put_nzcv_c(1, gst);
+   } else {
+      gst->guest_X0 = sr_Res(canonical->sres);
+      gst->guest_X1 = sr_ResHI(canonical->sres);
+      LibVEX_GuestARM64_put_nzcv_c(0, gst);
+   }
+
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+            OFFSET_arm64_X0, sizeof(ULong) );
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+            OFFSET_arm64_X1, sizeof(ULong) );
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+            offsetof(VexGuestARM64State, guest_CC_DEP1), sizeof(ULong) );
+
 #elif defined(VGP_x86_darwin)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1672,6 +1766,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    } else {
       gst->guest_r2 = sr_Res(canonical->sres);
    }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_s390x_r2, sizeof(UWord) );
 
 #  elif defined(VGP_mips32_linux)
    VexGuestMIPS32State* gst = (VexGuestMIPS32State*)gst_vanilla;
@@ -1853,6 +1949,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->s_arg8   = sizeof(UWord) * 2;
    layout->arg6_is_reg = True;
 
+#elif defined(VGP_arm64_freebsd)
+   layout->o_sysno  = OFFSET_arm64_X8;
+   layout->o_arg1   = OFFSET_arm64_X0;
+   layout->o_arg2   = OFFSET_arm64_X1;
+   layout->o_arg3   = OFFSET_arm64_X2;
+   layout->o_arg4   = OFFSET_arm64_X3;
+   layout->o_arg5   = OFFSET_arm64_X4;
+   layout->o_arg6   = OFFSET_arm64_X5;
+   layout->o_arg7   = OFFSET_arm64_X6;
+   layout->o_arg8   = OFFSET_arm64_X7;
+
 #elif defined(VGP_arm_linux)
    layout->o_sysno  = OFFSET_arm_R7;
    layout->o_arg1   = OFFSET_arm_R0;
@@ -1982,10 +2089,11 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
 #endif
 }
 
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
 static
 void getSyscallArgLayout_0_198 ( /*OUT*/SyscallArgLayout* layout )
 {
+#if defined(VGP_amd64_freebsd)
    VG_(bzero_inline)(layout, sizeof(*layout));
    layout->o_sysno  = OFFSET_amd64_RDI;
    layout->o_arg1   = OFFSET_amd64_RSI;
@@ -1997,6 +2105,16 @@ void getSyscallArgLayout_0_198 ( /*OUT*/SyscallArgLayout* layout )
    layout->s_arg7   = sizeof(UWord) * 2;
    layout->s_arg8   = sizeof(UWord) * 3;
    layout->arg6_is_reg = False;
+#else
+   layout->o_sysno  = OFFSET_arm64_X0;
+   layout->o_arg1   = OFFSET_arm64_X1;
+   layout->o_arg2   = OFFSET_arm64_X2;
+   layout->o_arg3   = OFFSET_arm64_X3;
+   layout->o_arg4   = OFFSET_arm64_X4;
+   layout->o_arg5   = OFFSET_arm64_X5;
+   layout->o_arg6   = OFFSET_arm64_X6;
+   layout->o_arg7   = OFFSET_arm64_X7;
+#endif
 }
 #endif
 
@@ -2309,7 +2427,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       action.  This info is needed so that the scalar syscall argument
       checks (PRE_REG_READ calls) know which bits of the guest state
       they need to inspect. */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined (VGP_arm64_freebsd)
    // PJF - somewhat unfortunate uglificaton of the code, but the current code handles two
    // types of syscall with different register use. Mixing them up is not good.
    // I've avoided modifying the existing function (I could have added
@@ -2321,7 +2439,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
 
    getSyscallArgLayout( &layout );
 
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    }
 #endif
 
@@ -2907,6 +3025,27 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
       vg_assert(p[0] == 0x0F && p[1] == 0x05);
    }
 
+#elif defined(VGP_arm64_freebsd)
+   arch->vex.guest_PC -= 4;             // sizeof(arm64 instr)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+       svc #0 == d4 00 00 01
+    */
+   {
+      UChar *p = (UChar *)arch->vex.guest_PC;
+
+      if (p[0] != 0x01 || p[1] != 0x00 || p[2] != 0x00 || p[3] != 0xD4)
+         VG_(message)(
+            Vg_DebugMsg,
+            "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
+            arch->vex.guest_PC, p[0], p[1], p[2], p[3]
+            );
+
+      vg_assert(p[0] == 0x01 && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0xD4);
+   }
+
 #elif defined(VGP_x86_darwin)
    arch->vex.guest_EIP = arch->vex.guest_IP_AT_SYSCALL;
 
@@ -3266,41 +3405,7 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 #if defined(VGO_freebsd) || defined(VGO_darwin)
   if (outside_range)
   {
-     /* This is not guaranteed to work since the compiler / link editor
-        could lay out the binary functions in a different order to
-        the source file. However, it seems to work. */
-
-#if defined (VGA_amd64)
-
-     vg_assert((Addr)_______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ >
-               (Addr)LibVEX_GuestAMD64_put_rflag_c );
-
-     vg_assert(addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ >
-               addr_amd64g_calculate_rflags_all_WRK);
-
-     if ((ip >= (Addr)LibVEX_GuestAMD64_put_rflag_c &&
-          ip <  (Addr)_______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______) ||
-         (ip >= addr_amd64g_calculate_rflags_all_WRK &&
-         ip < addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______))
-#elif defined (VGA_x86)
-
-     vg_assert((Addr)_______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______ >
-               (Addr)LibVEX_GuestX86_put_eflag_c);
-
-     vg_assert(addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______>
-              addr_x86g_calculate_eflags_all_WRK);
-
-     if ((ip >= (Addr)LibVEX_GuestX86_put_eflag_c &&
-         ip <  (Addr)_______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______) ||
-         (ip >= addr_x86g_calculate_eflags_all_WRK &&
-          ip < addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______))
-#elif defined(VGA_arm64)
-
-    // TODO: finish this (unsure WHICH flags need to be protected)
-
-#else
-#error "Unsupported architecture"
-#endif
+     if (th_regs->vex.guest_SETC)
      {
         outside_range = False;
         in_complete_to_committed = True;
@@ -3411,6 +3516,13 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
            LibVEX_GuestAMD64_put_rflag_c(1, &th_regs->vex);
         else
            LibVEX_GuestAMD64_put_rflag_c(0, &th_regs->vex);
+      }
+#elif defined(VGP_arm64_freebsd)
+      if (!(sci->flags & SfNoWriteResult)) {
+         if (sr_isError(sres))
+            LibVEX_GuestARM64_put_nzcv_c(1, &th_regs->vex);
+         else
+            LibVEX_GuestARM64_put_nzcv_c(0, &th_regs->vex);
       }
 #endif
       if (VG_(clo_trace_signals))

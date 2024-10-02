@@ -567,21 +567,6 @@ UInt x86g_calculate_eflags_all_WRK ( UInt cc_op,
    }
 }
 
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-
-/* see guest_amd64_helpers.c
-   Used in syswrap-main.c / VG_(post_syscall) for signal
-   resumption */
-
-static void _______VVVVVVVV_after_x86g_calculate_eflags_all_WRK_VVVVVVVV_______ (void)
-{
-}
-
-Addr addr_x86g_calculate_eflags_all_WRK = (Addr)x86g_calculate_eflags_all_WRK;
-Addr addr________VVVVVVVV_x86g_calculate_eflags_all_WRK_VVVVVVVV_______ = (Addr)_______VVVVVVVV_after_x86g_calculate_eflags_all_WRK_VVVVVVVV_______;
-#endif
-
-
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
 UInt x86g_calculate_eflags_all ( UInt cc_op, 
@@ -803,16 +788,6 @@ LibVEX_GuestX86_put_eflag_c ( UInt new_carry_flag,
    vex_state->guest_CC_DEP2 = 0;
    vex_state->guest_CC_NDEP = 0;
 }
-
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-
-/* Used in syswrap-main.c / VG_(post_syscall) for signal resumption */
-
-void _______VVVVVVVV_after_LibVEX_GuestX86_put_eflag_c_VVVVVVVV_______ (void)
-{
-}
-#endif
-
 
 /*---------------------------------------------------------------*/
 /*--- %eflags translation-time function specialisers.         ---*/
@@ -2823,17 +2798,13 @@ ULong x86g_use_seg_selector ( HWord ldt, HWord gdt,
 
    /* Convert the segment selector onto a table index */
    seg_selector >>= 3;
-   vassert(seg_selector < 8192);
+   vassert(seg_selector < VEX_GUEST_X86_GDT_NENT);
 
    if (tiBit == 0) {
 
       /* GDT access. */
       /* Do we actually have a GDT to look at? */
       if (gdt == 0)
-         goto bad;
-
-      /* Check for access to non-existent entry. */
-      if (seg_selector >= VEX_GUEST_X86_GDT_NENT)
          goto bad;
 
       the_descrs = (VexGuestX86SegDescr*)gdt;
@@ -2943,9 +2914,10 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_SC_CLASS = 0;
    vex_state->guest_IP_AT_SYSCALL = 0;
 
+   vex_state->guest_SETC = 0;
+
    vex_state->padding1 = 0;
    vex_state->padding2 = 0;
-   vex_state->padding3 = 0;
 }
 
 

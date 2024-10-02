@@ -254,7 +254,7 @@ void VG_(sigframe_return)(ThreadId tid, const vki_ucontext_t *uc)
    /* Returning from a signal handler. */
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_return (thread %u): IP=%#lx\n",
+                   "VG_(sigframe_return) (thread %u): IP=%#lx\n",
                    tid, VG_(get_IP)(tid));
 
    /* Tell the tool. */

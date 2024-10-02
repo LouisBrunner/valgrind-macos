@@ -893,16 +893,20 @@ while (<>)
     print qq|$prefix\"m\" \(state[0]\)\n|;
 
     $prefix = "         : ";
+    my %clobber_added;
 
-    foreach my $arg (@presets, @args)
+    foreach my $arg (@presets, @results, @args)
     {
         if ($arg->{register} && $arg->{type} ne "st")
         {
             my $register = $arg->{register};
 
             $register =~ s/^(r[0-9]+)[bwd]$/$1/;
-            print qq|$prefix\"$register\"|;
-            $prefix = ", ";
+            if (!$clobber_added{$register}++)
+            {
+                print qq|$prefix\"$register\"|;
+                $prefix = ", ";
+            }
         }
     }
 

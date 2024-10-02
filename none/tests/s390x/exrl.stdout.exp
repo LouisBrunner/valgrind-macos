@@ -13,3 +13,9 @@ after:  target = |0123456789aXXXXX|
 
 ------- EXRL with negative offset
         target = |01010101010XXXXX|
+
+------- EXRL targeting a PC-relative instruction
+        offset = |0000000000000004|
+
+------- EXRL targeting a branch-and-link instruction
+        offset = |000000000000000a|

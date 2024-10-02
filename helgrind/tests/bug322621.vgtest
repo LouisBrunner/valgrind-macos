@@ -1,2 +1,3 @@
+prereq: test -e bug322621
 vgopts: -q
 prog: bug322621

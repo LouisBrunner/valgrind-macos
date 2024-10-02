@@ -11,7 +11,7 @@ typedef struct {
 } Elf_AuxStr;
 
 Elf_AuxStr aux_map[AT_COUNT] = {
-        {"AT_NLL",      0},
+        {"AT_NULL",     0},
         {"AT_IGNORE",   1},
         {"AT_EXECFD",   2},
         {"AT_PHDR",     3},
@@ -38,27 +38,17 @@ Elf_AuxStr aux_map[AT_COUNT] = {
         {"AT_EHDRFLAGS", 24},
         {"AT_HWCAP", 25},
         {"AT_HWCAP2", 26},
-// FreeBSD 12 and 11
-//      {"AT_COUNT", 27},
-#if (FREEBSD_VERS >= FREEBSD_13_0)
         {"AT_BSDFLAGS", 27},
         {"AT_ARGC", 28},
         {"AT_ARGV", 29},
         {"AT_ENVC", 30},
         {"AT_ENVV", 31},
         {"AT_PS_STRINGS", 32},
-//      {"AT_COUNT", 33},
-#endif
-#if (FREEBSD_VERS >= FREEBSD_13_1)
         {"AT_FXRNG", 33},
         {"AT_KPRELOAD", 34},
-//      {"AT_COUNT", 35},
-#endif
-#if (FREEBSD_VERS >= FREEBSD_13_2)
         {"AT_USRSTACKBASE", 35},
         {"AT_USRSTACKLIM", 36},
 //      {"AT_COUNT", 37},
-#endif
 };
 
 int main(int argc, char* argv[], char* envp[])
@@ -80,13 +70,15 @@ int main(int argc, char* argv[], char* envp[])
                 fprintf(stderr, "EXECPATH: %s\n", (char*)auxp->a_un.a_val);
             }
             break;
-#if (FREEBSD_VERS >= FREEBSD_13_0)
+#if defined(AT_ARGV)
         case AT_ARGV:
             if (auxp->a_un.a_val != 0)
             {
                 fprintf(stderr, "ARGV: %s\n", *(char**)auxp->a_un.a_val);
             }
             break;
+#endif
+#if defined(AT_ENVV)
         case AT_ENVV:
             if (auxp->a_un.a_val != 0)
             {
@@ -95,6 +87,8 @@ int main(int argc, char* argv[], char* envp[])
                 /*fprintf(stderr, "ENVV: %s\n", *(char**)auxp->a_un.a_val);*/
             }
             break;
+#endif
+#if defined(AT_PS_STRINGS)
         case AT_PS_STRINGS:
             if (auxp->a_un.a_val != 0)
             {

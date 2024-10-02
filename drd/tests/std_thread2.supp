@@ -4,6 +4,12 @@
    fun:_dl_lookup_symbol_x
 }
 {
+   dl_new_hash
+   drd:ConflictingAccess
+   fun:_dl_new_hash
+   fun:_dl_lookup_symbol_x
+}
+{
    drd-libpthread-nanosleep
    drd:ConflictingAccess
    fun:nanosleep
@@ -45,3 +51,50 @@
    obj:/libexec/ld-elf*.so.1
 }
 
+{
+   drd-musl1
+   drd:ConflictingAccess
+   fun:pthread_exit
+}
+
+{
+   drd-musl2
+   drd:ConflictingAccess
+   fun:__wake
+   fun:__tl_unlock
+   fun:__tl_unlock
+   fun:pthread_create
+}
+
+{
+   drd-musl3
+   drd:ConflictingAccess
+   fun:a_store
+   fun:__tl_unlock
+   fun:pthread_create
+}
+
+{
+   drd-musl4
+   drd:ConflictingAccess
+   fun:__wait
+}
+
+{
+   drd-musl5
+   drd:ConflictingAccess
+   fun:a_cas
+   fun:__tl_lock
+}
+
+{
+   drd-musl6
+   drd:ConflictingAccess
+   fun:__tl_lock
+}
+
+{
+   drd-glibc-set-vma-name
+   drd:ConflictingAccess
+   fun:__set_vma_name
+}

@@ -98,12 +98,13 @@ asm(
 ".text\n"
 ".globl do_syscall_WRK\n"
 "do_syscall_WRK:\n"
-"         push    {r4, r5, r7}\n"
-"         ldr     r4, [sp, #12]\n"
-"         ldr     r5, [sp, #16]\n"
-"         ldr     r7, [sp, #20]\n"
+"         push    {r7, ip}\n"
+"         mov     r7, r0\n"
+"         mov     r0, r1\n"
+"         mov     r1, r2\n"
+"         mov     r2, r3\n"
 "         svc     0x0\n"
-"         pop     {r4, r5, r7}\n"
+"         pop     {r7, ip}\n"
 "         bx      lr\n"
 ".previous\n"
 );
@@ -309,6 +310,36 @@ asm(
 ".previous\n"
 );
 
+#elif defined(VGP_arm64_freebsd)
+
+#define __NR_mprotect 74
+
+extern UWord do_syscall_WRK (
+          UWord syscall_no,
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord a7, UWord a8,
+          UInt *flags,
+          UWord *rv2
+       );
+asm(
+   ".text\n"
+   ".globl do_syscall_WRK\n"
+   "do_syscall_WRK:\n"
+    "        ldr     x8, [sp, #8]     \n"  /* assume syscall success */
+    "        str     xzr, [x8]        \n"
+    "        ldr     x8, [sp, #0]     \n"  /* load syscall_no */
+    "        svc     0x0              \n"
+    "        bcc     1f               \n"  /* jump if success */
+    "        ldr     x9, [sp, #8]     \n"  /* syscall failed - set *errflag */
+    "        mov     x10, #1          \n"
+    "        str     x10, [x9]        \n"
+    "    1:  ldr     x9, [sp, #16]    \n"  /* save 2nd result word */
+    "        str     x1, [x9]         \n"
+    "        ret                      \n"  /* return 1st result word */
+   ".previous\n"
+   );
+
 #else
 // Ensure the file compiles even if the syscall nr is not defined.
 #ifndef __NR_mprotect
@@ -348,7 +379,7 @@ static void non_simd_mprotect (long tid, void* addr, long len)
    mprotect_result = do_syscall_WRK(__NR_mprotect,
                                     (UWord) addr, len, PROT_NONE,
                                     0, 0, 0, 0, 0, &flags);
-#elif defined(VGP_amd64_freebsd)
+#elif defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
 
    UInt flags = 0U;
    UWord rv2 = 0U;

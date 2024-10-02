@@ -2,12 +2,12 @@
 /*--------------------------------------------------------------------*/
 /*--- Process-related libc stuff.                     m_libcproc.c ---*/
 /*--------------------------------------------------------------------*/
- 
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -191,7 +191,7 @@ static void mash_colon_env(HChar *varp, const HChar *remove_pattern)
 	 match = VG_(string_match)(remove_pattern, entry_start);
 
 	 *output = prev;
-	 
+
 	 if (match) {
 	    output = entry_start;
 	    varp++;			/* skip ':' after removed entry */
@@ -214,7 +214,7 @@ static void mash_colon_env(HChar *varp, const HChar *remove_pattern)
 	 output--;
 	 vg_assert(*output == ':');
       }
-   }	 
+   }
 
    /* pad out the left-overs with '\0' */
    while(output < varp)
@@ -431,16 +431,16 @@ HChar **VG_(env_clone) ( HChar **oldenv )
    for (oldenvp = oldenv; oldenvp && *oldenvp; oldenvp++);
 
    envlen = oldenvp - oldenv + 1;
-   
+
    newenv = VG_(malloc)("libcproc.ec.1", envlen * sizeof(HChar *));
 
    oldenvp = oldenv;
    newenvp = newenv;
-   
+
    while (oldenvp && *oldenvp) {
       *newenvp++ = *oldenvp++;
    }
-   
+
    *newenvp = *oldenvp;
 
    return newenv;
@@ -660,7 +660,7 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 }
 
 /* Support for prctl. */
-Int VG_(prctl) (Int option, 
+Int VG_(prctl) (Int option,
                 ULong arg2, ULong arg3, ULong arg4, ULong arg5)
 {
    SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
@@ -684,7 +684,7 @@ Int VG_(gettid)(void)
    SysRes res = VG_(do_syscall0)(__NR_gettid);
 
    if (sr_isError(res) && sr_Res(res) == VKI_ENOSYS) {
-      HChar pid[16];      
+      HChar pid[16];
       /*
        * The gettid system call does not exist. The obvious assumption
        * to make at this point would be that we are running on an older
@@ -712,7 +712,7 @@ Int VG_(gettid)(void)
          pid[sr_Res(res)] = '\0';
          res = VG_(mk_SysRes_Success)(  VG_(strtoll10)(pid, &s) );
          if (*s != '\0') {
-            VG_(message)(Vg_DebugMsg, 
+            VG_(message)(Vg_DebugMsg,
                "Warning: invalid file name linked to by /proc/self: %s\n",
                pid);
          }
@@ -825,7 +825,7 @@ Int VG_(getegid) ( void )
 /* Get supplementary groups into list[0 .. size-1].  Returns the
    number of groups written, or -1 if error.  Note that in order to be
    portable, the groups are 32-bit unsigned ints regardless of the
-   platform. 
+   platform.
    As a special case, if size == 0 the function returns the number of
    groups leaving list untouched. */
 Int VG_(getgroups)( Int size, UInt* list )
@@ -906,6 +906,8 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
       return;
 
    if (pid == 0) {
+      /* We are the child, close writing fd that we don't use.  */
+      VG_(close)(fds[1]);
       /* Before proceeding, ensure parent has recorded child PID in map
          of SIGCHLD to ignore */
       while (child_wait == 1)
@@ -917,6 +919,7 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
          }
       }
 
+      /* Now close reading fd.  */
       VG_(close)(fds[0]);
       return;
    }
@@ -927,11 +930,15 @@ static void register_sigchld_ignore ( Int pid, Int fds[2])
       ht_sigchld_ignore = VG_(HT_construct)("ht.sigchld.ignore");
    VG_(HT_add_node)(ht_sigchld_ignore, n);
 
+   /* We are the parent process, close read fd that we don't use.  */
+   VG_(close)(fds[0]);
+
    child_wait = 0;
    if (VG_(write)(fds[1], &child_wait, sizeof(Int)) <= 0)
       VG_(message)(Vg_DebugMsg,
          "warning: Unable to record PID of internal process (write)\n");
 
+   /* Now close writing fd.  */
    VG_(close)(fds[1]);
 }
 
@@ -1050,7 +1057,7 @@ UInt VG_(read_millisecond_timer) ( void )
 #    error "Unknown OS"
 #  endif
 
-   /* COMMON CODE */  
+   /* COMMON CODE */
    if (base == 0)
       base = now;
 
@@ -1237,7 +1244,7 @@ Int VG_(getosreldate)(void)
 
 Bool VG_(is32on64)(void)
 {
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    return False;
 #elif defined(VGP_x86_freebsd)
    SysRes res;
@@ -1310,7 +1317,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are met:
-   
+
    * Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
    * Redistributions in binary form must reproduce the above copyright notice,
@@ -1340,11 +1347,12 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    const UInt icache_line_size_ = (1 << MMU_I_CLINE);
 #else
    // Ask what the I and D line sizes are
-   UInt cache_type_register;
+   ULong read_mrs;
    // Copy the content of the cache type register to a core register.
    __asm__ __volatile__ ("mrs %[ctr], ctr_el0" // NOLINT
-                         : [ctr] "=r" (cache_type_register));
+                         : [ctr] "=r" (read_mrs));
 
+   UInt cache_type_register = read_mrs;
    const Int kDCacheLineSizeShift = 16;
    const Int kICacheLineSizeShift = 0;
    const UInt kDCacheLineSizeMask = 0xf << kDCacheLineSizeShift;

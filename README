@@ -35,7 +35,7 @@ platforms:
 - PPC64/Linux
 - ARM/Linux
 - ARM64/Linux
-- x86/macOS
+- X86/macOS
 - AMD64/macOS
 - S390X/Linux
 - MIPS32/Linux
@@ -45,6 +45,7 @@ platforms:
 - AMD64/Solaris
 - X86/FreeBSD
 - AMD64/FreeBSD
+- ARM64/FreeBSD
 
 Note that AMD64 is just another name for x86_64, and Valgrind runs fine
 on Intel processors.  Also note that the core of macOS is called

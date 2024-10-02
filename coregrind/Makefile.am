@@ -223,6 +223,7 @@ noinst_HEADERS = \
 	pub_core_dispatch_asm.h	\
 	pub_core_errormgr.h	\
 	pub_core_execontext.h	\
+	pub_core_extension.h    \
 	pub_core_gdbserver.h	\
 	pub_core_guest.h	\
 	pub_core_hashtable.h	\
@@ -290,6 +291,8 @@ noinst_HEADERS = \
 	m_demangle/demangle.h	\
 	m_demangle/safe-ctype.h \
 	m_demangle/vg_libciface.h \
+	m_extension/priv_extension.h \
+	m_extension/priv_types_n_macros.h \
 	m_gdbserver/regcache.h \
 	m_gdbserver/regdef.h \
 	m_gdbserver/server.h \
@@ -409,11 +412,14 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-nanomips-linux.S \
 	m_dispatch/dispatch-x86-freebsd.S \
 	m_dispatch/dispatch-amd64-freebsd.S \
+	m_dispatch/dispatch-arm64-freebsd.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
 	m_dispatch/dispatch-arm64-darwin.S \
 	m_dispatch/dispatch-x86-solaris.S \
 	m_dispatch/dispatch-amd64-solaris.S \
+	m_extension/extension-main.c \
+	m_extension/extension-s390x.c \
 	m_gdbserver/inferiors.c \
 	m_gdbserver/regcache.c \
 	m_gdbserver/remote-utils.c \
@@ -454,6 +460,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-amd64-linux.c \
 	m_sigframe/sigframe-x86-freebsd.c \
 	m_sigframe/sigframe-amd64-freebsd.c \
+	m_sigframe/sigframe-arm64-freebsd.c \
 	m_sigframe/sigframe-ppc32-linux.c \
 	m_sigframe/sigframe-ppc64-linux.c \
 	m_sigframe/sigframe-arm-linux.c \
@@ -479,6 +486,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-nanomips-linux.S \
 	m_syswrap/syscall-x86-freebsd.S \
 	m_syswrap/syscall-amd64-freebsd.S \
+	m_syswrap/syscall-arm64-freebsd.S \
 	m_syswrap/syscall-x86-darwin.S \
   m_syswrap/syscall-amd64-darwin.S \
 	m_syswrap/syscall-arm64-darwin.S \
@@ -497,6 +505,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-ppc64-linux.c \
 	m_syswrap/syswrap-x86-freebsd.c \
 	m_syswrap/syswrap-amd64-freebsd.c \
+	m_syswrap/syswrap-arm64-freebsd.c \
 	m_syswrap/syswrap-arm-linux.c \
 	m_syswrap/syswrap-arm64-linux.c \
 	m_syswrap/syswrap-s390x-linux.c \

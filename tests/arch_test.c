@@ -38,7 +38,7 @@ char* all_archs[] = {
 };
 
 static Bool go(char* arch)
-{ 
+{
 #if defined(VGP_x86_linux) || defined(VGP_x86_darwin) \
    || defined(VGP_x86_solaris) || defined(VGP_x86_freebsd)
    if ( 0 == strcmp( arch, "x86"   ) ) return True;
@@ -68,7 +68,7 @@ static Bool go(char* arch)
 #elif defined(VGP_arm_linux)
    if ( 0 == strcmp( arch, "arm" ) ) return True;
 
-#elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin) || defined(VGP_arm64_freebsd)
    if ( 0 == strcmp( arch, "arm64" ) ) return True;
 
 #elif defined(VGP_mips32_linux)

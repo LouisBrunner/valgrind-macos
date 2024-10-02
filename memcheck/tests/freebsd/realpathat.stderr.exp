@@ -117,7 +117,7 @@ Invalid read of size 1
    ...
    by 0x........: main (realpathat.c:28)
 
-Invalid write of size 2
+Invalid write of size 1
    ...
    by 0x........: main (realpathat.c:32)
  Address 0x........ is ... bytes inside a block of size 100 free'd

@@ -31,8 +31,16 @@ if VGCONF_HAVE_PLATFORM_SEC
 TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@ += \
 	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
+else
+if VGCONF_PLATFORMS_INCLUDE_ARM64_LINUX
+TOOL_LDADD_@VGCONF_PLATFORM_PRI_CAPS@ += \
+	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
+if VGCONF_HAVE_PLATFORM_SEC
+TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@ += \
+	$(top_builddir)/coregrind/libgcc-sup-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a
 endif
-
+endif
+endif
 
 # -Wl,--build-id=none is needed when linking tools with a linker that only
 # knows -Ttext and not -Ttext-segment. Without this flag newer ld versions
@@ -76,6 +84,9 @@ TOOL_LDFLAGS_ARM_LINUX = \
 
 TOOL_LDFLAGS_ARM64_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@
+
+TOOL_LDFLAGS_ARM64_FREEBSD = \
+	$(TOOL_LDFLAGS_COMMON_FREEBSD) @FLAG_M64@
 
 TOOL_LDFLAGS_S390X_LINUX = \
 	$(TOOL_LDFLAGS_COMMON_LINUX) @FLAG_M64@ @FLAG_S390_PGSTE@
@@ -155,6 +166,9 @@ LIBREPLACEMALLOC_ARM64_LINUX = \
 LIBREPLACEMALLOC_AMD64_FREEBSD = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-amd64-freebsd.a
 
+LIBREPLACEMALLOC_ARM64_FREEBSD = \
+	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-arm64-freebsd.a
+
 LIBREPLACEMALLOC_X86_DARWIN = \
 	$(top_builddir)/coregrind/libreplacemalloc_toolpreload-x86-darwin.a
 
@@ -222,6 +236,11 @@ LIBREPLACEMALLOC_LDFLAGS_X86_FREEBSD = \
 LIBREPLACEMALLOC_LDFLAGS_AMD64_FREEBSD = \
 	-Wl,--whole-archive \
 	$(LIBREPLACEMALLOC_AMD64_FREEBSD) \
+	-Wl,--no-whole-archive
+
+LIBREPLACEMALLOC_LDFLAGS_ARM64_FREEBSD = \
+	-Wl,--whole-archive \
+	$(LIBREPLACEMALLOC_ARM64_FREEBSD) \
 	-Wl,--no-whole-archive
 
 LIBREPLACEMALLOC_LDFLAGS_X86_DARWIN = \

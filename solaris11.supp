@@ -41,3 +41,12 @@
    fun:forkx
 }
 
+{
+   Solaris:std::lock_guard<std::mutex>::lock_guard
+   Helgrind:Race
+   fun:_ZL18__gthread_active_pv
+   fun:_ZL20__gthread_mutex_lockP14_pthread_mutex
+   fun:_ZNSt5mutex4lockEv
+   fun:_ZNSt10lock_guardISt5mutexEC1ERS0_
+}
+

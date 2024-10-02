@@ -72,11 +72,14 @@ check_PROGRAMS = \
 	new-cpp \
 	null \
 	one \
-	pages_as_heap \
 	peak \
 	realloc \
 	thresholds \
 	zero
+
+if HAVE_SBRK
+check_PROGRAMS += pages_as_heap
+endif
 
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += overloaded-new

@@ -1525,8 +1525,10 @@ client request.
   </listitem>
 
   <listitem>
-    <para><varname>v.info all_errors</varname> shows all errors found
-    so far.</para>
+    <para><varname>v.info all_errors [also_suppressed]</varname> shows all errors found
+      so far.</para>
+    <para> The optional "also_suppressed" argument indicates to also output
+      the suppressed errors.</para>
   </listitem>
   <listitem>
     <para><varname>v.info last_error</varname> shows the last error

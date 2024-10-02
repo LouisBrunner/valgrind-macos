@@ -220,7 +220,7 @@ void VG_(sigframe_create) ( ThreadId tid,
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_create (thread %u): "
+                   "VG_(sigframe_create) (thread %u): "
                    "next RIP=%#lx, next RSP=%#lx\n",
                    tid, (Addr)handler, (Addr)frame );
 }
@@ -263,7 +263,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_destroy (thread %d): "
+                   "VG_(sigframe_destroy) (thread %d): "
                    "valid magic; next RIP=%#llx\n",
                    tid, tst->arch.vex.guest_RIP);
 

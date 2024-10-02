@@ -37,6 +37,8 @@ configure~
 /svn-commit.2.tmp
 /svn-commit.tmp
 /valgrind
+/valgrind-*tar.gz
+/valgrind-*tar.bz2
 /valgrind.pc
 /valgrind.spec
 /valt_load_address*.lds
@@ -213,6 +215,13 @@ configure~
 /coregrind/m_dispatch/.dirstamp
 /coregrind/m_dispatch/Makefile
 /coregrind/m_dispatch/Makefile.in
+
+# /coregrind/m_extension/
+/coregrind/m_extension/*.a
+/coregrind/m_extension/.deps
+/coregrind/m_extension/.dirstamp
+/coregrind/m_extension/Makefile
+/coregrind/m_extension/Makefile.in
 
 # /coregrind/m_gdbserver/
 /coregrind/m_gdbserver/.deps
@@ -670,6 +679,7 @@ configure~
 /helgrind/tests/bug322621
 /helgrind/tests/bug327548
 /helgrind/tests/bug392331
+/helgrind/tests/bug484480
 /helgrind/tests/cond_init_destroy
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test
@@ -692,6 +702,8 @@ configure~
 /helgrind/tests/pth_mempcpy_false_races
 /helgrind/tests/rwlock_race
 /helgrind/tests/rwlock_test
+/helgrind/tests/sem_clockwait_np
+/helgrind/tests/sem_timedwait
 /helgrind/tests/shmem_abits
 /helgrind/tests/stackteardown
 /helgrind/tests/t2t
@@ -838,6 +850,7 @@ configure~
 /memcheck/tests/*.stdout.out
 /memcheck/tests/filter_dw4
 /memcheck/tests/filter_overlaperror
+/memcheck/tests/filter_supp
 /memcheck/tests/.deps
 /memcheck/tests/accounting
 /memcheck/tests/addressable
@@ -857,9 +870,10 @@ configure~
 /memcheck/tests/bug155125
 /memcheck/tests/bug287260
 /memcheck/tests/bug340392
+/memcheck/tests/bug401284
 /memcheck/tests/bug464969_d_demangle
 /memcheck/tests/bug472219
-/memcheck/tests/bug401284
+/memcheck/tests/bug484002
 /memcheck/tests/calloc-overflow
 /memcheck/tests/cdebug_zlib
 /memcheck/tests/cdebug_zlib_gnu
@@ -869,6 +883,7 @@ configure~
 /memcheck/tests/clireq_nofill
 /memcheck/tests/clo_redzone
 /memcheck/tests/cond_ld_st
+/memcheck/tests/close_range
 /memcheck/tests/custom-overlap
 /memcheck/tests/custom_alloc
 /memcheck/tests/cxx17_aligned_new
@@ -1031,6 +1046,7 @@ configure~
 /memcheck/tests/wcs
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
+/memcheck/tests/wcpncpy
 /memcheck/tests/wcsncpy
 /memcheck/tests/wmemcmp
 /memcheck/tests/wrap1
@@ -1056,6 +1072,7 @@ configure~
 /memcheck/tests/amd64/bt_everything
 /memcheck/tests/amd64/bug132146
 /memcheck/tests/amd64/bug279698
+/memcheck/tests/amd64/bug492210
 /memcheck/tests/amd64/defcfaexpr
 /memcheck/tests/amd64/fxsave-amd64
 /memcheck/tests/amd64/int3-amd64
@@ -1072,6 +1089,8 @@ configure~
 /memcheck/tests/amd64/sh-mem-vec128
 /memcheck/tests/amd64/sh-mem-vec256
 /memcheck/tests/amd64/xsave-avx
+/memcheck/tests/amd64/rh2257546_128
+/memcheck/tests/amd64/rh2257546_256
 
 # /memcheck/tests/amd64-linux/
 /memcheck/tests/amd64-linux/.deps
@@ -1097,6 +1116,15 @@ configure~
 /memcheck/tests/amd64-solaris/context_sse
 /memcheck/tests/amd64-solaris/ldsoexec
 /memcheck/tests/amd64-solaris/scalar
+
+# /memcheck/tests/arm64/
+/memcheck/tests/arm64/*.diff*
+/memcheck/tests/arm64/*.dSYM
+/memcheck/tests/arm64/*.out
+/memcheck/tests/arm64/.deps
+/memcheck/tests/arm64/Makefile
+/memcheck/tests/arm64/Makefile.in
+/memcheck/tests/arm64/bug484935
 
 # /memcheck/tests/arm64-linux/
 /memcheck/tests/arm64-linux/.deps
@@ -1306,6 +1334,7 @@ configure~
 /memcheck/tests/x86/Makefile.in
 /memcheck/tests/x86/bug133694
 /memcheck/tests/x86/bug152022
+/memcheck/tests/x86/bug487993
 /memcheck/tests/x86/espindola2
 /memcheck/tests/x86/fpeflags
 /memcheck/tests/x86/fprem
@@ -1376,15 +1405,17 @@ configure~
 /memcheck/tests/freebsd/aligned_alloc
 /memcheck/tests/freebsd/bug464476
 /memcheck/tests/freebsd/bug470713
+/memcheck/tests/freebsd/bug483786
 /memcheck/tests/freebsd/capsicum
 /memcheck/tests/freebsd/chflags
 /memcheck/tests/freebsd/chmod_chown
-/memcheck/tests/freebsd/close_range
+/memcheck/tests/freebsd/clock_nanosleep_interrupt
 /memcheck/tests/freebsd/delete_sized_mismatch
 /memcheck/tests/freebsd/errno_aligned_allocs
 /memcheck/tests/freebsd/eventfd1
 /memcheck/tests/freebsd/eventfd2
 /memcheck/tests/freebsd/extattr
+/memcheck/tests/freebsd/fbsd278566
 /memcheck/tests/freebsd/fexecve
 /memcheck/tests/freebsd/file_locking_wait6
 /memcheck/tests/freebsd/get_set_context
@@ -1503,10 +1534,12 @@ configure~
 /none/tests/blockfault
 /none/tests/bug129866
 /none/tests/bug234814
+/none/tests/bug491394
 /none/tests/closeall
 /none/tests/coolo_sigaction
 /none/tests/coolo_strlen
 /none/tests/discard
+/none/tests/double_close_range
 /none/tests/exec-sigmask
 /none/tests/execve
 /none/tests/faultstatus
@@ -1520,6 +1553,7 @@ configure~
 /none/tests/fdleak_open
 /none/tests/fdleak_pipe
 /none/tests/fdleak_socketpair
+/none/tests/file_dclose
 /none/tests/floored
 /none/tests/fork
 /none/tests/fucomip
@@ -1601,6 +1635,7 @@ configure~
 /none/tests/sigstackgrowth
 /none/tests/sigsusp
 /none/tests/smc1
+/none/tests/socket_close
 /none/tests/stackgrowth
 /none/tests/susphello
 /none/tests/syscall-restart1
@@ -1612,6 +1647,7 @@ configure~
 /none/tests/threadederrno
 /none/tests/timestamp
 /none/tests/tls
+/none/tests/track-fds-exec-children
 /none/tests/unit_debuglog
 /none/tests/valgrind_cpp_test
 /none/tests/vgcore.*
@@ -1631,6 +1667,7 @@ configure~
 /none/tests/amd64/amd64locked
 /none/tests/amd64/asorep
 /none/tests/amd64/avx-1
+/none/tests/amd64/avx-vmovq
 /none/tests/amd64/avx2-1
 /none/tests/amd64/avx_estimate_insn
 /none/tests/amd64/bmi
@@ -1640,6 +1677,8 @@ configure~
 /none/tests/amd64/bug132918
 /none/tests/amd64/bug137714-amd64
 /none/tests/amd64/bug156404-amd64
+/none/tests/amd64/bug485148
+/none/tests/amd64/bug487439
 /none/tests/amd64/cet_nops
 /none/tests/amd64/clc
 /none/tests/amd64/cmpxchg
@@ -1765,20 +1804,31 @@ configure~
 /none/tests/arm/vfpv4_fma
 
 # /none/tests/arm64/
+/none/tests/arm64/*.stderr.diff*
+/none/tests/arm64/*.stderr.out
+/none/tests/arm64/*.stdout.diff*
+/none/tests/arm64/*.stdout.out
 /none/tests/arm64/.deps
 /none/tests/arm64/Makefile
 /none/tests/arm64/Makefile.in
 /none/tests/arm64/allexec
 /none/tests/arm64/atomics_v81
+/none/tests/arm64/bug484426
+/none/tests/arm64/bug489338
 /none/tests/arm64/crc32
 /none/tests/arm64/cvtf_imm
+/none/tests/arm64/dc_cvax
+/none/tests/arm64/fcvta_s_u
 /none/tests/arm64/fmadd_sub
 /none/tests/arm64/fp_and_simd
 /none/tests/arm64/fp_and_simd_v82
+/none/tests/arm64/frinta_frintn
+/none/tests/arm64/ldxp_stxp
 /none/tests/arm64/integer
-/none/tests/arm64/memory
+/none/tests/arm64/memory_test
 /none/tests/arm64/simd_dotprod
 /none/tests/arm64/simd_v81
+/none/tests/arm64/sha512_v82
 
 # /none/tests/darwin/
 /none/tests/darwin/*.dSYM
@@ -1964,9 +2014,13 @@ configure~
 /none/tests/ppc64/power6_bcmp
 /none/tests/ppc64/power6_mf_gpr
 /none/tests/ppc64/round
+/none/tests/ppc64/scv_test
 /none/tests/ppc64/std_reg_imm
+/none/tests/ppc64/subnormal_test
 /none/tests/ppc64/twi_tdi
 /none/tests/ppc64/tw_td
+/none/tests/ppc64/test_copy_paste
+/none/tests/ppc64/test_darn_inst
 /none/tests/ppc64/test_dfp1
 /none/tests/ppc64/test_dfp2
 /none/tests/ppc64/test_dfp3
@@ -1977,6 +2031,17 @@ configure~
 /none/tests/ppc64/test_isa_2_06_part3
 /none/tests/ppc64/test_isa_2_07_part1
 /none/tests/ppc64/test_isa_2_07_part2
+/none/tests/ppc64/test_isa_3_0
+/none/tests/ppc64/test_isa_3_1_AT
+/none/tests/ppc64/test_isa_3_1_Misc
+/none/tests/ppc64/test_isa_3_1_R1_RT
+/none/tests/ppc64/test_isa_3_1_R1_XT
+/none/tests/ppc64/test_isa_3_1_RT
+/none/tests/ppc64/test_isa_3_1_VRT
+/none/tests/ppc64/test_isa_3_1_XT
+/none/tests/ppc64/test_lxvx_stxvx
+/none/tests/ppc64/test_mcrxrx
+/none/tests/ppc64/test_mod_instructions
 /none/tests/ppc64/allexec
 /none/tests/ppc64/data-cache-instructions
 /none/tests/ppc64/ldst_multiple
@@ -2171,14 +2236,14 @@ configure~
 /none/tests/solaris/reserve_sysstat_zone_addr
 /none/tests/solaris/resolv
 /none/tests/solaris/sigresend
-/none/tests/solaris/stack-overflow
+/none/tests/solaris/stack_overflow
 /none/tests/solaris/stack_prot
 /none/tests/solaris/threads_exitall
 
 # /none/tests/freebsd/
-/none/tests/freebsd/*.stderr.diff
+/none/tests/freebsd/*.stderr.diff*
 /none/tests/freebsd/*.stderr.out
-/none/tests/freebsd/*.stdout.diff
+/none/tests/freebsd/*.stdout.diff*
 /none/tests/freebsd/*.stdout.out
 /none/tests/freebsd/.deps
 /none/tests/freebsd/Makefile
@@ -2189,8 +2254,10 @@ configure~
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
 /none/tests/freebsd/452275
-/none/tests/freebsd/usrstack
 /none/tests/freebsd/proc_pid_file
+/none/tests/freebsd/sanity_level_thread
+/none/tests/freebsd/usrstack
+/none/tests/freebsd/umtx_shm_creat
 
 # /none/tests/x86/
 /none/tests/x86/*.dSYM
@@ -2258,6 +2325,7 @@ configure~
 /none/tests/x86/sigcontext
 /none/tests/x86/smc1
 /none/tests/x86/ssse3_misaligned
+/none/tests/x86/sse4-x86
 /none/tests/x86/x86locked
 /none/tests/x86/x87trigOOR
 /none/tests/x86/xadd
@@ -2382,3 +2450,8 @@ configure~
 
 # /VEX/switchback/
 /VEX/switchback/switchback
+
+*.vgtest*.trs
+*.vgtest*.log
+/test-suite-overall.log
+test-suite.log

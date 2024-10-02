@@ -1,3 +1,4 @@
 #! /bin/sh
 
-sed "s/^valgrind-.*/valgrind-XXX/g"
+sed "s/^valgrind-.*/valgrind-XXX/g" |
+sed "s/Copyright (C) 20[0-9][0-9]-20[0-9][0-9]/Copyright (C) 2000/"

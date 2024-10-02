@@ -13,7 +13,23 @@ perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: \/devices\/pseudo\/
 perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: (\/private)?\/tmp\/(sock|data1|data2|file)\.[0-9]*/Open $1 ...: \/tmp\/$3/' |
 perl -p -e 's/^Open file descriptor [0-9]*: .*/Open file descriptor ...: .../' |
 perl -p -e 's/^Open file descriptor [0-9]*:$/Open file descriptor ...:/' |
+perl -p -e 's/File descriptor [0-9]*: .* is already closed/File descriptor ...: ... is already closed/' |
 perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
+perl -p -e 's/socket\.c:[1-9][0-9]*/in \/...libc.../' |
+# arm systems substitute open for creat
+perl -p -e 's/open \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
+perl -p -e "s/: open \(/: creat (/" |
+
+# FreeBSD specific fdleak filters
+perl -p -e 's/ _close / close /;s/ _openat / creat /;s/internet/AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:.../' |
+sed '/by 0x........: close (in \/...libc...)/d' |
+sed '/by 0x........: creat (in \/...libc...)/d' |
+
+# Solaris specific fdleak filters
+perl -p -e 's/ __close / close /' |
+sed '/ _so_socket /d;' |
+awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
+awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |
 
 # Stack traces showing where fds were created have lots of variations:
 # different numbers of entries, line numbers or not depending on whether
@@ -22,6 +38,14 @@ perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
 # So we just cut out the entire stack trace.  It's coarse but effective;
 # before we did this we had a plethora of expected outputs, with only
 # painfully minor variations between them.
-perl -p -0 -e 's/(Open[^\n]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs'
+perl -p -0 -e 's/(Open[^\n]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs' |
 
+sed "s/by 0x........: (below main)/by 0x........: main/" |
+sed "s/by 0x........: main (.*)/by 0x........: main/" |
 
+# With glibc debuginfo installed we might see syscall-template.S,
+# dup2.c close.c or creat64.c
+perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(close.c:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(creat(?:64)?.c:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(dup2.c:[0-9]*\)/(in \/...libc...)/"

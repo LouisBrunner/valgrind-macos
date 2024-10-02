@@ -2,7 +2,7 @@
 # the post-processing of the cgout files.
 # The touch is because git clone might give the cgout files a timestamp
 # in the future wrt the source file which generates a warning and post failure
-prereq: touch ann-merge1a.cgout ann-merge1b.cgout
+prereq: touch ann-merge1a.cgout ann-merge1b.cgout && ../../tests/python_test.sh
 prog: ../../tests/true
 vgopts: --cachegrind-out-file=cachegrind.out
 

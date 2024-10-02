@@ -1,0 +1,4 @@
+prog: file_dclose
+prereq: test -x file_dclose
+vgopts: -q --track-fds=yes
+stderr_filter: filter_fdleak

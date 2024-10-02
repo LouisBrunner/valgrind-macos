@@ -670,8 +670,8 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(
-         Vg_DebugMsg, 
-         "VG_(signal_return) (thread %u): isRT=%d valid magic; EIP=%#x\n",
+         Vg_DebugMsg,
+         "VG_(sigframe_destroy) (thread %u): isRT=%d valid magic; EIP=%#x\n",
          tid, isRT, tst->arch.vex.guest_EIP);
 
    /* tell the tools */

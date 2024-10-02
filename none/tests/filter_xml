@@ -1,0 +1,25 @@
+#! /bin/sh
+
+dir=`dirname $0`
+
+# FreeBSD adds this one extra line
+# but after filter_xml_frames it will just be <path>...<\/path>
+# which matches other lines, so get rid of it while we can
+# uniquely match it
+sed "/<path>internet<\/path>/d" |
+
+$dir/../../tests/filter_xml_frames  |
+perl    -p -e "s/<time>.*<\/time>/<time>...<\/time>/s" |
+perl    -p -e "s/<what>.*<\/what>/<what>...<\/what>/s" |
+perl    -p -e "s/<path>.*<\/path>/<path>...<\/path>/s" |
+perl    -p -e "s/<line>Copyright.*<\/line>/<line>Copyright...<\/line>/s" |
+perl    -p -e "s/<line>Using Valgrind.*<\/line>/<line>Using Valgrind...<\/line>/s" |
+sed "s/<ppid>[0-9]*<\/ppid>/<ppid>...<\/ppid>/" |
+sed "s/<tid>[0-9]*<\/tid>/<tid>...<\/tid>/" |
+sed "s/<pid>[0-9]*<\/pid>/<pid>...<\/pid>/" |
+sed "s/<obj>.*<\/obj>/<obj>...<\/obj>/" |
+sed "s/<exe>.*<\/exe>/<exe>...<\/exe>/" |
+sed "s/<dir>.*<\/dir>/<dir>...<\/dir>/" |
+sed "s/<ppid>[0-9]*<\/ppid>/<ppid>...<\/ppid>/" |
+sed "s/<unique>0x[0-9a-fA-F]*<\/unique>/<unique>0x........<\/unique>/" |
+sed "s/<ip>0x[0-9a-fA-F]*<\/ip>/<ip>0x........<\/ip>/"

@@ -137,8 +137,9 @@ static void usage_NORETURN ( int need_help )
 "    --error-exitcode=<number> exit code to return if errors found [0=disable]\n"
 "    --error-markers=<begin>,<end> add lines with begin/end markers before/after\n"
 "                              each error output in plain text mode [none]\n"
-"    --show-error-list=no|yes  show detected errors list and\n"
-"                              suppression counts at exit [no]\n"
+"    --show-error-list=no|yes|all  show detected errors list and\n"
+"                              suppression counts at exit [no].\n"
+"                              all means to also print suppressed errors.\n"
 "    -s                        same as --show-error-list=yes\n"
 "    --keep-debuginfo=no|yes   Keep symbols etc for unloaded code [no]\n"
 "                              This allows saved stack traces (e.g. memory leaks)\n"
@@ -166,6 +167,10 @@ static void usage_NORETURN ( int need_help )
 "                              size/blocks, full: profile current and cumulative\n"
 "                              allocated size/blocks and freed size/blocks.\n"
 "    --xtree-memory-file=<file>   xtree memory report file [xtmemory.kcg.%%p]\n"
+"    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]\n"
+"                              should calls to realloc with a size of 0\n"
+"                              free memory and return NULL or\n"
+"                              allocate/resize and return non-NULL\n"
 "\n"
 "  uncommon user options for all Valgrind tools:\n"
 "    --fullpath-after=         (with nothing after the '=')\n"
@@ -243,10 +248,6 @@ static void usage_NORETURN ( int need_help )
 "              attempt to avoid expensive address-space-resync operations\n"
 "    --max-threads=<number>    maximum number of threads that valgrind can\n"
 "                              handle [%d]\n"
-"    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]\n"
-"                              should calls to realloc with a size of 0\n"
-"                              free memory and return NULL or\n"
-"                              allocate/resize and return non-NULL\n"
 "\n";
 
    const HChar usage2[] =
@@ -255,6 +256,10 @@ static void usage_NORETURN ( int need_help )
 "    -d                        show verbose debugging output\n"
 "    --stats=no|yes            show tool and core statistics [no]\n"
 "    --sanity-level=<number>   level of sanity checking to do [1]\n"
+"                              1 - does occasional stack checking\n"
+"                              2 - more stack checks and malloc checks\n"
+"                              3 - as 2 and mmap checks\n"
+"                              4 - as 3 and translation sector checks\n"
 "    --trace-flags=<XXXXXXXX>   show generated code? (X = 0|1) [00000000]\n"
 "    --profile-flags=<XXXXXXXX> ditto, but for profiling (X = 0|1) [00000000]\n"
 "    --profile-interval=<number> show profile every <number> event checks\n"
@@ -325,8 +330,8 @@ static void usage_NORETURN ( int need_help )
 "  Extra options read from ~/.valgrindrc, $VALGRIND_OPTS, ./.valgrindrc\n"
 "\n"
 "  %s is %s\n"
-"  Valgrind is Copyright (C) 2000-2017, and GNU GPL'd, by Julian Seward et al.\n"
-"  LibVEX is Copyright (C) 2004-2017, and GNU GPL'd, by OpenWorks LLP et al.\n"
+"  Valgrind is Copyright (C) 2000-2024, and GNU GPL'd, by Julian Seward et al.\n"
+"  LibVEX is Copyright (C) 2004-2024, and GNU GPL'd, by OpenWorks LLP et al.\n"
 "\n"
 "  Bug reports, feedback, admiration, abuse, etc, to: %s.\n"
 "\n";
@@ -604,10 +609,19 @@ static void process_option (Clo_Mode mode,
          startpos = *nextpos ? nextpos + 1 : nextpos;
       }
    }
-   else if VG_BOOL_CLOM(cloPD, arg, "--show-error-list", VG_(clo_show_error_list)) {
+   else if VG_STR_CLOM(cloPD, arg, "--show-error-list", tmp_str) {
+      if (VG_(strcmp)(tmp_str, "yes") == 0)
+         VG_(clo_show_error_list) = 1;
+      else if (VG_(strcmp)(tmp_str, "all") == 0)
+         VG_(clo_show_error_list) = 2;
+      else if (VG_(strcmp)(tmp_str, "no") == 0)
+         VG_(clo_show_error_list) = 0;
+      else
+         VG_(fmsg_bad_option)(arg,
+            "Bad argument, should be 'yes', 'all' or 'no'\n");
       pos->show_error_list_set = True; }
    else if (VG_STREQ_CLOM(cloPD, arg, "-s")) {
-      VG_(clo_show_error_list) = True;
+      VG_(clo_show_error_list) = 1;
       pos->show_error_list_set = True;
    }
    else if VG_BOOL_CLO(arg, "--show-emwarns",   VG_(clo_show_emwarns)) {}
@@ -634,8 +648,8 @@ static void process_option (Clo_Mode mode,
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",
                         VG_(clo_child_silent_after_fork)) {}
-else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum", 
-                    VG_(clo_scheduling_quantum)) {}
+   else if VG_INT_CLOM(cloPD, arg, "--scheduling-quantum",
+                       VG_(clo_scheduling_quantum)) {}
    else if VG_STR_CLO(arg, "--fair-sched",        tmp_str) {
       if (VG_(Clo_Mode)() != cloP)
          ;
@@ -1105,6 +1119,13 @@ void main_process_cmd_line_options( void )
          will have to be done in Memcheck's flag-handling code, not
          here. */
    }
+
+#if defined(VGO_freebsd)
+   if (VG_(clo_sanity_level) >= 3) {
+      VG_(debugLog)(0, "main", "Warning: due to transparent memory mappings with MAP_STACK\n");
+      VG_(debugLog)(0, "main", "--sanity-level=3 and above may give spurious errors.\n");
+   }
+#endif
 
    /* All non-logging-related options have been checked.  If the logging
       option specified is ok, we can switch to it, as we know we won't
@@ -2279,7 +2300,8 @@ void shutdown_actions_NORETURN( ThreadId tid,
       the error management machinery. */
    VG_TDICT_CALL(tool_fini, 0/*exitcode*/);
 
-   if (VG_(needs).core_errors || VG_(needs).tool_errors) {
+   if ((VG_(needs).core_errors && VG_(found_or_suppressed_errs)())
+       || VG_(needs).tool_errors) {
       if (VG_(clo_verbosity) == 1
           && !VG_(clo_xml)
           && !VG_(clo_show_error_list))
@@ -2293,7 +2315,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
       }
 
       /* In XML mode, this merely prints the used suppressions. */
-      VG_(show_all_errors)(VG_(clo_verbosity), VG_(clo_xml));
+      VG_(show_all_errors)(VG_(clo_verbosity), VG_(clo_xml), VG_(clo_show_error_list));
    }
 
    if (VG_(clo_xml)) {
@@ -3477,6 +3499,37 @@ asm("\n"
     "\thlt\n"
     ".previous\n"
 );
+
+#elif defined(VGP_arm64_freebsd)
+
+
+// on entry
+// x0 contains a pointer to argc
+// sp contains a pointer either to the same address
+//    or 8 below it depending on whether the stack pointer
+//    was 16byte aligned
+//
+// before calling we want
+// x0 to contain a pointer to argc - just leave it alone
+// x1 to contain a pointer to the original stack in case we need it like amd64
+// sp to contain a pointer to the end of VG_(interim_stack)
+asm("\n"
+    ".text\n"
+    "\t.align 2\n"
+    "\t.type _start,#function\n"
+    "\t.global _start\n"
+    "_start:\n"
+    "\tadrp x2, vgPlain_interim_stack\n"
+    "\tadd  x2, x2, :lo12:vgPlain_interim_stack\n"
+    "\tldr  x3, ="VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tadd  x2, x2, x3\n"
+    "\tldr  x3, ="VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
+    "\tadd  x2, x2, x3\n"
+    "\tand  x2, x2, -16\n"
+    "\tmov  x1, sp\n"
+    "\tmov  sp, x2\n"
+    "\tb _start_in_C_freebsd\n"
+);
 #endif
 
 void *memcpy(void *dest, const void *src, size_t n);
@@ -3510,7 +3563,7 @@ void _start_in_C_freebsd ( UWord* pArgc, UWord *initial_sp )
    VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
    VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
 
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    the_iicii.sp_at_startup = (Addr)initial_sp;
 #else
    the_iicii.sp_at_startup = (Addr)pArgc;

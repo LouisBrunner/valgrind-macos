@@ -101,6 +101,8 @@ typedef
 #define VEX_HWCAPS_AMD64_RDRAND (1<<13) /* RDRAND instructions */
 #define VEX_HWCAPS_AMD64_F16C   (1<<14) /* F16C instructions */
 #define VEX_HWCAPS_AMD64_RDSEED (1<<15) /* RDSEED instructions */
+#define VEX_HWCAPS_AMD64_FMA3   (1<<16) /* FMA3 instructions */
+#define VEX_HWCAPS_AMD64_FMA4   (1<<17) /* FMA4 instructions */
 
 /* ppc32: baseline capability is integer only */
 #define VEX_HWCAPS_PPC32_F     (1<<8)  /* basic (non-optional) FP */
@@ -175,6 +177,8 @@ typedef
 #define VEX_HWCAPS_S390X_MI2   (1<<20)  /* miscellaneous-instruction-extensions facility 2 */
 #define VEX_HWCAPS_S390X_LSC2  (1<<21)  /* Conditional load/store facility2 */
 #define VEX_HWCAPS_S390X_VXE   (1<<22)  /* Vector-enhancements facility */
+#define VEX_HWCAPS_S390X_NNPA  (1<<23)  /* NNPA facility */
+#define VEX_HWCAPS_S390X_DFLT  (1<<24)  /* Deflate-conversion facility */
 
 /* Special value representing all available s390x hwcaps */
 #define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
@@ -193,7 +197,9 @@ typedef
                                 VEX_HWCAPS_S390X_MSA5  | \
                                 VEX_HWCAPS_S390X_MI2   | \
                                 VEX_HWCAPS_S390X_LSC2  | \
-                                VEX_HWCAPS_S390X_VXE)
+                                VEX_HWCAPS_S390X_VXE   | \
+                                VEX_HWCAPS_S390X_NNPA  | \
+                                VEX_HWCAPS_S390X_DFLT)
 
 #define VEX_HWCAPS_S390X(x)  ((x) & ~VEX_S390X_MODEL_MASK)
 #define VEX_S390X_MODEL(x)   ((x) &  VEX_S390X_MODEL_MASK)
@@ -374,6 +380,7 @@ typedef
          line size of 64 bytes would be encoded here as 6. */
       UInt arm64_dMinLine_lg2_szB;
       UInt arm64_iMinLine_lg2_szB;
+      UChar arm64_cache_block_size;
       /* ARM64: does the host require us to use the fallback LLSC
          implementation? */
       Bool arm64_requires_fallback_LLSC;

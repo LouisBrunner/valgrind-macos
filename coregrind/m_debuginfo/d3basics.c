@@ -66,7 +66,7 @@ const HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
       case DW_TAG_entry_point:        return "DW_TAG_entry_point";
       case DW_TAG_enumeration_type:   return "DW_TAG_enumeration_type";
       case DW_TAG_formal_parameter:   return "DW_TAG_formal_parameter";
-      case DW_TAG_imported_declaration: 
+      case DW_TAG_imported_declaration:
          return "DW_TAG_imported_declaration";
       case DW_TAG_label:              return "DW_TAG_label";
       case DW_TAG_lexical_block:      return "DW_TAG_lexical_block";
@@ -79,7 +79,7 @@ const HChar* ML_(pp_DW_TAG) ( DW_TAG tag )
       case DW_TAG_subroutine_type:    return "DW_TAG_subroutine_type";
       case DW_TAG_typedef:            return "DW_TAG_typedef";
       case DW_TAG_union_type:         return "DW_TAG_union_type";
-      case DW_TAG_unspecified_parameters: 
+      case DW_TAG_unspecified_parameters:
          return "DW_TAG_unspecified_parameters";
       case DW_TAG_variant:            return "DW_TAG_variant";
       case DW_TAG_common_block:       return "DW_TAG_common_block";
@@ -470,7 +470,7 @@ const HChar* ML_(pp_DW_RLE) ( DW_RLE entry )
 /* ------ To do with evaluation of Dwarf expressions ------ */
 
 /* FIXME: duplicated in readdwarf.c */
-static 
+static
 ULong read_leb128 ( const UChar* data, Int* length_return, Int sign )
 {
   ULong  result = 0;
@@ -542,7 +542,7 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, const RegSummary* regs )
    if (regno == 1/*SP*/) { *a = regs->sp; return True; }
 #  elif defined(VGP_arm_linux)
    if (regno == 13) { *a = regs->sp; return True; }
-   if (regno == 11) { *a = regs->fp; return True; } 
+   if (regno == 11) { *a = regs->fp; return True; }
 #  elif defined(VGP_s390x_linux)
    if (regno == 15) { *a = regs->sp; return True; }
    if (regno == 11) { *a = regs->fp; return True; }
@@ -552,7 +552,7 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, const RegSummary* regs )
 #  elif defined(VGP_mips64_linux)
    if (regno == 29) { *a = regs->sp; return True; }
    if (regno == 30) { *a = regs->fp; return True; }
-#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin) || defined(VGP_arm64_freebsd)
    if (regno == 31) { *a = regs->sp; return True; }
    if (regno == 29) { *a = regs->fp; return True; }
 #  else
@@ -604,7 +604,7 @@ static Bool bias_address( Addr* a, const DebugInfo* di )
 
 /* Evaluate a standard DWARF3 expression.  See detailed description in
    priv_d3basics.h.  Doesn't handle DW_OP_piece/DW_OP_bit_piece yet.  */
-GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB, 
+GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
                                      const GExpr* fbGX, const RegSummary* regs,
                                      const DebugInfo* di,
                                      Bool push_initial_zero )
@@ -683,7 +683,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
 
       vg_assert(sp >= -1 && sp < N_EXPR_STACK);
 
-      if (expr > limit) 
+      if (expr > limit)
          /* overrun - something's wrong */
          FAIL("evaluate_Dwarf3_Expr: ran off end of expr");
 
@@ -704,7 +704,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
                on before pushing the result. */
             a1 = ML_(read_Addr)(expr);
             if (bias_address(&a1, di)) {
-               PUSH( a1 ); 
+               PUSH( a1 );
                expr += sizeof(Addr);
             }
             else {
@@ -797,7 +797,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
             should follow this operator, so the top of stack would be
             returned.  */
             /* But no spec resulting from Googling.  Punt for now. */
-            FAIL("warning: evaluate_Dwarf3_Expr: unhandled "         
+            FAIL("warning: evaluate_Dwarf3_Expr: unhandled "
                  "DW_OP_GNU_push_tls_address");
             /*NOTREACHED*/
          case DW_OP_deref:
@@ -1057,9 +1057,9 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
             return res;
          default:
             if (!VG_(clo_xml))
-               VG_(message)(Vg_DebugMsg, 
+               VG_(message)(Vg_DebugMsg,
                             "warning: evaluate_Dwarf3_Expr: unhandled "
-                            "DW_OP_ 0x%x\n", (Int)opcode); 
+                            "DW_OP_ 0x%x\n", (Int)opcode);
             FAIL("evaluate_Dwarf3_Expr: unhandled DW_OP_");
             /*NOTREACHED*/
       }
@@ -1070,7 +1070,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
    res.word = stack[sp];
    res.kind = GXR_Addr;
    return res;
- 
+
 #  undef POP
 #  undef PUSH
 #  undef FAIL
@@ -1184,7 +1184,7 @@ GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di )
       aMax   = ML_(read_Addr)(p);   p += sizeof(Addr);
       nbytes = ML_(read_UShort)(p); p += sizeof(UShort);
       nGuards++;
-      if (0) VG_(printf)("           guard %ld: %#lx %#lx\n", 
+      if (0) VG_(printf)("           guard %ld: %#lx %#lx\n",
                          nGuards, aMin,aMax);
 
       thisResult.b  = False;
@@ -1204,7 +1204,7 @@ GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di )
                          "in unknown section (1)";
          }
       }
-      else 
+      else
       if (nbytes == 1 + sizeof(Addr) + 1 + 1
           /* 11 byte block: 3 c0 b6 2b 0 0 0 0 0 23 4
              (DW_OP_addr: 2bb6c0; DW_OP_plus_uconst: 4)
@@ -1212,7 +1212,7 @@ GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di )
              trailing ULEB denotes a number in the range 0 .. 127
              inclusive. */
           && p[0] == DW_OP_addr
-          && p[1 + sizeof(Addr)] == DW_OP_plus_uconst 
+          && p[1 + sizeof(Addr)] == DW_OP_plus_uconst
           && p[1 + sizeof(Addr) + 1] < 0x80 /*1-byte ULEB*/) {
          Addr a = ML_(read_Addr)(&p[1]);
          if (bias_address(&a, di)) {
@@ -1225,7 +1225,7 @@ GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di )
          }
       }
       else
-      if (nbytes == 2 + sizeof(Addr) 
+      if (nbytes == 2 + sizeof(Addr)
           && *p == DW_OP_addr
           && *(p + 1 + sizeof(Addr)) == DW_OP_GNU_push_tls_address) {
          if (!badness)
@@ -1303,7 +1303,7 @@ GXResult ML_(evaluate_trivial_GX)( const GExpr* gx, const DebugInfo* di )
       }
    }
 
-   /* Well, we have success.  All subexpressions evaluated, and 
+   /* Well, we have success.  All subexpressions evaluated, and
       they all agree.  Hurrah. */
    res.kind = GXR_Addr;
    res.word = (UWord)mul->ul; /* NB: narrowing from ULong */

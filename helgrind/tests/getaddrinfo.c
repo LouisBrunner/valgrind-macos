@@ -34,7 +34,11 @@ int main(void) {
     }
     for (i = 0; i < threaddat_size; ++i) {
         pthread_join(threads[i], 0);
-        freeaddrinfo(threaddat[i].res);
+        // musl crashes if you pass a NULL pointer to freeaddrinfo
+        if (threaddat[i].res)
+        {
+            freeaddrinfo(threaddat[i].res);
+        }
     }
     return 0;
 }

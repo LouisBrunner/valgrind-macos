@@ -15,6 +15,14 @@
 #define STACK_SIZE 1024 * 512
 #define LONG_SLEEP_TIME 1000000
 
+void long_sleep(void)
+{
+   for (int i = 0; i < LONG_SLEEP_TIME; i += 1000)
+   {
+      usleep(1000);
+   }
+}
+
 void *contender_start(void *arg)
 {
   pthread_mutex_t *mutex = arg;
@@ -82,19 +90,19 @@ int main ()
 
   // wait until the thread is sleeping inside pthread_mutex_lock().
   fprintf(stderr, "sleeping\n");
-  usleep(LONG_SLEEP_TIME);
+  long_sleep();
 
   // signal thread
   fprintf(stderr, "signalling\n");
   pthread_kill(contender, SIGINT);
 
   fprintf(stderr, "sleeping\n");
-  usleep(LONG_SLEEP_TIME);
+  long_sleep();
 
   fprintf(stderr, "unlocking\n");
   pthread_mutex_unlock(&mutex);
 
-  usleep(LONG_SLEEP_TIME);
+  long_sleep();
 
   // finally wait for the thread
   fprintf(stderr, "joining thread\n");

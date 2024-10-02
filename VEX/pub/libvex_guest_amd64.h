@@ -131,7 +131,10 @@ typedef
 
       /* Emulation notes */
       UInt  guest_EMNOTE;
-      UInt  pad2;
+      /* Used by Darwin and FreeBSD when setting the carry flag from
+       * ML_(do_syscall_for_client_WRK). Needed to determine how
+       * to restart interrupted syscalls. */
+      UInt guest_SETC;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to
@@ -202,13 +205,6 @@ extern
 void
 LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
                                 /*MOD*/VexGuestAMD64State* vex_state );
-
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-void _______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ (void);
-extern Addr addr_amd64g_calculate_rflags_all_WRK;
-extern Addr addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______;
-#endif
-
 
 /* Do FXSAVE from the supplied VexGuestAMD64tate structure and store the
    result at the given address which represents a buffer of at least 416

@@ -2,6 +2,8 @@
 
 gsed 's/Invalid write of size 8/Invalid write of size 4/' |
 gsed 's/is [4-9][0-9] bytes inside a block of size 100 free/is ... bytes inside a block of size 100 free/' |
+gsed '/___realpathat/d' |
+gsed 's/Invalid write of size 2/Invalid write of size 1/' |
 
 
 ../filter_stderr "$@"

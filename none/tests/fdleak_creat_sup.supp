@@ -1,0 +1,18 @@
+{
+   sup
+   CoreError:FdNotClosed
+   obj:*libc.so*
+   fun:main
+}
+{
+   sup2
+   CoreError:FdNotClosed
+   fun:*creat*
+   fun:main
+}
+{
+   sup3
+   CoreError:FdNotClosed
+   fun:*open*
+   fun:main
+}

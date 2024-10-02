@@ -22,7 +22,7 @@ do_burn () at sleepers.c:40
 $1 = void
 [Switching to thread 2 (Thread ....)]
 #0  0x........ in syscall ...
-Could not write register  "xxx"; remote failure reply 'E.
+Could not write register  "xxx"; remote failure reply '
 ERROR changing register  xxx regno y
 gdb commands changing registers (pc, sp, ...) (e.g. 'jump',
 set pc, calling from gdb a function in the debugged process, ...)
@@ -31,7 +31,7 @@ Thread status is VgTs_WaitSys
 '
 [Switching to thread 3 (Thread ....)]
 #0  0x........ in syscall ...
-Could not write register  "xxx"; remote failure reply 'E.
+Could not write register  "xxx"; remote failure reply '
 ERROR changing register  xxx regno y
 gdb commands changing registers (pc, sp, ...) (e.g. 'jump',
 set pc, calling from gdb a function in the debugged process, ...)
@@ -40,7 +40,7 @@ Thread status is VgTs_WaitSys
 '
 [Switching to thread 4 (Thread ....)]
 #0  0x........ in syscall ...
-Could not write register  "xxx"; remote failure reply 'E.
+Could not write register  "xxx"; remote failure reply '
 ERROR changing register  xxx regno y
 gdb commands changing registers (pc, sp, ...) (e.g. 'jump',
 set pc, calling from gdb a function in the debugged process, ...)

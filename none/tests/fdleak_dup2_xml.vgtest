@@ -1,0 +1,4 @@
+prog: fdleak_dup2
+vgopts: --track-fds=all --xml=yes --xml-fd=2
+args: < /dev/null
+stderr_filter: filter_xml

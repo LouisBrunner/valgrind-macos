@@ -2070,7 +2070,7 @@ int main(int argc, char **argv)
     fflush(stdout);
     printf("---- VST4 (single 4-element structure from one lane) ----\n");
     TESTINSN_VSTn("vst4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3);
-    TESTINSN_VSTn("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4);
+    TESTINSN_VSTn("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d3);
     TESTINSN_VSTn("vst4.32 {d0[0],d2[0],d4[0],d6[0]}", d0, d2, d4, d6);
     TESTINSN_VSTn("vst4.32 {d0[1],d2[1],d4[1],d6[1]}", d0, d2, d4, d6);
     TESTINSN_VSTn("vst4.16 {d1[0],d2[0],d3[0],d4[0]}", d1, d2, d3, d4);
@@ -2396,7 +2396,7 @@ int main(int argc, char **argv)
     fflush(stdout);
     printf("---- VST4 (single 4-element structure from one lane) ----\n");
     TESTINSN_VSTn_WB("vst4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3);
-    TESTINSN_VSTn_WB("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4);
+    TESTINSN_VSTn_WB("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d3);
     TESTINSN_VSTn_WB("vst4.32 {d0[0],d2[0],d4[0],d6[0]}", d0, d2, d4, d6);
     TESTINSN_VSTn_WB("vst4.32 {d0[1],d2[1],d4[1],d6[1]}", d0, d2, d4, d6);
     TESTINSN_VSTn_WB("vst4.16 {d1[0],d2[0],d3[0],d4[0]}", d1, d2, d3, d4);
@@ -2722,7 +2722,7 @@ int main(int argc, char **argv)
     fflush(stdout);
     printf("---- VST4 (single 4-element structure from one lane) ----\n");
     TESTINSN_VSTn_RI("vst4.32 {d0[0],d1[0],d2[0],d3[0]}", d0, d1, d2, d3, r5, 13);
-    TESTINSN_VSTn_RI("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d4, r9, 42);
+    TESTINSN_VSTn_RI("vst4.32 {d0[1],d1[1],d2[1],d3[1]}", d0, d1, d2, d3, r9, 42);
     TESTINSN_VSTn_RI("vst4.32 {d0[0],d2[0],d4[0],d6[0]}", d0, d2, d4, d6, r1, 0);
     TESTINSN_VSTn_RI("vst4.32 {d0[1],d2[1],d4[1],d6[1]}", d0, d2, d4, d6, r5, -3);
     TESTINSN_VSTn_RI("vst4.16 {d1[0],d2[0],d3[0],d4[0]}", d1, d2, d3, d4, r5, 13);

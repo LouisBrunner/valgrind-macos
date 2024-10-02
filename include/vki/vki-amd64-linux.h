@@ -375,7 +375,28 @@ struct vki_statfs {
 	__vki_kernel_fsid_t f_fsid;
 	long f_namelen;
 	long f_frsize;
-	long f_spare[5];
+        long f_flags;
+        long f_spare[4];
+};
+
+//----------------------------------------------------------------------
+// From bits/statfs.h
+//----------------------------------------------------------------------
+
+struct vki_statfs64
+{
+   long f_type;
+   long f_bsize;
+   unsigned long f_blocks;
+   unsigned long f_bfree;
+   unsigned long f_bavail;
+   unsigned long f_files;
+   unsigned long f_ffree;
+   __vki_kernel_fsid_t f_fsid;
+   long f_namelen;
+   long f_frsize;
+   long f_flags;
+   long f_spare[4];
 };
 
 //----------------------------------------------------------------------

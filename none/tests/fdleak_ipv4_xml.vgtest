@@ -1,0 +1,6 @@
+prog: fdleak_ipv4
+# Program forks, so don't output anything after fork/child.
+# Should maybe be default for xml output?
+vgopts: --track-fds=yes --xml=yes --xml-fd=2 --child-silent-after-fork=yes
+args: < /dev/null 
+stderr_filter: filter_xml

@@ -826,6 +826,156 @@ __asm__(
 );
 #endif /* VGP_s390x_linux */
 
+#if defined(__clang__) && defined(VGP_arm64_linux)
+
+// __builtin_setjmp is not implemented by the standard C library
+// used on Android in current llvm-based toolchains as of NDK r19.
+//
+// Here is a custom implementation of Valgrind's "minimal" setjmp
+// interface. Per the comment at the top of this file, we only need
+// to save integer registers.
+//
+// Per the Procedure Call Standard for the ARM 64-bit Architecture
+// document,
+// http://infocenter.arm.com/help/topic/com.arm.doc.ihi0055b/IHI0055B_aapcs64.pdf
+// Section 5.1.1. General-purpose registers:
+// >
+// > A subroutine invocation must preserve the contents of the
+// > registers r19-r29 and SP."
+//
+// We also need to save and restore r30, the link register, i.e.
+// the default destination that a 'ret' instruction branches to.
+//
+// Note that this document is phrased in terms of 'r' registers
+// (e.g. "r30") because it aims to be agnostic as to A64 vs A32
+// instruction sets, but here we are targeting the A64 instruction
+// set, so we are dealing with 'x' registers.
+
+
+
+__attribute__((returns_twice))
+UWord VG_MINIMAL_SETJMP(VG_MINIMAL_JMP_BUF(_env))
+{
+   asm volatile(
+                 // x9 is the first of the regular temporary registers
+                 // per the above-mentioned Procedule Call Standard document.
+                 // Use it as temporary to hold the value of SP, since str does
+                 // not accept SP as operand.
+      "  mov x9, sp                     \n"
+      // Store the general-purpose registers that we need to save
+      // per the above discussion.
+      // Note that x30 is the link register.
+      "  stp x19, x20, [%[_env], 0]     \n"
+      "  stp x21, x22, [%[_env], 0x10]  \n"
+      "  stp x23, x24, [%[_env], 0x20]  \n"
+      "  stp x25, x26, [%[_env], 0x30]  \n"
+      "  stp x27, x28, [%[_env], 0x40]  \n"
+      "  stp x29, x30, [%[_env], 0x50]  \n"
+      // Store the value of SP.
+      "  str x9,       [%[_env], 0x60]  \n"
+      :
+      // No outputs
+      :
+      // Inputs
+      [_env]"r"(_env)
+      :
+      // Clobbers.
+      // We have used x9 as a temporary
+      "x9",
+      // We have written to memory locations
+      "memory");
+
+          // Direct invokation of setjmp always returns 0.
+          // The pseudo returning of the value 1 as a return from longjmp
+          // is implemented in longjmp.
+   return 0;
+}
+
+__attribute__((noreturn))
+void VG_MINIMAL_LONGJMP(VG_MINIMAL_JMP_BUF(_env))
+{
+   asm volatile(
+                 // Loads to match the stores in the above setjmp implementation.
+      "  ldp x19, x20, [%[_env], 0]     \n"
+      "  ldp x21, x22, [%[_env], 0x10]  \n"
+      "  ldp x23, x24, [%[_env], 0x20]  \n"
+      "  ldp x25, x26, [%[_env], 0x30]  \n"
+      "  ldp x27, x28, [%[_env], 0x40]  \n"
+      "  ldp x29, x30, [%[_env], 0x50]  \n"
+      "  ldr x9,       [%[_env], 0x60]  \n"
+      "  mov sp, x9                     \n"
+      // return as setjmp for the second time, returning 1.
+      // Since we have loaded the link register x30 from the saved buffer
+      // that was set by the above setjmp implementation, the 'ret' instruction
+      // here is going to return to where setjmp was called.
+      // Per the setjmp/longjmp contract, that pseudo second returning
+      // of setjmp should return the value 1.
+      // x0 is holds the integer return value.
+      "  mov x0, 1                      \n"
+      "  ret                            \n"
+      :
+      // No outputs
+      :
+      // Inputs
+      [_env]"r"(_env)
+      :
+      // Clobbers.
+      // We have used x9 as a temporary
+      "x9");
+
+          // This statement is unreachable because the above asm statement
+          // unconditionally does a 'ret' instruction. The purpose of this
+          // statement is to silence clang warnings about this function returning
+          // while having the 'noreturn' attribute.
+   __builtin_unreachable();
+}
+
+#endif
+
+#if defined(VGP_arm64_freebsd)
+
+__asm__(
+   ".text\n"
+
+   ".globl VG_MINIMAL_SETJMP"  "\n"
+   "VG_MINIMAL_SETJMP:"  "\n" // x0 = jmp_buf
+   "        mov             x1, sp\n" /* can't STP from sp */
+   "        stp             x19, x20,       [x0, #0x00]\n"
+   "        stp             x21, x22,       [x0, #0x10]\n"
+   "        stp             x23, x24,       [x0, #0x20]\n"
+   "        stp             x25, x26,       [x0, #0x30]\n"
+   "        stp             x27, x28,       [x0, #0x40]\n"
+   "        stp             x29, x30,       [x0, #0x50]\n"
+   "        stp             x1, xzr,        [x0, #0x60]\n"
+   "        stp             d8, d9,         [x0, #0x70]\n"
+   "        stp             d10, d11,       [x0, #0x80]\n"
+   "        stp             d12, d13,       [x0, #0x90]\n"
+   "        stp             d14, d15,       [x0, #0xA0]\n"
+   "        mov             x0, #0\n" // return 0 on the first return
+   "        ret\n"
+   ".previous\n"
+
+   ".globl VG_MINIMAL_LONGJMP"  "\n"
+   "      VG_MINIMAL_LONGJMP:"  "\n" // x0 = jmp_buf
+   "        ldp             x19, x20,       [x0, #0x00]\n"
+   "        ldp             x21, x22,       [x0, #0x10]\n"
+   "        ldp             x23, x24,       [x0, #0x20]\n"
+   "        ldp             x25, x26,       [x0, #0x30]\n"
+   "        ldp             x27, x28,       [x0, #0x40]\n"
+   "        ldp             x29, x30,       [x0, #0x50]\n"
+   "        ldp             x1, xzr,        [x0, #0x60]\n"
+   "        ldp             d8, d9,         [x0, #0x70]\n"
+   "        ldp             d10, d11,       [x0, #0x80]\n"
+   "        ldp             d12, d13,       [x0, #0x90]\n"
+   "        ldp             d14, d15,       [x0, #0xA0]\n"
+   "        mov             sp, x1\n"
+   "        mov             x0, #1\n" // return non-zero on the second return
+   "        br              lr\n"
+   ".previous\n"
+   );
+
+#endif
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

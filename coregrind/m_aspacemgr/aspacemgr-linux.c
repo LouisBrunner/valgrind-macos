@@ -332,7 +332,6 @@ static Addr aspacem_cStart = 0;
 // Where aspacem will start looking for Valgrind space
 static Addr aspacem_vStart = 0;
 
-
 #define AM_SANITY_CHECK                                      \
    do {                                                      \
       if (VG_(clo_sanity_level) >= 3)                        \
@@ -863,12 +862,20 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       if (nsegments[i].hasW) seg_prot |= VKI_PROT_WRITE;
       if (nsegments[i].hasX) seg_prot |= VKI_PROT_EXEC;
 
-#if defined(VGO_darwin) || defined(VGO_freebsd)
+#if defined(VGO_darwin)
       // GrP fixme kernel info doesn't have dev/inode
       cmp_devino = False;
 
       // GrP fixme V and kernel don't agree on offsets
       cmp_offsets = False;
+#elif defined(VGO_freebsd)
+      cmp_offsets
+         = nsegments[i].kind == SkFileC || nsegments[i].kind == SkFileV;
+      cmp_offsets &= ignore_offset;
+
+      cmp_devino
+         = nsegments[i].dev != 0 || nsegments[i].ino != 0;
+      cmp_devino &= ignore_offset;
 #else
       cmp_offsets
          = nsegments[i].kind == SkFileC || nsegments[i].kind == SkFileV;
@@ -887,6 +894,19 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
       /* hack apparently needed on MontaVista Linux */
       if (filename && VG_(strstr)(filename, "/.lib-ro/"))
          cmp_devino = False;
+
+      /* On linux systems we want to avoid dev/inode check on btrfs,
+         we can use the statfs call for that, except on nanomips
+         (which also doesn't have a sys_fstatfs syswrap).
+         See https://bugs.kde.org/show_bug.cgi?id=317127 */
+#if !defined(VGP_nanomips_linux)
+      struct vki_statfs statfs = {0};
+      SysRes res = VG_(do_syscall2)(__NR_statfs, (UWord)filename,
+                                    (UWord)&statfs);
+      if (!sr_isError(res) && statfs.f_type == VKI_BTRFS_SUPER_MAGIC) {
+         cmp_devino = False;
+      }
+#endif
 #endif
 
       /* If we are doing sloppy execute permission checks then we
@@ -1767,9 +1787,6 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    // and fills the space up to the end of the segment
    // see man mmap
 
-   // Version number from
-   // https://www.freebsd.org/doc/en_US.ISO8859-1/books/porters-handbook/versions-10.html
-
    // On x86 this is 0x3FE0000
    // And on amd64 it is 0x1FFE0000 (536739840)
    // There is less of an issue on amd64 as we just choose some arbitrary address rather then trying
@@ -1782,13 +1799,15 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    // This seems to be in the sysctl kern.sgrowsiz
    // Then there is kern.maxssiz which is the total stack size (grow size + guard area)
    // In other words guard area = maxssiz - sgrowsiz
-
-#if (__FreeBSD_version >= 1003516)
+   //
+   // Unfortunately there isn't a maxssiz32 for x86 on amd64
+   // That means x86 on amd64 gets the amd64 stack size of 512M
+   // which is really quite big for the x86 address space
+   // so we can't use these syscalls. Maybe one day when all supported platforms
+   // have them.
 
 #if 0
    // this block implements what is described above
-   // this makes no changes to the regression tests
-   // I'm keeping it for a rainy day.
    // note this needs
    // #include "pub_core_libcproc.h"
    SizeT kern_maxssiz;
@@ -1796,17 +1815,20 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    SizeT sysctl_size = sizeof(SizeT);
    VG_(sysctlbyname)("kern.maxssiz", &kern_maxssiz, &sysctl_size, NULL, 0);
    VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
-
-   suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE;
+   VG_(printf)("maxssiz %lx\n", kern_maxssiz);
+   //suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE;
 #endif
 
+   // on amd64 we have oodles of space and just shove the new stack somewhere out of the way
+   // x86 is far more constrained, and we put the new stack just below the stack passed in to V
+   // except that it has stack space and the growth stack guard below it as decribed above
+   // so we need to skip over the existing stack/growth area on x86
+
+# if VG_WORDSIZE == 4
    suggested_clstack_end = aspacem_maxAddr - 64*1024*1024UL
                                            + VKI_PAGE_SIZE;
-
 #else
-   suggested_clstack_end = aspacem_maxAddr - 16*1024*1024UL
-                                           + VKI_PAGE_SIZE;
-
+   suggested_clstack_end = aspacem_maxAddr;
 #endif
 
    // --- Solaris ------------------------------------------
@@ -4106,6 +4128,74 @@ Bool VG_(get_changed_segments)(
 #elif defined(VGO_freebsd)
 
 /*
+ * Some more nasty hacks.
+ *
+ * On FreeBSD mmap with MAP_STACK will result in TWO adjacent areas being mapped.
+ * Assuming a grow down stack, the one in the lower address is a growth guard
+ * area. The one in the higher area is the stack. The kernel will automatically
+ * extend the stack into the growth guard. Valgrind doesn't see any of that.
+ * When we see mapped memory like that, we need to try to merge them so that
+ * they match the mmap that Valgrind saw and recorded.
+ *
+ * There is also the initial stack. Valgrind will have already recorded that
+ * with parse_procselfmaps. So we don't want to merge that.
+ */
+static char* maybe_merge_procmap_stack(char* p,  struct vki_kinfo_vmentry *kve, Addr* pEndPlusOne, UInt* pProt)
+{
+   static Bool sgrowsiz_read = False;
+   static SizeT kern_sgrowsiz;
+   if (!sgrowsiz_read) {
+      SizeT sysctl_size = sizeof(SizeT);
+      VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
+      sgrowsiz_read = True;
+   }
+   char* p_next = p + kve->kve_structsize;
+   struct vki_kinfo_vmentry *kve_next = (struct vki_kinfo_vmentry *)(p_next);
+
+#if defined(VGP_amd64_freebsd)
+   // I think that this is the stacksize rlimit
+   // I could use sysctl kern.maxssiz for this
+   if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 512ULL*1024ULL*1024ULL) {
+      return p;
+   }
+#elif defined(VGP_x86_freebsd)
+   // sysctl kern.maxssiz OK for x86 on x86 but not x86 on amd64
+   if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 64ULL*1024ULL*1024ULL) {
+      return p;
+   }
+#elif defined(VGP_arm64_freebsd)
+   if ( *pEndPlusOne + kern_sgrowsiz - kve->kve_start == 1024ULL*1024ULL*1024ULL) {
+      return p;
+   }
+#else
+#    error Unknown platform
+#endif
+
+   while (kve_next->kve_protection & VKI_KVME_PROT_READ &&
+          kve_next->kve_protection & VKI_KVME_PROT_WRITE &&
+          kve_next->kve_flags & VKI_KVME_FLAG_GROWS_DOWN &&
+          kve_next->kve_end - kve_next->kve_start == kern_sgrowsiz) {
+
+
+      *pEndPlusOne += kern_sgrowsiz;
+      if (kve_next->kve_protection & VKI_KVME_PROT_READ) {
+         *pProt |= VKI_PROT_READ;
+      }
+      if (kve_next->kve_protection & VKI_KVME_PROT_WRITE) {
+         *pProt |= VKI_PROT_WRITE;
+      }
+      if (kve_next->kve_protection & VKI_KVME_PROT_EXEC) {
+         *pProt |= VKI_PROT_EXEC;
+      }
+      p_next += kve->kve_structsize;
+      kve_next = (struct vki_kinfo_vmentry *)(p_next);
+   }
+   p_next -= kve->kve_structsize;
+   return p_next;
+}
+
+
+/*
  * PJF 2023-09-23
  *
  * This function is somewhat badly named for FreeBSD, where the
@@ -4127,7 +4217,7 @@ Bool VG_(get_changed_segments)(
  * the RW PT_LOAD.
  *
  * For instance, objdump -p for memcheck-amd64-freebsd contains
- *     LOAD off    0x0000000000000000 vaddr 0x0000000038000000 paddr 0x0000000038000000 align 2**12
+ *    LOAD off    0x0000000000000000 vaddr 0x0000000038000000 paddr 0x0000000038000000 align 2**12
  *         filesz 0x00000000000c5124 memsz 0x00000000000c5124 flags r--
  *    LOAD off    0x00000000000c5130 vaddr 0x00000000380c6130 paddr 0x00000000380c6130 align 2**12
  *         filesz 0x00000000001b10df memsz 0x00000000001b10df flags r-x
@@ -4182,6 +4272,17 @@ static void parse_procselfmaps (
    Int    oid[4];
    SysRes sres;
    Int map_count = 0;
+   // this assumes that compiling with clang uses ld.lld which produces 3 LOAD segements
+   // and that compiling with GCC uses ld.bfd which produces 2 LOAD segments
+#if defined(__clang__)
+   Int const rx_map = 1;
+   Int const rw_map = 2;
+#elif defined(__GNUC__)
+   Int const rx_map = 0;
+   Int const rw_map = 1;
+#else
+#error("unsupported compiler")
+#endif
    // could copy the whole kinfo_vmentry but it is 1160 bytes
    char   *rx_filename = NULL;
    ULong  rx_dev = 0U;
@@ -4225,7 +4326,7 @@ static void parse_procselfmaps (
 
       map_count = (p - (char *)procmap_buf)/kve->kve_structsize;
 
-      if (tool_read_maps && map_count == 2) {
+      if (tool_read_maps && map_count == rw_map) {
          aspacem_assert((prot & (VKI_PROT_READ | VKI_PROT_WRITE)) == (VKI_PROT_READ | VKI_PROT_WRITE));
          filename = rx_filename;
          dev = rx_dev;
@@ -4236,13 +4337,19 @@ static void parse_procselfmaps (
       if (record_gap && gapStart < start)
          (*record_gap) ( gapStart, start-gapStart );
 
+      if (kve->kve_type == VKI_KVME_TYPE_GUARD &&
+          record_mapping == sync_check_mapping_callback &&
+          VG_(clo_sanity_level) >= 3)  {
+         p = maybe_merge_procmap_stack(p, kve, &endPlusOne, &prot);
+      }
+
       if (record_mapping && start < endPlusOne) {
          (*record_mapping) ( start, endPlusOne-start,
                              prot, dev, ino,
                            foffset, filename, tool_read_maps && map_count == 2 );
       }
 
-      if (tool_read_maps && map_count == 1) {
+      if (tool_read_maps && map_count == rx_map) {
          aspacem_assert((prot & (VKI_PROT_READ | VKI_PROT_EXEC)) == (VKI_PROT_READ | VKI_PROT_EXEC));
          rx_filename = filename;
          rx_dev = dev;
@@ -4252,6 +4359,11 @@ static void parse_procselfmaps (
       }
 
       gapStart = endPlusOne;
+      // PJF I think that we need to walk this based on each entry's kve_structsize
+      // because sysctl kern.coredump_pack_fileinfo (on by default) can cause this
+      // array to be packed (for core dumps)
+      // the packing consists of only storing the used part of kve_path rather than
+      // the full 1024 bytes
       p += kve->kve_structsize;
    }
 

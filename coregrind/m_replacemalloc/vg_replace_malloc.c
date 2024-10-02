@@ -83,6 +83,8 @@
    10030 ALLOC_or_BOMB
    10040 ZONEFREE
    10050 FREE
+   10051 FREE_SIZED
+   10052 FREE_ALIGNED_SIZED
    10060 ZONECALLOC
    10070 CALLOC
    10080 ZONEREALLOC
@@ -452,6 +454,10 @@ extern int * __error(void) __attribute__((weak));
  ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
  ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME,  malloc_zone_malloc, malloc);
  ZONEALLOC_or_NULL(SO_SYN_MALLOC,     malloc_zone_malloc, malloc);
+#if DARWIN_VERS >= DARWIN_15_00
+ ALLOC_or_NULL(VG_Z_LIBC_SONAME,     malloc_type_malloc,      malloc);
+ ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME, malloc_type_zone_malloc, malloc);
+#endif
 
 #elif defined(VGO_solaris)
  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, malloc,      malloc);
@@ -995,6 +1001,10 @@ extern int * __error(void) __attribute__((weak));
  FREE(SO_SYN_MALLOC,          free,                 free );
  ZONEFREE(VG_Z_LIBC_SONAME,   malloc_zone_free,     free );
  ZONEFREE(SO_SYN_MALLOC,      malloc_zone_free,     free );
+#if DARWIN_VERS >= DARWIN_15_00
+ FREE(VG_Z_LIBC_SONAME,     malloc_type_free,      free);
+ ZONEFREE(VG_Z_LIBC_SONAME, malloc_type_zone_free, free);
+#endif
 
 #elif defined(VGO_solaris)
  FREE(VG_Z_LIBC_SONAME,       free,                 free );
@@ -1003,7 +1013,83 @@ extern int * __error(void) __attribute__((weak));
 
 #endif
 
+ /*------------------- free_sized -------------------*/
 
+ /* Generate a replacement for 'fnname' in object 'soname', which calls
+    'vg_replacement' to free previously allocated memory.
+ */
+
+#define FREE_SIZED(soname, fnname, vg_replacement, tag) \
+ \
+    void VG_REPLACE_FUNCTION_EZU(10051,soname,fnname) (void *p, SizeT size); \
+    void VG_REPLACE_FUNCTION_EZU(10051,soname,fnname) (void *p, SizeT size)  \
+ { \
+       struct AlignedAllocInfo aligned_alloc_info = { .size=size, .mem=p, .alloc_kind=AllocKind##tag }; \
+       \
+       DO_INIT; \
+       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
+       VERIFY_ALIGNMENT(&aligned_alloc_info); \
+       MALLOC_TRACE(#fnname "(%p)\n", p ); \
+       if (p == NULL)  \
+       return; \
+       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
+ }
+
+
+#if defined(VGO_linux)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#elif defined(VGO_freebsd)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#elif defined(VGO_darwin)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#elif defined(VGO_solaris)
+ FREE_SIZED(VG_Z_LIBC_SONAME,       free_sized,                 free, FreeSized );
+ FREE_SIZED(SO_SYN_MALLOC,          free_sized,                 free, FreeSized );
+
+#endif
+
+
+ /*--------------- free_aligned_sized ---------------*/
+
+ /* Generate a replacement for 'fnname' in object 'soname', which calls
+    'vg_replacement' to free previously allocated memory.
+ */
+
+#define FREE_ALIGNED_SIZED(soname, fnname, vg_replacement, tag) \
+ \
+    void VG_REPLACE_FUNCTION_EZU(10052,soname,fnname) (void *p, SizeT alignment, SizeT size); \
+    void VG_REPLACE_FUNCTION_EZU(10052,soname,fnname) (void *p, SizeT alignment, SizeT size)  \
+ { \
+       struct AlignedAllocInfo aligned_alloc_info = { .orig_alignment=alignment, .size=size, .mem=p, .alloc_kind=AllocKind##tag }; \
+       \
+       DO_INIT; \
+       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)alignment); \
+       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
+       VERIFY_ALIGNMENT(&aligned_alloc_info); \
+       MALLOC_TRACE(#fnname "(%p)\n", p ); \
+       if (p == NULL)  \
+       return; \
+       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
+ }
+
+
+#if defined(VGO_linux)
+
+#elif defined(VGO_freebsd)
+ FREE_ALIGNED_SIZED(VG_Z_LIBC_SONAME,       free_aligned_sized,                 free, FreeAlignedSized );
+ FREE_ALIGNED_SIZED(SO_SYN_MALLOC,          free_aligned_sized,                 free, FreeAlignedSized );
+
+#elif defined(VGO_darwin)
+
+#elif defined(VGO_solaris)
+
+#endif
 /*---------------------- cfree ----------------------*/
 
 // cfree
@@ -1605,6 +1691,10 @@ extern int * __error(void) __attribute__((weak));
  CALLOC(SO_SYN_MALLOC,    calloc);
  ZONECALLOC(VG_Z_LIBC_SONAME, malloc_zone_calloc);
  ZONECALLOC(SO_SYN_MALLOC,    malloc_zone_calloc);
+#if DARWIN_VERS >= DARWIN_15_00
+ CALLOC(VG_Z_LIBC_SONAME,     malloc_type_calloc);
+ ZONECALLOC(VG_Z_LIBC_SONAME, malloc_type_zone_calloc);
+#endif
 
 #elif defined(VGO_solaris)
  CALLOC(VG_Z_LIBC_SONAME,      calloc);
@@ -1738,6 +1828,10 @@ extern int * __error(void) __attribute__((weak));
  REALLOCF(SO_SYN_MALLOC, reallocf);
  ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_zone_realloc);
  ZONEREALLOC(SO_SYN_MALLOC,    malloc_zone_realloc);
+#if DARWIN_VERS >= DARWIN_15_00
+ REALLOC(VG_Z_LIBC_SONAME,     malloc_type_realloc);
+ ZONEREALLOC(VG_Z_LIBC_SONAME, malloc_type_zone_realloc);
+#endif
 
 #elif defined(VGO_solaris)
  REALLOC(VG_Z_LIBC_SONAME,      realloc);
@@ -1944,6 +2038,10 @@ extern int * __error(void) __attribute__((weak));
 #elif defined(VGO_darwin)
  ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_zone_memalign);
  ZONEMEMALIGN(SO_SYN_MALLOC,    malloc_zone_memalign);
+#if DARWIN_VERS >= DARWIN_15_00
+ MEMALIGN(VG_Z_LIBC_SONAME,     malloc_type_aligned_alloc);
+ ZONEMEMALIGN(VG_Z_LIBC_SONAME, malloc_type_zone_memalign);
+#endif
 
 #elif defined(VGO_solaris)
  MEMALIGN(VG_Z_LIBC_SONAME,      memalign);
@@ -2002,6 +2100,10 @@ extern int * __error(void) __attribute__((weak));
  VALLOC(SO_SYN_MALLOC, valloc);
  ZONEVALLOC(VG_Z_LIBC_SONAME, malloc_zone_valloc);
  ZONEVALLOC(SO_SYN_MALLOC,    malloc_zone_valloc);
+#if DARWIN_VERS >= DARWIN_15_00
+ VALLOC(VG_Z_LIBC_SONAME,     malloc_type_valloc);
+ ZONEVALLOC(VG_Z_LIBC_SONAME, malloc_type_zone_valloc);
+#endif
 
 #elif defined(VGO_solaris)
  VALLOC(VG_Z_LIBC_SONAME,      valloc);
@@ -2144,6 +2246,9 @@ extern int * __error(void) __attribute__((weak));
 #elif defined(VGO_darwin)
 #if (DARWIN_VERSIO >= DARWIN_10_6)
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
+#endif
+#if DARWIN_VERS >= DARWIN_15_00
+ POSIX_MEMALIGN(VG_Z_LIBC_SONAME, malloc_type_posix_memalign);
 #endif
 
 #elif defined(VGO_solaris)
@@ -2570,6 +2675,104 @@ ZONE_GET_NAME(VG_Z_LIBC_SONAME, malloc_get_zone_name);
 ZONE_GET_NAME(SO_SYN_MALLOC,    malloc_get_zone_name);
 
 #endif /* defined(VGO_darwin) */
+
+
+/*------------------ Darwin malloc_with_options ------------------*/
+
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_15_00
+
+#define WITH_OPTIONS_INIT_FLAG 1
+
+static void* malloc_with_options(const HChar* name, void* zone, SizeT alignment, SizeT size, UWord flags, void* reserved1, void* reserved2, Bool type_mode)
+{
+  void* v;
+  SizeT orig_alignment = alignment;
+  struct AlignedAllocInfo aligned_alloc_info = {
+    .orig_alignment = alignment,
+    .size           = size,
+    .alloc_kind     = AllocKindPosixMemalign
+  };
+
+  DO_INIT;
+  if (alignment != 0) {
+    VERIFY_ALIGNMENT(&aligned_alloc_info);
+  }
+  TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord) zone);
+  TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(alignment);
+  TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size);
+  TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(flags);
+  MALLOC_TRACE("%s(%p, al %llu, sz %llu, fl %lx, ?1 %p, ?2 %p)", name, zone, (ULong)alignment, (ULong)size, flags, reserved1, reserved2);
+
+  if (type_mode && flags == 0) {
+    flags = WITH_OPTIONS_INIT_FLAG;
+  }
+
+  if (alignment != 0) {
+    if (alignment % sizeof(void*) != 0 ||
+        (alignment & (alignment - 1)) != 0) {
+        SET_ERRNO_EINVAL;
+        return NULL;
+    }
+
+    /* Round up to minimum alignment if necessary. */
+    if (alignment < VG_MIN_MALLOC_SZB)
+        alignment = VG_MIN_MALLOC_SZB;
+
+    /* Round up to nearest power-of-two if necessary (like glibc). */
+    while (0 != (alignment & (alignment - 1)))
+        alignment++;
+  }
+
+  if (alignment != 0) {
+    v = (void*)VALGRIND_NON_SIMD_CALL3(info.tl_memalign, alignment, orig_alignment, size );
+    if (v != 0 && (flags & WITH_OPTIONS_INIT_FLAG) != 0x0) {
+      // FIXME: would be better to use `VG_(memset)(v, 0, size);` no?
+      for (SizeT i = 0; i < size; i += 1) {
+        ((UChar*)v)[i] = 0;
+      }
+    }
+  } else {
+    if ((flags & WITH_OPTIONS_INIT_FLAG) == 0) {
+      v = (void*)VALGRIND_NON_SIMD_CALL1(info.tl_malloc, size);
+    } else {
+      v = (void*)VALGRIND_NON_SIMD_CALL2(info.tl_calloc, 0x1, size);
+    }
+  }
+  MALLOC_TRACE(" = %p\n", v);
+  if (!v) SET_ERRNO_ENOMEM;
+  return v;
+}
+
+// Technically _np is the one which is flipped but it avoid an another swap in the helper function this way.
+#define WITH_OPTIONS_INTERNAL(soname, fnname) \
+  \
+  const void* VG_REPLACE_FUNCTION_EZU(10300,soname,fnname)(void* zone, SizeT alignment, SizeT size, void* reserved1, UWord flags, void* reserved2); \
+  const void* VG_REPLACE_FUNCTION_EZU(10300,soname,fnname)(void* zone, SizeT alignment, SizeT size, void* reserved1, UWord flags, void* reserved2)  \
+  { \
+    return malloc_with_options(#fnname, zone, alignment, size, flags, reserved1, reserved2, True); \
+  }
+
+#define WITH_OPTIONS_NP(soname, fnname) \
+  \
+  const void* VG_REPLACE_FUNCTION_EZU(10301,soname,fnname)(void* zone, SizeT alignment, SizeT size, UWord flags, void* reserved1, void* reserved2); \
+  const void* VG_REPLACE_FUNCTION_EZU(10301,soname,fnname)(void* zone, SizeT alignment, SizeT size, UWord flags, void* reserved1, void* reserved2)  \
+  { \
+    return malloc_with_options(#fnname, zone, alignment, size, flags, reserved1, reserved2, True); \
+  }
+
+#define WITH_OPTIONS(soname, fnname) \
+  \
+  const void* VG_REPLACE_FUNCTION_EZU(10302,soname,fnname)(void* zone, SizeT alignment, SizeT size, UWord flags, void* reserved1, void* reserved2); \
+  const void* VG_REPLACE_FUNCTION_EZU(10302,soname,fnname)(void* zone, SizeT alignment, SizeT size, UWord flags, void* reserved1, void* reserved2)  \
+  { \
+      return malloc_with_options(#fnname, zone, alignment, size, flags, reserved1, reserved2, False); \
+  }
+
+
+WITH_OPTIONS_NP(VG_Z_LIBC_SONAME, malloc_type_zone_malloc_with_options_np);
+WITH_OPTIONS_INTERNAL(VG_Z_LIBC_SONAME, malloc_type_zone_malloc_with_options_internal);
+WITH_OPTIONS(VG_Z_LIBC_SONAME, malloc_zone_malloc_with_options_np);
+#endif /* defined(VGO_darwin) && DARWIN_VERS >= DARWIN_15_00 */
 
 
 /*------------------ (startup related) ------------------*/

@@ -4,7 +4,14 @@ int main ()
 {
   int x;
 
-  printf ("x = %d\n", x==0xCAFEBABE ? 99 : 88);
+  if (x==0xCAFEBABE)
+  {
+    printf ("x = %d\n", 99);
+  }
+  else
+  {
+    printf ("x = %d\n", 88);
+  }
 
   return 0;
 }

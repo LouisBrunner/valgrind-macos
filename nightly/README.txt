@@ -26,6 +26,11 @@ If the two trees are identical, the tests are not run and no results are
 emailed.  This avoids spamming people with uninteresting results emails when
 no commits have happened recently.
 
+The requirements for the machine running the nightly tests are the same as
+for running the regression tests (see README_DEVELOPERS) plus GNU coreutils
+and the ability to send e-mail. The mail transport agent used depends on the
+platform and is decribed in step (4) below.
+
 
 SETTING UP
 ----------

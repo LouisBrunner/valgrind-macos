@@ -13,6 +13,7 @@ This repository contains a version of Valgrind including a few patches to improv
 | macOS 12 (Monterey)         | -   | ✅    | ❌[^2] | -      |
 | macOS 13 (Ventura)          | -   | ✅    | ❌[^2] | -      |
 | macOS 14 (Sonoma)           | -   | ✅    | ❌[^2] | -      |
+| macOS 15 (Sequoia)          | -   | ✅    | ❌[^2] | -      |
 
 [^1]: Supported as part of upstream Valgrind.
 [^2]: Apple Silicon support in progress ([#56](https://github.com/LouisBrunner/valgrind-macos/issues/56))

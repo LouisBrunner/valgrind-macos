@@ -244,9 +244,13 @@ DECL_TEMPLATE(darwin, csops_audittoken);        // 170
 // NYI kdebug_typefilter                        // 177
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_11
-// NYI kdebug_trace_string                      // 178
+DECL_TEMPLATE(darwin, kdebug_trace_string); // 178
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
+#if DARWIN_VERS >= DARWIN_15_00
+DECL_TEMPLATE(darwin, kdebug_trace64);     // 179
+#else
 // 179
+#endif
 DECL_TEMPLATE(darwin, kdebug_trace);            // 180
 // GEN setgid 181
 DECL_TEMPLATE(darwin, setegid);                 // 182
@@ -632,12 +636,8 @@ DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 #if DARWIN_VERS >= DARWIN_10_12
 DECL_TEMPLATE(darwin, getentropy);                  // 500
-#endif
-#if DARWIN_VERS >= DARWIN_10_15
 DECL_TEMPLATE(darwin, necp_open);                   // 501
 DECL_TEMPLATE(darwin, necp_client_action);          // 502
-#endif
-#if DARWIN_VERS >= DARWIN_10_12
 // 503
 // 504
 // 505

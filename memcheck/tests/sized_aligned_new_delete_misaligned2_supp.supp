@@ -125,7 +125,7 @@
 }
 
 {
-   array new aligned bad alignment, 32bit
+   array new aligned bad alignment, 32 bit
    Memcheck:BadAlign
    fun:_ZnajSt11align_val_t
    fun:main

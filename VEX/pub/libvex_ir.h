@@ -782,8 +782,13 @@ typedef
                              as F128) */
       Iop_RoundF64toInt, /* F64 value to nearest integral value (still
                             as F64) */
+      Iop_RoundF64toIntA0, /* As Iop_RoundF64toInt but ties to above zero*/
+
+      Iop_RoundF64toIntE, /* As Iop_RoundF64toInt but ties to even */
       Iop_RoundF32toInt, /* F32 value to nearest integral value (still
                             as F32) */
+      Iop_RoundF32toIntA0, /* As Iop_RoundF32toInt but ties to above zero*/
+      Iop_RoundF32toIntE, /* As Iop_RoundF32toInt but ties to even */
 
       /* --- guest s390 specifics, not mandated by 754. --- */
 
@@ -2480,6 +2485,11 @@ extern Bool eqIRAtom ( const IRExpr*, const IRExpr* );
    executed kernel-entering (system call) instruction.  This makes it
    very much easier (viz, actually possible at all) to back up the
    guest to restart a syscall that has been interrupted by a signal.
+
+   Re Ijk_Extension: the guest state must have the pseudo-register
+   guest_IP_AT_SYSCALL, which is also used for Ijk_Sys_*.  Front ends
+   must set this to the current instruction address before jumping to
+   an extension handler.
 */
 typedef
    enum {
@@ -2512,8 +2522,9 @@ typedef
       Ijk_Sys_int130,     /* amd64/x86 'int $0x82' */
       Ijk_Sys_int145,     /* amd64/x86 'int $0x91' */
       Ijk_Sys_int210,     /* amd64/x86 'int $0xD2' */
-      Ijk_Sys_sysenter    /* x86 'sysenter'.  guest_EIP becomes 
+      Ijk_Sys_sysenter,   /* x86 'sysenter'.  guest_EIP becomes
                              invalid at the point this happens. */
+      Ijk_Extension,      /* invoke guest-specific extension */
    }
    IRJumpKind;
 

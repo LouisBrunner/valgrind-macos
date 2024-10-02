@@ -270,7 +270,7 @@ extern void VG_(needs_cxx_freeres) ( void );
    - invalid file descriptors to syscalls like read() and write()
    - bad signal numbers passed to sigaction()
    - attempt to install signal handler for SIGKILL or SIGSTOP */
-extern void VG_(needs_core_errors) ( void );
+extern void VG_(needs_core_errors) ( Bool need );
 
 /* Booleans that indicate extra operations are defined;  if these are True,
    the corresponding template functions (given below) must be defined.  A

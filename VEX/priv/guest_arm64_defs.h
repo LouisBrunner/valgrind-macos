@@ -58,7 +58,7 @@ IRExpr* guest_arm64_spechelper ( const HChar* function_name,
 /* Describes to the optimser which part of the guest state require
    precise memory exceptions.  This is logically part of the guest
    state description. */
-extern 
+extern
 Bool guest_arm64_state_requires_precise_mem_exns ( Int, Int,
                                                    VexRegisterUpdates );
 
@@ -75,7 +75,7 @@ VexGuestLayout arm64Guest_layout;
 /* Calculate NZCV from the supplied thunk components, in the positions
    they appear in the CPSR, viz bits 31:28 for N Z C V respectively.
    Returned bits 63:32 and 27:0 are zero. */
-extern 
+extern
 ULong arm64g_calculate_flags_nzcv ( ULong cc_op, ULong cc_dep1,
                                     ULong cc_dep2, ULong cc_dep3 );
 
@@ -87,13 +87,13 @@ ULong arm64g_calculate_flag_c ( ULong cc_op, ULong cc_dep1,
 
 //ZZ /* Calculate the V flag from the thunk components, in the lowest bit
 //ZZ    of the word (bit 0). */
-//ZZ extern 
+//ZZ extern
 //ZZ UInt armg_calculate_flag_v ( UInt cc_op, UInt cc_dep1,
 //ZZ                              UInt cc_dep2, UInt cc_dep3 );
-//ZZ 
+//ZZ
 /* Calculate the specified condition from the thunk components, in the
    lowest bit of the word (bit 0). */
-extern 
+extern
 ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
                                    ULong cond_n_op ,
                                    ULong cc_dep1,
@@ -101,7 +101,7 @@ ULong arm64g_calculate_condition ( /* ARM64Condcode << 4 | cc_op */
 
 //ZZ /* Calculate the QC flag from the thunk components, in the lowest bit
 //ZZ    of the word (bit 0). */
-//ZZ extern 
+//ZZ extern
 //ZZ UInt armg_calculate_flag_qc ( UInt resL1, UInt resL2,
 //ZZ                               UInt resR1, UInt resR2 );
 
@@ -116,6 +116,7 @@ extern ULong arm64g_calc_crc32cw ( ULong acc, ULong bits );
 extern ULong arm64g_calc_crc32cx ( ULong acc, ULong bits );
 
 /* --- DIRTY HELPERS --- */
+extern ULong arm64g_dirtyhelper_MRS_DCZID_EL0 ( void );
 
 extern ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void );
 extern ULong arm64g_dirtyhelper_MRS_ACNTVCT_EL0 ( void );
@@ -126,6 +127,16 @@ extern ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void );
 
 extern void  arm64g_dirtyhelper_MSR_set_PSTATE_DIT ( void );
 extern void  arm64g_dirtyhelper_MSR_clr_PSTATE_DIT ( void );
+
+extern ULong arm64g_dirtyhelper_MRS_MIDR_EL1 ( void );
+
+extern ULong arm64g_dirtyhelper_MRS_ID_AA64PFR0_EL1 ( void );
+
+extern ULong arm64g_dirtyhelper_MRS_ID_AA64MMFR0_EL1 ( void );
+extern ULong arm64g_dirtyhelper_MRS_ID_AA64MMFR1_EL1 ( void );
+
+extern ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR0_EL1 ( void );
+extern ULong arm64g_dirtyhelper_MRS_ID_AA64ISAR1_EL1 ( void );
 
 extern void  arm64g_dirtyhelper_PMULLQ ( /*OUT*/V128* res,
                                          ULong arg1, ULong arg2 );
@@ -170,6 +181,19 @@ extern
 void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
                                     ULong nHi, ULong nLo,
                                     ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA512H2 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                   ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA512H ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                  ULong nHi, ULong nLo, ULong mHi, ULong mLo );
+extern
+void arm64g_dirtyhelper_SHA512SU0 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo );
+extern
+void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
+                                    ULong nHi, ULong nLo,
+                                    ULong mHi, ULong mLo );
 
 
 /*---------------------------------------------------------*/
@@ -183,7 +207,7 @@ void arm64g_dirtyhelper_SHA256SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
 #define ARM64G_CC_SHIFT_C  29
 #define ARM64G_CC_SHIFT_V  28
 //ZZ #define ARMG_CC_SHIFT_Q  27
-//ZZ 
+//ZZ
 //ZZ #define ARMG_CC_MASK_N    (1 << ARMG_CC_SHIFT_N)
 //ZZ #define ARMG_CC_MASK_Z    (1 << ARMG_CC_SHIFT_Z)
 #define ARM64G_CC_MASK_C    (1 << ARM64G_CC_SHIFT_C)
@@ -264,7 +288,7 @@ enum {
 
 //ZZ    ARMG_CC_OP_MUL,     /* DEP1 = result, DEP2 = 0, DEP3 = oldC:old_V
 //ZZ                           (in bits 1:0) */
-//ZZ 
+//ZZ
 //ZZ    ARMG_CC_OP_MULL,    /* DEP1 = resLO32, DEP2 = resHI32, DEP3 = oldC:old_V
 //ZZ                           (in bits 1:0) */
 

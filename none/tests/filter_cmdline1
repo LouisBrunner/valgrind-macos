@@ -2,5 +2,5 @@
 
 sed -e 's/\(set minimum alignment of heap allocations\) \[[0-9]*\]/\1 [...]/' \
     -e 's/\(command to start debugger\) \[.* -nw %f %p\]/\1 [... -nw %f %p]/' \
-    -e 's/\(prefix for vgdb FIFOs\) \[.*\/vgdb-pipe\]/\1 [...\/vgdb-pipe]/'
-
+    -e 's/\(prefix for vgdb FIFOs\) \[.*\/vgdb-pipe\]/\1 [...\/vgdb-pipe]/' |
+sed "s/Copyright (C) 20[0-9][0-9]-20[0-9][0-9]/Copyright (C) 2000/"

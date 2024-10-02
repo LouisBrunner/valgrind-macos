@@ -1,0 +1,4 @@
+prereq: test -x ./bug491394
+prog: bug491394
+vgopts: -q
+

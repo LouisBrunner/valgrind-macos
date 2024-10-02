@@ -1,4 +1,5 @@
 #!/bin/sh
+# @configure_input@
 
 SED=@SED@
 

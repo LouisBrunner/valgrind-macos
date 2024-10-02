@@ -1203,9 +1203,7 @@ struct vki_necp_aggregate_result {
 
 // ulock_wait flags
 #define WKI_ULF_WAIT_WORKQ_DATA_CONTENTION	0x00010000
-#endif /* DARWIN_VERS >= DARWIN_10_12 */
 
-#if DARWIN_VERS >= DARWIN_10_15
 #define VKI_NECP_CLIENT_ACTION_ADD                     1
 #define VKI_NECP_CLIENT_ACTION_REMOVE                  2
 #define VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS         3
@@ -1266,6 +1264,6 @@ struct vki_necp_agent_use_parameters {
 #define VKI_IFNET_STATS_PER_FLOW_SIZE 96
 #define VKI_NECP_STAT_COUNTS_SIZE 68
 
-#endif /* DARWIN_VERS >= DARWIN_10_15 */
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 #endif

@@ -144,8 +144,8 @@ L_$0_3:	/* In the range [3, 4), the syscall result is in %rax,
 
 .if $0 == UNIX
 	/* save carry flag to VEX */
-  ldr x0, [sp, #8] /* arg1 = vex state */
-  mov x1, x4       /* arg2 = new flag */
+  mov x0, x4       /* arg1 = new flag */
+  ldr x1, [sp, #8] /* arg2 = vex state */
 	bl	_LibVEX_GuestARM64_put_nzcv_c
 .endif
 

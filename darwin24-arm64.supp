@@ -1,0 +1,10 @@
+
+# Suppressions for Darwin 24.x / macOS 15.0 Sequoia (arm64)
+
+############################################
+
+# Bugs
+
+# False positives
+
+# Unclear

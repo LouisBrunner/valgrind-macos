@@ -1747,7 +1747,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
          gst->guest_X1 = sres._wHI;
          VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
                    OFFSET_arm64_X1, sizeof(ULong) );
-         LibVEX_GuestARM64_put_nzcv_c( gst, sres._mode==SysRes_UNIX_ERR ? 1 : 0 );
+         LibVEX_GuestARM64_put_nzcv_c( sres._mode==SysRes_UNIX_ERR ? 1 : 0, gst );
          // GrP fixme sets defined for entire rflags, not just bit c
          // DDD: this breaks exp-ptrcheck.
          VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,

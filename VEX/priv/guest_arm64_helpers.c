@@ -2100,28 +2100,6 @@ ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
    return nzcv;
 }
 
-/* floating point status resgister */
-/* VISIBLE TO LIBVEX CLIENT */
-void LibVEX_GuestARM64_put_nzcv_c ( /*MOD*/VexGuestARM64State* vex_state,
-                                    ULong new_carry_flag )
-{
-  ULong nzcv = arm64g_calculate_flags_nzcv(
-    vex_state->guest_CC_OP,
-    vex_state->guest_CC_DEP1,
-    vex_state->guest_CC_DEP2,
-    vex_state->guest_CC_NDEP
-  );
-  if (new_carry_flag & 1) {
-    nzcv |= ARM64G_CC_MASK_C;
-  } else {
-    nzcv &= ~ARM64G_CC_MASK_C;
-  }
-  vex_state->guest_CC_OP   = ARM64G_CC_OP_COPY;
-  vex_state->guest_CC_DEP1 = nzcv;
-  vex_state->guest_CC_DEP2 = 0;
-  vex_state->guest_CC_NDEP = 0;
-}
-
 /* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_fpsr ( const VexGuestARM64State* vex_state )
 {

@@ -441,8 +441,8 @@ Bool write_buf(int fd, const char* buf, size_t size, const char* desc,
 {
    size_t nrwritten;
    ssize_t nrw;
-   DEBUG(2, "writing %s len %d %.*s notify: %d\n", desc, size,
-         size, buf, notify);
+   DEBUG(2, "writing %s len %lu %.*s notify: %d\n", desc, size,
+         (int)size, buf, notify);
    nrwritten = 0;
    while (nrwritten < size) {
       nrw = write(fd, buf+nrwritten, size - nrwritten);

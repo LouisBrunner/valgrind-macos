@@ -48,7 +48,6 @@ check_PROGRAMS = \
 	bt_everything \
 	bug132146 \
 	bug279698 \
-	bug492210 \
 	fxsave-amd64 \
 	insn-bsfl \
 	insn-pmovmskb \
@@ -74,7 +73,8 @@ endif
 # but the problem is macOS, not clang
 if !VGCONF_OS_IS_DARWIN
  check_PROGRAMS += \
-	shr_edx
+	shr_edx \
+	bug492210
 endif
 
 AM_CFLAGS    += @FLAG_M64@

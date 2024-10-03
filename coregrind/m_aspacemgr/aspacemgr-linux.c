@@ -3822,8 +3822,17 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
     case VKI_VM_MEMORY_GENEALOGY:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[activity tracing]", path_len);
       return True;
+    case VKI_VM_MEMORY_BRK:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[brk]", path_len);
+      return True;
     case VKI_VM_MEMORY_MALLOC:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc memory]", path_len);
+      return True;
+    case VKI_VM_MEMORY_MALLOC_HUGE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (huge) memory]", path_len);
+      return True;
+    case VKI_VM_MEMORY_MALLOC_LARGE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (large) memory]", path_len);
       return True;
     case VKI_VM_MEMORY_MALLOC_SMALL:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (small) memory]", path_len);
@@ -3853,7 +3862,7 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
     case 0:
       return False;
     default:
-      VG_(debugLog)(0,"aspacem", "unknown vm tag: %d\n", tag);
+      VG_(debugLog)(0, "aspacem", "unknown vm tag: %d\n", tag);
       return False;
   }
 }

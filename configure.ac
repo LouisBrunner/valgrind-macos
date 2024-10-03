@@ -768,7 +768,7 @@ case "${host_os}" in
         macosx-24.*|iphoneos-18.*)
           AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15 Sequoia])
           DARWIN_VERS=$DARWIN_15_00
-          DEFAULT_SUPP="darwin24.supp ${DEFAULT_SUPP}"
+          DARWIN_KERNEL_VERS=24
           ;;
         *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])

@@ -6,54 +6,54 @@ Signal        Stop	Print	Pass to program	Description
 SIGFPE        Yes	Yes	Yes		Arithmetic exception
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
-test1 () at faultstatus.c:121
+test1 () at faultstatus.c:123
 121		*BADADDR = 'x';
 Signal        Stop	Print	Pass to program	Description
 SIGSEGV       No	Yes	Yes		Segmentation fault
 Continuing.
 Program received signal SIGSEGV, Segmentation fault.
 Program received signal SIGBUS, Bus error.
-test3 () at faultstatus.c:131
+test3 () at faultstatus.c:133
 131		mapping[FILESIZE+10];
 Continuing.
 Program received signal SIGFPE, Arithmetic exception.

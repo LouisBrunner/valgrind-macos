@@ -73,6 +73,7 @@ Some tests are hanging and were therefore disabled on macOS:
 
 - `none/tests/pselect_alarm`
 - `none/tests/pth_term_signal`
+- `memcheck/tests/sigaltstack` (issue on arm64)
 
 ### Linux (Ubuntu 20.04)
 

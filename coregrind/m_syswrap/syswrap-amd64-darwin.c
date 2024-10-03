@@ -416,7 +416,7 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
 asm(
 ".globl _wqthread_hijack_asm\n"
 "_wqthread_hijack_asm:\n"
-"   movq %rsp,%r9\n"  // original sp
+"   push %rsp\n"      // original sp
                       // other values stay where they are in registers
 "   push $0\n"        // fake return address
 "   jmp _wqthread_hijack\n"
@@ -431,7 +431,7 @@ asm(
     thread for every work item.
 */
 void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
-                     Int reuse, Addr sp)
+                     Int reuse, Int kevent_count, Addr sp)
 {
    ThreadState *tst;
    VexGuestAMD64State *vex;

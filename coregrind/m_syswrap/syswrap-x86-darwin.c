@@ -358,6 +358,7 @@ asm(
 "   push $0\n"    // alignment
 "   push $0\n"    // alignment
 "   push %ebp\n"  // original sp
+"   push $0\n"    // TODO: @lb, wrong but we don't use it and I don't have a 32bit machine to test
 "   push %edi\n"  // reuse
 "   push %edx\n"  // workitem
 "   push %ecx\n"  // stackaddr
@@ -376,7 +377,7 @@ asm(
     thread for every work item.
 */
 void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem, 
-                     Int reuse, Addr sp)
+                     Int reuse, Int kevent_count, Addr sp)
 {
    ThreadState *tst;
    VexGuestX86State *vex;

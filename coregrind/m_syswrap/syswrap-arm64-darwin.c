@@ -463,6 +463,7 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, Addr stacks
 asm(
 ".globl _wqthread_hijack_asm\n"
 "_wqthread_hijack_asm:\n"
+"   mov x6, sp\n"  // save sp
 "   mov x30, 0\n"  // fake return address
 "   b _wqthread_hijack\n"
 );
@@ -475,8 +476,8 @@ asm(
     To handle this in valgrind, we create and destroy a valgrind
     thread for every work item.
 */
-void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
-                     Int reuse, Addr sp)
+void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
+                     UInt upcall_flags, Int kevent_count, Addr sp)
 {
    ThreadState *tst;
    VexGuestARM64State *vex;
@@ -496,26 +497,15 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
 
    if (0) VG_(printf)(
              "wqthread_hijack: self %#lx, kport %#lx, "
-	     "stackaddr %#lx, workitem %#lx, reuse/flags %x, sp %#lx\n",
-	     self, kport, stackaddr, workitem, (UInt)reuse, sp);
+	     "stackaddr %#lx, kevent_list %#lx, flags %#x, kevent_count %d, sp %#lx\n",
+	     self, kport, stackaddr, kevent_list, upcall_flags, kevent_count, sp);
 
    /* Start the thread with all signals blocked.  VG_(scheduler) will
       set the mask correctly when we finally get there. */
    VG_(sigfillset)(&blockall);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
-   /* For 10.7 and earlier, |reuse| appeared to be used as a simple
-      boolean.  In 10.8 and later its name changed to |flags| and has
-      various other bits OR-d into it too, so it's necessary to fish
-      out just the relevant parts.  Hence: */
-#  if DARWIN_VERS <= DARWIN_10_7
-   Bool is_reuse = reuse != 0;
-#  elif DARWIN_VERS > DARWIN_10_7
-   Bool is_reuse = (reuse & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
-#  else
-#    error "Unsupported Darwin version"
-#  endif
-
+   Bool is_reuse = (upcall_flags & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
    if (is_reuse) {
 
      /* For whatever reason, tst->os_state.pthread appear to have a
@@ -575,9 +565,9 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    vex->guest_X0 = self;
    vex->guest_X1 = kport;
    vex->guest_X2 = stackaddr;
-   vex->guest_X3 = workitem;
-   vex->guest_X4 = reuse;
-   vex->guest_X5 = 0;
+   vex->guest_X3 = kevent_list;
+   vex->guest_X4 = upcall_flags;
+   vex->guest_X5 = kevent_count;
    vex->guest_XSP = sp;
 
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE

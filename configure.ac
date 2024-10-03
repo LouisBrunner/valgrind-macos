@@ -679,7 +679,7 @@ case "${host_os}" in
       # and we don't know of an macros similar to __GLIBC__ to get that info.
       #
       # XXX: `uname -r` won't do the right thing for cross-compiles, but
-      # that's not a problem yet. 2020: Now it is.
+      # that's not a problem yet.
       #
       # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
       # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0

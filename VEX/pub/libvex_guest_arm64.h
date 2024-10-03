@@ -172,10 +172,10 @@ typedef
       /* Used for FreeBSD client syscall when putting the carry flag
          value into VEX. */
       UInt guest_SETC;
-
-      /* Padding to make it have an 16-aligned size */
       UInt  pad_end_0;
-      /* ULong pad_end_1; */
+      /* Padding to make it have an 16-aligned size */
+      /* UInt  pad_end_1; */
+      /* ULong pad_end_2; */
    }
    VexGuestARM64State;
 

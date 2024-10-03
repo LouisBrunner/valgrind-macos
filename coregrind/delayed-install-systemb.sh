@@ -2,7 +2,7 @@
 
 # This script is used to do install_name_tool on the libmySystem.so library.
 # The reason it is not done directly through gcc/ld is that due to the name
-# of the library, it would make a "circular" dylib dependency (as we also like with -lSystem)
+# of the library, it would make a "circular" dylib dependency (as we also link with -lSystem)
 # and thus the argument is dropped by ld.
 #
 # The solution is to build the library normally and change the name afterwards.

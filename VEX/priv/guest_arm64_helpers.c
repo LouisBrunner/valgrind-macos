@@ -2100,6 +2100,7 @@ ULong LibVEX_GuestARM64_get_nzcv ( /*IN*/const VexGuestARM64State* vex_state )
    return nzcv;
 }
 
+/* floating point status resgister */
 /* VISIBLE TO LIBVEX CLIENT */
 ULong LibVEX_GuestARM64_get_fpsr ( const VexGuestARM64State* vex_state )
 {

@@ -106,7 +106,7 @@ memcheck/tests/linux/sys-preadv2_pwritev2 (stderr)
 
 See `.github/macos-VERSION-expected.txt` for more details about which tests pass on which version.
 
-<!-- TODO: split the flaky tests into a common, different files for easier reg tracking -->
+Some tests are a bit flaky and might fail randomly, see `.github/flaky-tests.txt` for more details.
 
 ## Acknowledgements
 

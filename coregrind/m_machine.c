@@ -40,6 +40,7 @@
 #include "pub_core_libcsignal.h"   // for ppc32 messing with SIGILL and SIGFPE
 #include "pub_core_debuglog.h"
 
+
 #define INSTR_PTR(regs)    ((regs).vex.VG_INSTR_PTR)
 #define STACK_PTR(regs)    ((regs).vex.VG_STACK_PTR)
 #define FRAME_PTR(regs)    ((regs).vex.VG_FRAME_PTR)

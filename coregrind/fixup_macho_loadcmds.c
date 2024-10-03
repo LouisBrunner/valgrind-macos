@@ -115,7 +115,6 @@
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <mach-o/fat.h>
-
 #include <mach/i386/thread_status.h>
 
 /* Get hold of DARWIN_VERS, and check it has a sane value. */

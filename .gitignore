@@ -1,6 +1,5 @@
 *.o
 .DS_Store
-/*/*.orig
 configure~
 
 # /

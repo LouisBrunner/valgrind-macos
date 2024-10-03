@@ -765,7 +765,7 @@ case "${host_os}" in
           DARWIN_VERS=$DARWIN_14_00
           DARWIN_KERNEL_VERS=23
           ;;
-        24.*)
+        macosx-24.*|iphoneos-18.*)
           AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15 Sequoia])
           DARWIN_VERS=$DARWIN_15_00
           DEFAULT_SUPP="darwin24.supp ${DEFAULT_SUPP}"

@@ -98,10 +98,7 @@ L_$0_1:	/* Even though we can't take a signal until the sigprocmask completes,
 	   If rip is in the range [1,2), the syscall hasn't been started yet */
 
 	/* Set the signal mask which should be current during the syscall. */
-	/* GrP fixme signals
-           DDD: JRS fixme: use __NR___pthread_sigmask, not __NR_rt_sigprocmask
-
-  ldr x16, =__NR_rt_sigprocmask
+  ldr x16, =__NR_sigprocmask
   ldr x0, =VKI_SIG_SETMASK
   mov x1, x2 // sysmask
   mov x2, x3 // postmask
@@ -110,7 +107,6 @@ L_$0_1:	/* Even though we can't take a signal until the sigprocmask completes,
 
   cmp x0, #0
   blt 7f
-	*/
 
 	/* OK, that worked.  Now do the syscall proper. */
 
@@ -151,19 +147,15 @@ L_$0_3:	/* In the range [3, 4), the syscall result is in %rax,
 
 L_$0_4:	/* Re-block signals.  If eip is in [4,5), then the syscall
 	   is complete and we needn't worry about it. */
-	/* GrP fixme signals
-     DDD: JRS fixme: use __NR___pthread_sigmask, not __NR_rt_sigprocmask
+  ldr x16, =__NR_sigprocmask
+  ldr x0, =VKI_SIG_SETMASK
+  ldr x1, [sp, #24] // saved x3 == postmask
+  mov x2, #0
+  ldr x3, [sp, #32] // saved x4 == nsigwords
+  svc 0x80
 
-    ldr x16, =__NR_rt_sigprocmask
-    ldr x0, =VKI_SIG_SETMASK
-    ldr x1, [sp, #24] // saved x3 == postmask
-    mov x2, #0
-    ldr x3, [sp, #32] // saved x4 == nsigwords
-    svc 0x80
-
-    cmp x0, #0
-    blt 7f
-	*/
+  cmp x0, #0
+  blt 7f
 
 L_$0_5:	/* now safe from signals */
   mov  x0, #0

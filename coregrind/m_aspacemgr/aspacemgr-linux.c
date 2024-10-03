@@ -1712,9 +1712,9 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       |           V's stack            |
       |--------------------------------| ???
       |             unused             |
-      |--------------------------------| 0x00019dacc000
+      |--------------------------------| 0x000180000000 + slider (ASLR-determined)
       |        dyld shared cache       |
-      |--------------------------------| 0x000280000000
+      |--------------------------------| ~0x000280000000
       |  left in case of DSC expansion |
       |--------------------------------| ~0x000300000000 <- start of client addressable space
       |       dyld stack (likely,      |

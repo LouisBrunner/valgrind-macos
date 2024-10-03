@@ -369,7 +369,7 @@ static void output_debug_info(const dyld_cache_header* cache) {
     "  .mappingWithSlideOffset: %#x,\n"
     "  .mappingWithSlideCount: %u,\n"
     "  .dylibsPBLStateArrayAddrUnused: %llu,\n"
-    "  .dylibsPBLSetAddr: %llu,\n"
+    "  .dylibsPBLSetAddr: %llx,\n"
     "  .programsPBLSetPoolAddr: %#llx,\n"
     "  .programsPBLSetPoolSize: %llu,\n"
     "  .programTrieAddr: %#llx,\n"

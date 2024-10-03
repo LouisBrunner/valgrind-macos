@@ -58,3 +58,8 @@ __DATA.__dyld4:
 .quad 0 ; (func pointer, used by dyld, non-null)
 ; void* (*tlv_get_addrAddr)(dyld3::MachOAnalyzer::TLV_Thunk*);
 .quad 0 ; (used by dyld, non-null)
+
+.text
+.globl _dyld_stub_binder
+_dyld_stub_binder:
+  ret

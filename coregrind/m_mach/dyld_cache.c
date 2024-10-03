@@ -56,6 +56,7 @@
 # define MACH_HEADER mach_header_64
 # define MAGIC MH_MAGIC_64
 
+static void output_text_debug_info(const dyld_cache_image_text_info* textInfo);
 static void output_debug_info(const dyld_cache_header* dyld_cache);
 
 typedef struct {
@@ -253,6 +254,7 @@ static struct MACH_HEADER* find_image_text(const dyld_cache_header* header, cons
     const char* imagePath = (const char*) calculate_relative(header, textInfo->pathOffset);
 
     if (VG_(strcmp)(imagePath, path) == 0) {
+      output_text_debug_info(textInfo);
       *len = textInfo->textSegmentSize;
       return (struct MACH_HEADER*) calculate_unslid(textInfo->loadAddress);
     }
@@ -294,6 +296,23 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
   VG_(debugLog)(2, "dyld_cache", "image fully loaded: %s\n", path);
 
   return 1;
+}
+
+static void output_text_debug_info(const dyld_cache_image_text_info* textInfo) {
+  const uint8_t* u = textInfo->uuid;
+  VG_(debugLog)(5, "dyld_cache",
+    "image_text_info{\n"
+    "  .uuid: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x,\n"
+    "  .loadAddress: %#llx,\n"
+    "  .textSegmentSize: %u,\n"
+    "  .pathOffset: %#x,\n"
+    "}\n",
+    u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7], u[8],
+    u[9], u[10], u[11], u[12], u[13], u[14], u[15],
+    textInfo->loadAddress,
+    textInfo->textSegmentSize,
+    textInfo->pathOffset
+  );
 }
 
 static void output_debug_info(const dyld_cache_header* cache) {

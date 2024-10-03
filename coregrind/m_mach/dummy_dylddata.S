@@ -60,6 +60,6 @@ __DATA.__dyld4:
 .quad 0 ; (used by dyld, non-null)
 
 .text
-.globl _dyld_stub_binder
-_dyld_stub_binder:
+.globl dyld_stub_binder
+dyld_stub_binder:
   ret

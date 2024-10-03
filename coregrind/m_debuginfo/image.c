@@ -1242,7 +1242,6 @@ SizeT ML_(img_strlen)(DiImage* img, DiOffT off)
 
 HChar* ML_(img_strdup)(DiImage* img, const HChar* cc, DiOffT offset)
 {
-   VG_(umsg)("img_stdup origin: %s\n", cc); // TODO: debug remove
    ensure_valid(img, offset, 1, "ML_(img_strdup)");
    SizeT  len = ML_(img_strlen)(img, offset);
    HChar* res = ML_(dinfo_zalloc)(cc, len+1);

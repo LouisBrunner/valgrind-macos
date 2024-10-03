@@ -873,7 +873,8 @@ static const HChar *kdebug_debugid(ULong did)
           while (*end == ' ' || *end == '\t') {
             end += 1;
           }
-          VG_(strlcpy)((HChar*)kdebug_trace_codes[kdebug_trace_codes_count].name, end, sizeof(kdebug_trace_codes[kdebug_trace_codes_count].name));
+          // FIXME: gross cast!
+          VG_(strlcpy)((HChar*)(Addr)kdebug_trace_codes[kdebug_trace_codes_count].name, end, sizeof(kdebug_trace_codes[kdebug_trace_codes_count].name));
           kdebug_trace_codes_count += 1;
           start = p - rbuf + 1;
         }

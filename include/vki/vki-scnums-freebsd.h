@@ -253,16 +253,22 @@
 #define __NR_futimes             206
 #define __NR_getpgid             207
 #define __NR_poll                209
+#if !defined(VGP_arm64_freebsd)
 #define __NR_freebsd7___semctl   220
+#endif
 #define __NR_semget              221
 #define __NR_semop               222
 /* obs semconfig                 223 */
+#if !defined(VGP_arm64_freebsd)
 #define __NR_freebsd7_msgctl     224
+#endif
 #define __NR_msgget              225
 #define __NR_msgsnd              226
 #define __NR_msgrcv              227
 #define __NR_shmat               228
+#if !defined(VGP_arm64_freebsd)
 #define __NR_freebsd7_shmctl     229
+#endif
 #define __NR_shmdt               230
 #define __NR_shmget              231
 #define __NR_clock_gettime       232

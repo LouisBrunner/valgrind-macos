@@ -1307,12 +1307,8 @@ POST(sys_wait6)
    }
 }
 
-// the man page is inconsistent for the last argument
-// See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=247386
-// will stick to 'arg' for simplicity
-
 // SYS_procctl 544
-// int procctl(idtype_t idtype, id_t id, int cmd, void *arg);
+// int procctl(idtype_t idtype, id_t id, int cmd, void *data);
 PRE(sys_procctl)
 {
    PRINT("sys_procctl ( %" FMT_REGWORD "d, %llu, %" FMT_REGWORD"d, %#" FMT_REGWORD "x )",
@@ -1320,7 +1316,7 @@ PRE(sys_procctl)
    PRE_REG_READ5(int, "procctl", vki_idtype_t, idtype,
                  vki_uint32_t, MERGE64_FIRST(id),
                  vki_uint32_t, MERGE64_SECOND(id),
-                 int, cmd, void *, arg);
+                 int, cmd, void *, data);
    switch (ARG4) {
    case VKI_PROC_ASLR_CTL:
    case VKI_PROC_SPROTECT:
@@ -1330,13 +1326,13 @@ PRE(sys_procctl)
    case VKI_PROC_STACKGAP_CTL:
    case VKI_PROC_NO_NEW_PRIVS_CTL:
    case VKI_PROC_WXMAP_CTL:
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(int));
       break;
    case VKI_PROC_REAP_STATUS:
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_status));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(struct vki_procctl_reaper_status));
       break;
    case VKI_PROC_REAP_GETPIDS:
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_pids));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(struct vki_procctl_reaper_pids));
       break;
    case VKI_PROC_REAP_KILL:
       /* The first three fields are reads
@@ -1350,15 +1346,15 @@ PRE(sys_procctl)
        *
        * There is also a pad field
        */
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
-      PRE_MEM_WRITE("procctl(arg)", ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
+      PRE_MEM_WRITE("procctl(data)", ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
    case VKI_PROC_ASLR_STATUS:
    case VKI_PROC_PDEATHSIG_STATUS:
    case VKI_PROC_STACKGAP_STATUS:
    case VKI_PROC_TRAPCAP_STATUS:
    case VKI_PROC_TRACE_STATUS:
-      PRE_MEM_WRITE("procctl(arg)", ARG5, sizeof(int));
+      PRE_MEM_WRITE("procctl(data)", ARG5, sizeof(int));
    case VKI_PROC_REAP_ACQUIRE:
    case VKI_PROC_REAP_RELEASE:
    default:

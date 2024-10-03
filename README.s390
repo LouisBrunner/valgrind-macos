@@ -42,6 +42,6 @@ Reading Material
 (1) ELF ABI s390x Supplement
     https://github.com/IBM/s390x-abi/releases
 (2) z/Architecture Principles of Operation
-    https://www.ibm.com/support/pages/zarchitecture-principles-operation
-(3) z/Architecture Reference Summary
-    https://www.ibm.com/support/pages/zarchitecture-reference-summary
+    https://publibfp.dhe.ibm.com/epubs/pdf/a227832d.pdf
+(3) Collection of z/Architecture publications
+    https://linux.mainframe.blog/zarchitecture-principles-of-operation/

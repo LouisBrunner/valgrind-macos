@@ -202,8 +202,6 @@ endif
 
 aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 
-close_range_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
-
 delete_sized_mismatch_CXXFLAGS = ${AM_CXXFLAGS} --std=c++14
 delete_sized_mismatch_SOURCES = delete_sized_mismatch.cpp
 

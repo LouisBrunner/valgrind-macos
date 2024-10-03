@@ -10508,15 +10508,15 @@ PRE(csrctl)
    switch (ARG1) {
    case VKI_CSR_CHECK:
      PRINT("csrctl(op:CSR_CHECK, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
-   PRE_REG_READ3(int, "csrctl",
-                 uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+     PRE_REG_READ3(int, "csrctl",
+                   uint32_t, op, void*, useraddr, size_t, usersize);
      PRE_MEM_READ( "csrctl(useraddr)", ARG2, ARG3 );
      break;
 
    case VKI_CSR_GET_ACTIVE_CONFIG:
       PRINT("csrctl(op:CSR_GET_ACTIVE_CONFIG, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
       PRE_REG_READ3(int, "csrctl",
-                    uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+                    uint32_t, op, void*, useraddr, size_t, usersize);
       PRE_MEM_WRITE( "csrctl(useraddr)", ARG2, ARG3 );
       break;
 
@@ -11128,7 +11128,6 @@ POST(thread_get_special_reply_port)
    record_named_port(tid, RES, MACH_PORT_RIGHT_RECEIVE, "special-reply-%p");
    PRINT("special reply port %s", name_for_port(RES));
 }
-
 
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 

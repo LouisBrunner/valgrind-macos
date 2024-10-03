@@ -1306,7 +1306,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
-#  elif defined(VGA_arm64)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd) || defined(VGP_arm64_darwin)
    // This arm64_linux section of this function VG_(invalidate_icache)
    // is copied from
    // https://github.com/armvixl/vixl/blob/master/src/a64/cpu-a64.cc

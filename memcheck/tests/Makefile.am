@@ -624,6 +624,10 @@ if HAVE_WCPNCPY
 check_PROGRAMS += wcpncpy
 endif
 
+if HAVE_WCPNCPY
+check_PROGRAMS += wcpncpy
+endif
+
 # are there still pre-C99 C compilers?
 if HAVE_WCSNCPY
 check_PROGRAMS += wcsncpy

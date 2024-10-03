@@ -81,6 +81,7 @@ AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
+bug492210_CFLAGS	= ${AM_CFLAGS} @FLAG_NO_PIE@ @FLAG_W_NO_UNINITIALIZED@
 fxsave_amd64_CFLAGS	= $(AM_CFLAGS) @FLAG_NO_PIE@
 insn_pcmpistri_CFLAGS	= $(AM_CFLAGS)
 more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \

@@ -71,9 +71,9 @@ brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 
 Some tests are hanging and were therefore disabled on macOS:
 
-- `none/tests/pselect_alarm`
-- `none/tests/pth_term_signal`
-- `memcheck/tests/sigaltstack` (issue on arm64)
+- `none/tests/pselect_alarm` (amd64)
+- `none/tests/pth_term_signal` (amd64 & arm64)
+- `memcheck/tests/sigaltstack` (arm64)
 
 ### Linux (Ubuntu 20.04)
 

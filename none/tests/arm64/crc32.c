@@ -5,7 +5,6 @@
 */
 
 #include <stdio.h>
-#include <malloc.h>  // memalign
 #include <string.h>  // memset
 #include <assert.h>
 

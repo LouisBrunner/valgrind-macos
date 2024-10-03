@@ -18,12 +18,13 @@
 #include <unistd.h>
 
 /* Simple test program, no race.  Parent writes atomically to a counter
-   whilst child reads it.  When counter reaches a prearranged value, 
+   whilst child reads it.  When counter reaches a prearranged value,
    child joins back to parent.  Parent (writer) uses hardware bus lock;
    child is only reading and so does not need to use a bus lock. */
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_arm64_darwin
 #undef PLAT_x86_freebsd
 #undef PLAT_amd64_freebsd
 #undef PLAT_arm64_freebsd
@@ -43,6 +44,8 @@
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
+#elif defined(__APPLE__) && defined(__aarch64__)
+#  define PLAT_arm64_darwin 1
 #elif defined(__FreeBSD__) && defined(__i386__)
 #  define PLAT_x86_freebsd 1
 #elif defined(__FreeBSD__) && defined(__amd64__)
@@ -108,7 +111,7 @@
       : /*out*/ : /*in*/ "r"(&(_lval))       \
       : /*trash*/ "r8", "r9", "cc", "memory" \
   );
-#elif defined(PLAT_arm64_linux) || defined(PLAT_arm64_freebsd)
+#elif defined(PLAT_arm64_linux) || defined(PLAT_arm64_freebsd) || defined(PLAT_arm64_darwin)
 #  define INC(_lval,_lqual) \
   __asm__ __volatile__( \
       "1:\n"                                 \

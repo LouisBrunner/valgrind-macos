@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+#include "tests/malloc.h"
 #include <assert.h>
 
 typedef  unsigned int            UInt;
@@ -36,7 +36,7 @@ void printBlock ( const char* who,
 
 int main ( void )
 {
-   ULong* block = memalign(16, 6 * sizeof(ULong));
+   ULong* block = memalign16(6 * sizeof(ULong));
    assert(block);
 
    ULong rt1in, rt2in, rt1out, rt2out;

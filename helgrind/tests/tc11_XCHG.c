@@ -11,6 +11,7 @@
 
 #undef PLAT_x86_darwin
 #undef PLAT_amd64_darwin
+#undef PLAT_arm64_darwin
 #undef PLAT_x86_freebsd
 #undef PLAT_amd64_freebsd
 #undef PLAT_arm64_freebsd
@@ -28,6 +29,8 @@
 #  define PLAT_x86_darwin 1
 #elif defined(__APPLE__) && defined(__x86_64__)
 #  define PLAT_amd64_darwin 1
+#elif defined(__APPLE__) && defined(__aarch64__)
+#  define PLAT_arm64_darwin 1
 #elif defined(__FreeBSD__) && defined(__i386__)
 #  define PLAT_x86_freebsd 1
 #elif defined(__FreeBSD__) && defined(__amd64__)
@@ -128,7 +131,7 @@
 
 #elif defined(PLAT_ppc32_linux) || defined(PLAT_ppc64_linux) \
       || defined(PLAT_arm_linux) || defined(PLAT_arm64_linux) \
-      || defined(PLAT_arm64_freebsd)
+      || defined(PLAT_arm64_freebsd) || defined(PLAT_arm64_darwin)
 #  if defined(HAVE_BUILTIN_ATOMIC)
 #    define XCHG_M_R(_addr,_lval)                                           \
         do {                                                                \

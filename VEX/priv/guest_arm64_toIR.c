@@ -3819,7 +3819,7 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       UInt dd = INSN(4,0);
       // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.ComputePACIMPDEF.4
       // dd = compute_pac(dd, nn, mm | SP) & 0xFFFFFFFF00000000;
-      // FIXME: putIReg64orZR(dd, mkU64(0x101010FF00000000));
+      putIReg64orZR(dd, getIReg64orZR(nn));
       DIP("pacga %s, %s, %s (FAKED)\n", nameIRegOrZR(True, dd), nameIRegOrZR(True, nn), nameIRegOrSP(True, mm));
         return True;
     }

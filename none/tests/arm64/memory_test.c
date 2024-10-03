@@ -4,7 +4,6 @@
 */
 
 #include <stdio.h>
-#include <malloc.h>  // memalign
 #include <string.h>  // memset
 #include "tests/malloc.h"
 #include <assert.h>
@@ -323,7 +322,7 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
 
 
 // In: rand:
-//       memory area, xferred vec regs, xferred int regs, 
+//       memory area, xferred vec regs, xferred int regs,
 //     caller spec:
 //       addr reg1, addr reg2
 //

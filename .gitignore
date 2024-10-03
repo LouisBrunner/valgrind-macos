@@ -1804,6 +1804,7 @@ configure~
 /none/tests/arm/vfpv4_fma
 
 # /none/tests/arm64/
+/none/tests/arm64/*.dSYM
 /none/tests/arm64/*.stderr.diff*
 /none/tests/arm64/*.stderr.out
 /none/tests/arm64/*.stdout.diff*

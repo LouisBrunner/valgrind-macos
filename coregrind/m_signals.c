@@ -3260,7 +3260,7 @@ void VG_(sigstartup_actions) ( void )
       ret = VG_(sigaction)(i, NULL, &sa);
 
 #     if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin) \
-      || defined(VGP_nanomips_linux)
+      || defined(VGP_arm64_darwin) || defined(VGP_nanomips_linux)
       /* apparently we may not even ask about the disposition of these
          signals, let alone change them */
       if (ret != 0 && (i == VKI_SIGKILL || i == VKI_SIGSTOP))

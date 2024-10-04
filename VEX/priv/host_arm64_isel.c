@@ -3793,6 +3793,21 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
       return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
+   if (e->tag == Iex_Const) {
+      /* This is something of a kludge.  Since a 16 bit floating point
+         zero is just .. all zeroes, just create a 64 bit zero word
+         and transfer it.  This avoids having to create a SfromW
+         instruction for this specific case. */
+      IRConst* con = e->Iex.Const.con;
+      if (con->tag == Ico_F16i && con->Ico.F16i == 0) {
+         HReg src = newVRegI(env);
+         HReg dst = newVRegD(env);
+         addInstr(env, ARM64Instr_Imm64(src, 0));
+         addInstr(env, ARM64Instr_VDfromX(dst, src));
+         return dst;
+      }
+   }
+
    if (e->tag == Iex_Get) {
       Int offs = e->Iex.Get.offset;
       if (offs >= 0 && offs < 8192 && 0 == (offs & 1)) {

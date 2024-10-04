@@ -1865,9 +1865,13 @@ Bool VG_(machine_get_hwcaps)( void )
 #if defined(VGO_darwin)
      (void) handler_unsup_insn;
 
+     // TODO: we should try to emulate `sysctlbyname` to get those values
+
      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
      vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+     vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
+     vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
 
      ULong ctr_el0 = 0;
 #else

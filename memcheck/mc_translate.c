@@ -8211,6 +8211,7 @@ static Bool isBogusAtom ( IRAtom* at )
       case Ico_U64:  n = (ULong)con->Ico.U64; break;
       case Ico_F32:  return False;
       case Ico_F64:  return False;
+      case Ico_F16i: return False;
       case Ico_F32i: return False;
       case Ico_F64i: return False;
       case Ico_V128: return False;

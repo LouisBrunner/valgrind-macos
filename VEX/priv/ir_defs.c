@@ -77,6 +77,7 @@ void ppIRConst ( const IRConst* con )
       case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
       case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
       case Ico_U128: vex_printf( "I128{0x%04x}", (UInt)(con->Ico.U128)); break;
+      case Ico_F16i: vex_printf( "F16i{0x%x}",   con->Ico.F16i); break;
       case Ico_F32:  u.f32 = con->Ico.F32;
                      vex_printf( "F32{0x%x}",   u.i32);
                      break;
@@ -269,6 +270,8 @@ void ppIROp ( IROp op )
       case Iop_128HIto64: vex_printf("128HIto64"); return;
       case Iop_128to64:   vex_printf("128to64");   return;
       case Iop_64HLto128: vex_printf("64HLto128"); return;
+
+      case Iop_CmpF16:    vex_printf("CmpF16");    return;
 
       case Iop_CmpF32:    vex_printf("CmpF32");    return;
       case Iop_F32toI32S: vex_printf("F32toI32S");  return;
@@ -2281,6 +2284,13 @@ IRConst* IRConst_U128 ( UShort con )
    c->Ico.U128 = con;
    return c;
 }
+IRConst* IRConst_F16i ( UInt f16i )
+{
+   IRConst* c  = LibVEX_Alloc_inline(sizeof(IRConst));
+   c->tag      = Ico_F16i;
+   c->Ico.F16i = f16i;
+   return c;
+}
 IRConst* IRConst_F32 ( Float f32 )
 {
    IRConst* c = LibVEX_Alloc_inline(sizeof(IRConst));
@@ -2862,6 +2872,7 @@ IRConst* deepCopyIRConst ( const IRConst* c )
       case Ico_U16:  return IRConst_U16(c->Ico.U16);
       case Ico_U32:  return IRConst_U32(c->Ico.U32);
       case Ico_U64:  return IRConst_U64(c->Ico.U64);
+      case Ico_F16i: return IRConst_F16i(c->Ico.F16i);
       case Ico_F32:  return IRConst_F32(c->Ico.F32);
       case Ico_F32i: return IRConst_F32i(c->Ico.F32i);
       case Ico_F64:  return IRConst_F64(c->Ico.F64);
@@ -4252,6 +4263,7 @@ IRType typeOfIRConst ( const IRConst* con )
       case Ico_U32:   return Ity_I32;
       case Ico_U64:   return Ity_I64;
       case Ico_U128:  return Ity_I128;
+      case Ico_F16i:  return Ity_F16;
       case Ico_F32:   return Ity_F32;
       case Ico_F32i:  return Ity_F32;
       case Ico_F64:   return Ity_F64;
@@ -5365,6 +5377,7 @@ Bool eqIRConst ( const IRConst* c1, const IRConst* c2 )
       case Ico_U16: return toBool( c1->Ico.U16 == c2->Ico.U16 );
       case Ico_U32: return toBool( c1->Ico.U32 == c2->Ico.U32 );
       case Ico_U64: return toBool( c1->Ico.U64 == c2->Ico.U64 );
+      case Ico_F16i: return toBool( c1->Ico.F16i == c2->Ico.F16i );
       case Ico_F32: return toBool( c1->Ico.F32 == c2->Ico.F32 );
       case Ico_F32i: return toBool( c1->Ico.F32i == c2->Ico.F32i );
       case Ico_F64: return toBool( c1->Ico.F64 == c2->Ico.F64 );

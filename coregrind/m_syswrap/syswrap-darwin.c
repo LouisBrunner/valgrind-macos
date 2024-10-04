@@ -2424,6 +2424,7 @@ PRE(workq_ops)
       // GrP fixme need anything here?
       // GrP fixme may block?
       break;
+   case VKI_WQOPS_THREAD_KEVENT_RETURN:
    case VKI_WQOPS_THREAD_WORKLOOP_RETURN:
    case VKI_WQOPS_THREAD_RETURN: {
       // The interesting case. The kernel will do one of two things:
@@ -2454,10 +2455,6 @@ PRE(workq_ops)
       // JRS uh, looks like it queues up a bunch of threads, or some such?
       *flags |= SfMayBlock; // the kernel sources take a spinlock, so play safe
       break;
-   case VKI_WQOPS_THREAD_KEVENT_RETURN:
-      // RK fixme need anything here?
-      // perhaps similar to VKI_WQOPS_THREAD_RETURN above?
-      break;
    case VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY:
       // RK fixme this just sets scheduling priorities - don't think we need
       // to do anything here
@@ -2465,6 +2462,9 @@ PRE(workq_ops)
    case VKI_WQOPS_SHOULD_NARROW:
       // RK fixme need anything here?
       // RK fixme may block?
+      break;
+   case VKI_WQOPS_SETUP_DISPATCH:
+      // docs says: setup pthread workqueue-related operations
       break;
    default:
       VG_(printf)("UNKNOWN workq_ops option %ld\n", ARG1);
@@ -9434,6 +9434,26 @@ PRE(__semwait_signal)
 //}
 
 
+PRE(task_name_for_pid)
+{
+   PRINT("task_name_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), SARG2, ARG3);
+   PRE_REG_READ3(long, "task_name_for_pid",
+                 mach_port_t,"target",
+                 vki_pid_t, "pid", mach_port_t *,"task");
+   PRE_MEM_WRITE("task_name_for_pid(task)", ARG3, sizeof(mach_port_t));
+}
+
+POST(task_name_for_pid)
+{
+   mach_port_t task;
+
+   POST_MEM_WRITE(ARG3, sizeof(mach_port_t));
+
+   task = *(mach_port_t *)ARG3;
+   record_named_port(tid, task, MACH_PORT_RIGHT_SEND, "task-name-%p");
+   PRINT("task-name %#x", task);
+}
+
 PRE(task_for_pid)
 {
    PRINT("task_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), SARG2, ARG3);
@@ -11214,6 +11234,25 @@ POST(kernelrpc_mach_port_request_notification_trap)
   }
 }
 
+PRE(kernelrpc_mach_port_type_trap)
+{
+  PRINT("kernelrpc_mach_port_type_trap(%s, %s, %#lx)",
+         name_for_port(ARG1), name_for_port(ARG2), ARG3);
+  PRE_REG_READ3(kern_return_t, "kernelrpc_mach_port_type_trap",
+    ipc_space_t, task, mach_port_name_t, name, mach_port_type_t*, ptype);
+  if (ARG3 != 0) {
+    PRE_MEM_WRITE("kernelrpc_mach_port_type_trap(ptype)", ARG3, sizeof(mach_port_type_t));
+  }
+}
+
+POST(kernelrpc_mach_port_type_trap)
+{
+  if (RES == 0 && ARG3 != 0) {
+    POST_MEM_WRITE(ARG3, sizeof(mach_port_type_t));
+    PRINT("-> ptype:%#x", *(mach_port_type_t*)ARG3);
+  }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 
@@ -12156,7 +12195,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)),
 #  endif
 
-// _____(__NR_task_name_for_pid),
+   MACXY(__NR_task_name_for_pid, task_name_for_pid),
    MACXY(__NR_task_for_pid, task_for_pid),
    MACXY(__NR_pid_for_task, pid_for_task),
 #if DARWIN_VERS >= DARWIN_13_00
@@ -12211,10 +12250,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(73)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(74)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(75)),
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)),
 #if DARWIN_VERS >= DARWIN_10_15
-   MACXY(_NR_kernelrpc_mach_port_request_notification_trap, kernelrpc_mach_port_request_notification_trap),
+   MACXY(__NR_kernelrpc_mach_port_type_trap, kernelrpc_mach_port_type_trap),
+   MACXY(__NR_kernelrpc_mach_port_request_notification_trap, kernelrpc_mach_port_request_notification_trap),
 #else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)),
 #endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(78)),

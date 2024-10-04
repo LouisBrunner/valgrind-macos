@@ -7531,6 +7531,43 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* ---------------------- LDRA{B} ----------------------- */
+   /* 31    26   23 22 21 20   11 10 9  4
+      11111 000  0  S  1  imm9 0  1  Rn Rt  LDRAA <Xt>, [<Xn|SP>{, #<simm>}] (offset)
+      11111 000  0  S  1  imm9 1  1  Rn Rt  LDRAA <Xt>, [<Xn|SP>{, #<simm>}]! (pre-indexed)
+      11111 000  1  S  1  imm9 0  1  Rn Rt  LDRAB <Xt>, [<Xn|SP>{, #<simm>}] (offset)
+      11111 000  1  S  1  imm9 1  1  Rn Rt  LDRAB <Xt>, [<Xn|SP>{, #<simm>}]! (pre-indexed)
+      size  VR   M  S  1  imm9 W  1  Rn Rt
+   */
+   if (INSN(31,24) == BITS8(1,1,1,1,1,0,0,0)
+       && INSN(21,21) == 1
+       && INSN(10,10) == 1
+   ) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
+        return False;
+      }
+      UInt tt = INSN(4,0);
+      UInt nn = INSN(9,5);
+      UInt imm9 = INSN(20,12);
+      Bool M = INSN(23,23) == 1;
+      UInt S = INSN(22,22);
+      Bool W = INSN(11,11) == 1;
+      Long offset = (Long)sx_to_64(S << 9 | imm9, 10) << 3;
+
+      IRTemp addr = newTemp(Ity_I64);
+      assign(addr, binop(Iop_Add64, getIReg64orSP(nn), mkU64(offset)));
+      putIReg64orZR(tt, loadLE(Ity_I64, mkexpr(addr)));
+      if (W) {
+        putIReg64orSP(nn, loadLE(Ity_I64, mkexpr(addr)));
+      }
+
+      DIP("ldra%c %s, [%s, #%lld/%llx]%s\n",
+          M ? 'b' : 'a',
+          nameIRegOrZR(False, tt), nameIReg64orSP(nn), offset, offset,
+          W ? "!" : "");
+      return True;
+   }
+
    if (sigill_diag) {
       vex_printf("ARM64 front end: load_store\n");
    }

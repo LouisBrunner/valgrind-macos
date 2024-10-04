@@ -3849,10 +3849,242 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
     case VKI_VM_MEMORY_UNSHARED_PMAP:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[unshared pmap]", path_len);
       return True;
+    case VKI_VM_MEMORY_REALLOC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[realloc]", path_len);
+      break;
+    case VKI_VM_MEMORY_MALLOC_LARGE_REUSABLE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (large, reusable) memory]", path_len);
+      break;
+    case VKI_VM_MEMORY_MALLOC_LARGE_REUSED:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (large, reused) memory]", path_len);
+      break;
+    case VKI_VM_MEMORY_MALLOC_MEDIUM:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc (medium) memory]", path_len);
+      break;
+    case VKI_VM_MEMORY_MALLOC_PROB_GUARD:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[malloc prob guard]", path_len);
+      break;
+    case VKI_VM_MEMORY_IOKIT:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[iokit]", path_len);
+      break;
+    case VKI_VM_MEMORY_GUARD:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[guard]", path_len);
+      break;
+    case VKI_VM_MEMORY_DYLIB:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[dylib]", path_len);
+      break;
+    case VKI_VM_MEMORY_OBJC_DISPATCHERS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[objc dispatchers]", path_len);
+      break;
+    case VKI_VM_MEMORY_APPKIT:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[appkit]", path_len);
+      break;
+    case VKI_VM_MEMORY_FOUNDATION:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[foundation]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREGRAPHICS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics]", path_len);
+      break;
+    case VKI_VM_MEMORY_CORESERVICES:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core services]", path_len);
+      break;
+    case VKI_VM_MEMORY_JAVA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[java]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREDATA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core data]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREDATA_OBJECTIDS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core data object ids]", path_len);
+      break;
+    case VKI_VM_MEMORY_ATS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[ats]", path_len);
+      break;
+    case VKI_VM_MEMORY_LAYERKIT:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[layer kit]", path_len);
+      break;
+    case VKI_VM_MEMORY_CGIMAGE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics image]", path_len);
+      break;
+    case VKI_VM_MEMORY_TCMALLOC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[tcmalloc]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREGRAPHICS_DATA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics data]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREGRAPHICS_SHARED:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics shared]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREGRAPHICS_FRAMEBUFFERS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics framebuffers]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREGRAPHICS_BACKINGSTORES:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics backing stores]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREGRAPHICS_XALLOC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core graphics xalloc]", path_len);
+      break;
+    case VKI_VM_MEMORY_DYLD_MALLOC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[dyld malloc]", path_len);
+      break;
+    case VKI_VM_MEMORY_SQLITE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[sqlite]", path_len);
+      break;
+    case VKI_VM_MEMORY_JAVASCRIPT_CORE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[javascript core]", path_len);
+      break;
+    case VKI_VM_MEMORY_JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[javascript jit executable allocator]", path_len);
+      break;
+    case VKI_VM_MEMORY_JAVASCRIPT_JIT_REGISTER_FILE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[javascript jit register file]", path_len);
+      break;
+    case VKI_VM_MEMORY_GLSL:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[glsl]", path_len);
+      break;
+    case VKI_VM_MEMORY_OPENCL:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[opencl]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREIMAGE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core image]", path_len);
+      break;
+    case VKI_VM_MEMORY_WEBCORE_PURGEABLE_BUFFERS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[webcore purgeable buffers]", path_len);
+      break;
+    case VKI_VM_MEMORY_IMAGEIO:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[imageio]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREPROFILE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core profile]", path_len);
+      break;
+    case VKI_VM_MEMORY_ASSETSD:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[assetsd]", path_len);
+      break;
+    case VKI_VM_MEMORY_LIBDISPATCH:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[libdispatch]", path_len);
+      break;
+    case VKI_VM_MEMORY_ACCELERATE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[accelerate]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREUI:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core ui]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREUIFILE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core ui file]", path_len);
+      break;
+    case VKI_VM_MEMORY_RAWCAMERA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[raw camera]", path_len);
+      break;
+    case VKI_VM_MEMORY_CORPSEINFO:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[corpse info]", path_len);
+      break;
+    case VKI_VM_MEMORY_ASL:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[asl]", path_len);
+      break;
+    case VKI_VM_MEMORY_SWIFT_RUNTIME:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[swift runtime]", path_len);
+      break;
+    case VKI_VM_MEMORY_SWIFT_METADATA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[swift metadata]", path_len);
+      break;
+    case VKI_VM_MEMORY_DHMM:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[dhmm]", path_len);
+      break;
+    case VKI_VM_MEMORY_SCENEKIT:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[scene kit]", path_len);
+      break;
+    case VKI_VM_MEMORY_SKYWALK:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[skywalk]", path_len);
+      break;
+    case VKI_VM_MEMORY_IOSURFACE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[io surface]", path_len);
+      break;
+    case VKI_VM_MEMORY_LIBNETWORK:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[libnetwork]", path_len);
+      break;
+    case VKI_VM_MEMORY_AUDIO:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[audio]", path_len);
+      break;
+    case VKI_VM_MEMORY_VIDEOBITSTREAM:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[video bitstream]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_XPC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm xpc]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_RPC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm rpc]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_MEMORYPOOL:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm memory pool]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_READCACHE:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm read cache]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_CRABS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm crabs]", path_len);
+      break;
+    case VKI_VM_MEMORY_QUICKLOOK_THUMBNAILS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[quicklook thumbnails]", path_len);
+      break;
+    case VKI_VM_MEMORY_ACCOUNTS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[accounts]", path_len);
+      break;
+    case VKI_VM_MEMORY_SANITIZER:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[sanitizer]", path_len);
+      break;
+    case VKI_VM_MEMORY_IOACCELERATOR:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[io accelerator]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_REGWARP:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm regwarp]", path_len);
+      break;
+    case VKI_VM_MEMORY_EAR_DECODER:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[ear decoder]", path_len);
+      break;
+    case VKI_VM_MEMORY_COREUI_CACHED_IMAGE_DATA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[core ui cached image data]", path_len);
+      break;
+    case VKI_VM_MEMORY_COLORSYNC:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[color sync]", path_len);
+      break;
+    case VKI_VM_MEMORY_BTINFO:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[bt info]", path_len);
+      break;
+    case VKI_VM_MEMORY_CM_HLS:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[cm hls]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_THREAD_CONTEXT:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta thread context]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_INDIRECT_BRANCH_MAP:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta indirect branch map]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_RETURN_STACK:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta return stack]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_EXECUTABLE_HEAP:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta executable heap]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_USER_LDT:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta user ldt]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_ARENA:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta arena]", path_len);
+      break;
+    case VKI_VM_MEMORY_ROSETTA_10:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[rosetta 10]", path_len);
+      break;
     case VKI_VM_MEMORY_VALGRIND:
     case 0:
       return False;
     default:
+      if (tag >= VKI_VM_MEMORY_APPLICATION_SPECIFIC_1 && tag <= VKI_VM_MEMORY_APPLICATION_SPECIFIC_16) {
+        VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[application specific]", path_len);
+        return True;
+      }
       VG_(debugLog)(0, "aspacem", "unknown vm tag: %d\n", tag);
       return False;
   }

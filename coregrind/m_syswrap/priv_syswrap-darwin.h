@@ -816,6 +816,7 @@ DECL_TEMPLATE(darwin, semaphore_wait);
 DECL_TEMPLATE(darwin, semaphore_wait_signal);
 DECL_TEMPLATE(darwin, semaphore_timedwait);
 DECL_TEMPLATE(darwin, semaphore_timedwait_signal);
+DECL_TEMPLATE(darwin, task_name_for_pid);
 DECL_TEMPLATE(darwin, task_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
 
@@ -846,6 +847,7 @@ DECL_TEMPLATE(darwin, kernelrpc_mach_port_get_attributes_trap);
 
 #if DARWIN_VERS >= DARWIN_10_15
 DECL_TEMPLATE(darwin, task_restartable_ranges_register);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_type_trap);
 DECL_TEMPLATE(darwin, kernelrpc_mach_port_request_notification_trap);
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
 

@@ -431,7 +431,7 @@ asm(
     thread for every work item.
 */
 void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
-                     Int reuse, Int kevent_count, Addr sp)
+                     UInt reuse, Int kevent_count, Addr sp)
 {
    ThreadState *tst;
    VexGuestAMD64State *vex;

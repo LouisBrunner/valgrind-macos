@@ -535,6 +535,9 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    vex->guest_R8  = reuse;
    vex->guest_R9  = kevent_count;
    vex->guest_RSP = sp;
+#if DARWIN_VERS >= DARWIN_10_12
+   vex->guest_GS_CONST = self + pthread_tsd_offset;
+#endif
 
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE
    stack = VG_PGROUNDUP(sp) - stacksize;

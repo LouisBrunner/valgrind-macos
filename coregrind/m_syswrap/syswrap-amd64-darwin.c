@@ -533,7 +533,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    vex->guest_RDX = stackaddr;
    vex->guest_RCX = workitem;
    vex->guest_R8  = reuse;
-   vex->guest_R9  = 0;
+   vex->guest_R9  = kevent_count;
    vex->guest_RSP = sp;
 
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE

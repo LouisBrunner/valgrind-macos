@@ -507,30 +507,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
 
    Bool is_reuse = (upcall_flags & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
    if (is_reuse) {
-
-     /* For whatever reason, tst->os_state.pthread appear to have a
-        constant offset of 96 on 10.7, but zero on 10.6 and 10.5.  No
-        idea why. */
-#      if DARWIN_VERS <= DARWIN_10_6
-       UWord magic_delta = 0;
-#      elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
-       UWord magic_delta = 0x60;
-#      elif DARWIN_VERS == DARWIN_10_9 \
-            || DARWIN_VERS == DARWIN_10_10 \
-            || DARWIN_VERS == DARWIN_10_11 \
-            || DARWIN_VERS == DARWIN_10_12 \
-            || DARWIN_VERS == DARWIN_10_13 \
-            || DARWIN_VERS == DARWIN_10_14 \
-            || DARWIN_VERS == DARWIN_10_15 \
-            || DARWIN_VERS == DARWIN_11_00 \
-            || DARWIN_VERS == DARWIN_12_00 \
-            || DARWIN_VERS == DARWIN_13_00 \
-            || DARWIN_VERS == DARWIN_14_00
-       UWord magic_delta = 0xE0;
-#      else
-#        error "magic_delta: to be computed on new OS version"
-         // magic_delta = tst->os_state.pthread - self
-#      endif
+       UWord magic_delta = 0x0;
 
        // This thread already exists; we're merely re-entering
        // after leaving via workq_ops(WQOPS_THREAD_RETURN).
@@ -569,6 +546,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
    vex->guest_X4 = upcall_flags;
    vex->guest_X5 = kevent_count;
    vex->guest_XSP = sp;
+   vex->guest_TPIDR_EL0 = self + pthread_tsd_offset;
 
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE
    stack = VG_PGROUNDUP(sp) - stacksize;

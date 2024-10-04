@@ -243,14 +243,16 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
                                                  offset + segcmd->fileoff,
                                                  filename);
 #if defined(VGA_arm64)
-      // most of the time, we can't map at 0x100000000 because the kernel doesn't allow it
-      // however, most binaries start their TEXT there, so we need to slide it
-      // we just do a non-fixed mmap and let the kernel decide where to put it
-      // we then calculate the slide and apply it everywhere it's needed
-      if (sr_isError(res) && !VG_(strcmp)(segcmd->segname, "__TEXT")) {
+      if (!sr_isError(res) || VG_(strcmp)(segcmd->segname, "__TEXT")) {
+        check_mmap(res, addr, filesize, "load_segment1");
+      } else {
+        // most of the time, we can't map at 0x100000000 because the kernel doesn't allow it
+        // however, most binaries start their TEXT there, so we need to slide it
+        // we just do a non-fixed mmap and let the kernel decide where to put it
+        // we then calculate the slide and apply it everywhere it's needed
         VG_(debugLog)(2, "ume",
-          "mmap fixed (file) (%#lx, %lu) failed with error %lu (%s), trying floating\n",
-          addr, filesize, sr_Err(res), VG_(strerror)(sr_Err(res))
+          "failed with error %lu (%s), trying floating\n",
+          sr_Err(res), VG_(strerror)(sr_Err(res))
         );
         unsigned int saved_prot = prot;
         if (sr_Err(res) == VKI_EPERM || sr_Err(res) == VKI_EINVAL) {
@@ -267,11 +269,13 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
             fd, offset + segcmd->fileoff, filename
         );
 
-        if (!sr_isError(res)) {
+        if (sr_isError(res)) {
+          check_mmap_float(res, filesize, "load_segment1");
+        } else {
           out_info->text_slide = sr_Res(res) - addr;
           slided_addr += out_info->text_slide;
           VG_(debugLog)(2, "ume",
-            "mmap fixed (file) (%#lx, %lu) succeeded with slide: %#lx\n",
+            "mmap float (file) (%#lx, %lu) succeeded with slide: %#lx\n",
             sr_Res(res), filesize, out_info->text_slide
           );
 
@@ -285,11 +289,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
               check_mmap_float(res, filesize, "load_segment1-mprotect");
             }
           }
-        } else {
-          check_mmap_float(res, filesize, "load_segment1");
         }
-      } else {
-        check_mmap(res, addr, filesize, "load_segment1");
       }
 #else
       check_mmap(res, addr, filesize, "load_segment1");

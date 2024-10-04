@@ -358,7 +358,7 @@ asm(
 "   push $0\n"    // alignment
 "   push $0\n"    // alignment
 "   push %ebp\n"  // original sp
-"   push $0\n"    // TODO: @lb, wrong but we don't use it and I don't have a 32bit machine to test
+"   push %esi\n"  // kevent_count
 "   push %edi\n"  // reuse
 "   push %edx\n"  // workitem
 "   push %ecx\n"  // stackaddr
@@ -473,7 +473,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    vex->guest_ECX = stackaddr;
    vex->guest_EDX = workitem;
    vex->guest_EDI = reuse;
-   vex->guest_ESI = 0;
+   vex->guest_ESI = kevent_count;
    vex->guest_ESP = sp;
 
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE

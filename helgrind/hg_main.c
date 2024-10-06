@@ -1716,14 +1716,23 @@ void evh__pre_thread_ll_exit ( ThreadId quit_tid )
    /* Complain if this thread holds any locks. */
    nHeld = HG_(cardinalityWS)( univ_lsets, thr_q->locksetA );
    tl_assert(nHeld >= 0);
-#if !defined(VGO_freebsd) || (FREEBSD_VERS < FREEBSD_15)
-   if (nHeld > 0) {
+   Bool lock_at_exit = False;
+#if defined(VGO_freebsd)
+   /* Bugzilla 494337
+    * temporary (?): turn off this check on FreeBSD 15+
+    * there is a lock during exit() to make it thread safe
+    * but that lock gets leaked.
+    */
+   if (VG_(getosreldate)() > 1500000) {
+      lock_at_exit = True;
+   }
+#endif
+   if (nHeld > 0 && (lock_at_exit == False)) {
       HChar buf[80];
       VG_(sprintf)(buf, "Exiting thread still holds %d lock%s",
                         nHeld, nHeld > 1 ? "s" : "");
       HG_(record_error_Misc)( thr_q, buf );
    }
-#endif
 
    /* Not much to do here:
       - tell libhb the thread is gone

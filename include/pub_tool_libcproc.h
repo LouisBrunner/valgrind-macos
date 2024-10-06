@@ -124,6 +124,10 @@ extern UInt VG_(get_user_milliseconds)(void);
 typedef void (*vg_atfork_t)(ThreadId);
 extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
 
+#if defined(VGO_freebsd)
+extern Int VG_(getosreldate)(void);
+#endif
+
 
 #endif   // __PUB_TOOL_LIBCPROC_H
 

@@ -2083,8 +2083,7 @@ int main(void)
    GO(SYS_fdatasync, "1s 0m");
    SY(SYS_fdatasync, x0+99999999); FAIL;
 
-#if (FREEBSD_VERS >= FREEBSD_12)
-
+   // __FreeBSD_version 1200031
    /* SYS_fstat                   551 */
    GO(SYS_fstat, "2s 1m");
    SY(SYS_fstat, x0+99999999, x0+1); FAIL;
@@ -2121,6 +2120,7 @@ int main(void)
    GO(SYS_mknodat, "4s 1m");
    SY(SYS_mknodat, x0+999999, x0+1, x0, x0); FAIL;
 
+   // FreeBSD_version 1200033
    /* SYS_kevent                 560 */
    GO(SYS_kevent, "6s 3m");
    SY(SYS_kevent, x0+1, x0+2, x0+3, x0+4, x0+5, x0+6); FAIL;
@@ -2137,6 +2137,7 @@ int main(void)
    GO(SYS_getrandom, "3s 1m");
    SY(SYS_getrandom, x0+1, x0+1, x0); FAIL;
 
+   // __FreeBSD_version 1200031)
    /* SYS_getfhat                 564 */
    GO(SYS_getfhat, "4s 2m");
    SY(SYS_getfhat, x0, x0, x0, x0); FAIL;
@@ -2153,11 +2154,9 @@ int main(void)
    GO(SYS_fhreadlink, "3s 2m");
    SY(SYS_fhreadlink, x0+1, x0+1, x0+10);
 
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_12_2)
-
-      /* SYS___sysctlbyname       570 */
+   // __FreeBSD_version 1201522
+   // __FreeBSD_version 1300045
+   /* SYS___sysctlbyname       570 */
    GO(SYS___sysctlbyname, "(getoldlen) 3s 2m");
    SY(SYS___sysctlbyname, x0, x0+1, NULL, x0+1, NULL, x0); FAIL;
 
@@ -2166,8 +2165,6 @@ int main(void)
 
    GO(SYS___sysctlbyname, "(putnew) 4s 2m");
    SY(SYS___sysctlbyname, x0, x0+1, NULL, NULL, x0+1, x0+2); FAIL;
-
-#endif
 
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");

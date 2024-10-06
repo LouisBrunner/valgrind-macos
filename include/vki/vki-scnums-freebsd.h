@@ -221,26 +221,18 @@
 #define __NR_setegid             182
 #define __NR_seteuid             183
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_stat      188
 #define __NR_freebsd11_fstat     189
 #define __NR_freebsd11_lstat     190
-#else
-#define __NR_stat                188
-#define __NR_fstat               189
-#define __NR_lstat               190
-#endif
 
 #define __NR_pathconf            191
 #define __NR_fpathconf           192
 #define __NR_getrlimit           194
 #define __NR_setrlimit           195
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_getdirentries 196
-#else
-#define __NR_getdirentries       196
-#endif
 //#define __NR_freebsd6_mmap       197
 #define __NR___syscall           198
 /* #define __NR_freebsd6_lseek      199 */
@@ -255,20 +247,20 @@
 #define __NR_poll                209
 #if !defined(VGP_arm64_freebsd)
 #define __NR_freebsd7___semctl   220
-#endif
+#endif  // VGP_arm64_freebsd
 #define __NR_semget              221
 #define __NR_semop               222
 /* obs semconfig                 223 */
 #if !defined(VGP_arm64_freebsd)
 #define __NR_freebsd7_msgctl     224
-#endif
+#endif // VGP_arm64_freebsd
 #define __NR_msgget              225
 #define __NR_msgsnd              226
 #define __NR_msgrcv              227
 #define __NR_shmat               228
 #if !defined(VGP_arm64_freebsd)
 #define __NR_freebsd7_shmctl     229
-#endif
+#endif // VGP_arm64_freebsd
 #define __NR_shmdt               230
 #define __NR_shmget              231
 #define __NR_clock_gettime       232
@@ -301,15 +293,11 @@
 #define __NR_lutimes             276
 /* obs netbsd_msync              277 */
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_nstat     278
 #define __NR_freebsd11_nfstat    279
 #define __NR_freebsd11_nlstat    280
-#else
-#define __NR_nstat               278
-#define __NR_nfstat              279
-#define __NR_nlstat              280
-#endif
+
 #define __NR_preadv              289
 #define __NR_pwritev             290
 
@@ -317,11 +305,8 @@
 
 #define __NR_fhopen              298
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_fhstat    299
-#else
-#define __NR_fhstat              299
-#endif
 
 #define __NR_modnext             300
 #define __NR_modstat             301
@@ -386,11 +371,9 @@
 #define __NR_getresgid           361
 #define __NR_kqueue              362
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200033
 #define __NR_freebsd11_kevent    363
-#else
-#define __NR_kevent              363
-#endif
+
 /* obs __cap_get_proc            364 */
 /* obs __cap_set_proc            365 */
 /* obs __cap_get_fd              366 */
@@ -422,17 +405,11 @@
 #define __NR_sendfile            393
 #define __NR_mac_syscall         394
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_getfsstat 395
 #define __NR_freebsd11_statfs    396
 #define __NR_freebsd11_fstatfs   397
 #define __NR_freebsd11_fhstatfs  398
-#else
-#define __NR_getfsstat           395
-#define __NR_statfs              396
-#define __NR_fstatfs             397
-#define __NR_fhstatfs            398
-#endif
 
 #define __NR_ksem_close          400
 #define __NR_ksem_post           401
@@ -455,11 +432,7 @@
 #define __NR_getcontext          421
 #define __NR_setcontext          422
 #define __NR_swapcontext         423
-#if (FREEBSD_VERS >= FREEBSD_13_1)
 #define __NR_freebsd13_swapoff   424
-#else
-#define __NR_swapoff             424
-#endif
 #define __NR___acl_get_link      425
 #define __NR___acl_set_link      426
 #define __NR___acl_delete_link   427
@@ -531,22 +504,16 @@
 #define __NR_fchownat            491
 #define __NR_fexecve             492
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_fstatat   493
-#else
-#define __NR_fstatat             493
-#endif
 
 #define __NR_futimesat           494
 #define __NR_linkat              495
 #define __NR_mkdirat             496
 #define __NR_mkfifoat            497
 
-#if (FREEBSD_VERS >= FREEBSD_12)
+// __FreeBSD_version 1200031
 #define __NR_freebsd11_mknodat   498
-#else
-#define __NR_mknodat             498
-#endif
 
 #define __NR_openat              499
 #define __NR_readlinkat          500
@@ -600,14 +567,9 @@
 
 /* obs numa_getaffinity          548 */
 /* obs numa_setaffinity          549 */
-#if (FREEBSD_VERS >= FREEBSD_11)
-
 #define __NR_fdatasync           550
 
-#endif // (FREEBSD_VERS >= FREEBSD_11)
-
-#if (FREEBSD_VERS >= FREEBSD_12)
-
+// __FreeBSD_version 1200031
 #define __NR_fstat               551
 #define __NR_fstatat             552
 #define __NR_fhstat              553
@@ -617,71 +579,52 @@
 #define __NR_getfsstat           557
 #define __NR_fhstatfs            558
 #define __NR_mknodat             559
+
+// __FreeBSD_version 1200033
 #define __NR_kevent              560
+
 #define __NR_cpuset_getdomain    561
 #define __NR_cpuset_setdomain    562
 #define __NR_getrandom           563
+
+// __FreeBSD_version 1200031
 #define __NR_getfhat             564
 #define __NR_fhlink              565
 #define __NR_fhlinkat            566
 #define __NR_fhreadlink          567
 
-#endif // (FREEBSD_VERS >= FREEBSD_12)
-
-#if (FREEBSD_VERS >= FREEBSD_12_2)
-
+// __FreeBSD_version 1300018
 #define __NR_funlinkat           568
 #define __NR_copy_file_range     569
+// __FreeBSD_version 1201522 and 1300045
 #define __NR___sysctlbyname      570
-#if (FREEBSD_VERS >= FREEBSD_13_0)
 #define __NR_shm_open2           571
 #define __NR_shm_rename          572
 #define __NR_sigfastblock        573
+// __FreeBSD_version 1300080
 #define __NR___realpathat        574
-#endif
+// __FreeBSD_version 1300091
 #define __NR_close_range         575
-
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_13_0)
 
 #define __NR_rpctls_syscall      576
 #define __NR___specialfd         577
 #define __NR_aio_writev          578
 #define __NR_aio_readv           579
 
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_13_1)
-
-#if (FREEBSD_VERS >= FREEBSD_14_0)
+// __FreeBSD_version 1400030
 #define __NR_fspacectl           580
-#endif
 #define __NR_sched_getcpu        581
 #define __NR_swapoff             582
 
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_15) || (FREEBSD_VERS >= FREEBSD_13_3)
-
 #define __NR_kqueuex             583
 #define __NR_membarrier          584
-
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_14_0)  || (FREEBSD_VERS >= FREEBSD_13_4)
 
 #define __NR_timerfd_create      585
 #define __NR_timerfd_gettime     586
 #define __NR_timerfd_settime     587
 
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_14_1) || (FREEBSD_VERS >= FREEBSD_13_3)
-
+// __FreeBSD_version 1400507 and 1500012
 #define __NR_kcmp                588
-
-#endif
 
 #define __NR_fake_sigreturn      1000
 

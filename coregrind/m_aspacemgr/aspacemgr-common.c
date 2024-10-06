@@ -386,7 +386,7 @@ Bool ML_(am_get_fd_d_i_m)( Int fd,
    }
    return False;
 #  elif defined(VGO_freebsd)
-#if (FREEBSD_VERS < FREEBSD_12)
+#if (__FreeBSD_version < 1200031)
    struct vki_freebsd11_stat buf;
    SysRes res = VG_(do_syscall2)(__NR_fstat, fd, (UWord)&buf);
 #else

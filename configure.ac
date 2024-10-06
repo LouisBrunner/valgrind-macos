@@ -399,113 +399,6 @@ case "${host_os}" in
      *freebsd*)
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="freebsd"
-        AC_DEFINE([FREEBSD_11], 1100, [FREEBSD_VERS value for FreeBSD 11.x])
-        freebsd_11=1100
-        AC_DEFINE([FREEBSD_12], 1200, [FREEBSD_VERS value for FreeBSD 12.0 to 12.1])
-        freebsd_12=1200
-        AC_DEFINE([FREEBSD_12_2], 1220, [FREEBSD_VERS value for FreeBSD 12.2])
-        freebsd_12_2=1220
-        AC_DEFINE([FREEBSD_13_0], 1300, [FREEBSD_VERS value for FreeBSD 13.0])
-        freebsd_13_0=1300
-        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1])
-        freebsd_13_1=1310
-        AC_DEFINE([FREEBSD_13_2], 1320, [FREEBSD_VERS value for FreeBSD 13.2])
-        freebsd_13_2=1320
-        AC_DEFINE([FREEBSD_13_3], 1330, [FREEBSD_VERS value for FreeBSD 13.3])
-        freebsd_13_3=1330
-        AC_DEFINE([FREEBSD_13_4], 1340, [FREEBSD_VERS value for FreeBSD 13.4])
-        freebsd_13_4=1340
-        AC_DEFINE([FREEBSD_14_0], 1400, [FREEBSD_VERS value for FreeBSD 14.0])
-        freebsd_14_0=1400
-        AC_DEFINE([FREEBSD_14_1], 1410, [FREEBSD_VERS value for FreeBSD 14.1])
-        freebsd_14_1=1410
-        AC_DEFINE([FREEBSD_15], 1500, [FREEBSD_VERS value for FreeBSD 15.x])
-        freebsd_15=1500
-
-        AC_MSG_CHECKING([for the kernel version])
-        kernel=`uname -r`
-
-        case "${kernel}" in
-        11.*)
-           AC_MSG_RESULT([FreeBSD 11.x (${kernel})])
-           AC_DEFINE([FREEBSD_VERS], FREEBSD_11, [FreeBSD version])
-           freebsd_vers=$freebsd_11
-           ;;
-        12.*)
-           case "${kernel}" in
-           12.[[0-1]]-*)
-              AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_12, [FreeBSD version])
-              freebsd_vers=$freebsd_12
-              ;;
-           *)
-              AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_12_2, [FreeBSD version])
-              freebsd_vers=$freebsd_12_2
-              ;;
-           esac
-           ;;
-        13.*)
-           case "${kernel}" in
-           13.0-*)
-              AC_MSG_RESULT([FreeBSD 13.0 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_0, [FreeBSD version])
-              freebsd_vers=$freebsd_13_0
-              ;;
-           13.1-*)
-              AC_MSG_RESULT([FreeBSD 13.1 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_1, [FreeBSD version])
-              freebsd_vers=$freebsd_13_1
-              ;;
-           13.2-*)
-              AC_MSG_RESULT([FreeBSD 13.2 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
-              freebsd_vers=$freebsd_13_2
-              ;;
-           13.3-*)
-              AC_MSG_RESULT([FreeBSD 13.3 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_3, [FreeBSD version])
-              freebsd_vers=$freebsd_13_3
-              ;;
-           13.4-*)
-              AC_MSG_RESULT([FreeBSD 13.4 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_4, [FreeBSD version])
-              freebsd_vers=$freebsd_13_4
-              ;;
-           *)
-              AC_MSG_RESULT([unsupported (${kernel})])
-              AC_MSG_ERROR([Valgrind works on FreeBSD 11.x to 15.x])
-              ;;
-           esac
-           ;;
-        14.*)
-           case "${kernel}" in
-           14.0-*)
-              AC_MSG_RESULT([FreeBSD 14.0 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_14_0, [FreeBSD version])
-              freebsd_vers=$freebsd_14_0
-              ;;
-           14.1-*)
-              AC_MSG_RESULT([FreeBSD 14.1 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_14_1, [FreeBSD version])
-              freebsd_vers=$freebsd_14_1
-              ;;
-           *)
-              AC_MSG_RESULT([unsupported (${kernel})])
-              AC_MSG_ERROR([Valgrind works on FreeBSD 11.x to 15.x])
-              ;;
-           esac
-           ;;
-        15.*)
-           AC_MSG_RESULT([FreeBSD 15.x (${kernel})])
-           AC_DEFINE([FREEBSD_VERS], FREEBSD_15, [FreeBSD version])
-           freebsd_vers=$freebsd_15
-           ;;
-        *)
-           AC_MSG_RESULT([unsupported (${kernel})])
-           AC_MSG_ERROR([Valgrind works on FreeBSD 11.x to 15.x])
-           ;;
-        esac
 
         DEFAULT_SUPP="$srcdir/freebsd.supp $srcdir/freebsd-helgrind.supp $srcdir/freebsd-drd.supp ${DEFAULT_SUPP}"
         ;;
@@ -4867,13 +4760,101 @@ fi # test "$VGCONF_OS" = "solaris"
 
 if test "$VGCONF_OS" = "freebsd" ; then
 
-AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13_0)
-AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, test $freebsd_vers -ge $freebsd_15)
+AC_CHECK_FUNCS([     \
+        eventfd
+        ])
+    
+AM_CONDITIONAL([FREEBSD_EVENTFD],
+               [test x$ac_cv_func_eventfd = xyes])
+
+AC_MSG_CHECKING([for the SYS___realpathat syscall (FreeBSD-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS___realpathat;
+]])], [
+freebsd_realpathat_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_REALPATHAT_SYSCALL], 1,
+          [Define to 1 if you have the new SYS___realpathat syscall.])
+], [
+freebsd_realpathat_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, test x$freebsd_realpathat_syscall = xyes)
+
+AC_MSG_CHECKING([for syscalls only in FreeBSD 13 and later])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_aio_readv;
+]])], [
+freebsd_syscall13=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_SYSCALL13], 1,
+          [Define to 1 if you are using FreeBSD 13 or later.])
+], [
+freebsd_syscall13=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_SYSCALL13, test x$freebsd_syscall13 = xyes)
+
+AC_MSG_CHECKING([for the SYS_kqueuex syscall (FreeBSD-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_kqueuex;
+]])], [
+freebsd_kqueuex_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_KQUEUEX_SYSCALL], 1,
+          [Define to 1 if you have the new SYS___realpathat syscall.])
+], [
+freebsd_kqueuex_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_KQUEUEX_SYSCALL, test x$freebsd_kqueuex_syscall = xyes)
+
+AC_MSG_CHECKING([for the SYS_timerfd_create syscall (FreeBSD-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_timerfd_create;
+]])], [
+freebsd_timerfd_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_TIMERFD_SYSCALL], 1,
+          [Define to 1 if you have the new SYS_timer_fd_create syscall.])
+], [
+freebsd_timerfd_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, test x$freebsd_timerfd_syscall = xyes)
+
+AC_MSG_CHECKING([for syscalls only in FreeBSD 15 and later])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_getrlimitusage;
+]])], [
+freebsd_syscall15=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_SYSCALL15], 1,
+          [Define to 1 if you are using FreeBSD 15 or later.])
+], [
+freebsd_syscall15=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_SYSCALL15, test x$freebsd_syscall15 = xyes)
 
 else
 
-AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, false)
-AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, false)
+AM_CONDITIONAL(FREEBSD_EVENTFD, false)
+AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, false)
+AM_CONDITIONAL(FREEBSD_SYSCALL13, false)
+AM_CONDITIONAL(FREEBSD_KQUEUEX_SYSCALL, false)
+AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, false)
+AM_CONDITIONAL(FREEBSD_SYSCALL15, false)
 
 fi # test "$VGCONF_OS" = "freebsd"
 
@@ -5002,11 +4983,13 @@ AC_CHECK_FUNCS([     \
         close_range  \
         wcsncpy      \
         free_aligned_sized \
-	sbrk         \
+        sbrk         \
         wcpncpy      \
         wcsxfrm      \
         sem_timedwait \
-        sem_clockwait_np
+        sem_clockwait_np \
+        fdatasync    \
+        getrandom
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -5056,6 +5039,10 @@ AM_CONDITIONAL([HAVE_SEM_TIMEDWAIT],
                [test x$ac_cv_func_sem_timedwait = xyes])
 AM_CONDITIONAL([HAVE_SEM_CLOCKWAIT_NP],
                [test x$ac_cv_func_sem_clockwait_np = xyes])
+AM_CONDITIONAL([HAVE_FDATASYNC],
+               [test x$ac_cv_func_fdatasync = xyes])
+AM_CONDITIONAL([HAVE_GETRANDOM],
+               [test x$ac_cv_func_getrandom = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

@@ -27,7 +27,7 @@ int main(void)
       perror("uuidgen failed:");
    }
  
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(HAVE_GETRANDOM)
 
    char buf[100];
    if (-1 == getrandom(buf, 100, GRND_NONBLOCK))
@@ -46,7 +46,7 @@ int main(void)
    VALGRIND_MAKE_MEM_UNDEFINED(&badint, sizeof(int));
    uuidgen(&s, badint);
  
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if defined(HAVE_GETRANDOM)
 
    badint = 100;
    VALGRIND_MAKE_MEM_UNDEFINED(&badint, sizeof(int));

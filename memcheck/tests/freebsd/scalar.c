@@ -309,10 +309,15 @@ int main(void)
 
    /* obsol vwrite                68 */
 
-#if defined(SYS_sbrk)
    /* SYS_sbrk                    69 */
+#if defined(SYS_sbrk)
    GO(SYS_sbrk, "1s 1m");
    SY(SYS_sbrk, x0); FAIL;
+#else
+   FAKE_GO("69:                SYS_sbrk 1s 1m");
+   FAKE_SY("Syscall param sbrk(incr) contains uninitialised byte(s)\n")
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
 #endif
 
    /* not implemented on OS SYS_sstk 70 */

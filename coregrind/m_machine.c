@@ -1865,13 +1865,35 @@ Bool VG_(machine_get_hwcaps)( void )
 #if defined(VGO_darwin)
      (void) handler_unsup_insn;
 
-     // TODO: we should try to emulate `sysctlbyname` to get those values
+     SizeT len = 4;
+     Int val;
 
-     vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
-     vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
-     vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
-     vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
-     vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
+#define IS_ENABLED(mib, miblen) \
+        (VG_(sysctl)(mib, (miblen), &val, &len, NULL, 0) == 0 && val == 1)
+
+     // sysctlbyname("hw.optional.arm.FEAT_PAuth")
+     Int mibPAUTH[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_PAUTH};
+     if (IS_ENABLED(mibPAUTH, 4)) {
+        vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+     }
+     // sysctlbyname("hw.optional.arm.FEAT_LRCPC")
+     Int mibLRCPC[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_LRCPC};
+     if (IS_ENABLED(mibLRCPC, 4)) {
+        vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+     }
+     // sysctlbyname("hw.optional.arm.FEAT_DIT")
+     Int mibDIT[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_DIT};
+     if (IS_ENABLED(mibDIT, 4)) {
+         vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+     }
+     // sysctlbyname("hw.optional.arm.FEAT_FP16")
+      Int mibFP16[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_FP16};
+     if (IS_ENABLED(mibFP16, 4)) {
+         vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
+         vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
+     }
+
+#undef IS_ENABLED
 
      ULong ctr_el0 = 0;
 #else

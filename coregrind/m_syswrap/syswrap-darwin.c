@@ -5413,6 +5413,7 @@ POST(host_get_clock_service)
 
    Reply *reply = (Reply *)ARG1;
 
+   record_named_port(tid, reply->clock_serv.name, -1, "clock-%p");
    assign_port_name(reply->clock_serv.name, "clock-%p");
    PRINT("%s", name_for_port(reply->clock_serv.name));
 }
@@ -6335,6 +6336,7 @@ POST(task_get_special_port)
    switch (MACH_ARG(task_get_special_port.which_port)) {
    case TASK_BOOTSTRAP_PORT:
       vg_bootstrap_port = reply->special_port.name;
+      record_named_port(tid, reply->special_port.name, -1, "bootstrap");
       assign_port_name(reply->special_port.name, "bootstrap");
       break;
    case TASK_KERNEL_PORT:
@@ -6437,6 +6439,7 @@ POST(semaphore_create)
 
    Reply *reply = (Reply *)ARG1;
 
+   record_named_port(tid, reply->semaphore.name, -1, "semaphore-%p");
    assign_port_name(reply->semaphore.name, "semaphore-%p");
    PRINT("%s", name_for_port(reply->semaphore.name));
 }
@@ -9158,31 +9161,36 @@ PRE(mach_msg2)
 #define MACH_MSG2_UNSHIFT_HIGH(x) ((x) >> 32)
 #define MACH_MSG2_UNSHIFT_LOW(x) ((x) & 0xffffffff)
 
-  Word msgh_bits = MACH_MSG2_UNSHIFT_HIGH(ARG1);
-  Word send_size = MACH_MSG2_UNSHIFT_LOW(ARG1);
-  Word msgh_remote_port = MACH_MSG2_UNSHIFT_HIGH(ARG2);
-  Word msgh_local_port = MACH_MSG2_UNSHIFT_LOW(ARG2);
-  Word msgh_voucher = MACH_MSG2_UNSHIFT_HIGH(ARG3);
-  Word msgh_id = MACH_MSG2_UNSHIFT_LOW(ARG3);
-  Word desc_count = MACH_MSG2_UNSHIFT_HIGH(ARG4);
-  Word rcv_name = MACH_MSG2_UNSHIFT_LOW(ARG4);
-  Word rcv_size = MACH_MSG2_UNSHIFT_HIGH(ARG5);
-  Word priority = MACH_MSG2_UNSHIFT_LOW(ARG5);
+  Word msgh_bits = MACH_MSG2_UNSHIFT_LOW(ARG3);
+  Word send_size = MACH_MSG2_UNSHIFT_HIGH(ARG3);
+  Word msgh_remote_port = MACH_MSG2_UNSHIFT_LOW(ARG4);
+  Word msgh_local_port = MACH_MSG2_UNSHIFT_HIGH(ARG4);
+  Word msgh_voucher = MACH_MSG2_UNSHIFT_LOW(ARG5);
+  Word msgh_id = MACH_MSG2_UNSHIFT_HIGH(ARG5);
+  Word desc_count = MACH_MSG2_UNSHIFT_LOW(ARG6);
+  Word rcv_name = MACH_MSG2_UNSHIFT_HIGH(ARG6);
+  Word rcv_size = MACH_MSG2_UNSHIFT_LOW(ARG7);
+  Word priority = MACH_MSG2_UNSHIFT_HIGH(ARG7);
 
 #undef MACH_MSG2_UNSHIFT_HIGH
 #undef MACH_MSG2_UNSHIFT_LOW
 
+  mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
   mach_msg_option64_t options = (mach_msg_option64_t)ARG2;
 
   PRINT(
-    "mach_msg2(%#lx, "
-    "%#lx (%#lx | %lu), %#lx (%s | %s), "
-    "%#lx (%s | %#lx), %#lx (%lu | %s), "
-    "%#lx (%lu | %lu), %lu)",
+    "mach_msg2(%#lx "
+    "{id: %d, bits: %#x, size: %u, voucher: %s, local: %s, remote: %s}, "
+    "options %#llx, "
+    "%#lx (msgh_bits %#lx | send_size %lu), %#lx (remote %s | local %s), "
+    "%#lx (voucher %s | id %#lx), %#lx (desc_count %lu | rcv_name %s), "
+    "%#lx (rcv_size %lu | priority %lu), timeout %lu) ",
     ARG1,
-    ARG2, msgh_bits, send_size, ARG3, name_for_port(msgh_remote_port), name_for_port(msgh_local_port),
-    ARG4, name_for_port(msgh_voucher), msgh_id, ARG5, desc_count, name_for_port(rcv_name),
-    ARG6, rcv_size, priority, ARG7
+    mh->msgh_id, mh->msgh_bits, mh->msgh_size, name_for_port(mh->msgh_voucher_port), name_for_port(mh->msgh_local_port), name_for_port(mh->msgh_remote_port),
+    options,
+    ARG3, msgh_bits, send_size, ARG4, name_for_port(msgh_remote_port), name_for_port(msgh_local_port),
+    ARG5, name_for_port(msgh_voucher), msgh_id, ARG6, desc_count, name_for_port(rcv_name),
+    ARG7, rcv_size, priority, ARG8
   );
   PRE_REG_READ8(kern_return_t, "mach_msg2",
     void *, data,
@@ -9193,6 +9201,14 @@ PRE(mach_msg2)
     uint64_t, desc_count_and_rcv_name,
     uint64_t, rcv_size_and_priority,
     uint64_t, timeout);
+  SizeT size = sizeof(mach_msg_header_t);
+  if (send_size > size) {
+    size = send_size;
+  }
+  if (rcv_size > size) {
+    size = rcv_size;
+  }
+  PRE_MEM_READ("mach_msg2(msg)", (Addr)mh, size);
 
   AFTER = NULL;
 
@@ -10313,9 +10329,12 @@ PRE(kernelrpc_mach_port_construct_trap)
 {
    UWord a1; UWord a2; ULong a3; UWord a4;
    munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   mach_port_options_t* options = (mach_port_options_t*) a2;
    PRINT("kernelrpc_mach_port_construct_trap"
-         "(target: %s, options: %#lx, content: %llx, name: %p)",
-         name_for_port(a1), a2, a3, *(mach_port_name_t**)a4);
+         "(target: %s, options: %#lx {flags: %#x, mpl_ql: %#x}, context: %llx, name: %p)",
+         name_for_port(a1), a2, options->flags, options->mpl.mpl_qlimit, a3, *(mach_port_name_t**)a4);
+   PRE_MEM_READ("kernelrpc_mach_port_construct_trap(options)", a2,
+                sizeof(mach_port_options_t));
    PRE_MEM_WRITE("kernelrpc_mach_port_construct_trap(name)", a4,
                  sizeof(mach_port_name_t*));
 }
@@ -11327,6 +11346,11 @@ PRE(sys_crossarch_trap)
   PRINT("sys_crossarch_trap(%lu)", ARG1);
   PRE_REG_READ1(kern_return_t, "sys_crossarch_trap", uint32_t, name);
 }
+
+PRE(objc_bp_assist_cfg_np)
+{
+  PRINT("objc_bp_assist_cfg_np(%#lx, %#lx)", ARG1, ARG2);
+}
 #endif
 
 #endif /* DARWIN_VERS >= DARWIN_11_00 */
@@ -11388,6 +11412,15 @@ PRE(map_with_linking_np)
 
 
 /* ---------------------------------------------------------------------
+ Added for macOS 14.0 (Sonoma)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_14_00
+
+#endif /* DARWIN_VERS >= DARWIN_14_00 */
+
+
+/* ---------------------------------------------------------------------
  Added for macOS 15.0 (Sequoia)
  ------------------------------------------------------------------ */
 
@@ -11401,6 +11434,45 @@ PRE(kdebug_trace64)
 }
 
 #endif /* DARWIN_VERS >= DARWIN_15_00 */
+
+
+/* ---------------------------------------------------------------------
+ Added for Apple Silicon
+ ------------------------------------------------------------------ */
+
+#if defined(VGA_arm64)
+
+PRE(syscall)
+{
+  PRINT("syscall(%ld, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx) = ",
+        ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+  const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG1));
+  if (sys) {
+    // shift the arguments
+    RegWord tmp = ARG1;
+    ARG1 = ARG2;
+    ARG2 = ARG3;
+    ARG3 = ARG4;
+    ARG4 = ARG5;
+    ARG5 = ARG6;
+    ARG6 = ARG7;
+    ARG7 = ARG8;
+    ARG8 = tmp;
+    sys->before(tid, layout, arrghs, status, flags);
+  } else {
+    SET_STATUS_Failure( VKI_ENOSYS );
+  }
+}
+
+POST(syscall)
+{
+  const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG8));
+  if (sys && sys->after) {
+    sys->after(tid, arrghs, status);
+  }
+}
+
+#endif /* defined(VGA_arm64) */
 
 
 /* ---------------------------------------------------------------------
@@ -11427,7 +11499,11 @@ PRE(kdebug_trace64)
         XY : PRE and POST handlers
 */
 const SyscallTableEntry ML_(syscall_table)[] = {
+#if defined(VGA_arm64)
+   MACX_(__NR_syscall,     syscall),
+#else
 // _____(__NR_syscall),   // 0
+#endif
    MACX_(__NR_exit,        exit),
    GENX_(__NR_fork,        sys_fork),
    GENXY(__NR_read,        sys_read),
@@ -12048,11 +12124,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_log_data),                                // 533
 // _____(__NR_memorystatus_available_memory),           // 534
 #endif
-#if defined(VGP_arm64_darwin)
-  // FIXME: no clue what it is but called by libsystem_kernel@_objc_bp_assist_cfg_np
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(535)),
-#endif
 #if DARWIN_VERS >= DARWIN_11_00
+#if defined(VGP_arm64_darwin)
+   MACX_(__NR_objc_bp_assist_cfg_np, objc_bp_assist_cfg_np), // 535
+#endif
 // _____(__NR_shared_region_map_and_slide_2_np),        // 536
 // _____(__NR_pivot_root),                              // 537
 // _____(__NR_task_inspect_for_pid),                    // 538
@@ -12299,14 +12374,49 @@ const SyscallTableEntry ML_(mdep_trap_table)[] = {
 #endif
 };
 
-const UInt ML_(syscall_table_size) =
-            sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
+const SyscallTableEntry* ML_(get_darwin_syscall_entry) ( UInt sysno )
+{
+   const UInt syscall_table_size =
+              sizeof(ML_(syscall_table)) / sizeof(ML_(syscall_table)[0]);
 
-const UInt ML_(mach_trap_table_size) =
-            sizeof(ML_(mach_trap_table)) / sizeof(ML_(mach_trap_table)[0]);
+   const UInt mach_trap_table_size =
+              sizeof(ML_(mach_trap_table)) / sizeof(ML_(mach_trap_table)[0]);
 
-const UInt ML_(mdep_trap_table_size) =
-            sizeof(ML_(mdep_trap_table)) / sizeof(ML_(mdep_trap_table)[0]);
+   const UInt mdep_trap_table_size =
+              sizeof(ML_(mdep_trap_table)) / sizeof(ML_(mdep_trap_table)[0]);
+
+   const SyscallTableEntry *table;
+   Int size;
+
+   switch (VG_DARWIN_SYSNO_CLASS(sysno)) {
+   case VG_DARWIN_SYSCALL_CLASS_UNIX:
+      table = ML_(syscall_table);
+      size = syscall_table_size;
+      break;
+   case VG_DARWIN_SYSCALL_CLASS_MACH:
+      table = ML_(mach_trap_table);
+      size = mach_trap_table_size;
+      break;
+   case VG_DARWIN_SYSCALL_CLASS_MDEP:
+      table = ML_(mdep_trap_table);
+      size = mdep_trap_table_size;
+      break;
+   default:
+      vg_assert2(0, "invalid syscall class: %d (syscall: %d / %#x)\n", VG_DARWIN_SYSNO_CLASS(sysno), VG_DARWIN_SYSNO_INDEX(sysno), sysno);
+      break;
+   }
+
+   sysno = VG_DARWIN_SYSNO_INDEX(sysno);
+   if (sysno < size) {
+      const SyscallTableEntry *sys = &table[sysno];
+      if (!sys->before)
+         return NULL; /* no entry */
+      return sys;
+   }
+
+   /* Can't find a wrapper. */
+   return NULL;
+}
 
 #endif // defined(VGO_darwin)
 

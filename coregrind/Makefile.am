@@ -730,6 +730,10 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/amd64-avx-linux.xml \
 	m_gdbserver/amd64-coresse-valgrind.xml \
 	m_gdbserver/amd64-linux-valgrind.xml \
+	m_gdbserver/aarch64-core.xml \
+	m_gdbserver/aarch64-fpu.xml \
+	m_gdbserver/aarch64-with-fpu.xml \
+	m_gdbserver/aarch64-with-fpu-valgrind.xml \
 	m_gdbserver/arm-core-valgrind-s1.xml \
 	m_gdbserver/arm-core-valgrind-s2.xml \
 	m_gdbserver/arm-core.xml \

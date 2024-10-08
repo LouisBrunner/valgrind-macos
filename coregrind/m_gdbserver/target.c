@@ -820,6 +820,23 @@ void set_desired_inferior (int use_general)
   }
 }
 
+void set_desired_inferior_from_id (int tid)
+{
+  struct thread_info *found;
+
+  found = (struct thread_info *) find_inferior_id (&all_threads, tid);
+  if (found == NULL)
+     current_inferior = (struct thread_info *) all_threads.head;
+  else
+     current_inferior = found;
+  {
+     ThreadState *tst = (ThreadState *) inferior_target_data (current_inferior);
+     ThreadId foundTID = tst->tid;
+     dlog(1, "set_desired_inferior_from_id requested tid %d found %p found tid %u lwpid %d\n",
+          tid, found, foundTID, tst->os_state.lwpid);
+  }
+}
+
 void* VG_(dmemcpy) ( void *d, const void *s, SizeT sz, Bool *mod )
 {
    if (VG_(memcmp) (d, s, sz)) {

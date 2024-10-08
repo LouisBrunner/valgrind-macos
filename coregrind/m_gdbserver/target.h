@@ -179,6 +179,9 @@ extern int valgrind_thread_alive (unsigned long tid);
    set to the first valid thread. */
 extern void set_desired_inferior (int use_general);
 
+/* Similar to set_desired_inferior but with an explicit thread ID. */
+extern void set_desired_inferior_from_id (int tid);
+
 /* Fetch register regno from the current_inferior thread and put its value in buf.  */
 extern void valgrind_fetch_register (int regno, unsigned char *buf);
 

@@ -891,6 +891,7 @@
 #endif
 
 #if DARWIN_VERS >= DARWIN_11_00
+#define __NR_objc_bp_assist_cfg_np              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(535)
 #define __NR_shared_region_map_and_slide_2_np   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(536)
 #define __NR_pivot_root                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(537)
 #define __NR_task_inspect_for_pid               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(538)
@@ -917,6 +918,11 @@
 #define __NR_mkfifoat                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(553)
 #define __NR_mknodat                          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(554)
 #define __NR_ungraftdmg                       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
+#endif
+
+#if DARWIN_VERS >= DARWIN_15_00
+#define __NR_sys_coalition_policy_set VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(556)
+#define __NR_sys_coalition_policy_get VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(557)
 #endif
 
 #if DARWIN_VERS < DARWIN_10_6
@@ -948,7 +954,7 @@
 #elif DARWIN_VERS == DARWIN_14_00
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
 #elif DARWIN_VERS == DARWIN_15_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555) // TODO: invalid
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(557)
 #else
 #error unknown darwin version
 #endif

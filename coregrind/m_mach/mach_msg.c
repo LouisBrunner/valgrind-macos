@@ -206,7 +206,7 @@ mach_msg_return_t mach_msg(
       base = (mach_msg_base_t *)((mach_msg_vector_t *)msg)->msgv_data;
     } else {
       base = (mach_msg_base_t *)msg;
-        }
+    }
 
 	  mach_msg_size_t descriptors = 0;
     if (option & MACH_SEND_MSG && msg->msgh_bits & MACH_MSGH_BITS_COMPLEX) {

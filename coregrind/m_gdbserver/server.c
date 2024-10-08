@@ -35,6 +35,21 @@
 #include "pub_core_addrinfo.h"
 #include "pub_core_aspacemgr.h"
 
+#if defined(VGO_darwin)
+#if VG_WORDSIZE == 4
+# define MACH_HEADER mach_header
+# define LC_SEGMENT_CMD LC_SEGMENT
+# define SEGMENT_COMMAND segment_command
+#else
+# define MACH_HEADER mach_header_64
+# define LC_SEGMENT_CMD LC_SEGMENT_64
+# define SEGMENT_COMMAND segment_command_64
+#endif
+#include <mach-o/loader.h>
+#include "vgversion.h"
+#define LLDB_SUPPORT 1
+#endif
+
 unsigned long cont_thread;
 unsigned long general_thread;
 unsigned long step_thread;
@@ -723,6 +738,14 @@ void handle_set (char *arg_own_buf, int *new_packet_len_p)
       write_ok (arg_own_buf);
       return;
    }
+
+#if defined(LLDB_SUPPORT)
+   if (strncmp ("QThreadSuffixSupported", arg_own_buf, 22) == 0) {
+      write_ok (arg_own_buf);
+      return;
+   }
+#endif
+
    /* Otherwise we didn't know what packet it was.  Say we didn't
       understand it.  */
    arg_own_buf[0] = 0;
@@ -1150,6 +1173,72 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
+#if defined(LLDB_SUPPORT)
+   if (strncmp("qGDBServerVersion", arg_own_buf, 17) == 0) {
+      VG_(sprintf) (arg_own_buf, "name:vgdb;version:%s", VERSION);
+      return;
+   }
+
+   if (strncmp("qHostInfo", arg_own_buf, 9) == 0) {
+      Int cputypeID[] = {VKI_CTL_HW, VKI_HW_CPUTYPE};
+      Int subcputypeID[] = {VKI_CTL_HW, VKI_HW_CPUSUBTYPE};
+      Int cputype = 0, cpusubtype = 0;
+      SizeT len = sizeof(cputype);
+      VG_(sysctl)(cputypeID, 2, &cputype, &len, NULL, 0);
+      VG_(sysctl)(subcputypeID, 2, &cpusubtype, &len, NULL, 0);
+      VG_(sprintf) (arg_own_buf, "cputype:%d;cpusubtype:%d;ostype:darwin;vendor:apple;endian:little;ptrsize:%d",
+                    cputype, cpusubtype, VG_WORDSIZE);
+      return;
+   }
+
+   // qRegisterInfo is deprecated in favor of `qXfer:features:read:target.xml`
+   // qProcessInfo / qfProcessInfo / qsProcessInfo: required/important but not implemented
+
+  if (strncmp("qMemoryRegionInfo:", arg_own_buf, 18) == 0) {
+    Addr addr = strtoul(&arg_own_buf[18], NULL, 16);
+    const NSegment* seg = VG_(am_find_nsegment)(addr);
+    if (!seg) {
+      seg = VG_(am_find_anon_segment)(addr);
+      VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx", addr, seg->end - addr);
+      return;
+    }
+    Int amount = VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:%s%s%s",
+                               seg->start, seg->end - seg->start,
+                               seg->hasR ? "r" : "",
+                               seg->hasW ? "w" : "",
+                               seg->hasX ? "x" : "");
+    const HChar* name = VG_(am_get_filename)(seg);
+    if (name) {
+      SizeT str_count = VG_(strlen)(name);
+      char hex[2 * str_count + 1];
+      hexify(hex, name, str_count);
+      VG_(sprintf) (arg_own_buf + amount, ";name:%s", hex);
+    }
+    return;
+  }
+
+  if (strncmp("qShlibInfoAddr", arg_own_buf, 14) == 0) {
+    const NSegment* next = VG_(am_find_nsegment)(0);
+    while (next) {
+      HChar* name = VG_(am_get_filename)(next);
+      if (name && VG_(strcmp)(name, "/usr/lib/dyld") == 0) {
+        VG_(sprintf) (arg_own_buf, "%lx", next->start);
+        return;
+      }
+      next = VG_(am_next_nsegment)(next, True);
+    }
+  }
+
+  // qThreadStopInfo: would be nice but no idea on the response format
+  // if (strncmp("qThreadStopInfo", arg_own_buf, 15) == 0) {
+  //   Int tid = strtoul(&arg_own_buf[15], NULL, 16);
+  //   struct thread_info* ti = gdb_id_to_thread(tid);
+  //   ???
+  // }
+
+  //  qFileLoadAddress / qModuleInfo: important but not seen it yet
+#endif
+
    /* Otherwise we didn't know what packet it was.  Say we didn't
       understand it.  */
    arg_own_buf[0] = 0;
@@ -1165,6 +1254,165 @@ void handle_v_requests (char *arg_own_buf, char *status, int *zignal)
       understand it.  */
    arg_own_buf[0] = 0;
    return;
+}
+
+#if defined(LLDB_SUPPORT)
+static
+void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
+{
+  // jGetLoadedDynamicLibrariesInfos: seems pretty important but not seen it yet
+  if (strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
+    HChar *p = arg_own_buf + 32;
+    if (*p == 0) {
+      // no argument
+      write_ok (arg_own_buf);
+      return;
+    } else if (*p == '{') {
+      // assumption: we are getting {"image_count":1234,"image_list_address":4567}
+      HChar *image_count_str = strchr(p, ':');
+      HChar *image_list_address_str = 0;
+      Int image_count = 0;
+      Addr image_list_address = 0;
+      if (image_count_str) {
+        image_list_address_str = strchr(image_count_str+1, ':');
+        HChar *image_count_str_end = strchr(image_count_str, ',');
+        if (image_count_str_end) {
+          image_count_str_end[0] = 0;
+          image_count = strtoul(image_count_str + 1, NULL, 10);
+        }
+      }
+      if (image_list_address_str) {
+        HChar *image_list_address_str_end = strchr(image_list_address_str, '}');
+        if (image_list_address_str_end) {
+          image_list_address_str_end[0] = 0;
+          image_list_address = strtoul(image_list_address_str + 1, NULL, 10);
+        }
+      }
+
+      if (image_count > 0 && image_list_address > 0) {
+        UWord* data = (UWord*)image_list_address;
+
+        Int counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
+        for (Int i = 0; i < image_count; i += 1) {
+          if (i > 0) {
+            counter += VG_(sprintf)(arg_own_buf + counter, ",");
+          }
+          UWord load_address = data[i * 3];
+          Addr pathname = data[i * 3 + 1];
+          UWord mod_date = data[i * 3 + 2];
+          HChar pathname_buf[PATH_MAX];
+          struct MACH_HEADER* mh = (struct MACH_HEADER*) load_address;
+          HChar uuid_str[37] = {0};
+          Addr commands_start = 0;
+          VG_(strncpy)(pathname_buf, (HChar*)pathname, PATH_MAX);
+          commands_start = load_address + sizeof(struct MACH_HEADER);
+          for (Int j = 0; j < mh->ncmds; j += 1) {
+            struct load_command* lc = (struct load_command*) commands_start;
+            if (lc->cmd == LC_UUID) {
+              struct uuid_command* uc = (struct uuid_command*)commands_start;
+              VG_(sprintf)(uuid_str, "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
+                           uc->uuid[0], uc->uuid[1], uc->uuid[2], uc->uuid[3],
+                           uc->uuid[4], uc->uuid[5], uc->uuid[6], uc->uuid[7],
+                           uc->uuid[8], uc->uuid[9], uc->uuid[10], uc->uuid[11],
+                           uc->uuid[12], uc->uuid[13], uc->uuid[14], uc->uuid[15]);
+              break;
+            }
+            commands_start += lc->cmdsize;
+          }
+          counter += VG_(sprintf)(arg_own_buf + counter, "{\"load_address\":%ld,\"mod_date\":%lu,\"pathname\":\"%s\",\"uuid\":\"%s\",\"mach_header\":{\"magic\":%u,\"cputype\":%u,\"cpusubtype\":%u,\"filetype\":%u}},\"segments\":[",
+                                  load_address, mod_date, pathname_buf, uuid_str, mh->magic, mh->cputype, mh->cpusubtype, mh->filetype);
+
+          commands_start = load_address + sizeof(struct MACH_HEADER);
+          Bool first_segment = True;
+          for (Int j = 0; j < mh->ncmds; j += 1) {
+            struct load_command* lc = (struct load_command*) commands_start;
+            if (lc->cmd == LC_SEGMENT_CMD) {
+              if (!first_segment) {
+                counter += VG_(sprintf)(arg_own_buf + counter, ",");
+              }
+              first_segment = False;
+              struct SEGMENT_COMMAND* sc = (struct SEGMENT_COMMAND*)commands_start;
+              counter += VG_(sprintf)(arg_own_buf + counter, "{\"name\":\"%s\",\"vmaddr\":%llu,\"vmsize\":%llu,\"fileoff\":%llu,\"filesize\":%llu,\"maxprot\":%u}}",
+                                      sc->segname, sc->vmaddr, sc->vmsize, sc->fileoff, sc->filesize, sc->maxprot);
+            }
+            commands_start += lc->cmdsize;
+          }
+          counter += VG_(sprintf)(arg_own_buf + counter, "]}}");
+        }
+        counter += VG_(sprintf)(arg_own_buf + counter, "]}}");
+        return;
+      }
+    }
+  }
+
+  /* Otherwise we didn't know what packet it was.  Say we didn't
+      understand it.  */
+   arg_own_buf[0] = 0;
+   return;
+}
+
+static
+void handle_us_requests (char *arg_own_buf, char *status, int *zignal)
+{
+  if (strncmp("_M", arg_own_buf, 2) == 0) {
+    char *arg = strchr(&arg_own_buf[0], ',');
+    if (arg) {
+      arg[0] = 0;
+      SizeT size = strtoul(&arg_own_buf[2], NULL, 16);
+      Int prot = 0;
+      arg += 1;
+      while (*arg) {
+        switch (*arg) {
+        case 'r':
+          prot |= VKI_PROT_READ;
+          break;
+        case 'w':
+          prot |= VKI_PROT_WRITE;
+          break;
+        case 'x':
+          prot |= VKI_PROT_EXEC;
+          break;
+        }
+        arg += 1;
+      }
+      SysRes res = VG_(am_mmap_anon_float_client)(size, prot);
+      if (!sr_isError(res)) {
+        VG_(sprintf) (arg_own_buf, "%lx", sr_Res(res));
+        return;
+      }
+    }
+  }
+
+  if (strncmp("_m", arg_own_buf, 2) == 0) {
+    Addr addr = strtoul(&arg_own_buf[2], NULL, 16);
+    const NSegment* seg = VG_(am_find_nsegment)(addr);
+    if (seg) {
+      VG_(am_notify_munmap)(addr, seg->end - addr);
+    }
+  }
+
+  /* Otherwise we didn't know what packet it was.  Say we didn't
+      understand it.  */
+   arg_own_buf[0] = 0;
+   return;
+}
+#endif
+
+static
+void set_variable_desired_inferior(char *arg_own_buf, int use_general_fallback)
+{
+#if defined(LLDB_SUPPORT)
+  char *arg = strchr(&arg_own_buf[0], ';');
+  if (arg && strncmp(arg, ";thread:", 8) == 0) {
+    unsigned long gdb_id = strtoul(&arg[8], NULL, 16);
+    unsigned long thread_id = gdb_id_to_thread_id(gdb_id);
+    if (thread_id != 0) {
+      set_desired_inferior_from_id (thread_id);
+      return;
+    }
+  }
+#endif
+  set_desired_inferior (use_general_fallback);
 }
 
 static
@@ -1318,11 +1566,11 @@ void server_main (void)
          }
          break;
       case 'g':
-         set_desired_inferior (1);
+         set_variable_desired_inferior (own_buf, 1);
          registers_to_string (own_buf);
          break;
       case 'G':
-         set_desired_inferior (1);
+         set_variable_desired_inferior (own_buf, 1);
          registers_from_string (&own_buf[1]);
          write_ok (own_buf);
          break;
@@ -1332,7 +1580,7 @@ void server_main (void)
          ThreadState *tst;
          regno = strtol(&own_buf[1], NULL, 16);
          regbytes = strchr(&own_buf[0], '=') + 1;
-         set_desired_inferior (1);
+         set_variable_desired_inferior (own_buf, 1);
          tst = (ThreadState *) inferior_target_data (current_inferior);
          /* Only accept changing registers in "runnable state3.
             In fact, it would be ok to change most of the registers
@@ -1489,6 +1737,16 @@ void server_main (void)
          /* Extended (long) request.  */
          handle_v_requests (own_buf, &status, &zignal);
          break;
+#if defined(LLDB_SUPPORT)
+      case 'j':
+         /* LLDB request.  */
+         handle_j_requests (own_buf, &status, &zignal);
+         break;
+      case '_':
+         /* LLDB request.  */
+         handle_us_requests (own_buf, &status, &zignal);
+         break;
+#endif
       default:
          /* It is a request we don't understand.  Respond with an
             empty packet so that gdb knows that we don't support this

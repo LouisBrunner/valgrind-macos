@@ -39,14 +39,6 @@ void start_thread_NORETURN ( Word arg );
 void assign_port_name(mach_port_t port, const char *name);
 void record_named_port(ThreadId tid, mach_port_t port, mach_port_right_t right, const char *name);
 
-extern const SyscallTableEntry ML_(mach_trap_table)[];
-extern const SyscallTableEntry ML_(syscall_table)[];
-extern const SyscallTableEntry ML_(mdep_trap_table)[];
-
-extern const UInt ML_(syscall_table_size);
-extern const UInt ML_(mach_trap_table_size);
-extern const UInt ML_(mdep_trap_table_size);
-
 void VG_(show_open_ports)(void);
 
 Bool ML_(sync_mappings)(const HChar *when, const HChar *where, UWord num);
@@ -56,6 +48,9 @@ Bool ML_(sync_mappings)(const HChar *when, const HChar *where, UWord num);
 // NYI = wrapper not yet implemented in Valgrind
 // NOC = the non-"_nocancel" wrapper is used
 // old = the syscall no longer exists in Darwin
+#if defined(VGA_arm64)
+DECL_TEMPLATE(darwin, syscall);                 // 0
+#endif
 DECL_TEMPLATE(darwin, exit);                    // 1
 // GEN fork 2
 // GEN read 3
@@ -678,6 +673,7 @@ DECL_TEMPLATE(darwin, abort_with_payload);          // 521
 // NYI memorystatus_available_memory  // 534
 #endif
 #if DARWIN_VERS >= DARWIN_11_00
+DECL_TEMPLATE(darwin, objc_bp_assist_cfg_np); // 535
 // NYI shared_region_map_and_slide_2_np   // 536
 // NYI pivot_root                         // 537
 // NYI task_inspect_for_pid               // 538

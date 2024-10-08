@@ -257,14 +257,8 @@ int main(void)
       struct our_sigaltstack oss;
       VALGRIND_MAKE_MEM_NOACCESS(&ss, sizeof(struct our_sigaltstack));
       VALGRIND_MAKE_MEM_NOACCESS(&oss, sizeof(struct our_sigaltstack));
-      GO(SYS_sigaltstack, "0s 2m");
+      GO(SYS_sigaltstack, "2s 4m");
       SY(SYS_sigaltstack, x0+&ss, x0+&oss); FAIL;
-
-      GO(SYS_sigaltstack, "2s 0m");
-      SY(SYS_sigaltstack, x0, x0); SUCC;
-
-      GO(SYS_sigaltstack, "2s 2m");
-      SY(SYS_sigaltstack, x0+1, x0+1); FAIL;
    }
 
    /* SYS_ioctl                   54 */

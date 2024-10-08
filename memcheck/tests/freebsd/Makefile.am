@@ -91,6 +91,7 @@ EXTRA_DIST = \
 	scalar.h scalar.vgtest \
 	scalar.stderr.exp \
 		scalar.stderr.exp-x86 \
+		scalar.supp \
 	scalar_abort2.vgtest \
 	scalar_13_plus.vgtest \
 	scalar_13_plus.stderr.exp \

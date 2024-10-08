@@ -5033,9 +5033,9 @@ PRE(sys_sigaltstack)
                  const vki_stack_t *, ss, vki_stack_t *, oss);
    if (ARG1 != 0) {
       const vki_stack_t *ss = (vki_stack_t *)(Addr)ARG1;
-      PRE_MEM_READ( "sigaltstack(ss)", (Addr)&ss->ss_sp, sizeof(ss->ss_sp) );
-      PRE_MEM_READ( "sigaltstack(ss)", (Addr)&ss->ss_flags, sizeof(ss->ss_flags) );
-      PRE_MEM_READ( "sigaltstack(ss)", (Addr)&ss->ss_size, sizeof(ss->ss_size) );
+      PRE_MEM_READ( "sigaltstack(ss->ss_sp)", (Addr)&ss->ss_sp, sizeof(ss->ss_sp) );
+      PRE_MEM_READ( "sigaltstack(ss->ss_size)", (Addr)&ss->ss_size, sizeof(ss->ss_size) );
+      PRE_MEM_READ( "sigaltstack(ss->ss_flags)", (Addr)&ss->ss_flags, sizeof(ss->ss_flags) );
    }
    if (ARG2 != 0) {
       PRE_MEM_WRITE( "sigaltstack(oss)", ARG2, sizeof(vki_stack_t) );

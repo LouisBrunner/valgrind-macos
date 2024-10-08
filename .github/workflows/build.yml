@@ -27,6 +27,10 @@ jobs:
     name: Build and Test on ${{matrix.os}}
 
     steps:
+      - name: display environment (macOS)
+        run: |
+          sysctl -a
+        if: ${{ matrix.os != 'ubuntu-24.04' }}
       - name: install dependencies (macOS)
         run: brew update && brew install automake
         if: ${{ matrix.os != 'ubuntu-24.04' }}

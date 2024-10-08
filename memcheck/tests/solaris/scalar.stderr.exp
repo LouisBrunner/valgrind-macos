@@ -1645,7 +1645,15 @@ Syscall param sigaltstack(ss) contains uninitialised byte(s)
 Syscall param sigaltstack(oss) contains uninitialised byte(s)
    ...
 
-Syscall param sigaltstack(ss) points to unaddressable byte(s)
+Syscall param sigaltstack(ss->ss_sp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sigaltstack(ss->ss_size) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sigaltstack(ss->ss_flags) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

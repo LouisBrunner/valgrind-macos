@@ -70,6 +70,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 493454  Missing FUSE_COMPATIBLE_MAY_BLOCK markers
 493507  direct readlink syscall from PRE handler is incompatible with
         FUSE_COMPATIBLE_MAY_BLOCK
+493970  s390x: Store/restore FPC upon helper call causes slowdown
 n-i-bz  Improve messages for sigaltstack errors, use specific
         stack_t member names
 

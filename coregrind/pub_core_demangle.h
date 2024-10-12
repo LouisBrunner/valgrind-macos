@@ -63,6 +63,12 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
                              /*OUT*/Int*  eclassTag,     // may be NULL
                              /*OUT*/Int*  eclassPrio );  // may be NULL
 
+/*
+ * ada doesn't use a simple prefix for its mangling like D, Rust and C++
+ * So when we see an ada-like symbol this global gets set.
+ */
+extern Bool VG_(lang_is_ada);
+
 #endif   // __PUB_CORE_DEMANGLE_H
 
 /*--------------------------------------------------------------------*/

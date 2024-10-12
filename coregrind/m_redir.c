@@ -533,6 +533,14 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
          alloc_symname_array(sym_name_pri, sym_names_sec, &twoslots[0]);
       const HChar** names;
       for (names = names_init; *names; names++) {
+         /*
+          * For Ada demangling, the language doesn't use a regular
+          * prefix like _Z or _R, so look for a common symbol and
+          * set a global flag.
+          */
+         if (!isText && VG_(strcmp)(*names, "__gnat_ada_main_program_name") == 0) {
+            VG_(lang_is_ada) = True;
+         }
          isGlobal = False;
          ok = VG_(maybe_Z_demangle)( *names,
                                      &demangled_sopatt,

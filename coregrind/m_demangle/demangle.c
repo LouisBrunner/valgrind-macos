@@ -1,6 +1,6 @@
 
 /*--------------------------------------------------------------------*/
-/*--- Demangling of C++ mangled names.                  demangle.c ---*/
+/*--- Demangling of decorated names.                    demangle.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -41,6 +41,7 @@
 #include "vg_libciface.h"
 #include "demangle.h"
 
+Bool VG_(lang_is_ada) = False;
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -125,8 +126,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    // XXX: the Java/Rust/Ada demangling here probably doesn't work. See
    // https://bugs.kde.org/show_bug.cgi?id=445235 for details.
    if (do_cxx_demangling && VG_(clo_demangle)
-       && orig != NULL && orig[0] == '_'
-       && (orig[1] == 'Z' || orig[1] == 'R' || orig[1] == 'D')) {
+       && orig != NULL && (VG_(lang_is_ada) ||
+      (orig[0] == '_' && (orig[1] == 'Z' || orig[1] == 'R' || orig[1] == 'D')))) {
       /* !!! vvv STATIC vvv !!! */
       static HChar* demangled = NULL;
       /* !!! ^^^ STATIC ^^^ !!! */
@@ -138,6 +139,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
       }
       if (orig[1] == 'D') {
         demangled = dlang_demangle ( orig, DMGL_ANSI | DMGL_PARAMS );
+      } else if (VG_(lang_is_ada)) {
+         demangled = ada_demangle(orig, 0);
       } else {
         demangled = ML_(cplus_demangle) ( orig, DMGL_ANSI | DMGL_PARAMS );
       }

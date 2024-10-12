@@ -1,0 +1,7 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: system.file_io.write_buf (bug445235_ada_demangle.c:13)
+   by 0x........: ada.text_io.put_line (bug445235_ada_demangle.c:21)
+   by 0x........: bad_print.uninit_print (bug445235_ada_demangle.c:26)
+   by 0x........: main (bug445235_ada_demangle.c:31)
+   by 0x........: main (bug445235_ada_demangle.c:39)
+

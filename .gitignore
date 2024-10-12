@@ -869,6 +869,7 @@
 /memcheck/tests/bug287260
 /memcheck/tests/bug340392
 /memcheck/tests/bug401284
+/memcheck/tests/bug445235_ada_demangle
 /memcheck/tests/bug464969_d_demangle
 /memcheck/tests/bug472219
 /memcheck/tests/bug484002

@@ -16,6 +16,8 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   option are deprecated and will be removed in a future valgrind
   version.
 
+* Ada name demangling is now supported in error messages.
+
 * ================== PLATFORM CHANGES =================
 
 * S390X added support for the DFLTCC instruction provided by the
@@ -51,6 +53,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 440180  s390x: Failed assertion in disassembler
 444781  MIPS: wrong syscall numbers used
 447989  Support Armv8.2 SHA-512 instructions
+445235  Java/Ada/D demangling is probably broken
 453044  gbserver_tests failures in aarch64
 479661  Valgrind leaks file descriptors
 486180  [Valgrind][MIPS] 'VexGuestArchState' has no member named

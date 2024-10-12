@@ -122,6 +122,7 @@ EXTRA_DIST = \
 	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
 	bug340392.stderr.exp bug340392.vgtest \
+	bug445235_ada_demangle.stderr.exp bug445235_ada_demangle.vgtest \
 	bug401284.stderr.exp bug401284.stdout.exp bug401284.vgtest \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
@@ -475,6 +476,7 @@ check_PROGRAMS = \
 	bug287260 \
 	bug340392 \
 	bug401284 \
+ 	bug445235_ada_demangle \
 	bug464969_d_demangle \
 	bug472219 \
 	calloc-overflow \

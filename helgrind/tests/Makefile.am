@@ -87,6 +87,7 @@ EXTRA_DIST = \
 		tc03_re_excl.stderr.exp \
 	tc04_free_lock.vgtest tc04_free_lock.stdout.exp \
 		tc04_free_lock.stderr.exp \
+		tc04_free_lock.stderr.exp-freebsd15 \
 	tc05_simple_race.vgtest tc05_simple_race.stdout.exp \
 		tc05_simple_race.stderr.exp \
 	tc06_two_races.vgtest tc06_two_races.stdout.exp \
@@ -99,6 +100,7 @@ EXTRA_DIST = \
 	tc09_bad_unlock.vgtest tc09_bad_unlock.stdout.exp \
 		tc09_bad_unlock.stderr.exp tc09_bad_unlock.stderr.exp-solaris \
 		tc09_bad_unlock.stderr.exp-freebsd \
+		tc09_bad_unlock.stderr.exp-freebsd15 \
 	tc10_rec_lock.vgtest tc10_rec_lock.stdout.exp tc10_rec_lock.stderr.exp \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
 	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
@@ -137,6 +139,7 @@ EXTRA_DIST = \
 		tc22_exit_w_lock.stderr.exp \
 		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 		tc22_exit_w_lock.stderr.exp-solaris \
+		tc22_exit_w_lock.stderr.exp-freebsd15 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
 		tc23_bogus_condwait.stderr.exp-mips32 \

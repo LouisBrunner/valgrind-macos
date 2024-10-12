@@ -1716,12 +1716,14 @@ void evh__pre_thread_ll_exit ( ThreadId quit_tid )
    /* Complain if this thread holds any locks. */
    nHeld = HG_(cardinalityWS)( univ_lsets, thr_q->locksetA );
    tl_assert(nHeld >= 0);
+#if !defined(VGO_freebsd) || (FREEBSD_VERS < FREEBSD_15)
    if (nHeld > 0) {
       HChar buf[80];
       VG_(sprintf)(buf, "Exiting thread still holds %d lock%s",
                         nHeld, nHeld > 1 ? "s" : "");
       HG_(record_error_Misc)( thr_q, buf );
    }
+#endif
 
    /* Not much to do here:
       - tell libhb the thread is gone

@@ -1542,6 +1542,7 @@
 /none/tests/execve
 /none/tests/faultstatus
 /none/tests/fcntl_setown
+/none/tests/fdbaduse
 /none/tests/fdleak_cmsg
 /none/tests/fdleak_creat
 /none/tests/fdleak_dup

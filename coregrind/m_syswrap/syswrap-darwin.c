@@ -9205,10 +9205,11 @@ PRE(mach_msg2)
   if (send_size > size) {
     size = send_size;
   }
+  PRE_MEM_READ("mach_msg2(msg)", (Addr)mh, size);
   if (rcv_size > size) {
     size = rcv_size;
   }
-  PRE_MEM_READ("mach_msg2(msg)", (Addr)mh, size);
+  PRE_MEM_WRITE("mach_msg2(msg)", (Addr)mh, size);
 
   AFTER = NULL;
 

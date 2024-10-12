@@ -1260,7 +1260,6 @@ void handle_v_requests (char *arg_own_buf, char *status, int *zignal)
 static
 void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
 {
-  // jGetLoadedDynamicLibrariesInfos: seems pretty important but not seen it yet
   if (strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
     HChar *p = arg_own_buf + 32;
     if (*p == 0) {

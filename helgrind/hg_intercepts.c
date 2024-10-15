@@ -132,7 +132,7 @@
 #define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
    do {                                                  \
       Word _arg1;                                        \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1, 0,0,0,0);        \
@@ -141,8 +141,8 @@
 #define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
    do {                                                  \
       Word _arg1, _arg2;                                 \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
@@ -153,8 +153,8 @@
                      _ty2F,_arg2F)                       \
    do {                                                  \
       Word _res, _arg1, _arg2;                           \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _res = VALGRIND_DO_CLIENT_REQUEST_EXPR(2,          \
@@ -167,9 +167,9 @@
                       _ty2F,_arg2F, _ty3F, _arg3F)       \
    do {                                                  \
       Word _arg1, _arg2, _arg3;                          \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
-      assert(sizeof(_ty3F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty3F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _arg3 = (Word)(_arg3F);                            \
@@ -182,10 +182,10 @@
                        _ty4F, _arg4F)                    \
    do {                                                  \
       Word _arg1, _arg2, _arg3, _arg4;                   \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
-      assert(sizeof(_ty3F) == sizeof(Word));             \
-      assert(sizeof(_ty4F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty3F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty4F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _arg3 = (Word)(_arg3F);                            \

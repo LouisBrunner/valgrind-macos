@@ -593,6 +593,11 @@ struct BadCloseExtra {
 
 struct FdBadUse {
   Int fd;                        /* The file descriptor */
+  HChar *pathname;               /* NULL if not a regular file or unknown */
+  HChar *description;            /* Description of the file descriptor
+                                    might include the pathname */
+  ExeContext *where_closed;      /* record the last close of fd */
+  ExeContext *where_opened;      /* recordwhere the fd  was opened */
 };
 
 struct NotClosedExtra {
@@ -1166,8 +1171,25 @@ void fd_pp_Error (const Error *err)
       if (xml) VG_(emit)("  <kind>FdBadUse</kind>\n");
       struct FdBadUse *nce = (struct FdBadUse *)
          VG_(get_error_extra)(err);
-      if (xml) VG_(emit)("  <fd>%d</fd>\n", nce->fd);
-      VG_(emit)("%sInvalid file descriptor %d%s\n", whatpre, nce->fd, whatpost);
+      const char *error_string = VG_(get_error_string)(err);
+      if (xml) {
+        VG_(emit)("  <fd>%d</fd>\n", nce->fd);
+        if (nce->pathname)
+            VG_(emit)("  <path>%s</path>\n", nce->pathname);
+      }
+      VG_(emit)("%sFile descriptor %d %s%s\n", whatpre, nce->fd,
+          error_string, whatpost);
+      /* If the file descriptor was never created we won't have
+         where_closed and where_opened. Only print them in a
+         use after close case.  */
+      if (nce->where_closed) {
+        VG_(emit)("%sPreviously closed%s\n", auxpre, auxpost);
+        VG_(pp_ExeContext)(nce->where_closed);
+      }
+      if (nce->where_opened) {
+        VG_(emit)("%sOriginally opened%s\n", auxpre, auxpost);
+        VG_(pp_ExeContext)(nce->where_opened);
+      }
       VG_(pp_ExeContext)(where);
    } else {
       vg_assert2 (False, "Unknown error kind: %d",
@@ -1577,6 +1599,19 @@ static Addr do_brk ( Addr newbrk, ThreadId tid )
    return VG_(brk_limit);
 }
 
+const OpenFd *ML_(find_OpenFd)(Int fd)
+{
+   OpenFd *i = allocated_fds;
+
+   while (i) {
+     if (i->fd == fd)
+           return i;
+     i = i->next;
+   }
+
+   return NULL;
+}
+
 
 /* ---------------------------------------------------------------------
    Vet file descriptors for sanity
@@ -1640,14 +1675,42 @@ Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
       client is exactly what we don't want.  */
 
    /* croak? */
+   if (VG_(clo_track_fds) && allowed
+       && !isNewFd && (VG_(strcmp)("close", syscallname) != 0)) {
+     const OpenFd *openbadfd = ML_(find_OpenFd)(fd);
+     if (!openbadfd) {
+       /* File descriptor which was never created (or inherited).  */
+       struct FdBadUse badfd;
+       badfd.fd = fd;
+       badfd.pathname = NULL;
+       badfd.description = NULL;
+       badfd.where_opened = NULL;
+       badfd.where_closed = NULL;
+       VG_(maybe_record_error)(tid, FdBadUse, 0,
+           "was never created", &badfd);
+
+     } else if (openbadfd->fd_closed) {
+       /* Already closed file descriptor is being used.  */
+       struct FdBadUse badfd;
+       badfd.fd = fd;
+       badfd.pathname = openbadfd->pathname;
+       badfd.description = openbadfd->description;
+       badfd.where_opened = openbadfd->where;
+       badfd.where_closed = openbadfd->where_closed;
+       VG_(maybe_record_error)(tid, FdBadUse, 0,
+           "was closed already", &badfd);
+     }
+   }
    if ((!allowed) && !isNewFd) {
-      // XXX FdBadUse might want to add more info if we are going to include
-      // already closed file descriptors, then we do have a bit more info
       if (VG_(clo_track_fds)) {
          struct FdBadUse badfd;
          badfd.fd = fd;
+         badfd.pathname = NULL;
+         badfd.description = NULL;
+         badfd.where_opened = NULL;
+         badfd.where_closed = NULL;
          VG_(maybe_record_error)(tid, FdBadUse, 0,
-                                 "invalid file descriptor", &badfd);
+                                 "Invalid file descriptor", &badfd);
       } else if (VG_(showing_core_warnings) ()) {
          // XXX legacy warnings, will be removed eventually
          VG_(message)(Vg_UserMsg,

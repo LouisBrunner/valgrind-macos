@@ -256,7 +256,8 @@ EXTRA_DIST = \
 	double_close_range.stderr.exp double_close_range.vgtest \
 	log-track-fds.stderr.exp log-track-fds.vgtest \
 	xml-track-fds.stderr.exp xml-track-fds.vgtest \
-	fdbaduse.stderr.exp fdbaduse.vgtest
+	fdbaduse.stderr.exp fdbaduse.vgtest \
+	use_after_close.stderr.exp use_after_close.vgtest
 
 
 check_PROGRAMS = \
@@ -311,7 +312,8 @@ check_PROGRAMS = \
 	sigprocmask \
 	socket_close \
 	file_dclose \
-	fdbaduse
+	fdbaduse \
+        use_after_close
 
 if HAVE_STATIC_LIBC
 if ! VGCONF_OS_IS_LINUX

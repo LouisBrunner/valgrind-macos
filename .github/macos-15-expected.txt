@@ -1,5 +1,6 @@
 memcheck/tests/accounting                (stderr)
 memcheck/tests/addressable               (stderr)
+memcheck/tests/arm64/bug484935           (stderr)
 memcheck/tests/badaddrvalue              (stderr)
 memcheck/tests/badfree-2trace            (stderr)
 memcheck/tests/badloop                   (stderr)

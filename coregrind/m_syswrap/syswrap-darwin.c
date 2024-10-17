@@ -9208,6 +9208,9 @@ PRE(mach_msg2)
   if (options & MACH_SEND_MSG && msgh_bits & MACH_SEND_TRAILER) {
     trailer_size = REQUESTED_TRAILER_SIZE(options);
   }
+// FIXME: loads of issues on macOS 13 and no computer to test on
+// disabled for now
+#if DARWIN_VERS != DARWIN_13_00
   if (options & MACH64_MSG_VECTOR) {
     mach_msg_vector_t *msgv = (mach_msg_vector_t *)mh;
     PRE_MEM_READ("mach_msg2(msgv)", (Addr)mh, sizeof(mach_msg_vector_t));
@@ -9235,6 +9238,7 @@ PRE(mach_msg2)
       PRE_MEM_WRITE("mach_msg2(msg)", (Addr)mh, size);
     }
   }
+#endif
 
   // Assume call may block unless specified otherwise
   *flags |= SfMayBlock;

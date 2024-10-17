@@ -1196,6 +1196,21 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
 
   if (strncmp("qMemoryRegionInfo:", arg_own_buf, 18) == 0) {
     Addr addr = strtoul(&arg_own_buf[18], NULL, 16);
+    DebugInfo* di = VG_(find_DebugInfo)(VG_(current_DiEpoch)(), addr);
+    if (di) {
+      Addr start = VG_(DebugInfo_get_text_avma)(di);
+      SizeT size = VG_(DebugInfo_get_text_size)(di);
+      const HChar* name = VG_(DebugInfo_get_filename)(di);
+      SizeT str_count = VG_(strlen)(name);
+      char hex[2 * str_count + 1];
+      hexify(hex, name, str_count);
+      if (addr >= start && addr < start + size) {
+        VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:rx;name:%s",
+                      start, size, hex);
+        return;
+      }
+    }
+
     const NSegment* seg = VG_(am_find_nsegment)(addr);
     if (!seg) {
       seg = VG_(am_find_anon_segment)(addr);
@@ -1203,10 +1218,10 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
     }
     Int amount = VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:%s%s%s",
-                               seg->start, seg->end - seg->start,
-                               seg->hasR ? "r" : "",
-                               seg->hasW ? "w" : "",
-                               seg->hasX ? "x" : "");
+                              seg->start, seg->end - seg->start,
+                              seg->hasR ? "r" : "",
+                              seg->hasW ? "w" : "",
+                              seg->hasX ? "x" : "");
     const HChar* name = VG_(am_get_filename)(seg);
     if (name) {
       SizeT str_count = VG_(strlen)(name);
@@ -1220,7 +1235,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
   if (strncmp("qShlibInfoAddr", arg_own_buf, 14) == 0) {
     const NSegment* next = VG_(am_find_nsegment)(0);
     while (next) {
-      HChar* name = VG_(am_get_filename)(next);
+      const HChar* name = VG_(am_get_filename)(next);
       if (name && VG_(strcmp)(name, "/usr/lib/dyld") == 0) {
         VG_(sprintf) (arg_own_buf, "%lx", next->start);
         return;

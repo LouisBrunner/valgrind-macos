@@ -195,6 +195,9 @@ void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
                                     ULong nHi, ULong nLo,
                                     ULong mHi, ULong mLo );
 
+extern
+ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

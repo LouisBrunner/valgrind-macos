@@ -2308,6 +2308,25 @@ IRTemp mk_convert_IRCmpF64Result_to_NZCV ( IRTemp irRes32 )
 
 
 /*------------------------------------------------------------*/
+/*--- Extension helpers                                    ---*/
+/*------------------------------------------------------------*/
+
+static
+IRExpr* mk_strip_pauth(UInt iregNo, Bool is_data)
+{
+  IRTemp val = newTemp(Ity_I64);
+  IRDirty* d = unsafeIRDirty_1_N (
+      val,
+      0/*regparms*/,
+      "arm64g_dirtyhelper_STRIP_PAC",
+      &arm64g_dirtyhelper_STRIP_PAC,
+      mkIRExprVec_2(getIReg64orSP(iregNo), mkU64(is_data))
+  );
+  stmt( IRStmt_Dirty(d) );
+  return mkexpr(val);
+}
+
+/*------------------------------------------------------------*/
 /*--- Data processing (immediate)                          ---*/
 /*------------------------------------------------------------*/
 
@@ -3732,7 +3751,7 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       Bool isA = INSN(10,10) == 0;
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
-      // FIXME: basically a NOP if we don't implement PAC
+      // FIXME: basically a NOP if we don't sign
       // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.InsertPAC.6
       // dd = insert_pac(dd, nn | SP, isA, !isD);
       if (isZ) {
@@ -3769,9 +3788,10 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       Bool isA = INSN(10,10) == 0;
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
-      // FIXME: basically a NOP if we don't implement PAC
-      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      // FIXME: should we actually auth instead of just stripping?
       // dd = authenticate(dd, nn | SP, isA, !isD);
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      putIReg64orZR(dd, mk_strip_pauth(dd, isD));
       if (isZ) {
         if (nn != 31) {
           return False;
@@ -3784,9 +3804,9 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
    }
 
    /* -------------------- XPAC{D,I} -------------------- */
-    /* 31 30 29           20      15     9  4
-       1  1  0 1101 0110 00001   010000 11111 Rd    XPACD <Xd>
-       1  1  0 1101 0110 00001   010001 11111 Rd    XPACI <Xd>
+    /* 31 30 29          20      15     9  4
+       1  1  0 1101 0110 00001   010000 11111 Rd    XPACI <Xd>
+       1  1  0 1101 0110 00001   010001 11111 Rd    XPACD <Xd>
        sf    S                   opcode
     */
    if (INSN(31,20) == BITS12(1,1,0,1,1,0,1,0,1,1,0,0)
@@ -3795,12 +3815,10 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
         if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
           return False;
         }
-      Bool isD = INSN(10,10) == 0;
-        UInt dd = INSN(4,0);
-      // FIXME: not sure if actually needed
-      // see https://developer.arm.com/documentation/ddi0602/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.AuthIA.3
-      // dd = strip(dd, isD)
-      DIP("xpac%c %s (FAKED)\n", isD ? 'd' : 'i', nameIRegOrZR(True, dd));
+      Bool isD = INSN(10,10) == 1;
+      UInt dd = INSN(4,0);
+      putIReg64orZR(dd, mk_strip_pauth(dd, isD));
+      DIP("xpac%c %s\n", isD ? 'd' : 'i', nameIRegOrZR(True, dd));
       return True;
    }
 
@@ -3817,6 +3835,7 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       UInt mm = INSN(20,16);
       UInt nn = INSN(9,5);
       UInt dd = INSN(4,0);
+      // FIXME: basically a NOP if we don't sign
       // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.ComputePACIMPDEF.4
       // dd = compute_pac(dd, nn, mm | SP) & 0xFFFFFFFF00000000;
       putIReg64orZR(dd, getIReg64orZR(nn));
@@ -7555,7 +7574,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       Long offset = (Long)sx_to_64(S << 9 | imm9, 10) << 3;
 
       IRTemp addr = newTemp(Ity_I64);
-      assign(addr, binop(Iop_Add64, getIReg64orSP(nn), mkU64(offset)));
+      // FIXME: should we actually auth instead of just stripping?
+      assign(addr, binop(Iop_Add64, mk_strip_pauth(nn, True), mkU64(offset)));
       putIReg64orZR(tt, loadLE(Ity_I64, mkexpr(addr)));
       if (W) {
         putIReg64orSP(nn, loadLE(Ity_I64, mkexpr(addr)));
@@ -8351,11 +8371,8 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
       }
-      // FIXME: not sure if actually needed
-      // x30 = strip(x30, False)
-      // putIReg64orZR(30, binop(mkAND(Ity_I64), getIReg64orZR(30), 0x??));
-      // see https://developer.arm.com/documentation/ddi0602/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.AuthIA.3
-      DIP("xpaclri (FAKED)\n");
+      putIReg64orZR(30, mk_strip_pauth(30, False));
+      DIP("xpaclri\n");
       return True;
    }
 
@@ -8410,11 +8427,12 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       Bool isA = INSN(6,6) == 0;
       Bool isSP = INSN(5,5) == 1;
       Bool isZ = !isSP && !isA;
-      // FIXME: basically a NOP if we don't implement PAC
-      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
-      // if isZ || isSP then dd = 30 else dd = 17
+      // FIXME: should we actually auth instead of just stripping?
       // if isZ then nn = 31 elif isSP then nn = SP else nn = 16
       // dd = authenticate(dd, nn | SP, isA, True);
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      UInt destRegister = isSP || isZ ? 30 : 17;
+      putIReg64orZR(destRegister, mk_strip_pauth(destRegister, False));
       DIP("auti%c%s%s%s (FAKED)\n", isA ? 'a' : 'b', isZ ? "z" : "", isSP ? "sp" : "", is1716 ? "1716" : "");
       return True;
     }
@@ -8476,15 +8494,15 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       }
       Bool isA = INSN(10,10) == 0;
       Bool isE = INSN(23,23) == 1;
-      // FIXME: basically a NOP if we don't implement PAC
-      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
-      // pc = authenticate(x30, SP, isA, True);
       if (isE) {
         return False;
       } else {
-      putPC(getIReg64orSP(30));
-      dres->whatNext = Dis_StopHere;
-      dres->jk_StopHere = Ijk_Ret;
+      // FIXME: should we actually auth instead of just stripping?
+        // pc = authenticate(x30, SP, isA, True);
+        // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+        putPC(mk_strip_pauth(30, False));
+        dres->whatNext = Dis_StopHere;
+        dres->jk_StopHere = Ijk_Ret;
       }
       DIP("%sreta%c (FAKED)\n", isE ? "e" : "", isA ? 'a' : 'b');
       return True;
@@ -8509,34 +8527,30 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_PAUTH) == 0) {
         return False;
       }
-        Bool isZ = INSN(24,24) == 0;
+      Bool isZ = INSN(24,24) == 0;
       Bool isL = INSN(21,21) == 1;
-        Bool isA = INSN(10,10) == 0;
-        UInt nn  = INSN(9,5);
-        UInt mm  = INSN(4,0);
+      Bool isA = INSN(10,10) == 0;
+      UInt nn  = INSN(9,5);
+      UInt mm  = INSN(4,0);
 
-        IRTemp target = newTemp(Ity_I64);
-      // FIXME: basically a NOP if we don't implement PAC
-      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
-      // pc = authenticate(nn, mm | SP, isA, True);
-      // TODO: unfortunately, some binaries will use pre-signed pointers, so we need to support it in some way
-      // currently we just wipe away [63:40]
-      assign(target, binop(mkAND(Ity_I64), getIReg64orSP(nn), mkU(Ity_I64, ~(0xffffffUL << 40))));
       if (isL) {
         putIReg64orZR(30, mkU64(guest_PC_curr_instr + 4));
       }
-        putPC(mkexpr(target));
-        dres->whatNext = Dis_StopHere;
-        dres->jk_StopHere = Ijk_Call; // FIXME: I think?
+      // FIXME: should we actually auth instead of just stripping?
+      // pc = authenticate(nn, mm | SP, isA, True);
+      // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
+      putPC(mk_strip_pauth(nn, False));
+      dres->whatNext = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Call; // FIXME: I think?
       if (isZ) {
         if (mm != 31) {
           return False;
         }
         DIP("b%sra%cz %s\n", isL ? "l" : "", isA ? 'a' : 'b', nameIReg64orSP(nn));
-        } else {
+      } else {
         DIP("b%sra%c %s, %s\n", isL ? "l" : "", isA ? 'a' : 'b', nameIReg64orSP(nn), nameIReg64orSP(mm));
-        }
-        return True;
+      }
+      return True;
     }
 
     /* ---- Cases for DIT ----
@@ -8748,14 +8762,15 @@ static ULong Replicate8x8 ( ULong bits8 )
 }
 
 /* Expand the VFPExpandImm-style encoding in the bottom 8 bits of
-   |imm8| to either a 32-bit value if N is 32 or a 64 bit value if N
-   is 64.  In the former case, the upper 32 bits of the returned value
-   are guaranteed to be zero. */
+   |imm8| to either a 64-bit, 32-bit or 16-bit value depending on N.
+   In the latter cases, the upper 32 or 48 bits of the returned value
+   are guaranteed to be zero.
+   Page 336 of Arm Architecture Reference Manual for A-profile architecture */
 static ULong VFPExpandImm ( ULong imm8, Int N )
 {
    vassert(imm8 <= 0xFF);
-   vassert(N == 32 || N == 64);
-   Int E = ((N == 32) ? 8 : 11) - 2; // The spec incorrectly omits the -2.
+   vassert(N == 32 || N == 64 || N == 16);
+   Int E = ((N == 64) ? 9 : (N == 32 ? 6 : 3));
    Int F = N - E - 1;
    ULong imm8_6 = (imm8 >> 6) & 1;
    /* sign: 1 bit */
@@ -16219,7 +16234,8 @@ Bool dis_AdvSIMD_fp_data_proc_3_source(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_immediate(/*MB_OUT*/DisResult* dres, UInt insn,
+                              const VexArchInfo* archinfo)
 {
    /* 31  28    23 21 20   12  9    4
       000 11110 ty 1  imm8 100 imm5 d
@@ -16237,16 +16253,23 @@ Bool dis_AdvSIMD_fp_immediate(/*MB_OUT*/DisResult* dres, UInt insn)
 
    /* ------- 00,00000: FMOV s_imm ------- */
    /* ------- 01,00000: FMOV d_imm ------- */
-   if (ty <= X01 && imm5 == BITS5(0,0,0,0,0)) {
-      Bool  isD  = (ty & 1) == 1;
-      ULong imm  = VFPExpandImm(imm8, isD ? 64 : 32);
-      if (!isD) {
+   /* ------- 11,00000: FMOV h_imm ------- */
+   if (ty != X10 && imm5 == BITS5(0,0,0,0,0)) {
+      Int regSize = (ty == X01) ? 64 : (ty == X00 ? 32 : 16);
+      ULong imm = VFPExpandImm(imm8, regSize);
+      if (regSize == 16 && (archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) == 0) {
+          return False;
+      }
+      if (regSize < 64) {
          vassert(0 == (imm & 0xFFFFFFFF00000000ULL));
       }
+      if (regSize < 32) {
+         vassert(0 == (imm & 0xFFFF0000ULL));
+      }
       putQReg128(dd, mkV128(0));
-      putQRegLO(dd, isD ? mkU64(imm) : mkU32(imm & 0xFFFFFFFFULL));
+      putQRegLO(dd, regSize == 64 ? mkU64(imm) : (regSize == 32 ? mkU32(imm & 0xFFFFFFFFULL) : mkU16(imm & 0xFFFFULL)));
       DIP("fmov %s, #0x%llx\n",
-          nameQRegLO(dd, isD ? Ity_F64 : Ity_F32), imm);
+          nameQRegLO(dd, regSize == 64 ? Ity_F64 : (regSize == 32 ? Ity_F32 : Ity_F16)), imm);
       return True;
    }
 
@@ -16792,7 +16815,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_data_proc_3_source(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_immediate(dres, insn);
+   ok = dis_AdvSIMD_fp_immediate(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_to_from_fixedp_conv(dres, insn);
    if (UNLIKELY(ok)) return True;

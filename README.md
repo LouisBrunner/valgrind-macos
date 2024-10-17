@@ -9,24 +9,22 @@ This repository contains a version of Valgrind including a few patches to improv
 | macOS 10.13 and earlier[^1] | ✅  | ✅    | -      | ❌[^3] |
 | macOS 10.14 (Mojave)        | ✅  | ✅    | -      | -      |
 | macOS 10.15 (Catalina)      | ✅  | ✅    | -      | -      |
-| macOS 11 (Big Sur)          | -   | ✅    | ❌[^2] | -      |
-| macOS 12 (Monterey)         | -   | ✅    | ❌[^2] | -      |
-| macOS 13 (Ventura)          | -   | ✅    | ❌[^2] | -      |
-| macOS 14 (Sonoma)           | -   | ✅    | ❌[^2] | -      |
-| macOS 15 (Sequoia)          | -   | ✅    | ❌[^2] | -      |
+| macOS 11 (Big Sur)          | -   | ✅    | ✅     | -      |
+| macOS 12 (Monterey)         | -   | ✅    | ✅     | -      |
+| macOS 13 (Ventura)          | -   | ✅    | ✅     | -      |
+| macOS 14 (Sonoma)           | -   | ✅    | ✅     | -      |
+| macOS 15 (Sequoia)          | -   | ✅    | ✅     | -      |
 
 [^1]: Supported as part of upstream Valgrind.
-[^2]: Apple Silicon support in progress ([#56](https://github.com/LouisBrunner/valgrind-macos/issues/56))
 [^3]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
 
 Note that every version from macOS 10.12 onwards currently has the following issues:
 
 - crash when using wqthread which is used in certain UI frameworks, especially Apple's, e.g. CoreFoundation ([#4](https://github.com/LouisBrunner/valgrind-macos/issues/4))
 - using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
-- drd thread related crash on 10.15 (probably onwards)
-- lots of `-UNHANDLED` messages on macOS 12 and earlier
-
-<!-- Checkout the [`patches`](https://github.com/LouisBrunner/valgrind-macos/commits/patches) branch for a list of patches that can be directly applied to the upstream Valgrind. -->
+- drd crashes on 10.15 (probably onwards)
+- dhat crashes (seen macOS 14 arm64)
+- loads of `-UNHANDLED` messages
 
 ## Usage
 
@@ -61,7 +59,7 @@ Note: in case of failures during the build, [make sure you have the latest Xcode
 
 ### Update
 
-Any `brew upgrade` will now correctly rebuild the latest `LouisBrunner/valgrind` instead of the upstream one (which doesn't support latest macOS versions).
+Any `brew upgrade` will now correctly rebuild the latest `LouisBrunner/valgrind` instead of the upstream one (which doesn't support the latest macOS versions).
 
 ```sh
 brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
@@ -75,33 +73,24 @@ Some tests are hanging and were therefore disabled on macOS:
 - `none/tests/pth_term_signal` (amd64 & arm64)
 - `memcheck/tests/sigaltstack` (arm64)
 
-### Linux (Ubuntu 20.04)
+### Linux (Ubuntu 24.04)
 
 These errors seem to come from the CI environment itself (as they show with or without my changes).
 
 ```
-== 730 tests, 13 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
-memcheck/tests/overlap                   (stderr)
-drd/tests/pth_mutex_signal               (stderr)
-none/tests/fdleak_cmsg                   (stderr)
-none/tests/fdleak_creat                  (stderr)
-none/tests/fdleak_dup                    (stderr)
-none/tests/fdleak_dup2                   (stderr)
-none/tests/fdleak_fcntl                  (stderr)
-none/tests/fdleak_ipv4                   (stderr)
-none/tests/fdleak_open                   (stderr)
-none/tests/fdleak_pipe                   (stderr)
-none/tests/fdleak_socketpair             (stderr)
-none/tests/rlimit64_nofile               (stderr)
-none/tests/rlimit_nofile                 (stderr)
+== 834 tests, 3 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
+none/tests/log-track-fds                 (stderr)
+none/tests/track-fds-exec-children       (stderr)
+none/tests/xml-track-fds                 (stderr)
 ```
 
-should be (according to the official builds)
+should be (according to the official Fedora x86_64 builds)
 
 ```
-== 789 tests, 1 stderr failure, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
-memcheck/tests/linux/sys-preadv2_pwritev2 (stderr)
+== 815 tests, 0 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
 ```
+
+See [here](https://builder.sourceware.org/buildbot/#/builders?tags=%2Bvalgrind) for details.
 
 ### macOS
 

@@ -3826,7 +3826,9 @@ PRE(posix_spawn)
 
    PRE_REG_READ5(int, "posix_spawn", vki_pid_t*, pid, char*, path,
                  void*, file_actions, char**, argv, char**, envp );
-   PRE_MEM_WRITE("posix_spawn(pid)", ARG1, sizeof(vki_pid_t) );
+   if (ARG1 != 0) {
+    PRE_MEM_WRITE("posix_spawn(pid)", ARG1, sizeof(vki_pid_t) );
+   }
    PRE_MEM_RASCIIZ("posix_spawn(path)", ARG2);
    // DDD: check file_actions
    if (ARG4 != 0)
@@ -9202,32 +9204,46 @@ PRE(mach_msg2)
     uint64_t, rcv_size_and_priority,
     uint64_t, timeout);
   SizeT size = sizeof(mach_msg_header_t);
-  if (send_size > size) {
-    size = send_size;
+  SizeT trailer_size = 0;
+  if (options & MACH_SEND_MSG && msgh_bits & MACH_SEND_TRAILER) {
+    trailer_size = REQUESTED_TRAILER_SIZE(options);
   }
-  PRE_MEM_READ("mach_msg2(msg)", (Addr)mh, size);
-  if (rcv_size > size) {
-    size = rcv_size;
-  }
-  PRE_MEM_WRITE("mach_msg2(msg)", (Addr)mh, size);
-
-  AFTER = NULL;
-
   if (options & MACH64_MSG_VECTOR) {
-    log_decaying("UNKNOWN mach_msg2 unhandled MACH64_MSG_VECTOR option");
-    return;
+    mach_msg_vector_t *msgv = (mach_msg_vector_t *)mh;
+    PRE_MEM_READ("mach_msg2(msgv)", (Addr)mh, sizeof(mach_msg_vector_t));
+    if (options & MACH_SEND_MSG) {
+      PRE_MEM_READ("mach_msg2(msgv->data)", (Addr)msgv->msgv_data, msgv->msgv_send_size);
+    }
+    if (options & MACH_RCV_MSG) {
+      if (msgv->msgv_rcv_addr != 0) {
+        PRE_MEM_WRITE("mach_msg2(msgv->rcv_addr)", (Addr)msgv->msgv_rcv_addr, msgv->msgv_rcv_size);
+      } else {
+        PRE_MEM_WRITE("mach_msg2(msgv->data)", (Addr)msgv->msgv_data, msgv->msgv_rcv_size);
+      }
+    }
+  } else {
+    if (send_size > size) {
+      size = send_size;
+    }
+    if (options & MACH_SEND_MSG) {
+      PRE_MEM_READ("mach_msg2(msg)", (Addr)mh, size + trailer_size);
+    }
+    if (rcv_size > size) {
+      size = rcv_size;
+    }
+    if (options & MACH_RCV_MSG) {
+      PRE_MEM_WRITE("mach_msg2(msg)", (Addr)mh, size);
+    }
   }
 
   // Assume call may block unless specified otherwise
   *flags |= SfMayBlock;
 
+  AFTER = NULL;
+
   if (options & MACH_SEND_MSG) {
     MACH_REMOTE = msgh_remote_port;
     MACH_MSGH_ID = msgh_id;
-
-    if (msgh_bits & MACH_SEND_TRAILER) {
-      log_decaying("UNKNOWN mach_msg2 unhandled MACH_SEND_TRAILER option");
-    }
   }
 
   // Call a PRE handler. The PRE handler may set an AFTER handler.

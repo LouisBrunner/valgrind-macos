@@ -26,24 +26,179 @@
 
 # False positives
 
-## unclear how it's possible but libobj manages to get a hold of a REAL libsystem_malloc pointer
-## and when it tries to free it, we obviously complain because it's not in our malloc zones
+## Could be a bug: nw_network_agent_copy_dictionary_from_necp doesn't initialize a var correctly
 {
-   OSX1400:libobjc_libsystem_malloc
-   Memcheck:Free
-   fun:free
-   fun:_objc_atfork_child
+   OSX1400:nw_network_agent_copy_dictionary_from_necp_cond_1
+   Memcheck:Cond
+   ...
+   fun:nw_path_has_dns
+   ...
+}
+{
+   OSX1400:nw_network_agent_copy_dictionary_from_necp_value8_1
+   Memcheck:Value8
+   ...
+   fun:nw_path_has_dns
+   ...
+}
+{
+   OSX1400:nw_network_agent_copy_dictionary_from_necp_cond_2
+   Memcheck:Cond
+   ...
+   fun:nw_path_evaluator_evaluate
+   ...
+}
+{
+   OSX1400:nw_network_agent_copy_dictionary_from_necp_value8_2
+   Memcheck:Value8
+   ...
+   fun:nw_path_evaluator_evaluate
+   ...
+}
+{
+   OSX1400:nw_network_agent_copy_dictionary_from_necp_nca_param_buffer
+   Memcheck:Param
+   necp_client_action(COPY_AGENT, buffer)
+   fun:necp_client_action
+   obj:*
+   ...
+   fun:nw_path_evaluator_evaluate
+   ...
+}
+{
+   OSX1400:nw_network_agent_copy_dictionary_from_necp_cond_3
+   Memcheck:Cond
+   ...
+   fun:nw_path_uses_nexus_internal
    ...
 }
 
-## same deal here
+## Could be a bug: IORegistryEntrySearchCFProperty doesn't seem to initialize a var correctly
 {
-   OSX1400:libobjc_libsystem_malloc_2
-   Memcheck:Free
-   fun:free
-   fun:_ZN19AutoreleasePoolPage4killEv
+   OSX1400:IORegistryEntrySearchCFProperty_cond_1
+   Memcheck:Cond
    ...
-   fun:__malloc_late_init
+   fun:MGIsDeviceOneOfType
+   ...
+}
+{
+   OSX1400:IORegistryEntrySearchCFProperty_value8_1
+   Memcheck:Value8
+   ...
+   fun:MGIsDeviceOneOfType
+   ...
+}
+{
+   OSX1400:IORegistryEntrySearchCFProperty_cond_2
+   Memcheck:Cond
+   ...
+   fun:__NSUserAccentHasHardwareColor_block_invoke
+   ...
+}
+{
+   OSX1400:IORegistryEntrySearchCFProperty_value8_2
+   Memcheck:Value8
+   ...
+   fun:__NSUserAccentHasHardwareColor_block_invoke
+   ...
+}
+{
+   OSX1400:IORegistryEntrySearchCFProperty_cond_3
+   Memcheck:Cond
+   ...
+   fun:__NSUserAccentColorGetHardwareAccentColorName_block_invoke
+   ...
+}
+{
+   OSX1400:IORegistryEntrySearchCFProperty_value8_3
+   Memcheck:Value8
+   ...
+   fun:__NSUserAccentColorGetHardwareAccentColorName_block_invoke
+   ...
+}
+
+## Could be a bug: result of xpc_pipe_routine is not completely initialized after malloc
+## I wish we could suppress based on origin because it would be much simpler for this
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_1
+   Memcheck:Cond
+   ...
+   fun:search_item_bynumber
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_value8_1
+   Memcheck:Value8
+   ...
+   fun:search_item_bynumber
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_2
+   Memcheck:Cond
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_3
+   Memcheck:Cond
+   ...
+   fun:CreateStringFromFileSystemRepresentationByAddingPercentEscapes
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_value8_2
+   Memcheck:Value8
+   ...
+   fun:CreateStringFromFileSystemRepresentationByAddingPercentEscapes
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_open_param_1
+   Memcheck:Param
+   open(filename)
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_4
+   Memcheck:Cond
+   ...
+   fun:-[_CFXPreferences withSearchListForIdentifier:container:cloudConfigurationURL:perform:]
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_value8_3
+   Memcheck:Value8
+   ...
+   fun:-[_CFXPreferences withSearchListForIdentifier:container:cloudConfigurationURL:perform:]
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_stat64_path
+   Memcheck:Param
+   stat64(path)
+   fun:stat
+   obj:*
+   ...
+   fun:-[_CFXPreferences withSearchListForIdentifier:container:cloudConfigurationURL:perform:]
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_5
+   Memcheck:Cond
+   ...
+   fun:-[CFPrefsSource copyValueForKey:]
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_value8_4
+   Memcheck:Value8
+   ...
+   fun:-[CFPrefsSource copyValueForKey:]
+   ...
 }
 
 # Unclear
@@ -56,161 +211,4 @@
    fun:sendto
    ...
    fun:__os_log_simple_offset
-}
-
-## These occur on binaries which use objc (curl, GUIs, etc), no idea where it comes from yet
-{
-   OSX1400:nw_path_has_dns_cond
-   Memcheck:Cond
-   ...
-   fun:nw_path_has_dns
-   ...
-}
-{
-   OSX1400:nw_path_has_dns_value8
-   Memcheck:Value8
-   ...
-   fun:nw_path_has_dns
-   ...
-}
-{
-   OSX1400:CFCopyHomeDirURLForUser
-   Memcheck:Cond
-   ...
-   fun:_CFCopyHomeDirURLForUser
-   ...
-}
-{
-   OSX1400:nw_path_snapshot_path_cond
-   Memcheck:Cond
-   ...
-   fun:nw_path_snapshot_path
-   ...
-}
-{
-   OSX1400:nw_path_snapshot_path_value8
-   Memcheck:Value8
-   ...
-   fun:nw_path_snapshot_path
-   ...
-}
-{
-   OSX1400:nw_path_snapshot_path_necp_client_action
-   Memcheck:Param
-   necp_client_action(COPY_AGENT, buffer)
-   fun:necp_client_action
-   obj:*
-   ...
-   fun:nw_path_snapshot_path
-   ...
-}
-{
-   OSX1400:_CFStringGetUserDefaultEncoding_value8
-   Memcheck:Value8
-   ...
-   fun:_CFStringGetUserDefaultEncoding
-   ...
-}
-{
-   OSX1400:_CFStringGetUserDefaultEncoding_cond
-   Memcheck:Cond
-   ...
-   fun:_CFStringGetUserDefaultEncoding
-   ...
-}
-{
-   OSX1400:__CFInitialize_cond
-   Memcheck:Cond
-   ...
-   fun:__CFInitialize
-   ...
-}
-{
-   OSX1400:__CFInitialize_param
-   Memcheck:Param
-   open(filename)
-   ...
-   fun:__CFInitialize
-   ...
-}
-{
-   OSX1400:CFXPreferences_withSearchLists_cond
-   Memcheck:Cond
-   ...
-   fun:-[_CFXPreferences withSearchLists:]
-   ...
-}
-{
-   OSX1400:CFXPreferences_withSearchLists_value8
-   Memcheck:Value8
-   ...
-   fun:-[_CFXPreferences withSearchLists:]
-   ...
-}
-{
-   OSX1400:CFXPreferences_withSearchLists_stat64_param
-   Memcheck:Param
-   stat64(path)
-   fun:stat
-   obj:*
-   ...
-   fun:-[_CFXPreferences withSearchLists:]
-   ...
-}
-{
-   OSX1400:CFXPreferences_currentUserHasInvalidHomeDirectory_cond
-   Memcheck:Cond
-   ...
-   fun:-[_CFXPreferences currentUserHasInvalidHomeDirectory]
-   ...
-}
-{
-   OSX1400:CFXPreferences_currentUserHasInvalidHomeDirectory_value8
-   Memcheck:Value8
-   ...
-   fun:-[_CFXPreferences currentUserHasInvalidHomeDirectory]
-   ...
-}
-{
-   OSX1400:CFPrefsPlistSource_volatilizeIfInvalidHomeDir
-   Memcheck:Cond
-   ...
-   fun:-[CFPrefsPlistSource volatilizeIfInvalidHomeDir]
-   ...
-}
-{
-   OSX1400:nw_path_get_nexus_agent
-   Memcheck:Cond
-   ...
-   fun:nw_path_get_nexus_agent
-   ...
-}
-{
-   OSX1400:nw_path_evaluator_evaluate_cond
-   Memcheck:Cond
-   ...
-   fun:nw_path_evaluator_evaluate
-   ...
-}
-{
-   OSX1400:nw_path_evaluator_evaluate_value8
-   Memcheck:Value8
-   ...
-   fun:nw_path_evaluator_evaluate
-   ...
-}
-### Also happens in darwin24-amd64.supp!!!
-{
-   OSX1400:ds_user_byuid_value8
-   Memcheck:Value8
-   ...
-   fun:ds_user_byuid
-   ...
-}
-{
-   OSX1400:ds_user_byuid_cond
-   Memcheck:Cond
-   ...
-   fun:ds_user_byuid
-   ...
 }

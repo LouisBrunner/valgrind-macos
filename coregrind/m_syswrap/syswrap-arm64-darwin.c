@@ -551,6 +551,21 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE
    stack = VG_PGROUNDUP(sp) - stacksize;
 
+   // pthread structure
+   ML_(notify_core_and_tool_of_mmap)(
+         stack+stacksize, pthread_structsize,
+         VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
+   // stack contents
+   ML_(notify_core_and_tool_of_mmap)(
+         stack, stacksize,
+         VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
+   // guard page
+   ML_(notify_core_and_tool_of_mmap)(
+         stack-VKI_PAGE_SIZE, VKI_PAGE_SIZE,
+         0, VKI_MAP_PRIVATE, -1, 0);
+
+   ML_(sync_mappings)("after", "wqthread_hijack", 0);
+
    if (is_reuse) {
       // Continue V's thread back in the scheduler.
       // The client thread is of course in another location entirely.
@@ -574,25 +589,6 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
       // kernel allocated stack - needs mapping
       tst->client_stack_highest_byte = stack+stacksize-1;
       tst->client_stack_szB = stacksize;
-
-      // GrP fixme scheduler lock?!
-
-      // pthread structure
-      ML_(notify_core_and_tool_of_mmap)(
-            stack+stacksize, pthread_structsize,
-            VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
-      // stack contents
-      // GrP fixme uninitialized!
-      ML_(notify_core_and_tool_of_mmap)(
-            stack, stacksize,
-            VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_PRIVATE, -1, 0);
-      // guard page
-      // GrP fixme ban_mem_stack!
-      ML_(notify_core_and_tool_of_mmap)(
-            stack-VKI_PAGE_SIZE, VKI_PAGE_SIZE,
-            0, VKI_MAP_PRIVATE, -1, 0);
-
-      ML_(sync_mappings)("after", "wqthread_hijack", 0);
 
       // Go!
       /* Same comments as the 'release' in the then-clause.

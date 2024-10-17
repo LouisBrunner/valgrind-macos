@@ -1576,6 +1576,29 @@ void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
    res->w64[0] = W.w64[0] + sig1 + Y.w64[0];
 }
 
+/* CALLED FROM GENERATED CODE */
+// TODO: would be much better to have this directly in JIT'd assembly
+// but I am not sure how to do that within VEX
+ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data )
+{
+   ULong res = ptr;
+   if (is_data) {
+      asm volatile (
+        "xpacd %[res]\n"
+        : [res] "+r" (res)
+      );
+   } else {
+      asm volatile (
+        "xpaci %[res]\n"
+        : [res] "+r" (res)
+      );
+   }
+   if (res != ptr) {
+    vex_printf("STRIP_PAC: 0x%llx -> 0x%llx (d: %d)\n", ptr, res, is_data);
+   }
+   return res;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers.    ---*/

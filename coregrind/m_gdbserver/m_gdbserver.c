@@ -424,7 +424,7 @@ Bool VG_(is_watched)(PointKind kind, Addr addr, Int szB)
    vg_assert (kind == access_watchpoint
               || kind == read_watchpoint
               || kind == write_watchpoint);
-   dlog(1, "tid %u VG_(is_watched) %s addr %p szB %d\n",
+   dlog(5, "tid %u VG_(is_watched) %s addr %p szB %d\n",
         tid, VG_(ppPointKind) (kind), C2v(addr), szB);
 
    for (i = 0; i < n_elems; i++) {

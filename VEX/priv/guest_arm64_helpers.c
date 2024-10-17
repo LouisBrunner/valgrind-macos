@@ -1582,7 +1582,7 @@ void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
 ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data )
 {
    ULong res = ptr;
-#if defined(VGO_darwin)
+#if defined(VGP_arm64_darwin)
    if (is_data) {
       asm volatile (
         "xpacd %[res]\n"

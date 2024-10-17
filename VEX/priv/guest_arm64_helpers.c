@@ -1582,6 +1582,7 @@ void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
 ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data )
 {
    ULong res = ptr;
+#if defined(VGO_darwin)
    if (is_data) {
       asm volatile (
         "xpacd %[res]\n"
@@ -1593,9 +1594,7 @@ ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data )
         : [res] "+r" (res)
       );
    }
-   if (res != ptr) {
-    vex_printf("STRIP_PAC: 0x%llx -> 0x%llx (d: %d)\n", ptr, res, is_data);
-   }
+#endif
    return res;
 }
 

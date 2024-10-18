@@ -466,6 +466,23 @@ int valgrind_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
       return 0;
    } else {
       dlog(1, "error reading memory %p size %d\n", sourceaddr, len);
+#if defined(VGP_arm64_darwin)
+      const void *before = sourceaddr;
+      // this might be a tagged pointer, so we need to strip it for reading
+      asm volatile (
+        "xpacd %[ptr]\n"
+        : [ptr] "+r" (sourceaddr)
+      );
+      if (sourceaddr != before) {
+        dlog(3, "error, trying again after PAC/tag stripping\n");
+        int ret = valgrind_read_memory((CORE_ADDR)sourceaddr, myaddr, len);
+        if (ret == 0) {
+          return 0;
+        }
+        dlog(3, "failed to read after PAC/tag stripping, remove the top 16 bits\n");
+        return valgrind_read_memory(((CORE_ADDR)sourceaddr & 0x0000FFFFFFFFFFFF), myaddr, len);
+      }
+#endif
       return -1;
    }
 }

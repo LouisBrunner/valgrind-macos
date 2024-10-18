@@ -212,3 +212,14 @@
    ...
    fun:__os_log_simple_offset
 }
+
+## Happens with apps using wqthread
+{
+   OSX1400:wqthread_kevent_id
+   Memcheck:Param
+   kevent_id(data_out)
+   fun:kevent_id
+   ...
+   fun:_dispatch_kq_drain
+   ...
+}

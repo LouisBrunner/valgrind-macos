@@ -133,7 +133,13 @@ Bool ML_(check_macho_and_get_rw_loads)( const void* buf, SizeT szB, Int* rw_load
       for (unsigned int i = 0U; i < mh->ncmds; ++i) {
          if (lc->cmd == LC_SEGMENT_CMD) {
             const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
-            if (sc->initprot == 3) {
+            if (sc->initprot == 3
+#if DARWIN_VERS >= DARWIN_14_00
+// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 14 and later (not sure when that started)
+// so we ignore it otherwise some binaries don't get symbols
+                && VG_(strcmp)(sc->segname, "__DATA_CONST") != 0
+#endif
+            ) {
               ++*rw_loads;
             }
          }
@@ -354,18 +360,23 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
          continue;
       }
 
+      Bool inside_text = di->text_present && sym_addr >= di->text_avma && sym_addr < di->text_avma + di->text_size;
+      Bool inside_data = di->data_present && sym_addr >= di->data_avma && sym_addr < di->data_avma + di->data_size;
+      Bool inside_d_data = di->sdata_present && sym_addr >= di->sdata_avma && sym_addr < di->sdata_avma + di->sdata_size;
       if (di->trace_symtab) {
          HChar* str = ML_(cur_read_strdup)(
                          ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
                          "di.read_symtab.1");
-         VG_(printf)("nlist raw: avma %010lx  %s\n", sym_addr, str );
+         VG_(printf)("nlist raw: avma %010lx  %s in %s\n",
+                     sym_addr, str,
+                     inside_text ? "__TEXT" : inside_data ? "__DATA" : inside_d_data ? "__DATA_DIRTY" : "???"
+         );
          ML_(dinfo_free)(str);
       }
 
       /* If no part of the symbol falls within the mapped range,
          ignore it. */
-      if (sym_addr <= di->text_avma
-          || sym_addr >= di->text_avma+di->text_size) {
+      if (!inside_text && !inside_data && !inside_d_data) {
          continue;
       }
 
@@ -394,9 +405,9 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
       disym.sec_names  = NULL;
       disym.size       = // let canonicalize fix it
                          di->text_avma+di->text_size - sym_addr;
-      disym.isText     = True;
+      disym.isText     = inside_text;
       disym.isIFunc    = False;
-      disym.isGlobal   = False;
+      disym.isGlobal   = inside_data || inside_d_data;
       // Lots of user function names get prepended with an underscore.  Eg. the
       // function 'f' becomes the symbol '_f'.  And the "below main"
       // function is called "start".  So we skip the leading underscore, and
@@ -741,6 +752,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    Addr     kernel_slide = 0; // Used when from_memory is True
    UChar    uuid[16];
    Word     i;
+   struct SEGMENT_COMMAND     data_const = {.cmd = 0};
    struct SEGMENT_COMMAND     link_edit = {.cmd = 0};
    const DebugInfoMapping* rx_map = NULL;
    const DebugInfoMapping* rw_map = NULL;
@@ -908,6 +920,9 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->text_debug_svma = di->text_svma;
                di->text_debug_bias = di->text_bias;
             }
+            if (0 == VG_(strcmp)(seg.segname, "__DATA_CONST")) {
+               data_const = seg;
+            }
             /* Try for __DATA */
             if (have_rw && !di->data_present
                 && 0 == VG_(strcmp)(&seg.segname[0], "__DATA")
@@ -915,10 +930,41 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->data_present = True;
                di->data_svma = (Addr)seg.vmaddr;
                di->data_avma = rw_map->avma;
+#if defined(VGA_arm64)
+               // FIXME: the same mmap contains both __DATA_CONST, __DATA and __DATA_DIRTY
+               // this means that symbols in __DATA/__DATA_DIRTY are offset by the size of __DATA_CONST
+               // not sure when this started to be an issue so I am going to gate this under arm64 for now
+               if (data_const.cmd != 0) {
+                  di->data_avma += data_const.vmsize;
+               }
+#endif
                di->data_size = seg.vmsize;
                di->data_bias = di->data_avma - di->data_svma;
                di->data_debug_svma = di->data_svma;
                di->data_debug_bias = di->data_bias;
+            }
+            /* We store __DATA_DIRTY inside .sdata (because they correspond somewhat).
+               Some binaries have very important information there,
+               notably dyld and its dyld_all_image_infos. */
+            if (have_rw && !di->sdata_present
+                && 0 == VG_(strcmp)(&seg.segname[0], "__DATA_DIRTY")
+                /* && DDD:seg->fileoff == 0 */ && seg.filesize != 0) {
+               di->sdata_present = True;
+               di->sdata_svma = (Addr)seg.vmaddr;
+               // FIXME: assumes __DATA was found first (which in practice should be fine)
+               di->sdata_avma = rw_map->avma + di->data_size;
+#if defined(VGA_arm64)
+               // FIXME: the same mmap contains both __DATA_CONST, __DATA and __DATA_DIRTY
+               // this means that symbols in __DATA/__DATA_DIRTY are offset by the size of __DATA_CONST
+               // not sure when this started to be an issue so I am going to gate this under arm64 for now
+               if (data_const.cmd != 0) {
+                  di->sdata_avma += data_const.vmsize;
+               }
+#endif
+               di->sdata_size = seg.vmsize;
+               di->sdata_bias = di->sdata_avma - di->sdata_svma;
+               di->sdata_debug_svma = di->sdata_svma;
+               di->sdata_debug_bias = di->sdata_bias;
             }
             /* Try for __LINKEDIT */
             if (0 == VG_(strcmp)(&seg.segname[0], "__LINKEDIT")) {

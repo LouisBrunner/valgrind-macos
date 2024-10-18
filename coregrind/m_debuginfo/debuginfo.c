@@ -2792,6 +2792,8 @@ Bool VG_(lookup_symbol_SLOW)(DiEpoch ep,
       for (i = 0; i < si->symtab_used; i++) {
          const HChar* pri_name = si->symtab[i].pri_name;
          vg_assert(pri_name);
+         if (debug)
+           VG_(printf)("lookup_symbol_SLOW: considering symbol %#lx %s\n", si->symtab[i].avmas.main, pri_name);
          if (0==VG_(strcmp)(name, pri_name)
              && (require_pToc ? GET_TOCPTR_AVMA(si->symtab[i].avmas) : True)) {
             *avmas = si->symtab[i].avmas;
@@ -2801,6 +2803,8 @@ Bool VG_(lookup_symbol_SLOW)(DiEpoch ep,
          if (sec_names) {
             vg_assert(sec_names[0]);
             while (*sec_names) {
+               if (debug)
+                 VG_(printf)("lookup_symbol_SLOW: considering symbol %#lx %s\n", si->symtab[i].avmas.main, *sec_names);
                if (0==VG_(strcmp)(name, *sec_names)
                    && (require_pToc
                        ? GET_TOCPTR_AVMA(si->symtab[i].avmas) : True)) {

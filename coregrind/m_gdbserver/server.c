@@ -1175,7 +1175,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
 
 #if defined(LLDB_SUPPORT)
    if (strncmp("qGDBServerVersion", arg_own_buf, 17) == 0) {
-      VG_(sprintf) (arg_own_buf, "name:vgdb;version:%s", VERSION);
+      VG_(sprintf) (arg_own_buf, "name:vgdb;version:%s;", VERSION);
       return;
    }
 
@@ -1186,8 +1186,13 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       SizeT len = sizeof(cputype);
       VG_(sysctl)(cputypeID, 2, &cputype, &len, NULL, 0);
       VG_(sysctl)(subcputypeID, 2, &cpusubtype, &len, NULL, 0);
-      VG_(sprintf) (arg_own_buf, "cputype:%d;cpusubtype:%d;ostype:darwin;vendor:apple;endian:little;ptrsize:%d",
-                    cputype, cpusubtype, VG_WORDSIZE);
+#if defined(VGO_darwin)
+      VG_(sprintf) (arg_own_buf,
+                    // FIXME: ostype should be `ios` for iOS
+                    "cputype:%d;cpusubtype:%d;ostype:macosx;vendor:apple;endian:little;ptrsize:%d;os_version:%d.%d;",
+                    cputype, cpusubtype, VG_WORDSIZE, DARWIN_VERS / 10000, DARWIN_VERS % 10000 / 100
+      );
+#endif
       return;
    }
 
@@ -1205,7 +1210,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       char hex[2 * str_count + 1];
       hexify(hex, name, str_count);
       if (addr >= start && addr < start + size) {
-        VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:rx;name:%s",
+        VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:rx;name:%s;",
                       start, size, hex);
         return;
       }
@@ -1217,7 +1222,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx", addr, seg->end - addr);
       return;
     }
-    Int amount = VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:%s%s%s",
+    Int amount = VG_(sprintf) (arg_own_buf, "start:%lx;size:%lx;permissions:%s%s%s;",
                               seg->start, seg->end - seg->start,
                               seg->hasR ? "r" : "",
                               seg->hasW ? "w" : "",
@@ -1227,22 +1232,21 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       SizeT str_count = VG_(strlen)(name);
       char hex[2 * str_count + 1];
       hexify(hex, name, str_count);
-      VG_(sprintf) (arg_own_buf + amount, ";name:%s", hex);
+      VG_(sprintf) (arg_own_buf + amount, "name:%s;", hex);
     }
     return;
   }
 
+#if defined(VGO_darwin)
   if (strncmp("qShlibInfoAddr", arg_own_buf, 14) == 0) {
-    const NSegment* next = VG_(am_find_nsegment)(0);
-    while (next) {
-      const HChar* name = VG_(am_get_filename)(next);
-      if (name && VG_(strcmp)(name, "/usr/lib/dyld") == 0) {
-        VG_(sprintf) (arg_own_buf, "%lx", next->start);
-        return;
-      }
-      next = VG_(am_next_nsegment)(next, True);
+    SymAVMAs avmas;
+    Bool found = VG_(lookup_symbol_SLOW)(VG_(current_DiEpoch)(), "dyld", "dyld_all_image_infos", &avmas);
+    if (found) {
+      VG_(sprintf) (arg_own_buf, "%lx", avmas.main);
+      return;
     }
   }
+#endif
 
   // qThreadStopInfo: would be nice but no idea on the response format
   // if (strncmp("qThreadStopInfo", arg_own_buf, 15) == 0) {
@@ -1272,14 +1276,76 @@ void handle_v_requests (char *arg_own_buf, char *status, int *zignal)
 }
 
 #if defined(LLDB_SUPPORT)
+#if defined(VGO_darwin)
+static
+int jGLDLI_add_image_info (char *arg_own_buf, UWord load_address, UWord mod_date, const HChar *pathname)
+{
+  struct MACH_HEADER* mh = (struct MACH_HEADER*) load_address;
+  HChar uuid_str[37] = {0};
+  Addr commands_start = 0;
+  Int counter = 0;
+
+  commands_start = load_address + sizeof(struct MACH_HEADER);
+  for (Int j = 0; j < mh->ncmds; j += 1) {
+    struct load_command* lc = (struct load_command*) commands_start;
+    if (lc->cmd == LC_UUID) {
+      struct uuid_command* uc = (struct uuid_command*)commands_start;
+      VG_(sprintf)(uuid_str, "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
+                    uc->uuid[0], uc->uuid[1], uc->uuid[2], uc->uuid[3],
+                    uc->uuid[4], uc->uuid[5], uc->uuid[6], uc->uuid[7],
+                    uc->uuid[8], uc->uuid[9], uc->uuid[10], uc->uuid[11],
+                    uc->uuid[12], uc->uuid[13], uc->uuid[14], uc->uuid[15]);
+      break;
+    }
+    commands_start += lc->cmdsize;
+  }
+
+  counter += VG_(sprintf)(arg_own_buf + counter, "{\"load_address\":%ld,\"mod_date\":%lu,\"pathname\":\"%s\",\"uuid\":\"%s\",\"mach_header\":{\"magic\":%u,\"cputype\":%u,\"cpusubtype\":%u,\"filetype\":%u}],\"segments\":[",
+                          load_address, mod_date, pathname, uuid_str, mh->magic, mh->cputype, mh->cpusubtype, mh->filetype);
+
+  commands_start = load_address + sizeof(struct MACH_HEADER);
+  Bool first_segment = True;
+  for (Int j = 0; j < mh->ncmds; j += 1) {
+    struct load_command* lc = (struct load_command*) commands_start;
+    if (lc->cmd == LC_SEGMENT_CMD) {
+      if (!first_segment) {
+        counter += VG_(sprintf)(arg_own_buf + counter, ",");
+      }
+      first_segment = False;
+      struct SEGMENT_COMMAND* sc = (struct SEGMENT_COMMAND*)commands_start;
+      counter += VG_(sprintf)(arg_own_buf + counter, "{\"name\":\"%s\",\"vmaddr\":%llu,\"vmsize\":%llu,\"fileoff\":%llu,\"filesize\":%llu,\"maxprot\":%u}]",
+                              sc->segname, sc->vmaddr, sc->vmsize, sc->fileoff, sc->filesize, sc->maxprot);
+    }
+    commands_start += lc->cmdsize;
+  }
+
+  counter += VG_(sprintf)(arg_own_buf + counter, "]}]");
+
+  return counter;
+}
+#endif
+
 static
 void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
 {
+#if defined(VGO_darwin)
   if (strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
     HChar *p = arg_own_buf + 32;
     if (*p == 0) {
       // no argument
       write_ok (arg_own_buf);
+      return;
+    } else if (VG_(strcmp)(p, "{\"fetch_all_solibs\":true}]") == 0) {
+      const DebugInfo* di = VG_(next_DebugInfo)(0);
+      Int counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
+      for (Int i = 0; di; i += 1) {
+        if (i > 0) {
+          counter += VG_(sprintf)(arg_own_buf + counter, ",");
+        }
+        counter += jGLDLI_add_image_info(arg_own_buf + counter, VG_(DebugInfo_get_text_avma)(di), 0, VG_(DebugInfo_get_filename)(di));
+        di = VG_(next_DebugInfo)(di);
+      }
+      VG_(sprintf)(arg_own_buf + counter, "]}]");
       return;
     } else if (*p == '{') {
       // assumption: we are getting {"image_count":1234,"image_list_address":4567}
@@ -1305,7 +1371,6 @@ void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
 
       if (image_count > 0 && image_list_address > 0) {
         UWord* data = (UWord*)image_list_address;
-
         Int counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
         for (Int i = 0; i < image_count; i += 1) {
           if (i > 0) {
@@ -1315,49 +1380,15 @@ void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
           Addr pathname = data[i * 3 + 1];
           UWord mod_date = data[i * 3 + 2];
           HChar pathname_buf[PATH_MAX];
-          struct MACH_HEADER* mh = (struct MACH_HEADER*) load_address;
-          HChar uuid_str[37] = {0};
-          Addr commands_start = 0;
           VG_(strncpy)(pathname_buf, (HChar*)pathname, PATH_MAX);
-          commands_start = load_address + sizeof(struct MACH_HEADER);
-          for (Int j = 0; j < mh->ncmds; j += 1) {
-            struct load_command* lc = (struct load_command*) commands_start;
-            if (lc->cmd == LC_UUID) {
-              struct uuid_command* uc = (struct uuid_command*)commands_start;
-              VG_(sprintf)(uuid_str, "%x%x%x%x-%x%x-%x%x-%x%x-%x%x%x%x%x%x",
-                           uc->uuid[0], uc->uuid[1], uc->uuid[2], uc->uuid[3],
-                           uc->uuid[4], uc->uuid[5], uc->uuid[6], uc->uuid[7],
-                           uc->uuid[8], uc->uuid[9], uc->uuid[10], uc->uuid[11],
-                           uc->uuid[12], uc->uuid[13], uc->uuid[14], uc->uuid[15]);
-              break;
-            }
-            commands_start += lc->cmdsize;
-          }
-          counter += VG_(sprintf)(arg_own_buf + counter, "{\"load_address\":%ld,\"mod_date\":%lu,\"pathname\":\"%s\",\"uuid\":\"%s\",\"mach_header\":{\"magic\":%u,\"cputype\":%u,\"cpusubtype\":%u,\"filetype\":%u}},\"segments\":[",
-                                  load_address, mod_date, pathname_buf, uuid_str, mh->magic, mh->cputype, mh->cpusubtype, mh->filetype);
-
-          commands_start = load_address + sizeof(struct MACH_HEADER);
-          Bool first_segment = True;
-          for (Int j = 0; j < mh->ncmds; j += 1) {
-            struct load_command* lc = (struct load_command*) commands_start;
-            if (lc->cmd == LC_SEGMENT_CMD) {
-              if (!first_segment) {
-                counter += VG_(sprintf)(arg_own_buf + counter, ",");
-              }
-              first_segment = False;
-              struct SEGMENT_COMMAND* sc = (struct SEGMENT_COMMAND*)commands_start;
-              counter += VG_(sprintf)(arg_own_buf + counter, "{\"name\":\"%s\",\"vmaddr\":%llu,\"vmsize\":%llu,\"fileoff\":%llu,\"filesize\":%llu,\"maxprot\":%u}}",
-                                      sc->segname, sc->vmaddr, sc->vmsize, sc->fileoff, sc->filesize, sc->maxprot);
-            }
-            commands_start += lc->cmdsize;
-          }
-          counter += VG_(sprintf)(arg_own_buf + counter, "]}}");
+          counter += jGLDLI_add_image_info(arg_own_buf + counter, load_address, mod_date, pathname_buf);
         }
-        counter += VG_(sprintf)(arg_own_buf + counter, "]}}");
+        counter += VG_(sprintf)(arg_own_buf + counter, "]}]");
         return;
       }
     }
   }
+#endif
 
   /* Otherwise we didn't know what packet it was.  Say we didn't
       understand it.  */

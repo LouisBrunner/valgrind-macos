@@ -71,7 +71,8 @@ VG_(disp_run_translations):
   stp  x25, x26, [sp, #-16]!
   stp  x23, x24, [sp, #-16]!
   stp  x21, x22, [sp, #-16]!
-  stp   x0, x20, [sp, #-16]!
+  stp  x19, x20, [sp, #-16]!
+  stp  x0,  xzr, [sp, #-16]!
 
   /* set FPSCR to vex-required default value */
   // FIXME
@@ -117,7 +118,8 @@ postamble:
 remove_frame:
   /* Restore int regs, including importantly x0 (two_words),
      but not x1 */
-  ldp   x0, x20, [sp], #16
+  ldp  x0,  xzr, [sp], #16
+  ldp  x19, x20, [sp], #16
   ldp  x21, x22, [sp], #16
   ldp  x23, x24, [sp], #16
   ldp  x25, x26, [sp], #16

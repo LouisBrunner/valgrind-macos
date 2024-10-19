@@ -272,11 +272,12 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
         if (sr_isError(res)) {
           check_mmap_float(res, filesize, "load_segment1");
         } else {
-          out_info->text_slide = sr_Res(res) - addr;
+          Addr new_addr = sr_Res(res);
+          out_info->text_slide = new_addr - addr;
           slided_addr += out_info->text_slide;
           VG_(debugLog)(2, "ume",
             "mmap float (file) (%#lx, %lu) succeeded with slide: %#lx\n",
-            sr_Res(res), filesize, out_info->text_slide
+            new_addr, filesize, out_info->text_slide
           );
 
           if (saved_prot != prot) {
@@ -284,10 +285,11 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
               "restoring protection from %x to %x\n",
               prot, saved_prot
             );
-            res = VG_(do_syscall3)(__NR_mprotect, (UWord)sr_Res(res), filesize, saved_prot );
+            res = VG_(do_syscall3)(__NR_mprotect, (UWord)new_addr, filesize, saved_prot );
             if (sr_isError(res)) {
               check_mmap_float(res, filesize, "load_segment1-mprotect");
             }
+            VG_(am_notify_mprotect)(new_addr, filesize, saved_prot);
           }
         }
       }

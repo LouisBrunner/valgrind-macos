@@ -4088,6 +4088,7 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
       VG_(debugLog)(0, "aspacem", "unknown vm tag: %d\n", tag);
       return False;
   }
+  return True;
 }
 
 static void fill_segment(NSegment* seg) {

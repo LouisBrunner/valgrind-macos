@@ -292,6 +292,12 @@ extern VG_MINIMAL_JMP_BUF(toplevel);
 extern Bool noack_mode;
 int putpkt (char *buf);
 int putpkt_binary (char *buf, int len);
+enum streampkt_when {
+  STREAMPKT_WHEN_START = 0,
+  STREAMPKT_WHEN_INTERMEDIATE = 1,
+  STREAMPKT_WHEN_END = 2
+};
+int streampkt_binary (char *buf, int cnt, unsigned char* csum, enum streampkt_when when);
 int getpkt (char *buf);
 void remote_open (const HChar *name);
 void remote_close (void);

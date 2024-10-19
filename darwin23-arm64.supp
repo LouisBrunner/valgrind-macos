@@ -200,6 +200,20 @@
    fun:-[CFPrefsSource copyValueForKey:]
    ...
 }
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_6
+   Memcheck:Cond
+   ...
+   fun:_libxpc_initializer
+   ...
+}
+{
+   OSX1400:xpc_pipe_routine_uninitialized_value8_5
+   Memcheck:Value8
+   ...
+   fun:_libxpc_initializer
+   ...
+}
 
 # Unclear
 

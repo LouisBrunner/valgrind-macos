@@ -1326,29 +1326,92 @@ int jGLDLI_add_image_info (char *arg_own_buf, UWord load_address, UWord mod_date
 #endif
 
 static
-void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
+void handle_j_requests (char *arg_own_buf, Bool* skip_reply)
 {
 #if defined(VGO_darwin)
-  if (strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
+  // We limit to vgdb=full because it can be quite slow to get all the images
+  if (VG_(clo_vgdb) == Vg_VgdbFull && strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
     HChar *p = arg_own_buf + 32;
+    unsigned char csum = 0;
+    Int counter = 0;
+    Int i;
+
     if (*p == 0) {
       // no argument
       write_ok (arg_own_buf);
       return;
     } else if (VG_(strcmp)(p, "{\"fetch_all_solibs\":true}]") == 0) {
+      // we need to send all currently loaded images, which might be bigger than PBUFSIZ
+      // so we stream it in chunks (1 image per chunk)
       const DebugInfo* di = VG_(next_DebugInfo)(0);
-      Int counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
-      for (Int i = 0; di; i += 1) {
+      counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
+      for (i = 0; di;) {
         if (i > 0) {
-          counter += VG_(sprintf)(arg_own_buf + counter, ",");
+          counter = VG_(sprintf)(arg_own_buf, ",");
         }
         counter += jGLDLI_add_image_info(arg_own_buf + counter, VG_(DebugInfo_get_text_avma)(di), 0, VG_(DebugInfo_get_filename)(di));
+        streampkt_binary(arg_own_buf, counter, &csum, i == 0 ? STREAMPKT_WHEN_START : STREAMPKT_WHEN_INTERMEDIATE);
+        i += 1;
         di = VG_(next_DebugInfo)(di);
       }
-      VG_(sprintf)(arg_own_buf + counter, "]}]");
+      if (i == 0) {
+        dlog(3, "no images found\n");
+        VG_(sprintf)(arg_own_buf, "{\"images\":[]}]");
+      } else {
+        streampkt_binary(arg_own_buf, VG_(sprintf)(arg_own_buf, "]}]"), &csum, STREAMPKT_WHEN_END);
+        *skip_reply = True;
+      }
       return;
-    } else if (*p == '{') {
+    } else if (VG_(strncmp)(p, "{\"solib_addresses\":[", 20) == 0) {
+      // assumption: we are getting {"solib_addresses":[1234,5678]}
+      // we might get a lot of images at once (easily in the 100s) which might be bigger than PBUFSIZ
+      // so we stream it in chunks (1 image per chunk)
+      HChar *solib_addresses_str = VG_(strdup)("vgdb.jGLDLI.1", strchr(p, '[') + 1);
+      void* temp_buffer = solib_addresses_str;
+      Bool done = False;
+      counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
+      for (i = 0; !done;) {
+        HChar *solib_addresses_str_end = strchr(solib_addresses_str, ',');
+        if (solib_addresses_str_end == 0) {
+          solib_addresses_str_end = strchr(solib_addresses_str, ']');
+          done = True;
+        }
+        if (solib_addresses_str_end == 0) {
+          break; // should not happen
+        }
+        solib_addresses_str_end[0] = 0;
+        Addr load_address = strtoul(solib_addresses_str, NULL, 10);
+        const DebugInfo *di = VG_(find_DebugInfo)(VG_(current_DiEpoch)(), load_address);
+        const HChar* name;
+        if (di) {
+          name = VG_(DebugInfo_get_filename)(di);
+        } else {
+          dlog(3, "no DebugInfo found for load_address %lx, falling back to NSegment\n", load_address);
+          const NSegment* seg = VG_(am_find_nsegment)(load_address);
+          name = VG_(am_get_filename)(seg);
+        }
+        if (name) {
+          if (i > 0) {
+            counter = VG_(sprintf)(arg_own_buf, ",");
+          }
+          counter += jGLDLI_add_image_info(arg_own_buf + counter, load_address, 0, name);
+          streampkt_binary(arg_own_buf, counter, &csum, i == 0 ? STREAMPKT_WHEN_START : STREAMPKT_WHEN_INTERMEDIATE);
+          i += 1;
+        }
+        solib_addresses_str = solib_addresses_str_end + 1;
+      }
+      VG_(free)(temp_buffer);
+      if (i == 0) {
+        dlog(3, "no images found\n");
+        VG_(sprintf)(arg_own_buf, "{\"images\":[]}]");
+      } else {
+        streampkt_binary(arg_own_buf, VG_(sprintf)(arg_own_buf, "]}]"), &csum, STREAMPKT_WHEN_END);
+        *skip_reply = True;
+      }
+      return;
+    } else if (VG_(strncmp)(p, "{\"image_count\":" , 14) == 0) {
       // assumption: we are getting {"image_count":1234,"image_list_address":4567}
+      // we do not know how many images we will get, so we stream it in chunks (1 image per chunk)
       HChar *image_count_str = strchr(p, ':');
       HChar *image_list_address_str = 0;
       Int image_count = 0;
@@ -1369,21 +1432,43 @@ void handle_j_requests (char *arg_own_buf, char *status, int *zignal)
         }
       }
 
-      if (image_count > 0 && image_list_address > 0) {
+      if (image_count > 0 && image_list_address > 0
+          && (VG_(am_is_valid_for_client) (image_list_address, image_count*3*sizeof(UWord), VKI_PROT_READ)
+              || VG_(am_is_valid_for_valgrind) (image_list_address, image_count*3*sizeof(UWord), VKI_PROT_READ))) {
         UWord* data = (UWord*)image_list_address;
-        Int counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
-        for (Int i = 0; i < image_count; i += 1) {
-          if (i > 0) {
-            counter += VG_(sprintf)(arg_own_buf + counter, ",");
-          }
+        counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
+        for (i = 0; i < image_count;) {
           UWord load_address = data[i * 3];
           Addr pathname = data[i * 3 + 1];
           UWord mod_date = data[i * 3 + 2];
           HChar pathname_buf[PATH_MAX];
+
+          if (!VG_(am_is_valid_for_client) (pathname, PATH_MAX, VKI_PROT_READ)
+              || !VG_(am_is_valid_for_valgrind) (pathname, PATH_MAX, VKI_PROT_READ)) {
+            dlog(3, "pathname %#lx is not valid\n", pathname);
+            continue;
+          }
+          if (!VG_(am_is_valid_for_client) (load_address, sizeof(struct MACH_HEADER), VKI_PROT_READ)
+              || !VG_(am_is_valid_for_valgrind) (load_address, sizeof(struct MACH_HEADER), VKI_PROT_READ)) {
+            dlog(3, "load_address %#lx is not valid\n", load_address);
+            continue;
+          }
+
           VG_(strncpy)(pathname_buf, (HChar*)pathname, PATH_MAX);
+          if (i > 0) {
+            counter = VG_(sprintf)(arg_own_buf, ",");
+          }
           counter += jGLDLI_add_image_info(arg_own_buf + counter, load_address, mod_date, pathname_buf);
+          streampkt_binary(arg_own_buf, counter, &csum, i == 0 ? STREAMPKT_WHEN_START : STREAMPKT_WHEN_INTERMEDIATE);
+          i += 1;
         }
-        counter += VG_(sprintf)(arg_own_buf + counter, "]}]");
+        if (i == 0) {
+          dlog(3, "no images found\n");
+          VG_(sprintf)(arg_own_buf, "{\"images\":[]}]");
+        } else {
+          streampkt_binary(arg_own_buf, VG_(sprintf)(arg_own_buf, "]}]"), &csum, STREAMPKT_WHEN_END);
+          *skip_reply = True;
+        }
         return;
       }
     }
@@ -1528,6 +1613,7 @@ void server_main (void)
       unsigned char sig;
       int packet_len;
       int new_packet_len = -1;
+      Bool skip_reply = False;
 
       if (resume_reply_packet_needed) {
          /* Send the resume reply to reply to last GDB resume
@@ -1785,7 +1871,7 @@ void server_main (void)
 #if defined(LLDB_SUPPORT)
       case 'j':
          /* LLDB request.  */
-         handle_j_requests (own_buf, &status, &zignal);
+         handle_j_requests (own_buf, &skip_reply);
          break;
       case '_':
          /* LLDB request.  */
@@ -1800,10 +1886,14 @@ void server_main (void)
          break;
       }
 
-      if (new_packet_len != -1)
-         putpkt_binary (own_buf, new_packet_len);
-      else
-         putpkt (own_buf);
+      // This means we already replied to the request,
+      // this happens when the reply is bigger than own_buf and is streamed in chunks (LLDB-only).
+      if (!skip_reply) {
+        if (new_packet_len != -1)
+          putpkt_binary (own_buf, new_packet_len);
+        else
+          putpkt (own_buf);
+      }
 
       if (status == 'W')
          VG_(umsg) ("\nChild exited with status %d\n", zignal);

@@ -2774,12 +2774,6 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
    if (!ok)
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
 
-// On Darwin, for anonymous maps you can pass in a tag which is used by
-// programs like vmmap for statistical purposes.
-#ifndef VM_TAG_VALGRIND
-#  define VM_TAG_VALGRIND 0
-#endif
-
    /* We have been advised that the mapping is allowable at the
       specified address.  So hand it off to the kernel, and propagate
       any resulting failure immediately. */

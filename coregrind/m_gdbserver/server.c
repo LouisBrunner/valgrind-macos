@@ -1329,8 +1329,7 @@ static
 void handle_j_requests (char *arg_own_buf, Bool* skip_reply)
 {
 #if defined(VGO_darwin)
-  // We limit to vgdb=full because it can be quite slow to get all the images
-  if (VG_(clo_vgdb) == Vg_VgdbFull && strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
+  if (strncmp("jGetLoadedDynamicLibrariesInfos:", arg_own_buf, 32) == 0) {
     HChar *p = arg_own_buf + 32;
     unsigned char csum = 0;
     Int counter = 0;
@@ -1362,7 +1361,9 @@ void handle_j_requests (char *arg_own_buf, Bool* skip_reply)
         *skip_reply = True;
       }
       return;
-    } else if (VG_(strncmp)(p, "{\"solib_addresses\":[", 20) == 0) {
+
+    // We limit to vgdb=full because lldb takes forever to load the images
+    } else if (VG_(strncmp)(p, "{\"solib_addresses\":[", 20) == 0 && VG_(clo_vgdb) == Vg_VgdbFull) {
       // assumption: we are getting {"solib_addresses":[1234,5678]}
       // we might get a lot of images at once (easily in the 100s) which might be bigger than PBUFSIZ
       // so we stream it in chunks (1 image per chunk)

@@ -2451,10 +2451,12 @@ void VG_(add_to_unredir_transtab)( const VexGuestExtents* vge,
    if (i > unredir_tt_highwater)
       unredir_tt_highwater = i;
 
+   ALLOW_RWX_WRITE((Addr) unredir_tc, N_UNREDIR_TT * UNREDIR_SZB);
    dstP = (HChar*)&unredir_tc[unredir_tc_used];
    srcP = (HChar*)code;
    for (j = 0; j < code_len; j++)
       dstP[j] = srcP[j];
+   ALLOW_RWX_EXECUTE((Addr) unredir_tc, N_UNREDIR_TT * UNREDIR_SZB);
 
    VG_(invalidate_icache)( dstP, code_len );
 

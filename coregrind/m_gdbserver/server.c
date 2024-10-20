@@ -665,6 +665,13 @@ static
 void handle_set (char *arg_own_buf, int *new_packet_len_p)
 {
    if (strcmp ("QStartNoAckMode", arg_own_buf) == 0) {
+#if defined(LLDB_SUPPORT)
+      // When reconnecting after QStartNoAckMode was already enabled,
+      // we need to send an ack to LLDB.
+      if (noack_mode) {
+        write_ack();
+      }
+#endif
       noack_mode = True;
       write_ok (arg_own_buf);
       return;
@@ -1345,12 +1352,15 @@ void handle_j_requests (char *arg_own_buf, Bool* skip_reply)
       const DebugInfo* di = VG_(next_DebugInfo)(0);
       counter = VG_(sprintf)(arg_own_buf, "{\"images\":[");
       for (i = 0; di;) {
-        if (i > 0) {
-          counter = VG_(sprintf)(arg_own_buf, ",");
+        Addr addr = VG_(DebugInfo_get_text_avma)(di);
+        if (addr > 0) {
+          if (i > 0) {
+            counter = VG_(sprintf)(arg_own_buf, ",");
+          }
+          counter += jGLDLI_add_image_info(arg_own_buf + counter, addr, 0, VG_(DebugInfo_get_filename)(di));
+          streampkt_binary(arg_own_buf, counter, &csum, i == 0 ? STREAMPKT_WHEN_START : STREAMPKT_WHEN_INTERMEDIATE);
+          i += 1;
         }
-        counter += jGLDLI_add_image_info(arg_own_buf + counter, VG_(DebugInfo_get_text_avma)(di), 0, VG_(DebugInfo_get_filename)(di));
-        streampkt_binary(arg_own_buf, counter, &csum, i == 0 ? STREAMPKT_WHEN_START : STREAMPKT_WHEN_INTERMEDIATE);
-        i += 1;
         di = VG_(next_DebugInfo)(di);
       }
       if (i == 0) {
@@ -1361,9 +1371,7 @@ void handle_j_requests (char *arg_own_buf, Bool* skip_reply)
         *skip_reply = True;
       }
       return;
-
-    // We limit to vgdb=full because lldb takes forever to load the images
-    } else if (VG_(strncmp)(p, "{\"solib_addresses\":[", 20) == 0 && VG_(clo_vgdb) == Vg_VgdbFull) {
+    } else if (VG_(strncmp)(p, "{\"solib_addresses\":[", 20) == 0) {
       // assumption: we are getting {"solib_addresses":[1234,5678]}
       // we might get a lot of images at once (easily in the 100s) which might be bigger than PBUFSIZ
       // so we stream it in chunks (1 image per chunk)

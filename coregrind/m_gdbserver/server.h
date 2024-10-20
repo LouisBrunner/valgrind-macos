@@ -303,6 +303,7 @@ void remote_open (const HChar *name);
 void remote_close (void);
 
 void sync_gdb_connection (void);
+void write_ack (void);
 void write_ok (char *buf);
 void write_enn (char *buf);
 void convert_ascii_to_int (const char *from, unsigned char *to, int n);

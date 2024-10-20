@@ -43,6 +43,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -50,6 +51,13 @@
 #include <sys/wait.h>
 
 #include "m_gdbserver/remote-utils-shared.h"
+
+#if defined(VGO_darwin)
+// vgdb keeps blocking at the wrong time (e.g. when V wants to write and poll is not exiting)
+// I have seen this happen on macOS a lot and it makes using a debugger close to impossible.
+// So we do a bunch of workarounds to force a smoother experience.
+#define LLDB_SUPPORT 1
+#endif
 
 /* vgdb has three usages:
    1. relay application between gdb and the gdbserver embedded in valgrind.
@@ -420,6 +428,15 @@ size_t read_buf(int fd, char* buf, const char* desc)
       again.  */
    do {
       nrread = read(fd, buf, PBUFSIZ);
+#if defined(LLDB_SUPPORT)
+      if (nrread == -1 && errno == EAGAIN) {
+        // "from pid" is non blocking and we try to poll it more aggressively to bypass the poll blocking issue.
+        if (strcmp(desc, "from pid") == 0) {
+          nrread = 0;
+          break;
+        }
+      }
+#endif
    } while (nrread == -1 && (errno == EINTR || errno == EAGAIN));
    if (nrread < 0) {
       ERROR(errno, "error reading %s\n", desc);
@@ -525,9 +542,14 @@ Bool read_from_pid_write_to_gdb(int from_pid)
 
    nrread = read_buf(from_pid, buf, "from pid");
    if (nrread <= 0) {
-      if (nrread == 0)
+      if (nrread == 0) {
+#if defined(LLDB_SUPPORT)
+         DEBUG(2, "polled 0 bytes from pid => all good\n");
+         return True;
+#else
          DEBUG(1, "read 0 bytes from pid => assume exit\n");
-      else
+#endif
+      } else
          DEBUG(1, "error reading bytes from pid\n");
       close(from_pid);
       shutting_down = True;
@@ -565,7 +587,14 @@ void wait_for_gdb_connect(int in_port)
 
     addr.sin_family = AF_INET;
     addr.sin_port = htons((unsigned short int)in_port);
+#if defined(VGO_darwin)
+    // using 0.0.0.0 on macOS creates annoying firewall popups everytime vgdb is rebuilt
+    // this is pretty annoying so restrict to localhost
+    // (which seems fair enough from a security perspective too).
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+#else
     addr.sin_addr.s_addr = INADDR_ANY;
+#endif
 
     if (-1 == bind(listen_gdb, (struct sockaddr *)&addr, sizeof(addr))) {
       XERROR(errno, "bind failed\n");
@@ -1690,6 +1719,9 @@ void do_multi_mode(int check_trials, int in_port)
    close (from_gdb);
 }
 
+#define TIMEOUT_ONE_SECOND 1000
+#define TIMEOUT_100_MS 100
+
 /* Relay data between gdb and Valgrind gdbserver, till EOF or an error is
    encountered. q_buf is the qSupported packet received from gdb.  */
 static
@@ -1746,9 +1778,28 @@ void gdb_relay(int pid, int send_noack_mode, char *q_buf)
       ret = poll(pollfds,
                  NumConnectionKind,
                  (shutting_down ?
-                  1 /* one second */
-                  : -1 /* infinite */));
+                  TIMEOUT_ONE_SECOND
+#if defined(LLDB_SUPPORT)
+// poll keeps blocking when V writes so we always use a timeout
+                  : TIMEOUT_100_MS
+#else
+                  : -1 /* infinite */
+#endif
+                  )
+      );
       DEBUG(2, "poll ret %d errno %d\n", ret, errno);
+
+#if defined(LLDB_SUPPORT)
+      // always poll V to avoid blocking it
+      // this is the same logic as if we actually get a pollin event
+      if (!waiting_for_noack_mode && !waiting_for_qsupported)
+        if (!read_from_pid_write_to_gdb(from_pid))
+           shutting_down = True;
+
+      // timed out but not exiting? go back to polling
+      if (ret == 0 && !shutting_down)
+         continue;
+#endif
 
       /* check for unexpected error */
       if (ret <= 0 && errno != EINTR) {

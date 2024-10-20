@@ -1118,15 +1118,20 @@ int getpkt (char *buf)
       dlog(3, "getpkt (\"%s\");  [sending ack] \n", buf);
 
    if (!noack_mode) {
+      write_ack();
+   }
+
+   return bp - buf;
+}
+
+void write_ack (void)
+{
       if (!ensure_write_remote_desc()) {
          dlog(1, "getpkt(write ack) no write_remote_desc");
       }
       VG_(write) (write_remote_desc, "+", 1);
       dlog(3, "[sent ack]\n");
    }
-
-   return bp - buf;
-}
 
 void write_ok (char *buf)
 {

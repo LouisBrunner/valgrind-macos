@@ -1744,6 +1744,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Mul64Fx2:
       case Iop_Min64Fx2:
       case Iop_Max64Fx2:
+      case Iop_MinN64Fx2:
+      case Iop_MaxN64Fx2:
       case Iop_Div64Fx2:
       case Iop_CmpLT64Fx2:
       case Iop_CmpLE64Fx2:
@@ -1768,6 +1770,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_Mul32Fx4:
       case Iop_Min32Fx4:
       case Iop_Max32Fx4:
+      case Iop_MinN32Fx4:
+      case Iop_MaxN32Fx4:
       case Iop_Div32Fx4:
       case Iop_CmpLT32Fx4:
       case Iop_CmpLE32Fx4:

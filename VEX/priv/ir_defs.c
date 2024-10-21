@@ -678,22 +678,26 @@ void ppIROp ( IROp op )
 
       case Iop_Max32Fx8:  vex_printf("Max32Fx8"); return;
       case Iop_Max32Fx4:  vex_printf("Max32Fx4"); return;
+      case Iop_MaxN32Fx4:  vex_printf("MaxN32Fx4"); return;
       case Iop_Max32Fx2:  vex_printf("Max32Fx2"); return;
       case Iop_PwMax32Fx4:  vex_printf("PwMax32Fx4"); return;
       case Iop_PwMax32Fx2:  vex_printf("PwMax32Fx2"); return;
       case Iop_Max32F0x4: vex_printf("Max32F0x4"); return;
       case Iop_Max64Fx4:  vex_printf("Max64Fx4"); return;
       case Iop_Max64Fx2:  vex_printf("Max64Fx2"); return;
+      case Iop_MaxN64Fx2:  vex_printf("Max64NFx2"); return;
       case Iop_Max64F0x2: vex_printf("Max64F0x2"); return;
 
       case Iop_Min32Fx8:  vex_printf("Min32Fx8"); return;
       case Iop_Min32Fx4:  vex_printf("Min32Fx4"); return;
+      case Iop_MinN32Fx4:  vex_printf("MinN32Fx4"); return;
       case Iop_Min32Fx2:  vex_printf("Min32Fx2"); return;
       case Iop_PwMin32Fx4:  vex_printf("PwMin32Fx4"); return;
       case Iop_PwMin32Fx2:  vex_printf("PwMin32Fx2"); return;
       case Iop_Min32F0x4: vex_printf("Min32F0x4"); return;
       case Iop_Min64Fx4:  vex_printf("Min64Fx4"); return;
       case Iop_Min64Fx2:  vex_printf("Min64Fx2"); return;
+      case Iop_MinN64Fx2:  vex_printf("MinN64Fx2"); return;
       case Iop_Min64F0x2: vex_printf("Min64F0x2"); return;
 
       case Iop_Mul32Fx4:  vex_printf("Mul32Fx4"); return;
@@ -1601,7 +1605,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_ReinterpD64asI64:
    case Iop_Add16Fx8: case Iop_Sub16Fx8:
    case Iop_Add32Fx4: case Iop_Sub32Fx4: case Iop_Mul32Fx4: case Iop_Div32Fx4:
-   case Iop_Max32Fx4: case Iop_Min32Fx4:
+   case Iop_Max32Fx4: case Iop_Min32Fx4: case Iop_MaxN32Fx4: case Iop_MinN32Fx4:
    case Iop_Add32Fx2: case Iop_Sub32Fx2:
    case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
    case Iop_CmpLE32Fx4: case Iop_CmpUN32Fx4:
@@ -1627,7 +1631,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_CmpUN32F0x4:
    case Iop_RecipEst32F0x4: case Iop_Sqrt32F0x4: case Iop_RSqrtEst32F0x4:
    case Iop_Add64Fx2: case Iop_Sub64Fx2: case Iop_Mul64Fx2: case Iop_Div64Fx2:
-   case Iop_Max64Fx2: case Iop_Min64Fx2:
+   case Iop_Max64Fx2: case Iop_Min64Fx2: case Iop_MaxN64Fx2: case Iop_MinN64Fx2:
    case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2: case Iop_CmpLE64Fx2:
    case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8: case Iop_CmpEQ16Fx8:
    case Iop_CmpUN64Fx2: case Iop_Abs64Fx2: case Iop_Neg64Fx2:
@@ -3605,11 +3609,11 @@ void typeOfPrimop ( IROp op,
       case Iop_Add64F0x2:
       case Iop_Div32F0x4:
       case Iop_Div64F0x2:
-      case Iop_Max32Fx4: case Iop_Max32F0x4:
+      case Iop_Max32Fx4: case Iop_Max32F0x4: case Iop_MaxN32Fx4:
       case Iop_PwMax32Fx4: case Iop_PwMin32Fx4:
-      case Iop_Max64Fx2: case Iop_Max64F0x2:
-      case Iop_Min32Fx4: case Iop_Min32F0x4:
-      case Iop_Min64Fx2: case Iop_Min64F0x2:
+      case Iop_Max64Fx2: case Iop_Max64F0x2: case Iop_MaxN64Fx2:
+      case Iop_Min32Fx4: case Iop_Min32F0x4: case Iop_MinN32Fx4:
+      case Iop_Min64Fx2: case Iop_Min64F0x2: case Iop_MinN64Fx2:
       case Iop_Mul32F0x4:
       case Iop_Mul64F0x2:
       case Iop_Sub32F0x4:

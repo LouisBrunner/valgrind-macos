@@ -2743,6 +2743,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Rsh32Ux4: case Iop_Rsh64Ux2:
          case Iop_Max64Fx2: case Iop_Max32Fx4:
          case Iop_Min64Fx2: case Iop_Min32Fx4:
+         case Iop_MaxN64Fx2: case Iop_MaxN32Fx4:
+         case Iop_MinN64Fx2: case Iop_MinN32Fx4:
          case Iop_RecipStep64Fx2: case Iop_RecipStep32Fx4:
          case Iop_RSqrtStep64Fx2: case Iop_RSqrtStep32Fx4:
          {
@@ -2870,6 +2872,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Max32Fx4:       op = ARM64vecb_FMAX32x4; break;
                case Iop_Min64Fx2:       op = ARM64vecb_FMIN64x2; break;
                case Iop_Min32Fx4:       op = ARM64vecb_FMIN32x4; break;
+               case Iop_MaxN64Fx2:      op = ARM64vecb_FMAXN64x2; break;
+               case Iop_MaxN32Fx4:      op = ARM64vecb_FMAXN32x4; break;
+               case Iop_MinN64Fx2:      op = ARM64vecb_FMINN64x2; break;
+               case Iop_MinN32Fx4:      op = ARM64vecb_FMINN32x4; break;
                case Iop_RecipStep64Fx2: setRM = True;
                                         op = ARM64vecb_FRECPS64x2; break;
                case Iop_RecipStep32Fx4: setRM = True;

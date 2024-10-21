@@ -842,6 +842,11 @@ typedef
       Iop_MinNumF64,  /* min, F64, ditto */
       Iop_MaxNumF32,  /* max, F32, ditto */
       Iop_MinNumF32,  /* min, F32, ditto */
+      /* same but for 128-bit SIMD */
+      Iop_MaxN64Fx2,
+      Iop_MinN64Fx2,
+      Iop_MaxN32Fx4,
+      Iop_MinN32Fx4,
 
       /* ------------------ 16-bit scalar FP ------------------ */
 

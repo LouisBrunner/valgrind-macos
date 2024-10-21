@@ -344,6 +344,8 @@ typedef
       ARM64vecb_FDIV64x2,    ARM64vecb_FDIV32x4,
       ARM64vecb_FMAX64x2,    ARM64vecb_FMAX32x4,
       ARM64vecb_FMIN64x2,    ARM64vecb_FMIN32x4,
+      ARM64vecb_FMAXN64x2,  ARM64vecb_FMAXN32x4,
+      ARM64vecb_FMINN64x2,  ARM64vecb_FMINN32x4,
                              ARM64vecb_UMAX32x4,
       ARM64vecb_UMAX16x8,    ARM64vecb_UMAX8x16,
                              ARM64vecb_UMIN32x4,

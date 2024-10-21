@@ -29,9 +29,7 @@
 
 /* KNOWN LIMITATIONS 2014-Nov-16
 
-   * Correctness: FMAXNM, FMINNM are implemented the same as FMAX/FMIN.
-
-     Also FP comparison "unordered" .. is implemented as normal FP
+   * Correctness: FP comparison "unordered" .. is implemented as normal FP
      comparison.
 
      Both should be fixed.  They behave incorrectly in the presence of
@@ -1002,17 +1000,23 @@ static IROp mkVecADDF ( UInt size ) {
    return ops[size];
 }
 
-static IROp mkVecMAXF ( UInt size ) {
+static IROp mkVecMAXF ( UInt size, Bool isN ) {
    const IROp ops[4]
       = { Iop_INVALID, Iop_INVALID, Iop_Max32Fx4, Iop_Max64Fx2 };
+   const IROp opsN[4]
+      = { Iop_INVALID, Iop_INVALID, Iop_MaxN32Fx4, Iop_MaxN64Fx2 };
    vassert(size < 4);
+   if (isN) return opsN[size];
    return ops[size];
 }
 
-static IROp mkVecMINF ( UInt size ) {
+static IROp mkVecMINF ( UInt size, Bool isN ) {
    const IROp ops[4]
       = { Iop_INVALID, Iop_INVALID, Iop_Min32Fx4, Iop_Min64Fx2 };
+   const IROp opsN[4]
+      = { Iop_INVALID, Iop_INVALID, Iop_MinN32Fx4, Iop_MinN64Fx2 };
    vassert(size < 4);
+   if (isN) return opsN[size];
    return ops[size];
 }
 
@@ -9104,6 +9108,7 @@ static IRTemp math_FOLDV ( IRTemp src, IROp op )
          return res;
       }
       case Iop_Max32Fx4: case Iop_Min32Fx4:
+      case Iop_MaxNumF32: case Iop_MinNumF32:
       case Iop_Min32Sx4: case Iop_Min32Ux4:
       case Iop_Max32Sx4: case Iop_Max32Ux4: case Iop_Add32x4: {
          IRTemp x3210 = src;
@@ -10383,11 +10388,10 @@ Bool dis_AdvSIMD_across_lanes(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 0,10,01100: FMINMNV s_4s -------- */
       /* -------- 1,00,01111: FMAXV   s_4s -------- */
       /* -------- 1,10,01111: FMINV   s_4s -------- */
-      /* FMAXNM, FMINNM: FIXME -- KLUDGED */
       if (bitQ == 0) return False; // Only 4s is allowed
       Bool   isMIN = (size & 2) == 2;
       Bool   isNM  = opcode == BITS5(0,1,1,0,0);
-      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(2);
+      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(2, isNM);
       IRTemp src = newTempV128();
       assign(src, getQReg128(nn));
       IRTemp res = math_FOLDV(src, opMXX);
@@ -10990,12 +10994,11 @@ Bool dis_AdvSIMD_scalar_pairwise(/*MB_OUT*/DisResult* dres, UInt insn,
       /* -------- 1,1x,01100 FMINNMP d_2d, s_2s -------- */
       /* -------- 1,0x,01111 FMAXP   d_2d, s_2s -------- */
       /* -------- 1,1x,01111 FMINP   d_2d, s_2s -------- */
-      /* FMAXNM, FMINNM: FIXME -- KLUDGED */
       Bool   isD   = (sz & 1) == 1;
       Bool   isMIN = (sz & 2) == 2;
       Bool   isNM  = opcode == BITS5(0,1,1,0,0);
       IROp   opZHI = mkVecZEROHIxxOFV128(isD ? 3 : 2);
-      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(isD ? 3 : 2);
+      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(isD ? 3 : 2, isNM);
       IRTemp src   = newTempV128();
       IRTemp argL  = newTempV128();
       IRTemp argR  = newTempV128();
@@ -13685,12 +13688,11 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 0,1x,11000 FMINNM 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
       /* -------- 0,0x,11110 FMAX   2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
       /* -------- 0,1x,11110 FMIN   2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
-      /* FMAXNM, FMINNM: FIXME -- KLUDGED */
       Bool   isD   = (size & 1) == 1;
       if (bitQ == 0 && isD) return False; // implied 1d case
       Bool   isMIN = (size & 2) == 2;
       Bool   isNM  = opcode == BITS5(1,1,0,0,0);
-      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(isD ? X11 : X10);
+      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(isD ? X11 : X10, isNM);
       IRTemp res   = newTempV128();
       assign(res, binop(opMXX, getQReg128(nn), getQReg128(mm)));
       putQReg128(dd, math_MAYBE_ZERO_HI64(bitQ, res));
@@ -13840,12 +13842,11 @@ Bool dis_AdvSIMD_three_same(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 1,1x,11000 FMINNMP 2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
       /* -------- 1,0x,11110 FMAXP   2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
       /* -------- 1,1x,11110 FMINP   2d_2d_2d, 4s_4s_4s, 2s_2s_2s -------- */
-      /* FMAXNM, FMINNM: FIXME -- KLUDGED */
       Bool isD = (size & 1) == 1;
       if (bitQ == 0 && isD) return False; // implied 1d case
       Bool   isMIN = (size & 2) == 2;
       Bool   isNM  = opcode == BITS5(1,1,0,0,0);
-      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(isD ? 3 : 2);
+      IROp   opMXX = (isMIN ? mkVecMINF : mkVecMAXF)(isD ? 3 : 2, isNM);
       IRTemp srcN  = newTempV128();
       IRTemp srcM  = newTempV128();
       IRTemp preL  = IRTemp_INVALID;
@@ -16080,8 +16081,8 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn,
       /* ------- 0x,0011: FSUB d_d, s_s ------- */
       /* ------- 0x,0100: FMAX d_d, s_s ------- */
       /* ------- 0x,0101: FMIN d_d, s_s ------- */
-      /* ------- 0x,0110: FMAXNM d_d, s_s ------- (FIXME KLUDGED) */
-      /* ------- 0x,0111: FMINNM d_d, s_s ------- (FIXME KLUDGED) */
+      /* ------- 0x,0110: FMAXNM d_d, s_s ------- */
+      /* ------- 0x,0111: FMINNM d_d, s_s ------- */
       IRType ity = ty == X00 ? Ity_F32 : Ity_F64;
       IROp   iop = Iop_INVALID;
       const HChar* nm = "???";
@@ -16090,10 +16091,10 @@ Bool dis_AdvSIMD_fp_data_proc_2_source(/*MB_OUT*/DisResult* dres, UInt insn,
          case BITS4(0,0,0,1): nm = "fdiv"; iop = mkDIVF(ity); break;
          case BITS4(0,0,1,0): nm = "fadd"; iop = mkADDF(ity); break;
          case BITS4(0,0,1,1): nm = "fsub"; iop = mkSUBF(ity); break;
-         case BITS4(0,1,0,0): nm = "fmax"; iop = mkVecMAXF(ty+2); break;
-         case BITS4(0,1,0,1): nm = "fmin"; iop = mkVecMINF(ty+2); break;
-         case BITS4(0,1,1,0): nm = "fmaxnm"; iop = mkVecMAXF(ty+2); break; //!!
-         case BITS4(0,1,1,1): nm = "fminnm"; iop = mkVecMINF(ty+2); break; //!!
+         case BITS4(0,1,0,0): nm = "fmax"; iop = mkVecMAXF(ty+2, False); break;
+         case BITS4(0,1,0,1): nm = "fmin"; iop = mkVecMINF(ty+2, False); break;
+         case BITS4(0,1,1,0): nm = "fmaxnm"; iop = mkVecMAXF(ty+2, True); break;
+         case BITS4(0,1,1,1): nm = "fminnm"; iop = mkVecMINF(ty+2, True); break;
          default: vassert(0);
       }
       if (opcode <= BITS4(0,0,1,1)) {

@@ -319,6 +319,10 @@ static irop_t irops[] = {
   { DEFOP(Iop_MinNumF64, UNDEF_ALL), .arm = 1 },
   { DEFOP(Iop_MaxNumF32, UNDEF_ALL), .arm = 1 },
   { DEFOP(Iop_MinNumF32, UNDEF_ALL), .arm = 1 },
+  { DEFOP(Iop_MaxN64Fx2, UNDEF_ALL), .arm64 = 1 },
+  { DEFOP(Iop_MinN64Fx2, UNDEF_ALL), .arm64 = 1 },
+  { DEFOP(Iop_MaxN32Fx4, UNDEF_ALL), .arm64 = 1 },
+  { DEFOP(Iop_MinN32Fx4, UNDEF_ALL), .arm64 = 1 },
 
   /* ------------------ 16-bit scalar FP ------------------ */
   { DEFOP(Iop_F16toF64,  UNDEF_ALL), .arm64 = 1 },

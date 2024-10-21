@@ -851,6 +851,10 @@ DECL_TEMPLATE(darwin, kernelrpc_mach_port_request_notification_trap);
 DECL_TEMPLATE(darwin, mach_msg2);
 #endif
 
+#if DARWIN_VERS >= DARWIN_14_00
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_purgable_control_trap);
+#endif
+
 // Machine-dependent traps
 #if defined(VGA_arm64)
 DECL_TEMPLATE(darwin, thread_set_tsd_base);

@@ -10077,6 +10077,17 @@ static void munge_wll(UWord* a1, ULong* a2, ULong* a3,
 #  endif
 }
 
+static void munge_wlww(UWord* a1, ULong* a2, UWord* a3, UWord* a4,
+                       UWord aRG1, UWord aRG2, UWord aRG3,
+                       UWord aRG4, UWord aRG5)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = LOHI64(aRG2,aRG3); *a3 = aRG4; *a4 = aRG5;
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = aRG4;
+#  endif
+}
+
 static void munge_wwlw(UWord* a1, UWord* a2, ULong* a3, UWord* a4,
                        UWord aRG1, UWord aRG2, UWord aRG3,
                        UWord aRG4, UWord aRG5)
@@ -11450,6 +11461,30 @@ PRE(map_with_linking_np)
 
 #if DARWIN_VERS >= DARWIN_14_00
 
+PRE(kernelrpc_mach_vm_purgable_control_trap)
+{
+   UWord a1; ULong a2; UWord a3; UWord a4;
+   munge_wlww(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRINT("kernelrpc_mach_vm_purgable_control_trap"
+         "(target:%s, address:%#llx, control:%ld, state:%#lx)",
+         name_for_port(a1), a2, a3, a4);
+   PRE_REG_READ4(kern_return_t, "kernelrpc_mach_vm_purgable_control_trap",
+                 mach_port_name_t, target, mach_vm_offset_t, address,
+                 vm_purgable_t, control, int*/*really user_addr_t*/, state);
+   PRE_MEM_READ("kernelrpc_mach_vm_purgable_control_trap(state)", a4, sizeof(int));
+   PRE_MEM_WRITE("kernelrpc_mach_vm_purgable_control_trap(state)", a4, sizeof(int));
+}
+
+POST(kernelrpc_mach_vm_purgable_control_trap)
+{
+   UWord a1; ULong a2; UWord a3; UWord a4;
+   munge_wlww(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   if (RES == 0) {
+      POST_MEM_WRITE(a4, sizeof(int));
+      PRINT("-> state: %#x", *(int*)a4);
+   }
+}
+
 #endif /* DARWIN_VERS >= DARWIN_14_00 */
 
 
@@ -12208,12 +12243,16 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(9)),
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACXY(__NR_kernelrpc_mach_vm_allocate_trap, kernelrpc_mach_vm_allocate_trap),
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10), kernelrpc_mach_vm_allocate_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)),
 #  endif
 
+#  if DARWIN_VERS >= DARWIN_14_00
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11), kernelrpc_mach_vm_purgable_control_trap),
+#  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)),
+#  endif
 
 #  if DARWIN_VERS >= DARWIN_10_8
    MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12), kernelrpc_mach_vm_deallocate_trap),

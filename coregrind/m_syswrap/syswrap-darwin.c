@@ -1793,6 +1793,10 @@ static const HChar *name_for_fcntl(UWord cmd) {
 #     if DARWIN_VERS >= DARWIN_10_15
       F(F_SPECULATIVE_READ);
 #     endif
+#     if DARWIN_VERS >= DARWIN_14_00
+      F(F_GETPROTECTIONCLASS);
+      F(F_SETPROTECTIONCLASS);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -2020,6 +2024,14 @@ PRE(fcntl)
       }
       break;
 #  endif
+
+# if DARWIN_VERS >= DARWIN_14_00
+   case VKI_F_GETPROTECTIONCLASS: /* Get the protection class of a file */
+      PRINT("fcntl ( %lu, %s )", ARG1, name_for_fcntl(ARG2));
+      PRE_REG_READ2(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd);
+      break;
+#endif
 
    default:
       PRINT("fcntl ( %lu, %lu [??] )", ARG1, ARG2);

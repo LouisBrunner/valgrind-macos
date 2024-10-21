@@ -214,6 +214,13 @@
    fun:_libxpc_initializer
    ...
 }
+{
+   OSX1400:xpc_pipe_routine_uninitialized_cond_7
+   Memcheck:Cond
+   ...
+   fun:CFCopyUserName
+   ...
+}
 
 # Unclear
 

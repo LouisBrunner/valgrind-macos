@@ -5384,19 +5384,28 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       01 011 000 imm19 Rt   LDR   Xt, [PC + sxTo64(imm19 << 2)]
       10 011 000 imm19 Rt   LDRSW Xt, [PC + sxTo64(imm19 << 2)]
       11 011 000 imm19 Rt   prefetch  [PC + sxTo64(imm19 << 2)]
-      Just handles the first two cases for now.
    */
-   if (INSN(29,24) == BITS6(0,1,1,0,0,0) && INSN(31,31) == 0) {
+   if (INSN(29,24) == BITS6(0,1,1,0,0,0)) {
+      Bool  isLDR = INSN(31,31) == 0;
+      Bool  isSW  = INSN(31,30) == BITS2(1,0);
       UInt  imm19 = INSN(23,5);
       UInt  rT    = INSN(4,0);
       UInt  bX    = INSN(30,30);
       ULong ea    = guest_PC_curr_instr + sx_to_64(imm19 << 2, 21);
-      if (bX) {
-         putIReg64orZR(rT, loadLE(Ity_I64, mkU64(ea)));
+      if (isLDR) {
+        if (bX) {
+          putIReg64orZR(rT, loadLE(Ity_I64, mkU64(ea)));
+        } else {
+          putIReg32orZR(rT, loadLE(Ity_I32, mkU64(ea)));
+        }
+        DIP("ldr %s, 0x%llx (literal)\n", nameIRegOrZR(bX == 1, rT), ea);
+      } else if (isSW) {
+        putIReg64orZR(rT, unop(Iop_32Sto64, loadLE(Ity_I32, mkU64(ea))));
+        DIP("ldrsw %s, 0x%llx (literal)\n", nameIReg64orZR(rT), ea);
       } else {
-         putIReg32orZR(rT, loadLE(Ity_I32, mkU64(ea)));
+        // The effect is "implementation defined" so we can technically ignore it.
+        DIP("prfm op(%x) 0x%llx (literal) (NOP)\n", rT, ea);
       }
-      DIP("ldr %s, 0x%llx (literal)\n", nameIRegOrZR(bX == 1, rT), ea);
       return True;
    }
 

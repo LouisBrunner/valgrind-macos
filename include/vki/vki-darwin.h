@@ -420,7 +420,10 @@ typedef uint32_t vki_u32;
 #endif
 #if DARWIN_VERS >= DARWIN_14_00
 # define VKI_F_GETPROTECTIONCLASS        F_GETPROTECTIONCLASS
-# define VKI_F_SETPROTECTIONCLASS        F_SETPROTECTIONCLASS
+# define VKI_F_OFD_SETLK                 F_OFD_SETLK
+# define VKI_F_OFD_GETLK                 F_OFD_GETLK
+# define VKI_F_OFD_SETLKWTIMEOUT         F_OFD_SETLKWTIMEOUT
+# define VKI_F_SETCONFINED               95
 #endif
 #define VKI_F_FULLFSYNC	F_FULLFSYNC
 #define VKI_F_PATHPKG_CHECK	F_PATHPKG_CHECK
@@ -1312,6 +1315,8 @@ struct vki_necp_aggregate_result {
 #define VKI_NECP_CLIENT_ACTION_UPDATE_CACHE           14
 #define VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE     15
 #define VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT    16
+#define VKI_NECP_CLIENT_ACTION_ADD_FLOW               17
+#define VKI_NECP_CLIENT_ACTION_REMOVE_FLOW            18
 #define VKI_NECP_CLIENT_ACTION_CLAIM                  19
 #define VKI_NECP_CLIENT_ACTION_SIGN                   20
 
@@ -1326,11 +1331,62 @@ struct vki_necp_client_signable {
 	u_int32_t sign_type;
 } __attribute__((__packed__));
 
+struct vki_necp_client_flow_stats {
+	u_int32_t stats_type; // NECP_CLIENT_STATISTICS_TYPE_*
+	u_int32_t stats_version; // NECP_CLIENT_STATISTICS_TYPE_*_VER
+	u_int32_t stats_size;
+	mach_vm_address_t stats_addr;
+};
+
+struct vki_necp_client_add_flow {
+	uuid_t agent_uuid;
+	uuid_t registration_id;
+	u_int16_t flags;               // NECP_CLIENT_FLOW_FLAGS_*
+	u_int16_t stats_request_count;
+	struct vki_necp_client_flow_stats stats_requests[0];
+	// sockaddr for override endpoint
+	// uint8 for override ip protocol
+} __attribute__((__packed__));
+
 struct vki_necp_cache_buffer {
 	u_int8_t                necp_cache_buf_type;    //  NECP_CLIENT_CACHE_TYPE_*
 	u_int8_t                necp_cache_buf_ver;     //  NECP_CLIENT_CACHE_TYPE_*_VER
 	u_int32_t               necp_cache_buf_size;
 	mach_vm_address_t       necp_cache_buf_addr;
+};
+
+struct vki_ifnet_stats_per_flow {
+	u_int64_t bk_txpackets;
+	u_int64_t txpackets;
+	u_int64_t rxpackets;
+	u_int32_t txretransmitbytes;
+	u_int32_t rxoutoforderbytes;
+	u_int32_t rxmitpkts;
+	u_int32_t rcvoopack;
+	u_int32_t pawsdrop;
+	u_int32_t sack_recovery_episodes;
+	u_int32_t reordered_pkts;
+	u_int32_t dsack_sent;
+	u_int32_t dsack_recvd;
+	u_int32_t srtt;
+	u_int32_t rttupdated;
+	u_int32_t rttvar;
+	u_int32_t rttmin;
+	u_int32_t bw_sndbw_max;
+	u_int32_t bw_rcvbw_max;
+	u_int32_t ecn_recv_ece;
+	u_int32_t ecn_recv_ce;
+	u_int32_t ecn_flags;
+	u_int16_t ipv4:1,
+	    local:1,
+	    connreset:1,
+	    conntimeout:1,
+	    rxmit_drop:1,
+	    ecn_fallback_synloss:1,
+	    ecn_fallback_droprst:1,
+	    ecn_fallback_droprxmt:1,
+	    ecn_fallback_ce:1,
+	    ecn_fallback_reorder:1;
 };
 
 struct vki_necp_interface_signature {

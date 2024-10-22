@@ -1795,7 +1795,10 @@ static const HChar *name_for_fcntl(UWord cmd) {
 #     endif
 #     if DARWIN_VERS >= DARWIN_14_00
       F(F_GETPROTECTIONCLASS);
-      F(F_SETPROTECTIONCLASS);
+      F(F_OFD_SETLK);
+      F(F_OFD_GETLK);
+      F(F_OFD_SETLKWTIMEOUT);
+      F(F_SETCONFINED);
 #     endif
    default:
       return "UNKNOWN";
@@ -2031,6 +2034,33 @@ PRE(fcntl)
       PRE_REG_READ2(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd);
       break;
+   case VKI_F_OFD_SETLK:
+      PRINT("fcntl ( %lu, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct flock *, fl);
+      PRE_MEM_READ( "fcntl(F_OFD_SETLK, fl)", ARG3, sizeof(struct flock));
+      break;
+   case VKI_F_OFD_GETLK:
+      PRINT("fcntl ( %lu, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct flock *, fl);
+      PRE_MEM_READ( "fcntl(F_OFD_GETLK, fl)", ARG3, sizeof(struct flock));
+      PRE_MEM_WRITE( "fcntl(F_OFD_GETLK, fl)", ARG3, sizeof(struct flock));
+      break;
+   case VKI_F_OFD_SETLKWTIMEOUT:
+      PRINT("fcntl ( %lu, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    struct flocktimeout *, fltimeout);
+      PRE_MEM_READ( "fcntl(F_OFD_SETLKWTIMEOUT, fltimeout)", ARG3, sizeof(struct flocktimeout));
+      break;
+   case VKI_F_SETCONFINED:
+      PRINT("fcntl ( %lu, %s, fd:%ld )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd, int, arg);
+      break;
 #endif
 
    default:
@@ -2083,6 +2113,13 @@ POST(fcntl)
       POST_MEM_WRITE( ARG3, 1+VG_(strlen)((char *)ARG3) );
       PRINT("\"%s\"", (char*)ARG3);
       break;
+
+#  if DARWIN_VERS >= DARWIN_14_00
+   case VKI_F_OFD_SETLK:
+      POST_MEM_WRITE( ARG3, sizeof(struct flock));
+      break;
+#  endif
+
 
    default:
       // DDD: ugh, missing lots of cases here, not nice
@@ -10912,8 +10949,23 @@ PRE(necp_client_action)
       PRE_MEM_READ( "necp_client_action(SIGN, client_id)", ARG3, ARG4);
       PRE_MEM_WRITE( "necp_client_action(SIGN, buffer)", ARG5, ARG6);
       break;
+#if DARWIN_VERS >= DARWIN_14_00
+   case VKI_NECP_CLIENT_ACTION_ADD_FLOW:
+      if (ARG4 != sizeof(uuid_t) || ARG6 != sizeof(struct vki_necp_client_add_flow)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(ADD_FLOW, client_id)", ARG3, ARG4);
+      PRE_MEM_WRITE( "necp_client_action(ADD_FLOW, buffer)", ARG5, ARG6);
+   case VKI_NECP_CLIENT_ACTION_REMOVE_FLOW:
+      if (ARG4 == 0 || ARG6 != sizeof(struct vki_ifnet_stats_per_flow)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+      }
+      PRE_MEM_READ( "necp_client_action(REMOVE_FLOW, client_id)", ARG3, ARG4);
+      PRE_MEM_READ( "necp_client_action(REMOVE_FLOW, buffer)", ARG5, ARG6);
+      break;
+#endif
    default:
-      VG_(printf)("UNKNOWN necp_client_action action %#lx\n", ARG2);
+      VG_(printf)("UNKNOWN necp_client_action action %ld\n", ARG2);
       break;
    }
 }

@@ -81,6 +81,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         FUSE_COMPATIBLE_MAY_BLOCK
 493970  s390x: Store/restore FPC upon helper call causes slowdown
 494252  s390x: incorrect disassembly for LOCHI and friends
+495278  PowerPC instruction dcbf should allow the L field values of 4, 6 on
+        ISA 3.0 and earlier, just ignore the value
 n-i-bz  Improve messages for sigaltstack errors, use specific
         stack_t member names
 

@@ -12145,7 +12145,10 @@ static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
    UChar opc1    = ifieldOPC(theInstr);
    UChar b21to25 = ifieldRegDS(theInstr);
    /* The L-field is 2 bits in ISA 3.0 and earlier and 3 bits in ISA 3.1 */
-   UChar flag_L  = IFIELD(theInstr, 21, (allow_isa_3_1 ? 3 : 2));
+   /* Relaxed the test to mach actual hardware, accept all L values from 0 to 7.
+      The hardware ignores the L value if not supported.      10/23/2024
+      UChar flag_L  = IFIELD(theInstr, 21, (allow_isa_3_1 ? 3 : 2));  */
+
    UChar rA_addr = ifieldRegA(theInstr);
    UChar rB_addr = ifieldRegB(theInstr);
    UInt  opc2    = ifieldOPClo10(theInstr);
@@ -12203,15 +12206,19 @@ static Bool dis_cache_manage ( UInt prefix, UInt theInstr,
          dcbf ra, rb, 0          dcbf
          dcbf ra, rb, 1          dcbf local
          dcbf ra, rb, 3          dcbf local primary
-         dcbf ra, rb, 4          dcbf block fjush to persistent storage    isa 3.1
-         dcbf ra, rb, 6          dcbf block store to persistent storage    isa 3.1
- */
-               if (!((flag_L == 0 || flag_L == 1 || flag_L == 3)
-               || ((flag_L == 4 || flag_L == 6) && allow_isa_3_1 == True)))
+         dcbf ra, rb, 4          dcbf block fjush to persistent storage isa 3.1
+         dcbf ra, rb, 6          dcbf block store to persistent storage isa 3.1
+         Relaxed requirement to allow all L values from 0 to 7 to match the
+         operation of the real hardware.  The real hardware accepts the
+         unsupported L values.      10/23/2024
+
+         if (!((flag_L == 0 || flag_L == 1 || flag_L == 3)
+           || ((flag_L == 4 || flag_L == 6) && allow_isa_3_1 == True)))
          {
             vex_printf("dis_cache_manage(ppc)(dcbf,flag_L)\n");
             return False;
          }
+      */
       /* nop as far as vex is concerned */
       break;
       

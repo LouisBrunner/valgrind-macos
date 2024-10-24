@@ -632,23 +632,22 @@ case "${host_os}" in
       AC_ADD_DARWIN_VERS([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0 / iOS 15])
       AC_ADD_DARWIN_VERS([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
       AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
-      AC_ADD_DARWIN_VERS([DARWIN_15_00], 140000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
+      AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
 
-      AC_DEFINE([XCODE_10_XX], 101200, [XCODE_VERS value for Xcode earlier than 10.13 (iOS 11)])
-      AC_DEFINE([XCODE_10_13], 101300, [XCODE_VERS value for Xcode 10.13 (iOS 11)])
-      AC_DEFINE([XCODE_10_14], 101400, [XCODE_VERS value for Xcode 10.14 (iOS 12)])
-      AC_DEFINE([XCODE_10_14_6], 101406, [XCODE_VERS value for Xcode 10.14.6 (iOS 12)])
-      AC_DEFINE([XCODE_10_15], 101500, [XCODE_VERS value for Xcode 10.15 (iOS 13)])
-      AC_DEFINE([XCODE_11_0], 110000, [XCODE_VERS value for Xcode 11.0 (iOS 14)])
-      AC_DEFINE([XCODE_12_0], 120000, [XCODE_VERS value for Xcode 12.0 (iOS 15)])
-      AC_DEFINE([XCODE_13_0], 130000, [XCODE_VERS value for Xcode 13.0 (iOS 16)])
-      AC_DEFINE([XCODE_14_0], 140000, [XCODE_VERS value for Xcode 14.0 (iOS 17)])
-      AC_DEFINE([XCODE_15_0], 140000, [XCODE_VERS value for Xcode 15.0 (iOS 18)])
+      AC_DEFINE([SDK_10_XX], 101200, [SDK_VERS value for Xcode SDK earlier than macOS 10.13 / iOS 11])
+      AC_DEFINE([SDK_10_13], 101300, [SDK_VERS value for Xcode SDK macOS 10.13 / iOS 11])
+      AC_DEFINE([SDK_10_14], 101400, [SDK_VERS value for Xcode SDK macOS 10.14 / iOS 12])
+      AC_DEFINE([SDK_10_14_6], 101406, [SDK_VERS value for Xcode SDK macOS 10.14.6 / iOS 12])
+      AC_DEFINE([SDK_10_15], 101500, [SDK_VERS value for Xcode SDK macOS 10.15 / iOS 13])
+      AC_DEFINE([SDK_11_0], 110000, [SDK_VERS value for Xcode SDK macOS 11.0 / iOS 14])
+      AC_DEFINE([SDK_12_0], 120000, [SDK_VERS value for Xcode SDK macOS 12.0 / iOS 15])
+      AC_DEFINE([SDK_13_0], 130000, [SDK_VERS value for Xcode SDK macOS 13.0 / iOS 16])
+      AC_DEFINE([SDK_14_0], 140000, [SDK_VERS value for Xcode SDK macOS 14.0 / iOS 17])
+      AC_DEFINE([SDK_15_0], 150000, [SDK_VERS value for Xcode SDK macOS 15.0 / iOS 18])
 
       # Substitute the Xcode include path detected earlier
-      AC_SUBST(XCODE_INC_DIR, [$xcodedir_inc])
-      AC_SUBST(XCODE_LIB_DIR, [$xcodedir_lib])
-
+      AC_SUBST(SDK_INC_DIR, [$xcodedir_inc])
+      AC_SUBST(SDK_LIB_DIR, [$xcodedir_lib])
 
       AC_MSG_CHECKING([for the Darwin platform])
       case "${darwin_platform}" in
@@ -823,53 +822,53 @@ case "${host_os}" in
       AC_SUBST(LD_OS_MIN_VERS_ARG, [$ld_os_min_vers_arg])
 
       AC_MSG_CHECKING([for the Xcode SDK version])
-      xcodeversion="legacy"
+      sdkversion="legacy"
       if test "x$XCRUN" != "xno"; then
-        xcodeversion=`xcrun --sdk $darwin_sdk --show-sdk-version`
+        sdkversion=`xcrun --sdk $darwin_sdk --show-sdk-version`
       fi
-      case "${darwin_platform}-${xcodeversion}" in
+      case "${darwin_platform}-${sdkversion}" in
         macosx-10.13*|iphoneos-11.*)
-          AC_DEFINE([XCODE_VERS], XCODE_10_13, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_13, [SDK version])
           ;;
         macosx-10.14.6)
-          AC_DEFINE([XCODE_VERS], XCODE_10_14_6, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_14_6, [SDK version])
           ;;
         macosx-10.14*|iphoneos-12.*)
-          AC_DEFINE([XCODE_VERS], XCODE_10_14, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_14, [SDK version])
           ;;
         macosx-10.15*|iphoneos-13.*)
-          AC_DEFINE([XCODE_VERS], XCODE_10_15, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_15, [SDK version])
           ;;
         macosx-11.*|iphoneos-14.*)
-          AC_DEFINE([XCODE_VERS], XCODE_11_0, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_11_0, [SDK version])
           ;;
         macosx-12.*|iphoneos-15.*)
-          AC_DEFINE([XCODE_VERS], XCODE_12_0, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_12_0, [SDK version])
           ;;
         macosx-13.*|iphoneos-16.*)
-          AC_DEFINE([XCODE_VERS], XCODE_13_0, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_13_0, [SDK version])
           ;;
         macosx-14.*|iphoneos-17.*)
-          AC_DEFINE([XCODE_VERS], XCODE_14_0, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_14_0, [SDK version])
           ;;
         macosx-15.*|iphoneos-18.*)
-          AC_DEFINE([XCODE_VERS], XCODE_15_0, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_15_0, [SDK version])
           ;;
         legacy)
-          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
           ;;
         macosx-10.5*|macosx-10.6*|macosx-10.7*|macosx-10.8*|macosx-10.9*|macosx-10.10*|macosx-10.11*|macosx-10.12*)
-          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
           ;;
         iphoneos-4.*|iphoneos-5.*|iphoneos-6.*|iphoneos-7.*|iphoneos-8.*|iphoneos-9.*|iphoneos-10.*)
-          AC_DEFINE([XCODE_VERS], XCODE_10_XX, [Xcode version])
+          AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
           ;;
         *)
-          AC_MSG_RESULT([unsupported (${xcodeversion})])
+          AC_MSG_RESULT([unsupported (${sdkversion})])
           AC_MSG_ERROR([Valgrind works on Darwin 10.x-24.x (Mac OS X 10.6-11 and macOS 10.12-15.0 and iOS 4-18)])
           ;;
       esac
-      AC_MSG_RESULT([${xcodeversion}])
+      AC_MSG_RESULT([${sdkversion}])
       ;;
 
      solaris2.11*)
@@ -940,10 +939,10 @@ case "$ARCH_MAX-$VGCONF_OS" in
         # iOS 7-10 and macOS 10.5-10.15 support both
         # iOS 11+ and macOS 10.15 are 64bit only
         vg_cv_only32bit="no"
-        if test x$xcodeversion = x10.14.6 -o $XCODE_VERS -ge $XCODE_10_15 ; then
+        if test x$sdkversion = x10.14.6 -o $SDK_VERS -ge $SDK_10_15 ; then
             vg_cv_only64bit="yes"
             AC_MSG_RESULT([no])
-        elif test $darwin_platform = iphoneos -a $XCODE_VERS -ge $XCODE_10_13; then
+        elif test $darwin_platform = iphoneos -a $SDK_VERS -ge $SDK_10_13; then
             vg_cv_only64bit="yes"
             AC_MSG_RESULT([no])
         else

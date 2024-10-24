@@ -24,6 +24,8 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#include "config.h"
+
 .section __DATA,__fake
 .globl __DATA.__fake
 __DATA.__fake:
@@ -36,9 +38,15 @@ dyld4_ProgramVars_environPtr:
 dyld4_ProgramVars___prognamePtr:
   .quad 0
 
+#if DARWIN_VERS >= DARWIN_15_00
+.section __TPRO_CONST,__dyld4
+.globl __TPRO_CONST.__dyld4
+__TPRO_CONST.__dyld4:
+#else
 .section __DATA,__dyld4
 .globl __DATA.__dyld4
 __DATA.__dyld4:
+#endif
 ; APIs*               apis;
 .quad 0 ; (set by dyld, null)
 ; void*               allImageInfos;

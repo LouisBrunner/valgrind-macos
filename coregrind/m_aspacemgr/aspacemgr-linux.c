@@ -4116,6 +4116,15 @@ static void fill_segment(NSegment* seg) {
   seg->fnIdx = ML_(am_allocate_segname)( name );
 }
 
+static Bool endswith(const HChar* str, const HChar* suffix) {
+  SizeT str_len = VG_(strlen)(str);
+  SizeT suffix_len = VG_(strlen)(suffix);
+  if (str_len < suffix_len) {
+    return False;
+  }
+  return VG_(strcmp)(str + str_len - suffix_len, suffix) == 0;
+}
+
 static UInt stats_machcalls = 0;
 
 static void parse_procselfmaps (
@@ -4157,15 +4166,31 @@ static void parse_procselfmaps (
       }
       iter = addr + size;
 
+      // FIXME: not sure we should fill up anything here as it will added later anyway
+      ret = get_filename_for_region(pid, addr, name, sizeof(name), NULL);
+      if (!ret) {
+        ret = get_name_from_tag(info.user_tag, name, sizeof(name));
+      }
+
+#if defined(VGA_arm64)
+      if (ret) {
+        if (endswith(name, "/libmySystem.so") || endswith(name, "/libmydyld.so")) {
+          // not only do we not want to track these, we want to unmmap them completely
+          // otherwise they clutter the address space and make macOS 15+ fail
+          // during client loading
+          kr = mach_vm_deallocate(mach_task_self(), addr, size);
+          if (kr) {
+            VG_(debugLog)(0, "aspacem", "failed to deallocate %#llx..%#llx: %s\n", addr, addr + size, name);
+          }
+          continue;
+        }
+      }
+#endif
+
       if (addr > last  &&  record_gap) {
          (*record_gap)(last, addr - last);
       }
       if (record_mapping) {
-         // FIXME: not sure we should fill up anything here as it will added later anyway
-         ret = get_filename_for_region(pid, addr, name, sizeof(name), NULL);
-         if (!ret) {
-           ret = get_name_from_tag(info.user_tag, name, sizeof(name));
-         }
          (*record_mapping)(addr, size, mach2vki(info.protection),
                            0, info.user_tag, info.offset, ret ? name : NULL, False);
       }

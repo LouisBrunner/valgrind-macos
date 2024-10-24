@@ -329,6 +329,98 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+static
+void add_symbol( /*OUT*/XArray* /* DiSym */ syms,
+                 struct _DebugInfo* di,
+                 struct NLIST* nl, Addr sym_addr,
+                 const HChar* prefix,
+                 DiCursor strtab_cur, UInt strtab_sz )
+{
+  DiSym  disym;
+
+  // "start_according_to_valgrind"
+  static const HChar* s_a_t_v = NULL; /* do not make non-static */
+
+  Bool inside_text = di->text_present && sym_addr >= di->text_avma && sym_addr < di->text_avma + di->text_size;
+  Bool inside_data = di->data_present && sym_addr >= di->data_avma && sym_addr < di->data_avma + di->data_size;
+  Bool inside_d_data = di->sdata_present && sym_addr >= di->sdata_avma && sym_addr < di->sdata_avma + di->sdata_size;
+
+  if (di->trace_symtab) {
+      HChar* str = ML_(cur_read_strdup)(
+                      ML_(cur_plus)(strtab_cur, nl->n_un.n_strx),
+                      "di.read_symtab.1");
+      VG_(printf)("nlist raw: avma %010lx  %s in %s %s\n",
+                  sym_addr, str,
+                  inside_text ? "__TEXT" : inside_data ? "__DATA" : inside_d_data ? "__DATA_DIRTY" : "???",
+                  prefix
+      );
+      ML_(dinfo_free)(str);
+  }
+
+  /* If no part of the symbol falls within the mapped range,
+      ignore it. */
+  if (!inside_text && !inside_data && !inside_d_data) {
+      return;
+  }
+
+  /* skip names which point outside the string table;
+      following these risks segfaulting Valgrind */
+  if (nl->n_un.n_strx < 0 || nl->n_un.n_strx >= strtab_sz) {
+      return;
+  }
+
+  HChar* name
+      = ML_(cur_read_strdup)( ML_(cur_plus)(strtab_cur, nl->n_un.n_strx),
+                              "di.read_symtab.2");
+
+  /* skip nameless symbols; these appear to be common, but
+      useless */
+  if (*name == 0) {
+      ML_(dinfo_free)(name);
+      return;
+  }
+
+  if (prefix[0]) {
+      HChar* newname = ML_(dinfo_zalloc)("di.read_symtab.3",
+                                         VG_(strlen)(prefix) + VG_(strlen)(name));
+      VG_(strcpy)(newname, prefix);
+      VG_(strcat)(newname, name);
+      ML_(dinfo_free)(name);
+      name = newname;
+  }
+
+  VG_(bzero_inline)(&disym, sizeof(disym));
+  disym.avmas.main = sym_addr;
+  SET_TOCPTR_AVMA(disym, 0);
+  SET_LOCAL_EP_AVMA(disym, 0);
+  disym.pri_name   = ML_(addStr)(di, name, -1);
+  disym.sec_names  = NULL;
+  disym.size       = // let canonicalize fix it
+                      di->text_avma+di->text_size - sym_addr;
+  disym.isText     = inside_text;
+  disym.isIFunc    = False;
+  disym.isGlobal   = inside_data || inside_d_data;
+  // Lots of user function names get prepended with an underscore.  Eg. the
+  // function 'f' becomes the symbol '_f'.  And the "below main"
+  // function is called "start".  So we skip the leading underscore, and
+  // if we see 'start' and --show-below-main=no, we rename it as
+  // "start_according_to_valgrind", which makes it easy to spot later
+  // and display as "(below main)".
+  if (disym.pri_name[0] == '_') {
+      disym.pri_name++;
+  }
+  else if (!VG_(clo_show_below_main) && VG_STREQ(disym.pri_name, "start")) {
+      if (s_a_t_v == NULL)
+        s_a_t_v = ML_(addStr)(di, "start_according_to_valgrind", -1);
+      vg_assert(s_a_t_v);
+      disym.pri_name = s_a_t_v;
+  }
+
+  vg_assert(disym.pri_name);
+  VG_(addToXA)( syms, &disym );
+  ML_(dinfo_free)(name);
+}
+
 /* Read a symbol table (nlist).  Add the resulting candidate symbols
    to 'syms'; the caller will post-process them and hand them off to
    ML_(addSym) itself. */
@@ -339,10 +431,6 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
                   DiCursor strtab_cur, UInt strtab_sz )
 {
    Int    i;
-   DiSym  disym;
-
-   // "start_according_to_valgrind"
-   static const HChar* s_a_t_v = NULL; /* do not make non-static */
 
    for (i = 0; i < symtab_count; i++) {
       struct NLIST nl;
@@ -360,73 +448,31 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
          continue;
       }
 
-      Bool inside_text = di->text_present && sym_addr >= di->text_avma && sym_addr < di->text_avma + di->text_size;
-      Bool inside_data = di->data_present && sym_addr >= di->data_avma && sym_addr < di->data_avma + di->data_size;
-      Bool inside_d_data = di->sdata_present && sym_addr >= di->sdata_avma && sym_addr < di->sdata_avma + di->sdata_size;
-      if (di->trace_symtab) {
-         HChar* str = ML_(cur_read_strdup)(
-                         ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
-                         "di.read_symtab.1");
-         VG_(printf)("nlist raw: avma %010lx  %s in %s\n",
-                     sym_addr, str,
-                     inside_text ? "__TEXT" : inside_data ? "__DATA" : inside_d_data ? "__DATA_DIRTY" : "???"
-         );
-         ML_(dinfo_free)(str);
-      }
+      add_symbol(syms, di, &nl, sym_addr, "", strtab_cur, strtab_sz);
+   }
+}
 
-      /* If no part of the symbol falls within the mapped range,
-         ignore it. */
-      if (!inside_text && !inside_data && !inside_d_data) {
-         continue;
-      }
+static
+void add_indirect_symbols( /*OUT*/XArray* /* DiSym */ syms,
+                  struct _DebugInfo* di,
+                  struct SECTION* section, SizeT entry_size,
+                  DiCursor indir_cur, UInt indir_count,
+                  DiCursor symtab_cur, UInt symtab_count,
+                  DiCursor strtab_cur, UInt strtab_sz )
+{
+   for (Int i = 0; i < indir_count; i++) {
+      Int index;
+      struct NLIST nl;
+      ML_(cur_read_get)(&index,
+                        ML_(cur_plus)(indir_cur, i * sizeof(Int)),
+                        sizeof(index));
+      ML_(cur_read_get)(&nl,
+                        ML_(cur_plus)(symtab_cur, index * sizeof(struct NLIST)),
+                        sizeof(nl));
 
-      /* skip names which point outside the string table;
-         following these risks segfaulting Valgrind */
-      if (nl.n_un.n_strx < 0 || nl.n_un.n_strx >= strtab_sz) {
-         continue;
-      }
+      Addr sym_addr = di->text_bias + section->addr + i * entry_size;
 
-      HChar* name
-         = ML_(cur_read_strdup)( ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
-                                 "di.read_symtab.2");
-
-      /* skip nameless symbols; these appear to be common, but
-         useless */
-      if (*name == 0) {
-         ML_(dinfo_free)(name);
-         continue;
-      }
-
-      VG_(bzero_inline)(&disym, sizeof(disym));
-      disym.avmas.main = sym_addr;
-      SET_TOCPTR_AVMA(disym, 0);
-      SET_LOCAL_EP_AVMA(disym, 0);
-      disym.pri_name   = ML_(addStr)(di, name, -1);
-      disym.sec_names  = NULL;
-      disym.size       = // let canonicalize fix it
-                         di->text_avma+di->text_size - sym_addr;
-      disym.isText     = inside_text;
-      disym.isIFunc    = False;
-      disym.isGlobal   = inside_data || inside_d_data;
-      // Lots of user function names get prepended with an underscore.  Eg. the
-      // function 'f' becomes the symbol '_f'.  And the "below main"
-      // function is called "start".  So we skip the leading underscore, and
-      // if we see 'start' and --show-below-main=no, we rename it as
-      // "start_according_to_valgrind", which makes it easy to spot later
-      // and display as "(below main)".
-      if (disym.pri_name[0] == '_') {
-         disym.pri_name++;
-      }
-      else if (!VG_(clo_show_below_main) && VG_STREQ(disym.pri_name, "start")) {
-         if (s_a_t_v == NULL)
-            s_a_t_v = ML_(addStr)(di, "start_according_to_valgrind", -1);
-         vg_assert(s_a_t_v);
-         disym.pri_name = s_a_t_v;
-      }
-
-      vg_assert(disym.pri_name);
-      VG_(addToXA)( syms, &disym );
-      ML_(dinfo_free)(name);
+      add_symbol(syms, di, &nl, sym_addr, section->sectname, strtab_cur, strtab_sz);
    }
 }
 
@@ -1086,6 +1132,73 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                     ML_(cur_plus)(syms,
                                   dysymcmd.ilocalsym * sizeof(struct NLIST)),
                     dysymcmd.nlocalsym, strs, symcmd.strsize);
+
+// Most likely usable on most recent macOS versions
+// but I haven't tested it yet
+#if DARWIN_VERS >= DARWIN_12_00
+        {
+          DiCursor cmd_cur = ML_(cur_from_sli)(msli);
+          DiCursor indirs = DiCursor_INVALID;
+
+          if (from_memory) {
+            Addr link_edit_addr = link_edit.vmaddr + kernel_slide;
+            indirs = ML_(cur_from_sli)(msli);
+            indirs.ioff = (link_edit_addr + (dysymcmd.indirectsymoff - link_edit.fileoff)) - rx_map->avma;
+          } else {
+            indirs = ML_(cur_plus)(ML_(cur_from_sli)(msli), dysymcmd.indirectsymoff);
+          }
+
+          struct MACH_HEADER mh;
+          ML_(cur_step_get)(&mh, &cmd_cur, sizeof(mh));
+          for (Int c = 0; c < mh.ncmds; c++) {
+            struct load_command cmd;
+            ML_(cur_read_get)(&cmd, cmd_cur, sizeof(cmd));
+
+            if (cmd.cmd == LC_SEGMENT_CMD) {
+              struct SEGMENT_COMMAND seg;
+              ML_(cur_read_get)(&seg, cmd_cur, sizeof(seg));
+
+              for (i = 0; i < seg.nsects; i += 1) {
+                DiCursor sect_cur = ML_(cur_plus)(cmd_cur, sizeof(seg));
+                struct SECTION sect;
+                ML_(cur_read_get)(&sect, sect_cur, sizeof(sect));
+                Int indexOfIndirects = sect.reserved1;
+
+                if ((sect.flags & S_SYMBOL_STUBS) == S_SYMBOL_STUBS) {
+                  Int sizeOfStub = sect.reserved2;
+                  Int amountOfStubs = sect.size / sizeOfStub;
+                  if (indexOfIndirects + amountOfStubs > dysymcmd.nindirectsyms) {
+                    ML_(symerr)(di, False, "Invalid Mach-O file (invalid stub section).");
+                    goto fail;
+                  }
+                  // add symbols where we have stub assembly
+                  add_indirect_symbols(candSyms, di,
+                    &sect, sizeOfStub,
+                    ML_(cur_plus)(indirs, indexOfIndirects * sizeof(UInt)), amountOfStubs,
+                    syms, symcmd.nsyms, strs, symcmd.strsize);
+                }
+                if ((sect.flags & S_LAZY_SYMBOL_POINTERS) == S_LAZY_SYMBOL_POINTERS) {
+                  Int sizeOfPointer = VG_WORDSIZE;
+                  Int amountOfPointers = sect.size / sizeOfPointer;
+                  if (indexOfIndirects + amountOfPointers > dysymcmd.nindirectsyms) {
+                    ML_(symerr)(di, False, "Invalid Mach-O file (invalid lazy symbol section).");
+                    goto fail;
+                  }
+                  // add symbols where we have lazy symbol pointers
+                  add_indirect_symbols(candSyms, di,
+                    &sect, sizeOfPointer,
+                    ML_(cur_plus)(indirs, indexOfIndirects * sizeof(UInt)), amountOfPointers,
+                    syms, symcmd.nsyms, strs, symcmd.strsize);
+                }
+
+                sect_cur = ML_(cur_plus)(sect_cur, sizeof(sect));
+              }
+            }
+
+            cmd_cur = ML_(cur_plus)(cmd_cur, cmd.cmdsize);
+          }
+        }
+#endif
       } else {
         read_symtab(candSyms,
                     di,

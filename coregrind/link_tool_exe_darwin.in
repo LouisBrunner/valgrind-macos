@@ -161,10 +161,15 @@ if ($archstr eq "arm64") {
     $cmd = "$cmd -image_base $ala";
 }
 
+# Xcode 16 is completely borked and crashes when you use -segaddr so we rollback to
+# the old linker in the meantime
+if (@DARWIN_VERS@ >= 150000) {
+    $cmd = "$cmd -ld_classic";
+
 # If we're building with clang (viz, the C compiler as specified
 # by the 2nd arg ends in "clang"), we also need -new_linker.  See
 # https://bugs.kde.org/show_bug.cgi?id=295427
-if ("$cc" =~ /clang$/) {
+} elsif ("$cc" =~ /clang$/) {
     $cmd = "$cmd -new_linker";
 }
 

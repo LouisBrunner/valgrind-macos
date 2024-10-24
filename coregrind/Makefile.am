@@ -151,25 +151,25 @@ mach_hdrs =
 mach_defs =
 if VGCONF_OS_IS_DARWIN
 mach_user_srcs += \
-	m_mach/mach_vmUser.c \
-        m_mach/taskUser.c \
-        m_mach/thread_actUser.c \
-        m_mach/vm_mapUser.c
+  m_mach/mach_vmUser.c \
+  m_mach/taskUser.c \
+  m_mach/thread_actUser.c \
+  m_mach/vm_mapUser.c
 mach_server_srcs += \
-	m_mach/mach_vmServer.c \
-        m_mach/taskServer.c \
-        m_mach/thread_actServer.c \
-        m_mach/vm_mapServer.c
+  m_mach/mach_vmServer.c \
+  m_mach/taskServer.c \
+  m_mach/thread_actServer.c \
+  m_mach/vm_mapServer.c
 mach_hdrs += \
-	m_mach/mach_vm.h \
-        m_mach/task.h \
-        m_mach/thread_act.h \
-        m_mach/vm_map.h
+  m_mach/mach_vm.h \
+  m_mach/task.h \
+  m_mach/thread_act.h \
+  m_mach/vm_map.h
 mach_defs += \
-	@XCODE_INC_DIR@/mach/mach_vm.defs \
-        @XCODE_INC_DIR@/mach/task.defs \
-        @XCODE_INC_DIR@/mach/thread_act.defs \
-        @XCODE_INC_DIR@/mach/vm_map.defs
+  @SDK_INC_DIR@/mach/mach_vm.defs \
+  @SDK_INC_DIR@/mach/task.defs \
+  @SDK_INC_DIR@/mach/thread_act.defs \
+  @SDK_INC_DIR@/mach/vm_map.defs
 
 if VGCONF_ARCHS_INCLUDE_ARM64
 noinst_PROGRAMS += libmySystem.so libmydyld.so
@@ -179,7 +179,7 @@ libmySystem_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmySystem_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmySystem_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmySystem_so_LINK = ./delayed-install-systemb.sh \
-  /usr/bin/ld -dylib @LD_OS_MIN_VERS_ARG@ -L@XCODE_LIB_DIR@ -lSystem -o libmySystem.so
+  /usr/bin/ld -dylib @LD_OS_MIN_VERS_ARG@ -L@SDK_LIB_DIR@ -lSystem -o libmySystem.so
 
 libmydyld_so_SOURCES = m_mach/dummy_syslib.c m_mach/dummy_dylddata.S
 libmydyld_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
@@ -196,9 +196,9 @@ endif
 $(abs_builddir)/m_mach:
 	mkdir -p $@
 $(mach_user_srcs): $(mach_defs) $(abs_builddir)/m_mach
-	(cd m_mach && mig -I@XCODE_INC_DIR@ $(mach_defs))
+	(cd m_mach && mig -I@SDK_INC_DIR@ $(mach_defs))
 $(mach_hdrs): $(mach_defs) $(mach_user_srcs) $(abs_builddir)/m_mach
-	(cd m_mach && mig -I@XCODE_INC_DIR@ $(mach_defs))
+	(cd m_mach && mig -I@SDK_INC_DIR@ $(mach_defs))
 
 #----------------------------------------------------------------------------
 # Headers

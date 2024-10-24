@@ -5,6 +5,16 @@
 
 # Bugs
 
+## Real bug: dyld uses a std::move'd object
+{
+   OSX1400:dyld_faulty_std_move
+   Memcheck:Param
+   stat64(path)
+   fun:stat
+   ...
+   fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
+}
+
 # False positives
 
 # Unclear

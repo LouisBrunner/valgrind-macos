@@ -768,7 +768,11 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRNCMP(VG_Z_LIBC_SONAME,        strncmp)
-# if DARWIN_VERS >= DARWIN_10_9
+# if DARWIN_VERS >= DARWIN_15_00 && defined(VGA_arm64)
+// On macOS 15 arm64, it looks like _platform_strncmp just do the lazy pointer resolution
+// and doesn't actually execute strncmp. So we replace the actual function resolved instead.
+  STRNCMP(libsystemZuplatformZddylib, _platform_strncmp$VARIANT$Base)
+# elif DARWIN_VERS >= DARWIN_10_9
   STRNCMP(libsystemZuplatformZddylib, _platform_strncmp)
 # endif
 
@@ -1007,7 +1011,11 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRCMP(VG_Z_LIBC_SONAME, strcmp)
-# if DARWIN_VERS >= DARWIN_10_9
+# if DARWIN_VERS >= DARWIN_15_00 && defined(VGA_arm64)
+// On macOS 15 arm64, it looks like _platform_strcmp just do the lazy pointer resolution
+// and doesn't actually execute strcmp. So we replace the actual function resolved instead.
+  STRCMP(libsystemZuplatformZddylib, _platform_strcmp$VARIANT$Base)
+# elif DARWIN_VERS >= DARWIN_10_9
   STRCMP(libsystemZuplatformZddylib, _platform_strcmp)
 # endif
 

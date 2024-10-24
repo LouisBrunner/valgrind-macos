@@ -265,6 +265,27 @@ mach_msg_return_t mach_msg(
 #endif
 }
 
+
+#if defined(VGA_arm64)
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#include "vki/vki-scnums-darwin.h"
+#include "pub_core_syscall.h" // VG_(do_syscall3)
+
+extern
+kern_return_t mach_vm_deallocate(
+  vm_map_t target_task,
+  mach_vm_address_t address,
+  mach_vm_size_t size
+) {
+  SysRes res = VG_(do_syscall3)(__NR_kernelrpc_mach_vm_deallocate_trap, (UWord)target_task, (UWord)address, (UWord)size);
+  if (sr_isError(res)) {
+    return KERN_FAILURE;
+  }
+  return KERN_SUCCESS;
+}
+#endif
+
 #endif // defined(VGO_darwin)
 
 /*--------------------------------------------------------------------*/

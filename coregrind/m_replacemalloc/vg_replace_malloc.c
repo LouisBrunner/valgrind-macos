@@ -313,7 +313,7 @@ extern int * __error(void) __attribute__((weak));
       return v; \
    }
 
-#if DARWIN_VERS >= DARWIN_15_00
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_15_00
 #define _DARWIN_C_SOURCE
 #include <malloc/malloc.h>
 #undef _DARWIN_C_SOURCE

@@ -313,6 +313,43 @@ extern int * __error(void) __attribute__((weak));
       return v; \
    }
 
+#if DARWIN_VERS >= DARWIN_15_00
+#define _DARWIN_C_SOURCE
+#include <malloc/malloc.h>
+#undef _DARWIN_C_SOURCE
+
+/* Same as above but also take a "type id", which is used by C++ and Swift.
+   We use it to distinguish between malloc, new and new[]. */
+#define TYPE_ALLOC_or_NULL(soname, fnname) \
+   \
+   void* VG_REPLACE_FUNCTION_EZU(10010,soname,fnname) (SizeT n, ULong typeID); \
+   void* VG_REPLACE_FUNCTION_EZU(10010,soname,fnname) (SizeT n, ULong typeID)  \
+   { \
+      void* v; \
+      \
+      DO_INIT; \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
+      malloc_type_descriptor_v0_t desc = (malloc_type_descriptor_v0_t)typeID; \
+      MALLOC_TRACE(#fnname "(%llu, %#llx (%d, %#x, %d, %#x))", \
+        (ULong)n, typeID, \
+        desc.summary.version, desc.summary.callsite_flags, \
+        desc.summary.type_kind, *(UInt*)&desc.summary.layout_semantics); \
+      \
+      void* replacement = info.tl_malloc; \
+      if (desc.summary.type_kind == MALLOC_TYPE_KIND_V0_CXX) { \
+         replacement = info.tl___builtin_new; \
+      } \
+      if (desc.summary.callsite_flags & MALLOC_TYPE_CALLSITE_FLAGS_V0_ARRAY) { \
+         replacement = info.tl___builtin_vec_new; \
+      } \
+      \
+      v = (void*)VALGRIND_NON_SIMD_CALL1( replacement, n ); \
+      MALLOC_TRACE(" = %p\n", v ); \
+      if (!v) SET_ERRNO_ENOMEM; \
+      return v; \
+   }
+#endif
+
 /* Generate a replacement for 'fnname' in object 'soname', which calls
    'vg_replacement' to allocate aligned memory.  If that fails, return NULL.
 */
@@ -455,8 +492,17 @@ extern int * __error(void) __attribute__((weak));
  ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME,  malloc_zone_malloc, malloc);
  ZONEALLOC_or_NULL(SO_SYN_MALLOC,     malloc_zone_malloc, malloc);
 #if DARWIN_VERS >= DARWIN_15_00
- ALLOC_or_NULL(VG_Z_LIBC_SONAME,     malloc_type_malloc,      malloc);
- ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME, malloc_type_zone_malloc, malloc);
+#if defined(VGA_arm64)
+ // on arm64, malloc_type_malloc is used for malloc, new and new[]
+ // __typed_operator_new_impl[abi:ne180100]@libc++abi.dylib calls it for new and new[]
+ // all other usages (Swift, ObjC, C) it calls it for malloc
+ // this matters as we need to put the right tag in the allocation
+ // otherwise the tool might report a mismatch between allocation func and free func
+ TYPE_ALLOC_or_NULL(VG_Z_LIBC_SONAME, malloc_type_malloc);
+#else
+ ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc_type_malloc,      malloc);
+#endif
+ ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME,  malloc_type_zone_malloc, malloc);
 #endif
 
 #elif defined(VGO_solaris)

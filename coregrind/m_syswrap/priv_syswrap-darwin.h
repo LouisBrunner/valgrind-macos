@@ -682,7 +682,7 @@ DECL_TEMPLATE(darwin, task_read_for_pid); // 539
 // NYI sys_pwritev                        // 541
 // NYI sys_preadv_nocancel                // 542
 // NYI sys_pwritev_nocancel               // 543
-// NYI ulock_wait2                        // 544
+DECL_TEMPLATE(darwin, ulock_wait2);       // 544
 // NYI proc_info_extended_id              // 545
 #endif
 #if DARWIN_VERS >= DARWIN_12_00
@@ -698,6 +698,10 @@ DECL_TEMPLATE(darwin, map_with_linking_np); // 550
 // NYI mkfifoat                         // 553
 // NYI mknodat                          // 554
 // NYI ungraftdmg                       // 555
+#endif
+#if DARWIN_VERS >= DARWIN_15_00
+// NYI sys_coalition_policy_set     // 556
+// NYI sys_coalition_policy_get     // 557
 #endif
 
 // Mach message helpers

@@ -1326,6 +1326,13 @@ struct vki_necp_aggregate_result {
 #define VKI_IFXNAMSIZ     IFNAMSIZ + 8
 #define VKI_IFNET_SIGNATURELEN      20
 
+#define VKI_UL_COMPARE_AND_WAIT             1
+#define VKI_UL_UNFAIR_LOCK                  2
+#define VKI_UL_COMPARE_AND_WAIT_SHARED      3
+#define VKI_UL_UNFAIR_LOCK64_SHARED         4
+#define VKI_UL_COMPARE_AND_WAIT64           5
+#define VKI_UL_COMPARE_AND_WAIT64_SHARED    6
+
 struct vki_necp_client_signable {
 	uuid_t client_id;
 	u_int32_t sign_type;

@@ -741,7 +741,7 @@ void VG_(show_open_ports)(void)
    kdebug helpers
    ------------------------------------------------------------------ */
 
-// From https://newosxbook.com/tools/kdv.html
+// Adapted from https://newosxbook.com/tools/kdv.html
 static const HChar *kdebug_std_codes[] =
 {
   NULL,
@@ -817,13 +817,15 @@ struct KDebugTraceCode {
   ULong code;
   const HChar name[64];
 };
-static Bool kdebug_trace_codes_initd = False;
-static UInt kdebug_trace_codes_count = 0;
-static struct KDebugTraceCode* kdebug_trace_codes = NULL;
 
 static const HChar *kdebug_debugid(ULong did)
 {
+  static Bool kdebug_trace_codes_initd = False;
+  static UInt kdebug_trace_codes_count = 0;
+  static struct KDebugTraceCode* kdebug_trace_codes = NULL;
+
   static HChar buf[64];
+
   Int class = KDBG_EXTRACT_CLASS(did);
   ULong event_id = did & KDBG_EVENTID_MASK;
   HChar dir = '\0';
@@ -2748,8 +2750,8 @@ PRE(__pthread_fchdir)
 
 PRE(kdebug_trace)
 {
-   PRINT("kdebug_trace(%ld, %ld, %ld, %ld, %ld, %ld)",
-         SARG1, SARG2, SARG3, SARG4, SARG5, SARG6);
+   PRINT("kdebug_trace(%#lx (%s), %#lx, %#lx, %#lx, %#lx, %#lx)",
+         SARG1, kdebug_debugid(SARG1), SARG2, SARG3, SARG4, SARG5, SARG6);
    /*
      Don't check anything - some clients pass fewer arguments.
    PRE_REG_READ6(long, "kdebug_trace",
@@ -4171,8 +4173,8 @@ POST(mkfifo)
 PRE(sendto)
 {
    *flags |= SfMayBlock;
-   PRINT("sendto ( %ld, %s, %ld, %lu, %#lx, %ld )",
-         SARG1, (HChar *)ARG2, SARG3, ARG4, ARG5, SARG6);
+   PRINT("sendto ( %ld, %#lx, %ld, %lu, %#lx, %ld )",
+         SARG1, ARG2, SARG3, ARG4, ARG5, SARG6);
    PRE_REG_READ6(long, "sendto",
                  int, s, const void *, msg, int, len,
                  unsigned int, flags,
@@ -10739,6 +10741,9 @@ POST(openat)
 PRE(kdebug_trace_string)
 {
   PRINT("kdebug_trace_string(%#lx (%s), %#lx, %s)", ARG1, kdebug_debugid(ARG1), ARG2, (HChar*)(Addr)ARG3);
+  if (ARG3 != 0) {
+    PRE_MEM_RASCIIZ("kdebug_trace_string(string)", ARG3);
+  }
   SET_STATUS_Success(0);
 }
 
@@ -11433,6 +11438,27 @@ POST(task_read_for_pid)
   if (RES == 0 && ARG3 != 0) {
     POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
     PRINT("-> t:%s", name_for_port(*(mach_port_name_t*)ARG3));
+  }
+}
+
+PRE(ulock_wait2)
+{
+  PRINT("ulock_wait2(%ld, %#lx, %ld, %#lx, %ld)",
+        ARG1, ARG2, ARG3, ARG4, ARG5);
+  PRE_REG_READ5(int, "ulock_wait2",
+                uint32_t, operation, void*, addr, uint64_t, value,
+                uint32_t, timeout, uint64_t, value2);
+  Int value_size = 4;
+  if (ARG1 == VKI_UL_COMPARE_AND_WAIT64
+      || ARG1 == VKI_UL_COMPARE_AND_WAIT64_SHARED
+      || ARG1 == VKI_UL_COMPARE_AND_WAIT_SHARED) {
+    value_size = 8;
+  }
+  if (ARG2 != 0) {
+    PRE_MEM_READ("ulock_wait2(addr)", ARG2, value_size);
+    *flags |= SfMayBlock;
+  } else {
+    SET_STATUS_Failure( VKI_EINVAL );
   }
 }
 
@@ -12256,7 +12282,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_sys_pwritev),                             // 541
 // _____(__NR_sys_preadv_nocancel),                     // 542
 // _____(__NR_sys_pwritev_nocancel),                    // 543
-// _____(__NR_ulock_wait2),                             // 544
+   MACX_(__NR_ulock_wait2, ulock_wait2),                // 544
 // _____(__NR_proc_info_extended_id),                   // 545
 #endif
 #if DARWIN_VERS >= DARWIN_12_00
@@ -12272,6 +12298,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_mkfifoat),                                // 553
 // _____(__NR_mknodat),                                 // 554
 // _____(__NR_ungraftdmg),                              // 555
+#endif
+#if DARWIN_VERS >= DARWIN_15_00
+// _____(__NR_sys_coalition_policy_set),                // 556
+// _____(__NR_sys_coalition_policy_get),                // 557
 #endif
 // _____(__NR_MAXSYSCALL)
    MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)

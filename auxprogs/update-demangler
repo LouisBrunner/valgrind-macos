@@ -5,7 +5,7 @@ set -e
 #---------------------------------------------------------------------
 # This quick and dirty script assists in updating the C++ demangler
 # machinery in coregrind/m_demangle.
-# The script will check out 
+# The script will check out
 # - old and new revisions of the C++ demangler related files from GCC's trunk
 # - m_demangle from valgrind's trunk.
 # It will assemble
@@ -63,6 +63,7 @@ cp    ../gcc/libiberty/cplus-dem.c .
 cp    ../gcc/libiberty/dyn-string.c .
 cp    ../gcc/libiberty/d-demangle.c .
 cp    ../gcc/libiberty/rust-demangle.c .
+cp    ../gcc/libiberty/swift-demangle.c .
 cp    ../gcc/libiberty/safe-ctype.c .
 cd ..
 
@@ -85,6 +86,7 @@ cp    ../gcc/libiberty/cplus-dem.c .
 cp    ../gcc/libiberty/dyn-string.c .
 cp    ../gcc/libiberty/d-demangle.c .
 cp    ../gcc/libiberty/rust-demangle.c .
+cp    ../gcc/libiberty/swift-demangle.c .
 cp    ../gcc/libiberty/safe-ctype.c .
 cd ..
 

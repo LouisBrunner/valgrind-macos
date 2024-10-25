@@ -59,21 +59,22 @@ extern "C" {
 #define DMGL_GNAT	 (1 << 15)
 #define DMGL_DLANG	 (1 << 16)
 #define DMGL_RUST	 (1 << 17)	/* Rust wraps GNU_V3 style mangling.  */
+#define DMGL_SWIFT	 (1 << 18)
 
 /* If none of these are set, use 'current_demangling_style' as the default. */
-#define DMGL_STYLE_MASK (DMGL_AUTO|DMGL_GNU_V3|DMGL_JAVA|DMGL_GNAT|DMGL_DLANG|DMGL_RUST)
+#define DMGL_STYLE_MASK (DMGL_AUTO|DMGL_GNU_V3|DMGL_JAVA|DMGL_GNAT|DMGL_DLANG|DMGL_RUST|DMGL_SWIFT)
 
 /* Disable a limit on the depth of recursion in mangled strings.
    Note if this limit is disabled then stack exhaustion is possible when
    demangling pathologically complicated strings.  Bug reports about stack
-   exhaustion when the option is enabled will be rejected.  */  
-#define DMGL_NO_RECURSE_LIMIT (1 << 18)	
+   exhaustion when the option is enabled will be rejected.  */
+#define DMGL_NO_RECURSE_LIMIT (1 << 18)
 
 /* If DMGL_NO_RECURSE_LIMIT is not enabled, then this is the value used as
    the maximum depth of recursion allowed.  It should be enough for any
    real-world mangled name.  */
 #define DEMANGLE_RECURSION_LIMIT 2048
-  
+
 /* Enumeration of possible demangling styles.
 
    Lucid and ARM styles are still kept logically distinct, even though
@@ -91,7 +92,8 @@ extern enum demangling_styles
   java_demangling = DMGL_JAVA,
   gnat_demangling = DMGL_GNAT,
   dlang_demangling = DMGL_DLANG,
-  rust_demangling = DMGL_RUST
+  rust_demangling = DMGL_RUST,
+  swift_demangling = DMGL_SWIFT
 } current_demangling_style;
 
 /* Define string names for the various demangling styles. */
@@ -103,6 +105,7 @@ extern enum demangling_styles
 #define GNAT_DEMANGLING_STYLE_STRING          "gnat"
 #define DLANG_DEMANGLING_STYLE_STRING         "dlang"
 #define RUST_DEMANGLING_STYLE_STRING          "rust"
+#define SWIFT_DEMANGLING_STYLE_STRING         "swift"
 
 /* Some macros to test what demangling style is active. */
 
@@ -113,6 +116,7 @@ extern enum demangling_styles
 #define GNAT_DEMANGLING (((int) CURRENT_DEMANGLING_STYLE) & DMGL_GNAT)
 #define DLANG_DEMANGLING (((int) CURRENT_DEMANGLING_STYLE) & DMGL_DLANG)
 #define RUST_DEMANGLING (((int) CURRENT_DEMANGLING_STYLE) & DMGL_RUST)
+#define SWIFT_DEMANGLING (((int) CURRENT_DEMANGLING_STYLE) & DMGL_SWIFT)
 
 /* Provide information about the available demangle styles. This code is
    pulled from gdb into libiberty because it is useful to binutils also.  */
@@ -168,6 +172,9 @@ rust_demangle_callback (const char *mangled, int options,
 
 extern char *
 rust_demangle (const char *mangled, int options);
+
+extern char *
+swift_demangle (const char *mangled, int options);
 
 enum gnu_v3_ctor_kinds {
   gnu_v3_complete_object_ctor = 1,

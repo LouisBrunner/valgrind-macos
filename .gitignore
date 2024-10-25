@@ -890,6 +890,7 @@ configure~
 /memcheck/tests/deep_templates
 /memcheck/tests/demangle
 /memcheck/tests/demangle-rust
+/memcheck/tests/demangle-swift
 /memcheck/tests/describe-block
 /memcheck/tests/descr_belowsp
 /memcheck/tests/dir

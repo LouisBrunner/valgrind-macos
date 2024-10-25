@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    Rust demangler components are
@@ -107,7 +107,7 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
                      /* OUT */ const HChar **result )
 {
    /* Possibly undo (2) */
-   /* Z-Demangling was requested.  
+   /* Z-Demangling was requested.
       The fastest way to see if it's a Z-mangled name is just to attempt
       to Z-demangle it (with NULL for the soname buffer, since we're not
       interested in that). */
@@ -125,11 +125,25 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    // - Rust "legacy" mangled symbols start with "_Z".
    // - Rust "v0" mangled symbols start with "_R".
    // - D programming language mangled symbols start with "_D".
+   // - Swift starts with many symbols:
+   // "_T": legacy
+   // "_T0": Swift v4
+   // "$S"/"_$S": Swift v4.x
+   // "$s"/"_$s": Swift v5
    // XXX: the Java/Rust/Ada demangling here probably doesn't work. See
    // https://bugs.kde.org/show_bug.cgi?id=445235 for details.
    if (do_cxx_demangling && VG_(clo_demangle)
-       && orig != NULL && orig[0] == '_'
-       && (orig[1] == 'Z' || orig[1] == 'R' || orig[1] == 'D')) {
+       && orig != NULL
+       && (
+        VG_(strstr)(orig, "_Z") == orig
+        || VG_(strstr)(orig, "_R") == orig
+        || VG_(strstr)(orig, "_D") == orig
+        || VG_(strstr)(orig, "_T") == orig
+        || VG_(strstr)(orig, "$S") == orig
+        || VG_(strstr)(orig, "$s") == orig
+        || VG_(strstr)(orig, "_$S") == orig
+        || VG_(strstr)(orig, "_$s") == orig
+       )) {
       /* !!! vvv STATIC vvv !!! */
       static HChar* demangled = NULL;
       /* !!! ^^^ STATIC ^^^ !!! */
@@ -199,8 +213,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
 /*--- DEMANGLE Z-ENCODED NAMES                             ---*/
 /*------------------------------------------------------------*/
 
-/* Demangle a Z-encoded name as described in pub_tool_redir.h. 
-   Z-encoded names are used by Valgrind for doing function 
+/* Demangle a Z-encoded name as described in pub_tool_redir.h.
+   Z-encoded names are used by Valgrind for doing function
    interception/wrapping.
 
    Demangle 'sym' into its soname and fnname parts, putting them in
@@ -211,7 +225,7 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    'so' as NULL is acceptable if the caller is only interested in the
    function name part. */
 
-Bool VG_(maybe_Z_demangle) ( const HChar* sym, 
+Bool VG_(maybe_Z_demangle) ( const HChar* sym,
                              /*OUT*/const HChar** so,
                              /*OUT*/const HChar** fn,
                              /*OUT*/Bool* isWrap,
@@ -235,7 +249,7 @@ Bool VG_(maybe_Z_demangle) ( const HChar* sym,
    }
    sobuf[0] = fnbuf[0] = '\0';
 
-   if (so) 
+   if (so)
      *so = sobuf;
    *fn = fnbuf;
 

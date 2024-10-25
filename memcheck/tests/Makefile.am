@@ -372,6 +372,7 @@ EXTRA_DIST = \
 	recursive-merge.stderr.exp recursive-merge.vgtest \
 	resvn_stack.stderr.exp resvn_stack.vgtest \
 	demangle-rust.vgtest demangle-rust.stderr.exp \
+	demangle-swift.vgtest demangle-swift.stderr.exp \
 	sbfragment.stdout.exp sbfragment.stderr.exp sbfragment.vgtest \
 	sem.stderr.exp sem.vgtest \
 	sendmsg.stderr.exp sendmsg.stderr.exp-solaris sendmsg.vgtest \
@@ -489,6 +490,7 @@ check_PROGRAMS = \
 	custom-overlap \
 	demangle \
 	demangle-rust \
+	demangle-swift \
 	big_debuginfo_symbol \
 	deep-backtrace \
 	describe-block \
@@ -698,6 +700,8 @@ endif
 demangle_SOURCES = demangle.cpp
 demangle_rust_SOURCES = demangle-rust.c
 demangle_rust_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+demangle_swift_SOURCES = demangle-swift.c
+demangle_swift_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
 dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
 
 descr_belowsp_LDADD     = -lpthread

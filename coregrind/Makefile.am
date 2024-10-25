@@ -398,6 +398,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_demangle/dyn-string.c \
 	m_demangle/d-demangle.c \
 	m_demangle/rust-demangle.c \
+	m_demangle/swift-demangle.c \
 	m_demangle/safe-ctype.c \
 	m_dispatch/dispatch-x86-linux.S \
 	m_dispatch/dispatch-amd64-linux.S \

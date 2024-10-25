@@ -452,6 +452,8 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
    }
 }
 
+// See reason for disabling later in this file
+#if 0
 static
 void add_indirect_symbols( /*OUT*/XArray* /* DiSym */ syms,
                   struct _DebugInfo* di,
@@ -475,7 +477,7 @@ void add_indirect_symbols( /*OUT*/XArray* /* DiSym */ syms,
       add_symbol(syms, di, &nl, sym_addr, section->sectname, strtab_cur, strtab_sz);
    }
 }
-
+#endif
 
 /* Compare DiSyms by their start address, and for equal addresses, use
    the primary name as a secondary sort key. */
@@ -1133,9 +1135,12 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                                   dysymcmd.ilocalsym * sizeof(struct NLIST)),
                     dysymcmd.nlocalsym, strs, symcmd.strsize);
 
-// Most likely usable on most recent macOS versions
-// but I haven't tested it yet
-#if DARWIN_VERS >= DARWIN_12_00
+// Due to the usage of dyld_cache, I am unsure how to properly capture the stubs from there
+// moreover we don't have a rw_map for those so loads of logic need to change above.
+// This is only really useful when reading librairies from disk which is limited now.
+// Finally, there is also a weird overflow of some kind on arm64 macOS 15.
+// So I am disabling this for now.
+#if 0
         {
           DiCursor cmd_cur = ML_(cur_from_sli)(msli);
           DiCursor indirs = DiCursor_INVALID;

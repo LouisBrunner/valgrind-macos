@@ -10589,6 +10589,15 @@ POST(fstatat64)
     POST_MEM_WRITE( ARG3, sizeof(struct vki_stat64) );
 }
 
+PRE(unlinkat)
+{
+    PRINT("unlinkat ( %ld, %#lx(%s), %#lx )",
+          SARG1, ARG2, (HChar*)ARG2, SARG3);
+    PRE_REG_READ3(long, "unlinkat",
+                  int, fd, const char *, path, int, flag);
+    PRE_MEM_RASCIIZ( "unlinkat(path)", ARG2 );
+}
+
 PRE(readlinkat)
 {
     Word  saved = SYSNO;
@@ -12195,6 +12204,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
    MACX_(__NR_faccessat,           faccessat),          // 466
    MACXY(__NR_fstatat64,           fstatat64),          // 470
+   MACX_(__NR_unlinkat,            unlinkat),           // 472
    MACX_(__NR_readlinkat,          readlinkat),         // 473
 #if DARWIN_VERS >= DARWIN_10_15
    MACX_(__NR_mkdirat,             mkdirat),            // 475

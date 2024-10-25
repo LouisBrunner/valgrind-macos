@@ -596,7 +596,7 @@ DECL_TEMPLATE(darwin, faccessat);                // 466
 // NYI fstatat         // 469
 DECL_TEMPLATE(darwin, fstatat64);                // 470
 // NYI linkat          // 471
-// NYI unlinkat        // 472
+DECL_TEMPLATE(darwin, unlinkat);                 // 472
 DECL_TEMPLATE(darwin, readlinkat);               // 473
 // NYI symlinkat       // 474
 #if DARWIN_VERS >= DARWIN_10_15

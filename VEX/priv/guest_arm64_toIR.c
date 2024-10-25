@@ -14122,6 +14122,48 @@ Bool dis_AdvSIMD_three_same_fp16(/*MB_OUT*/DisResult* dres, UInt insn,
 #  undef INSN
 }
 
+static
+Bool dis_AdvSIMD_four_same(/*MB_OUT*/DisResult* dres, UInt insn,
+                           const VexArchInfo* archinfo)
+{
+   /* EOR3 (Advanced SIMD, FEAT_SHA3), 4-way XOR with SIMD/FP */
+   /* 31          20    15 14    9     4
+      11001110000 Rm    0  Ra    Rn    Rd
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,21) == BITS11(1,1,0,0,1,1,1,0,0,0,0)
+       && INSN(15,15) == 0) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SHA3) == 0) {
+        return False;
+      }
+
+      UInt rm = INSN(20, 16);
+      UInt ra = INSN(14, 10);
+      UInt rn = INSN(9, 5);
+      UInt rd = INSN(4, 0);
+
+      IRTemp res = newTempV128();
+      assign(res,
+        binop(Iop_XorV128,
+          getQReg128(rn),
+          binop(Iop_XorV128,
+            getQReg128(rm),
+            getQReg128(ra)
+          )
+        )
+      );
+      putQReg128(rd, mkexpr(res));
+
+      DIP("eor3 %s, %s, %s, %s\n",
+          nameQReg128(rd), nameQReg128(rn), nameQReg128(rm), nameQReg128(ra));
+
+      return True;
+   }
+
+   return False;
+#  undef INSN
+}
+
 
 static
 Bool dis_AdvSIMD_two_reg_misc(/*MB_OUT*/DisResult* dres, UInt insn)
@@ -16796,6 +16838,8 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_AdvSIMD_three_same_extra(dres, insn);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_three_same_fp16(dres, insn, archinfo);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_AdvSIMD_four_same(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_two_reg_misc(dres, insn);
    if (UNLIKELY(ok)) return True;

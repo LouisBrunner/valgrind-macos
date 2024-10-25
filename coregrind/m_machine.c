@@ -1879,6 +1879,7 @@ Bool VG_(machine_get_hwcaps)( void )
         vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
         vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
         vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
      } else {
         // sysctlbyname("hw.optional.arm.FEAT_PAuth")
         Int mibPAUTH[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_PAUTH};
@@ -1896,10 +1897,15 @@ Bool VG_(machine_get_hwcaps)( void )
             vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
         }
         // sysctlbyname("hw.optional.arm.FEAT_FP16")
-          Int mibFP16[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_FP16};
+        Int mibFP16[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_FP16};
         if (IS_ENABLED(mibFP16, 4)) {
             vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
             vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_SHA3")
+        Int mibSHA3[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SHA3};
+        if (IS_ENABLED(mibSHA3, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
         }
      }
 

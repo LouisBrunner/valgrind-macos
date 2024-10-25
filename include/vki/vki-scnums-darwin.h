@@ -813,6 +813,7 @@
 #endif
 #define __NR_faccessat              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(466)
 #define __NR_fstatat64              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(470)
+#define __NR_unlinkat               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(472)
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)
 #if DARWIN_VERS >= DARWIN_10_15
 #define __NR_mkdirat                VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(475)

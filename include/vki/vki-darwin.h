@@ -931,6 +931,7 @@ typedef
 // seemingly private?
 #define VKI_HW_ARM 100
 #define VKI_HW_OPTIONAL 102
+#define VKI_HW_FEAT_SHA3 104
 #define VKI_HW_CPUTYPE 108
 #define VKI_HW_CPUSUBTYPE 109
 #define VKI_HW_FEAT_LRCPC 115

@@ -1719,11 +1719,11 @@ void evh__pre_thread_ll_exit ( ThreadId quit_tid )
    Bool lock_at_exit = False;
 #if defined(VGO_freebsd)
    /* Bugzilla 494337
-    * temporary (?): turn off this check on FreeBSD 15+
+    * temporary (?): turn off this check on FreeBSD 14.2+
     * there is a lock during exit() to make it thread safe
     * but that lock gets leaked.
     */
-   if (VG_(getosreldate)() > 1500000) {
+   if (VG_(getosreldate)() > 1401500) {
       lock_at_exit = True;
    }
 #endif

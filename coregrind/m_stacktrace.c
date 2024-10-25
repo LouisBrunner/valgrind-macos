@@ -508,7 +508,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
  * system calls are implemented with generated wrappers that call through
  * an interposing table of function pointers. The restult when built with
  * clang is that code for the frame pointer prolog is generated but then
- * an optimized sibling call is made. That means ehe frame pointer is popped
+ * an optimized sibling call is made. That means the frame pointer is popped
  * off the stack and a jmp is made to the function in the table rather than
  * a call.
  *
@@ -516,7 +516,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
  * no prolog but a copy of the frame pointer is stored 64byte word below the
  * stack pointer. If FreeBSD uses the hack for Darwin that sets
  *  ips[i] = *(Addr *)uregs.xsp - 1;
- * then the caller of the syyscall gets added twice.
+ * then the caller of the syscall gets added twice.
  */
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,

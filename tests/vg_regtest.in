@@ -663,6 +663,8 @@ sub do_one_test($$)
             print("(cleanup operation failed: $cleanup)\n");
     }
 
+    system("vm_stat");
+
     close(VGTESTLOG);
     $num_tests_done++;
     return $rc;

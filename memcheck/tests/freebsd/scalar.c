@@ -334,7 +334,7 @@ int main(void)
 
    /* SYS_mprotect                74 */
    GO(SYS_mprotect, "3s 0m");
-   //SY(SYS_mprotect, x0+1, x0+1, x0+9999); FAIL;
+   SY(SYS_mprotect, x0+1, x0+1, x0+9999); FAIL;
 
    /* SYS_madvise                 75 */
    GO(SYS_madvise, "3s 0m");
@@ -372,7 +372,7 @@ int main(void)
 
    /* SYS_swapon                  85 */
    GO(SYS_swapon, "1s 1m");
-   //SY(SYS_swapon, x0+1); SUCC;
+   SY(SYS_swapon, x0+1); FAIL;
 
    /* SYS_getitimer               86 */
    GO(SYS_getitimer, "2s 1m");
@@ -2174,7 +2174,6 @@ int main(void)
    GO(SYS___sysctlbyname, "(putnew) 4s 2m");
    SY(SYS___sysctlbyname, x0, x0+1, NULL, NULL, x0+1, x0+2); FAIL;
 
-#if 0 // for later
    // FreeBSD 13 (and any backports)
    /* SYS_shm_open2                      571 */
    GO(SYS_shm_open2, " 5s 2m");
@@ -2202,7 +2201,6 @@ int main(void)
    /* SYS_aio_readv                      579 */
    GO(SYS_aio_readv, "1s 1m");
    SY(SYS_aio_readv, x0+1); FAIL;
-#endif
 
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");

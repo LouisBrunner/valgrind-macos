@@ -5525,6 +5525,128 @@ Syscall param __sysctlbyname(newp) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+571:           SYS_shm_open2  5s 2m
+---------------------------------------------------------
+Syscall param shm_open2(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(shmflags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param shm_open2(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+571:           SYS_shm_open2  5s 1m
+---------------------------------------------------------
+Syscall param shm_open2(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(shmflags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+574:        SYS___realpathat  5s 2m
+---------------------------------------------------------
+Syscall param __realpathat(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(size) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param __realpathat(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+575:         SYS_close_range 3s 0m
+---------------------------------------------------------
+Syscall param close_range(lowfd) contains uninitialised byte(s)
+   ...
+
+Syscall param close_range(highfd) contains uninitialised byte(s)
+   ...
+
+Syscall param close_range(flags) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+577:         SYS___specialfd 3s 1m
+---------------------------------------------------------
+Syscall param __specialfd(type) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(req) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(len) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(req) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+578:          SYS_aio_writev 1s 1m
+---------------------------------------------------------
+Syscall param aio_writev(iocb) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_writev(iocb) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+579:           SYS_aio_readv 1s 1m
+---------------------------------------------------------
+Syscall param aio_readv(iocb) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_readv(iocb) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
   1:                SYS_exit 1s 0m
 ---------------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)

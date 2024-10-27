@@ -4783,22 +4783,6 @@ AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, test x$freebsd_realpathat_syscall = xyes)
 
-AC_MSG_CHECKING([for syscalls only in FreeBSD 13 and later])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/syscall.h>
-]], [[
-  return !SYS_aio_readv;
-]])], [
-freebsd_syscall13=yes
-AC_MSG_RESULT([yes])
-AC_DEFINE([FREEBSD_SYSCALL13], 1,
-          [Define to 1 if you are using FreeBSD 13 or later.])
-], [
-freebsd_syscall13=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(FREEBSD_SYSCALL13, test x$freebsd_syscall13 = xyes)
-
 AC_MSG_CHECKING([for the SYS_kqueuex syscall (FreeBSD-specific)])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/syscall.h>
@@ -4851,7 +4835,6 @@ else
 
 AM_CONDITIONAL(FREEBSD_EVENTFD, false)
 AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, false)
-AM_CONDITIONAL(FREEBSD_SYSCALL13, false)
 AM_CONDITIONAL(FREEBSD_KQUEUEX_SYSCALL, false)
 AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, false)
 AM_CONDITIONAL(FREEBSD_SYSCALL15, false)

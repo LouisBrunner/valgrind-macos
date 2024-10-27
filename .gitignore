@@ -1433,7 +1433,6 @@
 /memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/revoke
 /memcheck/tests/freebsd/scalar
-/memcheck/tests/freebsd/scalar_13_plus
 /memcheck/tests/freebsd/scalar_15_plus
 /memcheck/tests/freebsd/scalar_abort2
 /memcheck/tests/freebsd/scalar_fork

@@ -93,8 +93,6 @@ EXTRA_DIST = \
 		scalar.stderr.exp-x86 \
 		scalar.supp \
 	scalar_abort2.vgtest \
-	scalar_13_plus.vgtest \
-	scalar_13_plus.stderr.exp \
 	scalar_15_plus.vgtest \
 	scalar_15_plus.stderr.exp \
 	scalar_abort2.stderr.exp \
@@ -186,11 +184,6 @@ inlinfo_nested_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/freebsd -s
 
 bug464476_SOURCES = bug464476.cpp
 bug470713_SOURCES = bug470713.cpp
-
-if FREEBSD_SYSCALL13
-check_PROGRAMS += scalar_13_plus
-scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
-endif
 
 if FREEBSD_EVENTFD
 check_PROGRAMS += eventfd1 eventfd2

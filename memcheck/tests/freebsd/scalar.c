@@ -2319,6 +2319,42 @@ int main(void)
    FAKE_SY("\n");
 #endif
 
+    // FreeBSD 15 (and any backports)
+   /* SYS_kqueuex                        583 */
+#if defined(SYS_kqueuex)
+   GO(SYS_kqueuex, " 1s 0m");
+   SY(SYS_kqueuex, x0+123); FAIL;
+#else
+#endif
+
+   /* SYS_membarrier                     584 */
+#if defined(SYS_membarrier)
+   GO(SYS_membarrier, " 3s 0m");
+   SY(SYS_membarrier, x0+123, x0+456, x0+789); FAIL;
+#else
+#endif
+
+   /* SYS_timerfd_create                 585 */
+#if defined(SYS_timerfd_create)
+   GO(SYS_timerfd_create, " 2s 0m");
+   SY(SYS_timerfd_create, x0+123, x0+23456); FAIL;
+#else
+#endif
+
+   /* SYS_timerfd_gettime                586 */
+#if defined(SYS_timerfd_gettime)
+   GO(SYS_timerfd_gettime, " 2s 1m");
+   SY(SYS_timerfd_gettime, x0+100, x0); FAIL;
+#else
+#endif
+
+   /* SYS_timerfd_settime                587 */
+#if defined(SYS_timerfd_settime)
+   GO(SYS_timerfd_settime, "4s 2m");
+   SY(SYS_timerfd_settime, x0+321, x0, x0+10, x0+5); FAIL;
+#else
+#endif
+
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");
    SY(SYS_exit, x0); FAIL;

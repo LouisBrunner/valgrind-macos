@@ -93,8 +93,6 @@ EXTRA_DIST = \
 		scalar.stderr.exp-x86 \
 		scalar.supp \
 	scalar_abort2.vgtest \
-	scalar_15_plus.vgtest \
-	scalar_15_plus.stderr.exp \
 	scalar_abort2.stderr.exp \
 	scalar_fork.vgtest \
 	scalar_fork.stderr.exp \
@@ -200,11 +198,6 @@ endif
 if FREEBSD_TIMERFD_SYSCALL
 check_PROGRAMS += timerfd
 timerfd_LDFLAGS = -lm
-endif
-
-if FREEBSD_SYSCALL15
-check_PROGRAMS += scalar_15_plus timerfd
-scalar_15_plus_CFLAGS = ${AM_CFLAGS} -g
 endif
 
 aligned_alloc_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@

@@ -4815,29 +4815,12 @@ AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, test x$freebsd_timerfd_syscall = xyes)
 
-AC_MSG_CHECKING([for syscalls only in FreeBSD 15 and later])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <sys/syscall.h>
-]], [[
-  return !SYS_getrlimitusage;
-]])], [
-freebsd_syscall15=yes
-AC_MSG_RESULT([yes])
-AC_DEFINE([FREEBSD_SYSCALL15], 1,
-          [Define to 1 if you are using FreeBSD 15 or later.])
-], [
-freebsd_syscall15=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(FREEBSD_SYSCALL15, test x$freebsd_syscall15 = xyes)
-
 else
 
 AM_CONDITIONAL(FREEBSD_EVENTFD, false)
 AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, false)
 AM_CONDITIONAL(FREEBSD_KQUEUEX_SYSCALL, false)
 AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, false)
-AM_CONDITIONAL(FREEBSD_SYSCALL15, false)
 
 fi # test "$VGCONF_OS" = "freebsd"
 

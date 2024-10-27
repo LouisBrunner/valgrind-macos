@@ -2325,6 +2325,10 @@ int main(void)
    GO(SYS_kqueuex, " 1s 0m");
    SY(SYS_kqueuex, x0+123); FAIL;
 #else
+   FAKE_GO("583:             SYS_kqueuex  1s 0m");
+   FAKE_SY("Syscall param kqueuex(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
 #endif
 
    /* SYS_membarrier                     584 */
@@ -2332,6 +2336,16 @@ int main(void)
    GO(SYS_membarrier, " 3s 0m");
    SY(SYS_membarrier, x0+123, x0+456, x0+789); FAIL;
 #else
+   FAKE_GO("584:          SYS_membarrier  3s 0m");
+   FAKE_SY("Syscall param membarrier(cmd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param membarrier(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param membarrier(cpu_id) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
 #endif
 
    /* SYS_timerfd_create                 585 */
@@ -2339,6 +2353,13 @@ int main(void)
    GO(SYS_timerfd_create, " 2s 0m");
    SY(SYS_timerfd_create, x0+123, x0+23456); FAIL;
 #else
+   FAKE_GO("585:      SYS_timerfd_create  2s 0m");
+   FAKE_SY("Syscall param timerfd_create(clockid) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_create(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
 #endif
 
    /* SYS_timerfd_gettime                586 */
@@ -2346,6 +2367,17 @@ int main(void)
    GO(SYS_timerfd_gettime, " 2s 1m");
    SY(SYS_timerfd_gettime, x0+100, x0); FAIL;
 #else
+   FAKE_GO("586:     SYS_timerfd_gettime  2s 1m");
+   FAKE_SY("Syscall param timerfd_gettime(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_gettime(curr_value) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_gettime(curr_value) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
 #endif
 
    /* SYS_timerfd_settime                587 */
@@ -2353,6 +2385,27 @@ int main(void)
    GO(SYS_timerfd_settime, "4s 2m");
    SY(SYS_timerfd_settime, x0+321, x0, x0+10, x0+5); FAIL;
 #else
+   FAKE_GO("587:     SYS_timerfd_settime 4s 2m");
+   FAKE_SY("Syscall param timerfd_settime(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_settime(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_settime(new_value) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_settime(old_value) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_settime(new_value) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param timerfd_settime(old_value) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
 #endif
 
    /* SYS_exit                    1 */

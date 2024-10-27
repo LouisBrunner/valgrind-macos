@@ -1,4 +1,4 @@
-Release 3.24.0 (?? Oct 2024)
+Release 3.24.0.RC1 (27 Oct 2024)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -90,7 +90,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
-(3.24.0.RC1: ?? Oct 2024)
+(3.24.0.RC1: 27 Oct 2024)
 
 
 Release 3.23.0 (26 Apr 2024)

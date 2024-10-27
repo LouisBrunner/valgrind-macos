@@ -282,6 +282,26 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    i = 1;
    if (do_stats) stats.nr++;
 
+   // Does this apply to macOS 10.14 and earlier?
+#  if defined(VGO_freebsd) && (__FreeBSD_version < 1300000)
+   if (VG_(is_valid_tid)(tid_if_known) &&
+      VG_(is_in_syscall)(tid_if_known) &&
+      i < max_n_ips) {
+      /* On FreeBSD, all the system call stubs have no function
+       * prolog.  So instead of top of the stack being a new
+       * frame comprising a saved BP and a return address, we
+       * just have the return address in the caller's frame.
+       * Adjust for this by recording the return address.
+       */
+      if (debug)
+         VG_(printf)("     in syscall, use XSP-1\n");
+      ips[i] = *(Addr *)uregs.xsp - 1;
+      if (sps) sps[i] = uregs.xsp;
+      if (fps) fps[i] = uregs.xbp;
+      i++;
+   }
+#  endif
+
    while (True) {
 
       if (i >= max_n_ips)
@@ -502,19 +522,19 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
     || defined(VGP_amd64_solaris) || defined(VGP_amd64_freebsd)
 
 /*
- * Concerning the comment in the function about syscalls, this also used to
- * apply to FreeBSD. I'm not sure what changed or when. The situation with
- * FreeBSD going at least as far back as version 12.1 (so Nov 2019) is that
- * system calls are implemented with generated wrappers that call through
- * an interposing table of function pointers. The restult when built with
- * clang is that code for the frame pointer prolog is generated but then
- * an optimized sibling call is made. That means the frame pointer is popped
- * off the stack and a jmp is made to the function in the table rather than
+ * Concerning the comment in the function about syscalls, I'm not sure
+ * what changed or when with FreeBSD. The situation going at least
+ * as far back as FreeBSD 12.1 (so Nov 2019) is that system calls are
+ * implemented with generated wrappers that call through an interposing
+ * table of function pointers. The result when built with clang is that
+ * code for the frame pointer prolog is generated but then an optimized
+ * sibling call is made. That means the frame pointer is popped off
+ * the stack and a jmp is made to the function in the table rather than
  * a call.
  *
  * The end result is that, when we are in a syscall it is as though there were
- * no prolog but a copy of the frame pointer is stored 64byte word below the
- * stack pointer. If FreeBSD uses the hack for Darwin that sets
+ * no prolog but a copy of the frame pointer is stored one 64bit word below the
+ * stack pointer. If more recent FreeBSD uses the hack that sets
  *  ips[i] = *(Addr *)uregs.xsp - 1;
  * then the caller of the syscall gets added twice.
  */
@@ -592,7 +612,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       VG_(printf)("     ipsS[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
                   i-1, ips[i-1], uregs.xbp, uregs.xsp);
 
-#  if defined(VGO_darwin)
+#  if defined(VGO_darwin) || (defined(VGO_freebsd) && __FreeBSD_version < 1300000)
    if (VG_(is_valid_tid)(tid_if_known) &&
       VG_(is_in_syscall)(tid_if_known) &&
       i < max_n_ips) {

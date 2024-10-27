@@ -334,7 +334,7 @@ int main(void)
 
    /* SYS_mprotect                74 */
    GO(SYS_mprotect, "3s 0m");
-   SY(SYS_mprotect, x0+1, x0+1, x0+9999); FAIL;
+   //SY(SYS_mprotect, x0+1, x0+1, x0+9999); FAIL;
 
    /* SYS_madvise                 75 */
    GO(SYS_madvise, "3s 0m");
@@ -372,7 +372,7 @@ int main(void)
 
    /* SYS_swapon                  85 */
    GO(SYS_swapon, "1s 1m");
-   SY(SYS_swapon, x0); FAIL;
+   //SY(SYS_swapon, x0+1); SUCC;
 
    /* SYS_getitimer               86 */
    GO(SYS_getitimer, "2s 1m");

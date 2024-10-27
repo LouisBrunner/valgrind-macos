@@ -10,7 +10,7 @@
 
 int main(void)
 {
-#if defined(KERN_PS_STRINGS)
+#if defined(KERN_PS_STRINGS) && defined(AT_PS_STRINGS)
    unsigned long ul_ps_strings;
    struct ps_strings* v1;
    struct ps_strings* v2;

@@ -3605,6 +3605,10 @@ Syscall param mq_timedreceive(msg_prio) contains uninitialised byte(s)
 Syscall param mq_timedreceive(abs_timeout) contains uninitialised byte(s)
    ...
 
+Syscall param mq_timedreceive(msg_ptr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 Syscall param mq_timedreceive(msg_prio) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
@@ -3630,6 +3634,10 @@ Syscall param mq_timedsend(msg_prio) contains uninitialised byte(s)
 
 Syscall param mq_timedsend(abs_timeout) contains uninitialised byte(s)
    ...
+
+Syscall param mq_timedsend(msg_ptr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_timedsend(abs_timeout) points to unaddressable byte(s)
    ...
@@ -3713,6 +3721,14 @@ Syscall param sctp_generic_sendmsg(sinfo) contains uninitialised byte(s)
 
 Syscall param sctp_generic_sendmsg(flags) contains uninitialised byte(s)
    ...
+
+Syscall param sctp_generic_sendmsg(msg) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sctp_generic_sendmsg(to) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param sctp_generic_sendmsg(sinfo) points to unaddressable byte(s)
    ...

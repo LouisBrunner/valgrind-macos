@@ -4010,13 +4010,16 @@ PRE(sys___acl_aclcheck_link)
 // int sigwait(const sigset_t * restrict set, int * restrict sig);
 PRE(sys_sigwait)
 {
-   *flags |= SfMayBlock;
    PRINT("sys_sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
          ARG1,ARG2);
    PRE_REG_READ2(int, "sigwait",
                  const vki_sigset_t *, set, int *, sig);
    if (ARG1 != 0) {
       PRE_MEM_READ(  "sigwait(set)",  ARG1, sizeof(vki_sigset_t));
+      vki_sigset_t* set = (vki_sigset_t*)ARG1;
+      if (ML_(safe_to_deref)(set, sizeof(vki_sigset_t))) {
+         *flags |= SfMayBlock;
+      }
    }
    if (ARG2 != 0) {
       PRE_MEM_WRITE( "sigwait(sig)", ARG2, sizeof(int));
@@ -4025,7 +4028,7 @@ PRE(sys_sigwait)
 
 POST(sys_sigwait)
 {
-   if (ARG2 != 0) {
+   if (RES == 0 && ARG2 != 0) {
       POST_MEM_WRITE( ARG2, sizeof(int));
    }
 }

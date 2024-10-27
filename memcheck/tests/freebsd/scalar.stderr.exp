@@ -1155,6 +1155,23 @@ Syscall param adjtime(delta) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+140:             SYS_adjtime 2s 2m
+---------------------------------------------------------
+Syscall param adjtime(delta) contains uninitialised byte(s)
+   ...
+
+Syscall param adjtime(olddelta) contains uninitialised byte(s)
+   ...
+
+Syscall param adjtime(delta) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param adjtime(olddelta) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 147:              SYS_setsid 0s 0m
 ---------------------------------------------------------
 ---------------------------------------------------------
@@ -3965,6 +3982,22 @@ Syscall param shm_open(flags) contains uninitialised byte(s)
 
 Syscall param shm_open(mode) contains uninitialised byte(s)
    ...
+
+---------------------------------------------------------
+482:            SYS_shm_open 3s 1m
+---------------------------------------------------------
+Syscall param shm_open(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 483:          SYS_shm_unlink 1s 1m

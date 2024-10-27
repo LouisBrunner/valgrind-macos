@@ -334,8 +334,7 @@ int main(void)
 
    /* SYS_mprotect                74 */
    GO(SYS_mprotect, "3s 0m");
-   /* PJF why does this succeed? */
-   SY(SYS_mprotect, x0+1, x0, x0); SUCC;
+   SY(SYS_mprotect, x0+1, x0+1, x0+9999); FAIL;
 
    /* SYS_madvise                 75 */
    GO(SYS_madvise, "3s 0m");
@@ -503,11 +502,11 @@ int main(void)
 
    /* SYS_setreuid                126 */
    GO(SYS_setreuid, "2s 0m");
-   SY(SYS_setreuid, x0-1, x0-1); SUCC;
+   SY(SYS_setreuid, x0+1, x0+1); FAIL;
 
    /* SYS_setregid                127 */
    GO(SYS_setregid, "2s 0m");
-   SY(SYS_setregid, x0-1, x0-1); SUCC;
+   SY(SYS_setregid, x0+1, x0+1); FAIL;
 
    /* SYS_rename                  128 */
    GO(SYS_rename, "2s 2m");
@@ -552,8 +551,10 @@ int main(void)
 
    /* SYS_adjtime                 140 */
    GO(SYS_adjtime, "2s 1m");
-   /* succeeds? need non-null arg2 for 2m */
-   SY(SYS_adjtime, x0, x0); SUCC;
+   SY(SYS_adjtime, x0+1, x0); FAIL;
+
+   GO(SYS_adjtime, "2s 2m");
+   SY(SYS_adjtime, x0+1, x0+1); FAIL;
 
    /* 4.3 getpeername             141 */
 
@@ -1004,6 +1005,7 @@ int main(void)
    /* SYS_clock_nanosleep         244 */
    GO(SYS_clock_nanosleep, "4s 2m");
    SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0+3, x0+1); SUCC;
+   assert(res == EFAULT);
 #endif
 
    // SYS_clock_getcpuclockid2                             247
@@ -1101,7 +1103,7 @@ int main(void)
 
    /* SYS_modnext                 300 */
    GO(SYS_modnext, "1s 0m");
-   SY(SYS_modnext, x0+1); SUCC;
+   SY(SYS_modnext, x0+100000); FAIL;
 
    /* SYS_modstat                 301 */
    GO(SYS_modstat, "2s 1m");
@@ -1109,7 +1111,7 @@ int main(void)
 
    /* SYS_modfnext                302 */
    GO(SYS_modfnext, "1s 0m");
-   SY(SYS_modfnext, x0+1); SUCC;
+   SY(SYS_modfnext, x0+100000); FAIL;
 
    /* SYS_modfind                 303 */
    GO(SYS_modfind, "1s 1m");
@@ -1228,6 +1230,7 @@ int main(void)
    SY(SYS_sched_rr_get_interval, x0+999999, x0+1); FAIL;
 
    /* SYS_utrace                  335*/
+   /* only works if process is being traced */
    GO(SYS_utrace, "2s 1m");
    SY(SYS_utrace, x0+1, x0+16); SUCC;
 
@@ -1758,14 +1761,16 @@ int main(void)
 #if defined(SYS_freebsd12_shm_open)
    GO(SYS_freebsd12_shm_open, "(SHM_ANON) 3s 0m");
    SY(SYS_freebsd12_shm_open, x0+SHM_ANON, x0+2, x0+9); SUCC;
+
+   GO(SYS_freebsd12_shm_open, "3s 1m");
+   SY(SYS_freebsd12_shm_open, x0+2, x0+2, x0+9); FAIL;
 #else
    GO(SYS_shm_open, "(SHM_ANON) 3s 0m");
    SY(SYS_shm_open, x0+SHM_ANON, x0+2, x0+9); SUCC;
-#endif
 
-   // @todo this was causing a VG crash
-   // GO(SYS_shm_open, "3s 1m");
-   //SY(SYS_shm_open, x0+2, x0+2, x0+9); SUCC;
+   GO(SYS_shm_open, "3s 1m");
+   SY(SYS_shm_open, x0+2, x0+2, x0+9); FAIL;
+#endif
 
    /* SYS_shm_unlink              483 */
    GO(SYS_shm_unlink, "1s 1m");
@@ -1981,10 +1986,12 @@ int main(void)
     GO(SYS_posix_fallocate, "5s 0m");
     SY(SYS_posix_fallocate, x0+99999, x0, x0+10, x0, x0+20); SUCC;
 #endif
+    assert(res == EBADF);
 
     /* SYS_posix_fadvise          531 */
     GO(SYS_posix_fadvise, "4s 0m");
     SY(SYS_posix_fadvise, x0+99999, x0+10, x0+20, x0); SUCC;
+    assert(res == EBADF);
 
     /* SYS_wait6                  532 */
     GO(SYS_wait6, "6s 3m");
@@ -2182,7 +2189,7 @@ int main(void)
 
    /* SYS_close_range                    575 */
    GO(SYS_close_range, "3s 0m");
-   SY(SYS_close_range, x0+5, x0+10, x0); SUCC;
+   SY(SYS_close_range, x0+5, x0+10, x0+12345); FAIL;
 
    /* SYS___specialfd                    577 */
    GO(SYS___specialfd, "3s 1m");

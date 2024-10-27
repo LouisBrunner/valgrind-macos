@@ -334,7 +334,7 @@ int main(void)
 
    /* SYS_mprotect                74 */
    GO(SYS_mprotect, "3s 0m");
-   SY(SYS_mprotect, x0+1, x0+1, x0+9999); FAIL;
+   SY(SYS_mprotect, x0+1, x0-10, x0+9999); FAIL;
 
    /* SYS_madvise                 75 */
    GO(SYS_madvise, "3s 0m");
@@ -2176,31 +2176,148 @@ int main(void)
 
    // FreeBSD 13 (and any backports)
    /* SYS_shm_open2                      571 */
+#if defined(SYS_shm_open2)
    GO(SYS_shm_open2, " 5s 2m");
    SY(SYS_shm_open2, x0+0xf00c, x0+1, x0+2, x0+3, x0+4); FAIL;
 
    GO(SYS_shm_open2, " 5s 1m");
    SY(SYS_shm_open2, x0+SHM_ANON, x0+1, x0+2, x0+3, x0+4); FAIL;
+#else
+   FAKE_GO("571:           SYS_shm_open2  5s 2m");
+   FAKE_SY("Syscall param shm_open2(path) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(mode) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(shmflags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(name) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(path) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(name) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+
+   FAKE_GO("571:           SYS_shm_open2  5s 1m");
+   FAKE_SY("Syscall param shm_open2(path) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(mode) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(shmflags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(name) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param shm_open2(name) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
 
    /* SYS___realpathat                   574 */
+#if defined(SYS___realpathat)
    GO(SYS___realpathat, " 5s 2m");
    SY(SYS___realpathat, x0+0xffff, x0, x0, x0+100, x0+2); FAIL;
+#else
+   FAKE_GO("574:        SYS___realpathat  5s 2m");
+   FAKE_SY("Syscall param __realpathat(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __realpathat(path) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __realpathat(buf) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __realpathat(size) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __realpathat(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __realpathat(path) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __realpathat(buf) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
 
    /* SYS_close_range                    575 */
+#if defined(SYS_close_range)
    GO(SYS_close_range, "3s 0m");
    SY(SYS_close_range, x0+5, x0+10, x0+12345); FAIL;
+#else
+#endif
 
    /* SYS___specialfd                    577 */
+#if defined(SYS___specialfd)
    GO(SYS___specialfd, "3s 1m");
    SY(SYS___specialfd, x0+0xf000, x0+1, x0+10); FAIL;
+#else
+   FAKE_GO("577:         SYS___specialfd 3s 1m");
+   FAKE_SY("Syscall param __specialfd(type) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __specialfd(req) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __specialfd(len) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param __specialfd(req) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
 
    /* SYS_aio_writev                     578 */
+#if defined(SYS_aio_writev)
    GO(SYS_aio_writev, "1s 1m");
    SY(SYS_aio_writev, x0+1); FAIL;
+#else
+   FAKE_GO("578:          SYS_aio_writev 1s 1m");
+   FAKE_SY("Syscall param aio_writev(iocb) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param aio_writev(iocb) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
 
    /* SYS_aio_readv                      579 */
+#if defined(SYS_aio_readv)
    GO(SYS_aio_readv, "1s 1m");
    SY(SYS_aio_readv, x0+1); FAIL;
+#else
+   FAKE_GO("579:           SYS_aio_readv 1s 1m");
+   FAKE_SY("Syscall param aio_readv(iocb) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param aio_readv(iocb) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
 
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");

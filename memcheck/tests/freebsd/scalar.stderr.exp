@@ -610,6 +610,7 @@ Syscall param mprotect(len) contains uninitialised byte(s)
 Syscall param mprotect(prot) contains uninitialised byte(s)
    ...
 
+Warning: client syscall mprotect tried to modify addresses 0x........-0x........
 ---------------------------------------------------------
  75:             SYS_madvise 3s 0m
 ---------------------------------------------------------

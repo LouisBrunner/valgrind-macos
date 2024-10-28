@@ -451,7 +451,14 @@ load_unixthread(struct thread_command *threadcmd, load_info_t *out_info)
       vm_address_t stackbase = VG_PGROUNDDN(out_info->stack_end+1-stacksize);
       SysRes res;
 
+#if defined(VGA_arm64)
+      // FIXME: due to ASLR, we can't use VKI_MAP_FIXED here as that address space is probably used already,
+      // however, it would be nice to be able to pass `stackbase` as an input to the advisory
+      res = VG_(am_mmap_anon_float_client)(stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+      stackbase = sr_Res(res);
+#else
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+#endif
       check_mmap(res, stackbase, stacksize, "load_unixthread1");
       out_info->stack_start = (vki_uint8_t *)stackbase;
    } else {

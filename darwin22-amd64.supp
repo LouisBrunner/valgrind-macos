@@ -77,3 +77,14 @@
    fun:_ZNK5dyld39MachOFile18forEachLoadCommandER11DiagnosticsU13block_pointerFvPK12load_commandRbE
    ...
 }
+
+{
+   OSX1300:dyld_setUpPageInLinkingRegions_map_with_linking
+   Memcheck:Param
+   map_with_linking_np(link_info)
+   fun:__map_with_linking_np
+   fun:_ZN5dyld4L25setUpPageInLinkingRegionsERNS_12RuntimeStateEPKNS_6LoaderEmttbRKN5dyld35ArrayINS_18PageInLinkingRangeEEERKNS6_IPKvEE
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+   fun:(below main)
+}

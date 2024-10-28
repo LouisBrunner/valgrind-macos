@@ -1913,36 +1913,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
      ULong ctr_el0 = 0;
 #else
-     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
-     vg_assert(r == 0);
-
-     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
-     vg_assert(r == 0);
-
-     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
-
-     /* NODEFER: signal handler does not return (from the kernel's point of
-        view), hence if it is to successfully catch a signal more than once,
-        we need the NODEFER flag. */
-     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
-     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
-     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
-     tmp_sigill_act.ksa_handler = handler_unsup_insn;
-     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-     vg_assert(r == 0);
-
      ULong ctr_el0;
-     /* Does reading ctr_el0 register throw SIGILL? */
-     if (VG_MINIMAL_SETJMP(env_unsup_insn))
-        ctr_el0 = 0;
-     else
      __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
-
-     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
-     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-     vg_assert(r == 0);
-     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     vg_assert(r == 0);
 #endif
 
      vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;

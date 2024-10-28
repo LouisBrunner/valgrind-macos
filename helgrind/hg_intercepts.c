@@ -3241,7 +3241,7 @@ PTH_FUNC(int, semZutrywaitZAZa, sem_t* sem) { /* sem_trywait@* */
 }
 #elif defined(VGO_darwin)
 PTH_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */
-   return sem_wait_WRK(sem);
+   return sem_trywait_WRK(sem);
 }
 #elif defined(VGO_freebsd)
 LIBC_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*--- Dummy library constructor.                    dummy_syslib.c ---*/
+/*--- Dummy libSystem.B.dylib                      dummy_systemb.c ---*/
 /*--------------------------------------------------------------------*/
 
 /*
@@ -25,11 +25,5 @@
 */
 
 __attribute__((constructor))
-static void mysystem_init(void) {
-}
-
-// this avoids a warning during DSYM generation
-void dummy_symbol(void);
-
-void dummy_symbol(void) {
+static void mysystemb_init(void) {
 }

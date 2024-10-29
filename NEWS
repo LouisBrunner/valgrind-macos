@@ -79,6 +79,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 493454  Missing FUSE_COMPATIBLE_MAY_BLOCK markers
 493507  direct readlink syscall from PRE handler is incompatible with
         FUSE_COMPATIBLE_MAY_BLOCK
+493959  s390x: Fix regtest failure for none/tests/s390x/op00
 493970  s390x: Store/restore FPC upon helper call causes slowdown
 494252  s390x: incorrect disassembly for LOCHI and friends
 495278  PowerPC instruction dcbf should allow the L field values of 4, 6 on

@@ -3930,7 +3930,7 @@ PRE(sys_execve)
 #if defined(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS)
    if (ARG1_is_fd)
       VG_(message)(Vg_UserMsg, "execve(%ld, %#lx, %#lx, %lu) failed, "
-                   "errno %ld\n", SARG1, ARG2, ARG3, ARG4, ERR);
+                   "errno %lu\n", SARG1, ARG2, ARG3, ARG4, ERR);
    else
       VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx, %ld) failed, errno"
                    " %lu\n", ARG1, (HChar *) ARG1, ARG2, ARG3, SARG4, ERR);

@@ -86,6 +86,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         ISA 3.0 and earlier, just ignore the value
 495469  aligned_alloc and posix_memalign missing MALLOC_TRACE with returned
         pointer
+495470  s390x: 3.24.0.RC1 missing file and regtest failure
 n-i-bz  Improve messages for sigaltstack errors, use specific
         stack_t member names
 

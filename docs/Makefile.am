@@ -64,6 +64,7 @@ EXTRA_DIST = \
 	internals/qemu-aarch64-linux-HOWTO.txt \
 	internals/qemu-mips64-linux-HOWTO.txt \
 	internals/register-uses.txt \
+	internals/s390-opcodes.csv \
 	internals/release-HOWTO.txt \
 	internals/segments-seginfos.txt \
 	internals/t-chaining-notes.txt \

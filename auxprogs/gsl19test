@@ -38,6 +38,13 @@ then
    exit 1
 fi
 
+# nproc is part of coreutils so it's available on GNU/Linux. Not so on Mac OS X.
+command -v nproc > /dev/null
+if [ $? -eq 0 ]; then
+  num_cpu=`nproc`
+else
+  num_cpu=1
+fi
 
 runcmd () {
    echo -n "   $1  ... "
@@ -95,18 +102,18 @@ runcmd "Configuring                   " \
        "(cd gsl-1.9 && CC=$GSL_CC CFLAGS=\"$GSL_CFLAGS\" ./configure)" && \
 \
 runcmd "Building                      " \
-       "(cd gsl-1.9 && make && make -k check)"
+       "(cd gsl-1.9 && make -j $num_cpu && make -j $num_cpu -k check)"
 
 echo -n "   Collecting reference results  "
 rm -f out-REF
 (cd gsl-1.9 && for f in $ALL_TESTS ; \
-               do GSL_TEST_VERBOSE=1 ./$f ; done) &> out-REF
+               do GSL_TEST_VERBOSE=1 ./$f ; done) > out-REF 2>&1
 echo "  ... done"
 
 echo -n "   Collecting valgrinded results "
 rm -f out-V
 (cd gsl-1.9 && for f in $ALL_TESTS ; \
-               do GSL_TEST_VERBOSE=1 eval $GSL_VV -v --trace-children=yes "$GSL_VFLAGS" ./$f ; done) &> out-V
+               do eval GSL_TEST_VERBOSE=1 $GSL_VV -q --trace-children=yes "$GSL_VFLAGS" ./$f ; done) > out-V 2>&1
 echo "  ... done"
 
 echo -n "   Native fails:    " && (grep FAIL: out-REF | wc -l)

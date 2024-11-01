@@ -441,6 +441,30 @@ struct vki_drm_mode_crtc_lut {
 	__vki_u64 blue;
 };
 
+struct vki_drm_syncobj_handle {
+        __vki_u32 handle;
+        __vki_u32 flags;
+
+        __vki_s32 fd;
+        __vki_u32 pad;
+};
+
+struct vki_drm_prime_handle {
+        __vki_u32 handle;
+        __vki_u32 flags;
+        __vki_s32 fd;
+};
+
+struct vki_drm_mode_create_lease {
+        __vki_u64 object_ids;
+        __vki_u32 object_count;
+        __vki_u32 flags;
+
+        __vki_u32 lessee_id;
+        __vki_u32 fd;
+};
+
+
 //----------------------------------------------------------------------
 // From include/drm/drm.h
 //----------------------------------------------------------------------
@@ -536,6 +560,10 @@ struct vki_drm_mode_crtc_lut {
 
 #define VKI_DRM_COMMAND_BASE            0x40
 #define VKI_DRM_COMMAND_END		0xA0
+
+#define VKI_DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD VKI_DRM_IOWR(0xC1, struct vki_drm_syncobj_handle)
+#define VKI_DRM_IOCTL_PRIME_HANDLE_TO_FD VKI_DRM_IOWR(0x2d, struct vki_drm_prime_handle)
+#define VKI_DRM_IOCTL_MODE_CREATE_LEASE VKI_DRM_IOWR(0xC6, struct vki_drm_mode_create_lease)
 
 //----------------------------------------------------------------------
 // From include/drm/i915_drm.h

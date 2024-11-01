@@ -11777,6 +11777,33 @@ POST(sys_ioctl)
       }
       break;
 
+   case VKI_DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD:
+      if (ARG3) {
+         struct vki_drm_syncobj_handle *data =
+            (struct vki_drm_syncobj_handle *)(Addr)ARG3;
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless) (tid, data->fd);
+      }
+      break;
+
+   case VKI_DRM_IOCTL_PRIME_HANDLE_TO_FD:
+      if (ARG3) {
+         struct vki_drm_prime_handle *data =
+            (struct vki_drm_prime_handle *)(Addr)ARG3;
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless) (tid, data->fd);
+      }
+      break;
+
+   case VKI_DRM_IOCTL_MODE_CREATE_LEASE:
+      if (ARG3) {
+         struct vki_drm_mode_create_lease *data =
+            (struct vki_drm_mode_create_lease*)(Addr)ARG3;
+         if (VG_(clo_track_fds))
+            ML_(record_fd_open_nameless) (tid, data->fd);
+      }
+      break;
+
    /* KVM ioctls that only write the system call return value */
    case VKI_KVM_GET_API_VERSION:
    case VKI_KVM_CREATE_VM:

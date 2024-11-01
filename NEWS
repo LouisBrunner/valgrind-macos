@@ -75,6 +75,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 492210  False positive on x86/amd64 with ZF taken directly from addition
 492214  statx(fd, NULL, AT_EMPTY_PATH) is supported since Linux 6.11
         but not supported in valgrind
+492422  Please support DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD
 492663  Valgrind ignores debug info for some binaries
 493418  Add bad fd usage errors for --track-fds in ML_(fd_allowed)
 493454  Missing FUSE_COMPATIBLE_MAY_BLOCK markers

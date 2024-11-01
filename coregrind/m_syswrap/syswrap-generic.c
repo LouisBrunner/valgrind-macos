@@ -1599,6 +1599,7 @@ static Addr do_brk ( Addr newbrk, ThreadId tid )
    return VG_(brk_limit);
 }
 
+static
 const OpenFd *ML_(find_OpenFd)(Int fd)
 {
    OpenFd *i = allocated_fds;

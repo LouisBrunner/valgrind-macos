@@ -6895,7 +6895,7 @@ POST(sys_timerfd_settime)
 // int kcmp(pid_t pid1, pid_t pid2, int type, uintptr_t idx1, uintptr_t idx2);
 PRE(sys_kcmp)
 {
-   PRINT("kcmp(%ld, %ld, %ld, %" FMT_REGWORD "u, %" FMT_REGWORD "u)",
+   PRINT("sys_kcmp(%ld, %ld, %ld, %" FMT_REGWORD "u, %" FMT_REGWORD "u)",
          SARG1, SARG2, SARG3, ARG4, ARG5);
    switch (ARG3) {
    case VKI_KCMP_FILES:

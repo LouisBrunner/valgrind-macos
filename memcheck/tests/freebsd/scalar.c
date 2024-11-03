@@ -2427,7 +2427,7 @@ int main(void)
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
    FAKE_SY("Syscall param kcmp(idx2) contains uninitialised byte(s)\n");
-   FAKE_SY("    ...\n");
+   FAKE_SY("   ...\n");
    FAKE_SY("\n");
 #endif
 
@@ -2448,7 +2448,7 @@ int main(void)
    FAKE_SY("\n");
    FAKE_SY("Syscall param getrlimitusage(res) points to unaddressable byte(s)\n");
    FAKE_SY("   ...\n");
-   FAKE_SY("  Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
    FAKE_SY("\n");
 #endif 
 

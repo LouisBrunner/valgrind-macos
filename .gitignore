@@ -1647,6 +1647,7 @@
 /none/tests/tls
 /none/tests/track-fds-exec-children
 /none/tests/unit_debuglog
+/none/tests/use_after_close
 /none/tests/valgrind_cpp_test
 /none/tests/vgcore.*
 /none/tests/vgprintf

@@ -915,6 +915,48 @@ static int mutex_destroy_WRK(pthread_mutex_t *mutex)
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_freebsd)
+
+/*
+ * Bugzilla 494337
+ *
+ * Hacks'R'Us
+ * FreeBSD 15 (backported to 14.2) add a mutex lock to
+ * exit to ensure that it is thread-safe. But this lock
+ * never gets unlocked. That meant this lock was causing
+ * all threaded apps to generate a Helgrind still holding
+ * lock errors. So in time honoured tradition, this can
+ * be fixed with a hack. This adds a wrapper to exit()
+ * that sets a global variable hg_in_exit. In the next
+ * call to pthread_mutex_lock, if that variable is 1
+ * then the pthread_mutex_lock wrapper only calls the
+ * wrapped function. It does not call the PRE and POST
+ * userreq functions. It then resets hg_in_exit to 0
+ * (because there will be more locks in the atexit
+ * processing).
+ */
+
+int hg_in_exit = 0;
+
+static int exit_WRK(int status)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+   hg_in_exit = 1;
+
+   CALL_FN_W_W(ret, fn, status);
+
+   return ret;
+}
+
+LIBC_FUNC(int, exit, int res) {
+   return exit_WRK(res);
+}
+
+#endif
+
 
 //-----------------------------------------------------------
 // glibc:   pthread_mutex_lock
@@ -931,6 +973,14 @@ static int mutex_lock_WRK(pthread_mutex_t *mutex)
       fprintf(stderr, "<< pthread_mxlock %p", mutex); fflush(stderr);
    }
 
+#if defined(VGO_freebsd)
+   if (hg_in_exit) {
+      CALL_FN_W_W(ret, fn, mutex);
+      hg_in_exit = 0;
+      goto HG_MUTEX_LOCK_OUT;
+   }
+#endif
+
    DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE,
                 pthread_mutex_t*,mutex, long,0/*!isTryLock*/);
 
@@ -943,6 +993,8 @@ static int mutex_lock_WRK(pthread_mutex_t *mutex)
 
    DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
                 pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
+
+HG_MUTEX_LOCK_OUT:
 
    if (ret != 0) {
       DO_PthAPIerror( "pthread_mutex_lock", ret );

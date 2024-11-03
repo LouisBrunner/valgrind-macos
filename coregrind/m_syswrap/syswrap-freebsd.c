@@ -6915,6 +6915,54 @@ PRE(sys_kcmp)
    }
 }
 
+// SYS_getrlimitusage 589
+// from syscalls.master
+// int getrlimitusage(u_int which, int flags, _Out_ rlim_t *res);
+PRE(sys_getrlimitusage)
+{
+   PRINT("sys_getrlimitusage(%lu, %ld, %#" FMT_REGWORD "x )", ARG1, SARG2, ARG3);
+   PRE_REG_READ3(int, "getrlimitusage", u_int, which, int, flags, vki_rlim_t*, res);
+
+   PRE_MEM_WRITE("getrlimitusage(res)", ARG3, sizeof(vki_rlim_t));
+}
+
+POST(sys_getrlimitusage)
+{
+   POST_MEM_WRITE(ARG3, sizeof(vki_rlim_t));
+
+   // flags can be GETRLIMITUSAGE_EUID or not
+   // not sure what that means?
+
+   // we need to set the values for NOFILE DATA and STACK
+   vki_rlim_t* res = (vki_rlim_t*)ARG3;
+   switch (ARG1) {
+   case VKI_RLIMIT_NOFILE:
+      *res = ML_(get_fd_count)() + 3;
+      break;
+   case VKI_RLIMIT_DATA:
+      /*
+       * The OS initializes this the the size of the .data for the exe.
+       * We read this in readelf.c.
+       */
+      *res = VG_(data_size)() + VG_(brk_limit) - VG_(brk_base);
+      break;
+   case VKI_RLIMIT_STACK:
+      /*
+       * The main client stack is quite different when running under Valgrind. 
+       * See aspacemg-linux.c for details, but in short on 64bit systems
+       * the main stack starts with 128k reserved and a 512M limit.
+       * Valgrind just has one value, 16M by default (can be changed with
+       * --main-stacksize). Maybe we should use something more like the OS
+       * but it doesn't seem that important.
+       */
+      *res = VG_(get_client_stack_max_size)();
+      break;
+   default:
+      // do nothing
+      break;
+   }
+}
+
 #undef PRE
 #undef POST
 
@@ -7606,6 +7654,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587
    BSDX_(__NR_kcmp,             sys_kcmp),              // 588
+   BSDXY(__NR_getrlimitusage,   sys_getrlimitusage),    // 589
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
 

@@ -3543,6 +3543,10 @@ void _start_in_C_freebsd ( UWord* pArgc, UWord *initial_sp )
 #  error "Unknown OS"
 #endif
 
+SizeT VG_(get_client_stack_max_size)(void)
+{
+   return the_iifii.clstack_max_size;
+}
 
 Addr VG_(get_initial_client_SP)( void )
 {

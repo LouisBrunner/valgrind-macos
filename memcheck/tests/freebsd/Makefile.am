@@ -67,6 +67,7 @@ EXTRA_DIST = \
 	getfsstat.stderr.exp \
 	getfsstat.supp \
 		getfsstat.stderr.exp-x86 \
+	getrlimitusage.vgtest getrlimitusage.stderr.exp \
 	kqueue.vgtest \
 	kqueue.stderr.exp \
 	kqueue.stdout.exp \
@@ -170,6 +171,10 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 if HAVE_AIO_READV
 check_PROGRAMS += aiov
+endif
+
+if HAVE_GETRLIMITUSAGE
+check_PROGRAMS += getrlimitusage
 endif
 
 inlinfo_SOURCES = inlinfo.c

@@ -5711,6 +5711,40 @@ Syscall param timerfd_settime(old_value) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+588:                SYS_kcmp 5s 0m
+---------------------------------------------------------
+Syscall param kcmp(pid1) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(pid2) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(type) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(idx1) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(idx2) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+589:      SYS_getrlimitusage 3s, 1m
+---------------------------------------------------------
+Syscall param getrlimitusage(which) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimitusage(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimitusage(res) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimitusage(res) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
   1:                SYS_exit 1s 0m
 ---------------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)

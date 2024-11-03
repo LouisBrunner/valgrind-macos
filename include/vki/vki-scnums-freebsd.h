@@ -626,6 +626,8 @@
 // __FreeBSD_version 1400507 and 1500012
 #define __NR_kcmp                588
 
+#define __NR_getrlimitusage      589
+
 #define __NR_fake_sigreturn      1000
 
 #endif /* VKI_UNISTD_FREEBSD_H */

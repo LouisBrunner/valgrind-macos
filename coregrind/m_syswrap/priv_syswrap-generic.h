@@ -60,6 +60,7 @@ Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
                      Bool isNewFD);
 
 extern void ML_(record_fd_close)               (ThreadId tid, Int fd);
+extern Int  ML_(get_fd_count)                  (void);
 extern void ML_(record_fd_close_range)         (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_named)          (ThreadId tid, Int fd);
 extern void ML_(record_fd_open_nameless)       (ThreadId tid, Int fd);

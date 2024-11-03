@@ -4955,7 +4955,8 @@ AC_CHECK_FUNCS([     \
         sem_timedwait \
         sem_clockwait_np \
         fdatasync    \
-        getrandom
+        getrandom    \
+        getrlimitusage
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -5009,6 +5010,8 @@ AM_CONDITIONAL([HAVE_FDATASYNC],
                [test x$ac_cv_func_fdatasync = xyes])
 AM_CONDITIONAL([HAVE_GETRANDOM],
                [test x$ac_cv_func_getrandom = xyes])
+AM_CONDITIONAL([HAVE_GETRLIMITUSAGE],
+               [test x$ac_cv_func_getrlimitusage = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

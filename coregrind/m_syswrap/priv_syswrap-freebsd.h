@@ -538,6 +538,7 @@ DECL_TEMPLATE(freebsd, sys_timerfd_settime) // 587
 
 // __FreeBSD_version 1400507 and 1500012
 DECL_TEMPLATE(freebsd, sys_kcmp) // 588
+DECL_TEMPLATE(freebsd, sys_getrlimitusage) // 589
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)
 

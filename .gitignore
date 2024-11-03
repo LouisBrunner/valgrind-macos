@@ -1421,6 +1421,7 @@
 /memcheck/tests/freebsd/get_set_login
 /memcheck/tests/freebsd/getfh
 /memcheck/tests/freebsd/getfsstat
+/memcheck/tests/freebsd/getrlimitusage
 /memcheck/tests/freebsd/inlinfo
 /memcheck/tests/freebsd/inlinfo_nested.so
 /memcheck/tests/freebsd/kqueue

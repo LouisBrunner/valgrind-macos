@@ -65,6 +65,9 @@
 # include "priv_readmacho.h"
 # include "priv_readpdb.h"
 #endif
+#if defined(VGO_freebsd)
+#include "pub_core_clientstate.h"
+#endif
 
 
 /* Set this to 1 to enable somewhat minimal debug printing for the
@@ -5144,6 +5147,19 @@ void VG_(load_all_debuginfo) (void)
    for (DebugInfo* di = debugInfo_list; di; di = di->next) {
       VG_(di_load_di)(di);
    }
+}
+
+SizeT VG_(data_size)(void)
+{
+   HChar resolved[1000];
+   VG_(realpath)( VG_(args_the_exename), resolved);
+
+   for (DebugInfo* di = debugInfo_list; di; di = di->next) {
+      if (di->data_size  && VG_(strcmp)(di->soname, "NONE") == 0 && VG_(strcmp)(resolved, di->fsm.filename) == 0) {
+         return VG_PGROUNDUP(di->data_size);
+      }
+   }
+   return 0U;
 }
 #endif
 

@@ -1,0 +1,3 @@
+prereq: test -e ./getrlimitusage
+prog: getrlimitusage
+vgopts: -q

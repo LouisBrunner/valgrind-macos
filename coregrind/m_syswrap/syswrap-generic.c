@@ -553,6 +553,12 @@ static OpenFd *allocated_fds = NULL;
 /* Count of open file descriptors. */
 static Int fd_count = 0;
 
+
+Int ML_(get_fd_count)(void)
+{
+   return fd_count;
+}
+
 /* Close_range caller might want to close very wide range of file descriptors,
    up to 0U.  We want to avoid iterating through such a range in a normall
    close_range, just up to any open file descriptor.  Also, unlike

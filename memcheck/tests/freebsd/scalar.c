@@ -2408,6 +2408,50 @@ int main(void)
    FAKE_SY("\n");
 #endif
 
+   /* SYS_kcmp                           588 */
+#if defined(SYS_kcmp)
+   GO(SYS_kcmp, "5s 0m");
+   SY(SYS_kcmp, x0+1, x0+2, x0+3, x0+4, x0+5);
+#else
+   FAKE_GO("588:                SYS_kcmp 5s 0m");
+   FAKE_SY("Syscall param kcmp(pid1) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kcmp(pid2) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kcmp(type) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kcmp(idx1) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kcmp(idx2) contains uninitialised byte(s)\n");
+   FAKE_SY("    ...\n");
+   FAKE_SY("\n");
+#endif
+
+   /* SYS_getrlimitusage                 589 */
+#if defined(SYS_getrlimitusage)
+   GO(SYS_getrlimitusage, "3s, 1m");
+   SY(SYS_getrlimitusage, x0+3, x0, x0+2);
+#else
+   FAKE_GO("589:      SYS_getrlimitusage 3s, 1m");
+   FAKE_SY("Syscall param getrlimitusage(which) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param getrlimitusage(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param getrlimitusage(res) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param getrlimitusage(res) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("  Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif 
+
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");
    SY(SYS_exit, x0); FAIL;

@@ -138,7 +138,7 @@
    Anything "user-defined" or "class-specific" we can't know
    about and the user needs to use memory pool annotation.
 
-   "non-alocating placement" as the name implies does not
+   "non-allocating placement" as the name implies does not
    allocate. Placement deletes are no-ops.
 */
 

@@ -6329,7 +6329,7 @@ static void mc_print_usage(void)
 "    --keep-stacktraces=alloc|free|alloc-and-free|alloc-then-free|none\n"
 "        stack trace(s) to keep for malloc'd/free'd areas       [alloc-and-free]\n"
 "    --show-mismatched-frees=no|yes   show frees that don't match the allocator? [yes]\n"
-"    --show-realloc-size-zero=no|yes  show realocs with a size of zero? [yes]\n"
+"    --show-realloc-size-zero=no|yes  show reallocs with a size of zero? [yes]\n"
    );
 }
 

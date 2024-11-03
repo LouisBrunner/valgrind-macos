@@ -2198,7 +2198,7 @@ struct _IRExpr {
 
          It is important to get the array size/type exactly correct
          since IR optimisation looks closely at such info in order to
-         establish aliasing/non-aliasing between seperate GetI and
+         establish aliasing/non-aliasing between separate GetI and
          PutI events, which is used to establish when they can be
          reordered, etc.  Putting incorrect info in will lead to
          obscure IR optimisation bugs.

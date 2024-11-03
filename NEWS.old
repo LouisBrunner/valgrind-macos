@@ -14,7 +14,7 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   Rust v0 name demangling. [Update: alas, due to a bug, this support
   isn't working in 3.18.0.]
 
-* __libc_freeres isn't called anymore after the program recieves a
+* __libc_freeres isn't called anymore after the program receives a
   fatal signal. Causing some internal glibc resources to hang around,
   but preventing any crashes after the program has ended.
 

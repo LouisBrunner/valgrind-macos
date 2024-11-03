@@ -1167,7 +1167,7 @@ static void count_len(char delim, char *buf, size_t *len)
    If speaking with GDB, early_exit will ensure the GDB user sees
    the error messages produced by vgdb:
    early_exit should be used when vgdb exits due to an early error i.e.
-   error during arg processing, before it could succesfully process the
+   error during arg processing, before it could successfully process the
    first packet from GDB.
    early_exit will then read the first packet send by GDB (i.e.
    the qSupported packet) and will reply to it with an error and then exit.

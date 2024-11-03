@@ -467,7 +467,7 @@ as "silly arguments" and no back-trace was included.
 
 </sect2>
 
-<sect2 id="mc-manual.realocsizezero"
+<sect2 id="mc-manual.reallocsizezero"
        xreflabel="Realloc size zero">
 <title>Realloc size zero</title>
 

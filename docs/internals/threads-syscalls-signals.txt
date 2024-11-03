@@ -122,7 +122,7 @@ set of signals while the signal is being delivered.  Valgrind's handlers
 block all signals, so there's no risk of a new signal being delivered to
 the same thread until the old handler has finished.
 
-The other is that if the thread which recieves the signal is not running
+The other is that if the thread which receives the signal is not running
 (ie, doesn't hold the run_sema, which implies it must be waiting for a
 syscall to complete), then the signal handler will grab the run_sema
 before making any global state changes.  Since the only time we can get

@@ -6149,13 +6149,13 @@ static IRExpr* dnorm_adj_Vector ( IRExpr* src )
  *------------------------------------------------------------*/
 
 static ULong generate_TMreason( UInt failure_code,
-                                             UInt persistant,
+                                             UInt persistent,
                                              UInt nest_overflow,
                                              UInt tm_exact )
 {
    ULong tm_err_code =
      ( (ULong) 0) << (63-6)   /* Failure code */
-     | ( (ULong) persistant) << (63-7)     /* Failure persistant */
+     | ( (ULong) persistent) << (63-7)     /* Failure persistent */
      | ( (ULong) 0) << (63-8)   /* Disallowed */
      | ( (ULong) nest_overflow) << (63-9)   /* Nesting Overflow */
      | ( (ULong) 0) << (63-10)  /* Footprint Overflow */
@@ -7691,7 +7691,7 @@ static Bool dis_int_misc ( UInt prefix, UInt theInstr )
        *
        *    0b00   Resume instruction fetching and execution when an
        *           exception or an event-based branch exception occurs,
-       *           or a resume signal from the platform is recieved.
+       *           or a resume signal from the platform is received.
        *
        *    0b01   Reserved.
        *
@@ -33735,7 +33735,7 @@ static Bool dis_transactional_memory ( UInt prefix, UInt theInstr, UInt nextInst
       UInt failure_code = 0;  /* Forcing failure, will not be due to tabort
                                * or treclaim.
                                */
-      UInt persistant = 1;    /* set persistant since we are always failing
+      UInt persistent = 1;    /* set persistent since we are always failing
                                * the tbegin.
                                */
       UInt nest_overflow = 1; /* Alowed nesting depth overflow, we use this
@@ -33759,7 +33759,7 @@ static Bool dis_transactional_memory ( UInt prefix, UInt theInstr, UInt nextInst
        */
       putCR321( 0, mkU8( 0x2 ) );
 
-      tm_reason = generate_TMreason( failure_code, persistant,
+      tm_reason = generate_TMreason( failure_code, persistent,
                                      nest_overflow, tm_exact );
 
       storeTMfailure( guest_CIA_curr_instr, tm_reason,

@@ -560,7 +560,7 @@ static SysRes setup_child_tls (ThreadId ctid, Addr tlsaddr)
 {
    static const Bool debug = False;
    ThreadState* ctst = VG_(get_ThreadState)(ctid);
-   // res is succesful by default, overriden if a real syscall is needed/done.
+   // res is successful by default, overriden if a real syscall is needed/done.
    SysRes res = VG_(mk_SysRes_Success)(0);
 
    if (debug)

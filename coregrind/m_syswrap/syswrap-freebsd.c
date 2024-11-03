@@ -2007,7 +2007,7 @@ PRE(sys___sysctl)
     *    downwards). Without any special handling this would return the
     *    address of the host userstack. We have created a stack for the
     *    guest (in aspacemgr) and that is the one that we want the guest
-    *    to see. Aspacemgr is setup in m_main.c with the adresses and sizes
+    *    to see. Aspacemgr is setup in m_main.c with the addresses and sizes
     *    saved to file static variables in that file, so we call
     *    VG_(get_usrstack)() to retrieve them from there.
     */

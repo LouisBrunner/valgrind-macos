@@ -55,6 +55,8 @@
 #include "pub_tool_clreq.h"
 #include "helgrind.h"
 #include "config.h"
+#include <string.h>
+#include <unistd.h>
 
 
 #if defined(VGO_solaris)
@@ -974,7 +976,10 @@ static int mutex_lock_WRK(pthread_mutex_t *mutex)
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_mxlock %p", mutex); fflush(stderr);
+      char buf[30];
+      snprintf(buf, 30, "<< pthread_mxlock %p", mutex);
+      write(STDERR_FILENO, buf, strlen(buf));
+      fsync(STDERR_FILENO);
    }
 
 #if defined(VGO_freebsd)
@@ -1005,7 +1010,9 @@ HG_MUTEX_LOCK_OUT:
    }
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, " :: mxlock -> %d >>\n", ret);
+      char buf[30];
+      snprintf(buf, 30, " :: mxlock -> %d >>\n", ret);
+      write(STDERR_FILENO, buf, strlen(buf));
    }
    return ret;
 }
@@ -1231,7 +1238,10 @@ static int mutex_unlock_WRK(pthread_mutex_t *mutex)
    VALGRIND_GET_ORIG_FN(fn);
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_mxunlk %p", mutex); fflush(stderr);
+      char buf[30];
+      snprintf(buf, 30, "<< pthread_mxunlk %p", mutex);
+      write(STDERR_FILENO, buf, strlen(buf));
+      fsync(STDERR_FILENO);
    }
 
    DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
@@ -1247,7 +1257,9 @@ static int mutex_unlock_WRK(pthread_mutex_t *mutex)
    }
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, " mxunlk -> %d >>\n", ret);
+      char buf[30];
+      snprintf(buf, 30, " :: mxunlk -> %d >>\n", ret);
+      write(STDERR_FILENO, buf, strlen(buf));
    }
    return ret;
 }

@@ -113,6 +113,8 @@
 #define LIBC_FUNC(ret_ty, f, args...) \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args); \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args)
+
+#include <osreldate.h>
 #endif
 
 // Do a client request.  These are macros rather than a functions so
@@ -944,7 +946,9 @@ static int exit_WRK(int status)
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
 
+#if (__FreeBSD_version >= 1401500)
    hg_in_exit = 1;
+#endif
 
    CALL_FN_W_W(ret, fn, status);
 

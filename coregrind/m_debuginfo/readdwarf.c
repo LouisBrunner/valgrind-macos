@@ -3339,7 +3339,7 @@ static Int dwarfexpr_to_dag ( const UnwindContext* ctx,
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg, 
                             "Warning: DWARF2 CFI reader: unhandled DW_OP_ "
-                            "opcode 0x%x\n", (Int)opcode); 
+                            "opcode 0x%x\n", (UInt)opcode);
             return -1;
       }
 

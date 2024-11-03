@@ -336,7 +336,7 @@ Intel_cache_info(Int level, VexCacheInfo *ci)
                }
                break;
             default:
-               VG_(debugLog)(1, "cache", "warning: L%u cache ignored\n",
+               VG_(debugLog)(1, "cache", "warning: L%d cache ignored\n",
                              (info[0] & 0xe0) >> 5);
                break;
             }

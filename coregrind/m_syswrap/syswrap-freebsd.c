@@ -384,7 +384,7 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
    vg_assert( VG_(count_living_threads)() == 1 );
 
    ML_(call_on_new_stack_0_1)(
-      (Addr)sp,               /* stack */
+      sp,                     /* stack */
       0,                      /* bogus return address */
       run_a_thread_NORETURN,  /* fn to call */
       (Word)tid               /* arg to give it */
@@ -4616,12 +4616,8 @@ POST(sys__umtx_op)
             ML_(record_fd_open_nameless) (tid, RES);
       }
       break;
-   case VKI_UMTX_OP_ROBUST_LISTS:
-      break;
    case VKI_UMTX_OP_GET_MIN_TIMEOUT:
       POST_MEM_WRITE( ARG4, sizeof(long int) );
-      break;
-   case VKI_UMTX_OP_SET_MIN_TIMEOUT:
       break;
    default:
       break;

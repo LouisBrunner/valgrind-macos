@@ -643,7 +643,7 @@ PRE(sys_thr_new)
       goto fail;
    }
    tp.stack_base = (void *)ctst->os_state.valgrind_stack_base;
-   tp.stack_size = (Addr)stk - (Addr)tp.stack_base;
+   tp.stack_size = stk - (Addr)tp.stack_base;
 
    /* Create the new thread */
    res = VG_(do_syscall2)(__NR_thr_new, (UWord)&tp, sizeof(tp));

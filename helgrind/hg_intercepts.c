@@ -1003,7 +1003,9 @@ static int mutex_lock_WRK(pthread_mutex_t *mutex)
    DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
                 pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
 
+#if defined(VGO_freebsd)
 HG_MUTEX_LOCK_OUT:
+#endif
 
    if (ret != 0) {
       DO_PthAPIerror( "pthread_mutex_lock", ret );

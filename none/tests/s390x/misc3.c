@@ -144,13 +144,12 @@ static void test_all_select()
 
 static void test_mvcrl(char *to, char *from, size_t len)
 {
-   len -= 1;
    __asm__("lgr    0,%[len]\n\t"
            ".insn  sse,0xe50a00000000,%[to],%[from]\n\t"
            : [to] "+Q" (*(char (*)[len]) to)
            : [from] "Q" (*(char (*)[len]) from),
-             [len] "d" (len)
-           : );
+             [len] "d" (len - 1)
+           : "0");
 }
 
 static void test_all_mvcrl()

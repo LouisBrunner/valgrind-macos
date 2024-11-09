@@ -42,3 +42,36 @@
    fun:client
    fun:main
 }
+{
+   sup7
+   CoreError:FdNotClosed
+   fun:_so_socket
+   fun:__xnet_socket
+   fun:client
+   fun:main
+}
+{
+   sup8
+   CoreError:FdNotClosed
+   fun:__so_recvmsg
+   fun:__xnet_recvmsg
+   fun:client
+   fun:main
+}
+{
+   sup9
+   CoreError:FdNotClosed
+   fun:_so_socket
+   fun:__xnet_socket
+   fun:server
+   fun:main
+}
+{
+   sup10
+   CoreError:FdNotClosed
+   fun:__so_accept
+   fun:accept
+   fun:server
+   fun:main
+}
+

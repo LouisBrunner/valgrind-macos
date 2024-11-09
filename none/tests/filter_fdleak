@@ -27,6 +27,7 @@ sed '/by 0x........: creat (in \/...libc...)/d' |
 
 # Solaris specific fdleak filters
 perl -p -e 's/ __close / close /' |
+perl -p -e 's/ __write / write /' |
 sed '/ _so_socket /d;' |
 awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
 awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |

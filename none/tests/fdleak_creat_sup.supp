@@ -16,3 +16,12 @@
    fun:*open*
    fun:main
 }
+{
+   sup4
+   CoreError:FdNotClosed
+   ...
+   fun:*open*
+   fun:*creat*
+   fun:main
+}
+

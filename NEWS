@@ -117,6 +117,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         FUSE_COMPATIBLE_MAY_BLOCK
 493959  s390x: Fix regtest failure for none/tests/s390x/op00
 493970  s390x: Store/restore FPC upon helper call causes slowdown
+494218  Remove FREEBSD_VERS from configure and build
 494252  s390x: incorrect disassembly for LOCHI and friends
 494960  Fixes and tweaks for gsl19test
 495278  PowerPC instruction dcbf should allow the L field values of 4, 6 on

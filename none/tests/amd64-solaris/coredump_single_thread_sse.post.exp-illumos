@@ -1,0 +1,22 @@
+---Status---
+debugging core file of coredump_single (64-bit) from ...
+initial argv: ./coredump_single_thread_sse
+status: process terminated by SIGSEGV (Segmentation Fault), addr=........
+
+---SSE Registers---
+%xmm0  [127:0]   0x10325476 98cadbfe f0debc9a 78563412
+%xmm1  [127:0]   0xcafe6794 badcfe21 43658709 89674523
+%xmm2  [127:0]   0x54676550 bafabafa decedece cdabcdab
+%xmm3  [127:0]   0x353d3a37 20212725 154b1b1d 08060503
+%xmm4  [127:0]   0x98cadbfe 78563412 10325476 f0debc9a
+%xmm5  [127:0]   0x43658709 badcfe21 89674523 cafe6794
+%xmm6  [127:0]   0xbafabafa cdabcdab decedece 54676550
+%xmm7  [127:0]   0x20212725 08060503 154b1b1d 353d3a37
+%xmm8  [127:0]   0x8ab135bc 296692dc dd839600 5eb11524
+%xmm9  [127:0]   0x226834d5 30d3f7c6 959a8ebd 4b5072c6
+%xmm10 [127:0]   0xbdf31a8a b5c8db03 c7d15cf4 b6cad1c8
+%xmm11 [127:0]   0x9d5c4ba3 e5fa0835 2175d7a2 526d6010
+%xmm12 [127:0]   0x6e8063f5 6f00222c 7232bcb0 be2187ab
+%xmm13 [127:0]   0x0a0755e9 a620c325 f03b9fef ab4a333d
+%xmm14 [127:0]   0x04069c6a ba536a25 dfd2fda5 b8a12978
+%xmm15 [127:0]   0x2a67ef93 9534a7e1 242ddd04 9b9e3936

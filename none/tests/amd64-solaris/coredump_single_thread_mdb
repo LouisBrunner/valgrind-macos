@@ -23,4 +23,5 @@ sed '/^%gsbase = / d' | \
 sed '/^%fsbase = / d' \
 
 echo "\n---Stack trace---"
-echo "::stack ! perl -p -e 's/^(\S+)\+.*/\$1/g'" | /usr/bin/mdb vgcore.*
+echo "::stack ! perl -p -e 's/^(\S+)\+.*/\$1/g'" | /usr/bin/mdb vgcore.* | \
+sed '/_start_crt/d'

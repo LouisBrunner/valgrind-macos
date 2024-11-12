@@ -1289,7 +1289,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
             // We try to write the result to the parent, but always exit.
             size_t written = 0;
             while (written < sizeof (int)) {
-               int nrw = write (pipefd[1], ((char *)&err) + 1,
+               int nrw = write (pipefd[1], ((char *)&err) + written,
                                 sizeof (int) - written);
                if (nrw == -1) {
                   if (errno == EINTR || errno == EAGAIN)

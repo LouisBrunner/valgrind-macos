@@ -2739,7 +2739,7 @@ PRE(sys_shmsys)
 #if defined(SOLARIS_SHM_NEW)
    case VKI_SHMADV:
       /* Libc: int shmadv(int shmid, uint_t cmd, uint_t *advice); */
-      PRINT("sys_shmsys ( %ld, %ld, %lu, %ld )",
+      PRINT("sys_shmsys ( %ld, %ld, %lu, %lu )",
             SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmadv"), int, opcode,
                     int, shmid, vki_uint_t, cmd, vki_uint_t *, advice);
@@ -6895,7 +6895,7 @@ PRE(sys_modctl)
 
       default:
          VG_(unimplemented)("Syswrap of the modctl call with command "
-                            "MODNVL_DEVLINKSYNC and op %ld.", ARG2);
+                            "MODNVL_DEVLINKSYNC and op %lu.", ARG2);
          /*NOTREACHED*/
          break;
       }

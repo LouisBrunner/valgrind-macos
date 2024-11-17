@@ -142,7 +142,7 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img);
    Returns (virtual) position in image from which decompressed data can be
    read. */
 DiOffT ML_(img_mark_compressed_part)(DiImage* img, DiOffT offset, SizeT szC,
-                                     SizeT szD);
+                                     SizeT szD, UChar typeC);
 
 
 /*------------------------------------------------------------*/

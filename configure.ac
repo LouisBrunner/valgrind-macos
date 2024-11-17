@@ -2880,6 +2880,26 @@ AM_CONDITIONAL(GZ_ZLIB_GNU, test x$ac_have_gz_zlib_gnu = xyes)
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -g -gz=zstd ?
+
+AC_MSG_CHECKING([if gcc accepts -g -gz=zstd])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-g -gz=zstd"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+ac_have_gz_zstd=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gz_zstd=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(GZ_ZSTD, test x$ac_have_gz_zstd = xyes)
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support nested functions ?
 
 AC_MSG_CHECKING([if gcc accepts nested functions])

@@ -876,6 +876,7 @@
 /memcheck/tests/calloc-overflow
 /memcheck/tests/cdebug_zlib
 /memcheck/tests/cdebug_zlib_gnu
+/memcheck/tests/cdebug_zstd
 /memcheck/tests/client-msg
 /memcheck/tests/clientperm
 /memcheck/tests/clientstackperm

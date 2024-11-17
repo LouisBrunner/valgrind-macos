@@ -90,6 +90,10 @@
    #define ELFCOMPRESS_ZLIB 1
 #endif
 
+#if !defined(ELFCOMPRESS_ZSTD)
+   #define ELFCOMPRESS_ZSTD 2
+#endif
+
 #define SIZE_OF_ZLIB_HEADER 12
 
 /*------------------------------------------------------------*/
@@ -1730,12 +1734,13 @@ static Bool check_compression(ElfXX_Shdr* h, DiSlice* s) {
    if (h->sh_flags & SHF_COMPRESSED) {
       ElfXX_Chdr chdr;
       ML_(img_get)(&chdr, s->img, s->ioff, sizeof(ElfXX_Chdr));
-      if (chdr.ch_type != ELFCOMPRESS_ZLIB)
+      if (chdr.ch_type != ELFCOMPRESS_ZLIB && chdr.ch_type != ELFCOMPRESS_ZSTD )
          return False;
       s->ioff = ML_(img_mark_compressed_part)(s->img,
                                               s->ioff + sizeof(ElfXX_Chdr),
                                               s->szB - sizeof(ElfXX_Chdr),
-                                              (SizeT)chdr.ch_size);
+                                              (SizeT)chdr.ch_size,
+                                              (UChar)chdr.ch_type);
       s->szB = chdr.ch_size;
     } else if (h->sh_size > SIZE_OF_ZLIB_HEADER) {
        /* Read the zlib header.  In this case, it should be "ZLIB"
@@ -1761,7 +1766,8 @@ static Bool check_compression(ElfXX_Shdr* h, DiSlice* s) {
           s->ioff = ML_(img_mark_compressed_part)(s->img,
                                                   s->ioff + SIZE_OF_ZLIB_HEADER,
                                                   s->szB - SIZE_OF_ZLIB_HEADER,
-                                                  size);
+                                                  size,
+                                                  ELFCOMPRESS_ZLIB);
           s->szB = size;
        }
     }

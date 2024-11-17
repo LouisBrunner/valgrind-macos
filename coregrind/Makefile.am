@@ -372,6 +372,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/storage.c \
 	m_debuginfo/tinfl.c \
 	m_debuginfo/tytypes.c \
+	m_debuginfo/zstddeclib.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \
 	m_demangle/demangle.c \

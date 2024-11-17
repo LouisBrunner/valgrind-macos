@@ -129,6 +129,7 @@ EXTRA_DIST = \
 	bug472219.stderr.exp bug472219.vgtest \
 	bug484002.stderr.exp bug484002.stdout.exp bug484002.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
+	cdebug_zstd.vgtest cdebug_zstd.stderr.exp \
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
 	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
 	client-msg.stderr.exp client-msg.vgtest \
@@ -585,6 +586,12 @@ if GZ_ZLIB_GNU
 check_PROGRAMS += cdebug_zlib_gnu
 cdebug_zlib_gnu_SOURCES = cdebug.c
 cdebug_zlib_gnu_CFLAGS = $(AM_CFLAGS) -g -gz=zlib-gnu @FLAG_W_NO_UNINITIALIZED@
+endif
+
+if GZ_ZSTD
+check_PROGRAMS += cdebug_zstd
+cdebug_zstd_SOURCES = cdebug.c
+cdebug_zstd_CFLAGS = $(AM_CFLAGS) -g -gz=zstd @FLAG_W_NO_UNINITIALIZED@
 endif
 
 if HAVE_SBRK

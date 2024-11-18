@@ -77,20 +77,6 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
    UWord result = 0;
    const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
 
-   if (!VG_IS_TOOL_USERREQ('D','R',arg[0])
-       && !VG_IS_TOOL_USERREQ('D','r',arg[0])
-       && !VG_IS_TOOL_USERREQ('H','G',arg[0])
-       && VG_USERREQ__MALLOCLIKE_BLOCK != arg[0]
-       && VG_USERREQ__RESIZEINPLACE_BLOCK != arg[0]
-       && VG_USERREQ__FREELIKE_BLOCK != arg[0]
-#if defined(VGO_solaris)
-       && VG_USERREQ_DRD_RTLD_BIND_GUARD != arg[0]
-       && VG_USERREQ_DRD_RTLD_BIND_CLEAR != arg[0]
-#endif /* VGO_solaris */
-       && VG_USERREQ__GDB_MONITOR_COMMAND != arg[0]) {
-         return False;
-   }
-
    tl_assert(vg_tid == VG_(get_running_tid)());
    tl_assert(DRD_(VgThreadIdToDrdThreadId)(vg_tid) == drd_tid
              || (VG_USERREQ__GDB_MONITOR_COMMAND == arg[0]

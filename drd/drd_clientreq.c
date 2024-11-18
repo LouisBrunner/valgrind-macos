@@ -46,21 +46,7 @@
 Bool DRD_(g_free_is_write);
 
 
-/* Local function declarations. */
-
-static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret);
-
-
 /* Function definitions. */
-
-/**
- * Tell the Valgrind core the address of the DRD function that processes
- * client requests. Must be called before any client code is run.
- */
-void DRD_(clientreq_init)(void)
-{
-   VG_(needs_client_requests)(handle_client_request);
-}
 
 /**
  * DRD's handler for Valgrind client requests. The code below handles both
@@ -635,4 +621,13 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    *ret = result;
    return True;
+}
+
+/**
+ * Tell the Valgrind core the address of the DRD function that processes
+ * client requests. Must be called before any client code is run.
+ */
+void DRD_(clientreq_init)(void)
+{
+   VG_(needs_client_requests)(handle_client_request);
 }

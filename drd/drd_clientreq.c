@@ -1,7 +1,7 @@
 /*
   This file is part of drd, a thread error detector.
 
-  Copyright (C) 2006-2020 Bart Van Assche <bvanassche@acm.org>.
+  Copyright (C) 2006-2024 Bart Van Assche <bvanassche@acm.org>.
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -48,32 +48,9 @@ Bool DRD_(g_free_is_write);
 
 /* Function definitions. */
 
-/**
- * DRD's handler for Valgrind client requests. The code below handles both
- * DRD's public and tool-internal client requests.
- */
-#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
- /* There is a cse related issue in gcc for MIPS. Optimization level
-    has to be lowered, so cse related optimizations are not
-    included. */
- __attribute__((optimize("O1")))
-#endif
-static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
+static Bool handle_core_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 {
-   UWord result = 0;
-   const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
-
    tl_assert(vg_tid == VG_(get_running_tid)());
-   tl_assert(DRD_(VgThreadIdToDrdThreadId)(vg_tid) == drd_tid
-             || (VG_USERREQ__GDB_MONITOR_COMMAND == arg[0]
-                 && vg_tid == VG_INVALID_THREADID));
-   /* Check the consistency of vg_tid and drd_tid, unless
-      vgdb has forced the invocation of a gdb monitor cmd
-      when no threads was running (i.e. all threads blocked
-      in a syscall. In such a case, vg_tid is invalid,
-      its conversion to a drd thread id gives also an invalid
-      drd thread id, but drd_tid is not invalid (probably
-      equal to the last running drd thread. */
 
    switch (arg[0])
    {
@@ -124,7 +101,28 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
                                  &GEI);
       }
       break;
+   }
 
+   *ret = 0;
+   return True;
+}
+
+#if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
+ /* There is a cse related issue in gcc for MIPS. Optimization level
+    has to be lowered, so cse related optimizations are not
+    included. */
+ __attribute__((optimize("O1")))
+#endif
+static Bool handle_thr_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
+{
+   const DrdThreadId drd_tid = DRD_(thread_get_running_tid)();
+   UWord result = 0;
+
+   tl_assert(vg_tid == VG_(get_running_tid)());
+   tl_assert(DRD_(VgThreadIdToDrdThreadId)(vg_tid) == drd_tid);
+
+   switch (arg[0])
+   {
    case VG_USERREQ__DRD_GET_VALGRIND_THREAD_ID:
       result = vg_tid;
       break;
@@ -621,6 +619,23 @@ static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
 
    *ret = result;
    return True;
+}
+
+/**
+ * DRD's handler for Valgrind client requests. The code below handles both
+ * DRD's public and tool-internal client requests.
+ */
+static Bool handle_client_request(ThreadId vg_tid, UWord* arg, UWord* ret)
+{
+   if (VG_IS_TOOL_USERREQ(0, 0, arg[0]))
+      return handle_core_client_request(vg_tid, arg, ret);
+
+   if (VG_IS_TOOL_USERREQ('D', 'R', arg[0]) ||
+       VG_IS_TOOL_USERREQ('D', 'r', arg[0]) ||
+       VG_IS_TOOL_USERREQ('H', 'G', arg[0]))
+      return handle_thr_client_request(vg_tid, arg, ret);
+
+   return False;
 }
 
 /**

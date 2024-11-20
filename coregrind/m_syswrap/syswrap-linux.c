@@ -2103,6 +2103,7 @@ PRE(sys_epoll_create)
 POST(sys_epoll_create)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "epoll_create", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -2120,6 +2121,7 @@ PRE(sys_epoll_create1)
 POST(sys_epoll_create1)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "epoll_create1", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -2234,6 +2236,7 @@ PRE(sys_eventfd)
 }
 POST(sys_eventfd)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "eventfd", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -2250,6 +2253,7 @@ PRE(sys_eventfd2)
 }
 POST(sys_eventfd2)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "eventfd2", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -2799,6 +2803,7 @@ PRE(sys_fanotify_init)
 
 POST(sys_fanotify_init)
 {
+   POST_newFd_RES;
    vg_assert(SUCCESS);
    if (!ML_(fd_allowed)(RES, "fanotify_init", tid, True)) {
       VG_(close)(RES);
@@ -2847,6 +2852,7 @@ PRE(sys_inotify_init)
 POST(sys_inotify_init)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "inotify_init", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -5945,6 +5951,7 @@ PRE(sys_openat)
 POST(sys_openat)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "openat", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );

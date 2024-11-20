@@ -73,6 +73,8 @@ extern Bool ML_(fd_recorded)(Int fd);
 // Returned string must not be modified nor free'd.
 extern const HChar *ML_(find_fd_recorded_by_fd)(Int fd);
 
+extern int ML_(get_next_new_fd)(Int fd);
+
 // Used when killing threads -- we must not kill a thread if it's the thread
 // that would do Valgrind's final cleanup and output.
 extern
@@ -337,6 +339,17 @@ extern SysRes ML_(generic_PRE_sys_mmap)         ( TId, UW, UW, UW, UW, UW, Off64
 #undef UW
 #undef SR
 
+/* Helper macro for POST handlers that return a new file in RES.
+   If possible sets RES (through SET_STATUS_Success) to a new
+   (not yet seem before) file descriptor.  */
+#define POST_newFd_RES                       \
+  do {                                       \
+    if (VG_(clo_modify_fds) == 1) {           \
+      int newFd = ML_(get_next_new_fd)(RES); \
+      if (newFd != RES)                      \
+        SET_STATUS_Success(newFd);           \
+    }                                        \
+  } while (0)
 
 /////////////////////////////////////////////////////////////////
 

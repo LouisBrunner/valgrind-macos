@@ -14,6 +14,7 @@ perl -p -e 's/^Open (AF_UNIX socket|file descriptor) [0-9]*: (\/private)?\/tmp\/
 perl -p -e 's/^Open file descriptor [0-9]*: .*/Open file descriptor ...: .../' |
 perl -p -e 's/^Open file descriptor [0-9]*:$/Open file descriptor ...:/' |
 perl -p -e 's/File descriptor [0-9]*: .* is already closed/File descriptor ...: ... is already closed/' |
+perl -p -e 's/File descriptor [0-9]* was closed already/File descriptor was closed already/' |
 perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
 perl -p -e 's/socket\.c:[1-9][0-9]*/in \/...libc.../' |
 
@@ -32,6 +33,18 @@ perl -p -e 's/open \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
 perl -p -e "s/: open \(/: creat (/" |
 # arm64 write resolved to file:line with debuginfo
 perl -p -e "s/write\.c:[1-9][0-9]*/in \/...libc.../" |
+#ppc64le
+sed 's/__dprintf.*/dprintf \(in \/...libc...\)/' |
+
+# Remove "internal" _functions
+sed '/by 0x........: _/d' |
+
+# Remove symbol versioning
+sed -E 's/ ([a-zA-Z0-9_]+)@@?[A-Z0-9._]+/ \1/' |
+
+perl -p -e "s/\(dprintf.c:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(open.c:[0-9]*\)/(in \/...libc...)/" |
+perl -p -e "s/\(lseek(?:64)?.c:[0-9]*\)/(in \/...libc...)/" |
 
 # FreeBSD specific fdleak filters
 perl -p -e 's/ _close / close /;s/ _openat / creat /;s/ _write/ write/;s/internet/AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:.../' |
@@ -50,6 +63,9 @@ perl -p -0 -e 's/(Open[^\n]*\n)(   (at|by)[^\n]*\n)+/$1   ...\n/gs' |
 
 sed "s/by 0x........: (below main)/by 0x........: main/" |
 sed "s/by 0x........: main (.*)/by 0x........: main/" |
+sed "s/by 0x........: open (.*)/by 0x........: open/" |
+sed "s/by 0x........: write (.*)/by 0x........: write/" |
+sed "s/by 0x........: close (.*)/by 0x........: close/" |
 
 # With glibc debuginfo installed we might see syscall-template.S,
 # dup2.c close.c or creat64.c

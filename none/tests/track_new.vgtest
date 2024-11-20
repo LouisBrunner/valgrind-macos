@@ -1,0 +1,4 @@
+prog: track_new
+prereq: test -x track_new
+vgopts: -q --track-fds=yes --modify-fds=high
+stderr_filter: filter_fdleak

@@ -182,6 +182,7 @@ XArray *VG_(clo_req_tsyms);  // array of strings
 Bool   VG_(clo_run_libc_freeres) = True;
 Bool   VG_(clo_run_cxx_freeres) = True;
 UInt   VG_(clo_track_fds)      = 0;
+UInt   VG_(clo_modify_fds)      = 0;
 Bool   VG_(clo_show_below_main)= False;
 Bool   VG_(clo_keep_debuginfo) = False;
 Bool   VG_(clo_show_emwarns)   = False;

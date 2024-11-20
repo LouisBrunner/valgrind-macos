@@ -1,5 +1,5 @@
 bad
-File descriptor 3 was closed already
+File descriptor was closed already
    at 0x........: write (in /...libc...)
    by 0x........: main
  Previously closed

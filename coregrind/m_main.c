@@ -115,6 +115,7 @@ static void usage_NORETURN ( int need_help )
 "           startup exit abexit valgrindabexit all none\n"
 "    --track-fds=no|yes|all    track open file descriptors? [no]\n"
 "                              all includes reporting inherited file descriptors\n"
+"    --modify-fds=no|high      modify newly open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"
@@ -645,6 +646,15 @@ static void process_option (Clo_Mode mode,
       else
          VG_(fmsg_bad_option)(arg,
             "Bad argument, should be 'yes', 'all' or 'no'\n");
+   }
+   else if VG_STR_CLO(arg, "--modify-fds",         tmp_str) {
+      if (VG_(strcmp)(tmp_str, "high") == 0)
+         VG_(clo_modify_fds) = 1;
+      else if (VG_(strcmp)(tmp_str, "no") == 0)
+         VG_(clo_modify_fds) = 0;
+      else
+         VG_(fmsg_bad_option)(arg,
+            "Bad argument, should be 'high' or 'no'\n");
    }
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",

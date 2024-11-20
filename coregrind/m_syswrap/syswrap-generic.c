@@ -552,6 +552,49 @@ static OpenFd *allocated_fds = NULL;
 
 /* Count of open file descriptors. */
 static Int fd_count = 0;
+/* Last used file descriptor for "new" fds.
+   Used (and updated) in get_next_new_fd to find a new (not yet used)
+   fd number to return in syscall wrappers.  */
+static Int last_new_fd = 0;
+
+/* Replace (dup2) the fd with the highest file descriptor available.
+   Close the fd and return the newly created file descriptor on  success.
+   Keep track of the last_new_fd and return the initial fd on failure. */
+int ML_(get_next_new_fd)(int fd)
+{
+   int next_new_fd;
+
+   /* Check if last_new needs to wrap around.  */
+   if (last_new_fd == 0)
+     last_new_fd = VG_(fd_hard_limit);
+
+   next_new_fd = last_new_fd - 1;
+
+   /* Find the next fd number not in use. If we have to wrap around,
+      just use fd itself.  */
+   while (next_new_fd >= 0 && ML_(fd_recorded)(next_new_fd))
+      next_new_fd--;
+   if (next_new_fd < 0)
+     next_new_fd = fd;
+
+   /* Duplicate and close the existing fd if needed.  */
+   if (next_new_fd != fd) {
+      SysRes res = VG_(dup2)(fd, next_new_fd);
+      if (!sr_isError(res))
+         VG_(close)(fd);
+      else
+        next_new_fd = fd;
+
+      /* Record what the last new fd was we returned.  */
+      last_new_fd = next_new_fd;
+   } else {
+      /* There was no lower "new" fd found. Lets wrap around for
+         the next round.  */
+      last_new_fd = VG_(fd_hard_limit);
+   }
+
+   return next_new_fd;
+}
 
 
 Int ML_(get_fd_count)(void)
@@ -3693,6 +3736,7 @@ PRE(sys_dup)
 POST(sys_dup)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "dup", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -4561,6 +4605,7 @@ PRE(sys_open)
 POST(sys_open)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -4627,6 +4672,7 @@ PRE(sys_creat)
 POST(sys_creat)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "creat", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );

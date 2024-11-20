@@ -419,6 +419,8 @@ extern Bool VG_(clo_keep_debuginfo);
 /* Track open file descriptors? 0 = No, 1 = Yes, 2 = All (including std)  */
 extern UInt  VG_(clo_track_fds);
 
+extern UInt  VG_(clo_modify_fds);
+
 
 /* Used to expand file names.  "option_name" is the option name, eg.
    "--log-file".  'format' is what follows, eg. "cachegrind.out.%p".  In

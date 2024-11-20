@@ -267,7 +267,9 @@ EXTRA_DIST = \
 	log-track-fds.stderr.exp log-track-fds.vgtest \
 	xml-track-fds.stderr.exp xml-track-fds.vgtest \
 	fdbaduse.stderr.exp fdbaduse.vgtest \
-	use_after_close.stderr.exp use_after_close.vgtest
+	use_after_close.stderr.exp use_after_close.vgtest \
+	track_new.stderr.exp track_new.stdout.exp \
+	track_new.stderr.exp.debian32 track_new.vgtest
 
 
 check_PROGRAMS = \
@@ -325,7 +327,8 @@ check_PROGRAMS = \
 	socket_close \
 	file_dclose \
 	fdbaduse \
-        use_after_close
+        use_after_close \
+	track_new
 
 if HAVE_STATIC_LIBC
 if ! VGCONF_OS_IS_LINUX

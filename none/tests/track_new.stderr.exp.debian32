@@ -1,0 +1,10 @@
+File descriptor was closed already
+   at 0x........: llseek (in /...libc...)
+   by 0x........: dprintf (in /...libc...)
+   by 0x........: main
+ Previously closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+ Originally opened
+   at 0x........: creat (in /...libc...)
+   by 0x........: main

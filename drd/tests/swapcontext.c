@@ -20,7 +20,7 @@
 
 #define STACKSIZE (PTHREAD_STACK_MIN + 4096)
 
-typedef struct thread_local {
+typedef struct threadlocal {
   ucontext_t uc[3];
   size_t nrsw;
 } thread_local_t;

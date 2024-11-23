@@ -9,7 +9,7 @@ const char kSigbus[] = "I caught the SIGBUS signal!\n";
 
 int GLOB = 3;
 
-void mysigbus() {
+void mysigbus(int signum) {
    write(1, kSigbus, sizeof(kSigbus)-1);
    GLOB--;
    return;

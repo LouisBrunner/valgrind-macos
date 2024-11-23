@@ -104,6 +104,7 @@ AM_CFLAGS_BASE = \
 	-Wpointer-arith \
 	-Wstrict-prototypes \
 	-Wmissing-declarations \
+	-Wno-unused-result \
 	@FLAG_W_CAST_ALIGN@ \
 	@FLAG_W_CAST_QUAL@ \
 	@FLAG_W_WRITE_STRINGS@ \

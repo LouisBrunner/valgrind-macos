@@ -1,0 +1,139 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>5</protocolversion>
+<protocoltool>none</protocoltool>
+
+<preamble>
+  <line>Nulgrind, the minimal Valgrind tool</line>
+  <line>Copyright...</line>
+  <line>Using Valgrind...</line>
+  <line>Command: ./fdleak_ipv4</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>none</tool>
+
+<args>
+  <vargv>
+    <exe>...</exe>
+    <arg>--command-line-only=yes</arg>
+    <arg>--memcheck:leak-check=no</arg>
+    <arg>--tool=none</arg>
+    <arg>--track-fds=yes</arg>
+    <arg>--xml=yes</arg>
+    <arg>--xml-fd=2</arg>
+    <arg>--child-silent-after-fork=yes</arg>
+  </vargv>
+  <argv>
+    <exe>...</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>FdBadClose</kind>
+  <fd>4</fd>
+  <what>...</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>client</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>70</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>90</line>
+    </frame>
+  </stack>
+  <auxwhat>Previously closed</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>client</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>69</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>90</line>
+    </frame>
+  </stack>
+  <auxwhat>Originally opened</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>client</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>68</line>
+    </frame>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>90</line>
+    </frame>
+  </stack>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>FdNotClosed</kind>
+  <fd>3</fd>
+  <what>...</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>client</fn>
+      <dir>...</dir>
+      <file>fdleak_ipv4.c</file>
+      <line>51</line>
+    </frame>
+  </stack>
+</error>
+
+<errorcounts>
+  <pair>
+    <count>1</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+<suppcounts>
+</suppcounts>
+
+</valgrindoutput>
+

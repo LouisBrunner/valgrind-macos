@@ -13,6 +13,13 @@
    fun:main
 }
 {
+   sup2-ppc64le
+   CoreError:FdNotClosed
+   fun:socket
+   fun:server
+   #fun:main
+}
+{
    sup3
    CoreError:FdNotClosed
    ...
@@ -41,6 +48,13 @@
    fun:socket
    fun:client
    fun:main
+}
+{
+   sup6-ppc64le
+   CoreError:FdNotClosed
+   fun:socket
+   fun:client
+   #fun:main
 }
 {
    sup7

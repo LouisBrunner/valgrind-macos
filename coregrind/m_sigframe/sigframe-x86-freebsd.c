@@ -289,7 +289,7 @@ static Addr build_sigframe(ThreadState *tst,
              esp, offsetof(struct sigframe, vg) );
 
    frame->sigNo = sigNo;
-   frame->retaddr = (Addr)&VG_(x86_freebsd_SUBST_FOR_sigreturn);
+   frame->retaddr = (Addr)VG_(x86_freebsd_SUBST_FOR_sigreturn);
    if ((flags & VKI_SA_SIGINFO) == 0)
       frame->psigInfo = (Addr)siginfo->si_code;
    else

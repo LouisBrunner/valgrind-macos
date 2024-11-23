@@ -258,7 +258,7 @@ static Addr build_sigframe(ThreadState *tst,
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler frame",
              rsp, offsetof(struct sigframe, vg) );
 
-   frame->retaddr = (Addr)&VG_(amd64_freebsd_SUBST_FOR_sigreturn);
+   frame->retaddr = (Addr)VG_(amd64_freebsd_SUBST_FOR_sigreturn);
 
    if (siguc) {
       trapno = siguc->uc_mcontext.trapno;

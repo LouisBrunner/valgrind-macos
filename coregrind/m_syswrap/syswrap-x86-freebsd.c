@@ -402,12 +402,12 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
    }
 
    if (vex->guest_LDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_LDT );
+      free_LDT_or_GDT( (VexGuestX86SegDescr*)(HWord)vex->guest_LDT );
       vex->guest_LDT = (HWord)NULL;
    }
 
    if (vex->guest_GDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_GDT );
+      free_LDT_or_GDT( (VexGuestX86SegDescr*)(HWord)vex->guest_GDT );
       vex->guest_GDT = (HWord)NULL;
    }
 }
@@ -420,7 +420,7 @@ static SysRes sys_set_thread_area ( ThreadId tid, Int *idxptr, void *base)
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
 
-   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+   gdt = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_GDT;
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
@@ -463,7 +463,7 @@ static SysRes sys_get_thread_area ( ThreadId tid, Int idx, void ** basep )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+   gdt = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_GDT;
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {

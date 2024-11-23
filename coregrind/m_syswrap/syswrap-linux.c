@@ -12993,7 +12993,11 @@ PRE(sys_bpf)
             }
             /* Get size of key for this map. */
             if (bpf_map_get_sizes(attr->map_fd, &key_size, &value_size)) {
-               PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               /* see https://bugs.kde.org/show_bug.cgi?id=496571 */
+               /* Key is null when getting first entry in map. */
+               if (attr->key) {
+                  PRE_MEM_READ("bpf(attr->key)", attr->key, key_size);
+               }
                PRE_MEM_WRITE("bpf(attr->next_key)", attr->next_key, key_size);
             }
          }

@@ -135,6 +135,7 @@ EXTRA_DIST = \
 	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
+	fdleak_cmsg_xml.stderr.exp-ppc64le \
 	fdleak_cmsg_xml.stderr.exp fdleak_cmsg_xml.vgtest \
 	fdleak_cmsg_supp.stderr.exp fdleak_cmsg_supp.supp \
 	fdleak_cmsg_supp.vgtest \
@@ -149,6 +150,7 @@ EXTRA_DIST = \
 	fdleak_fcntl.stderr.exp fdleak_fcntl.vgtest \
 	fdleak_fcntl_xml.stderr.exp fdleak_fcntl_xml.vgtest \
 	fdleak_ipv4.stderr.exp fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
+	fdleak_ipv4_xml.stderr.exp-ppc64le \
 	fdleak_ipv4_xml.stderr.exp fdleak_ipv4_xml.stdout.exp \
 	fdleak_ipv4_xml.vgtest fdleak_ipv4_xml.stderr.exp-nomain \
 	fdleak_open.stderr.exp fdleak_open.vgtest \
@@ -248,6 +250,7 @@ EXTRA_DIST = \
 	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest \
 	sigprocmask.stderr.exp sigprocmask.vgtest \
 	socket_close.stderr.exp socket_close.vgtest \
+	socket_close_xml.stderr.exp-ppc64le \
 	socket_close_xml.stderr.exp socket_close_xml.vgtest \
 	file_dclose.stderr.exp file_dclose.vgtest \
 	file_dclose_xml.stderr.exp file_dclose_xml.vgtest \

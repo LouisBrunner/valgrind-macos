@@ -1137,7 +1137,7 @@ void prepare_resume_reply (char *buf, char status, unsigned char sig)
          CORE_ADDR addr;
          int i;
 
-         VG_(memcpy) (buf, "watch:", 6);
+         memcpy (buf, "watch:", 6);
          buf += 6;
 
          addr = valgrind_stopped_data_address ();

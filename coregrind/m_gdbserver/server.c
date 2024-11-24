@@ -1066,7 +1066,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          n = -1;
       else {
          n = strlen(name) - ofs;
-         VG_(memcpy) (data, name, n);
+         memcpy (data, name, n);
       }
 
       if (n < 0)

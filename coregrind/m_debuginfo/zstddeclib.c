@@ -112,10 +112,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pub_core_mallocfree.h"
 #include "pub_core_libcbase.h"
 
-#include <limits.h>
-#include <stddef.h>
-#include <string.h>
-
 # define ZSTD_memcpy(d,s,l) VG_(memcpy)((d),(s),(l))
 # define ZSTD_memmove(d,s,l) VG_(memmove)((d),(s),(l))
 # define ZSTD_memset(p,v,l) VG_(memset)((p),(v),(l))

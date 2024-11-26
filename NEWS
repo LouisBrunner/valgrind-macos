@@ -24,6 +24,7 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 489913  WARNING: unhandled amd64-linux syscall: 444 (landlock_create_ruleset)
+494246  syscall fsopen not wrapped
 494327  Crash when running Helgrind built with #define TRACE_PTH_FNS 1
 494337  All threaded applications cause still holding lock errors
 495488  Add FreeBSD getrlimitusage syscall wrapper

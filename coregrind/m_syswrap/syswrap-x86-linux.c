@@ -1646,7 +1646,12 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),   // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),   // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register),// 427
-
+   LINXY(__NR_open_tree,         sys_open_tree),        // 428
+   LINX_(__NR_move_mount,        sys_move_mount),       // 429
+   LINXY(__NR_fsopen,            sys_fsopen),           // 430
+   LINX_(__NR_fsconfig,          sys_fsconfig),         // 431
+   LINXY(__NR_fsmount,           sys_fsmount),          // 432
+   LINXY(__NR_fspick,            sys_fspick),           // 433
    LINXY(__NR_pidfd_open,        sys_pidfd_open),       // 434
    GENX_(__NR_clone3,            sys_ni_syscall),       // 435
    LINXY(__NR_close_range,       sys_close_range),      // 436

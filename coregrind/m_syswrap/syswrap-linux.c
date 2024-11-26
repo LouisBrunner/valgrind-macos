@@ -13840,6 +13840,152 @@ POST(sys_pidfd_getfd)
    }
 }
 
+/* int open_tree (int dfd, const char *filename, unsigned int flags)  */
+PRE(sys_open_tree)
+{
+   PRINT("sys_open_tree ( %ld, %#" FMT_REGWORD "x(%s), %ld",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+   PRE_REG_READ3(long, "open_tree",
+                 int, dfd, const char *, filename, int, flags);
+   PRE_MEM_RASCIIZ( "open_tree(filename)", ARG2);
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "open_tree", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+POST(sys_open_tree)
+{
+   if (!ML_(fd_allowed)(RES, "open_tree", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
+/* int move_mount (int from_dfd, const char *from_pathname,
+                   int to_dfd, const char *to_pathname,
+                   unsigned int flags)  */
+PRE(sys_move_mount)
+{
+   PRINT("sys_move_mount ( %ld, %#" FMT_REGWORD "x(%s), "
+         "%ld, %#" FMT_REGWORD "x(%s), %ld",
+         SARG1, ARG2, (HChar*)(Addr)ARG2,
+         SARG3, ARG4, (HChar*)(Addr)ARG4, SARG5);
+   PRE_REG_READ5(long, "mount_move",
+                 int, from_dfd, const char *, from_pathname,
+                 int, to_dfd, const char*, to_pathname, int, flags);
+   PRE_MEM_RASCIIZ( "mount_move(from_pathname)", ARG2);
+   /* For absolute filenames, from_dfd is ignored.  If from_dfd is AT_FDCWD,
+      from_pathname is relative to cwd.  When comparing from_dfd against
+      AT_FDCWD, be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "mount_move", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   PRE_MEM_RASCIIZ( "mount_move(from_pathname)", ARG4);
+   /* For absolute filenames, to_dfd is ignored.  If to_dfd is AT_FDCWD,
+      to_pathname is relative to cwd.  When comparing to_dfd against
+      AT_FDCWD, be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG4, 1 )
+       && *(Char *)(Addr)ARG4 != '/'
+       && ((Int)ARG4) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG3, "mount_move", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+/* int fsopen (const char *fs_name, unsigned int flags)  */
+PRE(sys_fsopen)
+{
+   PRINT("sys_fsopen ( %#" FMT_REGWORD "x(%s), %ld",
+         ARG1, (HChar*)(Addr)ARG1, SARG2);
+   PRE_REG_READ2(long, "fsopen", const char *, fs_name, int, flags);
+   PRE_MEM_RASCIIZ( "fsopen(filename)", ARG1);
+}
+
+POST(sys_fsopen)
+{
+   if (!ML_(fd_allowed)(RES, "fsopen", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG1);
+   }
+}
+
+/* int fsmount (int fd, unsigned int flags, unsigned int ms_flags)  */
+PRE(sys_fsmount)
+{
+   PRINT("sys_fsmount ( %ld, %ld, %ld", SARG1, SARG2, SARG3);
+   PRE_REG_READ3(long, "fsmount", int, fd, int, flags, int, ms_flags);
+   if (!ML_(fd_allowed)(ARG1, "fsmount", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+POST(sys_fsmount)
+{
+   if (!ML_(fd_allowed)(RES, "fsmount", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless)(tid, RES);
+   }
+}
+
+/* int fsconfig (int fd, unsigned int cmd, const char *key,
+                 const void *value, int aux)  */
+PRE(sys_fsconfig)
+{
+   PRINT("sys_fsconfig ( %ld, %ld, %#" FMT_REGWORD "x(%s), "
+         "%#" FMT_REGWORD "x, %ld )",
+         SARG1, SARG2, ARG3, (HChar*)(Addr)ARG3, ARG4, SARG6);
+   PRE_REG_READ5(long, "fsconfig", int, fd, int, cmd,
+                 const char *, key, const void *, value, int, aux);
+   if (ARG3)
+      PRE_MEM_RASCIIZ( "fsconfig(key)", ARG3);
+   if (!ML_(fd_allowed)(ARG1, "fsconfig", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   /* XXX we could also check the value based on the cmd FSCONFIG_...  */
+}
+
+/* int fspick (int dfd, const char *path, unsigned int flags)  */
+PRE(sys_fspick)
+{
+   PRINT("sys_fspick ( %ld, %#" FMT_REGWORD "x(%s), %ld",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+   PRE_REG_READ3(long, "fspick",
+                 int, dfd, const char *, filename, int, flags);
+   PRE_MEM_RASCIIZ( "fspick(path)", ARG2);
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      path is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "fspick", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
+POST(sys_fspick)
+{
+   if (!ML_(fd_allowed)(RES, "fspick", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
 #undef PRE
 #undef POST
 

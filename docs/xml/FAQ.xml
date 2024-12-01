@@ -512,7 +512,7 @@ int main(void)
         </listitem>
         <listitem>
           <para>Do not link with tcmalloc for the builds that you use for
-            Memecheck testing.</para>
+            Memcheck testing.</para>
         </listitem>
       </itemizedlist>
     </para>

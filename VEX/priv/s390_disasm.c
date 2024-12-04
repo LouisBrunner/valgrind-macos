@@ -219,7 +219,7 @@ bc_operand(UInt m1)
 static const HChar *
 brc_operand(UInt m1)
 {
-   if (m1 == 0)  return "brc";
+   if (m1 == 0)  return "jnop";
    if (m1 == 15) return "j";
 
    return construct_mnemonic("j", "", m1);
@@ -230,7 +230,7 @@ brc_operand(UInt m1)
 static const HChar *
 brcl_operand(UInt m1)
 {
-   if (m1 == 0)  return "brcl";
+   if (m1 == 0)  return "jgnop";
    if (m1 == 15) return "jg";
 
    return construct_mnemonic("jg", "", m1);
@@ -259,11 +259,7 @@ dxb_operand(HChar *p, UInt d, UInt x, UInt b, Bool displacement_is_signed)
       p += vex_sprintf(p, "%u", d);
    }
    if (x != 0) {
-      p += vex_sprintf(p, "(%s", gpr_operand(x));
-      if (b != 0) {
-         p += vex_sprintf(p, ",%s", gpr_operand(b));
-      }
-      p += vex_sprintf(p, ")");
+      p += vex_sprintf(p, "(%s,%s)", gpr_operand(x), gpr_operand(b));
    } else {
       if (b != 0) {
          p += vex_sprintf(p, "(%s)", gpr_operand(b));
@@ -373,8 +369,6 @@ s390_disasm(UInt command, ...)
             mask = va_arg(args, UInt);
             mnm = kind == S390_XMNM_BCR ? bcr_operand(mask) : bc_operand(mask);
             p  += vex_sprintf(p, "%s", mnemonic(mnm));
-            /* mask == 0 is a NOP and has no argument */
-            if (mask == 0) goto done;
             break;
 
          case S390_XMNM_BRC:
@@ -382,12 +376,6 @@ s390_disasm(UInt command, ...)
             mask = va_arg(args, UInt);
             mnm = kind == S390_XMNM_BRC ? brc_operand(mask) : brcl_operand(mask);
             p  += vex_sprintf(p, "%s", mnemonic(mnm));
-
-            /* mask == 0 has no special mnemonic */
-            if (mask == 0) {
-               p += vex_sprintf(p, " 0");
-               separator = ',';
-            }
             break;
 
          case S390_XMNM_CAB:
@@ -409,8 +397,8 @@ s390_disasm(UInt command, ...)
             mask = va_arg(args, UInt);
             if (mask == 0) {
                /* There is no special opcode when mask == 0. */
-               p  += vex_sprintf(p, "bic");
-               mask_suffix = mask;
+               p  += vex_sprintf(p, "%s", mnemonic("bic"));
+               p  += vex_sprintf(p, "%u,", mask);
             } else {
                p  += vex_sprintf(p, "%s", construct_mnemonic("bi", "", mask));
             }

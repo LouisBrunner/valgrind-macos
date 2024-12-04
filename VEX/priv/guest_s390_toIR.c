@@ -3186,7 +3186,7 @@ s390_format_RRF_RURR(const HChar *(*irgen)(UChar, UChar, UChar, UChar),
    const HChar *mnm = irgen(r3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      s390_disasm(ENC5(MNM, GPR, GPR, GPR, UINT), mnm, r1, r3, r2, m4);
+      s390_disasm(ENC4(XMNM, GPR, GPR, GPR), S390_XMNM_CLS, mnm, m4, r1, r2, r3);
 }
 
 static void

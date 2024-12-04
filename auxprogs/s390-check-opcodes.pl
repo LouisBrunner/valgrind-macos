@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use Getopt::Long;
 
 #------------------------------------------------------------------
 # This script assists in updating s390-opcodes.csv
@@ -12,11 +13,16 @@ use warnings;
 # - identify opcodes that are implemented in guest_s390_toIR.c
 #   but have an out-of-date status in the CSV file.
 #------------------------------------------------------------------
-my $num_arg = $#ARGV + 1;
-
 my $csv_file;
 my $opc_file;
 my $toir_file;
+my $check_formats = 0;
+my $usage = "usage: s390-check-opcodes [--check-formats] s390-opcodes.csv "
+          . "s390-opc.txt guest_s390_toIR.c\n";
+
+GetOptions("check-formats" => \$check_formats) || die $usage;
+
+my $num_arg = $#ARGV + 1;
 
 if ($num_arg == 0) {
     my $cwd = `pwd`;
@@ -29,14 +35,16 @@ if ($num_arg == 0) {
     $opc_file  = $ARGV[1];
     $toir_file = $ARGV[2];
 } else {
-    die "usage: s390-check-opcodes s390-opcodes.csv s390-opc.txt guest_s390_toIR.c\n";
+    die $usage;
 }
 
 my %opc_desc = ();
+my %opc_format = ();
 my %csv_desc = ();
 my %csv_implemented = ();
 my %toir_implemented = ();
 my %toir_decoded = ();
+my %toir_format = ();
 my %known_arch = map {($_ => 1)}
     qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13 arch14);
 
@@ -261,6 +269,9 @@ while (my $line = <OPC>) {
 	$opc_desc{$mnemonic} = $description;
     }
 
+    if (! exists $opc_format{$mnemonic}) {
+        $opc_format{$mnemonic} = $format;
+    }
     if ($description =~ /,/) {
 	print "warning: description of $mnemonic contains comma\n";
     }
@@ -342,6 +353,9 @@ while (my $line = <TOIR>) {
 	my $mnemonic = lc $1;
 	$toir_implemented{$mnemonic} = 1;
     }
+    if ($line =~ /^..*s390_format_([A-Z_]+)[ ]*\([ ]*s390_irgen_([A-Z]+)/) {
+        $toir_format{lc $2} = $1;
+    }
 }
 close(TOIR);
 
@@ -396,6 +410,23 @@ foreach my $opc (keys %csv_implemented) {
 foreach my $opc (keys %opc_desc) {
     if (! $toir_implemented{$opc} && ! $toir_decoded{$opc}) {
 	print "*** opcode $opc is not handled by the decoder\n";
+    }
+}
+
+#----------------------------------------------------
+# 5) Cross-check opcode formats
+#----------------------------------------------------
+if ($check_formats) {
+    foreach my $opc (keys %toir_format) {
+        if (! exists $opc_format{$opc}) {
+            print "*** format $toir_format{$opc} does not exist in s390-opc.txt\n";
+        } else {
+            if ($opc_format{$opc} ne $toir_format{$opc}) {
+                print "*** format for opcode $opc differs:\n";
+                print "    binutils:    $opc_format{$opc}\n";
+                print "    toIR:        $toir_format{$opc}\n";
+            }
+        }
     }
 }
 

@@ -141,9 +141,9 @@ typedef enum {
 #define RIE_RRUUU_i3(insn) (((insn) >> 40) & 0xff)
 #define RIE_RRUUU_i4(insn) (((insn) >> 32) & 0xff)
 #define RIE_RRUUU_i5(insn) (((insn) >> 24) & 0xff)
-#define RIEv1_r1(insn) (((insn) >> 52) & 0xf)
-#define RIEv1_i2(insn) (((insn) >> 32) & 0xffff)
-#define RIEv1_m3(insn) (((insn) >> 28) & 0xf)
+#define RIE_R0xU_r1(insn) (((insn) >> 52) & 0xf)
+#define RIE_R0xU_i2(insn) (((insn) >> 32) & 0xffff)
+#define RIE_R0xU_m3(insn) (((insn) >> 28) & 0xf)
 #define RIE_RRPU_r1(insn) (((insn) >> 52) & 0xf)
 #define RIE_RRPU_r2(insn) (((insn) >> 48) & 0xf)
 #define RIE_RRPU_i4(insn) (((insn) >> 32) & 0xffff)
@@ -2796,13 +2796,25 @@ s390_format_RIE_RRUUU(const HChar *(*irgen)(UChar r1, UChar r2, UChar i3,
 }
 
 static void
-s390_format_RIEv1(const HChar *(*irgen)(UChar r1, UShort i2, UChar m3),
-                  UChar r1, UShort i2, UChar m3)
+s390_format_R0UU(const HChar *(*irgen)(UChar r1, UShort i2, UChar m3),
+                 UChar r1, UShort i2, UChar m3)
 {
    const HChar *mnm = irgen(r1, i2, m3);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      s390_disasm(ENC4(MNM, GPR, UINT, UINT), mnm, r1, i2, m3);
+      s390_disasm(ENC4(XMNM, GPR, INT, CABM), S390_XMNM_CAB, mnm, m3, r1,
+                  i2, m3);
+}
+
+static void
+s390_format_R0IU(const HChar *(*irgen)(UChar r1, UShort i2, UChar m3),
+                 UChar r1, UShort i2, UChar m3)
+{
+   const HChar *mnm = irgen(r1, i2, m3);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC4(XMNM, GPR, INT, CABM), S390_XMNM_CAB, mnm, m3, r1,
+                  (Int)(Short)i2, m3);
 }
 
 static void
@@ -3331,6 +3343,25 @@ s390_format_RSY_RURD(const HChar *(*irgen)(UChar r1, UChar r3, IRTemp op2addr),
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       s390_disasm(ENC4(MNM, GPR, UINT, SDXB), mnm, r1, r3, dh2, dl2, 0, b2);
+}
+
+static void
+s390_format_RSY_R0RD(const HChar *(*irgen)(UChar r1, UChar m3, IRTemp op2addr),
+                     UChar r1, UChar m3, UChar b2, UShort dl2, UChar dh2)
+{
+   const HChar *mnm;
+   IRTemp op2addr = newTemp(Ity_I64);
+   IRTemp d2 = newTemp(Ity_I64);
+
+   assign(d2, mkU64(((ULong)(Long)(Char)dh2 << 12) | ((ULong)dl2)));
+   assign(op2addr, binop(Iop_Add64, mkexpr(d2), b2 != 0 ? get_gpr_dw0(b2) :
+          mkU64(0)));
+
+   mnm = irgen(r1, m3, op2addr);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      s390_disasm(ENC4(XMNM, GPR, CABM, SDXB), S390_XMNM_CAB, mnm, m3, r1, m3,
+                  dh2, dl2, 0, b2);
 }
 
 static void
@@ -22121,7 +22152,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),
                                                 RSY_dh2(ovl));  goto ok;
-   case 0xeb0000000023ULL: s390_format_RSY_RURD(s390_irgen_CLT, RSY_r1(ovl),
+   case 0xeb0000000023ULL: s390_format_RSY_R0RD(s390_irgen_CLT, RSY_r1(ovl),
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),
                                                 RSY_dh2(ovl));  goto ok;
@@ -22134,7 +22165,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),
                                                 RSY_dh2(ovl));  goto ok;
-   case 0xeb000000002bULL: s390_format_RSY_RURD(s390_irgen_CLGT, RSY_r1(ovl),
+   case 0xeb000000002bULL: s390_format_RSY_R0RD(s390_irgen_CLGT, RSY_r1(ovl),
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),
                                                 RSY_dh2(ovl));  goto ok;
@@ -22390,22 +22421,22 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 RIE_RRPU_r2(ovl),
                                                 RIE_RRPU_i4(ovl),
                                                 RIE_RRPU_m3(ovl));  goto ok;
-   case 0xec0000000070ULL: s390_format_RIEv1(s390_irgen_CGIT,
-                                             RIEv1_r1(ovl),
-                                             RIEv1_i2(ovl),
-                                             RIEv1_m3(ovl)); goto ok;
-   case 0xec0000000071ULL: s390_format_RIEv1(s390_irgen_CLGIT,
-                                             RIEv1_r1(ovl),
-                                             RIEv1_i2(ovl),
-                                             RIEv1_m3(ovl)); goto ok;
-   case 0xec0000000072ULL: s390_format_RIEv1(s390_irgen_CIT,
-                                             RIEv1_r1(ovl),
-                                             RIEv1_i2(ovl),
-                                             RIEv1_m3(ovl)); goto ok;
-   case 0xec0000000073ULL: s390_format_RIEv1(s390_irgen_CLFIT,
-                                             RIEv1_r1(ovl),
-                                             RIEv1_i2(ovl),
-                                             RIEv1_m3(ovl)); goto ok;
+   case 0xec0000000070ULL: s390_format_R0IU(s390_irgen_CGIT,
+                                            RIE_R0xU_r1(ovl),
+                                            RIE_R0xU_i2(ovl),
+                                            RIE_R0xU_m3(ovl)); goto ok;
+   case 0xec0000000071ULL: s390_format_R0UU(s390_irgen_CLGIT,
+                                            RIE_R0xU_r1(ovl),
+                                            RIE_R0xU_i2(ovl),
+                                            RIE_R0xU_m3(ovl)); goto ok;
+   case 0xec0000000072ULL: s390_format_R0IU(s390_irgen_CIT,
+                                            RIE_R0xU_r1(ovl),
+                                            RIE_R0xU_i2(ovl),
+                                            RIE_R0xU_m3(ovl)); goto ok;
+   case 0xec0000000073ULL: s390_format_R0UU(s390_irgen_CLFIT,
+                                            RIE_R0xU_r1(ovl),
+                                            RIE_R0xU_i2(ovl),
+                                            RIE_R0xU_m3(ovl)); goto ok;
    case 0xec0000000076ULL: s390_format_RIE_RRPU(s390_irgen_CRJ,
                                                 RIE_RRPU_r1(ovl),
                                                 RIE_RRPU_r2(ovl),

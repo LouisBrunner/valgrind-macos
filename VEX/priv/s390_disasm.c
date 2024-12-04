@@ -124,8 +124,10 @@ cab_operand(const HChar *base, UInt mask)
       *to = *from;
    }
    /* strcat(buf, suffix); */
-   for (from = suffix[mask >> 1]; *from; ++from, ++to) {
-      *to = *from;
+   if (! (mask & 0x1)) {
+      for (from = suffix[mask >> 1]; *from; ++from, ++to) {
+         *to = *from;
+      }
    }
    *to = '\0';
 
@@ -424,7 +426,7 @@ s390_disasm(UInt command, ...)
          break;
 
       case S390_ARG_INT:
-         p += vex_sprintf(p, "%d", (Int)(va_arg(args, UInt)));
+         p += vex_sprintf(p, "%d", va_arg(args, Int));
          break;
 
       case S390_ARG_PCREL: {
@@ -478,8 +480,8 @@ s390_disasm(UInt command, ...)
       case S390_ARG_CABM: {
          UInt mask;
 
-         mask = va_arg(args, UInt) & 0xE;
-         if (mask == 0 || mask == 14) {
+         mask = va_arg(args, UInt);
+         if (mask == 0 || mask == 14 || (mask & 0x1)) {
             p += vex_sprintf(p, ",%u", mask);
          }
          break;

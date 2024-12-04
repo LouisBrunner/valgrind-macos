@@ -20675,6 +20675,10 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                       RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
    case 0xb967: s390_format_RRF_R0RR2(s390_irgen_NXGRK, RRF4_r3(ovl),
                                       RRF4_r1(ovl), RRF4_r2(ovl)); goto ok;
+   case 0xb968: /* CLZG */ goto unimplemented;
+   case 0xb969: /* CTZG */ goto unimplemented;
+   case 0xb96c: /* BEXTG */ goto unimplemented;
+   case 0xb96d: /* BDEPG */ goto unimplemented;
    case 0xb972: s390_format_RRF_U0RR(s390_irgen_CRT, RRF2_m3(ovl),
                                      RRF2_r1(ovl), RRF2_r2(ovl),
                                      S390_XMNM_CAB); goto ok;
@@ -21279,6 +21283,16 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 RXY_x2(ovl), RXY_b2(ovl),
                                                 RXY_dl2(ovl),
                                                 RXY_dh2(ovl));  goto ok;
+   case 0xe30000000060ULL: /* LXAB */ goto unimplemented;
+   case 0xe30000000061ULL: /* LLXAB */ goto unimplemented;
+   case 0xe30000000062ULL: /* LXAH */ goto unimplemented;
+   case 0xe30000000063ULL: /* LLXAH */ goto unimplemented;
+   case 0xe30000000064ULL: /* LXAF */ goto unimplemented;
+   case 0xe30000000065ULL: /* LLXAF */ goto unimplemented;
+   case 0xe30000000066ULL: /* LXAG */ goto unimplemented;
+   case 0xe30000000067ULL: /* LLXAG */ goto unimplemented;
+   case 0xe30000000068ULL: /* LXAQ */ goto unimplemented;
+   case 0xe30000000069ULL: /* LLXAQ */ goto unimplemented;
    case 0xe30000000070ULL: s390_format_RXY_RRRD(s390_irgen_STHY, RXY_r1(ovl),
                                                 RXY_x2(ovl), RXY_b2(ovl),
                                                 RXY_dl2(ovl),
@@ -21536,6 +21550,8 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 VRS_d2(ovl),
                                                 VRS_rxb(ovl));  goto ok;
    case 0xe60000000049ULL: /* VLIP */ goto unimplemented;
+   case 0xe6000000004aULL: /* VCVDQ */ goto unimplemented;
+   case 0xe6000000004eULL: /* VCVBQ */ goto unimplemented;
    case 0xe60000000050ULL: /* VCVB */ goto unimplemented;
    case 0xe60000000051ULL: /* VCLZDP */ goto unimplemented;
    case 0xe60000000052ULL: /* VCVBG */ goto unimplemented;
@@ -21580,6 +21596,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe6000000007cULL: /* VSCSHP */ goto unimplemented;
    case 0xe6000000007dULL: /* VCSPH */ goto unimplemented;
    case 0xe6000000007eULL: /* VSDP */ goto unimplemented;
+   case 0xe6000000007fULL: /* VTZ */ goto unimplemented;
    case 0xe70000000000ULL: s390_format_VRX_VRRDM(s390_irgen_VLEB, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
@@ -21720,6 +21737,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe70000000053ULL: s390_format_VRR_VVM(s390_irgen_VCLZ, VRR_v1(ovl),
                                                VRR_v2(ovl), VRR_m4(ovl),
                                                VRR_rxb(ovl));  goto ok;
+   case 0xe70000000054ULL: /* VGEM */ goto unimplemented;
    case 0xe70000000056ULL: s390_format_VRR_VV(s390_irgen_VLR, VRR_v1(ovl),
                                               VRR_v2(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe7000000005cULL: s390_format_VRR_VVMM(s390_irgen_VISTR, VRR_v1(ovl),
@@ -21836,6 +21854,8 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                  VRId_v2(ovl), VRId_v3(ovl),
                                                  VRId_i4(ovl),
                                                  VRId_rxb(ovl));  goto ok;
+   case 0xe70000000088ULL: /* VEVAL */ goto unimplemented;
+   case 0xe70000000089ULL: /* VBLEND */ goto unimplemented;
    case 0xe7000000008aULL: s390_format_VRR_VVVVMM(s390_irgen_VSTRC, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
@@ -21930,6 +21950,10 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
                                                   VRRd_rxb(ovl));  goto ok;
+   case 0xe700000000b0ULL: /* VDL */ goto unimplemented;
+   case 0xe700000000b1ULL: /* VRL */ goto unimplemented;
+   case 0xe700000000b2ULL: /* VD */ goto unimplemented;
+   case 0xe700000000b3ULL: /* VR */ goto unimplemented;
    case 0xe700000000b4ULL: s390_format_VRR_VVVM(s390_irgen_VGFM, VRR_v1(ovl),
                                                 VRR_v2(ovl), VRR_r3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
@@ -22136,6 +22160,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),
                                                 RSY_dh2(ovl));  goto ok;
+   case 0xeb0000000016ULL: /* PFCR */ goto unimplemented;
    case 0xeb000000001cULL: s390_format_RSY_RRRD(s390_irgen_RLLG, RSY_r1(ovl),
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),
@@ -22772,6 +22797,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xc802ULL: /* CSST */ goto unimplemented;
    case 0xc804ULL: /* LPD */ goto unimplemented;
    case 0xc805ULL: /* LPDG */ goto unimplemented;
+   case 0xc806ULL: /* CAL */ goto unimplemented;
+   case 0xc807ULL: /* CALG */ goto unimplemented;
+   case 0xc80fULL: /* CALGF */ goto unimplemented;
    case 0xcc06ULL:  s390_format_RIL_RP(s390_irgen_BRCTH, RIL_r1(ovl),
                                        RIL_i2(ovl));  goto ok;
    case 0xcc08ULL: s390_format_RIL_RI(s390_irgen_AIH, RIL_r1(ovl),

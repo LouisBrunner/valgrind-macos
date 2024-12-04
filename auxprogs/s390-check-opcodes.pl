@@ -46,24 +46,24 @@ my %toir_implemented = ();
 my %toir_decoded = ();
 my %toir_format = ();
 my %known_arch = map {($_ => 1)}
-    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13 arch14);
+    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13 arch14 arch15);
 
 # Patterns for identifying certain extended mnemonics that shall be
 # skipped in "s390-opc.txt" and "s390-opcodes.csv".
 
-my @extended_mnemonics = (
-    "bi",			# extended mnemonic for bic
+my @extended_mnemonics = (      # Base mnemonic(s)
+    "bi",                       # bic
     'brul?',
-    'jc',			# brc
+    'jc',                       # brc
     'jasl?',
     'jct[gh]?',
     'jg?nop',
     'jxleg?',
     'jxhg?',
     'l[de]rv',
-    'lfi',			# iilf
-    'llg[fh]i',			# llilf, llill
-    'notg?r',			# nork, nogrk
+    'lfi',                      # iilf
+    'llg[fh]i',                 # llilf, llill
+    'notg?r',                   # nork, nogrk
     'risbgn?z',
     'risb[hl]gz',
     'r[onx]sbgt',
@@ -72,17 +72,19 @@ my @extended_mnemonics = (
     "vacc[bhfgq]",
     "vacccq",
     "vacq",
-    "vavgl*[bhfg]",
+    "vavgl?[bhfgq]",            # vavg, vavgl
+    "vblend[bhfgq]",            # vblend
     "vcdl*gb",
     'vcfp[sl]',
     '[vw]cel?fb',
     'vc[sl]fp',
     '[vw]cl?feb',
-    "vceq[bhfg]s*",
-    "vchl*[bhfg]s*",
+    "vceq[bhfgq]s?",            # vceq
+    "vchl?[bhfgq]s?",           # vch, vchl
     "vcl*gdb",
-    "vc[lt]z[bhfg]",
-    "vecl*[bhfg]",
+    "vc[lt]z[bhfgq]",           # vclz, vctz
+    "vdl?[fgq]",                # vd, vdl
+    "vecl?[bhfgq]",             # vec, vecl
     "verim[bhfg]",
     "verllv*[bhfg]",
     "veslv*[bhfg]",
@@ -111,12 +113,13 @@ my @extended_mnemonics = (
     "vfpso[sd]b",
     "vfsq*[sd]b",
     "vftci[sd]b",
+    "vgem[bfghq]",              # vgem
     "vgfma*[bhfg]",
     "vgm[bhfg]",
     "vistr[bhfg]s*",
     'vlbr[hfgq]',
     'vlbrrep[hfg]',
-    "vlc[bhfg]",
+    "vlc[bhfgq]",               # vlc
     "[vw]ldeb",
     "[vw]ledb",
     'vler[hfg]',
@@ -124,15 +127,15 @@ my @extended_mnemonics = (
     'vllebrz[hfge]',
     "vllez[bhfg]",
     "vllezlf",
-    "vlp[bhfg]",
+    "vlp[bhfgq]",               # vlp
     "vlrep[bhfg]",
     "vlvg[bhfg]",
-    "vmal?[eoh][bhfg]",
-    "vmal(b|hw|f)",
-    "vml(b|hw|f)",
-    "vml?(o|e)[bhf]",
-    "vml?h[bhf]",
-    "vm[nx]l*[bhfg]",
+    "vmal?[eoh][bhfgq]",        # vmae, vmale, vmao, vmalo, vmah, vmalh
+    "vmal(b|hw|f|g|q)",         # vmal
+    "vml(b|hw|f|g|q)",          # vml
+    "vml?(o|e)[bhfg]",          # vmo, vme
+    "vml?h[bhfgq]",             # vmh, vmlh
+    "vm[nx]l*[bhfgq]",          # vmn, vmnl, vmx, vmxl
     "vmr[lh][bhfg]",
     "vmslg",
     "vnot",
@@ -140,22 +143,22 @@ my @extended_mnemonics = (
     "vpkl*[bhfg]",
     "vpkl*s*[bhfg]s*",
     "vpopct[bhfg]",
+    "vrl?[fgq]",                # vr, vrl
     "vrepi*[bhgf]",
     "vs[bhfgq]",
     "vsbcbiq",
     "vsbiq",
     "vscbi[bhfgq]",
-    "vsch[sdx]p",		# vschp (short/long/extended)
+    "vsch[sdx]p",               # vschp
     "vseg[bfh]",
     'vstbr[hfgq]',
     'vster[hfg]',
     "vstrcz*[bhf]s*",
     'vstrsz?[bhf]',
     "vsum(b|gh|gf|h|qf|qg)",
-    "vuplh[bhf]",
-    "vuph[bhf]",
-    "vupl(b|hw|f)",
-    "vupll[bhf]",
+    "vupl?h[bhfg]",             # vuph, vuplh
+    "vupl(b|hw|f|g)",           # vupl
+    "vupll[bhfg]",              # vupll
     "wcdl*gb",
     "wcl*gdb",
     "wfa[sdx]b",
@@ -172,7 +175,7 @@ my @extended_mnemonics = (
     "wftci[sdx]b",
     "wfsq*[sdx]b",
     "vl(ed|de)",
-    "prno"			# alternate mnemonic for ppno
+    "prno"                      # ppno
     );
 
 # Compile excluded mnemonics into one regular expression to optimize

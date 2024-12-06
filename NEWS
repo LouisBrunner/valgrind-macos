@@ -29,6 +29,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 494337  All threaded applications cause still holding lock errors
 495488  Add FreeBSD getrlimitusage syscall wrapper
 496571  False positive for null key passed to bpf_map_get_next_key syscall.
+497130  Recognize new DWARF5 DW_LANG constants
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

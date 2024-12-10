@@ -87,14 +87,16 @@ int main(int argc, char *argv[])
         case 7:
         case 9:
         case 12:
+        case 13:
+        case 14:
         case 15:
             res = 0U;
             break;
         case 5:
-            res = res/100000 * 100000;
+            res = res/10000000 * 10000000;
             break;
         case 10:
-            res = res/1000 * 1000;
+            res = res/100000000 * 100000000;
             break;
         default:
              break;

@@ -560,7 +560,7 @@ Int ML_(get_fd_count)(void)
 }
 
 /* Close_range caller might want to close very wide range of file descriptors,
-   up to 0U.  We want to avoid iterating through such a range in a normall
+   up to ~0U.  We want to avoid iterating through such a range in a normal
    close_range, just up to any open file descriptor.  Also, unlike
    record_fd_close_range, we assume the user might deliberately double closes
    any file descriptors in the range, so don't warn about double close here. */

@@ -13625,8 +13625,9 @@ PRE(sys_execveat)
 PRE(sys_close_range)
 {
    SysRes res = VG_(mk_SysRes_Success)(0);
-   unsigned int beg, end;
-   unsigned int last = ARG2;
+   Int beg, end;
+   Int first = ARG1;
+   Int last = ARG2;
 
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_close_range ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %"
@@ -13635,7 +13636,7 @@ PRE(sys_close_range)
                  unsigned int, first, unsigned int, last,
                  unsigned int, flags);
 
-   if (ARG1 > last) {
+   if (first > last) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
@@ -13643,12 +13644,12 @@ PRE(sys_close_range)
    if (last >= VG_(fd_hard_limit))
       last = VG_(fd_hard_limit) - 1;
 
-   if (ARG1 > last) {
+   if (first > last) {
       SET_STATUS_Success ( 0 );
       return;
    }
 
-   beg = end = ARG1;
+   beg = end = first;
    do {
       if (end > last
 	  || (end == 2/*stderr*/ && VG_(debugLog_getLevel)() > 0)
@@ -13668,8 +13669,9 @@ PRE(sys_close_range)
 
 POST(sys_close_range)
 {
-   unsigned int fd;
-   unsigned int last = ARG2;
+   Int fd;
+   Int first = ARG1;
+   Int last = ARG2;
 
    if (!VG_(clo_track_fds)
        || (ARG3 & VKI_CLOSE_RANGE_CLOEXEC) != 0)
@@ -13680,10 +13682,10 @@ POST(sys_close_range)
 
    /* If the close_range range is too wide, we don't want to loop
       through the whole range.  */
-   if (ARG2 == ~0U)
-     ML_(record_fd_close_range)(tid, ARG1);
+   if (last == ~0U)
+     ML_(record_fd_close_range)(tid, first);
    else {
-     for (fd = ARG1; fd <= last; fd++)
+     for (fd = first; fd <= last; fd++)
        if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
            && fd != VG_(log_output_sink).fd
            && fd != VG_(xml_output_sink).fd)

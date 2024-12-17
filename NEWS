@@ -29,6 +29,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 494337  All threaded applications cause still holding lock errors
 495488  Add FreeBSD getrlimitusage syscall wrapper
 496571  False positive for null key passed to bpf_map_get_next_key syscall.
+469782  Valgrind does not support zstd-compressed debug sections
 497130  Recognize new DWARF5 DW_LANG constants
 497455  Update drd/scripts/download-and-build-gcc
 

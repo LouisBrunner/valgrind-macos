@@ -1,2 +1,2 @@
-cfn=(5164) ada__text_io__put_line
-cfn=(5160) _ada_main
+ada__text_io__put_line
+_ada_main

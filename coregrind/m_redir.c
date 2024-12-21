@@ -537,8 +537,13 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
           * For Ada demangling, the language doesn't use a regular
           * prefix like _Z or _R, so look for a common symbol and
           * set a global flag.
+          *
+          * https://bugs.kde.org/show_bug.cgi?id=497723 but not for
+          * callgrind because demangled overloaded manes get
+          * incorrectly counted together.
           */
-         if (!isText && VG_(strcmp)(*names, "__gnat_ada_main_program_name") == 0) {
+         if (!isText && VG_(strcmp)(*names, "__gnat_ada_main_program_name") == 0 &&
+             VG_(strcmp)(VG_(clo_toolname), "callgrind") != 0)  {
             VG_(lang_is_ada) = True;
          }
          isGlobal = False;

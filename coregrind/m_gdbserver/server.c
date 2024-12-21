@@ -1376,6 +1376,20 @@ void server_main (void)
          else
             write_enn (own_buf);
          break;
+      case 'x':
+         decode_m_packet (&own_buf[1], &mem_addr, &len);
+         if (valgrind_read_memory (mem_addr, mem_buf, len) == 0) {
+            // Read memory is successful.
+            // Complete the reply packet and indicate its length.
+            int out_len;
+            own_buf[0] = 'b';
+            new_packet_len
+               = 1 + remote_escape_output(mem_buf, len,
+                                          (unsigned char *) &own_buf[1], &out_len,
+                                          PBUFSIZ - POVERHSIZ - 1);
+         } else
+            write_enn (own_buf);
+         break;
       case 'X':
          if (decode_X_packet (&own_buf[1], packet_len - 1,
                               &mem_addr, &len, mem_buf) < 0

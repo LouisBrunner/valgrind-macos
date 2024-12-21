@@ -10,6 +10,10 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* The valgrind gdbserver now supports the GDB remote protocol packet
+  'x addr,len' (available in GDB release >= 16).
+  The x packet can reduce the time taken by GDB to read memory from valgrind.
+
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ===================

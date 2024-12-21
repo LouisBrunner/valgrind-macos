@@ -41,7 +41,8 @@ usage: valgrind [options] prog-and-args
     --xml-file=<file>         XML output to <file>
     --xml-socket=ipaddr:port  XML output to socket ipaddr:port
     --xml-user-comment=STR    copy STR verbatim into XML output
-    --demangle=no|yes         automatically demangle C++ names? [yes]
+    --demangle=no|yes         automatically demangle decorated names? [yes]
+                              supported languages: C++, D, Rust, Java, Ada
     --num-callers=<number>    show <number> callers in stack traces [12]
     --error-limit=no|yes      stop showing new errors if too many? [yes]
     --exit-on-first-error=no|yes exit code on the first error found? [no]

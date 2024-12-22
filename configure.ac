@@ -3100,6 +3100,22 @@ AC_LINK_IFELSE(
 CFLAGS=$safe_CFLAGS
 fi
 
+# check if linker accepts --no-warn-execstack
+AC_MSG_CHECKING([if the linker accepts -Wl,--no-warn-execstack])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wl,--no-warn-execstack"
+
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([ ], [return 0;])],
+[
+  AC_SUBST([FLAG_NO_WARN_EXECSTACK], ["-Wl,--no-warn-execstack"])
+  AC_MSG_RESULT([yes])
+], [
+  AC_SUBST([FLAG_NO_WARN_EXECSTACK], [""])
+  AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
 

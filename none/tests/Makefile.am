@@ -335,7 +335,7 @@ endif
 
 if HAVE_NESTED_FUNCTIONS
    check_PROGRAMS += nestedfns
-   nestedfns_LDFLAGS = -Wl,--no-warn-execstack
+   nestedfns_LDFLAGS = @FLAG_NO_WARN_EXECSTACK@
 endif
 
 # This doesn't appear to be compilable on Darwin.

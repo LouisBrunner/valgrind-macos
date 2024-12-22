@@ -265,6 +265,7 @@ noinst_HEADERS = \
 	m_debuginfo/lzoconf.h		\
 	m_debuginfo/lzodefs.h		\
 	m_debuginfo/minilzo.h		\
+	m_debuginfo/zstd.h              \
 	m_demangle/ansidecl.h	\
 	m_demangle/cp-demangle.h \
 	m_demangle/dyn-string.h	\

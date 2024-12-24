@@ -292,17 +292,17 @@ beq a0, a1, 1f ::
 beq a0, a1, 1f ::
   inputs: a0=1, a1=1
   branch: taken
-beq a0, zero, 1f ::
-  inputs: a0=0, zero=0
+beq a0, a1, 1f ::
+  inputs: a0=0, a1=0
   branch: taken
-beq a0, zero, 1f ::
-  inputs: a0=1, zero=0
+beq a0, a1, 1f ::
+  inputs: a0=1, a1=0
   branch: not taken
-beq zero, a0, 1f ::
-  inputs: zero=0, a0=0
+beq a1, a0, 1f ::
+  inputs: a1=0, a0=0
   branch: taken
-beq zero, a0, 1f ::
-  inputs: zero=0, a0=1
+beq a1, a0, 1f ::
+  inputs: a1=0, a0=1
   branch: not taken
 beq a0, a1, 1f ::
   inputs: a0=0, a1=-1
@@ -325,17 +325,17 @@ bne a0, a1, 1f ::
 bne a0, a1, 1f ::
   inputs: a0=1, a1=1
   branch: not taken
-bne a0, zero, 1f ::
-  inputs: a0=0, zero=0
+bne a0, a1, 1f ::
+  inputs: a0=0, a1=0
   branch: not taken
-bne a0, zero, 1f ::
-  inputs: a0=1, zero=0
+bne a0, a1, 1f ::
+  inputs: a0=1, a1=0
   branch: taken
-bne zero, a0, 1f ::
-  inputs: zero=0, a0=0
+bne a1, a0, 1f ::
+  inputs: a1=0, a0=0
   branch: not taken
-bne zero, a0, 1f ::
-  inputs: zero=0, a0=1
+bne a1, a0, 1f ::
+  inputs: a1=0, a0=1
   branch: taken
 bne a0, a1, 1f ::
   inputs: a0=0, a1=-1
@@ -358,17 +358,17 @@ blt a0, a1, 1f ::
 blt a0, a1, 1f ::
   inputs: a0=1, a1=1
   branch: not taken
-blt a0, zero, 1f ::
-  inputs: a0=0, zero=0
+blt a0, a1, 1f ::
+  inputs: a0=0, a1=0
   branch: not taken
-blt a0, zero, 1f ::
-  inputs: a0=1, zero=0
+blt a0, a1, 1f ::
+  inputs: a0=1, a1=0
   branch: not taken
-blt zero, a0, 1f ::
-  inputs: zero=0, a0=0
+blt a1, a0, 1f ::
+  inputs: a1=0, a0=0
   branch: not taken
-blt zero, a0, 1f ::
-  inputs: zero=0, a0=1
+blt a1, a0, 1f ::
+  inputs: a1=0, a0=1
   branch: taken
 blt a0, a1, 1f ::
   inputs: a0=0, a1=-1
@@ -391,17 +391,17 @@ bge a0, a1, 1f ::
 bge a0, a1, 1f ::
   inputs: a0=1, a1=1
   branch: taken
-bge a0, zero, 1f ::
-  inputs: a0=0, zero=0
+bge a0, a1, 1f ::
+  inputs: a0=0, a1=0
   branch: taken
-bge a0, zero, 1f ::
-  inputs: a0=1, zero=0
+bge a0, a1, 1f ::
+  inputs: a0=1, a1=0
   branch: taken
-bge zero, a0, 1f ::
-  inputs: zero=0, a0=0
+bge a1, a0, 1f ::
+  inputs: a1=0, a0=0
   branch: taken
-bge zero, a0, 1f ::
-  inputs: zero=0, a0=1
+bge a1, a0, 1f ::
+  inputs: a1=0, a0=1
   branch: not taken
 bge a0, a1, 1f ::
   inputs: a0=0, a1=-1
@@ -424,17 +424,17 @@ bltu a0, a1, 1f ::
 bltu a0, a1, 1f ::
   inputs: a0=1, a1=1
   branch: not taken
-bltu a0, zero, 1f ::
-  inputs: a0=0, zero=0
+bltu a0, a1, 1f ::
+  inputs: a0=0, a1=0
   branch: not taken
-bltu a0, zero, 1f ::
-  inputs: a0=1, zero=0
+bltu a0, a1, 1f ::
+  inputs: a0=1, a1=0
   branch: not taken
-bltu zero, a0, 1f ::
-  inputs: zero=0, a0=0
+bltu a1, a0, 1f ::
+  inputs: a1=0, a0=0
   branch: not taken
-bltu zero, a0, 1f ::
-  inputs: zero=0, a0=1
+bltu a1, a0, 1f ::
+  inputs: a1=0, a0=1
   branch: taken
 bltu a0, a1, 1f ::
   inputs: a0=0, a1=-1
@@ -457,17 +457,17 @@ bgeu a0, a1, 1f ::
 bgeu a0, a1, 1f ::
   inputs: a0=1, a1=1
   branch: taken
-bgeu a0, zero, 1f ::
-  inputs: a0=0, zero=0
+bgeu a0, a1, 1f ::
+  inputs: a0=0, a1=0
   branch: taken
-bgeu a0, zero, 1f ::
-  inputs: a0=1, zero=0
+bgeu a0, a1, 1f ::
+  inputs: a0=1, a1=0
   branch: taken
-bgeu zero, a0, 1f ::
-  inputs: zero=0, a0=0
+bgeu a1, a0, 1f ::
+  inputs: a1=0, a0=0
   branch: taken
-bgeu zero, a0, 1f ::
-  inputs: zero=0, a0=1
+bgeu a1, a0, 1f ::
+  inputs: a1=0, a0=1
   branch: not taken
 bgeu a0, a1, 1f ::
   inputs: a0=0, a1=-1

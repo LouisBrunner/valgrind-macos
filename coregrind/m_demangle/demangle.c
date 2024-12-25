@@ -123,8 +123,8 @@ void VG_(demangle) ( Bool do_cxx_demangling, Bool do_z_demangling,
    // - Rust "legacy" mangled symbols start with "_Z".
    // - Rust "v0" mangled symbols start with "_R".
    // - D programming language mangled symbols start with "_D".
-   // XXX: the Java/Rust/Ada demangling here probably doesn't work. See
-   // https://bugs.kde.org/show_bug.cgi?id=445235 for details.
+   // - Ada mangled symbols depend on the entity the symbol represents.
+   //   See ada_demangle for details.
    if (do_cxx_demangling && VG_(clo_demangle)
        && orig != NULL && (VG_(lang_is_ada) ||
       (orig[0] == '_' && (orig[1] == 'Z' || orig[1] == 'R' || orig[1] == 'D')))) {

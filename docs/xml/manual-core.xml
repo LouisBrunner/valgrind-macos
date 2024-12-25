@@ -1128,10 +1128,14 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option><![CDATA[--demangle=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Enable/disable automatic demangling (decoding) of C++ names.
+      <para>Enable/disable automatic demangling (decoding) of C++, D,
+      Rust, Java, Ada names.
       Enabled by default.  When enabled, Valgrind will attempt to
-      translate encoded C++ names back to something approaching the
-      original.  The demangler handles symbols mangled by g++ versions
+      translate encoded names in the listed languages back to something
+      approaching the original.
+      Note that the callgrind tool always disables Ada demangling in order
+      to differentiate overloaded functions and procedures in the callgraph.
+      The demangler handles symbols mangled by g++ versions
       2.X, 3.X and 4.X.</para>
 
       <para>An important fact about demangling is that function names

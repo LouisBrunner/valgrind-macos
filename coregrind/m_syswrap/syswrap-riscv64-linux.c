@@ -577,10 +577,24 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_io_uring_setup, sys_io_uring_setup),                 /* 425 */
    LINXY(__NR_io_uring_enter, sys_io_uring_enter),                 /* 426 */
    LINXY(__NR_io_uring_register, sys_io_uring_register),           /* 427 */
+   LINXY(__NR_open_tree, sys_open_tree),                           /* 428 */
+   LINX_(__NR_move_mount, sys_move_mount),                         /* 429 */
+   LINXY(__NR_fsopen, sys_fsopen),                                 /* 430 */
+   LINX_(__NR_fsconfig, sys_fsconfig),                             /* 431 */
+   LINXY(__NR_fsmount, sys_fsmount),                               /* 432 */
+   LINXY(__NR_fspick, sys_fspick),                                 /* 433 */
+   LINXY(__NR_pidfd_open, sys_pidfd_open),                         /* 434 */
    GENX_(__NR_clone3, sys_ni_syscall),                             /* 435 */
    LINXY(__NR_close_range, sys_close_range),                       /* 436 */
+   LINXY(__NR_openat2, sys_openat2),                               /* 437 */
+   LINXY(__NR_pidfd_getfd, sys_pidfd_getfd),                       /* 438 */
    LINX_(__NR_faccessat2, sys_faccessat2),                         /* 439 */
+   LINXY(__NR_epoll_pwait2, sys_epoll_pwait2),                     /* 441 */
+   LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), /* 444 */
+   LINX_(__NR_landlock_add_rule, sys_landlock_add_rule),           /* 445 */
+   LINX_(__NR_landlock_restrict_self, sys_landlock_restrict_self), /* 446 */
    LINXY(__NR_memfd_secret, sys_memfd_secret),                     /* 447 */
+   LINX_(__NR_fchmodat2, sys_fchmodat2),                           /* 452 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)

@@ -180,6 +180,7 @@ extern UInt  VG_(nanomips_linux_REDIR_FOR_strlen)( void* );
 extern Addr   VG_(riscv64_linux_SUBST_FOR_rt_sigreturn);
 extern HChar* VG_(riscv64_linux_REDIR_FOR_index)( const HChar*, Int );
 extern SizeT  VG_(riscv64_linux_REDIR_FOR_strlen)( const HChar* );
+extern Int    VG_(riscv64_linux_REDIR_FOR_strcmp)( const HChar*, const HChar* );
 #endif
 
 #if defined(VGP_x86_solaris)

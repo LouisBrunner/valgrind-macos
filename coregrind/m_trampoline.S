@@ -1647,6 +1647,23 @@ VG_(riscv64_linux_REDIR_FOR_index):
 	ret
 .size VG_(riscv64_linux_REDIR_FOR_index), .-VG_(riscv64_linux_REDIR_FOR_index)
 
+.global VG_(riscv64_linux_REDIR_FOR_strcmp)
+.type   VG_(riscv64_linux_REDIR_FOR_strcmp), @function
+VG_(riscv64_linux_REDIR_FOR_strcmp):
+0:
+	lbu a5, 0(a0)          /* load *s1 */
+	lbu a4, 0(a1)          /* load *s2 */
+	beqz a5, 1f            /* check end of s1 */
+	beq a5, a4, 2f         /* loop if *s1 == *s2 */
+1:
+	subw a0, a5, a4        /* return value is *s1 - *s2 */
+	ret
+2:
+	addi a0, a0, 1         /* next char in s1 */
+	addi a1, a1, 1         /* next char in s2 */
+        j 0b                   /* and back to the start */
+.size VG_(riscv64_linux_REDIR_FOR_strcmp), .-VG_(riscv64_linux_REDIR_FOR_strcmp)
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

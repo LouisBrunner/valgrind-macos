@@ -1714,6 +1714,11 @@ void VG_(redir_initialise) ( void )
          (Addr)&VG_(riscv64_linux_REDIR_FOR_index),
          complain_about_stripped_glibc_ldso
       );
+      add_hardwired_spec(
+         "ld-linux-riscv64-lp64d.so.1", "strcmp",
+         (Addr)&VG_(riscv64_linux_REDIR_FOR_strcmp),
+         complain_about_stripped_glibc_ldso
+      );
    }
 
 #  elif defined(VGP_x86_solaris)

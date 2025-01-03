@@ -645,6 +645,26 @@ int main(void)
   </answer>
 </qandaentry>
 
+<qandaentry id="faq.pcre2_qt">
+  <question id="q-pcre2_qt">
+    <para>I'm developing a Qt application and I get huge numbers of "Conditional jump"
+    errors. Is there anything that I can do about it?</para>
+  </question>
+  <answer id="a-pcre2_qt">
+    <para>Yes, there is a workaround. Here is an example error:</para>
+<programlisting>
+Conditional jump or move depends on uninitialised value(s)
+   at 0x1051C39B: ???
+   by 0x12657AA7: ???
+</programlisting>
+    <para>Qt Regular Expressions are built on the pcre2 library.
+    pcre2 uses JITting which means that the errors cannot be suppressed
+    (no function name). However, Qt provides a mechanism to turn off
+    the use of JITting. To do so, use the following environment variable:
+    <computeroutput>export QT_ENABLE_REGEXP_JIT=0</computeroutput></para>
+  </answer>
+</qandaentry>
+
 
 <qandaentry id="faq.attach">
   <question id="q-attach">

@@ -1,0 +1,2 @@
+prog: bug498317
+vgopts: -q --track-fds=yes --suppressions=bug498317.supp

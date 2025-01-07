@@ -1854,6 +1854,7 @@
 /none/tests/linux/blockfault
 /none/tests/linux/brk-overflow1
 /none/tests/linux/brk-overflow2
+/none/tests/linux/bug498317
 /none/tests/linux/clonev
 /none/tests/linux/Makefile
 /none/tests/linux/Makefile.in

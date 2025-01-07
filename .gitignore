@@ -2250,6 +2250,7 @@
 /none/tests/freebsd/Makefile
 /none/tests/freebsd/Makefile.in
 /none/tests/freebsd/auxv
+/none/tests/freebsd/bug498317
 /none/tests/freebsd/osrel
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve

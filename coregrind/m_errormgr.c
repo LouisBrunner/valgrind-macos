@@ -206,7 +206,8 @@ typedef
       // example should new core errors ever be added.
       ThreadSupp = -1,    /* Matches ThreadErr */
       FdBadCloseSupp = -2,
-      FdNotClosedSupp = -3
+      FdNotClosedSupp = -3,
+      FdBadUseSupp = -4
    }
    CoreSuppKind;
 
@@ -1033,7 +1034,7 @@ static Bool core_error_matches_suppression(const Error* err, const Supp* su)
       return err->ekind == FdBadClose;
    case FdNotClosedSupp:
       return err->ekind == FdNotClosed;
-   case FdBadUse:
+   case FdBadUseSupp:
       return err->ekind == FdBadUse;
    default:
       VG_(umsg)("FATAL: unknown core suppression kind: %d\n", su->skind );
@@ -1522,6 +1523,8 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
             supp->skind = FdBadCloseSupp;
          else if (VG_STREQ(supp_name, "FdNotClosed"))
             supp->skind = FdNotClosedSupp;
+         else if (VG_STREQ(supp_name, "FdBadUse"))
+            supp->skind = FdBadUseSupp;
          else
             BOMB("unknown core suppression type");
       }

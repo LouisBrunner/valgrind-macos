@@ -11,6 +11,8 @@ EXTRA_DIST = \
 	auxv.stderr.exp-freebsd131 \
 	auxv.stderr.exp-freebsd14 \
 	auxv.stderr.exp-arm64 \
+	bug498317.vgtest bug498317.stderr.exp \
+	bug498317.supp \
 	cp.vgtest \
 	cp.stderr.exp \
 	osrel.vgtest \
@@ -61,7 +63,7 @@ EXTRA_DIST = \
 	usrstack.stdout.exp
 
 check_PROGRAMS = \
-	auxv osrel swapcontext hello_world fexecve 452275 usrstack \
+	auxv bug498317 osrel swapcontext hello_world fexecve 452275 usrstack \
 	proc_pid_file sanity_level_thread umtx_shm_creat
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

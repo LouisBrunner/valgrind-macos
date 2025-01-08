@@ -1,7 +1,7 @@
 {
    test suppression of FdBadUse
    CoreError:FdBadUse
-   fun:__fcntl64_nocancel_adjusted
+   ...
    fun:fcntl
    fun:main
 }

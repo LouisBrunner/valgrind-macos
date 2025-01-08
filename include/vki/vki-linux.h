@@ -3226,6 +3226,9 @@ struct vki_getcpu_cache {
 
 #define VKI_EVIOCGBIT(ev,len)	_VKI_IOC(_VKI_IOC_READ, 'E', 0x20 + ev, len)	/* get event bits */
 
+#define VKI_EVIOCGRAB		_VKI_IOW('E', 0x90, int)
+/* grab device */
+
 /*
  * Event types
  */

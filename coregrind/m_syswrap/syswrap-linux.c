@@ -10397,6 +10397,10 @@ PRE(sys_ioctl)
       break;
    }
 
+   case VKI_EVIOCGRAB:
+	/* This just takes an int argument. */
+	break;
+
    default:
       /* EVIOC* are variable length and return size written on success */
       switch (ARG2 & ~(_VKI_IOC_SIZEMASK << _VKI_IOC_SIZESHIFT)) {

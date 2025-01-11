@@ -1397,12 +1397,12 @@
 /memcheck/tests/freebsd/.deps
 /memcheck/tests/freebsd/Makefile
 /memcheck/tests/freebsd/Makefile.in
-/memcheck/tests/freebsd/452275
 /memcheck/tests/freebsd/access
 /memcheck/tests/freebsd/aio
 /memcheck/tests/freebsd/aiov
 /memcheck/tests/freebsd/aio_read
 /memcheck/tests/freebsd/aligned_alloc
+/memcheck/tests/freebsd/bug452274
 /memcheck/tests/freebsd/bug464476
 /memcheck/tests/freebsd/bug470713
 /memcheck/tests/freebsd/bug483786
@@ -2251,12 +2251,12 @@
 /none/tests/freebsd/Makefile
 /none/tests/freebsd/Makefile.in
 /none/tests/freebsd/auxv
+/none/tests/freebsd/bug452274
 /none/tests/freebsd/bug498317
 /none/tests/freebsd/osrel
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
-/none/tests/freebsd/452275
 /none/tests/freebsd/proc_pid_file
 /none/tests/freebsd/sanity_level_thread
 /none/tests/freebsd/usrstack

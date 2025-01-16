@@ -265,6 +265,7 @@ s/^0x........ in \(\w\+ (\)/\1/
 
 #	delete any missing debuginfo messages
 /^Missing debuginfo.*/d
+/^Missing rpms.*/d
 
 EOF
 

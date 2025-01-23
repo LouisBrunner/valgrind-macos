@@ -941,30 +941,30 @@ HChar *getsockdetails(Int fd, UInt len, HChar *buf)
 void VG_(show_open_fds) (const HChar* when)
 {
    OpenFd *i;
-   int non_std = 0;
+   int inherited = 0;
 
    for (i = allocated_fds; i; i = i->next) {
-      if (i->fd > 2 && i->fd_closed != True)
-         non_std++;
+      if (i->where == NULL)
+         inherited++;
    }
 
    /* If we are running quiet and there are either no open file descriptors
       or not tracking all fds, then don't report anything.  */
    if ((fd_count == 0
-        || ((non_std == 0) && (VG_(clo_track_fds) < 2)))
+        || ((fd_count - inherited == 0) && (VG_(clo_track_fds) < 2)))
        && (VG_(clo_verbosity) == 0))
       return;
 
    if (!VG_(clo_xml)) {
-      VG_(umsg)("FILE DESCRIPTORS: %d open (%d std) %s.\n",
-                fd_count, fd_count - non_std, when);
+      VG_(umsg)("FILE DESCRIPTORS: %d open (%d inherited) %s.\n",
+                fd_count, inherited, when);
    }
 
    for (i = allocated_fds; i; i = i->next) {
       if (i->fd_closed)
          continue;
 
-      if (i->fd <= 2 && VG_(clo_track_fds) < 2)
+      if (i->where == NULL && VG_(clo_track_fds) < 2)
           continue;
 
       struct NotClosedExtra nce;

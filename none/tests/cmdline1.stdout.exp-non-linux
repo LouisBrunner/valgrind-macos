@@ -29,7 +29,7 @@ usage: valgrind [options] prog-and-args
          where event is one of:
            startup exit abexit valgrindabexit all none
     --track-fds=no|yes|all    track open file descriptors? [no]
-                              all includes reporting stdin, stdout and stderr
+                              all includes reporting inherited file descriptors
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>

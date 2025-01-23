@@ -114,7 +114,7 @@ static void usage_NORETURN ( int need_help )
 "         where event is one of:\n"
 "           startup exit abexit valgrindabexit all none\n"
 "    --track-fds=no|yes|all    track open file descriptors? [no]\n"
-"                              all includes reporting stdin, stdout and stderr\n"
+"                              all includes reporting inherited file descriptors\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"

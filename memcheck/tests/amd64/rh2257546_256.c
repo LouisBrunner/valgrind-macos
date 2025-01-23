@@ -28,7 +28,7 @@ int main ( void )
    "zzz1f:"                            "\n\t"
    "mov $88, %0"                       "\n"
    "zzzafter:"                         "\n\t"
-   : /*OUT*/"=r"(res) : /*IN*/"r"(c1),"r"(c2) : /*TRASH*/"ymm4","ymm5","cc"
+   : /*OUT*/"=r"(res) : /*IN*/"r"(c1),"r"(c2) : /*TRASH*/"xmm4","xmm5","cc"
    );
    printf("res = %lld\n", res);
    free(c1);

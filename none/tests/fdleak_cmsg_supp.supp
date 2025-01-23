@@ -6,6 +6,13 @@
    fun:main
 }
 {
+   sup1-old-glibc
+   CoreError:FdNotClosed
+   fun:__accept_nocancel
+   fun:server
+   fun:main
+}
+{
    sup2
    CoreError:FdNotClosed
    fun:socket
@@ -31,6 +38,13 @@
    sup4
    CoreError:FdNotClosed
    fun:recvmsg
+   fun:client
+   fun:main
+}
+{
+   sup4-old-glibc
+   CoreError:FdNotClosed
+   fun:__recvmsg_nocancel
    fun:client
    fun:main
 }

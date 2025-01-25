@@ -4956,7 +4956,8 @@ AC_CHECK_FUNCS([     \
         sem_clockwait_np \
         fdatasync    \
         getrandom    \
-        getrlimitusage
+        getrlimitusage \
+        timer_delete
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these

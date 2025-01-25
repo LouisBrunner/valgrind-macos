@@ -1,0 +1,3 @@
+prog: timer_delete
+vgopts: -q
+

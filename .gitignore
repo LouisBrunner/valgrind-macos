@@ -1534,6 +1534,7 @@
 /none/tests/bug129866
 /none/tests/bug234814
 /none/tests/bug491394
+/none/tests/bug492678
 /none/tests/closeall
 /none/tests/coolo_sigaction
 /none/tests/coolo_strlen
@@ -1645,6 +1646,7 @@
 /none/tests/thread-exits
 /none/tests/threaded-fork
 /none/tests/threadederrno
+/none/tests/timer_delete
 /none/tests/timestamp
 /none/tests/tls
 /none/tests/track-fds-exec-children

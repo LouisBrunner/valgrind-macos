@@ -103,6 +103,7 @@ EXTRA_DIST = \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
 	bug234814.vgtest bug234814.stderr.exp bug234814.stdout.exp \
 	bug491394.vgtest bug491394.stderr.exp \
+	bug492678.vgtest bug492678.stderr.exp \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
@@ -241,6 +242,7 @@ EXTRA_DIST = \
 	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
 	threadederrno.stderr.exp threadederrno.stdout.exp \
 	threadederrno.vgtest \
+	timer_delete.vgtest timer_delete.stderr.exp \
 	timestamp.stderr.exp timestamp.vgtest \
 	tls.vgtest tls.stderr.exp tls.stdout.exp  \
 	track-fds-exec-children.vgtest track-fds-exec-children.stderr.exp \
@@ -267,7 +269,7 @@ check_PROGRAMS = \
 	args \
 	async-sigs \
 	bitfield1 \
-	bug129866 bug234814 \
+	bug129866 bug234814 bug492678\
 	closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \
 	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
@@ -300,6 +302,7 @@ check_PROGRAMS = \
 	thread-exits \
 	threaded-fork \
 	threadederrno \
+	timer_delete \
 	timestamp \
 	tls \
 	tls.so \
@@ -439,6 +442,7 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
+timer_delete_LDADD      = -lrt
 timestamp_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so

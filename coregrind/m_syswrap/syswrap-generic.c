@@ -2959,6 +2959,14 @@ PRE(sys_setitimer)
                          &(value->it_interval));
       PRE_timeval_READ( "setitimer(&value->it_value)",
                          &(value->it_value));
+      // "Setting it_value to 0 disables a timer"
+      // poll for signals in that case
+      if (ML_(safe_to_deref)(value, sizeof(*value))) {
+         if (value->it_value.tv_sec == 0 &&
+             value->it_value.tv_usec == 0) {
+            *flags |= SfPollAfter;
+         }
+      }
    }
    if (ARG3 != (Addr)NULL) {
       struct vki_itimerval *ovalue = (struct vki_itimerval*)(Addr)ARG3;

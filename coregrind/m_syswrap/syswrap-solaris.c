@@ -8531,6 +8531,7 @@ PRE(sys_timer_delete)
    /* int timer_delete(timer_t timerid); */
    PRINT("sys_timer_delete ( %ld )", SARG1);
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
+   *flags |= SfPollAfter;
 }
 
 PRE(sys_timer_settime)

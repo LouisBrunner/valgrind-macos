@@ -2411,6 +2411,7 @@ PRE(sys_timer_delete)
 {
    PRINT("sys_timer_delete( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
+   *flags |= SfPollAfter;
 }
 
 // SYS_ktimer_settime   237

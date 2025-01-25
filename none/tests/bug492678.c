@@ -89,7 +89,7 @@ static void try_race_condition(void)
     ++tries;
     const struct timeval clk_period = {
         .tv_sec = 0,
-        .tv_usec = 5,
+        .tv_usec = 10,
     };
     sigalrm_timer_setup(&clk_period);
     sigalrm_timer_destroy();

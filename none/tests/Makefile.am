@@ -302,7 +302,6 @@ check_PROGRAMS = \
 	thread-exits \
 	threaded-fork \
 	threadederrno \
-	timer_delete \
 	timestamp \
 	tls \
 	tls.so \
@@ -357,6 +356,10 @@ endif
 
 if BUILD_IFUNC_TESTS
    check_PROGRAMS += ifunc
+endif
+
+if HAVE_TIMER_DELETE
+   check_PROGRAMS += timer_delete
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
@@ -442,7 +445,9 @@ thread_exits_LDADD	= -lpthread
 threaded_fork_LDADD	= -lpthread
 threadederrno_CFLAGS	= $(AM_CFLAGS)
 threadederrno_LDADD	= -lpthread
-timer_delete_LDADD      = -lrt
+if HAVE_TIMER_DELETE
+   timer_delete_LDADD      = -lrt
+endif
 timestamp_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 tls_SOURCES		= tls.c tls2.c
 tls_DEPENDENCIES	= tls.so tls2.so

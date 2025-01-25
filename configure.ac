@@ -4892,6 +4892,7 @@ AC_FUNC_MMAP
 
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
+AC_CHECK_LIB([rt], [timer_delete])
 
 AC_CHECK_FUNCS([     \
         aligned_alloc \
@@ -5011,6 +5012,8 @@ AM_CONDITIONAL([HAVE_GETRANDOM],
                [test x$ac_cv_func_getrandom = xyes])
 AM_CONDITIONAL([HAVE_GETRLIMITUSAGE],
                [test x$ac_cv_func_getrlimitusage = xyes])
+AM_CONDITIONAL([HAVE_TIMER_DELETE],
+               [test x$ac_cv_func_timer_delete = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \

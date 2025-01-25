@@ -170,7 +170,11 @@ int main()
 		const struct test tests[] = {
 #define T(n, sig, code, addr) { test##n, sig, code, addr }
 			T(1, SIGSEGV,	SEGV_MAPERR,	BADADDR),
+#if defined(VGO_darwin)
+			T(2, SIGBUS,	SEGV_ACCERR,	mapping),
+#else
 			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
+#endif
 			T(3, SIGBUS,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
 			T(4, SIGFPE,    DIVISION_BY_ZERO_SI_CODE, 0),
 #undef T

@@ -2339,7 +2339,7 @@ POST(__pthread_sigmask)
 PRE(__sigwait)
 {
     *flags |= SfMayBlock;
-    PRINT("sys_sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+    PRINT("__sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
           ARG1,ARG2);
     PRE_REG_READ2(int, "sigwait",
                   const vki_sigset_t *, set, int *, sig);
@@ -3074,7 +3074,7 @@ PRE(mount)
    // We are conservative and check everything, except the memory pointed to
    // by 'data'.
    *flags |= SfMayBlock;
-   PRINT("sys_mount( %#lx(%s), %#lx(%s), %#lx, %#lx )",
+   PRINT("mount( %#lx(%s), %#lx(%s), %#lx, %#lx )",
          ARG1, (HChar*)ARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "mount",
                  const char *, type, const char *, dir,
@@ -9979,13 +9979,13 @@ PRE(openat)
 {
    if (ARG3 & VKI_O_CREAT) {
       // 4-arg version
-      PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+      PRINT("openat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
             SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
       PRE_REG_READ4(long, "openat",
                     int, dfd, const char *, filename, int, flags, int, mode);
    } else {
      // 3-arg version
-     PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+     PRINT("openat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
      PRE_REG_READ3(long, "openat",
                    int, dfd, const char *, filename, int, flags);
@@ -10015,6 +10015,15 @@ POST(openat)
       if (VG_(clo_track_fds))
          ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
    }
+}
+
+PRE(mkdirat)
+{
+   PRINT("mkdirat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
+   PRE_REG_READ3(int, "mkdirat",
+                 int, fd, const char *, path, unsigned int, mode);
+   PRE_MEM_RASCIIZ( "mkdirat(path)", ARG2 );
+   *flags |= SfMayBlock;
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
@@ -11085,6 +11094,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_necp_match_policy,   necp_match_policy),  // 460
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
    MACXY(__NR_openat,              openat),             // 463
+   MACX_(__NR_mkdirat,             mkdirat),            // 475
 #if DARWIN_VERS >= DARWIN_10_13
    MACXY(__NR_openat_nocancel,     openat_nocancel),    // 464
 #endif

@@ -776,6 +776,7 @@
 
 #if DARWIN_VERS >= DARWIN_10_10
 #define __NR_openat                 VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(463)
+#define __NR_mkdirat                VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(475)
 #if DARWIN_VERS >= DARWIN_10_13
 #define __NR_openat_nocancel        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(464)
 #endif

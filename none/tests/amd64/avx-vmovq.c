@@ -6,8 +6,8 @@ GEN_test_RandM(VMOVQ_XMM_to_XMM_LOW_HIGH,
 
 // xmm0 is scratch
 GEN_test_RandM(VMOVQ_XMM_to_XMM_LOW_LOW_HIGH,
-               "vmovq %%xmm0, %%xmm7; vmovq %%xmm8, %%xmm0",
-               "vmovq %%xmm0, (%%rsi); vmovq %%xmm9, %%xmm0")
+               "vmovq %%xmm7, %%xmm0; vmovq %%xmm0, %%xmm8",
+               "vmovq (%%rsi), %%xmm0; vmovq %%xmm0, %%xmm9")
 
 int main ( void )
 {

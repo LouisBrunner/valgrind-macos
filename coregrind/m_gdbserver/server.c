@@ -1126,6 +1126,8 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       /* Note: max packet size including frame and checksum, but without
          trailing null byte, which is not sent/received. */
 
+      strcat (arg_own_buf, ";binary-upload+");
+
       strcat (arg_own_buf, ";QStartNoAckMode+");
       strcat (arg_own_buf, ";QPassSignals+");
       strcat (arg_own_buf, ";QCatchSyscalls+");

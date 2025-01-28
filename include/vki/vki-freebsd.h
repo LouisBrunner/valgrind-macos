@@ -1523,9 +1523,16 @@ typedef enum vki_idtype {
 #define VKI_MAP_PRIVATE 0x02     /* Changes are private */
 #define VKI_MAP_FIXED   0x10     /* Interpret addr exactly */
 #define VKI_MAP_NORESERVE  0x0040      /* don't check for reservations */
-#define  VKI_MAP_STACK  0x400
+#define VKI_MAP_STACK  0x400
 #define VKI_MAP_ANON 0x1000   /* don't use a file */
-#define  VKI_MAP_ANONYMOUS VKI_MAP_ANON
+#define VKI_MAP_ANONYMOUS VKI_MAP_ANON
+
+#define VKI_MAP_ALIGNED(n)   ((n) << VKI_MAP_ALIGNMENT_SHIFT)
+#define VKI_MAP_ALIGNMENT_SHIFT     24
+#define VKI_MAP_ALIGNMENT_MASK      VKI_MAP_ALIGNED(0xff)
+#define VKI_MAP_ALIGNED_SUPER       VKI_MAP_ALIGNED(1) /* align on a superpage */
+
+
 
 //----------------------------------------------------------------------
 // From sys/stat.h

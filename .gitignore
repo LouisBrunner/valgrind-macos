@@ -2255,6 +2255,7 @@
 /none/tests/freebsd/auxv
 /none/tests/freebsd/bug452274
 /none/tests/freebsd/bug498317
+none/tests/freebsd/bug499212
 /none/tests/freebsd/osrel
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve

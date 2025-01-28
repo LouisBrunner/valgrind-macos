@@ -15,6 +15,9 @@ EXTRA_DIST = \
 	bug452274.stderr.exp \
 	bug498317.vgtest bug498317.stderr.exp \
 	bug498317.supp \
+	bug499212.vgtest \
+	bug499212.stderr.exp \
+	bug499212.stdout.exp \
 	cp.vgtest \
 	cp.stderr.exp \
 	osrel.vgtest \
@@ -63,8 +66,8 @@ EXTRA_DIST = \
 	usrstack.stdout.exp
 
 check_PROGRAMS = \
-	auxv bug498317 osrel swapcontext hello_world fexecve bug452274 \
-        usrstack proc_pid_file sanity_level_thread umtx_shm_creat
+	auxv bug452274 bug498317 bug499212 fexecve hello_world osrel \
+        proc_pid_file sanity_level_thread swapcontext umtx_shm_creat usrstack
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)

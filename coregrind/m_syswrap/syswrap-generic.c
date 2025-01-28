@@ -2630,7 +2630,7 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    if (arg4 & VKI_MAP_FIXED) {
       mreq.rkind = MFixed;
    } else
-#if defined(VKI_MAP_ALIGN) /* Solaris specific */
+#if defined(VGO_solaris) && defined(VKI_MAP_ALIGN)
    if (arg4 & VKI_MAP_ALIGN) {
       mreq.rkind = MAlign;
       if (mreq.start == 0) {
@@ -2638,6 +2638,15 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       }
       /* VKI_MAP_FIXED and VKI_MAP_ALIGN don't like each other. */
       arg4 &= ~VKI_MAP_ALIGN;
+   } else
+#endif
+#if defined(VGO_freebsd)
+   if (arg4 & VKI_MAP_ALIGNMENT_MASK) {
+      mreq.rkind = MAlign;
+      if (mreq.start == 0U) {
+         mreq.start = 1U << (arg4 >> VKI_MAP_ALIGNMENT_SHIFT);
+      }
+      arg4 &= ~VKI_MAP_ALIGNMENT_MASK;
    } else
 #endif
    if (arg1 != 0) {

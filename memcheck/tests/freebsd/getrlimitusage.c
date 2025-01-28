@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
         {
         case 7:
         case 9:
+        case 11:
         case 12:
         case 13:
         case 14:

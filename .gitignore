@@ -1452,6 +1452,7 @@
 /memcheck/tests/freebsd/timing_safe
 /memcheck/tests/freebsd/utimens
 /memcheck/tests/freebsd/utimes
+/memcheck/tests/freebsd/utrace
 
 # /memcheck/tests/amd64-freebsd
 /memcheck/tests/amd64-freebsd/*.stderr.diff

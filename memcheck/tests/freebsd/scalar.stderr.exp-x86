@@ -2397,10 +2397,6 @@ Syscall param utrace(addr) contains uninitialised byte(s)
 Syscall param utrace(len) contains uninitialised byte(s)
    ...
 
-Syscall param utrace(addr) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
 ---------------------------------------------------------
 337:              SYS_kldsym 3s 1m
 ---------------------------------------------------------

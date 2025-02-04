@@ -3109,13 +3109,40 @@ POST(sys_sched_rr_get_interval)
    POST_MEM_WRITE(ARG2, sizeof(struct vki_timespec));
 }
 
+/*
+ * Putting this here rather than in vki-freebsd.h because this is a workaround
+ * (see https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=284563)
+ * The syscall interface doesn't allow us to properly validate the memory,
+ * and struct utrace_rtld isn't public.
+ */
+#define	VKI_RTLD_UTRACE_SIG_SZ 4
+
+struct vki_utrace_rtld {
+    char sig[VKI_RTLD_UTRACE_SIG_SZ];
+    int event;
+    void *handle;
+    void *mapbase;
+    size_t mapsize;
+    int refcnt;
+    char name[VKI_PATH_MAX];
+};
+
 // SYS_utrace  335
 // int utrace(const void *addr, size_t len);
 PRE(sys_utrace)
 {
    PRINT("sys_utrace ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", ARG1, ARG2);
    PRE_REG_READ2(int, "utrace", const void *, addr, vki_size_t, len);
-   PRE_MEM_READ( "utrace(addr)", ARG1, ARG2 );
+   if (ARG1 && ARG2 >= sizeof(struct vki_utrace_rtld) && ML_(safe_to_deref)((const void*)ARG1, ARG2)) {
+       struct vki_utrace_rtld* ut = (struct vki_utrace_rtld*)ARG1;
+       PRE_MEM_READ("utrace(addr.sig)", (Addr)&ut->sig, VKI_RTLD_UTRACE_SIG_SZ*sizeof(char));
+       PRE_MEM_READ("utrace(addr.event)", (Addr)&ut->event, sizeof(int));
+       PRE_MEM_READ("utrace(addr.handle)", (Addr)&ut->handle, sizeof(void*));
+       PRE_MEM_READ("utrace(addr.mapbase)", (Addr)&ut->mapbase, sizeof(void*));
+       PRE_MEM_READ("utrace(addr.mapsize)", (Addr)&ut->mapsize, sizeof(size_t));
+       PRE_MEM_READ("utrace(addr.refcnt)", (Addr)&ut->handle, sizeof(int));
+       PRE_MEM_READ("utrace(addr.name)", (Addr)&ut->name, VKI_PATH_MAX*sizeof(char));
+   }
 }
 
 // SYS_kldsym  337

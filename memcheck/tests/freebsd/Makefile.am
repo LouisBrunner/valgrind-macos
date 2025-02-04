@@ -137,7 +137,10 @@ EXTRA_DIST = \
 	utimens.stderr.exp \
 	utimes.vgtest \
 	utimes.stderr.exp-x86 \
-	utimes.stderr.exp
+	utimes.stderr.exp \
+	utrace.vgtest \
+	utrace.stderr.exp
+
 
 check_PROGRAMS = \
 	access aio aio_read aligned_alloc bug464476 bug470713 \

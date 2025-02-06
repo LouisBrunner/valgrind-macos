@@ -23,28 +23,7 @@
    fun:f*lockfile
 }
 {
-   DRD-MANY1
-   drd:ConflictingAccess
-   obj:*/lib*/libthr.so.3
-   obj:/libexec/ld-elf*.so.1
-}
-{
-   DRD-MANY2
-   drd:ConflictingAccess
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   obj:/libexec/ld-elf*.so.1
-}
-{
-   DRD-MANY3
-   drd:ConflictingAccess
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   obj:/libexec/ld-elf*.so.1
-}
-{
-   DRD-MANY4
+   DRD-MANY
    drd:ConflictingAccess
    obj:*/lib*/libthr.so.3
 }
@@ -74,14 +53,6 @@
    DRD-LIBGOMP3
    drd:ConflictingAccess
    fun:.omp_outlined*
-}
-{
-   DRD-LIBGOMP4
-   drd:ConflictingAccess
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libthr.so.3
-   fun:pthread_setspecific
 }
 {
    DRD-UNWIND1
@@ -134,22 +105,6 @@
    obj:*/lib*/libgcc_s.so.1
    obj:*/lib*/libgcc_s.so.1
    obj:*/lib*/libgcc_s.so.1
-}
-{
-   DRD-DLOPEN
-   drd:ConflictingAccess
-   obj:*/lib*/libthr.so.3
-   obj:/libexec/ld-elf*.so.1
-   obj:/libexec/ld-elf*.so.1
-   obj:/libexec/ld-elf*.so.1
-   fun:dlopen
-}
-{
-   DRD-LD-ELF
-   drd:ConflictingAccess
-   obj:*/lib*/libthr.so.3
-   ...
-   obj:/libexec/ld-elf*.so.1
 }
 {
    DRD-SNPRINTF

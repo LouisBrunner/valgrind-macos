@@ -32,6 +32,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+396415  Valgrind is not looking up $ORIGIN rpath of shebang programs
 487296  --track-fds=yes and --track-fds=all report erroneous information
         when fds 0, 1, or 2 are used as non-std
 489913  WARNING: unhandled amd64-linux syscall: 444 (landlock_create_ruleset)

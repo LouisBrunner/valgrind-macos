@@ -11,6 +11,8 @@ EXTRA_DIST = \
 	auxv.stderr.exp-freebsd131 \
 	auxv.stderr.exp-freebsd14 \
 	auxv.stderr.exp-arm64 \
+	auxv_script.vgtest \
+	auxv_script.stderr.exp \
 	bug452274.vgtest \
 	bug452274.stderr.exp \
 	bug498317.vgtest bug498317.stderr.exp \

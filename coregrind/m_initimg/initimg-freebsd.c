@@ -64,7 +64,6 @@ static void load_client ( /*OUT*/ExeInfo* info,
 {
    const HChar* exe_name;
    Int    ret;
-   SysRes res;
 
    vg_assert( VG_(args_the_exename) != NULL);
    exe_name = VG_(find_executable)( VG_(args_the_exename) );
@@ -82,13 +81,6 @@ static void load_client ( /*OUT*/ExeInfo* info,
    }
 
    // The client was successfully loaded!  Continue.
-
-   /* Get hold of a file descriptor which refers to the client
-      executable.  This is needed for attaching to GDB. */
-   res = VG_(open)(exe_name, VKI_O_RDONLY, VKI_S_IRUSR);
-   if (!sr_isError(res)) {
-      VG_(cl_exec_fd) = sr_Res(res);
-   }
 
    /* Copy necessary bits of 'info' that were filled in */
    *client_ip  = info->init_ip;
@@ -342,6 +334,53 @@ static const struct auxv *find_auxv(const UWord* sp)
    return (const struct auxv *)sp;
 }
 
+static Bool try_get_interp(const HChar* args_exe, HChar* interp_out)
+{
+   HChar  hdr[4096];
+   Int    len = sizeof hdr;
+   SysRes res;
+   Int fd;
+   HChar* end;
+   HChar* cp;
+   HChar* interp;
+
+   res = VG_(open)(args_exe, VKI_O_RDONLY, 0);
+   if (sr_isError(res)) {
+      return False;
+   } else {
+      fd = sr_Res(res);
+   }
+
+   res = VG_(pread)(fd, hdr, len, 0);
+
+   if (sr_isError(res)) {
+      VG_(close)(fd);
+      return False;
+   } else {
+      len = sr_Res(res);
+   }
+
+   if (0 != VG_(memcmp)(hdr, "#!", 2)) {
+       VG_(close)(fd);
+      return False;
+   }
+
+   end    = hdr + len;
+   interp = hdr + 2;
+   while (interp < end && (*interp == ' ' || *interp == '\t'))
+      interp++;
+
+   for (cp = interp; cp < end && !VG_(isspace)(*cp); cp++)
+      ;
+
+   *cp = '\0';
+
+   VG_(sprintf)(interp_out, "%s", interp);
+
+   VG_(close)(fd);
+   return True;
+}
+
 /* ----------------------------------------------------------------
 
    This sets up the client's initial stack, containing the args,
@@ -425,6 +464,10 @@ static Addr setup_client_stack(const void*  init_sp,
    vg_assert( VG_(args_for_client) );
 
    const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
+   HChar interp_name[VKI_PATH_MAX];
+   if (try_get_interp(exe_name, interp_name)) {
+      exe_name = interp_name;
+   }
    HChar resolved_name[VKI_PATH_MAX];
    VG_(realpath)(exe_name, resolved_name);
 

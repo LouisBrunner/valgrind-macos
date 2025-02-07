@@ -15,7 +15,7 @@ static int sleepms = 1000; // in each loop, will sleep "sleepms" milliseconds
 static int burn = 0; // after each sleep, will burn cpu in a tight 'burn' loop 
 static void setup_sigusr_handler(void); // sigusr1 and 2 sigaction setup.
 
-static pid_t gettid_sys()
+static pid_t gettid_sys(void)
 {
 #ifdef __NR_gettid
    return syscall(__NR_gettid);
@@ -32,7 +32,7 @@ void whoami(char *msg)
 }
 
 
-static void do_burn ()
+static void do_burn(void)
 {
    int i;
    int loopnr = 0;
@@ -126,6 +126,12 @@ static void setaffinity(void)
    CPU_ZERO(&single_cpu);
    CPU_SET(1, &single_cpu);
    (void) sched_setaffinity(0, sizeof(single_cpu), &single_cpu);
+#endif
+#ifdef VGO_freebsd
+   cpu_set_t single_cpu;
+   CPU_ZERO(&single_cpu);
+   CPU_SET(1, &single_cpu);
+   pthread_setaffinity_np(pthread_self(), sizeof(single_cpu), &single_cpu);
 #endif
    // GDBTD: equivalent for Darwin ?
 }

@@ -34,6 +34,8 @@ perl -p -e 's/ __write / write /' |
 sed '/ _so_socket /d;' |
 awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
 awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |
+sed '/__open/d' |
+sed 's/__systemcall6/creat/' |
 
 # Stack traces showing where fds were created have lots of variations:
 # different numbers of entries, line numbers or not depending on whether

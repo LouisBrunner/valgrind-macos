@@ -109,3 +109,16 @@
    obj:/libexec/ld-elf*.so.1
    obj:/libexec/ld-elf*.so.1
 }
+{
+   Solaris-leaks-g++-malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_GLOBAL__sub_I_eh_alloc.cc
+   obj:*/libstdc++.so*
+   fun:_init
+   fun:call_init
+   fun:setup
+   fun:_setup
+   fun:_rt_boot
+}

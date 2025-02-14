@@ -40,6 +40,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 494327  Crash when running Helgrind built with #define TRACE_PTH_FNS 1
 494337  All threaded applications cause still holding lock errors
 495488  Add FreeBSD getrlimitusage syscall wrapper
+496370  Illumos: signal handling is broken
 496571  False positive for null key passed to bpf_map_get_next_key syscall.
 469782  Valgrind does not support zstd-compressed debug sections
 497130  Recognize new DWARF5 DW_LANG constants
@@ -52,6 +53,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 498492  none/tests/amd64/lzcnt64 crashes on FreeBSD compiled with clang
 499183  FreeBSD: differences in avx-vmovq output
 499212  mmap() with MAP_ALIGNED() returns unaligned pointer
+
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

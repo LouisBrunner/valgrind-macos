@@ -511,6 +511,9 @@ ULong ML_(fletcher64)(UInt *buf, SizeT blocks)
    return (sum2 << 32) | sum1;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 /* Save a complete context (VCPU state, sigmask) of a given client thread
    into the vki_ucontext_t structure.  This structure is supposed to be
    allocated in the client memory, a caller must make sure that the memory can
@@ -665,6 +668,8 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
                   (new_esp - old_esp) + VG_STACK_REDZONE_SZB);
    }
 }
+
+#pragma GCC pop_options
 
 /* Set a client stack associated with a given thread id according to values
    passed in the vki_stack_t structure. */

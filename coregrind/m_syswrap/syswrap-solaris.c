@@ -10947,7 +10947,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_uuidsys,              sys_uuidsys),               /* 124 */
 #endif /* SOLARIS_UUIDSYS_SYSCALL */
 #if defined(HAVE_MREMAP)
-   GENX_(__NR_mremap,               sys_mremap),                /* 126 */
+   GENX_(__NR_mremap,               sys_mremap),                /* 126 (Solaris only, not Illumos) */
 #endif /* HAVE_MREMAP */
    SOLX_(__NR_mmapobj,              sys_mmapobj),               /* 127 */
    GENX_(__NR_setrlimit,            sys_setrlimit),             /* 128 */
@@ -10968,7 +10968,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLX_(__NR_seteuid,              sys_seteuid),               /* 141 */
    SOLX_(__NR_forksys,              sys_forksys),               /* 142 */
 #if defined(SOLARIS_GETRANDOM_SYSCALL)
-   SOLXY(__NR_getrandom,            sys_getrandom),             /* 143 */
+   SOLXY(__NR_getrandom,            sys_getrandom),             /* 143 (Solaris) 126 (Illumos) */
 #endif /* SOLARIS_GETRANDOM_SYSCALL */
    SOLXY(__NR_sigtimedwait,         sys_sigtimedwait),          /* 144 */
    SOLX_(__NR_yield,                sys_yield),                 /* 146 */

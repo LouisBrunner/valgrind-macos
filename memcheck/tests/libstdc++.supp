@@ -122,3 +122,15 @@
    fun:_setup
    fun:_rt_boot
 }
+{
+   Illumos-leaks-g++-malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_GLOBAL__sub_I_eh_alloc.cc
+   fun:call_array
+   fun:call_init
+   fun:setup
+   fun:_setup
+   fun:_rt_boot
+}

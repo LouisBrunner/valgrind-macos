@@ -1185,6 +1185,7 @@ void fd_pp_Error (const Error *err)
       }
       VG_(emit)("%sFile descriptor %d %s%s\n", whatpre, nce->fd,
           error_string, whatpost);
+      VG_(pp_ExeContext)(where);
       /* If the file descriptor was never created we won't have
          where_closed and where_opened. Only print them in a
          use after close case.  */
@@ -1196,7 +1197,6 @@ void fd_pp_Error (const Error *err)
         VG_(emit)("%sOriginally opened%s\n", auxpre, auxpost);
         VG_(pp_ExeContext)(nce->where_opened);
       }
-      VG_(pp_ExeContext)(where);
    } else {
       vg_assert2 (False, "Unknown error kind: %d",
                   VG_(get_error_kind)(err));

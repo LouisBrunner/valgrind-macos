@@ -1,12 +1,12 @@
 bad
 File descriptor 3 was closed already
+   at 0x........: write (in /...libc...)
+   by 0x........: main
  Previously closed
    at 0x........: close (in /...libc...)
    by 0x........: main
  Originally opened
    at 0x........: dup (in /...libc...)
-   by 0x........: main
-   at 0x........: write (in /...libc...)
    by 0x........: main
 File descriptor 7 was never created
    at 0x........: write (in /...libc...)

@@ -907,7 +907,7 @@ VexInvalRange patchProfInc_S390(VexEndness endness_host,
                                 void  *code_to_patch,
                                 const ULong *location_of_counter);
 
-/* KLUDGE: See detailled comment in host_s390_defs.c. */
+/* KLUDGE: See detailled comment in main_main.c. */
 extern UInt s390_host_hwcaps;
 
 /* Convenience macros to test installed facilities */

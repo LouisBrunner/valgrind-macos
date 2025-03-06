@@ -1,0 +1,6 @@
+prog: disasm-test
+# args: --all        # enable this eventually
+#
+# NOTE: there are extra newlines in the output which are *not*
+# present when disasm-test is invoked by hand.
+# Not sure where they are coming from. 

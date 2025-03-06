@@ -2231,6 +2231,17 @@
 /none/tests/riscv64/integer
 /none/tests/riscv64/muldiv
 
+# /none/tests/s390x/disasm-test/
+/none/tests/s390x/disasm-test/*.dSYM
+/none/tests/s390x/disasm-test/*.stderr.diff*
+/none/tests/s390x/disasm-test/*.stderr.out
+/none/tests/s390x/disasm-test/*.stdout.diff*
+/none/tests/s390x/disasm-test/*.stdout.out
+/none/tests/s390x/disasm-test/.deps
+/none/tests/s390x/disasm-test/Makefile
+/none/tests/s390x/disasm-test/Makefile.in
+/none/tests/s390x/disasm-test/disasm-test
+
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM
 /none/tests/scripts/*.so

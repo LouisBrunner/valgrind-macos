@@ -553,50 +553,6 @@ static OpenFd *allocated_fds = NULL;
 /* Count of open file descriptors. */
 static Int fd_count = 0;
 
-/* Close_range caller might want to close very wide range of file descriptors,
-   up to 0U.  We want to avoid iterating through such a range in a normall
-   close_range, just up to any open file descriptor.  Also, unlike
-   record_fd_close_range, we assume the user might deliberately double closes
-   any file descriptors in the range, so don't warn about double close here. */
-void ML_(record_fd_close_range)(ThreadId tid, Int from_fd)
-{
-  OpenFd *i = allocated_fds;
-
-  if (from_fd >= VG_(fd_hard_limit))
-    return;			/* Valgrind internal */
-
-   while(i) {
-      // Assume the user doesn't want a warning if this came from
-      // close_range. Just record the file descriptors not yet closed here.
-      if (i->fd >= from_fd && !i->fd_closed
-          && i->fd != VG_(log_output_sink).fd
-          && i->fd != VG_(xml_output_sink).fd) {
-         i->fd_closed = True;
-         i->where_closed = ((tid == -1)
-                            ? NULL
-                            : VG_(record_ExeContext)(tid,
-                                                     0/*first_ip_delta*/));
-         fd_count--;
-      }
-      i = i->next;
-   }
-}
-
-struct BadCloseExtra {
-   Int fd;                        /* The file descriptor */
-   HChar *pathname;               /* NULL if not a regular file or unknown */
-   HChar *description;            /* Description of the file descriptor
-                                     might include the pathname */
-   ExeContext *where_closed;      /* record the last close of fd */
-   ExeContext *where_opened;      /* recordwhere the fd  was opened */
-};
-
-struct NotClosedExtra {
-   Int fd;
-   HChar *pathname;
-   HChar *description;
-};
-
 Int ML_(get_fd_count)(void)
 {
    return fd_count;

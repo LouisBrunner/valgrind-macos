@@ -1,0 +1,15 @@
+
+---Thread-Announcement------------------------------------------
+
+Thread #x is the program's root thread
+
+----------------------------------------------------------------
+
+Thread #x: Exiting thread still holds 2 locks
+   ...
+   by 0x........: exit_WRK (hg_intercepts.c:...)
+   by 0x........: exit (hg_intercepts.c:...)
+   ...
+
+
+ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 0 from 0)

@@ -36,6 +36,7 @@
 
 #include "libvex_basictypes.h"
 
+#include "main_util.h"
 
 /*---------------------------------------------------------*/
 /*--- Representing HOST REGISTERS                       ---*/

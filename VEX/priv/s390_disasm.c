@@ -124,8 +124,10 @@ cab_operand(const HChar *base, UInt mask)
       *to = *from;
    }
    /* strcat(buf, suffix); */
-   for (from = suffix[mask >> 1]; *from; ++from, ++to) {
-      *to = *from;
+   if (! (mask & 0x1)) {
+      for (from = suffix[mask >> 1]; *from; ++from, ++to) {
+         *to = *from;
+      }
    }
    *to = '\0';
 
@@ -219,7 +221,7 @@ bc_operand(UInt m1)
 static const HChar *
 brc_operand(UInt m1)
 {
-   if (m1 == 0)  return "brc";
+   if (m1 == 0)  return "jnop";
    if (m1 == 15) return "j";
 
    return construct_mnemonic("j", "", m1);
@@ -230,7 +232,7 @@ brc_operand(UInt m1)
 static const HChar *
 brcl_operand(UInt m1)
 {
-   if (m1 == 0)  return "brcl";
+   if (m1 == 0)  return "jgnop";
    if (m1 == 15) return "jg";
 
    return construct_mnemonic("jg", "", m1);
@@ -239,27 +241,8 @@ brcl_operand(UInt m1)
 
 /* Return the special mnemonic for a conditional load/store  opcode */
 static const HChar *
-cls_operand(Int kind, UInt mask)
+cls_operand(const HChar *prefix, UInt mask)
 {
-   const HChar *prefix;
-
-   switch (kind) {
-   case S390_XMNM_LOCR:   prefix = "locr";  break;
-   case S390_XMNM_LOCGR:  prefix = "locgr"; break;
-   case S390_XMNM_LOC:    prefix = "loc";   break;
-   case S390_XMNM_LOCG:   prefix = "locg";  break;
-   case S390_XMNM_STOC:   prefix = "stoc";  break;
-   case S390_XMNM_STOCG:  prefix = "stocg"; break;
-   case S390_XMNM_STOCFH: prefix = "stocfh"; break;
-   case S390_XMNM_LOCFH:  prefix = "locfh"; break;
-   case S390_XMNM_LOCFHR: prefix = "locfhr"; break;
-   case S390_XMNM_LOCHI:  prefix = "lochi"; break;
-   case S390_XMNM_LOCGHI: prefix = "locghi"; break;
-   case S390_XMNM_LOCHHI: prefix = "lochhi"; break;
-   default:
-      vpanic("cls_operand");
-   }
-
    return construct_mnemonic(prefix, "", mask);
 }
 
@@ -278,11 +261,7 @@ dxb_operand(HChar *p, UInt d, UInt x, UInt b, Bool displacement_is_signed)
       p += vex_sprintf(p, "%u", d);
    }
    if (x != 0) {
-      p += vex_sprintf(p, "(%s", gpr_operand(x));
-      if (b != 0) {
-         p += vex_sprintf(p, ",%s", gpr_operand(b));
-      }
-      p += vex_sprintf(p, ")");
+      p += vex_sprintf(p, "(%s,%s)", gpr_operand(x), gpr_operand(b));
    } else {
       if (b != 0) {
          p += vex_sprintf(p, "(%s)", gpr_operand(b));
@@ -392,8 +371,6 @@ s390_disasm(UInt command, ...)
             mask = va_arg(args, UInt);
             mnm = kind == S390_XMNM_BCR ? bcr_operand(mask) : bc_operand(mask);
             p  += vex_sprintf(p, "%s", mnemonic(mnm));
-            /* mask == 0 is a NOP and has no argument */
-            if (mask == 0) goto done;
             break;
 
          case S390_XMNM_BRC:
@@ -401,12 +378,6 @@ s390_disasm(UInt command, ...)
             mask = va_arg(args, UInt);
             mnm = kind == S390_XMNM_BRC ? brc_operand(mask) : brcl_operand(mask);
             p  += vex_sprintf(p, "%s", mnemonic(mnm));
-
-            /* mask == 0 has no special mnemonic */
-            if (mask == 0) {
-               p += vex_sprintf(p, " 0");
-               separator = ',';
-            }
             break;
 
          case S390_XMNM_CAB:
@@ -415,31 +386,21 @@ s390_disasm(UInt command, ...)
             p  += vex_sprintf(p, "%s", mnemonic(cab_operand(mnm, mask)));
             break;
 
-         case S390_XMNM_LOCR:
-         case S390_XMNM_LOCGR:
-         case S390_XMNM_LOC:
-         case S390_XMNM_LOCG:
-         case S390_XMNM_STOC:
-         case S390_XMNM_STOCG:
-         case S390_XMNM_STOCFH:
-         case S390_XMNM_LOCFH:
-         case S390_XMNM_LOCFHR:
-         case S390_XMNM_LOCHI:
-         case S390_XMNM_LOCGHI:
-         case S390_XMNM_LOCHHI:
+         case S390_XMNM_CLS:
+            mnm  = va_arg(args, HChar *);
             mask = va_arg(args, UInt);
-            mnm = cls_operand(kind, mask);
-            p  += vex_sprintf(p, "%s", mnemonic(mnm));
+            p  += vex_sprintf(p, "%s", mnemonic(cls_operand(mnm, mask)));
             /* There are no special opcodes when mask == 0 or 15. In that case
                the integer mask is appended as the final operand */
             if (mask == 0 || mask == 15) mask_suffix = mask;
             break;
+
          case S390_XMNM_BIC:
             mask = va_arg(args, UInt);
             if (mask == 0) {
                /* There is no special opcode when mask == 0. */
-               p  += vex_sprintf(p, "bic");
-               mask_suffix = mask;
+               p  += vex_sprintf(p, "%s", mnemonic("bic"));
+               p  += vex_sprintf(p, "%u,", mask);
             } else {
                p  += vex_sprintf(p, "%s", construct_mnemonic("bi", "", mask));
             }
@@ -465,7 +426,7 @@ s390_disasm(UInt command, ...)
          break;
 
       case S390_ARG_INT:
-         p += vex_sprintf(p, "%d", (Int)(va_arg(args, UInt)));
+         p += vex_sprintf(p, "%d", va_arg(args, Int));
          break;
 
       case S390_ARG_PCREL: {
@@ -519,8 +480,8 @@ s390_disasm(UInt command, ...)
       case S390_ARG_CABM: {
          UInt mask;
 
-         mask = va_arg(args, UInt) & 0xE;
-         if (mask == 0 || mask == 14) {
+         mask = va_arg(args, UInt);
+         if (mask == 0 || mask == 14 || (mask & 0x1)) {
             p += vex_sprintf(p, ",%u", mask);
          }
          break;

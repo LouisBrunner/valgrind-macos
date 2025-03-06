@@ -87,6 +87,7 @@ EXTRA_DIST = \
 		tc03_re_excl.stderr.exp \
 	tc04_free_lock.vgtest tc04_free_lock.stdout.exp \
 		tc04_free_lock.stderr.exp \
+		tc04_free_lock.stderr.exp-freebsd \
 	tc05_simple_race.vgtest tc05_simple_race.stdout.exp \
 		tc05_simple_race.stderr.exp \
 	tc06_two_races.vgtest tc06_two_races.stdout.exp \
@@ -137,6 +138,7 @@ EXTRA_DIST = \
 		tc22_exit_w_lock.stderr.exp \
 		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 		tc22_exit_w_lock.stderr.exp-solaris \
+		tc22_exit_w_lock.stderr.exp-freebsd15 \
 	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
 		tc23_bogus_condwait.stderr.exp \
 		tc23_bogus_condwait.stderr.exp-mips32 \

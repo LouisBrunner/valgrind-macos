@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -28,7 +28,7 @@
 
 
 /* ---------------------------------------------------------------------
-   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU. 
+   ALL THE CODE IN THIS FILE RUNS ON THE SIMULATED CPU.
 
    These functions are not called directly - they're the targets of code
    redirection or load notifications (see pub_core_redir.h for info).
@@ -132,7 +132,7 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
 #if defined(VGP_ppc64be_linux)
    /* ppc64be uses function descriptors, so get the actual function entry
       address for the client request, but return the function descriptor
-      from this function. 
+      from this function.
       result points to the function descriptor, which starts with the
       function entry. */
     fnentry = *(Addr*)result;
@@ -157,7 +157,7 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
    Darwin crash log hints
    ------------------------------------------------------------------ */
 
-/* This string will be inserted into crash logs, so crashes while 
+/* This string will be inserted into crash logs, so crashes while
    running under Valgrind can be distinguished from other crashes. */
 __private_extern__ const char *__crashreporter_info__ = "Instrumented by Valgrind " VERSION;
 
@@ -165,10 +165,10 @@ __private_extern__ const char *__crashreporter_info__ = "Instrumented by Valgrin
    Darwin environment cleanup
    ------------------------------------------------------------------ */
 
-/* Scrubbing DYLD_INSERT_LIBRARIES from envp during exec is insufficient, 
-   as there are other ways to launch a process with environment that 
-   valgrind can't catch easily (i.e. launchd). 
-   Instead, scrub DYLD_INSERT_LIBRARIES from the parent process once 
+/* Scrubbing DYLD_INSERT_LIBRARIES from envp during exec is insufficient,
+   as there are other ways to launch a process with environment that
+   valgrind can't catch easily (i.e. launchd).
+   Instead, scrub DYLD_INSERT_LIBRARIES from the parent process once
    dyld is done loading vg_preload.so.
 */
 #include <string.h>
@@ -253,7 +253,7 @@ static void vg_cleanup_env(void)
     env_unsetenv(envp, "DYLD_SHARED_REGION");
     // GrP fixme should be more like mash_colon_env()
     env_unsetenv(envp, "DYLD_INSERT_LIBRARIES");
-}   
+}
 
 /* ---------------------------------------------------------------------
    Darwin arc4random (rdar://6166275)
@@ -290,8 +290,6 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
 
 #elif defined(VGO_freebsd)
 
-#if (FREEBSD_VERS >= FREEBSD_14_0)
-
 void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void);
 void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
 {
@@ -309,8 +307,6 @@ void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void)
                                     fn.nraddr, fnentry, 0, 0, 0);
     return (void*)result;
 }
-
-#endif
 
 #elif defined(VGO_solaris)
 

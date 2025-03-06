@@ -440,7 +440,7 @@ Syscall param acct(filename) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
- 53:         SYS_sigaltstack 2s 2m
+ 53:         SYS_sigaltstack 2s 4m
 ---------------------------------------------------------
 Syscall param sigaltstack(ss) contains uninitialised byte(s)
    ...
@@ -448,23 +448,26 @@ Syscall param sigaltstack(ss) contains uninitialised byte(s)
 Syscall param sigaltstack(oss) contains uninitialised byte(s)
    ...
 
-Syscall param sigaltstack(ss) points to unaddressable byte(s)
+Syscall param sigaltstack(ss->ss_sp) points to unaddressable byte(s)
    ...
  Address 0x........ is on thread 1's stack
+
+Syscall param sigaltstack(ss->ss_size) points to unaddressable byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
+Syscall param sigaltstack(ss->ss_flags) points to unaddressable byte(s)
+   ...
+ Address 0x........ is on thread 1's stack
+
 
 Syscall param sigaltstack(oss) points to unaddressable byte(s)
    ...
  Address 0x........ is on thread 1's stack
 
-Conditional jump or move depends on uninitialised value(s)
-   ...
-
 ---------------------------------------------------------
  54:               SYS_ioctl 3s 1m
 ---------------------------------------------------------
-
-More than 100 errors detected.  Subsequent errors
-will still be recorded, but in less detail than before.
 Syscall param ioctl(fd) contains uninitialised byte(s)
    ...
 
@@ -607,6 +610,7 @@ Syscall param mprotect(len) contains uninitialised byte(s)
 Syscall param mprotect(prot) contains uninitialised byte(s)
    ...
 
+Warning: client syscall mprotect tried to modify addresses 0x........-0x........
 ---------------------------------------------------------
  75:             SYS_madvise 3s 0m
 ---------------------------------------------------------
@@ -1148,6 +1152,23 @@ Syscall param adjtime(olddelta) contains uninitialised byte(s)
    ...
 
 Syscall param adjtime(delta) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+140:             SYS_adjtime 2s 2m
+---------------------------------------------------------
+Syscall param adjtime(delta) contains uninitialised byte(s)
+   ...
+
+Syscall param adjtime(olddelta) contains uninitialised byte(s)
+   ...
+
+Syscall param adjtime(delta) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param adjtime(olddelta) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -2375,10 +2396,6 @@ Syscall param utrace(addr) contains uninitialised byte(s)
 
 Syscall param utrace(len) contains uninitialised byte(s)
    ...
-
-Syscall param utrace(addr) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 337:              SYS_kldsym 3s 1m
@@ -3611,6 +3628,10 @@ Syscall param mq_timedreceive(msg_prio) contains uninitialised byte(s)
 Syscall param mq_timedreceive(abs_timeout) contains uninitialised byte(s)
    ...
 
+Syscall param mq_timedreceive(msg_ptr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 Syscall param mq_timedreceive(msg_prio) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
@@ -3636,6 +3657,10 @@ Syscall param mq_timedsend(msg_prio) contains uninitialised byte(s)
 
 Syscall param mq_timedsend(abs_timeout) contains uninitialised byte(s)
    ...
+
+Syscall param mq_timedsend(msg_ptr) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_timedsend(abs_timeout) points to unaddressable byte(s)
    ...
@@ -3719,6 +3744,14 @@ Syscall param sctp_generic_sendmsg(sinfo) contains uninitialised byte(s)
 
 Syscall param sctp_generic_sendmsg(flags) contains uninitialised byte(s)
    ...
+
+Syscall param sctp_generic_sendmsg(msg) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sctp_generic_sendmsg(to) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param sctp_generic_sendmsg(sinfo) points to unaddressable byte(s)
    ...
@@ -3975,6 +4008,22 @@ Syscall param shm_open(mode) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
+482:            SYS_shm_open 3s 1m
+---------------------------------------------------------
+Syscall param shm_open(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 483:          SYS_shm_unlink 1s 1m
 ---------------------------------------------------------
 Syscall param shm_unlink(path) contains uninitialised byte(s)
@@ -4052,6 +4101,10 @@ Syscall param cpuset_getaffinity(setsize) contains uninitialised byte(s)
 Syscall param cpuset_getaffinity(mask) contains uninitialised byte(s)
    ...
 
+Syscall param cpuset_getaffinity points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 ---------------------------------------------------------
 488:  SYS_cpuset_setaffinity 5s 1m
 ---------------------------------------------------------
@@ -4072,6 +4125,10 @@ Syscall param cpuset_setaffinity(setsize) contains uninitialised byte(s)
 
 Syscall param cpuset_setaffinity(mask) contains uninitialised byte(s)
    ...
+
+Syscall param cpuset_setaffinity points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 489:           SYS_faccessat 3s 1m
@@ -5533,6 +5590,225 @@ Syscall param __sysctlbyname(name) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param __sysctlbyname(newp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+571:           SYS_shm_open2  5s 2m
+---------------------------------------------------------
+Syscall param shm_open2(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(shmflags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param shm_open2(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+571:           SYS_shm_open2  5s 1m
+---------------------------------------------------------
+Syscall param shm_open2(path) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(mode) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(shmflags) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) contains uninitialised byte(s)
+   ...
+
+Syscall param shm_open2(name) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+574:        SYS___realpathat  5s 2m
+---------------------------------------------------------
+Syscall param __realpathat(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(buf) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(size) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param __realpathat(path) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param __realpathat(buf) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+575:         SYS_close_range 3s 0m
+---------------------------------------------------------
+Syscall param close_range(lowfd) contains uninitialised byte(s)
+   ...
+
+Syscall param close_range(highfd) contains uninitialised byte(s)
+   ...
+
+Syscall param close_range(flags) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+577:         SYS___specialfd 3s 1m
+---------------------------------------------------------
+Syscall param __specialfd(type) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(req) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(len) contains uninitialised byte(s)
+   ...
+
+Syscall param __specialfd(req) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+578:          SYS_aio_writev 1s 1m
+---------------------------------------------------------
+Syscall param aio_writev(iocb) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_writev(iocb) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+579:           SYS_aio_readv 1s 1m
+---------------------------------------------------------
+Syscall param aio_readv(iocb) contains uninitialised byte(s)
+   ...
+
+Syscall param aio_readv(iocb) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+583:             SYS_kqueuex  1s 0m
+---------------------------------------------------------
+Syscall param kqueuex(flags) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+584:          SYS_membarrier  3s 0m
+---------------------------------------------------------
+Syscall param membarrier(cmd) contains uninitialised byte(s)
+   ...
+
+Syscall param membarrier(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param membarrier(cpu_id) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+585:      SYS_timerfd_create  2s 0m
+---------------------------------------------------------
+Syscall param timerfd_create(clockid) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_create(flags) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+586:     SYS_timerfd_gettime  2s 1m
+---------------------------------------------------------
+Syscall param timerfd_gettime(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_gettime(curr_value) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_gettime(curr_value) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+587:     SYS_timerfd_settime 4s 2m
+---------------------------------------------------------
+Syscall param timerfd_settime(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_settime(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_settime(new_value) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_settime(old_value) contains uninitialised byte(s)
+   ...
+
+Syscall param timerfd_settime(new_value) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param timerfd_settime(old_value) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+588:                SYS_kcmp 5s 0m
+---------------------------------------------------------
+Syscall param kcmp(pid1) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(pid2) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(type) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(idx1) contains uninitialised byte(s)
+   ...
+
+Syscall param kcmp(idx2) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+589:      SYS_getrlimitusage 3s, 1m
+---------------------------------------------------------
+Syscall param getrlimitusage(which) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimitusage(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimitusage(res) contains uninitialised byte(s)
+   ...
+
+Syscall param getrlimitusage(res) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

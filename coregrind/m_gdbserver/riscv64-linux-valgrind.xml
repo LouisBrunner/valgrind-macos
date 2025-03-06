@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2018-2022 Free Software Foundation, Inc.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE target SYSTEM "gdb-target.dtd">
+<target>
+  <architecture>riscv</architecture>
+  <xi:include href="riscv64-cpu.xml"/>
+  <xi:include href="riscv64-fpu.xml"/>
+  <xi:include href="riscv64-cpu-valgrind-s1.xml"/>
+  <xi:include href="riscv64-fpu-valgrind-s1.xml"/>
+  <xi:include href="riscv64-cpu-valgrind-s2.xml"/>
+  <xi:include href="riscv64-fpu-valgrind-s2.xml"/>
+
+  <feature name="org.gnu.gdb.riscv.linux">
+    <reg name="restart" bitsize="64" group="system"/>
+  </feature>
+</target>

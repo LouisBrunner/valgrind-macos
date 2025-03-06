@@ -94,7 +94,7 @@ typedef
          || defined(VGP_ppc32_linux) \
          || defined(VGP_arm_linux) || defined(VGP_s390x_linux) \
          || defined(VGP_arm64_linux) \
-         || defined(VGP_nanomips_linux)
+         || defined(VGP_nanomips_linux) || defined(VGP_riscv64_linux)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;

@@ -98,6 +98,9 @@ extern Addr VG_(client_freeres_wrapper);
    VG_(get_StackTrace) in m_stacktrace.c for further info. */
 extern Addr VG_(client__dl_sysinfo_int80);
 
+/* Get the maximum client stacksize. */
+extern SizeT VG_(get_client_stack_max_size)(void);
+
 /* Obtains the initial client stack pointer from the finalised image info. */
 extern Addr VG_(get_initial_client_SP)(void);
 

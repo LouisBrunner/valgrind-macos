@@ -1141,7 +1141,7 @@ void ppX86Instr ( const X86Instr* i, Bool mode64 ) {
          ppHRegX86(i->Xin.FpCmp.dst);
          break;
       case Xin_SseConst:
-         vex_printf("const $0x%04x,", (Int)i->Xin.SseConst.con);
+         vex_printf("const $0x%04x,", (UInt)i->Xin.SseConst.con);
          ppHRegX86(i->Xin.SseConst.dst);
          break;
       case Xin_SseLdSt:

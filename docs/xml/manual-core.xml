@@ -20,7 +20,7 @@ refer to the Valgrind core services.  </para>
 
 
 
-<sect1 id="manual-core.whatdoes" 
+<sect1 id="manual-core.whatdoes"
        xreflabel="What Valgrind does with your program">
 <title>What Valgrind does with your program</title>
 
@@ -113,7 +113,7 @@ OpenOffice.org with Memcheck is a bit easier when using this option.  You
 don't have to do this, but doing so helps Valgrind produce more accurate
 and less confusing error reports.  Chances are you're set up like this
 already, if you intended to debug your program with GNU GDB, or some
-other debugger. Alternatively, the Valgrind option 
+other debugger. Alternatively, the Valgrind option
 <option>--read-inline-info=yes</option> instructs Valgrind to read
 the debug information describing inlining information. With this,
 function call chain will be properly shown, even when your application
@@ -199,7 +199,7 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
     to be available for their own use.</para>
   </listitem>
 
-  <listitem id="manual-core.out2file" 
+  <listitem id="manual-core.out2file"
             xreflabel="Directing output to file"> <para>A less intrusive
     option is to write the commentary to a file, which you specify by
     <option>--log-file=filename</option>.  There are special format
@@ -210,7 +210,7 @@ re-run, passing the <option>-v</option> option to Valgrind.  A second
     for more details.</para>
   </listitem>
 
-  <listitem id="manual-core.out2socket" 
+  <listitem id="manual-core.out2socket"
             xreflabel="Directing output to network socket"> <para>The
     least intrusive option is to send the commentary to a network
     socket.  The socket is specified as an IP address and port number
@@ -369,7 +369,7 @@ since it may have a bad effect on performance.</para>
 <title>Suppressing errors</title>
 
 <para>The error-checking tools detect numerous problems in the system
-libraries, such as the C library, 
+libraries, such as the C library,
 which come pre-installed with your OS.  You can't easily fix
 these, but you don't want to see these errors (and yes, there are many!)
 So Valgrind reads a list of errors to suppress at startup.  A default
@@ -622,7 +622,7 @@ variables will be ignored. This feature is supported on Linux only.</para>
 </sect1>
 
 
-<sect1 id="manual-core.options" 
+<sect1 id="manual-core.options"
        xreflabel="Core Command-line Options">
 <title>Core Command-line Options</title>
 
@@ -739,7 +739,7 @@ in most cases.  We group the available options by rough categories.</para>
       <option><![CDATA[--trace-children-skip=patt1,patt2,... ]]></option>
     </term>
     <listitem>
-      <para>This option only has an effect when 
+      <para>This option only has an effect when
         <option>--trace-children=yes</option> is specified.  It allows
         for some children to be skipped.  The option takes a comma
         separated list of patterns for the names of child executables
@@ -766,7 +766,7 @@ in most cases.  We group the available options by rough categories.</para>
       <option><![CDATA[--trace-children-skip-by-arg=patt1,patt2,... ]]></option>
     </term>
     <listitem>
-      <para>This is the same as  
+      <para>This is the same as
         <option>--trace-children-skip</option>, with one difference:
         the decision as to whether to trace into a child process is
         made by examining the arguments to the child process, rather
@@ -798,7 +798,7 @@ in most cases.  We group the available options by rough categories.</para>
       <option><![CDATA[--vgdb=<no|yes|full> [default: yes] ]]></option>
     </term>
     <listitem>
-      
+
       <para>Valgrind will provide "gdbserver" functionality when
       <option>--vgdb=yes</option> or <option>--vgdb=full</option> is
       specified.  This allows an external GNU GDB debugger to control
@@ -868,16 +868,16 @@ in most cases.  We group the available options by rough categories.</para>
           <para>Note: <option>startup</option> and
           <option>--vgdb-error=0</option> will both cause Valgrind
           gdbserver to be invoked before your program is executed. The
-          <option>--vgdb-error=0</option> will in addition cause your 
+          <option>--vgdb-error=0</option> will in addition cause your
           program to stop on all subsequent errors.</para>
 
         </listitem>
-        
+
         <listitem><para><option>all</option> to specify the complete set.
             It is equivalent to
             <option>--vgdb-stop-at=startup,exit,abexit,valgrindabexit</option>.</para>
         </listitem>
-        
+
         <listitem><para><option>none</option> for the empty set.</para>
         </listitem>
       </itemizedlist>
@@ -968,7 +968,7 @@ in most cases.  We group the available options by rough categories.</para>
       escaped with a backslash.</para>
 
       <para><option>%%</option> is replaced with <option>%</option>.</para>
-      
+
       <para>If an <option>%</option> is followed by any other character, it
       causes an abort.</para>
 
@@ -993,7 +993,7 @@ in most cases.  We group the available options by rough categories.</para>
       output to the standard error (stderr).  This option is intended to
       be used in conjunction with the
       <computeroutput>valgrind-listener</computeroutput> program.  For
-      further details, see 
+      further details, see
       <link linkend="&vg-comment-id;">the commentary</link>
       in the manual.</para>
     </listitem>
@@ -1041,7 +1041,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option>--xml-fd</option>, <option>--xml-file</option> or
       <option>--xml-socket</option> to specify where the XML is to be sent.
       </para>
-      
+
       <para>Less important messages will still be printed in plain text, but
       because the XML output and plain text output are sent to different
       output channels (the destination of the plain text output is still
@@ -1128,10 +1128,14 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option><![CDATA[--demangle=<yes|no> [default: yes] ]]></option>
     </term>
     <listitem>
-      <para>Enable/disable automatic demangling (decoding) of C++ names.
+      <para>Enable/disable automatic demangling (decoding) of C++, D,
+      Rust, Java, Ada names.
       Enabled by default.  When enabled, Valgrind will attempt to
-      translate encoded C++ names back to something approaching the
-      original.  The demangler handles symbols mangled by g++ versions
+      translate encoded names in the listed languages back to something
+      approaching the original.
+      Note that the callgrind tool always disables Ada demangling in order
+      to differentiate overloaded functions and procedures in the callgraph.
+      The demangler handles symbols mangled by g++ versions
       2.X, 3.X and 4.X.</para>
 
       <para>An important fact about demangling is that function names
@@ -1243,7 +1247,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     <listitem>
       <para>Specifies an alternative exit code to return if Valgrind
       reported any errors in the run.  When set to the default value
-      (zero), the return value from Valgrind will always be the return 
+      (zero), the return value from Valgrind will always be the return
       value of the process being simulated.  When set to a nonzero value,
       that value is returned instead, if Valgrind detects any errors.
       This is useful for using Valgrind as part of an automated test
@@ -1314,7 +1318,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
     </listitem>
   </varlistentry>
 
-  
+
   <varlistentry id="opt.sigill-diagnostics" xreflabel="--sigill-diagnostics">
     <term>
       <option><![CDATA[--sigill-diagnostics=<yes|no> [default: yes] ]]></option>
@@ -1374,7 +1378,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <function>main</function>-like functions are present in the trace,
       they are normalised as <function>(below main)</function>, in order to
       make the output more deterministic.</para>
-      
+
       <para>If this option is enabled, all stack trace entries will be
       shown and <function>main</function>-like functions will not be
       normalised.</para>
@@ -1536,7 +1540,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       debuginfo objects, and also ensures that Valgrind can't crash as
       a result of mismatches.</para>
 
-      <para>This check can be overridden using 
+      <para>This check can be overridden using
       <computeroutput>--allow-mismatched-debuginfo=yes</computeroutput>.
       This may be useful when the debuginfo and main objects have not
       been split in the proper way.  Be careful when using this,
@@ -1588,7 +1592,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       wildcards to function names, and by using frame-level wildcards.
       The wildcarding facilities are powerful yet flexible, and with a
       bit of careful editing, you may be able to suppress a whole
-      family of related errors with only a few suppressions.  
+      family of related errors with only a few suppressions.
       <!-- commented out because it causes broken links in the man page
       For details on how to do this, see
       <xref linkend="manual-core.suppress"/>.
@@ -1661,7 +1665,7 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       as necessary.</para>
 
       <para>Valgrind will not attempt to
-      run <computeroutput>dsymutil</computeroutput> on any 
+      run <computeroutput>dsymutil</computeroutput> on any
       executable or library in
       <computeroutput>/usr/</computeroutput>,
       <computeroutput>/bin/</computeroutput>,
@@ -1793,9 +1797,9 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       <option><![CDATA[--realloc-zero-bytes-frees=yes|no [default: yes for glibc no otherwise] ]]></option>
     </term>
     <listitem>
-      <para>The behaviour of <computeroutput>realloc()</computeroutput> is
-      implementation defined (in C17, in C23 it is likely to become
-      undefined). Valgrind tries to work in the same way as the
+      <para>The behaviour of <computeroutput>realloc()</computeroutput> with a size
+      of zero is implementation defined in C17 and undefined in C23.
+      Valgrind tries to work in the same way as the
       underlying system and C runtime library that it was configured and built on.
       However, if you use a different C runtime library then this default may be wrong.
       If the value is <option>yes</option> then <varname>realloc</varname> will
@@ -1875,21 +1879,21 @@ Massif, Helgrind, DRD), the following options apply.</para>
       tree detailing which piece of code is responsible for heap
       memory usage. See <xref linkend="&vg-xtree-id;"/>
       for a detailed explanation about execution trees. </para>
-      
+
       <para> When set to <varname>none</varname>, no memory execution
       tree is produced.</para>
-      
+
       <para> When set to <varname>allocs</varname>, the memory
       execution tree gives the current number of allocated bytes and
       the current number of allocated blocks. </para>
-      
+
       <para> When set to <varname>full</varname>, the memory execution
       tree gives 6 different measurements : the current number of
       allocated bytes and blocks (same values as
       for <varname>allocs</varname>), the total number of allocated
       bytes and blocks, the total number of freed bytes and
       blocks.</para>
-      
+
       <para>Note that the overhead in cpu and memory to produce
         an xtree depends on the tool. The overhead in cpu is small for
         the value <varname>allocs</varname>, as the information needed
@@ -1910,7 +1914,7 @@ Massif, Helgrind, DRD), the following options apply.</para>
       </para>
     </listitem>
   </varlistentry>
-  
+
   <varlistentry id="opt.xtree-memory-file" xreflabel="--xtree-memory-file">
     <term>
       <option><![CDATA[--xtree-memory-file=<filename> [default:
@@ -2026,11 +2030,11 @@ need to use them.</para>
 <programlisting><![CDATA[
 ==15380== Conditional jump or move depends on uninitialised value(s)
 ==15380==    at 0x80484EA: main (inlinfo.c:6)
-==15380== 
+==15380==
 ==15380== Conditional jump or move depends on uninitialised value(s)
 ==15380==    at 0x8048550: fun_noninline (inlinfo.c:6)
 ==15380==    by 0x804850E: main (inlinfo.c:34)
-==15380== 
+==15380==
 ==15380== Conditional jump or move depends on uninitialised value(s)
 ==15380==    at 0x8048520: main (inlinfo.c:6)
 ]]></programlisting>
@@ -2043,12 +2047,12 @@ need to use them.</para>
 ==15377==    by 0x80484EA: fun_b (inlinfo.c:20)
 ==15377==    by 0x80484EA: fun_a (inlinfo.c:26)
 ==15377==    by 0x80484EA: main (inlinfo.c:33)
-==15377== 
+==15377==
 ==15377== Conditional jump or move depends on uninitialised value(s)
 ==15377==    at 0x8048550: fun_d (inlinfo.c:6)
 ==15377==    by 0x8048550: fun_noninline (inlinfo.c:41)
 ==15377==    by 0x804850E: main (inlinfo.c:34)
-==15377== 
+==15377==
 ==15377== Conditional jump or move depends on uninitialised value(s)
 ==15377==    at 0x8048520: fun_d (inlinfo.c:6)
 ==15377==    by 0x8048520: main (inlinfo.c:35)
@@ -2072,7 +2076,7 @@ need to use them.</para>
 ==15363==    at 0x80484A9: croak (varinfo1.c:28)
 ==15363==    by 0x8048544: main (varinfo1.c:55)
 ==15363==  Address 0x80497f7 is 7 bytes inside data symbol "global_i2"
-==15363== 
+==15363==
 ==15363== Uninitialised byte(s) found during client check request
 ==15363==    at 0x80484A9: croak (varinfo1.c:28)
 ==15363==    by 0x8048550: main (varinfo1.c:56)
@@ -2089,7 +2093,7 @@ need to use them.</para>
 ==15370==    by 0x8048544: main (varinfo1.c:55)
 ==15370==  Location 0x80497f7 is 0 bytes inside global_i2[7],
 ==15370==  a global variable declared at varinfo1.c:41
-==15370== 
+==15370==
 ==15370== Uninitialised byte(s) found during client check request
 ==15370==    at 0x80484A9: croak (varinfo1.c:28)
 ==15370==    by 0x8048550: main (varinfo1.c:56)
@@ -2379,13 +2383,13 @@ need to use them.</para>
           multithreaded program, for example a web browser, on
           Valgrind.</para>
         </listitem>
-        
+
         <listitem> <para>The value <option>--fair-sched=try</option>
           activates fair scheduling if available on the
           platform.  Otherwise, it will automatically fall back
           to <option>--fair-sched=no</option>.</para>
         </listitem>
-        
+
         <listitem> <para>The value <option>--fair-sched=no</option> activates
           a scheduler which does not guarantee fairness
           between threads ready to run, but which in general gives the
@@ -3065,7 +3069,7 @@ setting so long as any thread of the program has work to do.
 
 <para>Valgrind has a fairly complete signal implementation.  It should be
 able to cope with any POSIX-compliant use of signals.</para>
- 
+
 <para>If you're using signals in clever ways (for example, catching
 SIGSEGV, modifying page state and restarting the instruction), you're
 probably relying on precise exceptions.  In this case, you will need
@@ -3135,29 +3139,29 @@ will create a core dump in the usual way.</para>
       a block allocated by this stack trace is released (by another
       "freeing" stack trace)</para>
   </listitem>
-    
+
   <listitem>
     <para><option>curBk</option> current number of Blocks allocated,
       maintained similary to curB : +1 for each allocation, -1 when
       the block is freed.</para>
   </listitem>
-    
+
   <listitem>
     <para><option>totB</option> total allocated Bytes. This is
       increased for each allocation with the number of allocated bytes.</para>
   </listitem>
-    
+
   <listitem>
     <para><option>totBk</option> total allocated Blocks, maintained similary
       to totB : +1 for each allocation.</para>
   </listitem>
-    
+
   <listitem>
     <para><option>totFdB</option> total Freed Bytes, increased each time
       a block is released by this ("freeing") stack trace : + nr freed bytes
       for each free operation.</para>
   </listitem>
-    
+
   <listitem>
     <para><option>totFdBk</option> total Freed Blocks, maintained similarly
       to totFdB : +1 for each free operation.</para>
@@ -3169,7 +3173,7 @@ will create a core dump in the usual way.</para>
 <para>Xtrees can be saved in 2 file formats, the "Callgrind Format" and
 the "Massif Format".</para>
 <itemizedlist>
-  
+
   <listitem>
     <para>Callgrind Format</para>
     <para>An xtree file in the Callgrind Format contains a single callgraph,
@@ -3189,7 +3193,7 @@ the "Massif Format".</para>
       information even when specifying <option>--read-inline-info=yes</option>.
     </para>
   </listitem>
-    
+
   <listitem>
     <para>Massif Format</para>
     <para>An xtree file in the Massif Format contains one detailed tree
@@ -3236,7 +3240,7 @@ callgrind_annotate --auto=yes --inclusive=yes --sort=curB:100,curBk:100,totB:100
   528 bytes in 41 blocks.</para>
 <screen><![CDATA[
 --------------------------------------------------------------------------------
-curB curBk totB totBk totFdB totFdBk 
+curB curBk totB totBk totFdB totFdBk
 --------------------------------------------------------------------------------
  528    41  770    60    242      19  PROGRAM TOTALS
 ]]></screen>
@@ -3276,7 +3280,7 @@ curB curBk totB totBk totFdB totFdBk  file:function
 --------------------------------------------------------------------------------
 -- Auto-annotated source: /home/philippe/valgrind/littleprogs/ + mfg.c
 --------------------------------------------------------------------------------
-curB curBk totB totBk totFdB totFdBk 
+curB curBk totB totBk totFdB totFdBk
 ....
    .     .    .     .      .       .  static void freeY(void)
    .     .    .     .      .       .  {
@@ -3331,8 +3335,8 @@ curB curBk totB totBk totFdB totFdBk
 <para>We use the standard Unix
 <computeroutput>./configure</computeroutput>,
 <computeroutput>make</computeroutput>, <computeroutput>make
-install</computeroutput> mechanism.  Once you have completed 
-<computeroutput>make install</computeroutput> you may then want 
+install</computeroutput> mechanism.  Once you have completed
+<computeroutput>make install</computeroutput> you may then want
 to run the regression tests
 with <computeroutput>make regtest</computeroutput>.
 </para>
@@ -3397,8 +3401,8 @@ know if you have build problems.</para>
 limitations of Valgrind, and for a list of programs which are
 known not to work on it.</para>
 
-<para>All parts of the system make heavy use of assertions and 
-internal self-checks.  They are permanently enabled, and we have no 
+<para>All parts of the system make heavy use of assertions and
+internal self-checks.  They are permanently enabled, and we have no
 plans to disable them.  If one of them breaks, please mail us!</para>
 
 <para>If you get an assertion failure
@@ -3407,7 +3411,7 @@ your program wrote off the end of a heap block, or before its
 beginning, thus corrupting heap metadata.  Valgrind hopefully will have
 emitted a message to that effect before dying in this way.</para>
 
-<para>Read the <xref linkend="FAQ"/> for more advice about common problems, 
+<para>Read the <xref linkend="FAQ"/> for more advice about common problems,
 crashes, etc.</para>
 
 </sect1>
@@ -3525,7 +3529,7 @@ subject to the following constraints:</para>
 
   <listitem>
    <para>Valgrind has the following limitations
-   in its implementation of x86/AMD64 floating point relative to 
+   in its implementation of x86/AMD64 floating point relative to
    IEEE754.</para>
 
    <para>Precision: There is no support for 80 bit arithmetic.
@@ -3582,10 +3586,10 @@ subject to the following constraints:</para>
    behaviour: default fixup on all exceptions, round-to-nearest
    operations, and 64-bit precision.</para>
   </listitem>
-   
+
   <listitem>
    <para>Valgrind has the following limitations in
-   its implementation of x86/AMD64 SSE2 FP arithmetic, relative to 
+   its implementation of x86/AMD64 SSE2 FP arithmetic, relative to
    IEEE754.</para>
 
    <para>Essentially the same: no exceptions, and limited observance of
@@ -3598,7 +3602,7 @@ subject to the following constraints:</para>
 
   <listitem>
    <para>Valgrind has the following limitations in
-   its implementation of ARM VFPv3 arithmetic, relative to 
+   its implementation of ARM VFPv3 arithmetic, relative to
    IEEE754.</para>
 
    <para>Essentially the same: no exceptions, and limited observance
@@ -3611,7 +3615,7 @@ subject to the following constraints:</para>
 
   <listitem>
    <para>Valgrind has the following limitations
-   in its implementation of PPC32 and PPC64 floating point 
+   in its implementation of PPC32 and PPC64 floating point
    arithmetic, relative to IEEE754.</para>
 
    <para>Scalar (non-Altivec): Valgrind provides a bit-exact emulation of
@@ -3626,16 +3630,16 @@ subject to the following constraints:</para>
 
    <para>As on x86/AMD64, IEEE754 exceptions are not supported: all floating
    point exceptions are handled using the default IEEE fixup actions.
-   Valgrind detects, ignores, and can warn about, attempts to unmask 
-   the 5 IEEE FP exception kinds by writing to the floating-point status 
+   Valgrind detects, ignores, and can warn about, attempts to unmask
+   the 5 IEEE FP exception kinds by writing to the floating-point status
    and control register (fpscr).
    </para>
 
-   <para>Vector (Altivec, VMX): essentially as with x86/AMD64 SSE/SSE2: 
-   no exceptions, and limited observance of rounding mode.  
+   <para>Vector (Altivec, VMX): essentially as with x86/AMD64 SSE/SSE2:
+   no exceptions, and limited observance of rounding mode.
    For Altivec, FP arithmetic
    is done in IEEE/Java mode, which is more accurate than the Linux default
-   setting.  "More accurate" means that denormals are handled properly, 
+   setting.  "More accurate" means that denormals are handled properly,
    rather than simply being flushed to zero.</para>
   </listitem>
  </itemizedlist>
@@ -3645,7 +3649,7 @@ subject to the following constraints:</para>
   <listitem>
    <para>emacs starts up but immediately concludes it is out of
    memory and aborts.  It may be that Memcheck does not provide
-   a good enough emulation of the 
+   a good enough emulation of the
    <computeroutput>mallinfo</computeroutput> function.
    Emacs works fine if you build it to use
    the standard malloc/free routines.</para>
@@ -3664,7 +3668,7 @@ result of a potentially serious code generation bug in GNU g++
 (snapshot 20010527).</para>
 
 <programlisting><![CDATA[
-sewardj@phoenix:~/newmat10$ ~/Valgrind-6/valgrind -v ./bogon 
+sewardj@phoenix:~/newmat10$ ~/Valgrind-6/valgrind -v ./bogon
 ==25832== Valgrind 0.10, a memory error detector for x86 RedHat 7.1.
 ==25832== Copyright (C) 2000-2001, and GNU GPL'd, by Julian Seward.
 ==25832== Startup, with flags:
@@ -3676,7 +3680,7 @@ sewardj@phoenix:~/newmat10$ ~/Valgrind-6/valgrind -v ./bogon
 ==25832== reading syms from /mnt/pima/jrs/Inst/lib/libstdc++.so.3
 ==25832== reading syms from /home/sewardj/Valgrind/valgrind.so
 ==25832== reading syms from /proc/self/exe
-==25832== 
+==25832==
 ==25832== Invalid read of size 4
 ==25832==    at 0x8048724: BandMatrix::ReSize(int,int,int) (bogon.cpp:45)
 ==25832==    by 0x80487AF: main (bogon.cpp:66)
@@ -3763,7 +3767,7 @@ shipped.</para>
 
     <para>Valgrind observed a call to one of the vast family of
     <computeroutput>ioctl</computeroutput> system calls, but did not
-    modify its memory status info (because nobody has yet written a 
+    modify its memory status info (because nobody has yet written a
     suitable wrapper).  The call will still have gone through, but you may get
     spurious errors after this as a result of the non-update of the
     memory info.</para>

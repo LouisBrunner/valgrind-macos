@@ -1,0 +1,7 @@
+
+
+Process terminating with default action of signal 6 (SIGABRT)
+   ...
+   by 0x........: main (tc22_exit_w_lock.c:48)
+
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

@@ -204,6 +204,17 @@ SysRes VG_(mk_SysRes_arm64_linux) ( Long val ) {
    return res;
 }
 
+SysRes VG_(mk_SysRes_riscv64_linux) ( Long val ) {
+   SysRes res;
+   res._isError = val >= -4095 && val <= -1;
+   if (res._isError) {
+      res._val = (ULong)(-val);
+   } else {
+      res._val = (ULong)val;
+   }
+   return res;
+}
+
 /* Generic constructors. */
 SysRes VG_(mk_SysRes_Success) ( UWord res ) {
    SysRes r;
@@ -1076,6 +1087,30 @@ asm (
    ".previous                              \n\t"
 );
 
+#elif defined(VGP_riscv64_linux)
+/* Calling convention is: args in a0-a5, sysno in a7, return value in a0.
+   Return value follows the usual convention that -4095 .. -1 (both inclusive)
+   is an error value. All other values are success values.
+
+   Registers a0 to a5 remain unchanged, but syscall_no is in a6 and needs to be
+   moved to a7.
+*/
+extern UWord do_syscall_WRK (
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord syscall_no
+       );
+asm(
+".text\n"
+".globl do_syscall_WRK\n"
+"do_syscall_WRK:\n"
+"        mv a7, a6\n"
+"        li a6, 0\n"
+"        ecall\n"
+"        ret\n"
+".previous\n"
+);
+
 #elif defined(VGP_x86_solaris)
 
 extern ULong
@@ -1323,6 +1358,10 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    RegWord reg_a0 = 0;
    do_syscall_WRK(a1, a2, a3, a4, a5, a6, sysno, &reg_a0);
    return VG_(mk_SysRes_nanomips_linux)(reg_a0);
+
+#  elif defined(VGP_riscv64_linux)
+   UWord val = do_syscall_WRK(a1, a2, a3, a4, a5, a6, sysno);
+   return VG_(mk_SysRes_riscv64_linux)(val);
 
 #  elif defined(VGP_x86_solaris)
    UInt val, val2, err = False;

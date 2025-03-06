@@ -162,6 +162,9 @@ extern Int *syscalls_to_catch;
                                VG_(strtoull16) ((s),(r)) \
                                : VG_(strtoull10) ((s),(r)))
 
+#define memcpy(_dd,_ss,_sz)   VG_(memcpy)((_dd),(_ss),(_sz))
+#define memset(_ss,_cc,_sz)   VG_(memset)((_ss),(_cc),(_sz))
+
 #define malloc(sz)            VG_(malloc)  ("gdbsrv", sz)
 #define calloc(n,sz)          VG_(calloc)  ("gdbsrv", n, sz)
 #define realloc(p,size)       VG_(realloc) ("gdbsrv", p, size)

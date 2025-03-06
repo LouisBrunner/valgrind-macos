@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+
+<valgrindoutput>
+
+<protocolversion>5</protocolversion>
+<protocoltool>none</protocoltool>
+
+<preamble>
+  <line>Nulgrind, the minimal Valgrind tool</line>
+  <line>Copyright...</line>
+  <line>Using Valgrind...</line>
+  <line>Command: ./socket_close</line>
+</preamble>
+
+<pid>...</pid>
+<ppid>...</ppid>
+<tool>none</tool>
+
+<args>
+  <vargv>
+    <exe>...</exe>
+    <arg>--command-line-only=yes</arg>
+    <arg>--memcheck:leak-check=no</arg>
+    <arg>--tool=none</arg>
+    <arg>-q</arg>
+    <arg>--track-fds=yes</arg>
+    <arg>--xml=yes</arg>
+    <arg>--xml-fd=2</arg>
+  </vargv>
+  <argv>
+    <exe>...</exe>
+  </argv>
+</args>
+
+<status>
+  <state>RUNNING</state>
+  <time>...</time>
+</status>
+
+Open socket 3
+close socket_fd 3
+and close the socket again 3
+<error>
+  <unique>0x........</unique>
+  <tid>...</tid>
+  <kind>FdBadClose</kind>
+  <fd>3</fd>
+  <what>...</what>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>socket_close.c</file>
+      <line>40</line>
+    </frame>
+  </stack>
+  <auxwhat>Previously closed</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>main</fn>
+      <dir>...</dir>
+      <file>socket_close.c</file>
+      <line>36</line>
+    </frame>
+  </stack>
+  <auxwhat>Originally opened</auxwhat>
+  <stack>
+    <frame>
+      <ip>0x........</ip>
+      <obj>...</obj>
+      <fn>open_socket</fn>
+      <dir>...</dir>
+      <file>socket_close.c</file>
+      <line>17</line>
+    </frame>
+  </stack>
+</error>
+
+
+<status>
+  <state>FINISHED</state>
+  <time>...</time>
+</status>
+
+<errorcounts>
+  <pair>
+    <count>1</count>
+    <unique>0x........</unique>
+  </pair>
+</errorcounts>
+
+
+</valgrindoutput>
+

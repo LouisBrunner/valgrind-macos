@@ -245,6 +245,26 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       );
    } while (block[2] != 1);
 #endif
+#elif defined(VGA_riscv64)
+   unsigned long long int block[3]
+      = { (unsigned long long int)p, (unsigned long long int)n,
+          0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mv     t0, %0"         "\n\t"
+         "ld     t1, (t0)"       "\n\t" // p
+         "ld     t2, 8(t0)"      "\n\t" // n
+         "lr.w   t3, (t1)"       "\n\t"
+         "slli   t3, t3, 56"     "\n\t" // sign-extend
+         "srai   t3, t3, 56"     "\n\t"
+         "add    t3, t3, t2"     "\n\t"
+         "sc.w   t4, t3, (t1)"   "\n\t"
+         "sd     t4, 16(t0)"     "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
+      );
+   } while (block[2] != 0);
 #else
 # error "Unsupported arch"
 #endif
@@ -461,6 +481,26 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       );
    } while (block[2] != 1);
 #endif
+#elif defined(VGA_riscv64)
+   unsigned long long int block[3]
+   = { (unsigned long long int)p, (unsigned long long int)n,
+       0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mv     t0, %0"         "\n\t"
+         "ld     t1, (t0)"       "\n\t" // p
+         "ld     t2, 8(t0)"      "\n\t" // n
+         "lr.w   t3, (t1)"       "\n\t"
+         "slli   t3, t3, 48"     "\n\t" // sign-extend
+         "srai   t3, t3, 48"     "\n\t"
+         "add    t3, t3, t2"     "\n\t"
+         "sc.w   t4, t3, (t1)"   "\n\t"
+         "sd     t4, 16(t0)"     "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
+      );
+   } while (block[2] != 0);
 #else
 # error "Unsupported arch"
 #endif
@@ -616,6 +656,24 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
+#elif defined(VGA_riscv64)
+   unsigned long long int block[3]
+   = { (unsigned long long int)p, (unsigned long long int)n,
+       0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mv     t0, %0"         "\n\t"
+         "ld     t1, (t0)"       "\n\t" // p
+         "ld     t2, 8(t0)"      "\n\t" // n
+         "lr.w   t3, (t1)"       "\n\t"
+         "add    t3, t3, t2"     "\n\t"
+         "sc.w   t4, t3, (t1)"   "\n\t"
+         "sd     t4, 16(t0)"     "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
+      );
+   } while (block[2] != 0);
 #else
 # error "Unsupported arch"
 #endif
@@ -718,6 +776,24 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
+#elif defined(VGA_riscv64)
+   unsigned long long int block[3]
+   = { (unsigned long long int)p, (unsigned long long int)n,
+       0xFFFFFFFFFFFFFFFFULL};
+   do {
+      __asm__ __volatile__(
+         "mv     t0, %0"         "\n\t"
+         "ld     t1, (t0)"       "\n\t" // p
+         "ld     t2, 8(t0)"      "\n\t" // n
+         "lr.d   t3, (t1)"       "\n\t"
+         "add    t3, t3, t2"     "\n\t"
+         "sc.d   t4, t3, (t1)"   "\n\t"
+         "sd     t4, 16(t0)"     "\n\t"
+         : /*out*/
+         : /*in*/ "r"(&block[0])
+         : /*trash*/ "memory", "t0", "t1", "t2", "t3", "t4"
+      );
+   } while (block[2] != 0);
 #else
 # error "Unsupported arch"
 #endif
@@ -731,7 +807,7 @@ __attribute__((noinline)) void atomic_add_128bit ( MyU128* p,
     || defined(VGA_amd64) \
     || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
     || defined(VGA_arm) \
-    || defined(VGA_s390x)
+    || defined(VGA_s390x) || defined(VGA_riscv64)
    /* do nothing; is not supported */
 #elif defined(VGA_arm64)
    unsigned long long int block[3]

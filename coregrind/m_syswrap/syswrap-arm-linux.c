@@ -109,7 +109,7 @@ asm(
 /*Setup child stack */
 "   str     r0, [r1, #-4]!\n"
 "   str     r3, [r1, #-4]!\n"
-"   push {r4,r7}\n" 
+"   push {r4,r7}\n"
 "   mov r0, r2\n" /* arg1: flags */
 /* r1 (arg2) is already our child's stack */
 "   ldr r2, [sp, #12]\n" // parent tid
@@ -140,7 +140,7 @@ asm(
 
 // forward declarations
 static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr );
-            
+
 /* ---------------------------------------------------------------------
    More thread stuff
    ------------------------------------------------------------------ */
@@ -149,7 +149,7 @@ static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr );
 // needs to be cleaned up
 void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
-}  
+}
 
 /* Assigns tlsptr to the guest TPIDRURO.
    If needed for the specific hardware, really executes
@@ -166,11 +166,11 @@ static SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
          This emulated value is set by the __NR_ARM_set_tls syscall.
          The emulated value must be read by the kernel helper function
          located at 0xffff0fe0.
-      
+
          The emulated tlsptr is located at 0xffff0ff0
          (so slightly after the kernel helper function).
          Note that applications are not supposed to read this directly.
-      
+
          For compatibility : if there is a hw tls register, the kernel
          will put at 0xffff0fe0 the instructions to read it, so
          as to have old applications calling the kernel helper
@@ -240,7 +240,7 @@ PRE(sys_mmap2)
                  unsigned long, prot,  unsigned long, flags,
                  unsigned long, fd,    unsigned long, offset);
 
-   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5,
                                        4096 * (Off64T)ARG6 );
    SET_STATUS_from_SysRes(r);
 }
@@ -360,7 +360,7 @@ PRE(sys_sigsuspend)
       two don't appear to be used by the kernel and are always passed as
       zero by glibc and the third is the first word of the signal mask
       so only 32 signals are supported.
-     
+
       In fact glibc normally uses rt_sigsuspend if it is available as
       that takes a pointer to the signal mask so supports more signals.
     */
@@ -398,57 +398,57 @@ PRE(sys_cacheflush)
 PRE(sys_ptrace)
 {
    PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
-   PRE_REG_READ4(int, "ptrace", 
+   PRE_REG_READ4(int, "ptrace",
                  long, request, long, pid, long, addr, long, data);
    switch (ARG1) {
    case VKI_PTRACE_PEEKTEXT:
    case VKI_PTRACE_PEEKDATA:
    case VKI_PTRACE_PEEKUSR:
-      PRE_MEM_WRITE( "ptrace(peek)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(peek)", ARG4,
 		     sizeof (long));
       break;
    case VKI_PTRACE_GETREGS:
-      PRE_MEM_WRITE( "ptrace(getregs)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(getregs)", ARG4,
 		     sizeof (struct vki_user_regs_struct));
       break;
    case VKI_PTRACE_GETFPREGS:
-      PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(getfpregs)", ARG4,
 		     sizeof (struct vki_user_fp));
       break;
    case VKI_PTRACE_GETWMMXREGS:
-      PRE_MEM_WRITE( "ptrace(getwmmxregs)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(getwmmxregs)", ARG4,
 		     VKI_IWMMXT_SIZE);
       break;
    case VKI_PTRACE_GETCRUNCHREGS:
-      PRE_MEM_WRITE( "ptrace(getcrunchregs)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(getcrunchregs)", ARG4,
 		     VKI_CRUNCH_SIZE);
       break;
    case VKI_PTRACE_GETVFPREGS:
-      PRE_MEM_WRITE( "ptrace(getvfpregs)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(getvfpregs)", ARG4,
                      sizeof (struct vki_user_vfp) );
       break;
    case VKI_PTRACE_GETHBPREGS:
-      PRE_MEM_WRITE( "ptrace(gethbpregs)", ARG4, 
+      PRE_MEM_WRITE( "ptrace(gethbpregs)", ARG4,
                      sizeof (unsigned long) );
       break;
    case VKI_PTRACE_SETREGS:
-      PRE_MEM_READ( "ptrace(setregs)", ARG4, 
+      PRE_MEM_READ( "ptrace(setregs)", ARG4,
 		     sizeof (struct vki_user_regs_struct));
       break;
    case VKI_PTRACE_SETFPREGS:
-      PRE_MEM_READ( "ptrace(setfpregs)", ARG4, 
+      PRE_MEM_READ( "ptrace(setfpregs)", ARG4,
 		     sizeof (struct vki_user_fp));
       break;
    case VKI_PTRACE_SETWMMXREGS:
-      PRE_MEM_READ( "ptrace(setwmmxregs)", ARG4, 
+      PRE_MEM_READ( "ptrace(setwmmxregs)", ARG4,
 		     VKI_IWMMXT_SIZE);
       break;
    case VKI_PTRACE_SETCRUNCHREGS:
-      PRE_MEM_READ( "ptrace(setcrunchregs)", ARG4, 
+      PRE_MEM_READ( "ptrace(setcrunchregs)", ARG4,
 		     VKI_CRUNCH_SIZE);
       break;
    case VKI_PTRACE_SETVFPREGS:
-      PRE_MEM_READ( "ptrace(setvfpregs)", ARG4, 
+      PRE_MEM_READ( "ptrace(setvfpregs)", ARG4,
                      sizeof (struct vki_user_vfp));
       break;
    case VKI_PTRACE_SETHBPREGS:
@@ -535,7 +535,7 @@ POST(sys_ptrace)
 #define __NR_OABI_SYSCALL_BASE 0x0
 #endif
 
-#define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(arm_linux, sysno, name) 
+#define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(arm_linux, sysno, name)
 #define PLAXY(sysno, name)    WRAPPER_ENTRY_XY(arm_linux, sysno, name)
 
 // This table maps from __NR_xxx syscall numbers (from
@@ -576,7 +576,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_umount,            sys_oldumount),      // 22
    LINX_(__NR_setuid,            sys_setuid16),       // 23 ## P
    LINX_(__NR_getuid,            sys_getuid16),       // 24 ## P
-//zz 
+//zz
 //zz    //   (__NR_stime,             sys_stime),          // 25 * (SVr4,SVID,X/OPEN)
    PLAXY(__NR_ptrace,            sys_ptrace),         // 26
    GENX_(__NR_alarm,             sys_alarm),          // 27
@@ -600,7 +600,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_pipe,              sys_pipe),           // 42
    GENXY(__NR_times,             sys_times),          // 43
 //   GENX_(__NR_prof,              sys_ni_syscall),     // 44
-//zz 
+//zz
    GENX_(__NR_brk,               sys_brk),            // 45
    LINX_(__NR_setgid,            sys_setgid16),       // 46
    LINX_(__NR_getgid,            sys_getgid16),       // 47
@@ -618,7 +618,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_setpgid,           sys_setpgid),        // 57
 //   GENX_(__NR_ulimit,            sys_ni_syscall),     // 58
 //zz    //   (__NR_oldolduname,       sys_olduname),       // 59 Linux -- obsolete
-//zz 
+//zz
    GENX_(__NR_umask,             sys_umask),          // 60
    GENX_(__NR_chroot,            sys_chroot),         // 61
 //zz    //   (__NR_ustat,             sys_ustat)           // 62 SVr4 -- deprecated
@@ -630,13 +630,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_sigaction,         sys_sigaction),      // 67
 //zz    //   (__NR_sgetmask,          sys_sgetmask),       // 68 */* (ANSI C)
 //zz    //   (__NR_ssetmask,          sys_ssetmask),       // 69 */* (ANSI C)
-//zz 
+//zz
    LINX_(__NR_setreuid,          sys_setreuid16),     // 70
    LINX_(__NR_setregid,          sys_setregid16),     // 71
    PLAX_(__NR_sigsuspend,        sys_sigsuspend),     // 72
    LINXY(__NR_sigpending,        sys_sigpending),     // 73
 //zz    //   (__NR_sethostname,       sys_sethostname),    // 74 */*
-//zz 
+//zz
    GENX_(__NR_setrlimit,         sys_setrlimit),      // 75
    GENXY(__NR_getrlimit,         sys_old_getrlimit),  // 76
    GENXY(__NR_getrusage,         sys_getrusage),      // 77
@@ -648,13 +648,13 @@ static SyscallTableEntry syscall_main_table[] = {
 //   PLAX_(__NR_select,            old_select),         // 82
    GENX_(__NR_symlink,           sys_symlink),        // 83
 //zz    //   (__NR_oldlstat,          sys_lstat),          // 84 -- obsolete
-//zz 
-   GENX_(__NR_readlink,          sys_readlink),       // 85
+//zz
+   GENXY(__NR_readlink,          sys_readlink),       // 85
 //zz    //   (__NR_uselib,            sys_uselib),         // 86 */Linux
 //zz    //   (__NR_swapon,            sys_swapon),         // 87 */Linux
 //zz    //   (__NR_reboot,            sys_reboot),         // 88 */Linux
 //zz    //   (__NR_readdir,           old_readdir),        // 89 -- superseded
-//zz 
+//zz
 //   _____(__NR_mmap,              old_mmap),           // 90
    GENXY(__NR_munmap,            sys_munmap),         // 91
    GENX_(__NR_truncate,          sys_truncate),       // 92
@@ -678,14 +678,14 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_lstat,             sys_newlstat),       // 107
    GENXY(__NR_fstat,             sys_newfstat),       // 108
 //zz    //   (__NR_olduname,          sys_uname),          // 109 -- obsolete
-//zz 
+//zz
 //   GENX_(__NR_iopl,              sys_iopl),           // 110
    LINX_(__NR_vhangup,           sys_vhangup),        // 111
 //   GENX_(__NR_idle,              sys_ni_syscall),     // 112
 // PLAXY(__NR_vm86old,           sys_vm86old),        // 113 __NR_syscall... weird
    GENXY(__NR_wait4,             sys_wait4),          // 114
-//zz 
-//zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux 
+//zz
+//zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux
    LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
 //   _____(__NR_ipc,               sys_ipc),            // 117
    GENX_(__NR_fsync,             sys_fsync),          // 118
@@ -696,27 +696,27 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_uname,             sys_newuname),       // 122
 //   PLAX_(__NR_modify_ldt,        sys_modify_ldt),     // 123
    LINXY(__NR_adjtimex,          sys_adjtimex),       // 124
-//zz 
+//zz
    GENXY(__NR_mprotect,          sys_mprotect),       // 125
    LINXY(__NR_sigprocmask,       sys_sigprocmask),    // 126
 //zz    // Nb: create_module() was removed 2.4-->2.6
 //   GENX_(__NR_create_module,     sys_ni_syscall),     // 127
    LINX_(__NR_init_module,       sys_init_module),    // 128
    LINX_(__NR_delete_module,     sys_delete_module),  // 129
-//zz 
+//zz
 //zz    // Nb: get_kernel_syms() was removed 2.4-->2.6
 //   GENX_(__NR_get_kernel_syms,   sys_ni_syscall),     // 130
    LINX_(__NR_quotactl,          sys_quotactl),       // 131
    GENX_(__NR_getpgid,           sys_getpgid),        // 132
    GENX_(__NR_fchdir,            sys_fchdir),         // 133
 //zz    //   (__NR_bdflush,           sys_bdflush),        // 134 */Linux
-//zz 
+//zz
 //zz    //   (__NR_sysfs,             sys_sysfs),          // 135 SVr4
    LINX_(__NR_personality,       sys_personality),    // 136
 //   GENX_(__NR_afs_syscall,       sys_ni_syscall),     // 137
    LINX_(__NR_setfsuid,          sys_setfsuid16),     // 138
    LINX_(__NR_setfsgid,          sys_setfsgid16),     // 139
- 
+
    LINXY(__NR__llseek,           sys_llseek),         // 140
    GENXY(__NR_getdents,          sys_getdents),       // 141
    GENX_(__NR__newselect,        sys_select),         // 142
@@ -752,11 +752,11 @@ static SyscallTableEntry syscall_main_table[] = {
 //   GENX_(__NR_query_module,      sys_ni_syscall),     // 167
    GENXY(__NR_poll,              sys_poll),           // 168
 //zz    //   (__NR_nfsservctl,        sys_nfsservctl),     // 169 */Linux
-//zz 
+//zz
    LINX_(__NR_setresgid,         sys_setresgid16),    // 170
    LINXY(__NR_getresgid,         sys_getresgid16),    // 171
    LINXY(__NR_prctl,             sys_prctl),          // 172
-   PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173 
+   PLAX_(__NR_rt_sigreturn,      sys_rt_sigreturn),   // 173
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),   // 174
 
    LINXY(__NR_rt_sigprocmask,    sys_rt_sigprocmask), // 175
@@ -783,7 +783,7 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_(__NR_mmap2,             sys_mmap2),          // 192
    GENX_(__NR_truncate64,        sys_truncate64),     // 193
    GENX_(__NR_ftruncate64,       sys_ftruncate64),    // 194
-   
+
    PLAXY(__NR_stat64,            sys_stat64),         // 195
    PLAXY(__NR_lstat64,           sys_lstat64),        // 196
    PLAXY(__NR_fstat64,           sys_fstat64),        // 197
@@ -907,12 +907,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_getsockopt,        sys_getsockopt),     // 295
    LINX_(__NR_sendmsg,           sys_sendmsg),        // 296
    LINXY(__NR_recvmsg,           sys_recvmsg),        // 297
-   LINX_(__NR_semop,             sys_semop),          // 298 
+   LINX_(__NR_semop,             sys_semop),          // 298
    LINX_(__NR_semget,            sys_semget),         // 299
    LINXY(__NR_semctl,            sys_semctl),         // 300
-   LINX_(__NR_msgget,            sys_msgget),         
-   LINX_(__NR_msgsnd,            sys_msgsnd),          
-   LINXY(__NR_msgrcv,            sys_msgrcv),         
+   LINX_(__NR_msgget,            sys_msgget),
+   LINX_(__NR_msgsnd,            sys_msgsnd),
+   LINXY(__NR_msgrcv,            sys_msgrcv),
    LINXY(__NR_msgctl,            sys_msgctl),         // 304
    LINX_(__NR_semtimedop,        sys_semtimedop),     // 312
 
@@ -939,13 +939,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_linkat,       sys_linkat),           // 303
    LINX_(__NR_symlinkat,    sys_symlinkat),        // 304
 
-   LINX_(__NR_readlinkat,    sys_readlinkat),       // 
+   LINXY(__NR_readlinkat,    sys_readlinkat),       //
    LINX_(__NR_fchmodat,       sys_fchmodat),         //
    LINX_(__NR_faccessat,    sys_faccessat),        //
    LINXY(__NR_shmat,             sys_shmat),       //305
-   LINXY(__NR_shmdt,             sys_shmdt),          //306 
-   LINX_(__NR_shmget,            sys_shmget),         //307 
-   LINXY(__NR_shmctl,            sys_shmctl),         // 308 
+   LINXY(__NR_shmdt,             sys_shmdt),          //306
+   LINX_(__NR_shmget,            sys_shmget),         //307
+   LINXY(__NR_shmctl,            sys_shmctl),         // 308
 //   LINX_(__NR_pselect6,       sys_pselect6),         //
 
    LINX_(__NR_unshare,       sys_unshare),          // 310
@@ -968,7 +968,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    ///////////////
 
-   // JRS 2010-Jan-03: I believe that all the numbers listed 
+   // JRS 2010-Jan-03: I believe that all the numbers listed
    // in comments in the table prior to this point (eg "// 326",
    // etc) are bogus since it looks to me like they are copied
    // verbatim from syswrap-x86-linux.c and they certainly do not
@@ -1008,6 +1008,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_setns,             sys_setns),            // 375
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 376
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 377
+   LINX_(__NR_kcmp,              sys_kcmp),             // 378
 
    LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 380
    LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 381
@@ -1052,7 +1053,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
-
+   LINXY(__NR_open_tree,         sys_open_tree),         // 428
+   LINX_(__NR_move_mount,        sys_move_mount),        // 429
+   LINXY(__NR_fsopen,            sys_fsopen),            // 430
+   LINX_(__NR_fsconfig,          sys_fsconfig),          // 431
+   LINXY(__NR_fsmount,           sys_fsmount),           // 432
+   LINXY(__NR_fspick,            sys_fspick),            // 433
    LINXY(__NR_pidfd_open,        sys_pidfd_open),        // 434
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
    LINXY(__NR_close_range,       sys_close_range),       // 436
@@ -1061,6 +1067,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+
+   LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
+   LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
+   LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
    LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
 };

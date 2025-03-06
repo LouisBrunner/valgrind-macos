@@ -53,6 +53,7 @@
 #include "../pub/libvex_guest_s390x.h"
 #include "../pub/libvex_guest_mips32.h"
 #include "../pub/libvex_guest_mips64.h"
+#include "../pub/libvex_guest_riscv64.h"
 
 #define VG_STRINGIFZ(__str)  #__str
 #define VG_STRINGIFY(__str)  VG_STRINGIFZ(__str)
@@ -265,6 +266,74 @@ void foo ( void )
    GENOFFSET(MIPS64,mips64,PC);
    GENOFFSET(MIPS64,mips64,HI);
    GENOFFSET(MIPS64,mips64,LO);
+
+   // riscv64
+   GENOFFSET(RISCV64,riscv64,x0);
+   GENOFFSET(RISCV64,riscv64,x1);
+   GENOFFSET(RISCV64,riscv64,x2);
+   GENOFFSET(RISCV64,riscv64,x3);
+   GENOFFSET(RISCV64,riscv64,x4);
+   GENOFFSET(RISCV64,riscv64,x5);
+   GENOFFSET(RISCV64,riscv64,x6);
+   GENOFFSET(RISCV64,riscv64,x7);
+   GENOFFSET(RISCV64,riscv64,x8);
+   GENOFFSET(RISCV64,riscv64,x9);
+   GENOFFSET(RISCV64,riscv64,x10);
+   GENOFFSET(RISCV64,riscv64,x11);
+   GENOFFSET(RISCV64,riscv64,x12);
+   GENOFFSET(RISCV64,riscv64,x13);
+   GENOFFSET(RISCV64,riscv64,x14);
+   GENOFFSET(RISCV64,riscv64,x15);
+   GENOFFSET(RISCV64,riscv64,x16);
+   GENOFFSET(RISCV64,riscv64,x17);
+   GENOFFSET(RISCV64,riscv64,x18);
+   GENOFFSET(RISCV64,riscv64,x19);
+   GENOFFSET(RISCV64,riscv64,x20);
+   GENOFFSET(RISCV64,riscv64,x21);
+   GENOFFSET(RISCV64,riscv64,x22);
+   GENOFFSET(RISCV64,riscv64,x23);
+   GENOFFSET(RISCV64,riscv64,x24);
+   GENOFFSET(RISCV64,riscv64,x25);
+   GENOFFSET(RISCV64,riscv64,x26);
+   GENOFFSET(RISCV64,riscv64,x27);
+   GENOFFSET(RISCV64,riscv64,x28);
+   GENOFFSET(RISCV64,riscv64,x29);
+   GENOFFSET(RISCV64,riscv64,x30);
+   GENOFFSET(RISCV64,riscv64,x31);
+   GENOFFSET(RISCV64,riscv64,pc);
+   GENOFFSET(RISCV64,riscv64,f0);
+   GENOFFSET(RISCV64,riscv64,f1);
+   GENOFFSET(RISCV64,riscv64,f2);
+   GENOFFSET(RISCV64,riscv64,f3);
+   GENOFFSET(RISCV64,riscv64,f4);
+   GENOFFSET(RISCV64,riscv64,f5);
+   GENOFFSET(RISCV64,riscv64,f6);
+   GENOFFSET(RISCV64,riscv64,f7);
+   GENOFFSET(RISCV64,riscv64,f8);
+   GENOFFSET(RISCV64,riscv64,f9);
+   GENOFFSET(RISCV64,riscv64,f10);
+   GENOFFSET(RISCV64,riscv64,f11);
+   GENOFFSET(RISCV64,riscv64,f12);
+   GENOFFSET(RISCV64,riscv64,f13);
+   GENOFFSET(RISCV64,riscv64,f14);
+   GENOFFSET(RISCV64,riscv64,f15);
+   GENOFFSET(RISCV64,riscv64,f16);
+   GENOFFSET(RISCV64,riscv64,f17);
+   GENOFFSET(RISCV64,riscv64,f18);
+   GENOFFSET(RISCV64,riscv64,f19);
+   GENOFFSET(RISCV64,riscv64,f20);
+   GENOFFSET(RISCV64,riscv64,f21);
+   GENOFFSET(RISCV64,riscv64,f22);
+   GENOFFSET(RISCV64,riscv64,f23);
+   GENOFFSET(RISCV64,riscv64,f24);
+   GENOFFSET(RISCV64,riscv64,f25);
+   GENOFFSET(RISCV64,riscv64,f26);
+   GENOFFSET(RISCV64,riscv64,f27);
+   GENOFFSET(RISCV64,riscv64,f28);
+   GENOFFSET(RISCV64,riscv64,f29);
+   GENOFFSET(RISCV64,riscv64,f30);
+   GENOFFSET(RISCV64,riscv64,f31);
+   GENOFFSET(RISCV64,riscv64,fcsr);
 }
 
 /*--------------------------------------------------------------------*/

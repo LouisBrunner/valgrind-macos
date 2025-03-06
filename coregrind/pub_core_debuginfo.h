@@ -141,6 +141,10 @@ typedef
 typedef
    struct { Addr pc; Addr sp; Addr fp; Addr ra; }
    D3UnwindRegs;
+#elif defined(VGA_riscv64)
+typedef
+   struct { Addr pc; Addr sp; Addr fp; Addr ra; }
+   D3UnwindRegs;
 #else
 #  error "Unsupported arch"
 #endif
@@ -162,6 +166,8 @@ extern UInt VG_(debuginfo_generation) (void);
     we can't open executable files to get the debuginfo after
     entering capability mode. */
 extern void VG_(load_all_debuginfo) (void);
+/* Get the size of .data for the client exe */
+extern SizeT VG_(data_size)(void);
 #endif
 
 

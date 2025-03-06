@@ -32,7 +32,7 @@ Syscall param timerfd_settime(fd) contains uninitialised byte(s)
    at 0x........: timerfd_settime (in /...libc...)
    by 0x........: main (timerfd.c:141)
 
-FILE DESCRIPTORS: 4 open (3 std) at exit.
+FILE DESCRIPTORS: 4 open (3 inherited) at exit.
 Open file descriptor 3:
    at 0x........: timerfd_create (in /...libc...)
    by 0x........: main (timerfd.c:115)

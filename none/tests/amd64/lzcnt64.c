@@ -9,12 +9,14 @@ void do_lzcnt64 ( /*OUT*/UInt* flags, /*OUT*/ULong* res, ULong arg )
 {
   ULong block[3] = { arg, 0ULL, 0ULL };
   __asm__ __volatile__(
+    "subq $1024, %%rsp\n\t"
     "movabsq $0x5555555555555555, %%r11" "\n\t"
     "lzcntq 0(%0), %%r11"     "\n\t"
     "movq %%r11, 8(%0)"       "\n\t"
     "pushfq"                  "\n\t"
     "popq %%r11"              "\n\t"
-    "movq %%r11, 16(%0)"      "\n"
+    "movq %%r11, 16(%0)"      "\n\t"
+    "addq $1024, %%rsp"       "\n"
     : : "r"(&block[0]) : "r11","cc","memory"
   );
   *res = block[1];
@@ -26,12 +28,14 @@ void do_lzcnt32 ( /*OUT*/UInt* flags, /*OUT*/ULong* res, ULong arg )
 {
   ULong block[3] = { arg, 0ULL, 0ULL };
   __asm__ __volatile__(
+    "subq $1024, %%rsp\n\t"
     "movabsq $0x5555555555555555, %%r11" "\n\t"
     "lzcntl 0(%0), %%r11d"    "\n\t"
     "movq %%r11, 8(%0)"       "\n\t"
     "pushfq"                  "\n\t"
     "popq %%r11"              "\n\t"
-    "movq %%r11, 16(%0)"      "\n"
+    "movq %%r11, 16(%0)"      "\n\t"
+    "addq $1024, %%rsp"       "\n"
     : : "r"(&block[0]) : "r11","cc","memory"
   );
   *res = block[1];
@@ -43,12 +47,14 @@ void do_lzcnt16 ( /*OUT*/UInt* flags, /*OUT*/ULong* res, ULong arg )
 {
   ULong block[3] = { arg, 0ULL, 0ULL };
   __asm__ __volatile__(
+    "subq $1024, %%rsp\n\t"
     "movabsq $0x5555555555555555, %%r11" "\n\t"
     "lzcntw 0(%0), %%r11w"    "\n\t"
     "movq %%r11, 8(%0)"       "\n\t"
     "pushfq"                  "\n\t"
     "popq %%r11"              "\n\t"
-    "movq %%r11, 16(%0)"      "\n"
+    "movq %%r11, 16(%0)"      "\n\t"
+    "addq $1024, %%rsp"       "\n"
     : : "r"(&block[0]) : "r11","cc","memory"
   );
   *res = block[1];

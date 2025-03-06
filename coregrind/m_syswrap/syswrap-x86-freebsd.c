@@ -402,12 +402,12 @@ static void deallocate_LGDTs_for_thread ( VexGuestX86State* vex )
    }
 
    if (vex->guest_LDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_LDT );
+      free_LDT_or_GDT( (VexGuestX86SegDescr*)(HWord)vex->guest_LDT );
       vex->guest_LDT = (HWord)NULL;
    }
 
    if (vex->guest_GDT != (HWord)NULL) {
-      free_LDT_or_GDT( (VexGuestX86SegDescr*)vex->guest_GDT );
+      free_LDT_or_GDT( (VexGuestX86SegDescr*)(HWord)vex->guest_GDT );
       vex->guest_GDT = (HWord)NULL;
    }
 }
@@ -420,7 +420,7 @@ static SysRes sys_set_thread_area ( ThreadId tid, Int *idxptr, void *base)
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
 
-   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+   gdt = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_GDT;
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
@@ -463,7 +463,7 @@ static SysRes sys_get_thread_area ( ThreadId tid, Int idx, void ** basep )
    vg_assert(sizeof(HWord) == sizeof(VexGuestX86SegDescr*));
    vg_assert(8 == sizeof(VexGuestX86SegDescr));
 
-   gdt = (VexGuestX86SegDescr*)VG_(threads)[tid].arch.vex.guest_GDT;
+   gdt = (VexGuestX86SegDescr*)(HWord)VG_(threads)[tid].arch.vex.guest_GDT;
 
    /* If the thread doesn't have a GDT, allocate it now. */
    if (!gdt) {
@@ -1307,12 +1307,8 @@ POST(sys_wait6)
    }
 }
 
-// the man page is inconsistent for the last argument
-// See https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=247386
-// will stick to 'arg' for simplicity
-
 // SYS_procctl 544
-// int procctl(idtype_t idtype, id_t id, int cmd, void *arg);
+// int procctl(idtype_t idtype, id_t id, int cmd, void *data);
 PRE(sys_procctl)
 {
    PRINT("sys_procctl ( %" FMT_REGWORD "d, %llu, %" FMT_REGWORD"d, %#" FMT_REGWORD "x )",
@@ -1320,7 +1316,7 @@ PRE(sys_procctl)
    PRE_REG_READ5(int, "procctl", vki_idtype_t, idtype,
                  vki_uint32_t, MERGE64_FIRST(id),
                  vki_uint32_t, MERGE64_SECOND(id),
-                 int, cmd, void *, arg);
+                 int, cmd, void *, data);
    switch (ARG4) {
    case VKI_PROC_ASLR_CTL:
    case VKI_PROC_SPROTECT:
@@ -1330,13 +1326,13 @@ PRE(sys_procctl)
    case VKI_PROC_STACKGAP_CTL:
    case VKI_PROC_NO_NEW_PRIVS_CTL:
    case VKI_PROC_WXMAP_CTL:
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(int));
       break;
    case VKI_PROC_REAP_STATUS:
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_status));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(struct vki_procctl_reaper_status));
       break;
    case VKI_PROC_REAP_GETPIDS:
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(struct vki_procctl_reaper_pids));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(struct vki_procctl_reaper_pids));
       break;
    case VKI_PROC_REAP_KILL:
       /* The first three fields are reads
@@ -1350,15 +1346,15 @@ PRE(sys_procctl)
        *
        * There is also a pad field
        */
-      PRE_MEM_READ("procctl(arg)", ARG5, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
-      PRE_MEM_WRITE("procctl(arg)", ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
+      PRE_MEM_READ("procctl(data)", ARG5, sizeof(int) + sizeof(u_int) + sizeof(vki_pid_t));
+      PRE_MEM_WRITE("procctl(data)", ARG5+offsetof(struct vki_procctl_reaper_kill, rk_killed), sizeof(u_int) + sizeof(vki_pid_t));
       break;
    case VKI_PROC_ASLR_STATUS:
    case VKI_PROC_PDEATHSIG_STATUS:
    case VKI_PROC_STACKGAP_STATUS:
    case VKI_PROC_TRAPCAP_STATUS:
    case VKI_PROC_TRACE_STATUS:
-      PRE_MEM_WRITE("procctl(arg)", ARG5, sizeof(int));
+      PRE_MEM_WRITE("procctl(data)", ARG5, sizeof(int));
    case VKI_PROC_REAP_ACQUIRE:
    case VKI_PROC_REAP_RELEASE:
    default:
@@ -1394,8 +1390,6 @@ PRE(sys_mknodat)
                  int, fd, const char *, path, vki_mode_t, mode, vki_uint32_t, MERGE64_FIRST(dev), vki_uint32_t, MERGE64_SECOND(idev))
    PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
 }
-
-#if (FREEBSD_VERS >= FREEBSD_12)
 
 // SYS_cpuset_getdomain 561
 // int cpuset_getdomain(cpulevel_t level, cpuwhich_t which, id_t id,
@@ -1435,8 +1429,6 @@ PRE(sys_cpuset_setdomain)
    // man page says that setsize (ARG4) "is usually provided by calling sizeof(mask)"
    PRE_MEM_READ( "cpuset_getdomain(mask)", ARG6, ARG5 );
 }
-
-#endif
 
 PRE(sys_fake_sigreturn)
 {

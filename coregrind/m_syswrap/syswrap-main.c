@@ -868,6 +868,18 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    canonical->arg7  = 0;
    canonical->arg8  = 0;
 
+#elif defined(VGP_riscv64_linux)
+   VexGuestRISCV64State* gst = (VexGuestRISCV64State*)gst_vanilla;
+   canonical->sysno = gst->guest_x17; /* a7 */
+   canonical->arg1  = gst->guest_x10; /* a0 */
+   canonical->arg2  = gst->guest_x11; /* a1 */
+   canonical->arg3  = gst->guest_x12; /* a2 */
+   canonical->arg4  = gst->guest_x13; /* a3 */
+   canonical->arg5  = gst->guest_x14; /* a4 */
+   canonical->arg6  = gst->guest_x15; /* a5 */
+   canonical->arg7  = 0;
+   canonical->arg8  = 0;
+
 #elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -1192,6 +1204,16 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
    gst->guest_r10 = canonical->arg7;
    gst->guest_r11 = canonical->arg8;
 
+#elif defined(VGP_riscv64_linux)
+   VexGuestRISCV64State* gst = (VexGuestRISCV64State*)gst_vanilla;
+   gst->guest_x17 = canonical->sysno; /* a7 */
+   gst->guest_x10 = canonical->arg1;  /* a0 */
+   gst->guest_x11 = canonical->arg2;  /* a1 */
+   gst->guest_x12 = canonical->arg3;  /* a2 */
+   gst->guest_x13 = canonical->arg4;  /* a3 */
+   gst->guest_x14 = canonical->arg5;  /* a4 */
+   gst->guest_x15 = canonical->arg6;  /* a5 */
+
 #elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    UWord *stack = (UWord *)gst->guest_ESP;
@@ -1389,6 +1411,11 @@ void getSyscallStatusFromGuestState ( /*OUT*/SyscallStatus*     canonical,
 #  elif defined(VGP_s390x_linux)
    VexGuestS390XState* gst   = (VexGuestS390XState*)gst_vanilla;
    canonical->sres = VG_(mk_SysRes_s390x_linux)( gst->guest_r2 );
+   canonical->what = SsComplete;
+
+#  elif defined(VGP_riscv64_linux)
+   VexGuestRISCV64State* gst = (VexGuestRISCV64State*)gst_vanilla;
+   canonical->sres = VG_(mk_SysRes_riscv64_linux)( gst->guest_x10 );
    canonical->what = SsComplete;
 
 #  elif defined(VGP_x86_solaris)
@@ -1702,6 +1729,20 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
              OFFSET_mips32_r4, sizeof(UWord) );
 
+#  elif defined(VGP_riscv64_linux)
+   VexGuestRISCV64State* gst = (VexGuestRISCV64State*)gst_vanilla;
+   vg_assert(canonical->what == SsComplete);
+   if (sr_isError(canonical->sres)) {
+      /* This isn't exactly right, in that really a Failure with res
+         not in the range 1 .. 4095 is unrepresentable in the
+         Linux-riscv64 scheme.  Oh well. */
+      gst->guest_x10 = - (Long)sr_Err(canonical->sres);
+   } else {
+      gst->guest_x10 = sr_Res(canonical->sres);
+   }
+   VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+             OFFSET_riscv64_x10, sizeof(UWord) );
+
 #  elif defined(VGP_x86_solaris)
    VexGuestX86State* gst = (VexGuestX86State*)gst_vanilla;
    SysRes sres = canonical->sres;
@@ -1936,6 +1977,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg4   = OFFSET_s390x_r5;
    layout->o_arg5   = OFFSET_s390x_r6;
    layout->o_arg6   = OFFSET_s390x_r7;
+   layout->uu_arg7  = -1; /* impossible value */
+   layout->uu_arg8  = -1; /* impossible value */
+
+#elif defined(VGP_riscv64_linux)
+   layout->o_sysno  = OFFSET_riscv64_x17; /* a7 */
+   layout->o_arg1   = OFFSET_riscv64_x10; /* a0 */
+   layout->o_arg2   = OFFSET_riscv64_x11; /* a1 */
+   layout->o_arg3   = OFFSET_riscv64_x12; /* a2 */
+   layout->o_arg4   = OFFSET_riscv64_x13; /* a3 */
+   layout->o_arg5   = OFFSET_riscv64_x14; /* a4 */
+   layout->o_arg6   = OFFSET_riscv64_x15; /* a5 */
    layout->uu_arg7  = -1; /* impossible value */
    layout->uu_arg8  = -1; /* impossible value */
 
@@ -3038,6 +3090,28 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
          arch->vex.guest_PC -= 2;
       }
    }
+
+#elif defined(VGP_riscv64_linux)
+   arch->vex.guest_pc -= 4;             // sizeof(ecall)
+
+   /* Make sure our caller is actually sane, and we're really backing
+      back over a syscall.
+
+      ecall == 73 00 00 00
+   */
+   {
+      UChar *p = (UChar *)arch->vex.guest_pc;
+
+      if (p[0] != 0x73 || p[1] != 0x00 || p[2] != 0x00 || p[3] != 0x00)
+         VG_(message)(
+            Vg_DebugMsg,
+            "?! restarting over syscall at %#llx %02x %02x %02x %02x\n",
+            arch->vex.guest_pc, p[0], p[1], p[2], p[3]
+          );
+
+      vg_assert(p[0] == 0x73 && p[1] == 0x00 && p[2] == 0x00 && p[3] == 0x00);
+   }
+
 #elif defined(VGP_x86_solaris)
    arch->vex.guest_EIP -= 2;   // sizeof(int $0x91) or sizeof(syscall)
 

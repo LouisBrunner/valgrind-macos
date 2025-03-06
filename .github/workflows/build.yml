@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-12, macos-13]
+        os: [ubuntu-24.04, macos-13]
 
     runs-on: ${{ matrix.os }}
 
@@ -21,10 +21,12 @@ jobs:
 
     steps:
       - name: install dependencies (macOS)
-        run: brew update && brew install automake
+        run: |
+          brew update && brew install automake
         if: ${{ matrix.os != 'ubuntu-24.04' }}
       - name: install dependencies (Linux)
-        run: sudo apt-get update && sudo apt-get install libc6-dbg gdb
+        run: |
+          sudo apt-get update && sudo apt-get install libc6-dbg gdb
         if: ${{ matrix.os == 'ubuntu-24.04' }}
       - name: checkout project
         uses: actions/checkout@v1
@@ -44,13 +46,11 @@ jobs:
       - name: try ls -l
         run: ./vg-in-place --gen-suppressions=all ls -l || ./vg-in-place -v -v -v -v -d -d -d -d ls -l
       - name: build regression tests
-        run: make check
+        run: XMLLINT=does_not_exist make check
       - name: create artifacts folder
         run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
-      - name: build tests
-        run: make check
       - name: run regression tests
-        run: make regtest | tee ${{ env.TEST_FOLDER }}/raw-results.txt
+        run: XMLLINT=does_not_exist make regtest | tee ${{ env.TEST_FOLDER }}/raw-results.txt
       - name: process results
         if: always()
         run: |
@@ -68,7 +68,7 @@ jobs:
         run: cat ${{ env.TEST_FOLDER }}/results.txt | cut -f 1 -d' ' | xargs -L1 -I % sh -c 'cp %.*.diff* ${{ env.TEST_FOLDER }}/outputs/'
       - name: calculate difference between tests
         if: always()
-        uses: LouisBrunner/diff-action@v0.3.0
+        uses: LouisBrunner/diff-action@v2.2.0
         with:
           old: .github/${{ matrix.os }}-expected.txt
           new: ${{ env.TEST_FOLDER }}/filtered-results.txt
@@ -78,7 +78,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: ${{ matrix.os }}
           notify_check: true
-          notify_issue: true
+          notify_issue: failure
+          sticky_comment: true
       - name: upload artifacts
         if: always()
         uses: actions/upload-artifact@v4

@@ -6805,7 +6805,6 @@ POST(sys_fspacectl)
    }
 }
 
-#if (FREEBSD_VERS >= FREEBSD_14_0)
 // SYS_fspacectl 580
 // int fspacectl(int fd, int cmd, const struct spacectl_range *rqsr, int flags,
 //     struct spacectl_range *rmsr);
@@ -6825,7 +6824,6 @@ POST(sys_fspacectl)
       POST_MEM_WRITE((Addr)ARG5, sizeof(struct vki_spacectl_range));
    }
 }
-#endif
 
 // SYS_swapoff 582
 // int swapoff(const char *special, u_int flags);
@@ -6867,10 +6865,6 @@ PRE(sys_membarrier)
          ARG1, ARG2, SARG3);
    PRE_REG_READ3(int, "membarrier", int, cmd, unsigned, flags, int, cpu_id);
 }
-
-#endif
-
-#if (FREEBSD_VERS >= FREEBSD_14_0) || (FREEBSD_VERS >= FREEBSD_13_4)
 
 // SYS_timerfd_create 585
 // int timerfd_create(int clockid, int flags);
@@ -7703,8 +7697,6 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    BSDXY(__NR_kqueuex,          sys_kqueuex),           // 583
    BSDX_(__NR_membarrier,       sys_membarrier),        // 584
-#endif
-#if (FREEBSD_VERS >= FREEBSD_14_0) || (FREEBSD_VERS >= FREEBSD_13_4)
    BSDXY(__NR_timerfd_create,   sys_timerfd_create),    // 585
    BSDXY(__NR_timerfd_settime,  sys_timerfd_settime),   // 586
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587

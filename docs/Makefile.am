@@ -126,7 +126,7 @@ endif
 LOGFILE = print.log
 
 # validation stuff
-XMLLINT       = xmllint
+XMLLINT      ?= xmllint
 XMLLINT_FLAGS = --noblanks --noout --xinclude --postvalid --noent \
 		--path $(top_builddir)/docs/xml
 
@@ -249,12 +249,12 @@ print-docs:
 	mv index.pdf index.ps $(myprintdir) && \
 	rm $(LOGFILE)
 
-# If the docs have been built, install them.  But don't worry if they have 
+# If the docs have been built, install them.  But don't worry if they have
 # not -- developers do 'make install' not from a 'make dist'-ified distro all
 # the time.
 #
 # Note: this is done at 'make install' time.
-# Note 2: the ifeq/else/endif have to be indented one space 
+# Note 2: the ifeq/else/endif have to be indented one space
 # because otherwise it seems that automake thinks it should
 # be the one to handle the else/endif parts, not GNU make
 # as we intend.

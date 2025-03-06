@@ -629,12 +629,6 @@
 
 #define __NR_getrlimitusage      589
 
-#if (FREEBSD_VERS >= FREEBSD_14_1) || (FREEBSD_VERS >= FREEBSD_13_3)
-
-#define __NR_kcmp                588
-
-#endif
-
 #define __NR_fake_sigreturn      1000
 
 #endif /* VKI_UNISTD_FREEBSD_H */

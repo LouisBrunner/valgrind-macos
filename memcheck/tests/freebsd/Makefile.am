@@ -67,6 +67,7 @@ EXTRA_DIST = \
 	getfsstat.stderr.exp \
 	getfsstat.supp \
 		getfsstat.stderr.exp-x86 \
+	getrlimitusage.vgtest getrlimitusage.stderr.exp \
 	kqueue.vgtest \
 	kqueue.stderr.exp \
 	kqueue.stdout.exp \
@@ -93,12 +94,8 @@ EXTRA_DIST = \
 		scalar.stderr.exp-arm64 \
 		scalar.stderr.exp-arm64_2 \
 		scalar.stderr.exp-x86 \
-		scalar.stderr.exp-amd64-141 \
+		scalar.supp \
 	scalar_abort2.vgtest \
-	scalar_13_plus.vgtest \
-	scalar_13_plus.stderr.exp \
-	scalar_15_plus.vgtest \
-	scalar_15_plus.stderr.exp \
 	scalar_abort2.stderr.exp \
 	scalar_fork.vgtest \
 	scalar_fork.stderr.exp \
@@ -142,7 +139,10 @@ EXTRA_DIST = \
 	utimens.stderr.exp \
 	utimes.vgtest \
 	utimes.stderr.exp-x86 \
-	utimes.stderr.exp
+	utimes.stderr.exp \
+	utrace.vgtest \
+	utrace.stderr.exp
+
 
 check_PROGRAMS = \
 	access aio aio_read aligned_alloc bug464476 bug470713 \
@@ -178,6 +178,10 @@ if HAVE_AIO_READV
 check_PROGRAMS += aiov
 endif
 
+if HAVE_GETRLIMITUSAGE
+check_PROGRAMS += getrlimitusage
+endif
+
 inlinfo_SOURCES = inlinfo.c
 inlinfo_DEPENDENCIES = inlinfo_nested.so
 inlinfo_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/freebsd
@@ -189,14 +193,20 @@ inlinfo_nested_so_LDFLAGS = -Wl,-rpath,$(top_builddir)/memcheck/tests/freebsd -s
 bug464476_SOURCES = bug464476.cpp
 bug470713_SOURCES = bug470713.cpp
 
-if FREEBSD_VERS_13_PLUS
-check_PROGRAMS += realpathat scalar_13_plus eventfd1 eventfd2
-scalar_13_plus_CFLAGS = ${AM_CFLAGS} -g
+if FREEBSD_EVENTFD
+check_PROGRAMS += eventfd1 eventfd2
 endif
 
-if FREEBSD_VERS_15_PLUS
-check_PROGRAMS += kqueuex scalar_15_plus timerfd
-scalar_15_plus_CFLAGS = ${AM_CFLAGS} -g
+if FREEBSD_REALPATHAT_SYSCALL
+check_PROGRAMS += realpathat
+endif
+
+if FREEBSD_KQUEUEX_SYSCALL
+check_PROGRAMS += kqueuex
+endif
+
+if FREEBSD_TIMERFD_SYSCALL
+check_PROGRAMS += timerfd
 timerfd_LDFLAGS = -lm
 endif
 
@@ -208,6 +218,7 @@ delete_sized_mismatch_CXXFLAGS = ${AM_CXXFLAGS} --std=c++14
 delete_sized_mismatch_SOURCES = delete_sized_mismatch.cpp
 
 errno_aligned_allocs_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
 
 extattr_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 

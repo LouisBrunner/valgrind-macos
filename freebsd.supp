@@ -180,3 +180,11 @@
    obj:*/lib*/libc.so.7
    fun:scanf
 }
+{
+   MEMCHECK-LIBC-__CXA_ATEXIT
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/libc.so.7
+   fun:__cxa_atexit
+}

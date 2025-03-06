@@ -1,0 +1,10 @@
+# not sure what causes this exactly on x86 and amd64 (but not arm64)
+# there is an conditional uninit read
+# there are several if statements that use the two pointers to stack
+# structures that probably generate the error
+
+{
+   internal uninitilized read
+   Memcheck:Cond
+   fun:syscall
+}

@@ -33,6 +33,15 @@
       } \
    } while (0);
 
+#define FAKE_GO(str) \
+   fprintf(stderr, "---------------------------------------------------------\n"  \
+                   "%s\n"                                                         \
+                   "---------------------------------------------------------\n", \
+                   str);
+
+#define FAKE_SY(msg) \
+   fprintf(stderr, "%s", (msg));
+
 /* Module variables. */
 static long x0;
 static long res;

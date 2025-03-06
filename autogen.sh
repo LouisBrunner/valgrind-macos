@@ -11,7 +11,7 @@ run ()
     fi
 }
 
-run aclocal
+run aclocal -I m4
 run autoheader
 run automake -a
 run autoconf

@@ -2608,7 +2608,7 @@ POST(__pthread_sigmask)
 PRE(__sigwait)
 {
     *flags |= SfMayBlock;
-    PRINT("sys_sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+    PRINT("__sigwait ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
           ARG1,ARG2);
     PRE_REG_READ2(int, "sigwait",
                   const vki_sigset_t *, set, int *, sig);
@@ -3367,7 +3367,7 @@ PRE(mount)
    // We are conservative and check everything, except the memory pointed to
    // by 'data'.
    *flags |= SfMayBlock;
-   PRINT("sys_mount( %#lx(%s), %#lx(%s), %#lx, %#lx )",
+   PRINT("mount( %#lx(%s), %#lx(%s), %#lx, %#lx )",
          ARG1, (HChar*)ARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "mount",
                  const char *, type, const char *, dir,
@@ -5370,11 +5370,11 @@ POST(host_get_io_master)
 
 PRE(host_get_io_master)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//    } Request;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//   } Request;
+//#pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -5638,26 +5638,26 @@ PRE(mach_port_set_context)
 
 POST(mach_port_set_context)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       NDR_record_t NDR;
-//       kern_return_t RetCode;
-//    } Reply;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      NDR_record_t NDR;
+//      kern_return_t RetCode;
+//   } Reply;
+//#pragma pack()
 }
 
 
 // JRS 2011-Aug-25 FIXME completely bogus
 PRE(task_get_exception_ports)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       NDR_record_t NDR;
-//       exception_mask_t exception_mask;
-//    } Request;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      NDR_record_t NDR;
+//      exception_mask_t exception_mask;
+//   } Request;
+//#pragma pack()
 
    PRINT("task_get_exception_ports(BOGUS)");
    AFTER = POST_FN(task_get_exception_ports);
@@ -5665,20 +5665,20 @@ PRE(task_get_exception_ports)
 
 POST(task_get_exception_ports)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       /* start of the kernel processed data */
-//       mach_msg_body_t msgh_body;
-//       mach_msg_port_descriptor_t old_handlers[32];
-//       /* end of the kernel processed data */
-//       NDR_record_t NDR;
-//       mach_msg_type_number_t masksCnt;
-//       exception_mask_t masks[32];
-//       exception_behavior_t old_behaviors[32];
-//       thread_state_flavor_t old_flavors[32];
-//    } Reply;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_port_descriptor_t old_handlers[32];
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t masksCnt;
+//      exception_mask_t masks[32];
+//      exception_behavior_t old_behaviors[32];
+//      thread_state_flavor_t old_flavors[32];
+//   } Reply;
+//#pragma pack()
 }
 
 
@@ -5963,18 +5963,18 @@ PRE(mach_port_get_set_status)
 
 POST(mach_port_get_set_status)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       /* start of the kernel processed data */
-//       mach_msg_body_t msgh_body;
-//       mach_msg_ool_descriptor_t members;
-//       /* end of the kernel processed data */
-//       NDR_record_t NDR;
-//       mach_msg_type_number_t membersCnt;
-//       mach_msg_trailer_t trailer;
-//    } Reply;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_descriptor_t members;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t membersCnt;
+//      mach_msg_trailer_t trailer;
+//   } Reply;
+//#pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -6507,17 +6507,17 @@ POST(task_policy_set)
 
 PRE(mach_ports_register)
 {
-// #pragma pack(4)
-//     typedef struct {
-//        mach_msg_header_t Head;
-//        /* start of the kernel processed data */
-//        mach_msg_body_t msgh_body;
-//        mach_msg_ool_ports_descriptor_t init_port_set;
-//        /* end of the kernel processed data */
-//        NDR_record_t NDR;
-//        mach_msg_type_number_t init_port_setCnt;
-//     } Request;
-// #pragma pack()
+//#pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_ports_descriptor_t init_port_set;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t init_port_setCnt;
+//    } Request;
+//#pragma pack()
 
     // Request *req = (Request *)ARG1;
 
@@ -6546,11 +6546,11 @@ POST(mach_ports_register)
 
 PRE(mach_ports_lookup)
 {
-// #pragma pack(4)
-//    typedef struct {
-//        mach_msg_header_t Head;
-//    } Request;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//       mach_msg_header_t Head;
+//   } Request;
+//#pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -6561,17 +6561,17 @@ PRE(mach_ports_lookup)
 
 POST(mach_ports_lookup)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       /* start of the kernel processed data */
-//       mach_msg_body_t msgh_body;
-//       mach_msg_ool_ports_descriptor_t init_port_set;
-//       /* end of the kernel processed data */
-//       NDR_record_t NDR;
-//       mach_msg_type_number_t init_port_setCnt;
-//    } Reply;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_ports_descriptor_t init_port_set;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t init_port_setCnt;
+//   } Reply;
+//#pragma pack()
 
     // Reply *reply = (Reply *)ARG1;
 }
@@ -6653,11 +6653,11 @@ POST(task_set_info)
 
 PRE(task_threads)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//    } Request;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//   } Request;
+//#pragma pack()
 
    // Request *req = (Request *)ARG1;
 
@@ -6975,17 +6975,17 @@ PRE(vm_read)
 
 POST(vm_read)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       /* start of the kernel processed data */
-//       mach_msg_body_t msgh_body;
-//       mach_msg_ool_descriptor_t data;
-//       /* end of the kernel processed data */
-//       NDR_record_t NDR;
-//       mach_msg_type_number_t dataCnt;
-//    } Reply;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_descriptor_t data;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t dataCnt;
+//   } Reply;
+//#pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -7021,17 +7021,17 @@ PRE(mach_vm_read)
 
 POST(mach_vm_read)
 {
-// #pragma pack(4)
-//    typedef struct {
-//       mach_msg_header_t Head;
-//       /* start of the kernel processed data */
-//       mach_msg_body_t msgh_body;
-//       mach_msg_ool_descriptor_t data;
-//       /* end of the kernel processed data */
-//       NDR_record_t NDR;
-//       mach_msg_type_number_t dataCnt;
-//    } Reply;
-// #pragma pack()
+//#pragma pack(4)
+//   typedef struct {
+//      mach_msg_header_t Head;
+//      /* start of the kernel processed data */
+//      mach_msg_body_t msgh_body;
+//      mach_msg_ool_descriptor_t data;
+//      /* end of the kernel processed data */
+//      NDR_record_t NDR;
+//      mach_msg_type_number_t dataCnt;
+//   } Reply;
+//#pragma pack()
 
    // Reply *reply = (Reply *)ARG1;
 
@@ -10462,15 +10462,15 @@ PRE(csrctl)
    switch (ARG1) {
    case VKI_CSR_CHECK:
      PRINT("csrctl(op:CSR_CHECK, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
-   PRE_REG_READ3(int, "csrctl",
-                 uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+     PRE_REG_READ3(int, "csrctl",
+                   uint32_t, op, void*, useraddr, size_t, usersize);
      PRE_MEM_READ( "csrctl(useraddr)", ARG2, ARG3 );
      break;
 
    case VKI_CSR_GET_ACTIVE_CONFIG:
       PRINT("csrctl(op:CSR_GET_ACTIVE_CONFIG, useraddr:%#lx, usersize:%#lx)", ARG2, ARG3);
       PRE_REG_READ3(int, "csrctl",
-                    uint32_t, op, user_addr_t, useraddr, user_addr_t, usersize);
+                    uint32_t, op, void*, useraddr, size_t, usersize);
       PRE_MEM_WRITE( "csrctl(useraddr)", ARG2, ARG3 );
       break;
 
@@ -10523,13 +10523,13 @@ PRE(openat)
 {
    if (ARG3 & VKI_O_CREAT) {
       // 4-arg version
-      PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
+      PRINT("openat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
             SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
       PRE_REG_READ4(long, "openat",
                     int, dfd, const char *, filename, int, flags, int, mode);
    } else {
      // 3-arg version
-     PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
+     PRINT("openat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
            SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
      PRE_REG_READ3(long, "openat",
                    int, dfd, const char *, filename, int, flags);
@@ -10559,6 +10559,15 @@ POST(openat)
       if (VG_(clo_track_fds))
          ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
    }
+}
+
+PRE(mkdirat)
+{
+   PRINT("mkdirat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
+   PRE_REG_READ3(int, "mkdirat",
+                 int, fd, const char *, path, unsigned int, mode);
+   PRE_MEM_RASCIIZ( "mkdirat(path)", ARG2 );
+   *flags |= SfMayBlock;
 }
 
 #endif /* DARWIN_VERS >= DARWIN_10_10 */
@@ -10650,6 +10659,7 @@ PRE(getentropy)
                   void*, buffer, size_t, size);
     PRE_MEM_WRITE( "getentropy(buffer)", ARG1, ARG2 );
 }
+
 POST(getentropy)
 {
     vg_assert(SUCCESS);
@@ -10892,17 +10902,17 @@ POST(host_create_mach_voucher_trap)
 
 PRE(task_register_dyld_image_infos)
 {
-// #pragma pack(4)
-//     typedef struct {
-//        mach_msg_header_t Head;
-//        /* start of the kernel processed data */
-//        mach_msg_body_t msgh_body;
-//        mach_msg_ool_descriptor_t dyld_images;
-//        /* end of the kernel processed data */
-//        NDR_record_t NDR;
-//        mach_msg_type_number_t dyld_imagesCnt;
-//     } Request;
-// #pragma pack()
+//#pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       /* start of the kernel processed data */
+//       mach_msg_body_t msgh_body;
+//       mach_msg_ool_descriptor_t dyld_images;
+//       /* end of the kernel processed data */
+//       NDR_record_t NDR;
+//       mach_msg_type_number_t dyld_imagesCnt;
+//    } Request;
+//#pragma pack()
 
     // Request *req = (Request *)ARG1;
 
@@ -10930,15 +10940,15 @@ POST(task_register_dyld_image_infos)
 
 PRE(task_register_dyld_shared_cache_image_info)
 {
-// #pragma pack(4)
-//     typedef struct {
-//        mach_msg_header_t Head;
-//        NDR_record_t NDR;
-//        dyld_kernel_image_info_t dyld_cache_image;
-//        boolean_t no_cache;
-//        boolean_t private_cache;
-//     } Request;
-// #pragma pack()
+//#pragma pack(4)
+//    typedef struct {
+//       mach_msg_header_t Head;
+//       NDR_record_t NDR;
+//       dyld_kernel_image_info_t dyld_cache_image;
+//       boolean_t no_cache;
+//       boolean_t private_cache;
+//    } Request;
+//#pragma pack()
 
     // Request *req = (Request *)ARG1;
 
@@ -11082,8 +11092,6 @@ POST(thread_get_special_reply_port)
    record_named_port(tid, RES, MACH_PORT_RIGHT_RECEIVE, "special-reply-%p");
    PRINT("special reply port %s", name_for_port(RES));
 }
-
-
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 
 
@@ -11114,16 +11122,6 @@ PRE(kernelrpc_mach_port_get_attributes_trap)
  ------------------------------------------------------------------ */
 
 #if DARWIN_VERS >= DARWIN_10_15
-
-PRE(mkdirat)
-{
-   *flags |= SfMayBlock;
-   PRINT("sys_mkdirat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
-         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
-   PRE_REG_READ3(long, "mkdirat",
-                 int, dfd, const char *, pathname, int, mode);
-   PRE_MEM_RASCIIZ( "mkdirat(pathname)", ARG2 );
-}
 
 PRE(task_restartable_ranges_register)
 {
@@ -11878,9 +11876,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_faccessat,           faccessat),          // 466
    MACXY(__NR_fstatat64,           fstatat64),          // 470
    MACX_(__NR_readlinkat,          readlinkat),         // 473
-#if DARWIN_VERS >= DARWIN_10_15
    MACX_(__NR_mkdirat,             mkdirat),            // 475
-#endif
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
    MACXY(__NR_csrctl,              csrctl),             // 483
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484

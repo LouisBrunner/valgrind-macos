@@ -1,0 +1,1858 @@
+RV64I base instruction set, shared operations
+lui a0, 0 ::
+  output: a0=0x0000000000000000
+lui a0, 1 ::
+  output: a0=0x0000000000001000
+lui a0, 2 ::
+  output: a0=0x0000000000002000
+lui a0, 4 ::
+  output: a0=0x0000000000004000
+lui a0, 8 ::
+  output: a0=0x0000000000008000
+lui a0, 16 ::
+  output: a0=0x0000000000010000
+lui a0, 32 ::
+  output: a0=0x0000000000020000
+lui a0, 64 ::
+  output: a0=0x0000000000040000
+lui a0, 128 ::
+  output: a0=0x0000000000080000
+lui a0, 256 ::
+  output: a0=0x0000000000100000
+lui a0, 512 ::
+  output: a0=0x0000000000200000
+lui a0, 1024 ::
+  output: a0=0x0000000000400000
+lui a0, 2048 ::
+  output: a0=0x0000000000800000
+lui a0, 4096 ::
+  output: a0=0x0000000001000000
+lui a0, 8192 ::
+  output: a0=0x0000000002000000
+lui a0, 16384 ::
+  output: a0=0x0000000004000000
+lui a0, 32768 ::
+  output: a0=0x0000000008000000
+lui a0, 65536 ::
+  output: a0=0x0000000010000000
+lui a0, 131072 ::
+  output: a0=0x0000000020000000
+lui a0, 262144 ::
+  output: a0=0x0000000040000000
+lui a0, 524288 ::
+  output: a0=0xffffffff80000000
+lui a0, 1048575 ::
+  output: a0=0xfffffffffffff000
+lui t6, 1 ::
+  output: t6=0x0000000000001000
+lui zero, 1 ::
+  output: zero=0x0000000000000000
+auipc a0, 0 ::
+  output: a0=1f+0
+auipc a0, 1 ::
+  output: a0=1f+4096
+auipc a0, 2 ::
+  output: a0=1f+8192
+auipc a0, 4 ::
+  output: a0=1f+16384
+auipc a0, 8 ::
+  output: a0=1f+32768
+auipc a0, 16 ::
+  output: a0=1f+65536
+auipc a0, 32 ::
+  output: a0=1f+131072
+auipc a0, 64 ::
+  output: a0=1f+262144
+auipc a0, 128 ::
+  output: a0=1f+524288
+auipc a0, 256 ::
+  output: a0=1f+1048576
+auipc a0, 512 ::
+  output: a0=1f+2097152
+auipc a0, 1024 ::
+  output: a0=1f+4194304
+auipc a0, 2048 ::
+  output: a0=1f+8388608
+auipc a0, 4096 ::
+  output: a0=1f+16777216
+auipc a0, 8192 ::
+  output: a0=1f+33554432
+auipc a0, 16384 ::
+  output: a0=1f+67108864
+auipc a0, 32768 ::
+  output: a0=1f+134217728
+auipc a0, 65536 ::
+  output: a0=1f+268435456
+auipc a0, 131072 ::
+  output: a0=1f+536870912
+auipc a0, 262144 ::
+  output: a0=1f+1073741824
+auipc a0, 524288 ::
+  output: a0=1f-2147483648
+auipc a0, 1048575 ::
+  output: a0=1f-4096
+auipc t6, 1 ::
+  output: t6=1f+4096
+auipc zero, 1 ::
+  output: zero=0x0000000000000000
+jal t0, .+4 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+6 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+8 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+16 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+32 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+64 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+128 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+256 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+512 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+1024 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .+2048 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .-4 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .-6 ::
+  output: t0=1f+4
+  target: reached
+jal t0, .-2048 ::
+  output: t0=1f+4
+  target: reached
+jal t6, .+4 ::
+  output: t6=1f+4
+  target: reached
+jal zero, .+4 ::
+  output: zero=0x0000000000000000
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f+4
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f+6
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f+8
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f-4
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f-6
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f-8
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t0) ::
+  inputs: t0=1f-8
+  output: ra=1f+4
+  target: reached
+jalr ra, 1(t0) ::
+  inputs: t0=1f-9
+  output: ra=1f+4
+  target: reached
+jalr ra, 2(t0) ::
+  inputs: t0=1f-10
+  output: ra=1f+4
+  target: reached
+jalr ra, 4(t0) ::
+  inputs: t0=1f-12
+  output: ra=1f+4
+  target: reached
+jalr ra, 8(t0) ::
+  inputs: t0=1f-16
+  output: ra=1f+4
+  target: reached
+jalr ra, 16(t0) ::
+  inputs: t0=1f-24
+  output: ra=1f+4
+  target: reached
+jalr ra, 32(t0) ::
+  inputs: t0=1f-40
+  output: ra=1f+4
+  target: reached
+jalr ra, 64(t0) ::
+  inputs: t0=1f-72
+  output: ra=1f+4
+  target: reached
+jalr ra, 128(t0) ::
+  inputs: t0=1f-136
+  output: ra=1f+4
+  target: reached
+jalr ra, 256(t0) ::
+  inputs: t0=1f-264
+  output: ra=1f+4
+  target: reached
+jalr ra, 512(t0) ::
+  inputs: t0=1f-520
+  output: ra=1f+4
+  target: reached
+jalr ra, 1024(t0) ::
+  inputs: t0=1f-1032
+  output: ra=1f+4
+  target: reached
+jalr ra, 2047(t0) ::
+  inputs: t0=1f-2055
+  output: ra=1f+4
+  target: reached
+jalr ra, -1(t0) ::
+  inputs: t0=1f-7
+  output: ra=1f+4
+  target: reached
+jalr ra, -2048(t0) ::
+  inputs: t0=1f+2040
+  output: ra=1f+4
+  target: reached
+jalr ra, 0(t6) ::
+  inputs: t6=1f+4
+  output: ra=1f+4
+  target: reached
+jalr zero, 0(a0) ::
+  inputs: a0=1f+4
+  output: zero=0x0000000000000000
+  target: reached
+beq a0, a1, .+4 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+6 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+8 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+16 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+32 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+64 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+128 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+256 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+512 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+1024 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .+2048 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .-4 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .-6 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq a0, a1, .-2048 ::
+  inputs: a0=0, a1=0
+  target: reached
+beq t5, t6, .+4 ::
+  inputs: t5=0, t6=0
+  target: reached
+beq a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: taken
+beq a0, a1, 1f ::
+  inputs: a0=0, a1=1
+  branch: not taken
+beq a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: not taken
+beq a0, a1, 1f ::
+  inputs: a0=1, a1=1
+  branch: taken
+beq a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: taken
+beq a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: not taken
+beq a1, a0, 1f ::
+  inputs: a1=0, a0=0
+  branch: taken
+beq a1, a0, 1f ::
+  inputs: a1=0, a0=1
+  branch: not taken
+beq a0, a1, 1f ::
+  inputs: a0=0, a1=-1
+  branch: not taken
+beq a0, a1, 1f ::
+  inputs: a0=-1, a1=0
+  branch: not taken
+beq a0, a1, 1f ::
+  inputs: a0=-1, a1=-1
+  branch: taken
+bne a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: not taken
+bne a0, a1, 1f ::
+  inputs: a0=0, a1=1
+  branch: taken
+bne a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: taken
+bne a0, a1, 1f ::
+  inputs: a0=1, a1=1
+  branch: not taken
+bne a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: not taken
+bne a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: taken
+bne a1, a0, 1f ::
+  inputs: a1=0, a0=0
+  branch: not taken
+bne a1, a0, 1f ::
+  inputs: a1=0, a0=1
+  branch: taken
+bne a0, a1, 1f ::
+  inputs: a0=0, a1=-1
+  branch: taken
+bne a0, a1, 1f ::
+  inputs: a0=-1, a1=0
+  branch: taken
+bne a0, a1, 1f ::
+  inputs: a0=-1, a1=-1
+  branch: not taken
+blt a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: not taken
+blt a0, a1, 1f ::
+  inputs: a0=0, a1=1
+  branch: taken
+blt a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: not taken
+blt a0, a1, 1f ::
+  inputs: a0=1, a1=1
+  branch: not taken
+blt a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: not taken
+blt a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: not taken
+blt a1, a0, 1f ::
+  inputs: a1=0, a0=0
+  branch: not taken
+blt a1, a0, 1f ::
+  inputs: a1=0, a0=1
+  branch: taken
+blt a0, a1, 1f ::
+  inputs: a0=0, a1=-1
+  branch: not taken
+blt a0, a1, 1f ::
+  inputs: a0=-1, a1=0
+  branch: taken
+blt a0, a1, 1f ::
+  inputs: a0=-1, a1=-1
+  branch: not taken
+bge a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: taken
+bge a0, a1, 1f ::
+  inputs: a0=0, a1=1
+  branch: not taken
+bge a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: taken
+bge a0, a1, 1f ::
+  inputs: a0=1, a1=1
+  branch: taken
+bge a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: taken
+bge a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: taken
+bge a1, a0, 1f ::
+  inputs: a1=0, a0=0
+  branch: taken
+bge a1, a0, 1f ::
+  inputs: a1=0, a0=1
+  branch: not taken
+bge a0, a1, 1f ::
+  inputs: a0=0, a1=-1
+  branch: taken
+bge a0, a1, 1f ::
+  inputs: a0=-1, a1=0
+  branch: not taken
+bge a0, a1, 1f ::
+  inputs: a0=-1, a1=-1
+  branch: taken
+bltu a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: not taken
+bltu a0, a1, 1f ::
+  inputs: a0=0, a1=1
+  branch: taken
+bltu a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: not taken
+bltu a0, a1, 1f ::
+  inputs: a0=1, a1=1
+  branch: not taken
+bltu a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: not taken
+bltu a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: not taken
+bltu a1, a0, 1f ::
+  inputs: a1=0, a0=0
+  branch: not taken
+bltu a1, a0, 1f ::
+  inputs: a1=0, a0=1
+  branch: taken
+bltu a0, a1, 1f ::
+  inputs: a0=0, a1=-1
+  branch: taken
+bltu a0, a1, 1f ::
+  inputs: a0=-1, a1=0
+  branch: not taken
+bltu a0, a1, 1f ::
+  inputs: a0=-1, a1=-1
+  branch: not taken
+bgeu a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: taken
+bgeu a0, a1, 1f ::
+  inputs: a0=0, a1=1
+  branch: not taken
+bgeu a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: taken
+bgeu a0, a1, 1f ::
+  inputs: a0=1, a1=1
+  branch: taken
+bgeu a0, a1, 1f ::
+  inputs: a0=0, a1=0
+  branch: taken
+bgeu a0, a1, 1f ::
+  inputs: a0=1, a1=0
+  branch: taken
+bgeu a1, a0, 1f ::
+  inputs: a1=0, a0=0
+  branch: taken
+bgeu a1, a0, 1f ::
+  inputs: a1=0, a0=1
+  branch: not taken
+bgeu a0, a1, 1f ::
+  inputs: a0=0, a1=-1
+  branch: not taken
+bgeu a0, a1, 1f ::
+  inputs: a0=-1, a1=0
+  branch: taken
+bgeu a0, a1, 1f ::
+  inputs: a0=-1, a1=-1
+  branch: taken
+lb a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffa0
+  no memory changes
+lb a0, 1(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000079
+  no memory changes
+lb a0, 2(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffed
+  no memory changes
+lb a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000068
+  no memory changes
+lb a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffef
+  no memory changes
+lb a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000011
+  no memory changes
+lb a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffe3
+  no memory changes
+lb a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffff92
+  no memory changes
+lb a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000042
+  no memory changes
+lb a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffc7
+  no memory changes
+lb a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffcd
+  no memory changes
+lb a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000004a
+  no memory changes
+lb a0, 2047(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffffbc
+  no memory changes
+lb a0, -1(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000002b
+  no memory changes
+lb a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffff8c
+  no memory changes
+lb a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0xffffffffffffffed
+  no memory changes
+lb zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+lh a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000396f
+  no memory changes
+lh a0, 2(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffbe76
+  no memory changes
+lh a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000036cd
+  no memory changes
+lh a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000003f2d
+  no memory changes
+lh a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000607f
+  no memory changes
+lh a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000031b1
+  no memory changes
+lh a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000007a20
+  no memory changes
+lh a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffa24f
+  no memory changes
+lh a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000002ed4
+  no memory changes
+lh a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffff9eda
+  no memory changes
+lh a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffdc57
+  no memory changes
+lh a0, 2046(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffff8f1e
+  no memory changes
+lh a0, -2(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xfffffffffffffef5
+  no memory changes
+lh a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffffffff99
+  no memory changes
+lh a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0x00000000000020fa
+  no memory changes
+lh zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+lw a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000050f7f87c
+  no memory changes
+lw a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffdde6ba3c
+  no memory changes
+lw a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffff8349fb67
+  no memory changes
+lw a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000006ce42545
+  no memory changes
+lw a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000027636871
+  no memory changes
+lw a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000f131555
+  no memory changes
+lw a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000005806056c
+  no memory changes
+lw a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffdcef22c1
+  no memory changes
+lw a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000003109b267
+  no memory changes
+lw a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000003db72f24
+  no memory changes
+lw a0, 2044(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000006e0e703
+  no memory changes
+lw a0, -4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000074b87535
+  no memory changes
+lw a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000003d9ad2e6
+  no memory changes
+lw a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0xfffffffff267f447
+  no memory changes
+lw zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+lbu a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000c9
+  no memory changes
+lbu a0, 1(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000b8
+  no memory changes
+lbu a0, 2(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000089
+  no memory changes
+lbu a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000098
+  no memory changes
+lbu a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000a8
+  no memory changes
+lbu a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000005a
+  no memory changes
+lbu a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000004c
+  no memory changes
+lbu a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000003b
+  no memory changes
+lbu a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000006a
+  no memory changes
+lbu a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000ef
+  no memory changes
+lbu a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000f5
+  no memory changes
+lbu a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000072
+  no memory changes
+lbu a0, 2047(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000036
+  no memory changes
+lbu a0, -1(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000a5
+  no memory changes
+lbu a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000000b4
+  no memory changes
+lbu a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0x0000000000000015
+  no memory changes
+lbu zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+lhu a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000007797
+  no memory changes
+lhu a0, 2(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000006013
+  no memory changes
+lhu a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000ddfe
+  no memory changes
+lhu a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000cde5
+  no memory changes
+lhu a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000003ec7
+  no memory changes
+lhu a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000af19
+  no memory changes
+lhu a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000038c8
+  no memory changes
+lhu a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000e078
+  no memory changes
+lhu a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000006dfd
+  no memory changes
+lhu a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000000dd03
+  no memory changes
+lhu a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000001a80
+  no memory changes
+lhu a0, 2046(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000000af2
+  no memory changes
+lhu a0, -2(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000000079ca
+  no memory changes
+lhu a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000000003dc2
+  no memory changes
+lhu a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0x0000000000005f23
+  no memory changes
+lhu zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+sb a0, 0(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 1(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. 89 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 2(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. 89 .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 8(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 .. .. .. .. .. .. ..
+sb a0, 16(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 32(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 64(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 128(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 256(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+256]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 512(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+512]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 1024(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+1024]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a0, 2047(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+2032]  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 89
+sb a0, -1(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-016]  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 89
+sb a0, -2048(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-2048]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sb a4, 0(a5) ::
+  inputs: a4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 0(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 2(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. 89 67 .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 67 .. .. .. .. .. .. .. .. .. ..
+sh a0, 8(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 .. .. .. .. .. ..
+sh a0, 16(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 32(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 64(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 128(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 256(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+256]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 512(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+512]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 1024(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+1024]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a0, 2046(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+2032]  .. .. .. .. .. .. .. .. .. .. .. .. .. .. 89 67
+sh a0, -2(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-016]  .. .. .. .. .. .. .. .. .. .. .. .. .. .. 89 67
+sh a0, -2048(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-2048]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sh a4, 0(a5) ::
+  inputs: a4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 0(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 .. .. .. .. .. .. .. ..
+sw a0, 8(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 .. .. .. ..
+sw a0, 16(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 32(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 64(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 128(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 .. 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 256(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+256]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 512(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+512]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 1024(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+1024]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a0, 2044(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+2032]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+sw a0, -4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-016]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+sw a0, -2048(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-2048]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+sw a4, 0(a5) ::
+  inputs: a4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+addi a0, a1, 1 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001001
+addi a0, a1, 2 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001002
+addi a0, a1, 4 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001004
+addi a0, a1, 8 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001008
+addi a0, a1, 16 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001010
+addi a0, a1, 32 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001020
+addi a0, a1, 64 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001040
+addi a0, a1, 128 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001080
+addi a0, a1, 256 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001100
+addi a0, a1, 1024 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001400
+addi a0, a1, 2047 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x00000000000017ff
+addi a0, a1, -1 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000000fff
+addi a0, a1, -2048 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000000800
+addi a0, a1, 1 ::
+  inputs: a1=0x000000007fffffff
+  output: a0=0x0000000080000000
+addi a0, a1, 1 ::
+  inputs: a1=0x00000000fffffffe
+  output: a0=0x00000000ffffffff
+addi a0, a1, 1 ::
+  inputs: a1=0x00000000ffffffff
+  output: a0=0x0000000100000000
+addi t5, t6, 1 ::
+  inputs: t6=0x0000000000001000
+  output: t5=0x0000000000001001
+addi zero, a0, 1 ::
+  inputs: a0=0x0000000000001000
+  output: zero=0x0000000000000000
+slti a0, a1, 0 ::
+  inputs: a1=0x0000000000000000
+  output: a0=0x0000000000000000
+slti a0, a1, 0 ::
+  inputs: a1=0x0000000000000001
+  output: a0=0x0000000000000000
+slti a0, a1, 0 ::
+  inputs: a1=0xffffffffffffffff
+  output: a0=0x0000000000000001
+slti a0, a1, 0x7ff ::
+  inputs: a1=0x00000000000007ff
+  output: a0=0x0000000000000000
+slti a0, a1, 0x7ff ::
+  inputs: a1=0x0000000000000800
+  output: a0=0x0000000000000000
+slti a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0xffffffffffffffff
+  output: a0=0x0000000000000000
+slti a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0x0000000000000000
+  output: a0=0x0000000000000000
+slti t5, t6, 0 ::
+  inputs: t6=0x0000000000000000
+  output: t5=0x0000000000000000
+slti t5, t6, 0 ::
+  inputs: t6=0x0000000000000001
+  output: t5=0x0000000000000000
+slti zero, a0, 1 ::
+  inputs: a0=0x0000000000000000
+  output: zero=0x0000000000000000
+sltiu a0, a1, 0 ::
+  inputs: a1=0x0000000000000000
+  output: a0=0x0000000000000000
+sltiu a0, a1, 0 ::
+  inputs: a1=0x0000000000000001
+  output: a0=0x0000000000000000
+sltiu a0, a1, 0 ::
+  inputs: a1=0xffffffffffffffff
+  output: a0=0x0000000000000000
+sltiu a0, a1, 0x7ff ::
+  inputs: a1=0x00000000000007ff
+  output: a0=0x0000000000000000
+sltiu a0, a1, 0x7ff ::
+  inputs: a1=0x0000000000000800
+  output: a0=0x0000000000000000
+sltiu a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0xffffffffffffffff
+  output: a0=0x0000000000000000
+sltiu a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0x0000000000000000
+  output: a0=0x0000000000000001
+sltiu t5, t6, 0 ::
+  inputs: t6=0x0000000000000000
+  output: t5=0x0000000000000000
+sltiu t5, t6, 0 ::
+  inputs: t6=0x0000000000000001
+  output: t5=0x0000000000000000
+sltiu zero, a0, 1 ::
+  inputs: a0=0x0000000000000000
+  output: zero=0x0000000000000000
+xori a0, a1, 0 ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x0000ffff0000ffff
+xori a0, a1, 0 ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0xffff0000ffff0000
+xori a0, a1, 0x7ff ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x0000ffff0000f800
+xori a0, a1, 0x7ff ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0xffff0000ffff07ff
+xori a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0xffff0000ffff0000
+xori a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0x0000ffff0000ffff
+xori t5, t6, 0 ::
+  inputs: t6=0x0000ffff0000ffff
+  output: t5=0x0000ffff0000ffff
+xori zero, a0, 0x7ff ::
+  inputs: a0=0x0000ffff0000ffff
+  output: zero=0x0000000000000000
+ori a0, a1, 0 ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x0000ffff0000ffff
+ori a0, a1, 0 ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0xffff0000ffff0000
+ori a0, a1, 0x7ff ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x0000ffff0000ffff
+ori a0, a1, 0x7ff ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0xffff0000ffff07ff
+ori a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0xffffffffffffffff
+ori a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0xffffffffffffffff
+ori t5, t6, 0 ::
+  inputs: t6=0x0000ffff0000ffff
+  output: t5=0x0000ffff0000ffff
+ori zero, a0, 0x7ff ::
+  inputs: a0=0x0000ffff0000ffff
+  output: zero=0x0000000000000000
+andi a0, a1, 0 ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x0000000000000000
+andi a0, a1, 0 ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0x0000000000000000
+andi a0, a1, 0x7ff ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x00000000000007ff
+andi a0, a1, 0x7ff ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0x0000000000000000
+andi a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0x0000ffff0000ffff
+  output: a0=0x0000ffff0000ffff
+andi a0, a1, 0xffffffffffffffff ::
+  inputs: a1=0xffff0000ffff0000
+  output: a0=0xffff0000ffff0000
+andi t5, t6, 0 ::
+  inputs: t6=0x0000ffff0000ffff
+  output: t5=0x0000000000000000
+andi zero, a0, 0x7ff ::
+  inputs: a0=0x0000ffff0000ffff
+  output: zero=0x0000000000000000
+slli a0, a1, 0 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xabcdef0123456789
+slli a0, a1, 1 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x579bde02468acf12
+slli a0, a1, 2 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xaf37bc048d159e24
+slli a0, a1, 4 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xbcdef01234567890
+slli a0, a1, 8 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xcdef012345678900
+slli a0, a1, 16 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xef01234567890000
+slli a0, a1, 32 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x2345678900000000
+slli a0, a1, 63 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x8000000000000000
+slli t5, t6, 1 ::
+  inputs: t6=0xabcdef0123456789
+  output: t5=0x579bde02468acf12
+slli zero, a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: zero=0x0000000000000000
+srli a0, a1, 0 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xabcdef0123456789
+srli a0, a1, 1 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x55e6f78091a2b3c4
+srli a0, a1, 2 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x2af37bc048d159e2
+srli a0, a1, 4 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0abcdef012345678
+srli a0, a1, 8 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x00abcdef01234567
+srli a0, a1, 16 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000abcdef012345
+srli a0, a1, 32 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x00000000abcdef01
+srli a0, a1, 63 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000000001
+srli t5, t6, 1 ::
+  inputs: t6=0xabcdef0123456789
+  output: t5=0x55e6f78091a2b3c4
+srli zero, a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: zero=0x0000000000000000
+srai a0, a1, 0 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xabcdef0123456789
+srai a0, a1, 1 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xd5e6f78091a2b3c4
+srai a0, a1, 2 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xeaf37bc048d159e2
+srai a0, a1, 4 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xfabcdef012345678
+srai a0, a1, 8 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xffabcdef01234567
+srai a0, a1, 16 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xffffabcdef012345
+srai a0, a1, 32 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xffffffffabcdef01
+srai a0, a1, 63 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xffffffffffffffff
+srai t5, t6, 1 ::
+  inputs: t6=0xabcdef0123456789
+  output: t5=0xd5e6f78091a2b3c4
+srai zero, a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: zero=0x0000000000000000
+add a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000002000
+  output: a0=0x0000000000003000
+add a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000001
+  output: a0=0x0000000080000000
+add a0, a1, a2 ::
+  inputs: a1=0x00000000fffffffe, a2=0x0000000000000001
+  output: a0=0x00000000ffffffff
+add a0, a1, a2 ::
+  inputs: a1=0x00000000ffffffff, a2=0x0000000000000001
+  output: a0=0x0000000100000000
+add a0, a1, a2 ::
+  inputs: a1=0xfffffffffffffffe, a2=0x0000000000000001
+  output: a0=0xffffffffffffffff
+add a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000001
+  output: a0=0x0000000000000000
+add t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000003000
+add zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+sub a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000000fff
+  output: a0=0x0000000000000001
+sub a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000001000
+  output: a0=0x0000000000000000
+sub a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000001001
+  output: a0=0xffffffffffffffff
+sub a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+sub a0, a1, a2 ::
+  inputs: a1=0x0000000100000000, a2=0x0000000000000001
+  output: a0=0x00000000ffffffff
+sub t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000000fff
+  output: t4=0x0000000000000001
+sub zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000000fff
+  output: zero=0x0000000000000000
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0xabcdef0123456789
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0x579bde02468acf12
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0xaf37bc048d159e24
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0xbcdef01234567890
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0xcdef012345678900
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0xef01234567890000
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0x2345678900000000
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000003f
+  output: a0=0x8000000000000000
+sll a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000040
+  output: a0=0xabcdef0123456789
+sll t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0x579bde02468acf12
+sll zero, a0, a1 ::
+  inputs: a0=0xabcdef0123456789, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+slt a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+slt a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0x0000000000000001
+  output: a0=0x0000000000000001
+slt a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+slt t4, t5, t6 ::
+  inputs: t5=0x0000000000000000, t6=0x0000000000000000
+  output: t4=0x0000000000000000
+slt t4, t5, t6 ::
+  inputs: t5=0x0000000000000000, t6=0x0000000000000001
+  output: t4=0x0000000000000001
+slt zero, a0, a1 ::
+  inputs: a0=0x0000000000000000, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+sltu a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+sltu a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0x0000000000000001
+  output: a0=0x0000000000000001
+sltu a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+sltu t4, t5, t6 ::
+  inputs: t5=0x0000000000000000, t6=0x0000000000000000
+  output: t4=0x0000000000000000
+sltu t4, t5, t6 ::
+  inputs: t5=0x0000000000000000, t6=0x0000000000000001
+  output: t4=0x0000000000000001
+sltu zero, a0, a1 ::
+  inputs: a0=0x0000000000000000, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+xor a0, a1, a2 ::
+  inputs: a1=0x0000ffff0000ffff, a2=0x00000000ffffffff
+  output: a0=0x0000ffffffff0000
+xor t4, t5, t6 ::
+  inputs: t5=0x0000ffff0000ffff, t6=0x00000000ffffffff
+  output: t4=0x0000ffffffff0000
+xor zero, a0, a1 ::
+  inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
+  output: zero=0x0000000000000000
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0xabcdef0123456789
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0x55e6f78091a2b3c4
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0x2af37bc048d159e2
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0x0abcdef012345678
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0x00abcdef01234567
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0x0000abcdef012345
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0x00000000abcdef01
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000003f
+  output: a0=0x0000000000000001
+srl a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000040
+  output: a0=0xabcdef0123456789
+srl t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0x55e6f78091a2b3c4
+srl zero, a0, a1 ::
+  inputs: a0=0xabcdef0123456789, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0xabcdef0123456789
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0xd5e6f78091a2b3c4
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0xeaf37bc048d159e2
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0xfabcdef012345678
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0xffabcdef01234567
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0xffffabcdef012345
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0xffffffffabcdef01
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000003f
+  output: a0=0xffffffffffffffff
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000040
+  output: a0=0xabcdef0123456789
+sra t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0xd5e6f78091a2b3c4
+sra zero, a0, a1 ::
+  inputs: a0=0xabcdef0123456789, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+or a0, a1, a2 ::
+  inputs: a1=0x0000ffff0000ffff, a2=0x00000000ffffffff
+  output: a0=0x0000ffffffffffff
+or t4, t5, t6 ::
+  inputs: t5=0x0000ffff0000ffff, t6=0x00000000ffffffff
+  output: t4=0x0000ffffffffffff
+or zero, a0, a1 ::
+  inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
+  output: zero=0x0000000000000000
+and a0, a1, a2 ::
+  inputs: a1=0x0000ffff0000ffff, a2=0x00000000ffffffff
+  output: a0=0x000000000000ffff
+and t4, t5, t6 ::
+  inputs: t5=0x0000ffff0000ffff, t6=0x00000000ffffffff
+  output: t4=0x000000000000ffff
+and zero, a0, a1 ::
+  inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
+  output: zero=0x0000000000000000
+fence ::
+
+RV64I base instruction set, additions
+lwu a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000ab16b28b
+  no memory changes
+lwu a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000ec1edba
+  no memory changes
+lwu a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000006117bfcc
+  no memory changes
+lwu a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000002d4154e2
+  no memory changes
+lwu a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000ce7e8e1c
+  no memory changes
+lwu a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000022aa69b
+  no memory changes
+lwu a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000e3156eea
+  no memory changes
+lwu a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000097ee3bb0
+  no memory changes
+lwu a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000004ce82b35
+  no memory changes
+lwu a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000185668b2
+  no memory changes
+lwu a0, 2044(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x00000000e3fcbe9a
+  no memory changes
+lwu a0, -4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000052d34dcc
+  no memory changes
+lwu a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0000000098b98bf4
+  no memory changes
+lwu a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0x000000004d86ad56
+  no memory changes
+lwu zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+ld a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x396ebd333e9785d7
+  no memory changes
+ld a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x2d4a090205687129
+  no memory changes
+ld a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xd300b16a85cd7c06
+  no memory changes
+ld a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x0de93ef601cc1aa8
+  no memory changes
+ld a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x933e83556593c5dc
+  no memory changes
+ld a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xc30c82379dd342d0
+  no memory changes
+ld a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x88f1496a86e6d207
+  no memory changes
+ld a0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x2a6f38124a0f2f9c
+  no memory changes
+ld a0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xd04a4b711fa93ec2
+  no memory changes
+ld a0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x4aa8a98a2b57bc7f
+  no memory changes
+ld a0, 2040(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x59bee9ecfe744029
+  no memory changes
+ld a0, -4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xeef6a921c896781e
+  no memory changes
+ld a0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xa56a8d842a3a5f41
+  no memory changes
+ld a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0x9821dab6df0781a2
+  no memory changes
+ld zero, 0(a0) ::
+  inputs: a0=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+sd a0, 0(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 01 ef cd ab .. .. .. ..
+sd a0, 8(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+sd a0, 16(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 32(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 64(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 128(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 256(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+256]  .. 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 512(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+512]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 1024(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+1024]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a0, 2040(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+2032]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+sd a0, -4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-016]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+  [+000]  01 ef cd ab .. .. .. .. .. .. .. .. .. .. .. ..
+sd a0, -2048(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [-2048]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+sd a4, 0(a5) ::
+  inputs: a4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+addiw a0, a1, 1 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001001
+addiw a0, a1, 2 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001002
+addiw a0, a1, 4 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001004
+addiw a0, a1, 8 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001008
+addiw a0, a1, 16 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001010
+addiw a0, a1, 32 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001020
+addiw a0, a1, 64 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001040
+addiw a0, a1, 128 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001080
+addiw a0, a1, 256 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001100
+addiw a0, a1, 1024 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000001400
+addiw a0, a1, 2047 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x00000000000017ff
+addiw a0, a1, -1 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000000fff
+addiw a0, a1, -2048 ::
+  inputs: a1=0x0000000000001000
+  output: a0=0x0000000000000800
+addiw a0, a1, 1 ::
+  inputs: a1=0x000000007fffffff
+  output: a0=0xffffffff80000000
+addiw a0, a1, 1 ::
+  inputs: a1=0x00000000fffffffe
+  output: a0=0xffffffffffffffff
+addiw a0, a1, 1 ::
+  inputs: a1=0x00000000ffffffff
+  output: a0=0x0000000000000000
+addiw t5, t6, 1 ::
+  inputs: t6=0x0000000000001000
+  output: t5=0x0000000000001001
+addiw zero, a0, 1 ::
+  inputs: a0=0x0000000000001000
+  output: zero=0x0000000000000000
+slliw a0, a1, 0 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000023456789
+slliw a0, a1, 1 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x00000000468acf12
+slliw a0, a1, 2 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xffffffff8d159e24
+slliw a0, a1, 4 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000034567890
+slliw a0, a1, 8 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000045678900
+slliw a0, a1, 16 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000067890000
+slliw a0, a1, 31 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0xffffffff80000000
+slliw t5, t6, 1 ::
+  inputs: t6=0xabcdef0123456789
+  output: t5=0x00000000468acf12
+slliw zero, a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: zero=0x0000000000000000
+srliw a0, a1, 0 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000023456789
+srliw a0, a1, 1 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000011a2b3c4
+srliw a0, a1, 2 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000008d159e2
+srliw a0, a1, 4 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000002345678
+srliw a0, a1, 8 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000234567
+srliw a0, a1, 16 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000002345
+srliw a0, a1, 31 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000000000
+srliw t5, t6, 1 ::
+  inputs: t6=0xabcdef0123456789
+  output: t5=0x0000000011a2b3c4
+srliw zero, a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: zero=0x0000000000000000
+sraiw a0, a1, 0 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000023456789
+sraiw a0, a1, 1 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000011a2b3c4
+sraiw a0, a1, 2 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000008d159e2
+sraiw a0, a1, 4 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000002345678
+sraiw a0, a1, 8 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000234567
+sraiw a0, a1, 16 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000002345
+sraiw a0, a1, 31 ::
+  inputs: a1=0xabcdef0123456789
+  output: a0=0x0000000000000000
+srai t5, t6, 1 ::
+  inputs: t6=0xabcdef0123456789
+  output: t5=0xd5e6f78091a2b3c4
+srai zero, a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: zero=0x0000000000000000
+addw a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000002000
+  output: a0=0x0000000000003000
+addw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000001
+  output: a0=0xffffffff80000000
+addw a0, a1, a2 ::
+  inputs: a1=0x00000000fffffffe, a2=0x0000000000000001
+  output: a0=0xffffffffffffffff
+addw a0, a1, a2 ::
+  inputs: a1=0x00000000ffffffff, a2=0x0000000000000001
+  output: a0=0x0000000000000000
+addw a0, a1, a2 ::
+  inputs: a1=0xfffffffffffffffe, a2=0x0000000000000001
+  output: a0=0xffffffffffffffff
+addw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000001
+  output: a0=0x0000000000000000
+addw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000003000
+addw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+subw a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000000fff
+  output: a0=0x0000000000000001
+subw a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000001000
+  output: a0=0x0000000000000000
+subw a0, a1, a2 ::
+  inputs: a1=0x0000000000001000, a2=0x0000000000001001
+  output: a0=0xffffffffffffffff
+subw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+subw a0, a1, a2 ::
+  inputs: a1=0x0000000100000000, a2=0x0000000000000001
+  output: a0=0xffffffffffffffff
+subw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000000fff
+  output: t4=0x0000000000000001
+subw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000000fff
+  output: zero=0x0000000000000000
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0x0000000023456789
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0x00000000468acf12
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0xffffffff8d159e24
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0x0000000034567890
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0x0000000045678900
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0x0000000067890000
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000001f
+  output: a0=0xffffffff80000000
+sllw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0x0000000023456789
+sllw t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0x00000000468acf12
+sllw zero, a0, a1 ::
+  inputs: a0=0xabcdef0123456789, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0x0000000023456789
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0x0000000011a2b3c4
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0x0000000008d159e2
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0x0000000002345678
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0x0000000000234567
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0x0000000000002345
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000001f
+  output: a0=0x0000000000000000
+srlw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0x0000000023456789
+srlw t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0x0000000011a2b3c4
+srlw zero, a0, a1 ::
+  inputs: a0=0xabcdef0123456789, a1=0x0000000000000001
+  output: zero=0x0000000000000000
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0x0000000023456789
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0x0000000011a2b3c4
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0x0000000008d159e2
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0x0000000002345678
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0x0000000000234567
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0x0000000000002345
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000001f
+  output: a0=0x0000000000000000
+sraw a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0x0000000023456789
+sraw t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0x0000000011a2b3c4
+sraw zero, a0, a1 ::
+  inputs: a0=0xabcdef0123456789, a1=0x0000000000000001
+  output: zero=0x0000000000000000

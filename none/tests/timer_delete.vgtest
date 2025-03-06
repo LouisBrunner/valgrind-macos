@@ -1,0 +1,4 @@
+prereq: test -e timer_delete
+prog: timer_delete
+vgopts: -q
+

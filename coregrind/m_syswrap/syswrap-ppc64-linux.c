@@ -363,7 +363,7 @@ asm(
 
 void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
-}  
+}
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for ppc64/Linux-specific syscalls
@@ -399,7 +399,7 @@ PRE(sys_mmap)
                  unsigned long, prot,  unsigned long, flags,
                  unsigned long, fd,    unsigned long, offset);
 
-   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
+   r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5,
                                        (Off64T)ARG6 );
    SET_STATUS_from_SysRes(r);
 }
@@ -407,7 +407,7 @@ PRE(sys_mmap)
 //zz PRE(sys_mmap2)
 //zz {
 //zz    SysRes r;
-//zz 
+//zz
 //zz    // Exactly like old_mmap() except:
 //zz    //  - the file offset is specified in 4K units rather than bytes,
 //zz    //    so that it can be used for files bigger than 2^32 bytes.
@@ -417,12 +417,12 @@ PRE(sys_mmap)
 //zz                  unsigned long, start, unsigned long, length,
 //zz                  unsigned long, prot,  unsigned long, flags,
 //zz                  unsigned long, fd,    unsigned long, offset);
-//zz 
-//zz    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5, 
+//zz
+//zz    r = ML_(generic_PRE_sys_mmap)( tid, ARG1, ARG2, ARG3, ARG4, ARG5,
 //zz                                        4096 * (Off64T)ARG6 );
 //zz    SET_STATUS_from_SysRes(r);
 //zz }
-//zz 
+//zz
 //zz // XXX: lstat64/fstat64/stat64 are generic, but not necessarily
 //zz // applicable to every architecture -- I think only to 32-bit archs.
 //zz // We're going to need something like linux/core_os32.h for such
@@ -434,12 +434,12 @@ PRE(sys_mmap)
 //zz    PRE_MEM_RASCIIZ( "stat64(file_name)", ARG1 );
 //zz    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
 //zz }
-//zz 
+//zz
 //zz POST(sys_stat64)
 //zz {
 //zz    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 //zz }
-//zz 
+//zz
 //zz PRE(sys_lstat64)
 //zz {
 //zz    PRINT("sys_lstat64 ( %p(%s), %p )",ARG1,ARG1,ARG2);
@@ -447,7 +447,7 @@ PRE(sys_mmap)
 //zz    PRE_MEM_RASCIIZ( "lstat64(file_name)", ARG1 );
 //zz    PRE_MEM_WRITE( "lstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 //zz }
-//zz 
+//zz
 //zz POST(sys_lstat64)
 //zz {
 //zz    vg_assert(SUCCESS);
@@ -455,14 +455,14 @@ PRE(sys_mmap)
 //zz       POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
 //zz    }
 //zz }
-//zz 
+//zz
 //zz PRE(sys_fstat64)
 //zz {
 //zz   PRINT("sys_fstat64 ( %d, %p )",ARG1,ARG2);
 //zz   PRE_REG_READ2(long, "fstat64", unsigned long, fd, struct stat64 *, buf);
 //zz   PRE_MEM_WRITE( "fstat64(buf)", ARG2, sizeof(struct vki_stat64) );
 //zz }
-//zz 
+//zz
 //zz POST(sys_fstat64)
 //zz {
 //zz   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
@@ -588,7 +588,7 @@ POST(sys_ptrace)
    ------------------------------------------------------------------ */
 
 /* Add an ppc64-linux specific wrapper to a syscall table. */
-#define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(ppc64_linux, sysno, name) 
+#define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(ppc64_linux, sysno, name)
 #define PLAXY(sysno, name)    WRAPPER_ENTRY_XY(ppc64_linux, sysno, name)
 
 // This table maps from __NR_xxx syscall numbers (from
@@ -702,7 +702,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_symlink,           sys_symlink),            //  83
 // _____(__NR_oldlstat,          sys_oldlstat),           //  84
 
-   GENX_(__NR_readlink,          sys_readlink),           //  85
+   GENXY(__NR_readlink,          sys_readlink),           //  85
 // _____(__NR_uselib,            sys_uselib),             //  86
 // _____(__NR_swapon,            sys_swapon),             //  87
 // _____(__NR_reboot,            sys_reboot),             //  88
@@ -713,7 +713,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_truncate,          sys_truncate),           //  92
    GENX_(__NR_ftruncate,         sys_ftruncate),          //  93
    GENX_(__NR_fchmod,            sys_fchmod),             //  94
-   
+
    GENX_(__NR_fchown,            sys_fchown),             //  95
    GENX_(__NR_getpriority,       sys_getpriority),        //  96
    GENX_(__NR_setpriority,       sys_setpriority),        //  97
@@ -945,7 +945,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_renameat,          sys_renameat),           // 293
    LINX_(__NR_linkat,            sys_linkat),             // 294
    LINX_(__NR_symlinkat,         sys_symlinkat),          // 295
-   LINX_(__NR_readlinkat,        sys_readlinkat),         // 296
+   LINXY(__NR_readlinkat,        sys_readlinkat),         // 296
    LINX_(__NR_fchmodat,          sys_fchmodat),           // 297
    LINX_(__NR_faccessat,         sys_faccessat),          // 298
    LINX_(__NR_set_robust_list,   sys_set_robust_list),    // 299
@@ -1025,7 +1025,12 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
-
+   LINXY(__NR_open_tree,         sys_open_tree),         // 428
+   LINX_(__NR_move_mount,        sys_move_mount),        // 429
+   LINXY(__NR_fsopen,            sys_fsopen),            // 430
+   LINX_(__NR_fsconfig,          sys_fsconfig),          // 431
+   LINXY(__NR_fsmount,           sys_fsmount),           // 432
+   LINXY(__NR_fspick,            sys_fspick),            // 433
    LINXY(__NR_pidfd_open,        sys_pidfd_open),        // 434
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
    LINXY(__NR_close_range,       sys_close_range),       // 436
@@ -1034,6 +1039,10 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat2,        sys_faccessat2),       // 439
 
    LINXY (__NR_epoll_pwait2,     sys_epoll_pwait2),      // 441
+
+   LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
+   LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
+   LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
    LINX_ (__NR_fchmodat2,        sys_fchmodat2),         // 452
 };

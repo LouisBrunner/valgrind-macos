@@ -247,7 +247,10 @@ int main(void)
       int nbytes_p;
       // (U1*)(UWord)constULL funny casting to keep gcc quiet on
       // 32-bit platforms
-      U1* huge_addr = (U1*)(UWord)0x6600000000ULL;  // 408GB
+      // https://www.kernel.org/doc/html/next/riscv/vm-layout.html
+      // Says RISC-V Linux Kernel SV39 user-space virtual memory
+      // ends at 256GB. So try at 240GB.
+      U1* huge_addr = (U1*)(UWord)0x3c00000000ULL;  // 240GB
       // Note, kernel 2.6.? on Athlon64 refuses fixed mmap requests
       // at above 512GB.
 

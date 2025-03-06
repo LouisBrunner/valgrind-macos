@@ -1,0 +1,45 @@
+
+Status
+~~~~~~
+
+The RISC-V port targets the 64-bit RISC-V architecture and the Linux operating
+system. The port has been tested to work on real hardware and under QEMU.
+
+The following ISA base and extensions are currently supported:
+
+| Name         | Description                       | #Instrs | Notes    |
+| ------------ | --------------------------------- | ------- | -------- |
+| RV64I        | Base instruction set              |   52/52 |          |
+| RV64M        | Integer multiplication & division |   12/13 | (1)      |
+| RV64A        | Atomic                            |   22/22 | (2)      |
+| RV64F        | Single-precision floating-point   |   30/30 | (3)      |
+| RV64D        | Double-precision floating-point   |   32/32 |          |
+| RV64Zicsr    | Control & status register         |     2/6 | (4), (5) |
+| RV64Zifencei | Instruction-fetch fence           |     0/1 | (6)      |
+| RV64C        | Compressed                        |   37/37 |          |
+
+Notes:
+(1) MULHSU is not recognized.
+(2) LR and SC use the VEX "fallback" method which suffers from the ABA problem.
+(3) Operations do not check if the input operands are correctly NaN-boxed.
+(4) CSRRC, CSRRWI, CSRRSI and CSRRCI are not recognized.
+(5) Only registers fflags, frm and fcsr are accepted.
+(6) FENCE.I is not recognized.
+
+
+Implementation tidying-up/TODO notes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Implement a proper "non-fallback" method for LR and SC instructions.
+* Add a check for correct NaN-boxing of 32-bit floating-point operands.
+* Optimize instruction selection, in particular make more use of <instr>i
+  variants.
+* Optimize handling of floating-point exceptions. Avoid helpers and calculate
+  exception flags using the same instruction which produced an actual result.
+* Review register usage by the codegen.
+* Avoid re-use of Intel-constants CFIC_IA_SPREL and CFIC_IA_BPREL. Generalize
+  them for all architectures or introduce same CFIC_RISCV64_ variants.
+* Get rid of the typedef of vki_modify_ldt_t in include/vki/vki-riscv64-linux.h.
+* Review if setup_client_stack() should expose AT_SYSINFO_EHDR to clients.
+* Make sure that the final exit sequence in run_a_thread_NORETURN() is not racy
+  in regards to accessing the thread state.

@@ -5317,7 +5317,7 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 
          gnat_dmmls_INIT();
          /* Similar loop as for master completed hook below, but stops at
-            the first matching occurence, only comparing master and
+            the first matching occurrence, only comparing master and
             dependent. */
          for (n = VG_(sizeXA) (gnat_dmmls) - 1; n >= 0; n--) {
             GNAT_dmml *dmml = (GNAT_dmml*) VG_(indexXA)(gnat_dmmls, n);

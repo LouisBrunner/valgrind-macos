@@ -28,7 +28,7 @@ Syscall param pdfork(flags) contains uninitialised byte(s)
    ...
    by 0x........: main (pdfork_pdkill.c:96)
 
-FILE DESCRIPTORS: 3 open (3 std) at exit.
+FILE DESCRIPTORS: 3 open (3 inherited) at exit.
 Open file descriptor ...
    <inherited from parent>
 

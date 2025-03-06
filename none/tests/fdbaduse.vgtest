@@ -1,0 +1,4 @@
+prog: fdbaduse
+prereq: test -x fdbaduse
+vgopts: -q --track-fds=yes
+stderr_filter: filter_fdleak

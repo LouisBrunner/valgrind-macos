@@ -59,6 +59,7 @@
 
 #if defined(VGO_freebsd)
 #include <dlfcn.h>
+#include <osreldate.h>
 #endif
 
 #if defined(VGO_solaris)
@@ -285,11 +286,11 @@ static void DRD_(init)(void)
        * is neither. So we force loading of libthr.so, which
        * avoids this junk tid value.
        */
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (__FreeBSD_version >= 1500013)
       void* libsys = dlopen("/lib/libsys.so.7", RTLD_NOW|RTLD_GLOBAL|RTLD_NODELETE);
 #endif
       dlclose(dlopen("/lib/libthr.so.3", RTLD_NOW|RTLD_GLOBAL|RTLD_NODELETE));
-#if (FREEBSD_VERS >= FREEBSD_15)
+#if (__FreeBSD_version >= 1500013)
       if (libsys) {
          dlclose(libsys);
       }

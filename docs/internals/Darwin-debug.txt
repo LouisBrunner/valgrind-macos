@@ -58,5 +58,5 @@ gets set for core and tool preloads (the equivalent of LD_PRELOAD).
 DYLD_SHARED_REGION gets set to "avoid" (but note that for macOS 11
 Big Sur and later "avoid" is no longer an option).
 
-The Darwin calstack is a bit simpler to synthesise than the ones on
+The Darwin callstack is a bit simpler to synthesise than the ones on
 ELF platforms. There is no auxiliary vector (auxv) to construct.

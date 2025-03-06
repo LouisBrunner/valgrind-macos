@@ -1765,3 +1765,73 @@ lpswey,"load PSW extended",N/A,"privileged instruction"
 lbear,"load bear",N/A,"privileged instruction"
 stbear,"store bear",N/A,"privileged instruction"
 qpaci,"query processor activity counter information",N/A,"privileged instruction"
+bdepg,"bit deposit","not implemented",arch15
+bextg,"bit extract","not implemented",arch15
+cal,"compare and load 32","not implemented",arch15
+calg,"compare and load 64","not implemented",arch15
+calgf,"compare and load 64<32","not implemented",arch15
+clzg,"count leading zeros","not implemented",arch15
+ctzg,"count trailing zeros","not implemented",arch15
+llxab,"load logical indexed address (shift left 0)","not implemented",arch15
+llxah,"load logical indexed address (shift left 1)","not implemented",arch15
+llxaf,"load logical indexed address (shift left 2)","not implemented",arch15
+llxag,"load logical indexed address (shift left 3)","not implemented",arch15
+llxaq,"load logical indexed address (shift left 4)","not implemented",arch15
+lxab,"load indexed address (shift left 0)","not implemented",arch15
+lxah,"load indexed address (shift left 1)","not implemented",arch15
+lxaf,"load indexed address (shift left 2)","not implemented",arch15
+lxag,"load indexed address (shift left 3)","not implemented",arch15
+lxaq,"load indexed address (shift left 4)","not implemented",arch15
+pfcr,"perform functions with concurrent results","not implemented",arch15
+vblend,"vector blend","not implemented",arch15
+vcvbq,"vector convert to binary 128 bit","not implemented",arch15
+vcvdq,"vector convert to decimal 128 bit","not implemented",arch15
+vd,"vector divide","not implemented",arch15
+vdl,"vector divide logical","not implemented",arch15
+veval,"vector evaluate","not implemented",arch15
+vgem,"vector generate element masks","not implemented",arch15
+vr,"vector remainder","not implemented",arch15
+vrl,"vector remainder logical","not implemented",arch15
+vtz,"vector test zoned","not implemented",arch15
+vavgq,"vector average quadword","not implemented",arch15
+vavglq,"vector average logical quadword","not implemented",arch15
+vecq,"vector element compare quadword","not implemented",arch15
+veclq,"vector element compare logical quadword","not implemented",arch15
+vceqq,"vector compare equal quadword","not implemented",arch15
+vceqqs,"vector compare equal quadword","not implemented",arch15
+vchq,"vector compare high quadword","not implemented",arch15
+vchqs,"vector compare high quadword","not implemented",arch15
+vchlq,"vector compare high logical quadword","not implemented",arch15
+vchlqs,"vector compare high logical quadword","not implemented",arch15
+vclzq,"vector count leading zeros quadword","not implemented",arch15
+vctzq,"vector count trailing zeros quadword","not implemented",arch15
+vlcq,"vector load complement quadword","not implemented",arch15
+vlpq,"vector load positive quadword","not implemented",arch15
+vmxq,"vector maximum quadword","not implemented",arch15
+vmxlq,"vector maximum logical quadword","not implemented",arch15
+vmnq,"vector minimum quadword","not implemented",arch15
+vmnlq,"vector minimum logical quadword","not implemented",arch15
+vmalg,"vector multiply and add low doubleword","not implemented",arch15
+vmalq,"vector multiply and add low quadword","not implemented",arch15
+vmahg,"vector multiply and add high doubleword","not implemented",arch15
+vmahq,"vector multiply and add high quadword","not implemented",arch15
+vmalhg,"vector multiply and add logical high doubleword","not implemented",arch15
+vmalhq,"vector multiply and add logical high quadword","not implemented",arch15
+vmaeg,"vector multiply and add even doubleword","not implemented",arch15
+vmaleg,"vector multiply and add logical even doubleword","not implemented",arch15
+vmaog,"vector multiply and add odd doubleword","not implemented",arch15
+vmalog,"vector multiply and add logical odd doubleword","not implemented",arch15
+vmhg,"vector multiply high doubleword","not implemented",arch15
+vmhq,"vector multiply high quadword","not implemented",arch15
+vmlhg,"vector multiply logical high doubleword","not implemented",arch15
+vmlhq,"vector multiply logical high quadword","not implemented",arch15
+vmlg,"vector multiply low doubleword","not implemented",arch15
+vmlq,"vector multiply low quadword","not implemented",arch15
+vmeg,"vector multiply even doubleword","not implemented",arch15
+vmleg,"vector multiply logical even doubleword","not implemented",arch15
+vmog,"vector multiply odd doubleword","not implemented",arch15
+vmlog,"vector multiply logical odd doubleword","not implemented",arch15
+vuphg,"vector unpack high doubleword","not implemented",arch15
+vuplhg,"vector unpack logical high doubleword","not implemented",arch15
+vuplg,"vector unpack low doubleword","not implemented",arch15
+vupllg,"vector unpack logical low doubleword","not implemented",arch15

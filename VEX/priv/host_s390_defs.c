@@ -1707,18 +1707,6 @@ emit_RXY(UChar *p, ULong op, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2
 
 
 static UChar *
-emit_S(UChar *p, UInt op, UChar b2, UShort d2)
-{
-   ULong the_insn = op;
-
-   the_insn |= ((ULong)b2) << 12;
-   the_insn |= ((ULong)d2) << 0;
-
-   return emit_4bytes(p, the_insn);
-}
-
-
-static UChar *
 emit_SI(UChar *p, UInt op, UChar i2, UChar b1, UShort d1)
 {
    ULong the_insn = op;
@@ -3792,16 +3780,6 @@ s390_emit_LDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 
 
 static UChar *
-s390_emit_LFPC(UChar *p, UChar b2, UShort d2)
-{
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC2(MNM, UDXB), "lfpc", d2, 0, b2);
-
-   return emit_S(p, 0xb29d0000, b2, d2);
-}
-
-
-static UChar *
 s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 {
    vassert(s390_host_has_fgx);
@@ -3892,16 +3870,6 @@ s390_emit_STDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
       s390_disasm(ENC3(MNM, FPR, SDXB), "stdy", r1, dh2, dl2, x2, b2);
 
    return emit_RXY(p, 0xed0000000067ULL, r1, x2, b2, dl2, dh2);
-}
-
-
-static UChar *
-s390_emit_STFPC(UChar *p, UChar b2, UShort d2)
-{
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      s390_disasm(ENC2(MNM, UDXB), "stfpc", d2, 0, b2);
-
-   return emit_S(p, 0xb29c0000, b2, d2);
 }
 
 
@@ -10354,14 +10322,7 @@ s390_insn_helper_call_emit(UChar *buf, const s390_insn *insn)
       Also, need to arrange for the return address be put into the
       link-register */
    buf = s390_emit_load_64imm(buf, 1, target);
-
-   /* Stash away the client's FPC register because the helper might change it. */
-   buf = s390_emit_STFPC(buf, S390_REGNO_STACK_POINTER, S390_OFFSET_SAVED_FPC_C);
-
-   buf = s390_emit_BASR(buf, S390_REGNO_LINK_REGISTER, 1);      // call helper
-
-   buf = s390_emit_LFPC(buf, S390_REGNO_STACK_POINTER,          // restore FPC
-                        S390_OFFSET_SAVED_FPC_C);
+   buf = s390_emit_BASR(buf, S390_REGNO_LINK_REGISTER, 1);
 
    // preElse:
    UChar* pPreElse = buf;

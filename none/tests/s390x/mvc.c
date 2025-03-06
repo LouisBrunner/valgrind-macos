@@ -34,7 +34,7 @@ int main(void)
    printf("before: target = |%s|\n", target);
    asm volatile( "mvi 0(%0),'x'\n\t"        // target[1] = 'x'
                  "mvc 1(2,%0),0(%0)\n\t"    // target[2:3] = target[1]
-                 :: "a" (target+1));
+                 :: "a" (target+1) : "memory");
    printf("after:  target = |%s|\n", target);
 
    /* Destructive overlap #3 */
@@ -42,7 +42,7 @@ int main(void)
    memset(full, '-', sizeof full);
    full[0] = 'x';
    asm volatile( "mvc 1(256,%0),0(%0)\n\t"     // full[1:256] = full[0]
-                 :: "a" (full));
+                 :: "a" (full) : "memory");
    /* Verify: the first 256+1 characters should be 'x' followed by '-' */
    for (i = 0; i <= 256; ++i)
       assert(full[i] == 'x');

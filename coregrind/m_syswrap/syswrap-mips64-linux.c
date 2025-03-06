@@ -119,15 +119,15 @@ asm (
       void* arg           in a3 = 7
       pid_t* parent_tid   in a4 = 8
       void* tls           in a5 = 9
-      pid_t* child_tid    in a6 = 10  
+      pid_t* child_tid    in a6 = 10
 
    System call requires:
 
-      int    $__NR_clone  in v0 
-      int    flags        in a0 = 4 
-      void*  child_stack  in a1 = 5 
+      int    $__NR_clone  in v0
+      int    flags        in a0 = 4
+      void*  child_stack  in a1 = 5
       pid_t* parent_tid   in a2 = 6
-      void*  tls_ptr      in a3 = 7 
+      void*  tls_ptr      in a3 = 7
       pid_t* child_tid    in a4 = 8 */
 
 #define __NR_CLONE        __NR_clone
@@ -135,7 +135,7 @@ asm (
 
 // See priv_syswrap-linux.h for arg profile.
 asm(
-".text\n" 
+".text\n"
 ".set noreorder\n"
 ".set nomacro\n"
 ".globl do_syscall_clone_mips64_linux\n"
@@ -293,7 +293,7 @@ PRE(sys_reboot)
    PRE_REG_READ4(int, "reboot",
                  int, magic1, int, magic2, unsigned int, cmd,
                  void *, arg);
-   
+
    *flags |= SfMayBlock;
 }
 
@@ -603,7 +603,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_link, sys_link),
    GENX_ (__NR_unlink, sys_unlink),
    GENX_ (__NR_symlink, sys_symlink),
-   GENX_ (__NR_readlink, sys_readlink),
+   GENXY (__NR_readlink, sys_readlink),
    GENX_ (__NR_chmod, sys_chmod),
    GENX_ (__NR_fchmod, sys_fchmod),
    GENX_ (__NR_chown, sys_chown),
@@ -771,7 +771,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_renameat, sys_renameat),
    LINX_ (__NR_linkat, sys_linkat),
    LINX_ (__NR_symlinkat, sys_symlinkat),
-   LINX_ (__NR_readlinkat, sys_readlinkat),
+   LINXY (__NR_readlinkat, sys_readlinkat),
    LINX_ (__NR_fchmodat, sys_fchmodat),
    LINX_ (__NR_faccessat, sys_faccessat),
    LINXY (__NR_pselect6, sys_pselect6),
@@ -818,13 +818,22 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_io_uring_setup, sys_io_uring_setup),
    LINXY (__NR_io_uring_enter, sys_io_uring_enter),
    LINXY (__NR_io_uring_register, sys_io_uring_register),
+   LINXY (__NR_open_tree, sys_open_tree),
+   LINX_ (__NR_move_mount, sys_move_mount),
+   LINXY (__NR_fsopen, sys_fsopen),
+   LINX_ (__NR_fsconfig, sys_fsconfig),
+   LINXY (__NR_fsmount, sys_fsmount),
+   LINXY (__NR_fspick, sys_fspick),
    LINXY (__NR_pidfd_open, sys_pidfd_open),
    GENX_ (__NR_clone3, sys_ni_syscall),
    LINXY (__NR_close_range, sys_close_range),
    LINXY (__NR_openat2, sys_openat2),
    LINXY (__NR_pidfd_getfd, sys_pidfd_getfd),
    LINX_ (__NR_faccessat2, sys_faccessat2),
-   LINXY(__NR_epoll_pwait2, sys_epoll_pwait2),
+   LINXY (__NR_epoll_pwait2, sys_epoll_pwait2),
+   LINXY (__NR_landlock_create_ruleset, sys_landlock_create_ruleset),
+   LINX_ (__NR_landlock_add_rule, sys_landlock_add_rule),
+   LINX_ (__NR_landlock_restrict_self, sys_landlock_restrict_self),
    LINX_ (__NR_fchmodat2, sys_fchmodat2),
 };
 
@@ -846,6 +855,6 @@ SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )
 
 #endif  /* defined(VGP_mips64_linux) */
 
-/*--------------------------------------------------------------------*/ 
-/*--- end                                   syswrap-mips64-linux.c ---*/ 
-/*--------------------------------------------------------------------*/ 
+/*--------------------------------------------------------------------*/
+/*--- end                                   syswrap-mips64-linux.c ---*/
+/*--------------------------------------------------------------------*/

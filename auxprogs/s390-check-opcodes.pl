@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use Getopt::Long;
 
 #------------------------------------------------------------------
 # This script assists in updating s390-opcodes.csv
@@ -12,11 +13,16 @@ use warnings;
 # - identify opcodes that are implemented in guest_s390_toIR.c
 #   but have an out-of-date status in the CSV file.
 #------------------------------------------------------------------
-my $num_arg = $#ARGV + 1;
-
 my $csv_file;
 my $opc_file;
 my $toir_file;
+my $check_formats = 0;
+my $usage = "usage: s390-check-opcodes [--check-formats] s390-opcodes.csv "
+          . "s390-opc.txt guest_s390_toIR.c\n";
+
+GetOptions("check-formats" => \$check_formats) || die $usage;
+
+my $num_arg = $#ARGV + 1;
 
 if ($num_arg == 0) {
     my $cwd = `pwd`;
@@ -29,33 +35,35 @@ if ($num_arg == 0) {
     $opc_file  = $ARGV[1];
     $toir_file = $ARGV[2];
 } else {
-    die "usage: s390-check-opcodes s390-opcodes.csv s390-opc.txt guest_s390_toIR.c\n";
+    die $usage;
 }
 
 my %opc_desc = ();
+my %opc_format = ();
 my %csv_desc = ();
 my %csv_implemented = ();
 my %toir_implemented = ();
 my %toir_decoded = ();
+my %toir_format = ();
 my %known_arch = map {($_ => 1)}
-    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13 arch14);
+    qw(g5 z900 z990 z9-109 z9-ec z10 z196 zEC12 z13 arch12 arch13 arch14 arch15);
 
 # Patterns for identifying certain extended mnemonics that shall be
 # skipped in "s390-opc.txt" and "s390-opcodes.csv".
 
-my @extended_mnemonics = (
-    "bi",			# extended mnemonic for bic
+my @extended_mnemonics = (      # Base mnemonic(s)
+    "bi",                       # bic
     'brul?',
-    'jc',			# brc
+    'jc',                       # brc
     'jasl?',
     'jct[gh]?',
     'jg?nop',
     'jxleg?',
     'jxhg?',
     'l[de]rv',
-    'lfi',			# iilf
-    'llg[fh]i',			# llilf, llill
-    'notg?r',			# nork, nogrk
+    'lfi',                      # iilf
+    'llg[fh]i',                 # llilf, llill
+    'notg?r',                   # nork, nogrk
     'risbgn?z',
     'risb[hl]gz',
     'r[onx]sbgt',
@@ -64,17 +72,19 @@ my @extended_mnemonics = (
     "vacc[bhfgq]",
     "vacccq",
     "vacq",
-    "vavgl*[bhfg]",
+    "vavgl?[bhfgq]",            # vavg, vavgl
+    "vblend[bhfgq]",            # vblend
     "vcdl*gb",
     'vcfp[sl]',
     '[vw]cel?fb',
     'vc[sl]fp',
     '[vw]cl?feb',
-    "vceq[bhfg]s*",
-    "vchl*[bhfg]s*",
+    "vceq[bhfgq]s?",            # vceq
+    "vchl?[bhfgq]s?",           # vch, vchl
     "vcl*gdb",
-    "vc[lt]z[bhfg]",
-    "vecl*[bhfg]",
+    "vc[lt]z[bhfgq]",           # vclz, vctz
+    "vdl?[fgq]",                # vd, vdl
+    "vecl?[bhfgq]",             # vec, vecl
     "verim[bhfg]",
     "verllv*[bhfg]",
     "veslv*[bhfg]",
@@ -103,12 +113,13 @@ my @extended_mnemonics = (
     "vfpso[sd]b",
     "vfsq*[sd]b",
     "vftci[sd]b",
+    "vgem[bfghq]",              # vgem
     "vgfma*[bhfg]",
     "vgm[bhfg]",
     "vistr[bhfg]s*",
     'vlbr[hfgq]',
     'vlbrrep[hfg]',
-    "vlc[bhfg]",
+    "vlc[bhfgq]",               # vlc
     "[vw]ldeb",
     "[vw]ledb",
     'vler[hfg]',
@@ -116,15 +127,15 @@ my @extended_mnemonics = (
     'vllebrz[hfge]',
     "vllez[bhfg]",
     "vllezlf",
-    "vlp[bhfg]",
+    "vlp[bhfgq]",               # vlp
     "vlrep[bhfg]",
     "vlvg[bhfg]",
-    "vmal?[eoh][bhfg]",
-    "vmal(b|hw|f)",
-    "vml(b|hw|f)",
-    "vml?(o|e)[bhf]",
-    "vml?h[bhf]",
-    "vm[nx]l*[bhfg]",
+    "vmal?[eoh][bhfgq]",        # vmae, vmale, vmao, vmalo, vmah, vmalh
+    "vmal(b|hw|f|g|q)",         # vmal
+    "vml(b|hw|f|g|q)",          # vml
+    "vml?(o|e)[bhfg]",          # vmo, vme
+    "vml?h[bhfgq]",             # vmh, vmlh
+    "vm[nx]l*[bhfgq]",          # vmn, vmnl, vmx, vmxl
     "vmr[lh][bhfg]",
     "vmslg",
     "vnot",
@@ -132,22 +143,22 @@ my @extended_mnemonics = (
     "vpkl*[bhfg]",
     "vpkl*s*[bhfg]s*",
     "vpopct[bhfg]",
+    "vrl?[fgq]",                # vr, vrl
     "vrepi*[bhgf]",
     "vs[bhfgq]",
     "vsbcbiq",
     "vsbiq",
     "vscbi[bhfgq]",
-    "vsch[sdx]p",		# vschp (short/long/extended)
+    "vsch[sdx]p",               # vschp
     "vseg[bfh]",
     'vstbr[hfgq]',
     'vster[hfg]',
     "vstrcz*[bhf]s*",
     'vstrsz?[bhf]',
     "vsum(b|gh|gf|h|qf|qg)",
-    "vuplh[bhf]",
-    "vuph[bhf]",
-    "vupl(b|hw|f)",
-    "vupll[bhf]",
+    "vupl?h[bhfg]",             # vuph, vuplh
+    "vupl(b|hw|f|g)",           # vupl
+    "vupll[bhfg]",              # vupll
     "wcdl*gb",
     "wcl*gdb",
     "wfa[sdx]b",
@@ -164,7 +175,7 @@ my @extended_mnemonics = (
     "wftci[sdx]b",
     "wfsq*[sdx]b",
     "vl(ed|de)",
-    "prno"			# alternate mnemonic for ppno
+    "prno"                      # ppno
     );
 
 # Compile excluded mnemonics into one regular expression to optimize
@@ -261,6 +272,9 @@ while (my $line = <OPC>) {
 	$opc_desc{$mnemonic} = $description;
     }
 
+    if (! exists $opc_format{$mnemonic}) {
+        $opc_format{$mnemonic} = $format;
+    }
     if ($description =~ /,/) {
 	print "warning: description of $mnemonic contains comma\n";
     }
@@ -342,6 +356,9 @@ while (my $line = <TOIR>) {
 	my $mnemonic = lc $1;
 	$toir_implemented{$mnemonic} = 1;
     }
+    if ($line =~ /^..*s390_format_([A-Z_]+)[ ]*\([ ]*s390_irgen_([A-Z]+)/) {
+        $toir_format{lc $2} = $1;
+    }
 }
 close(TOIR);
 
@@ -396,6 +413,23 @@ foreach my $opc (keys %csv_implemented) {
 foreach my $opc (keys %opc_desc) {
     if (! $toir_implemented{$opc} && ! $toir_decoded{$opc}) {
 	print "*** opcode $opc is not handled by the decoder\n";
+    }
+}
+
+#----------------------------------------------------
+# 5) Cross-check opcode formats
+#----------------------------------------------------
+if ($check_formats) {
+    foreach my $opc (keys %toir_format) {
+        if (! exists $opc_format{$opc}) {
+            print "*** format $toir_format{$opc} does not exist in s390-opc.txt\n";
+        } else {
+            if ($opc_format{$opc} ne $toir_format{$opc}) {
+                print "*** format for opcode $opc differs:\n";
+                print "    binutils:    $opc_format{$opc}\n";
+                print "    toIR:        $toir_format{$opc}\n";
+            }
+        }
     }
 }
 

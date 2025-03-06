@@ -2089,7 +2089,8 @@ typedef
       Irrm_PREPARE_SHORTER      = 5,  // Round to prepare for shorter 
                                       // precision
       Irrm_AWAY_FROM_ZERO       = 6,  // Round to away from 0
-      Irrm_NEAREST_TIE_TOWARD_0 = 7   // Round to nearest, ties towards 0
+      Irrm_NEAREST_TIE_TOWARD_0 = 7,  // Round to nearest, ties towards 0
+      Irrm_INVALID              = 8   // Invalid mode
    }
    IRRoundingMode;
 
@@ -2198,7 +2199,7 @@ struct _IRExpr {
 
          It is important to get the array size/type exactly correct
          since IR optimisation looks closely at such info in order to
-         establish aliasing/non-aliasing between seperate GetI and
+         establish aliasing/non-aliasing between separate GetI and
          PutI events, which is used to establish when they can be
          reordered, etc.  Putting incorrect info in will lead to
          obscure IR optimisation bugs.

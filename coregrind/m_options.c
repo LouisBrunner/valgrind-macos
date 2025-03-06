@@ -203,7 +203,8 @@ UInt   VG_(clo_unw_stack_scan_frames) = 5;
 VgSmc VG_(clo_smc_check) = Vg_SmcAllNonFile;
 #elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
       || defined(VGA_arm) || defined(VGA_arm64) \
-      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
+      || defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips) \
+      || defined(VGA_riscv64)
 VgSmc VG_(clo_smc_check) = Vg_SmcStack;
 #else
 #  error "Unknown arch"

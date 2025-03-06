@@ -183,6 +183,23 @@ extern UWord do_syscall_WRK (
    return out;
 }
 
+#elif defined(VGP_riscv64_linux)
+extern UWord do_syscall_WRK (
+          UWord a1, UWord a2, UWord a3,
+          UWord a4, UWord a5, UWord a6,
+          UWord syscall_no
+       );
+asm(
+".text\n"
+".globl do_syscall_WRK\n"
+"do_syscall_WRK:\n"
+"        mv a7, a6\n"
+"        li a6, 0\n"
+"        ecall\n"
+"        ret\n"
+".previous\n"
+);
+
 #elif defined(VGP_x86_solaris)
 extern ULong
 do_syscall_WRK(UWord a1, UWord a2, UWord a3,
@@ -369,7 +386,7 @@ static void non_simd_mprotect (long tid, void* addr, long len)
                                     &err);
    if (err)
       mprotect_result = -1;
-#elif defined(VGP_arm64_linux)
+#elif defined(VGP_arm64_linux) || defined(VGP_riscv64_linux)
    mprotect_result = do_syscall_WRK((UWord) addr, len, PROT_NONE,
                                     0, 0, 0,
                                     __NR_mprotect);

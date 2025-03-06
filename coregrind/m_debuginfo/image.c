@@ -45,6 +45,7 @@
 #include "minilzo.h"
 #define TINFL_HEADER_FILE_ONLY
 #include "tinfl.c"
+#include "zstd.h"
 
 /* These values (1024 entries of 8192 bytes each) gives a cache
    size of 8MB. */
@@ -54,6 +55,9 @@
 #define CACHE_ENTRY_SIZE      (1 << CACHE_ENTRY_SIZE_BITS)
 
 #define COMPRESSED_SLICE_ARRAY_GROW_SIZE 64
+
+#define ELFCOMPRESS_ZLIB 1
+#define ELFCOMPRESS_ZSTD 2
 
 /* An entry in the cache. */
 typedef
@@ -69,10 +73,11 @@ typedef
 /* Compressed slice */
 typedef
    struct {
-      DiOffT offD;  // offset of decompressed data
-      SizeT  szD;   // size of decompressed data
-      DiOffT offC;  // offset of compressed data
-      SizeT  szC;   // size of compressed data
+      DiOffT offD;   // offset of decompressed data
+      SizeT  szD;    // size of decompressed data
+      DiOffT offC;   // offset of compressed data
+      SizeT  szC;    // size of compressed data
+      UChar  typeC;  // type of compressed data
    }
    CSlc;
 
@@ -759,11 +764,20 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
          vg_assert(is_sane_CEnt("get_slowcase-case-1", img, i));
          vg_assert(img->ces_used == ces_used_at_entry + 1);
       } else {
-         SizeT len = tinfl_decompress_mem_to_mem(
-                        img->ces[i]->data, cslc->szD,
-                        cbuf, cslc->szC,
-                        TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF
-                        | TINFL_FLAG_PARSE_ZLIB_HEADER);
+         SizeT len;
+         if(cslc->typeC == ELFCOMPRESS_ZLIB) {
+            len = tinfl_decompress_mem_to_mem(
+               img->ces[i]->data, cslc->szD,
+               cbuf, cslc->szC,
+               TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF
+               | TINFL_FLAG_PARSE_ZLIB_HEADER);
+         }
+         else {
+            len = ZSTD_decompress(
+               img->ces[i]->data, cslc->szD,
+               cbuf, cslc->szC);
+         }
+
          vg_assert(len == cslc->szD); // sanity check on data, FIXME
          vg_assert(cslc->szD == size);
          img->ces[i]->used = cslc->szD;
@@ -809,11 +823,19 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
       img->ces[i]->fromC = False;
       vg_assert(is_sane_CEnt("get_slowcase-case-2", img, i));
    } else {
-      SizeT len = tinfl_decompress_mem_to_mem(
-                     img->ces[i]->data, cslc->szD,
-                     cbuf, cslc->szC,
-                     TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF
-                     | TINFL_FLAG_PARSE_ZLIB_HEADER);
+      SizeT len;
+      if(cslc->typeC == ELFCOMPRESS_ZLIB) {
+         len = tinfl_decompress_mem_to_mem(
+            img->ces[i]->data, cslc->szD,
+            cbuf, cslc->szC,
+            TINFL_FLAG_USING_NON_WRAPPING_OUTPUT_BUF
+            | TINFL_FLAG_PARSE_ZLIB_HEADER);
+      }
+      else {
+         len = ZSTD_decompress(
+            img->ces[i]->data, cslc->szD,
+            cbuf, cslc->szC);
+      }
       vg_assert(len == size);
       img->ces[i]->used = size;
       img->ces[i]->off = cslc->offD;
@@ -1084,7 +1106,7 @@ DiImage* ML_(img_from_di_server)(const HChar* filename,
 }
 
 DiOffT ML_(img_mark_compressed_part)(DiImage* img, DiOffT offset, SizeT szC,
-                                     SizeT szD)
+                                     SizeT szD, UChar typeC)
 {
    DiOffT ret;
    vg_assert(img != NULL);
@@ -1101,6 +1123,7 @@ DiOffT ML_(img_mark_compressed_part)(DiImage* img, DiOffT offset, SizeT szC,
    img->cslc[img->cslc_used].szC = szC;
    img->cslc[img->cslc_used].offD = img->size;
    img->cslc[img->cslc_used].szD = szD;
+   img->cslc[img->cslc_used].typeC = typeC;
    img->size += szD;
    img->cslc_used++;
    return ret;

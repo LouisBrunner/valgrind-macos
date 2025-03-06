@@ -48,15 +48,15 @@
 /* Convert one amd64 insn to IR.  See the type DisOneInstrFn in
    guest_generic_bb_to_IR.h. */
 extern
-DisResult disInstr_AMD64 ( IRSB*        irbb,
-                           const UChar* guest_code,
+DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
+                           const UChar* guest_code_IN,
                            Long         delta,
                            Addr         guest_IP,
                            VexArch      guest_arch,
                            const VexArchInfo* archinfo,
                            const VexAbiInfo*  abiinfo,
-                           VexEndness   host_endness,
-                           Bool         sigill_diag );
+                           VexEndness   host_endness_IN,
+                           Bool         sigill_diag_IN );
 
 /* Used by the optimiser to specialise calls to helpers. */
 extern
@@ -108,7 +108,7 @@ extern ULong amd64g_calculate_RCL  (
                 ULong arg, ULong rot_amt, ULong rflags_in, Long sz 
              );
 
-extern ULong amd64g_calculate_pclmul(ULong s1, ULong s2, ULong which);
+extern ULong amd64g_calculate_pclmul(ULong a, ULong b, ULong which);
 
 extern ULong amd64g_check_fldcw ( ULong fpucw );
 

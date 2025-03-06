@@ -100,7 +100,7 @@ void add_thread (unsigned long thread_id, void *target_data, unsigned int gdb_id
    struct thread_info *new_thread
       = (struct thread_info *) malloc (sizeof (*new_thread));
 
-   VG_(memset) (new_thread, 0, sizeof (*new_thread));
+   memset (new_thread, 0, sizeof (*new_thread));
 
    new_thread->entry.id = thread_id;
 

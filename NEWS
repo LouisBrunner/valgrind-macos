@@ -56,6 +56,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 498492  none/tests/amd64/lzcnt64 crashes on FreeBSD compiled with clang
 499183  FreeBSD: differences in avx-vmovq output
 499212  mmap() with MAP_ALIGNED() returns unaligned pointer
+501194  Fix ML_(check_macho_and_get_rw_loads) so that it is correct for any number of segment commands
 
 
 To see details of a given bug, visit

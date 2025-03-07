@@ -1135,16 +1135,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    DebugInfo* di;
    Int        actual_fd, oflags;
-#if defined(VGO_darwin)
-   SysRes     preadres;
-   // @todo PJF make this dynamic
-   // that probably means reading the sizeofcmds from the mach_header then
-   // allocating enough space for it
-   // and then one day maybe doing something for fat binaries
-   HChar      buf4k[4096];
-#else
-   Bool       elf_ok;
-#endif
 #if defined(VGO_freebsd)
    static Bool first_fixed_file = True;
 #endif
@@ -1321,11 +1311,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 #endif
 
-#if defined(VGO_darwin)
-   /* Peer at the first few bytes of the file, to see if it is an ELF */
-   /* object file. Ignore the file if we do not have read permission. */
-   VG_(memset)(buf4k, 0, sizeof(buf4k));
-#endif
 
    oflags = VKI_O_RDONLY;
 #  if defined(VKI_O_LARGEFILE)
@@ -1350,35 +1335,17 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       actual_fd = use_fd;
    }
 
-#if defined(VGO_darwin)
-   preadres = VG_(pread)( actual_fd, buf4k, sizeof(buf4k), 0 );
-   if (use_fd == -1) {
-      VG_(close)( actual_fd );
-   }
-
-   if (sr_isError(preadres)) {
-      DebugInfo fake_di;
-      VG_(memset)(&fake_di, 0, sizeof(fake_di));
-      fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm", filename);
-      ML_(symerr)(&fake_di, True, "can't read file to inspect Mach-O headers");
-      return 0;
-   }
-   if (sr_Res(preadres) == 0)
-      return 0;
-   vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf4k) );
-
    expected_rw_load_count = 0;
 
-   if (!ML_(check_macho_and_get_rw_loads)( buf4k, (SizeT)sr_Res(preadres), &expected_rw_load_count ))
+#if defined(VGO_darwin)
+   if (!ML_(check_macho_and_get_rw_loads)( actual_fd, &expected_rw_load_count ))
       return 0;
 #endif
 
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
-   expected_rw_load_count = 0;
-
-   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
+   Bool elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
 
    if (use_fd == -1) {
       VG_(close)( actual_fd );

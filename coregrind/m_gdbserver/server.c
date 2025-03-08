@@ -1066,7 +1066,7 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
          n = -1;
       else {
          n = strlen(name) - ofs;
-         VG_(memcpy) (data, name, n);
+         memcpy (data, name, n);
       }
 
       if (n < 0)
@@ -1125,6 +1125,8 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       VG_(sprintf) (arg_own_buf, "PacketSize=%x", (UInt)PBUFSIZ - 1);
       /* Note: max packet size including frame and checksum, but without
          trailing null byte, which is not sent/received. */
+
+      strcat (arg_own_buf, ";binary-upload+");
 
       strcat (arg_own_buf, ";QStartNoAckMode+");
       strcat (arg_own_buf, ";QPassSignals+");
@@ -1374,6 +1376,20 @@ void server_main (void)
          if (valgrind_write_memory (mem_addr, mem_buf, len) == 0)
             write_ok (own_buf);
          else
+            write_enn (own_buf);
+         break;
+      case 'x':
+         decode_m_packet (&own_buf[1], &mem_addr, &len);
+         if (valgrind_read_memory (mem_addr, mem_buf, len) == 0) {
+            // Read memory is successful.
+            // Complete the reply packet and indicate its length.
+            int out_len;
+            own_buf[0] = 'b';
+            new_packet_len
+               = 1 + remote_escape_output(mem_buf, len,
+                                          (unsigned char *) &own_buf[1], &out_len,
+                                          PBUFSIZ - POVERHSIZ - 1);
+         } else
             write_enn (own_buf);
          break;
       case 'X':

@@ -114,7 +114,7 @@ static void usage_NORETURN ( int need_help )
 "         where event is one of:\n"
 "           startup exit abexit valgrindabexit all none\n"
 "    --track-fds=no|yes|all    track open file descriptors? [no]\n"
-"                              all includes reporting stdin, stdout and stderr\n"
+"                              all includes reporting inherited file descriptors\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"
@@ -130,7 +130,8 @@ static void usage_NORETURN ( int need_help )
 "    --xml-file=<file>         XML output to <file>\n"
 "    --xml-socket=ipaddr:port  XML output to socket ipaddr:port\n"
 "    --xml-user-comment=STR    copy STR verbatim into XML output\n"
-"    --demangle=no|yes         automatically demangle C++ names? [yes]\n"
+"    --demangle=no|yes         automatically demangle decorated names? [yes]\n"
+"                              supported languages: C++, D, Rust, Java, Ada\n"
 "    --num-callers=<number>    show <number> callers in stack traces [12]\n"
 "    --error-limit=no|yes      stop showing new errors if too many? [yes]\n"
 "    --exit-on-first-error=no|yes exit code on the first error found? [no]\n"
@@ -2546,6 +2547,11 @@ static void final_tidyup(ThreadId tid)
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestPPC64State, guest_GPR3),
             sizeof(VG_(threads)[tid].arch.vex.guest_GPR3));
+#  elif defined(VGA_riscv64)
+   VG_(threads)[tid].arch.vex.guest_x10 = to_run;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestRISCV64State, guest_x10),
+            sizeof(VG_(threads)[tid].arch.vex.guest_x10));
 #  elif defined(VGA_s390x)
    VG_(threads)[tid].arch.vex.guest_r2 = to_run;
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
@@ -3079,6 +3085,33 @@ asm(
     ".set pop                                           \n\t"
 ".previous                                              \n\t"
 );
+#elif defined(VGP_riscv64_linux)
+asm("\n"
+    "\t.text\n"
+    "\t.type _start,@function\n"
+    "\t.global _start\n"
+    "_start:\n"
+    /* establish the global pointer in gp */
+    ".option push\n"
+    ".option norelax\n"
+    "\tla gp, __global_pointer$\n"
+    ".option pop\n"
+    /* set up the new stack in t0 */
+    "\tla t0, vgPlain_interim_stack\n"
+    "\tli t1, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tadd t0, t0, t1\n"
+    "\tli t1, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
+    "\tadd t0, t0, t1\n"
+    "\tli t1, 0xFFFFFF00\n"
+    "\tand t0, t0, t1\n"
+    /* install it, and collect the original one */
+    "\tmv a0, sp\n"
+    "\tmv sp, t0\n"
+    /* call _start_in_C_linux, passing it the startup sp */
+    "\tj _start_in_C_linux\n"
+    "\tunimp\n"
+    ".previous\n"
+);
 #else
 #  error "Unknown platform"
 #endif
@@ -3536,6 +3569,10 @@ void _start_in_C_freebsd ( UWord* pArgc, UWord *initial_sp )
 #  error "Unknown OS"
 #endif
 
+SizeT VG_(get_client_stack_max_size)(void)
+{
+   return the_iifii.clstack_max_size;
+}
 
 Addr VG_(get_initial_client_SP)( void )
 {

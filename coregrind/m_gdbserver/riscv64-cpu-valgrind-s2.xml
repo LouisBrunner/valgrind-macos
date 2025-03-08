@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2018-2022 Free Software Foundation, Inc.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="org.gnu.gdb.riscv.cpu.valgrind.s2">
+  <reg name="zeros2" bitsize="64" type="int" regnum="138"/>
+  <reg name="ras2" bitsize="64" type="int"/>
+  <reg name="sps2" bitsize="64" type="int"/>
+  <reg name="gps2" bitsize="64" type="int"/>
+  <reg name="tps2" bitsize="64" type="int"/>
+  <reg name="t0s2" bitsize="64" type="int"/>
+  <reg name="t1s2" bitsize="64" type="int"/>
+  <reg name="t2s2" bitsize="64" type="int"/>
+  <reg name="fps2" bitsize="64" type="int"/>
+  <reg name="s1s2" bitsize="64" type="int"/>
+  <reg name="a0s2" bitsize="64" type="int"/>
+  <reg name="a1s2" bitsize="64" type="int"/>
+  <reg name="a2s2" bitsize="64" type="int"/>
+  <reg name="a3s2" bitsize="64" type="int"/>
+  <reg name="a4s2" bitsize="64" type="int"/>
+  <reg name="a5s2" bitsize="64" type="int"/>
+  <reg name="a6s2" bitsize="64" type="int"/>
+  <reg name="a7s2" bitsize="64" type="int"/>
+  <reg name="s2s2" bitsize="64" type="int"/>
+  <reg name="s3s2" bitsize="64" type="int"/>
+  <reg name="s4s2" bitsize="64" type="int"/>
+  <reg name="s5s2" bitsize="64" type="int"/>
+  <reg name="s6s2" bitsize="64" type="int"/>
+  <reg name="s7s2" bitsize="64" type="int"/>
+  <reg name="s8s2" bitsize="64" type="int"/>
+  <reg name="s9s2" bitsize="64" type="int"/>
+  <reg name="s10s2" bitsize="64" type="int"/>
+  <reg name="s11s2" bitsize="64" type="int"/>
+  <reg name="t3s2" bitsize="64" type="int"/>
+  <reg name="t4s2" bitsize="64" type="int"/>
+  <reg name="t5s2" bitsize="64" type="int"/>
+  <reg name="t6s2" bitsize="64" type="int"/>
+  <reg name="pcs2" bitsize="64" type="int"/>
+</feature>

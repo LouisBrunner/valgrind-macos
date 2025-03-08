@@ -25,7 +25,7 @@ int main(void)
     memset(buff, 0, sizeof(buff));
     sprintf(buff, "some data");
     write(tmpfd, buff, strlen(buff)+1);
-#if (FREEBSD_VERS >= FREEBSD_11)
+#if defined(HAVE_FDATASYNC)
     fdatasync(tmpfd);
 #endif
     close (tmpfd);
@@ -78,7 +78,7 @@ int main(void)
  
     unlink(tmpfromfile);
     int badint;
-#if (FREEBSD_VERS >= FREEBSD_11)
+#if defined(HAVE_FDATASYNC)
     fdatasync(badint);
 #endif
 }

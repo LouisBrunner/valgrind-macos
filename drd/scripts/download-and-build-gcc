@@ -1,73 +1,56 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Make sure that libgmp and libmpfr are installed before you run this script.
-# On Debian systems, e.g. Ubuntu, you can install these libraries as follows:
-# sudo apt-get install libgmp3-dev libmpfr-dev. In openSUSE these packages
-# are called gmp-devel and mpfr-devel.
-
-
-GCC_VERSION=4.5.0
-FSF_MIRROR=ftp://ftp.easynet.be/gnu
-SRCDIR=$HOME/software
-DOWNLOADS=$SRCDIR/downloads
-SRC=$HOME/software/gcc-${GCC_VERSION}
-BUILD=${SRC}-build
-TAR=gcc-${GCC_VERSION}.tar.bz2
-PREFIX=$HOME/gcc-${GCC_VERSION}
-GMP_PREFIX=/usr
-#GMP_PREFIX=$HOME/gmp-5.0.1
-MPFR_PREFIX=/usr
-#MPFR_PREFIX=$HOME/mpfr-2.4.2
-MPC_PREFIX=/usr
-#MPC_PREFIX=$HOME/mpc-0.8.1
+GCC_VERSION=13.3.0
+if [[ $# -eq 1 ]] ; then
+  GCC_VERSION=$1
+fi
+GIT_REPO=git://gcc.gnu.org/git/gcc.git
+SRCDIR=${HOME}/software
+REPO=${SRCDIR}/gcc
+BUILD=${REPO}/build
+PREFIX=${HOME}/gcc-${GCC_VERSION}
 export LC_ALL=C
-export MAKEFLAGS="-j$(($(grep -c '^processor' /proc/cpuinfo) + 1))"
 
-if [ ! -e $GMP_PREFIX/include/gmp.h ]; then
-  echo "Please install the gmp library development package first."
-  exit 1
-fi
-
-if [ ! -e $MPFR_PREFIX/include/mpfr.h ]; then
-  echo "Please install the mpfr library development package first."
-  exit 1
-fi
-
-if [ ! -e $MPC_PREFIX/include/mpc.h ]; then
-  echo "Please install the mpc library development package first."
-  exit 1
-fi
+OS=$(uname -s)
+case ${OS} in
+  Linux)
+    MAKE=make
+    MAKEFLAGS="-j$(($(grep -c '^processor' /proc/cpuinfo) + 1))"
+    ;;
+  FreeBSD)
+    MAKE=gmake
+    MAKEFLAGS="-j$(sysctl -n hw.ncpu)"
+    ;;
+  *)
+    echo "Unsupported OS"
+    exit 1
+    ;;
+esac
+export MAKEFLAGS
 
 rm -rf   ${BUILD}     || exit $?
 rm -rf   ${PREFIX}    || exit $?
-mkdir -p ${DOWNLOADS} || exit $?
-mkdir -p ${BUILD}     || exit $?
-cd       ${BUILD}     || exit $?
+mkdir -p ${SRCDIR}    || exit $?
 
-if [ ! -e $DOWNLOADS/$TAR ]; then
-(
-  if cd $DOWNLOADS; then
-    wget -q $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/$TAR \
-    || { wget -q -O- $FSF_MIRROR/gcc/gcc-${GCC_VERSION}/${TAR%bz2}gz \
-         | gzip -cd | bzip2 -9 >${TAR}; }
-  fi
-)
+if [ ! -e ${REPO} ]; then
+  cd ${SRCDIR}
+  git clone ${GIT_REPO} gcc || exit $?
 fi
 
-if [ ! -e $SRC ]; then
-  ( cd $SRCDIR && tar -xjf $DOWNLOADS/$TAR )
-fi
+cd       ${REPO}                         || exit $?
+git checkout releases/gcc-${GCC_VERSION} || exit $?
+rm -rf gmp* mpfr* mpc* isl*              || exit $?
+./contrib/download_prerequisites
+mkdir -p ${BUILD}                        || exit $?
+cd       ${BUILD}                        || exit $?
 
-${SRC}/configure            \
+${REPO}/configure            \
   --disable-linux-futex     \
   --disable-mudflap         \
   --disable-nls             \
   --enable-languages=c,c++  \
   --enable-threads=posix    \
   --enable-tls              \
-  --prefix=$PREFIX          \
-  --with-gmp=$GMP_PREFIX    \
-  --with-mpfr=$MPFR_PREFIX  \
-  --with-mpc=$MPC_PREFIX
+  --prefix=$PREFIX
 
-time { make -s && make -s install; }
+time { ${MAKE} -s && ${MAKE} -s install; }

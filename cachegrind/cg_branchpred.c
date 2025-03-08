@@ -48,7 +48,7 @@
 #  define N_IADDR_LO_ZERO_BITS 2
 #elif defined(VGA_x86) || defined(VGA_amd64)
 #  define N_IADDR_LO_ZERO_BITS 0
-#elif defined(VGA_s390x) || defined(VGA_arm)
+#elif defined(VGA_s390x) || defined(VGA_arm) || defined(VGA_riscv64)
 #  define N_IADDR_LO_ZERO_BITS 1
 #else
 #  error "Unsupported architecture"

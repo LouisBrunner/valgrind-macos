@@ -481,3 +481,28 @@ integration with a text editor, it is possible to reformat arbitrary blocks
 of code with a single keystroke.  Refer to the upstream documentation which
 describes integration with various editors and IDEs:
 https://clang.llvm.org/docs/ClangFormat.html.
+
+Updating zstd
+~~~~~~~~~~~~~
+Similar to libiberty, we have to import a copy of zstd rather than linking
+with a library. There isn't (yet) a script to automate this, so it has to be
+done manually.
+
+The version currently in use can be seen in coregrind/m_debuginfo/zstd.h.
+Look for ZSTD_VERSION_MAJOR ZSTD_VERSION_MINOR and ZSTD_VERSION_RELEASE.
+
+ - Get the source of zstd from
+
+   https://github.com/facebook/zstd
+
+ - Checkout the latest release tag (should be vMAJ.MIN.REL)
+
+ - Copy {zstd git repo}/lib/zstd.h to coregrind/m_debuginfo/zstd.h
+ 
+ -  cd to {zstd git repo}/build/single_file_libs and run ./create_single_file_decoder.sh
+ 
+ - You cannot simply copy and use the generated zstddeclib.c!
+   All calls to libc functions in this file need replacing with VG_ versions.
+   Merge the newly generated zstddeclib.c with coregrind/m_debuginfo/zstddeclib.c.
+   Make sure to keep the copy of the BSD license in the C file.
+   

@@ -33,7 +33,7 @@
 #----------------------------------------------------------------------------#
 # Solaris libc reinitializes mutex udp->ld_lock in the child's post-fork
 # handler.
-{  
+{
    Solaris:postfork_child_mutex_reinit
    drd:MutexErr
    fun:mutex_init
@@ -49,4 +49,16 @@
    fun:_ZNSt5mutex4lockEv
    fun:_ZNSt10lock_guardISt5mutexEC1ERS0_
 }
-
+{
+   Solaris:pthread_once
+   Helgrind:Race
+   fun:pthread_once
+}
+{
+   Solaris:gomp_init_task
+   drd:ConflictingAccess
+   fun:priority_queue_init
+   fun:gomp_init_task
+   fun:gomp_team_start
+   fun:GOMP_parallel
+}

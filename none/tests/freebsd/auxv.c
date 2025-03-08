@@ -10,7 +10,7 @@ typedef struct {
         int type;
 } Elf_AuxStr;
 
-Elf_AuxStr aux_map[AT_COUNT] = {
+Elf_AuxStr aux_map[] = {
         {"AT_NULL",     0},
         {"AT_IGNORE",   1},
         {"AT_EXECFD",   2},

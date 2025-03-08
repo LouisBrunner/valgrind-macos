@@ -1,0 +1,4 @@
+prog: auxv_script
+vgopts: -q
+stderr_filter: filter_auxv
+

@@ -1,0 +1,46 @@
+
+How to install and configure a QEMU riscv64-linux installation.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Last updated 25 March 2023
+
+This file is a variant of qemu-aarch64-linux-HOWTO.txt but for RISCV64. It
+differs in use of openSUSE Tumbleweed and an already prepared image.
+
+
+Use a distribution package manager to install QEMU with support for running
+a 64-bit RISC-V system. It should provide the qemu-system-riscv64 executable.
+Make sure the package comes with an OpenSBI binary which is normally stored at
+/usr/share/qemu/opensbi-riscv64-generic-fw_dynamic.bin.
+
+Get a Tumbleweed image and convert it to qcow2:
+
+mkdir tumbleweed && cd tumbleweed
+wget http://download.opensuse.org/ports/riscv/tumbleweed/images/openSUSE-Tumbleweed-RISC-V-JeOS-efi.riscv64.raw.xz
+unxz openSUSE-Tumbleweed-RISC-V-JeOS-efi.riscv64.raw.xz
+qemu-img convert -f raw -O qcow2 openSUSE-Tumbleweed-RISC-V-JeOS-efi.riscv64.raw image.qcow2
+qemu-img resize image.qcow2 20G
+
+Obtain a U-Boot loader:
+
+UBOOT=$(wget https://download.opensuse.org/ports/riscv/tumbleweed/repo/oss/INDEX.gz -O - | gunzip | grep 'u-boot-qemu-riscv64smode-[0123456789\.-]*\.riscv64\.rpm')
+wget --directory-prefix=u-boot https://download.opensuse.org/ports/riscv/tumbleweed/repo/oss/$UBOOT
+rpm2cpio u-boot/u-boot-qemu-riscv64smode-*.riscv64.rpm | cpio -D u-boot -idm
+
+Boot the system:
+
+qemu-system-riscv64 -nographic -machine virt -smp 4 -m 8G \
+  -kernel u-boot/boot/u-boot.bin \
+  -device virtio-blk-device,drive=hd0 -drive file=image.qcow2,format=qcow2,id=hd0 \
+  -device virtio-net-device,netdev=usernet -netdev user,id=usernet,hostfwd=tcp::5555-:22
+
+Now you can ssh into the VM and install stuff as usual:
+
+ssh -p 5555 root@localhost
+[The preset password is linux.]
+
+  (on the guest)
+  useradd username && passwd username
+  zypper install autoconf automake make gcc gcc-c++ git-core
+
+Hack on, etc.

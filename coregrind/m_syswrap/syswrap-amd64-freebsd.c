@@ -643,7 +643,7 @@ PRE(sys_thr_new)
       goto fail;
    }
    tp.stack_base = (void *)ctst->os_state.valgrind_stack_base;
-   tp.stack_size = (Addr)stk - (Addr)tp.stack_base;
+   tp.stack_size = stk - (Addr)tp.stack_base;
 
    /* Create the new thread */
    res = VG_(do_syscall2)(__NR_thr_new, (UWord)&tp, sizeof(tp));
@@ -964,8 +964,6 @@ PRE(sys_mknodat)
    PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
 }
 
-#if (FREEBSD_VERS >= FREEBSD_12)
-
 // SYS_cpuset_getdomain 561
 // int cpuset_getdomain(cpulevel_t level, cpuwhich_t which, id_t id,
 //                      size_t setsize, domainset_t *mask, int *policy);
@@ -1000,8 +998,6 @@ PRE(sys_cpuset_setdomain)
    // man page says that setsize (ARG4) "is usually provided by calling sizeof(mask)"
    PRE_MEM_READ( "cpuset_getdomain(mask)", ARG5, ARG4 );
 }
-
-#endif
 
 PRE(sys_fake_sigreturn)
 {

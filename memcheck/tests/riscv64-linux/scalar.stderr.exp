@@ -1,0 +1,156 @@
+-----------------------------------------------------
+   0:           __NR_io_setup 2s 1m
+-----------------------------------------------------
+Syscall param io_setup(nr_events) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:55)
+
+Syscall param io_setup(ctxp) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:55)
+
+Syscall param io_setup(ctxp) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:55)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+  63:               __NR_read 1+3s 1m
+-----------------------------------------------------
+Syscall param (syscallno) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:61)
+
+Syscall param read(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:61)
+
+Syscall param read(buf) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:61)
+
+Syscall param read(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:61)
+
+Syscall param read(buf) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:61)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+  64:              __NR_write 3s 1m
+-----------------------------------------------------
+Syscall param write(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:66)
+
+Syscall param write(buf) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:66)
+
+Syscall param write(count) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:66)
+
+Syscall param write(buf) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:66)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+ 104:         __NR_kexec_load n/i
+-----------------------------------------------------
+-----------------------------------------------------
+ 223:          __NR_fadvise64 n/i
+-----------------------------------------------------
+-----------------------------------------------------
+ 293:               __NR_rseq n/i
+-----------------------------------------------------
+-----------------------------------------------------
+ 435:             __NR_clone3 n/i
+-----------------------------------------------------
+-----------------------------------------------------
+ 117:             __NR_ptrace 4s 1m
+-----------------------------------------------------
+Syscall param ptrace(request) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:96)
+
+Syscall param ptrace(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:96)
+
+Syscall param ptrace(addr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:96)
+
+Syscall param ptrace(data) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:96)
+
+Syscall param ptrace(peek) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c:96)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+ 139:       __NR_rt_sigreturn n/a
+-----------------------------------------------------
+-----------------------------------------------------
+ 222:               __NR_mmap 6s 0m
+-----------------------------------------------------
+Syscall param mmap(start) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:106)
+
+Syscall param mmap(length) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:106)
+
+Syscall param mmap(prot) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:106)
+
+Syscall param mmap(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:106)
+
+Syscall param mmap(fd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:106)
+
+Syscall param mmap(offset) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:106)
+
+-----------------------------------------------------
+ 259: __NR_riscv_flush_icache 3s 0m
+-----------------------------------------------------
+Syscall param riscv_flush_icache(start) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:111)
+
+Syscall param riscv_flush_icache(end) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:111)
+
+Syscall param riscv_flush_icache(flags) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:111)
+
+-----------------------------------------------------
+9999:                    9999 1e
+-----------------------------------------------------
+WARNING: unhandled riscv64-linux syscall: 9999
+You may be able to write your own handler.
+Read the file README_MISSING_SYSCALL_OR_IOCTL.
+Nevertheless we consider this a bug.  Please report
+it at http://valgrind.org/support/bug_reports.html.
+-----------------------------------------------------
+  93:               __NR_exit 1s 0m
+-----------------------------------------------------
+Syscall param exit(status) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c:123)
+

@@ -53,6 +53,9 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_ARM64_LINUX
 SUBDIRS += arm64-linux
 endif
+if VGCONF_PLATFORMS_INCLUDE_RISCV64_LINUX
+SUBDIRS += riscv64-linux
+endif
 if VGCONF_PLATFORMS_INCLUDE_X86_SOLARIS
 SUBDIRS += x86-solaris
 endif
@@ -67,7 +70,7 @@ SUBDIRS += amd64-freebsd
 endif
 
 DIST_SUBDIRS = x86 amd64 arm64 ppc32 ppc64 s390x linux \
-		darwin solaris x86-linux amd64-linux arm64-linux \
+		darwin solaris x86-linux amd64-linux arm64-linux riscv64-linux \
 		x86-solaris amd64-solaris mips32 mips64 \
 		freebsd amd64-freebsd x86-freebsd \
 		common .
@@ -122,12 +125,14 @@ EXTRA_DIST = \
 	bug155125.stderr.exp bug155125.vgtest \
 	bug287260.stderr.exp bug287260.vgtest \
 	bug340392.stderr.exp bug340392.vgtest \
+	bug445235_ada_demangle.stderr.exp bug445235_ada_demangle.vgtest \
 	bug401284.stderr.exp bug401284.stdout.exp bug401284.vgtest \
 	bug464969_d_demangle.stderr.exp bug464969_d_demangle.vgtest \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.stderr.exp bug472219.vgtest \
 	bug484002.stderr.exp bug484002.stdout.exp bug484002.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
+	cdebug_zstd.vgtest cdebug_zstd.stderr.exp \
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
 	cdebug_zlib_gnu.stderr.exp cdebug_zlib_gnu.vgtest \
 	client-msg.stderr.exp client-msg.vgtest \
@@ -475,6 +480,7 @@ check_PROGRAMS = \
 	bug287260 \
 	bug340392 \
 	bug401284 \
+ 	bug445235_ada_demangle \
 	bug464969_d_demangle \
 	bug472219 \
 	calloc-overflow \
@@ -585,6 +591,12 @@ cdebug_zlib_gnu_SOURCES = cdebug.c
 cdebug_zlib_gnu_CFLAGS = $(AM_CFLAGS) -g -gz=zlib-gnu @FLAG_W_NO_UNINITIALIZED@
 endif
 
+if GZ_ZSTD
+check_PROGRAMS += cdebug_zstd
+cdebug_zstd_SOURCES = cdebug.c
+cdebug_zstd_CFLAGS = $(AM_CFLAGS) -g -gz=zstd @FLAG_W_NO_UNINITIALIZED@
+endif
+
 if HAVE_SBRK
 check_PROGRAMS += brk2
 endif
@@ -618,6 +630,10 @@ endif
 
 if HAVE_PTHREAD_SETNAME_NP
 check_PROGRAMS += threadname
+endif
+
+if HAVE_WCPNCPY
+check_PROGRAMS += wcpncpy
 endif
 
 if HAVE_WCPNCPY

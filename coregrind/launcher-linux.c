@@ -51,16 +51,18 @@
 #include <string.h>
 #include <unistd.h>
 
+/* Provide own definitions for elf.h constants that might not be yet available
+   on some older systems. */
 #ifndef EM_X86_64
-#define EM_X86_64 62    // elf.h doesn't define this on some older systems
+#define EM_X86_64 62
 #endif
 
 #ifndef EM_AARCH64
-#define EM_AARCH64 183  // ditto
+#define EM_AARCH64 183
 #endif
 
 #ifndef EM_PPC64
-#define EM_PPC64 21  // ditto
+#define EM_PPC64 21
 #endif
 
 #ifndef EM_NANOMIPS
@@ -73,6 +75,10 @@
 
 #ifndef E_MIPS_ABI2
 #define E_MIPS_ABI2    0x00000020
+#endif
+
+#ifndef EM_RISCV
+#define EM_RISCV 243
 #endif
 
 /* Report fatal errors */
@@ -316,6 +322,10 @@ static const char *select_platform(const char *clientname)
                 (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
                  header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
                platform = "ppc64le-linux";
+            } else if (header.ehdr64.e_machine == EM_RISCV &&
+                (header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
+                 header.ehdr64.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
+               platform = "riscv64-linux";
             }
          } else if (header.c[EI_DATA] == ELFDATA2MSB) {
 #           if !defined(VGPV_arm_linux_android) \
@@ -404,8 +414,8 @@ int main(int argc, char** argv, char** envp)
       the executable (eg because it's a shell script).  VG_PLATFORM is the
       default_platform. Its value is defined in coregrind/Makefile.am and
       typically it is the primary build target. Unless the primary build
-      target is not built is not built in which case VG_PLATFORM is the
-      secondary build target. */
+      target is not built in which case VG_PLATFORM is the secondary build
+      target. */
 #  if defined(VGO_linux)
    if ((0==strcmp(VG_PLATFORM,"x86-linux"))    ||
        (0==strcmp(VG_PLATFORM,"amd64-linux"))  ||
@@ -417,7 +427,8 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||
        (0==strcmp(VG_PLATFORM,"mips32-linux")) ||
        (0==strcmp(VG_PLATFORM,"mips64-linux")) ||
-       (0==strcmp(VG_PLATFORM,"nanomips-linux")))
+       (0==strcmp(VG_PLATFORM,"nanomips-linux")) ||
+       (0==strcmp(VG_PLATFORM,"riscv64-linux")))
       default_platform = VG_PLATFORM;
 #  elif defined(VGO_solaris)
    if ((0==strcmp(VG_PLATFORM,"x86-solaris")) ||

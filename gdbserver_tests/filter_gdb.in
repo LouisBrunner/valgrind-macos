@@ -265,6 +265,7 @@ s/^0x........ in \(\w\+ (\)/\1/
 
 #	delete any missing debuginfo messages
 /^Missing debuginfo.*/d
+/^Missing rpms.*/d
 
 EOF
 
@@ -289,6 +290,6 @@ $SED -e '/after trap SIGFPE/,/after continue SIGFPE/d'                          
 
 # join together two lines that gdb 7.1 splits in two (???)
 # (in a separate sed, as the below influences the behaviour of the other expressions)
-$SED    -e :a -e '$!N;s/\n    at sleepers.c:39/ at sleepers.c:39/;ta' -e 'P;D' 
+$SED    -e :a -e '$!N;s/\n    at sleepers.c:39/ at sleepers.c:39/;ta' -e 'P;D'
 
 rm $PATTERNFILE

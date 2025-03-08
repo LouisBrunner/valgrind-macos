@@ -174,7 +174,7 @@ void randomize_memory_pool()
       [{r,m}_arg2]   -- integer arg2
       [{r,m}_arg3]   -- integer arg3
       [{r,m}_result]      -- integer result
-      [{r,m}_memory_pool] -- address of random memory pool. Usefull for some instructions
+      [{r,m}_memory_pool] -- address of random memory pool. Useful for some instructions
 
 */
 
@@ -291,7 +291,7 @@ __attribute__((unused)) static void test_##insn() \
 }
 
 /* Stores CC to %[r_result].
-   Usefull when testing instructions which modify condition code.
+   Useful when testing instructions which modify condition code.
 */
 #define S390_TEST_PUT_CC_TO_RESULT "ipm %[r_result] \n srl %[r_result], 28 \n"
 

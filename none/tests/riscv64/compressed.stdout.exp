@@ -1,0 +1,917 @@
+RV64C compressed instruction set, quadrant 0
+c.addi4spn a0, sp, 4 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001004
+c.addi4spn a0, sp, 8 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001008
+c.addi4spn a0, sp, 16 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001010
+c.addi4spn a0, sp, 32 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001020
+c.addi4spn a0, sp, 64 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001040
+c.addi4spn a0, sp, 128 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001080
+c.addi4spn a0, sp, 256 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001100
+c.addi4spn a0, sp, 512 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000001200
+c.addi4spn a0, sp, 1020 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x00000000000013fc
+c.addi4spn a0, sp, 4 ::
+  inputs: sp=0x000000007ffffffc
+  output: a0=0x0000000080000000
+c.addi4spn a0, sp, 4 ::
+  inputs: sp=0x00000000fffffffb
+  output: a0=0x00000000ffffffff
+c.addi4spn a0, sp, 4 ::
+  inputs: sp=0x00000000fffffffc
+  output: a0=0x0000000100000000
+c.addi4spn a5, sp, 4 ::
+  inputs: sp=0x0000000000001000
+  output: a0=0x0000000000000020
+c.fld fa0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xbeafe48541dc8da0
+  no memory changes
+c.fld fa0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xba6d23fbddcfb6e4
+  no memory changes
+c.fld fa0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xe23b6d7d6753321d
+  no memory changes
+c.fld fa0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x849d6e092767dabd
+  no memory changes
+c.fld fa0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xec83e542163f4e88
+  no memory changes
+c.fld fa0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x21989d257082ce6f
+  no memory changes
+c.fld fa0, 248(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x63082c1746f49884
+  no memory changes
+c.fld fa4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: fa4=0x5486cc410e1801e6
+  no memory changes
+c.lw a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000720eda7
+  no memory changes
+c.lw a0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffec7a332e
+  no memory changes
+c.lw a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xfffffffff26fc107
+  no memory changes
+c.lw a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffb4a7dcfa
+  no memory changes
+c.lw a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffff81406130
+  no memory changes
+c.lw a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000000da412a7
+  no memory changes
+c.lw a0, 124(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x000000006a330ec8
+  no memory changes
+c.lw a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0xffffffffd45c61ed
+  no memory changes
+c.ld a0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x82501ceacc654dae
+  no memory changes
+c.ld a0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x6dbeca915808e621
+  no memory changes
+c.ld a0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x863d8543d33dd28a
+  no memory changes
+c.ld a0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x07ff662e72b0598a
+  no memory changes
+c.ld a0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x30a49d2822488e15
+  no memory changes
+c.ld a0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xe539d48afb0b8e7d
+  no memory changes
+c.ld a0, 248(a1) ::
+  inputs: a1=&area_mid
+  output: a0=0x36f9f34ce2cde861
+  no memory changes
+c.ld a4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: a4=0x172704a799a1c1f4
+  no memory changes
+c.fsd fa0, 0(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 8(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsd fa0, 16(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 32(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 64(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 128(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 248(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+240]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsd fa4, 0(a5) ::
+  inputs: fa4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sw a0, 0(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sw a0, 4(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 .. .. .. .. .. .. .. ..
+c.sw a0, 8(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 .. .. .. ..
+c.sw a0, 16(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sw a0, 32(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sw a0, 64(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sw a0, 124(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+112]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+c.sw a4, 0(a5) ::
+  inputs: a4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sd a0, 0(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 01 .. cd ab .. .. .. .. .. .. .. ..
+c.sd a0, 8(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.sd a0, 16(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sd a0, 32(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sd a0, 64(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sd a0, 128(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sd a0, 248(a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  [+240]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.sd a4, 0(a5) ::
+  inputs: a4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+
+RV64C compressed instruction set, quadrant 1
+c.nop ::
+c.addi a0, 1 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001001
+c.addi a0, 2 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001002
+c.addi a0, 4 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001004
+c.addi a0, 8 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001008
+c.addi a0, 16 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001010
+c.addi a0, 31 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x000000000000101f
+c.addi a0, -1 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000000fff
+c.addi a0, -32 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000000fe0
+c.addi a0, 1 ::
+  inputs: a0=0x000000007fffffff
+  output: a0=0x0000000080000000
+c.addi a0, 1 ::
+  inputs: a0=0x00000000fffffffe
+  output: a0=0x00000000ffffffff
+c.addi a0, 1 ::
+  inputs: a0=0x00000000ffffffff
+  output: a0=0x0000000100000000
+c.addi t6, 1 ::
+  inputs: t6=0x0000000000001000
+  output: t6=0x0000000000001001
+c.addiw a0, 0 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001000
+c.addiw a0, 1 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001001
+c.addiw a0, 2 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001002
+c.addiw a0, 4 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001004
+c.addiw a0, 8 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001008
+c.addiw a0, 16 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000001010
+c.addiw a0, 31 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x000000000000101f
+c.addiw a0, -1 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000000fff
+c.addiw a0, -32 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000000fe0
+c.addiw a0, 1 ::
+  inputs: a0=0x000000007fffffff
+  output: a0=0xffffffff80000000
+c.addiw a0, 1 ::
+  inputs: a0=0x00000000fffffffe
+  output: a0=0xffffffffffffffff
+c.addiw a0, 1 ::
+  inputs: a0=0x00000000ffffffff
+  output: a0=0x0000000000000000
+c.addiw t6, 0 ::
+  inputs: t6=0x0000000000001000
+  output: t6=0x0000000000001000
+c.li a0, 0 ::
+  output: a0=0x0000000000000000
+c.li a0, 1 ::
+  output: a0=0x0000000000000001
+c.li a0, 2 ::
+  output: a0=0x0000000000000002
+c.li a0, 4 ::
+  output: a0=0x0000000000000004
+c.li a0, 8 ::
+  output: a0=0x0000000000000008
+c.li a0, 15 ::
+  output: a0=0x000000000000000f
+c.li a0, -1 ::
+  output: a0=0xffffffffffffffff
+c.li a0, -16 ::
+  output: a0=0xfffffffffffffff0
+c.li t6, 1 ::
+  output: t6=0x0000000000000001
+c.addi16sp sp, 16 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000001010
+c.addi16sp sp, 32 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000001020
+c.addi16sp sp, 64 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000001040
+c.addi16sp sp, 128 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000001080
+c.addi16sp sp, 256 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000001100
+c.addi16sp sp, 496 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x00000000000011f0
+c.addi16sp sp, -16 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000000ff0
+c.addi16sp sp, -512 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000000e00
+c.addi16sp sp, 16 ::
+  inputs: sp=0x000000007ffffff0
+  output: sp=0x0000000080000000
+c.addi16sp sp, 16 ::
+  inputs: sp=0x00000000ffffffef
+  output: sp=0x00000000ffffffff
+c.addi16sp sp, 16 ::
+  inputs: sp=0x00000000fffffff0
+  output: sp=0x0000000100000000
+c.lui a0, 1 ::
+  output: a0=0x0000000000001000
+c.lui a0, 2 ::
+  output: a0=0x0000000000002000
+c.lui a0, 4 ::
+  output: a0=0x0000000000004000
+c.lui a0, 8 ::
+  output: a0=0x0000000000008000
+c.lui a0, 16 ::
+  output: a0=0x0000000000010000
+c.lui a0, 31 ::
+  output: a0=0x000000000001f000
+c.lui a0, 0xfffff ::
+  output: a0=0xfffffffffffff000
+c.lui a0, 0xfffe0 ::
+  output: a0=0xfffffffffffe0000
+c.lui t6, 1 ::
+  output: t6=0x0000000000001000
+c.srli a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x55e6f78091a2b3c4
+c.srli a0, 2 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x2af37bc048d159e2
+c.srli a0, 4 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x0abcdef012345678
+c.srli a0, 8 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x00abcdef01234567
+c.srli a0, 16 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x0000abcdef012345
+c.srli a0, 32 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x00000000abcdef01
+c.srli a0, 63 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x0000000000000001
+c.srli a5, 1 ::
+  inputs: a5=0xabcdef0123456789
+  output: a5=0x55e6f78091a2b3c4
+c.srai a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xd5e6f78091a2b3c4
+c.srai a0, 2 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xeaf37bc048d159e2
+c.srai a0, 4 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xfabcdef012345678
+c.srai a0, 8 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xffabcdef01234567
+c.srai a0, 16 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xffffabcdef012345
+c.srai a0, 32 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xffffffffabcdef01
+c.srai a0, 63 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xffffffffffffffff
+c.srai a5, 1 ::
+  inputs: a5=0xabcdef0123456789
+  output: a5=0xd5e6f78091a2b3c4
+c.andi a0, 0 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x0000000000000000
+c.andi a0, 1 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x0000000000000001
+c.andi a0, 2 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x0000000000000002
+c.andi a0, 4 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x0000000000000004
+c.andi a0, 8 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x0000000000000008
+c.andi a0, 16 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x0000000000000010
+c.andi a0, 31 ::
+  inputs: a0=0xffffffffffffffff
+  output: a0=0x000000000000001f
+c.andi a5, 0 ::
+  inputs: a5=0xffffffffffffffff
+  output: a5=0x0000000000000000
+c.sub a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000000fff
+  output: a0=0x0000000000000001
+c.sub a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000001000
+  output: a0=0x0000000000000000
+c.sub a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000001001
+  output: a0=0xffffffffffffffff
+c.sub a0, a1 ::
+  inputs: a0=0xffffffffffffffff, a1=0x0000000000000000
+  output: a0=0xffffffffffffffff
+c.sub a0, a1 ::
+  inputs: a0=0x0000000100000000, a1=0x0000000000000001
+  output: a0=0x00000000ffffffff
+c.sub a4, a5 ::
+  inputs: a4=0x0000000000001000, a5=0x0000000000000fff
+  output: a4=0x0000000000000001
+c.xor a0, a1 ::
+  inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
+  output: a0=0x0000ffffffff0000
+c.xor a4, a5 ::
+  inputs: a4=0x0000ffff0000ffff, a5=0x00000000ffffffff
+  output: a4=0x0000ffffffff0000
+c.or a0, a1 ::
+  inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
+  output: a0=0x0000ffffffffffff
+c.or a4, a5 ::
+  inputs: a4=0x0000ffff0000ffff, a5=0x00000000ffffffff
+  output: a4=0x0000ffffffffffff
+c.and a0, a1 ::
+  inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
+  output: a0=0x000000000000ffff
+c.and a4, a5 ::
+  inputs: a4=0x0000ffff0000ffff, a5=0x00000000ffffffff
+  output: a4=0x000000000000ffff
+c.subw a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000000fff
+  output: a0=0x0000000000000001
+c.subw a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000001000
+  output: a0=0x0000000000000000
+c.subw a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000001001
+  output: a0=0xffffffffffffffff
+c.subw a0, a1 ::
+  inputs: a0=0xffffffffffffffff, a1=0x0000000000000000
+  output: a0=0xffffffffffffffff
+c.subw a0, a1 ::
+  inputs: a0=0x0000000100000000, a1=0x0000000000000001
+  output: a0=0xffffffffffffffff
+c.subw a4, a5 ::
+  inputs: a4=0x0000000000001000, a5=0x0000000000000fff
+  output: a4=0x0000000000000001
+c.addw a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: a0=0x0000000000003000
+c.addw a0, a1 ::
+  inputs: a0=0x000000007fffffff, a1=0x0000000000000001
+  output: a0=0xffffffff80000000
+c.addw a0, a1 ::
+  inputs: a0=0x00000000fffffffe, a1=0x0000000000000001
+  output: a0=0xffffffffffffffff
+c.addw a0, a1 ::
+  inputs: a0=0x00000000ffffffff, a1=0x0000000000000001
+  output: a0=0x0000000000000000
+c.addw a0, a1 ::
+  inputs: a0=0xfffffffffffffffe, a1=0x0000000000000001
+  output: a0=0xffffffffffffffff
+c.addw a0, a1 ::
+  inputs: a0=0xffffffffffffffff, a1=0x0000000000000001
+  output: a0=0x0000000000000000
+c.addw a4, a5 ::
+  inputs: a4=0x0000000000001000, a5=0x0000000000002000
+  output: a4=0x0000000000003000
+c.j .+4 ::
+  target: reached
+c.j .+6 ::
+  target: reached
+c.j .+8 ::
+  target: reached
+c.j .+16 ::
+  target: reached
+c.j .+32 ::
+  target: reached
+c.j .+64 ::
+  target: reached
+c.j .+128 ::
+  target: reached
+c.j .+256 ::
+  target: reached
+c.j .+512 ::
+  target: reached
+c.j .+1024 ::
+  target: reached
+c.j .+2044 ::
+  target: reached
+c.j .-4 ::
+  target: reached
+c.j .-6 ::
+  target: reached
+c.j .-2048 ::
+  target: reached
+c.beqz a0, .+4 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+6 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+8 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+16 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+32 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+64 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+128 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .+252 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .-4 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .-6 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .-256 ::
+  inputs: a0=0
+  target: reached
+c.beqz a5, .+4 ::
+  inputs: a5=0
+  target: reached
+c.beqz a0, 1f ::
+  inputs: a0=0
+  branch: taken
+c.beqz a0, 1f ::
+  inputs: a0=1
+  branch: not taken
+c.bnez a0, .+4 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+6 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+8 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+16 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+32 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+64 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+128 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .+252 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .-4 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .-6 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .-256 ::
+  inputs: a0=1
+  target: reached
+c.bnez a5, .+4 ::
+  inputs: a5=1
+  target: reached
+c.bnez a0, 1f ::
+  inputs: a0=0
+  branch: not taken
+c.bnez a0, 1f ::
+  inputs: a0=1
+  branch: taken
+
+RV64C compressed instruction set, quadrant 2
+c.slli a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x579bde02468acf12
+c.slli a0, 2 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xaf37bc048d159e24
+c.slli a0, 4 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xbcdef01234567890
+c.slli a0, 8 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xcdef012345678900
+c.slli a0, 16 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xef01234567890000
+c.slli a0, 32 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x2345678900000000
+c.slli a0, 63 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x8000000000000000
+c.slli a5, 1 ::
+  inputs: a5=0xabcdef0123456789
+  output: a5=0x579bde02468acf12
+c.fldsp fa0, 0(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0x09938bb5e378ccc9
+  no memory changes
+c.fldsp fa0, 8(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xd46119bc4f7b459c
+  no memory changes
+c.fldsp fa0, 16(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xcd40b4ceaa101165
+  no memory changes
+c.fldsp fa0, 32(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0x0ec2557909435825
+  no memory changes
+c.fldsp fa0, 64(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xb7e70cf3395b0d30
+  no memory changes
+c.fldsp fa0, 128(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0x6c7c4355121e0d98
+  no memory changes
+c.fldsp fa0, 256(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xee5b125eb6a74a8d
+  no memory changes
+c.fldsp fa0, 504(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xbd4f1ec2a7cdc5d1
+  no memory changes
+c.fldsp fa5, 0(sp) ::
+  inputs: sp=&area_mid
+  output: fa5=0x6a642668a9bd2cd0
+  no memory changes
+c.lwsp a0, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffa2c51890
+  no memory changes
+c.lwsp a0, 4(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x0000000003588d55
+  no memory changes
+c.lwsp a0, 8(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffbd9fc2c3
+  no memory changes
+c.lwsp a0, 16(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffff8dc294e9
+  no memory changes
+c.lwsp a0, 32(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x00000000185128a6
+  no memory changes
+c.lwsp a0, 64(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffa02175a9
+  no memory changes
+c.lwsp a0, 128(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x000000002a54a500
+  no memory changes
+c.lwsp a0, 252(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x0000000042735f59
+  no memory changes
+c.lwsp a5, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a5=0x00000000670a7797
+  no memory changes
+c.ldsp a0, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x6429290760136358
+  no memory changes
+c.ldsp a0, 8(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xbefd16247abc5ae2
+  no memory changes
+c.ldsp a0, 16(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x05a2ce0c43b76420
+  no memory changes
+c.ldsp a0, 32(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x22efeba3bef6670c
+  no memory changes
+c.ldsp a0, 64(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x82ad9af526269470
+  no memory changes
+c.ldsp a0, 128(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xa872c2086f198487
+  no memory changes
+c.ldsp a0, 256(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x0ab07070f302a1dc
+  no memory changes
+c.ldsp a0, 504(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xcb1f9e3eb6021eea
+  no memory changes
+c.ldsp a5, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a5=0xc6fac5ba2658c35f
+  no memory changes
+c.jr t0 ::
+  inputs: t0=1f+4
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f+6
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f+8
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-4
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-6
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-8
+  target: reached
+c.jr t6 ::
+  inputs: t6=1f+4
+  target: reached
+c.mv t0, t6 ::
+  inputs: t6=0xabcdef0123456789
+  output: t0=0xabcdef0123456789
+c.mv t6, t0 ::
+  inputs: t0=0xabcdef0123456789
+  output: t6=0xabcdef0123456789
+c.mv s0, s11 ::
+  inputs: s11=0xabcdef0123456789
+  output: s0=0xabcdef0123456789
+c.mv s11, s0 ::
+  inputs: s0=0xabcdef0123456789
+  output: s11=0xabcdef0123456789
+c.mv a0, a7 ::
+  inputs: a7=0xabcdef0123456789
+  output: a0=0xabcdef0123456789
+c.mv a7, a0 ::
+  inputs: a0=0xabcdef0123456789
+  output: a7=0xabcdef0123456789
+c.jalr t0 ::
+  inputs: t0=1f+4
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f+6
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f+8
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-4
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-6
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-8
+  output: ra=1f+2
+  target: reached
+c.jalr t6 ::
+  inputs: t6=1f+4
+  output: ra=1f+2
+  target: reached
+c.add a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: a0=0x0000000000003000
+c.add a0, a1 ::
+  inputs: a0=0x000000007fffffff, a1=0x0000000000000001
+  output: a0=0x0000000080000000
+c.add a0, a1 ::
+  inputs: a0=0x00000000fffffffe, a1=0x0000000000000001
+  output: a0=0x00000000ffffffff
+c.add a0, a1 ::
+  inputs: a0=0x00000000ffffffff, a1=0x0000000000000001
+  output: a0=0x0000000100000000
+c.add a0, a1 ::
+  inputs: a0=0xfffffffffffffffe, a1=0x0000000000000001
+  output: a0=0xffffffffffffffff
+c.add a0, a1 ::
+  inputs: a0=0xffffffffffffffff, a1=0x0000000000000001
+  output: a0=0x0000000000000000
+c.add a4, a5 ::
+  inputs: a4=0x0000000000001000, a5=0x0000000000002000
+  output: a4=0x0000000000003000
+c.fsdsp fa0, 0(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 8(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsdsp fa0, 16(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 32(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 64(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 128(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 256(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+256]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 504(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+496]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsdsp fa5, 0(sp) ::
+  inputs: fa5=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.swsp a0, 0(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 4(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 .. .. .. .. .. .. .. ..
+c.swsp a0, 8(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 .. .. .. ..
+c.swsp a0, 16(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+016]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 32(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+032]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 64(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+064]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 128(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+128]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 252(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+240]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+c.swsp a5, 0(sp) ::
+  inputs: a5=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sdsp a0, 0(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 8(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.sdsp a0, 16(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 32(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 64(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 128(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 256(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+256]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 504(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+496]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.sdsp a5, 0(sp) ::
+  inputs: a5=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..

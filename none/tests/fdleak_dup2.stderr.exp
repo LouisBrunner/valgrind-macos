@@ -1,6 +1,6 @@
 
 
-FILE DESCRIPTORS: 6 open (3 std) at exit.
+FILE DESCRIPTORS: 6 open (3 inherited) at exit.
 Open file descriptor ...: /dev/null
    ...
 

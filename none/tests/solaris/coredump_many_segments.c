@@ -191,7 +191,7 @@ int main(int argc, const char *argv[])
 
    size_t sum = sum_ranges(ranges);
    if (sum < SEGMENTS * page_size) {
-      fprintf(stderr, "Free (virtual) address space cannot accomodate "
+      fprintf(stderr, "Free (virtual) address space cannot accommodate "
               "%u pages.\n", SEGMENTS);
       return 1;
    }

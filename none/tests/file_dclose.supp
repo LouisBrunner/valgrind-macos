@@ -3,5 +3,11 @@
    CoreError:FdBadClose
    fun:*close*
    fun:closefile
-   #fun:main
+}
+{
+   badclose_2
+   CoreError:FdBadClose
+   fun:_close
+   fun:close
+   fun:closefile
 }

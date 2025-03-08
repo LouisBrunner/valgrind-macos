@@ -1,0 +1,3 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: main (cdebug.c:3)
+

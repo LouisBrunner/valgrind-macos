@@ -145,6 +145,9 @@ Thread #x's call to pthread_mutex_unlock failed
 
 Thread #x: Exiting thread still holds 1 lock
    ...
+   by 0x........: exit_WRK (hg_intercepts.c:...)
+   by 0x........: exit (hg_intercepts.c:...)
+   ...
 
 
 ERROR SUMMARY: 11 errors from 11 contexts (suppressed: 0 from 0)

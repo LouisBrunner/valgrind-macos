@@ -153,7 +153,6 @@ typedef  unsigned long HWord;
 #undef VEX_HOST_WORDSIZE
 #undef VEX_REGPARM
 
-/* The following 4 work OK for Linux. */
 #if defined(__x86_64__)
 #   define VEX_HOST_WORDSIZE 8
 #   define VEX_REGPARM(_n) /* */
@@ -196,6 +195,10 @@ typedef  unsigned long HWord;
 
 #elif defined(__nanomips__) && (__nanomips != 64)
 #   define VEX_HOST_WORDSIZE 4
+#   define VEX_REGPARM(_n) /* */
+
+#elif defined(__riscv) && (__riscv_xlen == 64)
+#   define VEX_HOST_WORDSIZE 8
 #   define VEX_REGPARM(_n) /* */
 
 #else

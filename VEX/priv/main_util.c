@@ -543,8 +543,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
 
 
 /* A general replacement for printf().  Note that only low-level 
-   debugging info should be sent via here.  The official route is to
-   to use vg_message().  This interface is deprecated.
+   debugging info should be sent via here.
 */
 static HChar myprintf_buf[1000];
 static Int   n_myprintf_buf;

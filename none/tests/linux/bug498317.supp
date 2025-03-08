@@ -1,0 +1,8 @@
+{
+   test suppression of FdBadUse
+   CoreError:FdBadUse
+   ...
+   fun:fcntl*
+   fun:main
+}
+

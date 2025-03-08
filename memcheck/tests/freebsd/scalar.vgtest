@@ -1,5 +1,5 @@
 prog: scalar
-vgopts: -q --error-limit=no
+vgopts: -q --error-limit=no --suppressions=scalar.supp
 stderr_filter: filter_scalar
 # Remove all frames from the stack trace except the first one.
 # This is important because syscall() function on x86 isn't ABI conformant

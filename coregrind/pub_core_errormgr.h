@@ -31,7 +31,7 @@
 #define __PUB_CORE_ERRORMGR_H
 
 //--------------------------------------------------------------------
-// PURPOSE: This module manages errors recording and printing, 
+// PURPOSE: This module manages errors recording and printing,
 // which includes suppression reading and writing.
 //--------------------------------------------------------------------
 
@@ -39,13 +39,14 @@
 
 // These must be negative, so as to not overlap with tool error kinds.
 typedef
-   enum { 
+   enum {
       // Nb: thread errors are a relic of the time when Valgrind's core
       // could detect them.  This example is left as an example should new
       // core errors ever be added.
       ThreadErr = -1,
       FdBadClose = -2,
       FdNotClosed = -3,
+      FdBadUse = -4,
    }
    CoreErrorKind;
 
@@ -77,7 +78,7 @@ extern void VG_(show_error_counts_as_XML) ( void );
 
 extern Bool VG_(is_action_requested)      ( const HChar* action, Bool* clo );
 
-extern Bool VG_(showing_core_errors)      ( void );
+extern Bool VG_(showing_core_warnings)    ( void );
 
 extern UInt VG_(get_n_errs_found)         ( void );
 extern UInt VG_(get_n_errs_shown)         ( void );

@@ -1,0 +1,6 @@
+# This produces no output (only does so under truss or ktrace)
+# but there was an issue with the syscall that generated false positives
+# due to holes in the struct used
+env: LD_UTRACE=1
+prog: ../../../tests/true
+vgopts: -q

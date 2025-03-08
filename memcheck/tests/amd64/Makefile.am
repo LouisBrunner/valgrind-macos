@@ -48,7 +48,6 @@ check_PROGRAMS = \
 	bt_everything \
 	bug132146 \
 	bug279698 \
-	# bug492210 \ # broken on GitHub Linux runners
 	fxsave-amd64 \
 	insn-bsfl \
 	insn-pmovmskb \
@@ -74,6 +73,7 @@ endif
 # but the problem is macOS, not clang
 if !VGCONF_OS_IS_DARWIN
  check_PROGRAMS += \
+	bug492210 \
 	shr_edx
 endif
 
@@ -81,6 +81,7 @@ AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
 
+bug492210_CFLAGS	= ${AM_CFLAGS} @FLAG_NO_PIE@ @FLAG_W_NO_UNINITIALIZED@
 fxsave_amd64_CFLAGS	= $(AM_CFLAGS) @FLAG_NO_PIE@
 insn_pcmpistri_CFLAGS	= $(AM_CFLAGS)
 more_x87_fp_CFLAGS	= $(AM_CFLAGS) -O -ffast-math -mfpmath=387 \

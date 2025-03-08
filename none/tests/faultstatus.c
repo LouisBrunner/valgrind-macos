@@ -11,7 +11,7 @@
 #include "../../config.h"
 
 /* Division by zero triggers a SIGFPE on x86 and x86_64,
-   but not on the PowerPC architecture.
+   but not on the PowerPC, AArch64 and RISC-V architectures.
 
    On ARM-Linux, we do get a SIGFPE, but not from the faulting of a
    division instruction (there isn't any such thing) but rather
@@ -19,7 +19,7 @@
    Hence we get a SIGFPE but the SI_CODE is different from that on
    x86/amd64-linux.
  */
-#if defined(__powerpc__) || defined(__aarch64__)
+#if defined(__powerpc__) || defined(__aarch64__) || defined(__riscv)
 #  define DIVISION_BY_ZERO_TRIGGERS_FPE 0
 #if defined(VGO_freebsd)
 #  define DIVISION_BY_ZERO_SI_CODE      SI_LWP
@@ -40,7 +40,7 @@
  * BUS_ADRERR is used for bus time out while BUS_OBJERR is translated
  * from underlying codes FC_OBJERR (x86) or ASYNC_BERR (sparc).
  */
-#if defined(VGO_solaris) || (defined(VGO_freebsd) && (FREEBSD_VERS >= FREEBSD_12_2))
+#if defined(VGO_solaris) || defined(VGO_freebsd)
 #  define BUS_ERROR_SI_CODE  BUS_OBJERR
 #else
 #  define BUS_ERROR_SI_CODE  BUS_ADRERR
@@ -170,12 +170,12 @@ int main()
 		const struct test tests[] = {
 #define T(n, sig, code, addr) { test##n, sig, code, addr }
 			T(1, SIGSEGV,	SEGV_MAPERR,	BADADDR),
-			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
-#if defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_12_2)
-			T(3, SIGSEGV,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
+#if defined(VGO_darwin)
+			T(2, SIGBUS,	SEGV_ACCERR,	mapping),
 #else
-			T(3, SIGBUS,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
+			T(2, SIGSEGV,	SEGV_ACCERR,	mapping),
 #endif
+			T(3, SIGBUS,	BUS_ERROR_SI_CODE, &mapping[FILESIZE+10]),
 			T(4, SIGFPE,    DIVISION_BY_ZERO_SI_CODE, 0),
 #undef T
 		};

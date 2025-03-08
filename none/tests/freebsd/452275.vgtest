@@ -1,3 +1,0 @@
-prog: 452275
-vgopts: -q
-stderr_filter: filter_452275

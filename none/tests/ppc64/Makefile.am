@@ -190,8 +190,10 @@ test_isa_2_06_part3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_
 
 test_dfp1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+# Explicitly use -std=gnu99 because the meaning of void (*test_func_t)()
+# changed in c23, causing incompatible-pointer-types errors.
 test_dfp2_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
-			@FLAG_M64@ $(BUILD_FLAGS_DFP)
+			@FLAG_M64@ $(BUILD_FLAGS_DFP) -std=gnu99
 test_dfp3_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_DFP)
 test_dfp4_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(DFP_FLAG) \

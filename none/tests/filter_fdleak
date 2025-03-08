@@ -16,24 +16,31 @@ perl -p -e 's/^Open file descriptor [0-9]*:$/Open file descriptor ...:/' |
 perl -p -e 's/File descriptor [0-9]*: .* is already closed/File descriptor ...: ... is already closed/' |
 perl -p -e 's/127.0.0.1:[0-9]*/127.0.0.1:.../g' |
 perl -p -e 's/socket\.c:[1-9][0-9]*/in \/...libc.../' |
-# arm systems substitute open for creat
-perl -p -e 's/open \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
-perl -p -e "s/: open \(/: creat (/" |
-
-# FreeBSD specific fdleak filters
-perl -p -e 's/ _close / close /;s/ _openat / creat /;s/internet/AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:.../' |
-sed '/by 0x........: close (in \/...libc...)/d' |
-sed '/by 0x........: creat (in \/...libc...)/d' |
 
 # Solaris specific fdleak filters
 perl -p -e 's/ __close / close /' |
+perl -p -e 's/ __write / write /' |
 sed '/ _so_socket /d;' |
 awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
 awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |
+sed '/__open/d' |
+sed 's/__systemcall6/creat/' |
+
+# arm systems substitute open for creat
+perl -p -e 's/open \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
+perl -p -e "s/: open \(/: creat (/" |
+# arm64 write resolved to file:line with debuginfo
+perl -p -e "s/write\.c:[1-9][0-9]*/in \/...libc.../" |
+
+# FreeBSD specific fdleak filters
+perl -p -e 's/ _close / close /;s/ _openat / creat /;s/ _write/ write/;s/internet/AF_INET socket 4: 127.0.0.1:... <-> 127.0.0.1:.../' |
+sed '/by 0x........: close (in \/...libc...)/d' |
+sed '/by 0x........: creat (in \/...libc...)/d' |
+sed '/by 0x........: write (in \/...libc...)/d' |
 
 # Stack traces showing where fds were created have lots of variations:
 # different numbers of entries, line numbers or not depending on whether
-# libc debug info is present, 'main' vs. '(below main)', etc.  
+# libc debug info is present, 'main' vs. '(below main)', etc.
 #
 # So we just cut out the entire stack trace.  It's coarse but effective;
 # before we did this we had a plethora of expected outputs, with only

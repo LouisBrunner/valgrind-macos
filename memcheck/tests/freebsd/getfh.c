@@ -13,7 +13,7 @@ int main()
    char path[PATH_MAX];
    fhandle_t fh1;
    fhandle_t fh2;
-#if (FREEBSD_VERS >= FREEBSD_12)
+#if (__FreeBSD_version >= 1200031)
    fhandle_t fh3;
 #endif
  
@@ -26,7 +26,7 @@ int main()
  
     getfh(path, &fh1);
     lgetfh(path, &fh2);
-#if (FREEBSD_VERS >= FREEBSD_12)    
+#if (__FreeBSD_version >= 1200031)
     getfhat(fd, path, &fh3, AT_SYMLINK_NOFOLLOW);
 #endif
  
@@ -39,7 +39,7 @@ int main()
  
     getfh(fn, pfh1);
     lgetfh(fn, pfh1);
-#if (FREEBSD_VERS >= FREEBSD_12)    
+#if (__FreeBSD_version >= 1200031)
     getfhat(*pi+AT_FDCWD, fn, pfh1, *pi+AT_SYMLINK_NOFOLLOW);
 #endif
  

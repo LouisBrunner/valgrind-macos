@@ -3939,7 +3939,7 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename,
                 * VG_(di_notify_mmap): in some cases, the 2 NSegments will
                 * have been merged and VG_(di_notify_mmap) only gets called
                 * once.
-                * How to detect that the segments were be merged ?
+                * How to detect that the segments were merged ?
                 * Logically, they will be merged if the first segment ends
                 * at the beginning of the second segment:
                 *   Seg1 virtual address + Seg1 segment_size

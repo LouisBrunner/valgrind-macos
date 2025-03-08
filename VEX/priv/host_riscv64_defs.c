@@ -2353,7 +2353,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
                                         ? disp_cp_chain_me_to_fastEP
                                         : disp_cp_chain_me_to_slowEP;
 
-      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)disp_cp_chain_me);
+      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_chain_me);
 
       /* c.jalr 0(t0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1001);
@@ -2405,7 +2405,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       }
 
       /* li t0, VG_(disp_cp_xindir) */
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)disp_cp_xindir);
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_xindir);
 
       /* c.jr 0(t0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
@@ -2479,7 +2479,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = imm64_to_ireg(p, 8 /*x8/s0*/, trcval);
 
       /* li t0, VG_(disp_cp_xassisted) */
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)disp_cp_xassisted);
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_xassisted);
 
       /* c.jr 0(t0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
@@ -2598,7 +2598,7 @@ VexInvalRange chainXDirect_RISCV64(VexEndness  endness_host,
    UChar* p = place_to_chain;
    vassert(((HWord)p & 1) == 0);
    vassert(is_addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/,
-                                         (ULong)disp_cp_chain_me_EXPECTED));
+                                         (ULong)(HWord)disp_cp_chain_me_EXPECTED));
    vassert(p[18] == 0x82 && p[19] == 0x92);
 
    /* And what we want to change it to is:
@@ -2615,7 +2615,7 @@ VexInvalRange chainXDirect_RISCV64(VexEndness  endness_host,
 
       The replacement has the same length as the original.
    */
-   (void)addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)place_to_jump_to);
+   (void)addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)(HWord)place_to_jump_to);
    p[18] = 0x82;
    p[19] = 0x82;
 

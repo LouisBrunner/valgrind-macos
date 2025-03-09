@@ -1206,8 +1206,14 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 
    /* Finally, the point of all this stattery: if it's not a regular file,
-      don't try to read debug info from it. */
-   if (! VKI_S_ISREG(statbuf.mode))
+      don't try to read debug info from it. Also if it is a "regular file"
+      but has a zero size then skip it. Having a zero size will definitely
+      fail when trying to create an DiImage and wouldn't be a valid elf or
+      macho file. This can happen when mmapping a deleted file, which
+      would normally fail in the check above, because the stat call will
+      fail.  But if the deleted file is on an NFS file system then a fake
+      (regular) empty file might be returned.  */
+   if (! VKI_S_ISREG(statbuf.mode) || statbuf.size == 0)
       return 0;
 
    /* no uses of statbuf below here. */

@@ -169,10 +169,6 @@ Status
 Only opcodes with extended mnemonics as identified in Appendix J of the
 Principles of Operation are considered.
 
-There is only partial support for opcodes with optional operands.
-In the sense that the generated testcases will always include the
-optional operand.
-
 
 TODO
 ----

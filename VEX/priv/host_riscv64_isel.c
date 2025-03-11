@@ -542,7 +542,7 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       The same applies to nextFArgReg which records a number of used
       floating-point registers f10/fa0 .. f17/fa7.
     */
-   addInstr(env, RISCV64Instr_Call(*retloc, (Addr64)cee->addr, cond, nextArgReg,
+   addInstr(env, RISCV64Instr_Call(*retloc, (Addr64)(HWord)cee->addr, cond, nextArgReg,
                                    nextFArgReg));
 
    return True;

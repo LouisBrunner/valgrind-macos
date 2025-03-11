@@ -3,7 +3,7 @@ fsize (1):	-1
 data (2):	4096
 stack (3):	16777216
 core (4):	-1
-rss (5):	40000000
+rss (5):	0
 memlock (6):	0
 nproc (7):	0
 nofile (8):	3

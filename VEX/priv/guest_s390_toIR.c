@@ -4326,7 +4326,7 @@ s390_format_VRRa_VVVMMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
 
 static void
 s390_format_VSI_URDV(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar i3),
-                     UChar v1, UChar b2, UChar d2, UChar i3, UChar rxb)
+                     UChar v1, UChar b2, UShort d2, UChar i3, UChar rxb)
 {
    const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);

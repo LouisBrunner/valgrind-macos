@@ -1888,7 +1888,7 @@ ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
    if (debug)
       VG_(dmsg)("di_notify_dsc-1: %s\n", filename);
 
-   if (!ML_(check_macho_and_get_rw_loads)( (const void*) header, len, &rw_load_count ))
+   if (!ML_(check_macho_and_get_rw_loads_from_memory)( (const void*) header, len, &rw_load_count ))
       return 0;
 
    /* See if we have a DebugInfo for this filename.  If not,

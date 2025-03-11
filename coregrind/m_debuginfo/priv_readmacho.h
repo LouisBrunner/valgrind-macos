@@ -37,6 +37,9 @@
    it. Also count the number of RW segements. */
 extern Bool ML_(check_macho_and_get_rw_loads)( Int fd, Int* rw_loads );
 
+/* Same as above, but reads from memory instead of a file descriptor. */
+extern Bool ML_(check_macho_and_get_rw_loads_from_memory)( const void* buf, SizeT size, Int* rw_loads );
+
 /* The central function for reading Mach-O debug info.  For the
    object/exe specified by the DebugInfo, find Mach-O sections, then read
    the symbols, line number info, file name info, CFA (stack-unwind

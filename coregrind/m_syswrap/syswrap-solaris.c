@@ -3989,11 +3989,13 @@ PRE(sys_fcntl)
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd, int, arg);
       /* Check if a client program isn't going to poison any of V's output
          fds. */
+      /*
       if (ARG2 == VKI_F_DUP2FD &&
           !ML_(fd_allowed)(ARG3, "fcntl(F_DUP2FD)", tid, False)) {
          SET_STATUS_Failure(VKI_EBADF);
          return;
       }
+      */
       break;
 
    /* These ones use ARG3 as "native lock" (input only). */

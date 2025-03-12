@@ -82,9 +82,11 @@ int main(int argc, char *argv[])
             }
         }
         // add some rounding to try to make regtest stable
+        // most of these change all the time
         switch (i)
         {
         case 7:
+        case 5:
         case 9:
         case 11:
         case 12:
@@ -92,9 +94,6 @@ int main(int argc, char *argv[])
         case 14:
         case 15:
             res = 0U;
-            break;
-        case 5:
-            res = res/10000000 * 10000000;
             break;
         case 10:
             res = res/100000000 * 100000000;

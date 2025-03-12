@@ -1196,7 +1196,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    if (sr_isError(statres)) {
       DebugInfo fake_di;
       Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL
-                   || VG_(strstr)(filename, "/dev/shm/") != NULL;
+                   || VG_(strstr)(filename, "/dev/shm/") != NULL
+                   || VG_(strncmp)("/memfd:", filename,
+                                   VG_(strlen)("/memfd:")) == 0;
       if (!quiet && VG_(clo_verbosity) > 1) {
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
          fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm", filename);

@@ -35,12 +35,12 @@ Unaddressable byte(s) found during client check request
 Uninitialised byte(s) found during client check request
    at 0x........: croak (dw4.c:32)
    by 0x........: main (dw4.c:89)
- Address 0x........ is in a rw- mapped file /export/home/paulf/valgrind/memcheck/tests/dw4 segment
+ Address 0x........ is in a rw- mapped file DIRECTORY/dw4 segment
 
 Uninitialised byte(s) found during client check request
    at 0x........: croak (dw4.c:32)
    by 0x........: main (dw4.c:91)
- Address 0x........ is in a rw- mapped file /export/home/paulf/valgrind/memcheck/tests/dw4 segment
+ Address 0x........ is in a rw- mapped file DIRECTORY/dw4 segment
 
 Unaddressable byte(s) found during client check request
    at 0x........: croak (dw4.c:25)

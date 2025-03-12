@@ -2353,7 +2353,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
                                         ? disp_cp_chain_me_to_fastEP
                                         : disp_cp_chain_me_to_slowEP;
 
-      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)disp_cp_chain_me);
+      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_chain_me);
 
       /* c.jalr 0(t0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1001);
@@ -2405,7 +2405,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       }
 
       /* li t0, VG_(disp_cp_xindir) */
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)disp_cp_xindir);
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_xindir);
 
       /* c.jr 0(t0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
@@ -2479,7 +2479,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = imm64_to_ireg(p, 8 /*x8/s0*/, trcval);
 
       /* li t0, VG_(disp_cp_xassisted) */
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)disp_cp_xassisted);
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_xassisted);
 
       /* c.jr 0(t0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
@@ -2598,7 +2598,7 @@ VexInvalRange chainXDirect_RISCV64(VexEndness  endness_host,
    UChar* p = place_to_chain;
    vassert(((HWord)p & 1) == 0);
    vassert(is_addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/,
-                                         (ULong)disp_cp_chain_me_EXPECTED));
+                                         (ULong)(HWord)disp_cp_chain_me_EXPECTED));
    vassert(p[18] == 0x82 && p[19] == 0x92);
 
    /* And what we want to change it to is:
@@ -2615,7 +2615,7 @@ VexInvalRange chainXDirect_RISCV64(VexEndness  endness_host,
 
       The replacement has the same length as the original.
    */
-   (void)addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)place_to_jump_to);
+   (void)addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)(HWord)place_to_jump_to);
    p[18] = 0x82;
    p[19] = 0x82;
 
@@ -2647,7 +2647,7 @@ VexInvalRange unchainXDirect_RISCV64(VexEndness  endness_host,
    UChar* p = place_to_unchain;
    vassert(((HWord)p & 1) == 0);
    vassert(is_addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/,
-                                         (ULong)place_to_jump_to_EXPECTED));
+                                         (ULong)(HWord)place_to_jump_to_EXPECTED));
    vassert(p[18] == 0x82 && p[19] == 0x82);
 
    /* And what we want to change it to is:
@@ -2664,7 +2664,7 @@ VexInvalRange unchainXDirect_RISCV64(VexEndness  endness_host,
 
       The replacement has the same length as the original.
    */
-   (void)addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)disp_cp_chain_me);
+   (void)addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)(HWord)disp_cp_chain_me);
    p[18] = 0x82;
    p[19] = 0x89;
 
@@ -2686,7 +2686,7 @@ VexInvalRange patchProfInc_RISCV64(VexEndness   endness_host,
    vassert(p[18] == 0x83 && p[19] == 0x32 && p[20] == 0x03 && p[21] == 0x00);
    vassert(p[22] == 0x85 && p[23] == 0x02);
    vassert(p[24] == 0x23 && p[25] == 0x30 && p[26] == 0x53 && p[27] == 0x00);
-   (void)addr48_to_ireg_EXACTLY_18B(p, 6 /*x6/t1*/, (ULong)location_of_counter);
+   (void)addr48_to_ireg_EXACTLY_18B(p, 6 /*x6/t1*/, (ULong)(HWord)location_of_counter);
    VexInvalRange vir = {(HWord)p, 28};
    return vir;
 }

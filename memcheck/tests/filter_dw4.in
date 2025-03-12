@@ -9,6 +9,9 @@ $SED "s/inside a block of size [0-9]* alloc'd/inside a block of size ... alloc'd
 # remove directory name and pid from mapped filename
 $SED "s/file .*valgrind-dw4-test.[1-9][0-9]*/file valgrind-dw4-test.PID/" |
 
+# remove name from mapped file segment
+$SED "s#is in a rw- mapped file .*/dw4 segment#is in a rw- mapped file DIRECTORY/dw4 segment#" |
+
 ./filter_stderr "$@"
 
 exit 0

@@ -264,7 +264,7 @@ static CORE_ADDR** target_get_dtv (ThreadState *tst)
             void *private;
         } tcbhead_t;
    */
-   return (CORE_ADDR**)(void *)(riscv->guest_x4 - 2 * sizeof(void *));
+   return (CORE_ADDR**)(void *)((HWord)riscv->guest_x4 - 2 * sizeof(void *));
 }
 
 static struct valgrind_target_ops low_target = {

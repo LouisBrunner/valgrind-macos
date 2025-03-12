@@ -91,7 +91,13 @@ static Int count_rw_loads(const struct load_command* macho_load_commands, unsign
   for (unsigned int i = 0U; i < ncmds; ++i) {
       if (lc->cmd == LC_SEGMENT_CMD) {
         const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
-        if (sc->initprot == 3) {
+        if (sc->initprot == 3
+#if DARWIN_VERS >= DARWIN_14_00
+// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 14 and later (not sure when that started)
+// so we ignore it otherwise some binaries don't get symbols
+            && VG_(strcmp)(sc->segname, "__DATA_CONST") != 0
+#endif
+        ) {
           rw_loads += 1;
         }
       }

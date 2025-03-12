@@ -1061,9 +1061,9 @@ case "$ARCH_MAX-$VGCONF_OS" in
           AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
           AC_MSG_ERROR([32-bit build with Darwin arm64 (aach64) is unsupported])
         fi
-        if test x$I_ACKNOWLEDGE_THIS_MIGHT_CRASH_MY_COMPUTER != xyes; then
+        if test x$I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER != xyes; then
           AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
-          AC_MSG_ERROR([Darwin arm64 is still experimental, see https://github.com/LouisBrunner/valgrind-macos/issues/56 and use at your own risk])
+          AC_MSG_ERROR([Valgrind support on Darwin arm64 is experimental and may crash or even damage your computer. Please refer to https://github.com/LouisBrunner/valgrind-macos/issues/123 for more details and use at your own risk.])
         fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;

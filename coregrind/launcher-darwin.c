@@ -221,6 +221,17 @@ int main(int argc, char** argv, char** envp)
    char **new_argv;
    int new_argc;
 
+#if defined(VGA_arm64)
+  {
+    const char *ack = getenv("I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER");
+    if (!ack || strcmp(ack, "yes") != 0) {
+      fprintf(stderr, "Valgrind support on Darwin arm64 is experimental and may crash or even damage your computer. "
+                      "Please refer to https://github.com/LouisBrunner/valgrind-macos/issues/123 for more details and use at your own risk.\n");
+      exit(3);
+    }
+  }
+#endif
+
    /* Start the debugging-log system ASAP.  First find out how many
       "-d"s were specified.  This is a pre-scan of the command line.
       At the same time, look for the tool name. */

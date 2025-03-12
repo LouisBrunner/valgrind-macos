@@ -7,7 +7,7 @@ on:
 
 env:
   TEST_FOLDER: .github/test
-  I_ACKNOWLEDGE_THIS_MIGHT_CRASH_MY_COMPUTER: yes
+  I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER: yes
 
 jobs:
   build_various_platforms:

@@ -56,6 +56,10 @@
 // number back to the kernel (__NR_something shouldn't be passed directly to
 // the kernel).
 //
+// Nore that on arm, the class are unused and it works more like on i386.
+// Mach are negative, Unix are positive and machine-dependent don't really exist
+// outside thread_set_tsd_base which is a special value of 0x80000000.
+//
 // Hack: x86 `int $0x80` (unix, 64-bit result) are special.
 // [I haven't worked out why... --njn]
 
@@ -86,22 +90,24 @@
     ((VG_DARWIN_SYSCALL_CLASS_DIAG << VG_DARWIN_SYSCALL_CLASS_SHIFT) | \
      (VG_DARWIN_SYSCALL_NUMBER_MASK & (syscall_number)))
 
-
 /* Macros for decoding syscall numbers from the 64-bit encoding scheme. */
 #define VG_DARWIN_SYSNO_INDEX(sysno) ((sysno) & VG_DARWIN_SYSCALL_NUMBER_MASK)
 #define VG_DARWIN_SYSNO_CLASS(sysno) ((sysno) >> VG_DARWIN_SYSCALL_CLASS_SHIFT)
 
 
 /* Macros for converting syscall numbers to the form expected by the kernel.*/
-#if defined(VGA_x86)
+#if defined(VGA_x86) || defined(VGA_arm64)
    // This converts the 64-bit syscall number encoding, which we use
    // throughout Valgrind, into the 32-bit syscall number encoding, which is
    // suitable for passing to the (32-bit) kernel.
+   // This is also the case on ARM.
 #  define VG_DARWIN_SYSNO_FOR_KERNEL(sysno) \
     ((VG_DARWIN_SYSNO_CLASS(sysno) == VG_DARWIN_SYSCALL_CLASS_MACH) \
     ? -VG_DARWIN_SYSNO_INDEX(sysno) \
     :  VG_DARWIN_SYSNO_INDEX(sysno) \
     )
+#  define VG_DARWIN_UNIX_SYSNO_FOR_KERNEL_ASM(sysno) VG_DARWIN_SYSNO_INDEX(sysno)
+#  define VG_DARWIN_MACH_SYSNO_FOR_KERNEL_ASM(sysno) (-VG_DARWIN_SYSNO_INDEX(sysno))
 
 #elif defined(VGA_amd64)
    // For 64-bit systems, we don't need to do anything to the syscall number.
@@ -133,6 +139,11 @@
 #define __NR_thread_fast_set_cthread_self VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(3)
 // 4, 5, 6 are invalid
 
+#elif defined(VGA_arm64)
+
+#define __NR_thread_set_tsd_base VG_DARWIN_SYSCALL_CONSTRUCT_MDEP(0)
+#define __SYSNO_thread_set_tsd_base 0x80000000
+
 #else
 #  error unknown architecture
 #endif
@@ -141,7 +152,7 @@
 // osfmk/mach/syscall_sw.h
 
 #define __NR_kernelrpc_mach_vm_allocate_trap         VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)
-
+#define __NR_kernelrpc_mach_vm_purgable_control_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)
 #define __NR_kernelrpc_mach_vm_deallocate_trap       VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12)
 
 #define __NR_kernelrpc_mach_vm_protect_trap          VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14)
@@ -222,7 +233,8 @@
 #endif
 
 #if DARWIN_VERS >= DARWIN_10_15
-#define _NR_kernelrpc_mach_port_request_notification_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)
+#define __NR_kernelrpc_mach_port_type_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)
+#define __NR_kernelrpc_mach_port_request_notification_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)
 #endif
 
 #define __NR_mach_timebase_info               VG_DARWIN_SYSCALL_CONSTRUCT_MACH(89)
@@ -275,7 +287,11 @@
 #define	__NR_fchflags       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(35)
 #define	__NR_sync           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(36)
 #define	__NR_kill           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(37)
+#if defined(VGA_arm64)
+#define __NR_sys_crossarch_trap VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(38)
+#else
 			/* 38  old stat */
+#endif
 #define	__NR_getppid        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(39)
 			/* 40  old lstat */
 #define	__NR_dup            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(41)
@@ -797,6 +813,7 @@
 #endif
 #define __NR_faccessat              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(466)
 #define __NR_fstatat64              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(470)
+#define __NR_unlinkat               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(472)
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)
 #define __NR_mkdirat                VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(475)
 #define __NR_bsdthread_ctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(478)
@@ -873,6 +890,7 @@
 #endif
 
 #if DARWIN_VERS >= DARWIN_11_00
+#define __NR_objc_bp_assist_cfg_np              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(535)
 #define __NR_shared_region_map_and_slide_2_np   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(536)
 #define __NR_pivot_root                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(537)
 #define __NR_task_inspect_for_pid               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(538)
@@ -899,6 +917,11 @@
 #define __NR_mkfifoat                         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(553)
 #define __NR_mknodat                          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(554)
 #define __NR_ungraftdmg                       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
+#endif
+
+#if DARWIN_VERS >= DARWIN_15_00
+#define __NR_sys_coalition_policy_set VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(556)
+#define __NR_sys_coalition_policy_get VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(557)
 #endif
 
 #if DARWIN_VERS < DARWIN_10_6
@@ -930,7 +953,7 @@
 #elif DARWIN_VERS == DARWIN_14_00
 #define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
 #elif DARWIN_VERS == DARWIN_15_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555) // TODO: invalid
+#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(557)
 #else
 #error unknown darwin version
 #endif

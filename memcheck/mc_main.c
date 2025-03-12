@@ -1256,6 +1256,19 @@ static Bool modify_ignore_ranges ( Bool addRange, Addr start, Addr len )
    return True;
 }
 
+static inline Addr transform_addr_before_check(Addr a) {
+#if defined(VGP_arm64_darwin)
+  // FIXME: HACK
+  // arm64 supports tagged pointers where part of the address space can be used without affecting the pointer.
+  // While it would be better for VEX to handle this somehow, I am not sure how to do that.
+  // So in the meantime, this hack will make sure we don't generate too much false positives.
+  if ((a & 0x8F00000000000000) == 0x8000000000000000) {
+    return a & 0x7fffffffffffffff;
+  }
+#endif
+  return a;
+}
+
 
 /* --------------- Load/store slow cases. --------------- */
 
@@ -1272,6 +1285,8 @@ void mc_LOADV_128_or_256_slow ( /*OUT*/ULong* res,
    Addr   ai;
    UChar  vbits8;
    Bool   ok;
+
+   a = transform_addr_before_check(a);
 
    /* Code below assumes load size is a power of two and at least 64
       bits. */
@@ -1397,6 +1412,8 @@ VG_REGPARM(3) /* make sure we're using a fixed calling convention, since
                  this function may get called from hand written assembly. */
 ULong mc_LOADVn_slow ( Addr a, SizeT nBits, Bool bigendian )
 {
+   a = transform_addr_before_check(a);
+
    PROF_EVENT(MCPE_LOADVN_SLOW);
 
    /* ------------ BEGIN semi-fast cases ------------ */
@@ -1574,6 +1591,8 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
    UChar vbits8;
    Addr  ai;
    Bool  ok;
+
+   a = transform_addr_before_check(a);
 
    PROF_EVENT(MCPE_STOREVN_SLOW);
 

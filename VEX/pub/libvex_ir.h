@@ -271,6 +271,8 @@ typedef
       Ico_U64,
       Ico_U128,  /* 128-bit restricted integer constant,
                     same encoding scheme as V128 */
+      Ico_F16i,  /* 16-bit unsigned int to be interpreted literally
+                    as a IEEE754 single value. */
       Ico_F32,   /* 32-bit IEEE754 floating */
       Ico_F32i,  /* 32-bit unsigned int to be interpreted literally
                     as a IEEE754 single value. */
@@ -298,6 +300,7 @@ typedef
          UInt   U32;
          ULong  U64;
          UShort U128;
+         UShort F16i;
          Float  F32;
          UInt   F32i;
          Double F64;
@@ -315,6 +318,7 @@ extern IRConst* IRConst_U16  ( UShort );
 extern IRConst* IRConst_U32  ( UInt );
 extern IRConst* IRConst_U64  ( ULong );
 extern IRConst* IRConst_U128 ( UShort );
+extern IRConst* IRConst_F16i ( UInt );
 extern IRConst* IRConst_F32  ( Float );
 extern IRConst* IRConst_F32i ( UInt );
 extern IRConst* IRConst_F64  ( Double );
@@ -838,6 +842,11 @@ typedef
       Iop_MinNumF64,  /* min, F64, ditto */
       Iop_MaxNumF32,  /* max, F32, ditto */
       Iop_MinNumF32,  /* min, F32, ditto */
+      /* same but for 128-bit SIMD */
+      Iop_MaxN64Fx2,
+      Iop_MinN64Fx2,
+      Iop_MaxN32Fx4,
+      Iop_MinN32Fx4,
 
       /* ------------------ 16-bit scalar FP ------------------ */
 
@@ -2518,7 +2527,7 @@ typedef
 	 all mean: do a syscall before continuing. */
       Ijk_Sys_syscall,    /* amd64/x86 'syscall', ppc 'sc', arm 'svc #0' */
       Ijk_Sys_int32,      /* amd64/x86 'int $0x20' */
-      Ijk_Sys_int128,     /* amd64/x86 'int $0x80' */
+      Ijk_Sys_int128,     /* amd64/x86 'int $0x80', arm 'svc #80' */
       Ijk_Sys_int129,     /* amd64/x86 'int $0x81' */
       Ijk_Sys_int130,     /* amd64/x86 'int $0x82' */
       Ijk_Sys_int145,     /* amd64/x86 'int $0x91' */

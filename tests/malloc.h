@@ -3,7 +3,10 @@
 #include <stdlib.h>
 #include "config.h"
 #if defined(VGO_darwin)
+// without this we are missing malloc_type_id_t on Xcode 16+
+#define _DARWIN_C_SOURCE
 #  include <malloc/malloc.h>
+#undef _DARWIN_C_SOURCE
 #elif defined(VGO_freebsd)
 #  include <stdlib.h>
 #  include <malloc_np.h>
@@ -60,4 +63,3 @@ static void* memalign64(size_t szB)
    assert(0 == ((64-1) & (unsigned long)x));
    return x;
 }
-

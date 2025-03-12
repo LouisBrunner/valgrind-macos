@@ -2,12 +2,12 @@
 /*--------------------------------------------------------------------*/
 /*--- Assertions and panics.                        m_libcassert.c ---*/
 /*--------------------------------------------------------------------*/
- 
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -140,7 +140,7 @@
         (srP)->misc.ARM.r11 = block[4];                   \
         (srP)->misc.ARM.r7  = block[5];                   \
       }
-#elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
+#elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin) || defined(VGP_arm64_freebsd)
 #  define GET_STARTREGS(srP)                              \
       { ULong block[4];                                   \
         __asm__ __volatile__(                             \
@@ -298,7 +298,7 @@ static void exit_wrk( Int status, Bool gdbserver_call_allowed)
    if (gdbserver_call_allowed && !exit_called) {
       const ThreadId atid = 1; // Arbitrary tid used to call/terminate gdbsrv.
       exit_called = True;
-      if (status != 0 
+      if (status != 0
           && VgdbStopAtiS(VgdbStopAt_ValgrindAbExit, VG_(clo_vgdb_stop_at))) {
          if (VG_(gdbserver_init_done)()) {
             if (!(VG_(clo_launched_with_multi)))
@@ -407,50 +407,50 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
                                     Bool exited_threads,
                                     const UnwindStartRegs* startRegsIN)
 {
-   Int i; 
+   Int i;
    if (host_stacktrace) {
       const Bool save_clo_xml = VG_(clo_xml);
       Addr stacktop;
       Addr ips[BACKTRACE_DEPTH];
       Int  n_ips;
-      ThreadState *tst 
+      ThreadState *tst
          = VG_(get_ThreadState)( VG_(lwpid_to_vgtid_dead_ok)(VG_(gettid)()));
- 
+
       // If necessary, fake up an ExeContext which is of our actual real CPU
       // state.  Could cause problems if we got the panic/exception within the
       // execontext/stack dump/symtab code.  But it's better than nothing.
       UnwindStartRegs startRegs;
       VG_(memset)(&startRegs, 0, sizeof(startRegs));
-      
+
       if (startRegsIN == NULL) {
          GET_STARTREGS(&startRegs);
       } else {
          startRegs = *startRegsIN;
       }
- 
+
       stacktop = tst->os_state.valgrind_stack_init_SP;
 
-      n_ips = 
+      n_ips =
          VG_(get_StackTrace_wrk)(
-            0/*tid is unknown*/, 
-            ips, BACKTRACE_DEPTH, 
+            0/*tid is unknown*/,
+            ips, BACKTRACE_DEPTH,
             NULL/*array to dump SP values in*/,
             NULL/*array to dump FP values in*/,
             &startRegs, stacktop
          );
-      VG_(printf)("\nhost stacktrace:\n"); 
+      VG_(printf)("\nhost stacktrace:\n");
       VG_(clo_xml) = False;
       VG_(pp_StackTrace) (VG_(current_DiEpoch)(), ips, n_ips);
       VG_(clo_xml) = save_clo_xml;
    }
 
-   VG_(printf)("\nsched status:\n"); 
+   VG_(printf)("\nsched status:\n");
    if (VG_(threads) == NULL) {
       VG_(printf)("  scheduler not yet initialised\n");
    } else {
       VG_(printf)("  running_tid=%u\n", VG_(get_running_tid)());
       for (i = 1; i < VG_N_THREADS; i++) {
-         VgStack *stack 
+         VgStack *stack
             = (VgStack*)VG_(threads)[i].os_state.valgrind_stack_base;
          /* If a thread slot was never used (yet), valgrind_stack_base is 0.
             If a thread slot is used by a thread or was used by a thread which
@@ -464,7 +464,7 @@ static void show_sched_status_wrk ( Bool host_stacktrace,
             UInt inner_tid;
 
             for (inner_tid = 1; inner_tid < VG_N_THREADS; inner_tid++) {
-               if (VG_(threads)[i].os_state.lwpid 
+               if (VG_(threads)[i].os_state.lwpid
                    == VG_(inner_threads)[inner_tid].os_state.lwpid) {
                   ThreadState* save_outer_vg_threads = VG_(threads);
 
@@ -514,7 +514,7 @@ static void report_and_quit ( const HChar* report,
    VG_(exit)(1);
 }
 
-void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file, 
+void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
                         Int line, const HChar* fn, const HChar* format, ... )
 {
    va_list vargs, vargs_copy;
@@ -523,14 +523,14 @@ void VG_(assert_fail) ( Bool isCore, const HChar* expr, const HChar* file,
    UInt written;
 
    static Bool entered = False;
-   if (entered) 
+   if (entered)
       VG_(exit)(2);
    entered = True;
 
    if (isCore) {
       component = "valgrind";
       bugs_to   = VG_BUGS_TO;
-   } else { 
+   } else {
       component = VG_(details).name;
       bugs_to   = VG_(details).bug_reports_to;
    }

@@ -181,6 +181,84 @@ typedef int    Bool;
 #define HWCAP2_FRINT        (1 << 8)
 #endif
 
+#if defined(VGO_darwin)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+#define AT_HWCAP 0
+#define AT_HWCAP2 1
+
+#define CHECK_CAP(cap, name) \
+  (sysctlbyname((name), &hwcap_value, &size, NULL, 0) == 0 && hwcap_value == 1 ? (cap) : 0)
+
+// based on https://github.com/klauspost/cpuid/blob/master/os_darwin_arm64.go
+// and my computer `sysctl -a`
+unsigned long getauxval(unsigned long type)
+{
+  unsigned long hwcap = 0;
+  int hwcap_value = 0;
+  size_t size = 4;
+
+  switch (type) {
+    case AT_HWCAP:
+      hwcap |= CHECK_CAP(HWCAP_FP, "hw.optional.arm.FEAT_FP");
+      hwcap |= CHECK_CAP(HWCAP_FP, "hw.optional.floatingpoint"); // double
+      hwcap |= CHECK_CAP(HWCAP_FP, "hw.optional.arm.FEAT_FP");
+      hwcap |= CHECK_CAP(HWCAP_ASIMD, "hw.optional.AdvSIMD");
+      // ??? evtstrm
+      hwcap |= CHECK_CAP(HWCAP_AES, "hw.optional.arm.FEAT_AES");
+      hwcap |= CHECK_CAP(HWCAP_PMULL, "hw.optional.arm.FEAT_PMULL");
+      hwcap |= CHECK_CAP(HWCAP_SHA1, "hw.optional.arm.FEAT_SHA1");
+      hwcap |= CHECK_CAP(HWCAP_SHA2, "hw.optional.arm.FEAT_SHA256");
+      hwcap |= CHECK_CAP(HWCAP_CRC32, "hw.optional.FEAT_CRC32");
+      hwcap |= CHECK_CAP(HWCAP_CRC32, "hw.optional.armv8_crc32"); // double
+      hwcap |= CHECK_CAP(HWCAP_ATOMICS, "hw.optional.armv8_1_atomics");
+      hwcap |= CHECK_CAP(HWCAP_FPHP, "hw.optional.arm.FEAT_FP16");
+      hwcap |= CHECK_CAP(HWCAP_ASIMDHP, "hw.optional.AdvSIMD_HPFPCvt");
+      // ??? cpuid
+      hwcap |= CHECK_CAP(HWCAP_ASIMDRDM, "hw.optional.arm.FEAT_RDM");
+      hwcap |= CHECK_CAP(HWCAP_JSCVT, "hw.optional.arm.FEAT_JSCVT");
+      hwcap |= CHECK_CAP(HWCAP_FCMA, "hw.optional.arm.FEAT_FCMA");
+      hwcap |= CHECK_CAP(HWCAP_FCMA, "hw.optional.armv8_3_compnum"); // double
+      hwcap |= CHECK_CAP(HWCAP_LRCPC, "hw.optional.arm.FEAT_LRCPC");
+      hwcap |= CHECK_CAP(HWCAP_DCPOP, "hw.optional.arm.FEAT_DPB");
+      hwcap |= CHECK_CAP(HWCAP_SHA3, "hw.optional.arm.FEAT_SHA3");
+      hwcap |= CHECK_CAP(HWCAP_SHA3, "hw.optional.armv8_2_sha3"); // double
+      // ??? sm3
+      // ??? sm4
+      hwcap |= CHECK_CAP(HWCAP_ASIMDDP, "hw.optional.arm.FEAT_DotProd");
+      hwcap |= CHECK_CAP(HWCAP_SHA512, "hw.optional.arm.FEAT_SHA512");
+      hwcap |= CHECK_CAP(HWCAP_SHA512, "hw.optional.armv8_2_sha512"); // double
+      hwcap |= CHECK_CAP(HWCAP_SVE, "hw.optional.arm.FEAT_SVE");
+      // ??? asimdfhm
+      hwcap |= CHECK_CAP(HWCAP_DIT, "hw.optional.arm.FEAT_DIT");
+      // ??? uscat
+      // ??? ilrcpc
+      hwcap |= CHECK_CAP(HWCAP_FLAGM, "hw.optional.arm.FEAT_FlagM");
+      hwcap |= CHECK_CAP(HWCAP_SSBS, "hw.optional.arm.FEAT_SSBS");
+      hwcap |= CHECK_CAP(HWCAP_SB, "hw.optional.arm.FEAT_SB");
+      // ??? paca
+      // ??? pacg
+      return hwcap;
+    case AT_HWCAP2:
+      hwcap |= CHECK_CAP(HWCAP2_DCPODP, "hw.optional.arm.FEAT_DPB");
+      // ??? sve2
+      // ??? sveaes
+      // ??? svepmull
+      // ??? svebitperm
+      // ??? svesha3
+      // ??? svesm4
+      hwcap |= CHECK_CAP(HWCAP2_FLAGM2, "hw.optional.arm.FEAT_FlagM2");
+      // ??? frint
+      return hwcap;
+    default:
+      return 0UL;
+  }
+}
+
+#undef CHECK_CAP
+#endif
+
 unsigned long hwcaps[] = {
    HWCAP_FP,     HWCAP_ASIMD,  HWCAP_EVTSTRM, HWCAP_AES,     HWCAP_PMULL,
    HWCAP_SHA1,   HWCAP_SHA2,   HWCAP_CRC32,   HWCAP_ATOMICS, HWCAP_FPHP,

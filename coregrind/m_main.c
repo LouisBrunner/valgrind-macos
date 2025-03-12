@@ -2069,22 +2069,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                True   /* executable? */,
                0 /* di_handle: no associated debug info */ );
 
-     /* Darwin only: tell the tools where the client's kernel commpage
-        is.  It would be better to do this by telling aspacemgr about
-        it -- see the now disused record_system_memory() in
-        initimg-darwin.c -- but that causes the sync checker to fail,
-        since the mapping doesn't appear in the kernel-supplied
-        process map.  So do it here instead. */
-#    if defined(VGP_amd64_darwin)
-     VG_TRACK( new_mem_startup,
-               0x7fffffe00000, 0x7ffffffff000-0x7fffffe00000,
-               True, False, True, /* r-x */
-               0 /* di_handle: no associated debug info */ );
-#    elif defined(VGP_x86_darwin)
-     VG_TRACK( new_mem_startup,
-               0xfffec000, 0xfffff000-0xfffec000,
-               True, False, True, /* r-x */
-               0 /* di_handle: no associated debug info */ );
+#    if defined(VGO_darwin)
+     VG_(mach_record_system_memory)();
 #    endif
 
      /* Clear the running thread indicator */
@@ -3227,7 +3213,7 @@ asm("\n"
     "\tsubl  $12, %esp\n"  // keep stack 16 aligned; see #295428
     /* call _start_in_C_darwin, passing it the startup %esp */
     "\tpushl %eax\n"
-    "\tcall  __start_in_C_darwin\n"
+    "\tcall  __start_in_C_darwin_x86\n"
     "\tint $3\n"
     "\tint $3\n"
 );
@@ -3245,10 +3231,43 @@ asm("\n"
     /* install it, and collect the original one */
     "\txchgq %rdi, %rsp\n"
     /* call _start_in_C_darwin, passing it the startup %rsp */
-    "\tcall  __start_in_C_darwin\n"
+    "\tcall  __start_in_C_darwin_x86\n"
     "\tint $3\n"
     "\tint $3\n"
 );
+#elif defined(VGP_arm64_darwin)
+/*
+  On arm64, the kernel seems to be passing the arguments in registers (x0-x3).
+  So we use x4 and x5 to setup the new stack and call a different _start_in_C_darwin.
+*/
+asm("\n"
+    ".text\n"
+    "\t.globl __start\n"
+    // ".align 3,0xD503201F\n"
+    "__start:\n"
+    /* set up the new stack in x4 */
+    "\tadrp x4, _vgPlain_interim_stack@PAGE\n"
+    "\tadd  x4, x4, _vgPlain_interim_stack@PAGEOFF\n"
+    "\tldr  x5, ="VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tadd  x4, x4, x5\n"
+    "\tldr  x5, ="VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
+    "\tadd  x4, x4, x5\n"
+    "\tand  x4, x4, -16\n"
+
+    /* install it, and collect the original one */
+    "\tmov  x5, sp\n"
+    "\tmov  sp, x4\n"
+    "\tmov  x4, x5\n"
+
+    /* call _start_in_C_darwin, passing it the startup sp */
+    "\tb    __start_in_C_darwin_arm\n"
+
+    // Not sure if this is right?
+    "\tudf  #0\n"
+    "\tudf  #0\n"
+);
+#else
+#error missing architecture
 #endif
 
 void* __memcpy_chk(void *dest, const void *src, SizeT n, SizeT n2);
@@ -3281,8 +3300,8 @@ void* memset(void *s, int c, SizeT n) {
 
 /* Avoid compiler warnings: this fn _is_ used, but labelling it
    'static' causes gcc to complain it isn't. */
-void _start_in_C_darwin ( UWord* pArgc );
-void _start_in_C_darwin ( UWord* pArgc )
+void _start_in_C_darwin_x86 ( UWord* pArgc );
+void _start_in_C_darwin_x86 ( UWord* pArgc )
 {
    Int     r;
    Int     argc = *(Int *)pArgc;  // not pArgc[0] on LP64
@@ -3301,6 +3320,29 @@ void _start_in_C_darwin ( UWord* pArgc )
    the_iicii.sp_at_startup = (Addr)pArgc;
 
    r = valgrind_main( (Int)argc, argv, envp );
+   /* NOTREACHED */
+   VG_(exit)(r);
+}
+
+/* Avoid compiler warnings: this fn _is_ used, but labelling it
+   'static' causes gcc to complain it isn't. */
+void _start_in_C_darwin_arm ( Int argc, HChar** argv, HChar** envp, HChar** applep, UWord* sp );
+void _start_in_C_darwin_arm ( Int argc, HChar** argv, HChar** envp, HChar** applep, UWord* sp )
+{
+   Int     r;
+
+   // See _start_in_C_linux
+   INNER_REQUEST
+      ((void) VALGRIND_STACK_REGISTER
+       (&VG_(interim_stack).bytes[0],
+        &VG_(interim_stack).bytes[0] + sizeof(VG_(interim_stack))));
+
+   VG_(memset)( &the_iicii, 0, sizeof(the_iicii) );
+   VG_(memset)( &the_iifii, 0, sizeof(the_iifii) );
+
+   the_iicii.sp_at_startup = (Addr)sp;
+
+   r = valgrind_main( argc, argv, envp );
    /* NOTREACHED */
    VG_(exit)(r);
 }

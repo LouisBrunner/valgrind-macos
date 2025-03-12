@@ -3,12 +3,12 @@
 /*--------------------------------------------------------------------*/
 /*--- File- and socket-related libc stuff.            m_libcfile.c ---*/
 /*--------------------------------------------------------------------*/
- 
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -86,7 +86,7 @@ static Char filedesc_buf[M_FILEDESC_BUF];
 
 /* Given a file descriptor, attempt to deduce its filename.  To do
    this, we use /proc/self/fd/<FD>.  If this doesn't point to a file,
-   or if it doesn't exist, we return False. 
+   or if it doesn't exist, we return False.
    Upon successful completion *result contains the filename. The
    filename will be overwritten with the next invocation so callers
    need to copy the filename if needed. *result is NULL if the filename
@@ -200,7 +200,7 @@ Bool VG_(resolve_filename) ( Int fd, const HChar** result )
    if (0 == VG_(fcntl)(fd, VKI_F_GETPATH, (UWord)tmp)) {
       static HChar *buf = NULL;
 
-      if (buf == NULL) 
+      if (buf == NULL)
          buf = VG_(malloc)("resolve_filename", VKI_MAXPATHLEN+1);
       VG_(strcpy)( buf, tmp );
 
@@ -431,7 +431,7 @@ Int VG_(pipe) ( Int fd[2] )
 
 Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
 {
-#  if defined(VGO_linux) || defined(VGP_amd64_darwin) || defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
+#  if defined(VGO_linux) || defined(VGP_amd64_darwin) || defined(VGP_arm64_darwin) || defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
 #  if defined(__NR__llseek)
    Off64T result;
    SysRes res = VG_(do_syscall5)(__NR__llseek, fd,
@@ -444,7 +444,7 @@ Off64T VG_(lseek) ( Int fd, Off64T offset, Int whence )
    return sr_isError(res) ? (-1) : sr_Res(res);
 #  endif
 #  elif defined(VGP_x86_darwin) || defined(VGP_x86_freebsd)
-   SysRes res = VG_(do_syscall4)(__NR_lseek, fd, 
+   SysRes res = VG_(do_syscall4)(__NR_lseek, fd,
                                  offset & 0xffffffff, offset >> 32, whence);
    return sr_isError(res) ? (-1) : sr_Res(res);
 #  elif defined(VGP_x86_solaris)
@@ -641,7 +641,7 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
    }
 #  endif
 #  elif defined(VGO_solaris)
-   { 
+   {
 #     if defined(VGP_x86_solaris)
       struct vki_stat64 buf64;
       res = VG_(do_syscall4)(__NR_fstatat64, (UWord)fd, 0, (UWord)&buf64, 0);
@@ -829,7 +829,7 @@ void VG_(record_startup_wd) ( void )
    /* Simple: just ask the kernel */
    SysRes res;
    SizeT szB = 0;
-   do { 
+   do {
       szB += 500;
       startup_wd = VG_(realloc)("startup_wd", startup_wd, szB);
       VG_(memset)(startup_wd, 0, szB);
@@ -856,7 +856,7 @@ void VG_(record_startup_wd) ( void )
    { HChar  envvar[100];   // large enough
      HChar* wd;
      VG_(memset)(envvar, 0, sizeof(envvar));
-     VG_(sprintf)(envvar, "VALGRIND_STARTUP_PWD_%d_XYZZY", 
+     VG_(sprintf)(envvar, "VALGRIND_STARTUP_PWD_%d_XYZZY",
                           (Int)VG_(getppid)());
      wd = VG_(getenv)( envvar );
      if (wd == NULL)
@@ -888,7 +888,7 @@ SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
       timeout_ts.tv_nsec = ((long)timeout % 1000) * 1000000;
    }
    res = VG_(do_syscall4)(__NR_ppoll,
-                          (UWord)fds, nfds, 
+                          (UWord)fds, nfds,
                           (UWord)(timeout >= 0 ? &timeout_ts : NULL),
                           (UWord)NULL);
 #  elif defined(VGO_linux)
@@ -903,7 +903,7 @@ SysRes VG_(poll) (struct vki_pollfd *fds, Int nfds, Int timeout)
 
    if (timeout < 0)
       tsp = NULL;
-   else {  
+   else {
       ts.tv_sec = timeout / 1000;
       ts.tv_nsec = (timeout % 1000) * 1000000;
       tsp = &ts;
@@ -1016,7 +1016,7 @@ Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 #  else
 #    error "Unknown OS"
 #  endif
-   return sr_isError(res) ? 1 : 0;   
+   return sr_isError(res) ? 1 : 0;
 
 #  if defined(VGO_linux)
 #  undef VKI_R_OK
@@ -1025,7 +1025,7 @@ Int VG_(access) ( const HChar* path, Bool irusr, Bool iwusr, Bool ixusr )
 #  endif
 }
 
-/* 
+/*
    Emulate the normal Unix permissions checking algorithm.
 
    If owner matches, then use the owner permissions, else
@@ -1124,30 +1124,30 @@ SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
    // we must extend it to pass a long long 64 bits.
 #  if defined(VGP_x86_linux)
    vg_assert(sizeof(OffT) == 4);
-   res = VG_(do_syscall5)(__NR_pread64, fd, (UWord)buf, count, 
+   res = VG_(do_syscall5)(__NR_pread64, fd, (UWord)buf, count,
                           offset, 0); // Little endian long long
    return res;
 #  elif defined(VGP_arm_linux)
    vg_assert(sizeof(OffT) == 4);
-   res = VG_(do_syscall5)(__NR_pread64, fd, (UWord)buf, count, 
+   res = VG_(do_syscall5)(__NR_pread64, fd, (UWord)buf, count,
                           0, offset); // Big endian long long
    return res;
 #  elif defined(VGP_ppc32_linux)
    vg_assert(sizeof(OffT) == 4);
-   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count, 
+   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count,
                           0, // Padding needed on PPC32
                           0, offset); // Big endian long long
    return res;
 #  elif (defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)) \
      && (VKI_LITTLE_ENDIAN)
    vg_assert(sizeof(OffT) == 4);
-   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count, 
+   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count,
                           0, offset, 0);
    return res;
 #  elif (defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)) \
      && (VKI_BIG_ENDIAN)
    vg_assert(sizeof(OffT) == 4);
-   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count, 
+   res = VG_(do_syscall6)(__NR_pread64, fd, (UWord)buf, count,
                           0, 0, offset);
    return res;
 #  elif defined(VGP_amd64_linux) || defined(VGP_s390x_linux) \
@@ -1162,16 +1162,16 @@ SysRes VG_(pread) ( Int fd, void* buf, Int count, OffT offset )
    return res;
 #  elif defined(VGP_x86_freebsd)
    vg_assert(sizeof(OffT) == 8);
-   res = VG_(do_syscall5)(__NR_pread, fd, (UWord)buf, count, 
+   res = VG_(do_syscall5)(__NR_pread, fd, (UWord)buf, count,
                           offset & 0xffffffff, offset >> 32);
    return res;
-#  elif defined(VGP_amd64_darwin)
+#  elif defined(VGP_amd64_darwin) || defined(VGP_arm64_darwin)
    vg_assert(sizeof(OffT) == 8);
    res = VG_(do_syscall4)(__NR_pread_nocancel, fd, (UWord)buf, count, offset);
    return res;
 #  elif defined(VGP_x86_darwin)
    vg_assert(sizeof(OffT) == 8);
-   res = VG_(do_syscall5)(__NR_pread_nocancel, fd, (UWord)buf, count, 
+   res = VG_(do_syscall5)(__NR_pread_nocancel, fd, (UWord)buf, count,
                           offset & 0xffffffff, offset >> 32);
    return res;
 #  elif defined(VGP_x86_solaris)
@@ -1230,7 +1230,7 @@ Int VG_(mkstemp) ( const HChar* part_of_name, /*OUT*/HChar* fullname )
 
    tries = 0;
    while (True) {
-      if (tries++ > 10) 
+      if (tries++ > 10)
          return -1;
       VG_(sprintf)( fullname, mkstemp_format,
                     tmpdir, part_of_name, VG_(random)( &seed ));
@@ -1304,7 +1304,7 @@ UShort VG_(ntohs) ( UShort x )
 }
 
 
-/* The main function. 
+/* The main function.
 
    Supplied string contains either an ip address "192.168.0.1" or
    an ip address and port pair, "192.168.0.1:1500".  Parse these,
@@ -1322,13 +1322,13 @@ Int VG_(connect_via_socket)( const HChar* str )
    UInt   ip   = 0;
    UShort port = VG_CLO_DEFAULT_LOGPORT;
    Bool   ok   = parse_inet_addr_and_port(str, &ip, &port);
-   if (!ok) 
+   if (!ok)
       return -1;
 
    //if (0)
    //   VG_(printf)("ip = %d.%d.%d.%d, port %d\n",
-   //               (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, 
-   //               (ip >> 8) & 0xFF, ip & 0xFF, 
+   //               (ip >> 24) & 0xFF, (ip >> 16) & 0xFF,
+   //               (ip >> 8) & 0xFF, ip & 0xFF,
    //               (UInt)port );
 
    servAddr.sin_family = VKI_AF_INET;
@@ -1341,7 +1341,7 @@ Int VG_(connect_via_socket)( const HChar* str )
       /* this shouldn't happen ... nevertheless */
       return -2;
    }
-		
+
    /* connect to server */
    res = my_connect(sd, &servAddr, sizeof(servAddr));
    if (res < 0) {
@@ -1370,7 +1370,7 @@ static Int parse_inet_addr_and_port ( const HChar* str, UInt* ip_addr, UShort* p
       j = 0;
       any = 0;
       while (1) {
-         c = GET_CH; 
+         c = GET_CH;
          if (c < '0' || c > '9') break;
          j = 10 * j + (int)(c - '0');
          any = 1;
@@ -1379,14 +1379,14 @@ static Int parse_inet_addr_and_port ( const HChar* str, UInt* ip_addr, UShort* p
       ipa = (ipa << 8) + j;
       if (i <= 2 && c != '.') goto syntaxerr;
    }
-   if (c == 0 || c == ':') 
+   if (c == 0 || c == ':')
       *ip_addr = ipa;
    if (c == 0) goto ok;
    if (c != ':') goto syntaxerr;
    j = 0;
    any = 0;
    while (1) {
-      c = GET_CH; 
+      c = GET_CH;
       if (c < '0' || c > '9') break;
       j = j * 10 + (int)(c - '0');
       any = 1;
@@ -1431,8 +1431,8 @@ Int VG_(socket) ( Int domain, Int type, Int protocol )
        // Set SO_NOSIGPIPE so write() returns EPIPE instead of raising SIGPIPE
        Int optval = 1;
        SysRes res2;
-       res2 = VG_(do_syscall5)(__NR_setsockopt, sr_Res(res), VKI_SOL_SOCKET, 
-                               VKI_SO_NOSIGPIPE, (UWord)&optval, 
+       res2 = VG_(do_syscall5)(__NR_setsockopt, sr_Res(res), VKI_SOL_SOCKET,
+                               VKI_SO_NOSIGPIPE, (UWord)&optval,
                                sizeof(optval));
        // ignore setsockopt() error
        (void) res2;
@@ -1502,11 +1502,11 @@ Int VG_(write_socket)( Int sd, const void *msg, Int count )
 {
    /* This is actually send(). */
 
-   /* For Linux, VKI_MSG_NOSIGNAL is a request not to send SIGPIPE on 
+   /* For Linux, VKI_MSG_NOSIGNAL is a request not to send SIGPIPE on
       errors on stream oriented sockets when the other end breaks the
       connection. The EPIPE error is still returned.
 
-      For Darwin, VG_(socket)() sets SO_NOSIGPIPE to get EPIPE instead of 
+      For Darwin, VG_(socket)() sets SO_NOSIGPIPE to get EPIPE instead of
       SIGPIPE */
 
 #  if defined(VGP_x86_linux) || defined(VGP_ppc32_linux) \
@@ -1526,11 +1526,11 @@ Int VG_(write_socket)( Int sd, const void *msg, Int count )
         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
         || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes res;
-   res = VG_(do_syscall6)(__NR_sendto, sd, (UWord)msg, 
+   res = VG_(do_syscall6)(__NR_sendto, sd, (UWord)msg,
                                        count, VKI_MSG_NOSIGNAL, 0,0);
    return sr_isError(res) ? -1 : sr_Res(res);
 
-#  elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
+#  elif defined(VGP_x86_darwin) || defined(VGP_amd64_darwin) || defined(VGP_arm64_darwin)
    SysRes res;
    res = VG_(do_syscall3)(__NR_write_nocancel, sd, (UWord)msg, count);
    return sr_isError(res) ? -1 : sr_Res(res);
@@ -1647,14 +1647,14 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
         || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall5)( __NR_getsockopt,
-                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)sd, (UWord)level, (UWord)optname,
                            (UWord)optval, (UWord)optlen );
    return sr_isError(res) ? -1 : sr_Res(res);
 
 #  elif defined(VGO_darwin)
    SysRes res;
    res = VG_(do_syscall5)( __NR_getsockopt,
-                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)sd, (UWord)level, (UWord)optname,
                            (UWord)optval, (UWord)optlen );
    return sr_isError(res) ? -1 : sr_Res(res);
 
@@ -1692,14 +1692,14 @@ Int VG_(setsockopt) ( Int sd, Int level, Int optname, void *optval,
         || defined(VGP_riscv64_linux)
    SysRes res;
    res = VG_(do_syscall5)( __NR_setsockopt,
-                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)sd, (UWord)level, (UWord)optname,
                            (UWord)optval, (UWord)optlen );
    return sr_isError(res) ? -1 : sr_Res(res);
 
 #  elif defined(VGO_darwin) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall5)( __NR_setsockopt,
-                           (UWord)sd, (UWord)level, (UWord)optname, 
+                           (UWord)sd, (UWord)level, (UWord)optname,
                            (UWord)optval, (UWord)optlen );
    return sr_isError(res) ? -1 : sr_Res(res);
 
@@ -1723,7 +1723,7 @@ const HChar *VG_(basename)(const HChar *path)
    static SizeT  buf_len = 0;
    const HChar *p, *end;
 
-   if (path == NULL  ||  
+   if (path == NULL  ||
        0 == VG_(strcmp)(path, ""))
    {
       return ".";
@@ -1762,11 +1762,11 @@ const HChar *VG_(dirname)(const HChar *path)
 {
    static HChar *buf = NULL;
    static SizeT  buf_len = 0;
-    
+
    const HChar *p;
 
-   if (path == NULL  ||  
-       0 == VG_(strcmp)(path, "")  ||  
+   if (path == NULL  ||
+       0 == VG_(strcmp)(path, "")  ||
        0 == VG_(strcmp)(path, "/"))
    {
       return ".";
@@ -1786,7 +1786,7 @@ const HChar *VG_(dirname)(const HChar *path)
    if (p == path) {
       if (*p == '/') return "/"; // all slashes
       else return "."; // no slashes
-   } 
+   }
 
    while (p > path  &&  *p == '/') {
       // skip '/' again

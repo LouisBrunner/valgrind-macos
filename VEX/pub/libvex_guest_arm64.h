@@ -124,7 +124,7 @@ typedef
       /* A 128-bit value which is used to represent the FPSR.QC (sticky
          saturation) flag, when necessary.  If the value stored here
          is zero, FPSR.QC is currently zero.  If it is any other value,
-         FPSR.QC is currently one.  We don't currently represent any 
+         FPSR.QC is currently one.  We don't currently represent any
          other bits of FPSR, so this is all that that is for FPSR. */
       U128 guest_QCFLAG;
 
@@ -143,6 +143,9 @@ typedef
          Note, this is only set for wrap-style redirects, not for
          replace-style ones. */
       ULong guest_NRADDR;
+
+      /* Used for Darwin/FreeBSD syscall dispatching. */
+      ULong guest_SC_CLASS;
 
       /* Needed for Darwin (but mandated for all guest architectures):
          program counter at the last syscall insn (int 0x80/81/82,
@@ -166,16 +169,13 @@ typedef
       ULong guest_LLSC_DATA_LO64; // Original value at _ADDR+0.
       ULong guest_LLSC_DATA_HI64; // Original value at _ADDR+8.
 
-      /* Used for FreeBSD syscall dispatching. */
-      ULong guest_SC_CLASS;
       /* Used for FreeBSD client syscall when putting the carry flag
          value into VEX. */
       UInt guest_SETC;
-      UInt pad_end_0;
+      UInt  pad_end_0;
       /* Padding to make it have an 16-aligned size */
       /* UInt  pad_end_1; */
       /* ULong pad_end_2; */
-
    }
    VexGuestARM64State;
 
@@ -212,7 +212,7 @@ ULong LibVEX_GuestARM64_get_fpsr ( /*IN*/
 extern
 void LibVEX_GuestARM64_set_fpsr ( /*MOD*/VexGuestARM64State* vex_state,
                                   ULong fpsr );
-                                  
+
 
 #endif /* ndef __LIBVEX_PUB_GUEST_ARM64_H */
 

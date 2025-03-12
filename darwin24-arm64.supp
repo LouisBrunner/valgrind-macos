@@ -1,0 +1,561 @@
+
+# Suppressions for Darwin 24.x / macOS 15.0 Sequoia (arm64)
+
+############################################
+
+# Bugs
+
+## Real bug: dyld uses a std::move'd object
+{
+   OSX1500:dyld_faulty_std_move
+   Memcheck:Param
+   stat64(path)
+   fun:stat
+   ...
+   fun:_ZN5dyld423ExternallyViewableState12addImageInfoERN3lsl9AllocatorERKNS0_9ImageInfoE
+}
+
+## Most likely a bug: libsystem_featureflags doesn't initialize the 3rd argument to shm_open
+{
+   OSX1500:libsystem_featureflags_shm_open
+   Memcheck:Param
+   shm_open("mode")
+   ...
+   fun:_os_feature_table_once
+}
+
+# False positives
+
+## Could be a bug: nw_network_agent_copy_dictionary_from_necp doesn't initialize a var correctly
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_cond_1
+   Memcheck:Cond
+   ...
+   fun:nw_path_has_dns
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_value8_1
+   Memcheck:Value8
+   ...
+   fun:nw_path_has_dns
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_cond_2
+   Memcheck:Cond
+   ...
+   fun:nw_path_create_evaluator_for_endpoint
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_value8_2
+   Memcheck:Value8
+   ...
+   fun:nw_path_create_evaluator_for_endpoint
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_nca_param_buffer
+   Memcheck:Param
+   necp_client_action(COPY_AGENT, buffer)
+   fun:necp_client_action
+   obj:*
+   ...
+   fun:nw_path_create_evaluator_for_endpoint
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_cond_3
+   Memcheck:Cond
+   ...
+   fun:nw_path_uses_nexus_internal
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_cond_4
+   Memcheck:Cond
+   ...
+   fun:-[NWConcrete_nw_path description]
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_value8_3
+   Memcheck:Value8
+   ...
+   fun:-[NWConcrete_nw_path description]
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_cond_5
+   Memcheck:Cond
+   ...
+   fun:nw_path_get_interface_index
+   ...
+}
+{
+   OSX1500:nw_network_agent_copy_dictionary_from_necp_value8_4
+   Memcheck:Value8
+   ...
+   fun:nw_path_get_interface_index
+   ...
+}
+
+## Could be a bug: IORegistryEntrySearchCFProperty doesn't seem to initialize a var correctly
+{
+   OSX1500:IORegistryEntrySearchCFProperty_cond_1
+   Memcheck:Cond
+   ...
+   fun:MGIsDeviceOneOfType
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_value8_1
+   Memcheck:Value8
+   ...
+   fun:MGIsDeviceOneOfType
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_cond_2
+   Memcheck:Cond
+   ...
+   fun:__NSUserAccentHasHardwareColor_block_invoke
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_value8_2
+   Memcheck:Value8
+   ...
+   fun:__NSUserAccentHasHardwareColor_block_invoke
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_cond_3
+   Memcheck:Cond
+   ...
+   fun:__NSUserAccentColorGetHardwareAccentColorName_block_invoke
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_value8_3
+   Memcheck:Value8
+   ...
+   fun:__NSUserAccentColorGetHardwareAccentColorName_block_invoke
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_cond_4
+   Memcheck:Cond
+   ...
+   fun:MTLRegisterDevices
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_value8_4
+   Memcheck:Value8
+   ...
+   fun:MTLRegisterDevices
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_param_getattrlist
+   Memcheck:Param
+   getattrlist(path)
+   fun:getattrlist
+   ...
+   fun:MTLRegisterDevices
+   ...
+}
+{
+   OSX1500:IORegistryEntrySearchCFProperty_param_stat64
+   Memcheck:Param
+   stat64(path)
+   fun:stat
+   ...
+   fun:MTLRegisterDevices
+   ...
+}
+
+## Could be a bug: result of xpc_pipe_routine is not completely initialized after malloc
+## I wish we could suppress based on origin because it would be much simpler for this
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_1
+   Memcheck:Cond
+   ...
+   fun:search_item_byname
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_1
+   Memcheck:Value8
+   ...
+   fun:search_item_byname
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_2
+   Memcheck:Cond
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_6
+   Memcheck:Value8
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_3
+   Memcheck:Cond
+   ...
+   fun:CreateStringFromFileSystemRepresentationByAddingPercentEscapes
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_2
+   Memcheck:Value8
+   ...
+   fun:CreateStringFromFileSystemRepresentationByAddingPercentEscapes
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_open_param_1
+   Memcheck:Param
+   open(filename)
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_4
+   Memcheck:Cond
+   ...
+   fun:-[_CFXPreferences withSearchListForIdentifier:container:cloudConfigurationURL:perform:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_3
+   Memcheck:Value8
+   ...
+   fun:-[_CFXPreferences withSearchListForIdentifier:container:cloudConfigurationURL:perform:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_stat64_path
+   Memcheck:Param
+   stat64(path)
+   fun:stat
+   obj:*
+   ...
+   fun:-[_CFXPreferences withSearchListForIdentifier:container:cloudConfigurationURL:perform:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_5
+   Memcheck:Cond
+   ...
+   fun:-[CFPrefsSource copyValueForKey:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_4
+   Memcheck:Value8
+   ...
+   fun:-[CFPrefsSource copyValueForKey:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_6
+   Memcheck:Cond
+   ...
+   fun:_libxpc_initializer
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_5
+   Memcheck:Value8
+   ...
+   fun:_libxpc_initializer
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_7
+   Memcheck:Cond
+   ...
+   fun:CFCopyUserName
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_8
+   Memcheck:Cond
+   ...
+   fun:-[NSPersistentUILocalStorageClient initWithPersistentStateDirectoryURL:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_6
+   Memcheck:Value8
+   ...
+   fun:-[NSPersistentUILocalStorageClient initWithPersistentStateDirectoryURL:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_9
+   Memcheck:Cond
+   ...
+   fun:-[NSURL(NSURLPathUtilities) URLByAppendingPathComponent:isDirectory:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_7
+   Memcheck:Value8
+   ...
+   fun:-[NSURL(NSURLPathUtilities) URLByAppendingPathComponent:isDirectory:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_10
+   Memcheck:Cond
+   ...
+   fun:$s10Foundation16_FileManagerImplV3url3for2in14appropriateFor6createAA3URLVSo21NSSearchPathDirectoryV_So0lM10DomainMaskVAJSgSbtKF
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_8
+   Memcheck:Value8
+   ...
+   fun:$s10Foundation16_FileManagerImplV3url3for2in14appropriateFor6createAA3URLVSo21NSSearchPathDirectoryV_So0lM10DomainMaskVAJSgSbtKF
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_11
+   Memcheck:Cond
+   ...
+   fun:NSHomeDirectoryForUser
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_9
+   Memcheck:Value8
+   ...
+   fun:NSHomeDirectoryForUser
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_12
+   Memcheck:Cond
+   ...
+   fun:+[NSBundle(NSNibLoading) _loadNibFile:nameTable:options:withZone:ownerBundle:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_10
+   Memcheck:Value8
+   ...
+   fun:+[NSBundle(NSNibLoading) _loadNibFile:nameTable:options:withZone:ownerBundle:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_13
+   Memcheck:Cond
+   ...
+   fun:_ZN16BindingBlueprint27initializeSpecialFolderTypeEPK7__CFURLPK14__CFDictionary
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_11
+   Memcheck:Value8
+   ...
+   fun:_ZN16BindingBlueprint27initializeSpecialFolderTypeEPK7__CFURLPK14__CFDictionary
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_14
+   Memcheck:Cond
+   ...
+   fun:_NSResolveSymlinksInPathUsingCache
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_12
+   Memcheck:Value8
+   ...
+   fun:_NSResolveSymlinksInPathUsingCache
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_13
+   Memcheck:Value8
+   ...
+   fun:-[NSString(NSPathUtilities) _stringByStandardizingPathUsingCache:]
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_15
+   Memcheck:Cond
+   ...
+   fun:CRCopyCrashHistory
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_14
+   Memcheck:Value8
+   ...
+   fun:CRCopyCrashHistory
+   ...
+}
+
+## Could be a bug: io_connect_method doesn't initialize a var correctly
+{
+   OSX1500:io_connect_method_cond_1
+   Memcheck:Cond
+   ...
+   fun:io_connect_method
+   ...
+}
+{
+   OSX1500:io_connect_method_cond_2
+   Memcheck:Cond
+   ...
+   fun:IOConnectCallMethod
+   ...
+}
+{
+   OSX1500:io_connect_method_value8_1
+   Memcheck:Value8
+   ...
+   fun:io_connect_method
+   ...
+}
+{
+   OSX1500:io_connect_method_param_msg
+   Memcheck:Param
+   mach_msg2(msg)
+   fun:mach_msg2_trap
+   ...
+}
+
+## Could be a bug: __CFRunLoopRun doesn't initialize a var correctly
+{
+   OSX1500:__CFRunLoopRun_param_mach_msg
+   Memcheck:Param
+   mach_msg2(msgh_voucher_and_id)
+   fun:mach_msg2_trap
+   ...
+   fun:__CFRunLoopRun
+   ...
+}
+{
+   OSX1500:__CFRunLoopRun_param_bsd
+   Memcheck:Param
+   bsdthreadctl(arg3)
+   fun:__bsdthread_ctl
+   obj:/dev/ttys010
+   fun:_dispatch_set_priority_and_mach_voucher_slow
+   fun:_dispatch_set_priority_and_voucher_slow
+   fun:_dispatch_main_queue_drain
+   fun:_dispatch_main_queue_callback_4CF
+   fun:__CFRUNLOOP_IS_SERVICING_THE_MAIN_DISPATCH_QUEUE__
+   fun:__CFRunLoopRun
+   fun:CFRunLoopRunSpecific
+   fun:RunCurrentEventLoopInMode
+   fun:ReceiveNextEventCommon
+   fun:_BlockUntilNextEventMatchingListInModeWithFilter
+}
+
+## Could be a bug: _os_log_simple_send doesn't initialize a var correctly
+{
+   OSX1500:_os_log_simple_send_param
+   Memcheck:Param
+   socketcall.sendto(msg)
+   fun:sendto
+   obj:*
+   ...
+   fun:_os_log_simple
+   ...
+}
+
+## Could be a bug: _NSUpdateWindowEventShape doesn't initialize a var correctly
+{
+   OSX1500:_NSUpdateWindowEventShape_cond_1
+   Memcheck:Cond
+   ...
+   fun:_NSUpdateWindowEventShape
+   ...
+}
+{
+   OSX1500:_NSUpdateWindowEventShape_cond_2
+   Memcheck:Cond
+   ...
+   fun:_NSShapeRoundedWindowWithWeighting
+   ...
+}
+
+# Unclear
+
+## Happens with apps using wqthread
+{
+   OSX1500:wqthread_kevent_id
+   Memcheck:Param
+   kevent_id(data_out)
+   fun:kevent_id
+   ...
+   fun:_dispatch_kq_drain
+   ...
+}
+
+## Seemingly uninitialized malloc'd memory in sandbox_extension_issue
+{
+   OSX1500:sandbox_extension_issue_malloc_param
+   Memcheck:Param
+   mach_msg2(msgv->data)
+   fun:mach_msg2_trap
+   ...
+   fun:_RegisterApplication
+   ...
+}
+{
+   OSX1500:sandbox_extension_issue_malloc_cond
+   Memcheck:Cond
+   ...
+   fun:_RegisterApplication
+   ...
+   fun:-[NSMenuBarPresentationInstance _getAggregateUIMode:withOptions:]
+   ...
+}
+
+## Seemingly uninitialized malloc'd memory in _LSDatabaseCreate
+{
+   OSX1500:_LSDatabaseCreate_malloc_cond_1
+   Memcheck:Cond
+   ...
+   fun:_LSDatabaseCreate
+   ...
+}
+{
+   OSX1500:_LSDatabaseCreate_malloc_cond_2
+   Memcheck:Cond
+   ...
+   fun:_UTGetActiveTypeForIdentifier
+   ...
+}
+{
+   OSX1500:_LSDatabaseCreate_malloc_cond_3
+   Memcheck:Cond
+   ...
+   fun:_UTTypeConformsTo
+   ...
+}
+
+## Seemingly uninitialized malloc'd memory in objc::DenseMapBase::grow used by [NSMethodSignature _protocolsForObjectAtArgumentIndex:]
+{
+   OSX1500:objc_DenseMapBase_grow_malloc_cond
+   Memcheck:Cond
+   fun:_ZN4objc12DenseMapBaseINS_8DenseMapI12DisguisedPtrIK11objc_objectEmN12_GLOBAL__N_125RefcountMapValuePurgeableENS_12DenseMapInfoIS5_EENS_6detail12DenseMapPairIS5_mEEEES5_mS7_S9_SC_E4growEj
+   ...
+   fun:-[NSSegmentItemView _requestMetrics:]
+   ...
+}

@@ -36,7 +36,7 @@
 // tools.
 //--------------------------------------------------------------------
 
-/* Allocation arenas.  
+/* Allocation arenas.
 
       CORE      for the core's and tools' general use.
       DINFO     for debug info (symbols, line #s, CFI, etc) storage.
@@ -46,7 +46,7 @@
       TTAUX     for storing TT/TC auxiliary structures (address range
                 equivalence classes).
 
-   When adding a new arena, remember also to add it to ensure_mm_init(). 
+   When adding a new arena, remember also to add it to ensure_mm_init().
 */
 typedef Int ArenaId;
 
@@ -83,6 +83,7 @@ typedef Int ArenaId;
       defined(VGP_arm64_freebsd)  || \
       defined(VGP_x86_darwin)     || \
       defined(VGP_amd64_darwin)   || \
+      defined(VGP_arm64_darwin)   || \
       defined(VGP_arm64_linux)    || \
       defined(VGP_riscv64_linux)  || \
       defined(VGP_amd64_solaris)
@@ -114,7 +115,7 @@ extern void* VG_(arena_realloc) ( ArenaId arena, const HChar* cc,
                                   void* ptr, SizeT size );
 extern void* VG_(arena_memalign)( ArenaId aid, const HChar* cc,
                                   SizeT req_alignB, SizeT req_pszB );
-extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc, 
+extern HChar* VG_(arena_strdup)  ( ArenaId aid, const HChar* cc,
                                    const HChar* s);
 
 /* Specialised version of realloc, that shrinks the size of the block ptr from
@@ -144,7 +145,7 @@ extern void  VG_(print_all_arena_stats) ( void );
 
 extern void  VG_(print_arena_cc_analysis) ( void );
 
-typedef 
+typedef
    struct _AddrArenaInfo
    AddrArenaInfo;
 
@@ -160,6 +161,31 @@ struct _AddrArenaInfo {
    Note that no information is produced for addresses allocated with
    VG_(arena_perm_malloc). */
 extern void VG_(describe_arena_addr) ( Addr a, /*OUT*/AddrArenaInfo* aai );
+
+#if defined(VGP_arm64_darwin)
+#include "pub_core_vki.h" // For VKI_PROT_*
+#include "pub_core_vkiscnums.h" // system call numbers
+#include "pub_core_syscall.h" // VG_(do_syscall3)
+#include "pub_core_libcassert.h" // vg_assert
+#include "pub_core_debuglog.h" // VG_(debugLog)
+
+__attribute__((always_inline))
+__inline__
+void enable_thread_to_jit_write(Addr ptr, SizeT size, Bool enable) {
+  VG_(debugLog)(6, "mmapjit", "enable_thread_to_jit_write(%#lx, %lu, %d)\n", ptr, size, enable);
+
+  SysRes sres = VG_(do_syscall3)(__NR_mprotect, ptr, size,
+    enable ? VKI_PROT_READ | VKI_PROT_WRITE
+           : VKI_PROT_READ | VKI_PROT_EXEC
+  );
+  vg_assert2(!sr_isError(sres), "mprotect failed: %s (%d)", VG_(strerror)(sr_Res(sres)), sr_Res(sres));
+}
+#define ALLOW_RWX_WRITE(ptr, size) enable_thread_to_jit_write((ptr), (size), 1)
+#define ALLOW_RWX_EXECUTE(ptr, size) enable_thread_to_jit_write((ptr), (size), 0)
+#else
+#define ALLOW_RWX_WRITE(...)
+#define ALLOW_RWX_EXECUTE(...)
+#endif
 
 #endif   // __PUB_CORE_MALLOCFREE_H
 

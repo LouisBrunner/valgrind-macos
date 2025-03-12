@@ -4167,6 +4167,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Min64Fx2:
       case Iop_Max64Fx2:
+      case Iop_MinN64Fx2:
+      case Iop_MaxN64Fx2:
       case Iop_CmpLT64Fx2:
       case Iop_CmpLE64Fx2:
       case Iop_CmpEQ64Fx2:
@@ -4194,6 +4196,8 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
 
       case Iop_Min32Fx4:
       case Iop_Max32Fx4:
+      case Iop_MinN32Fx4:
+      case Iop_MaxN32Fx4:
       case Iop_CmpLT32Fx4:
       case Iop_CmpLE32Fx4:
       case Iop_CmpEQ32Fx4:
@@ -8211,6 +8215,7 @@ static Bool isBogusAtom ( IRAtom* at )
       case Ico_U64:  n = (ULong)con->Ico.U64; break;
       case Ico_F32:  return False;
       case Ico_F64:  return False;
+      case Ico_F16i: return False;
       case Ico_F32i: return False;
       case Ico_F64i: return False;
       case Ico_V128: return False;

@@ -802,13 +802,68 @@ int try_rle (char *buf, int remaining, unsigned char *csum, char **p)
    return n + 1;
 }
 
+static
+int sendpkt_write_helper (const char * sender, char *buf, int count)
+{
+   if (VG_(write) (write_remote_desc, buf, count) != count) {
+       warning ("%s(write) error\n", sender);
+       return -1;
+   }
+
+   if (VG_(debugLog_getLevel)() >= 3) {
+       char *tracebuf = malloc(4 * count + 1); // worst case
+       char *tr = tracebuf;
+
+       for (UInt npr = 0; npr < count; npr++) {
+         UChar uc = (unsigned char)buf[npr];
+         if (uc > 31 && uc < 127) {
+             *tr++ = uc;
+         } else {
+             *tr++ = '\\';
+             VG_(sprintf)(tr, "%03o", uc);
+             tr += 3;
+         }
+       }
+       *tr++ = 0;
+       dlog(3, "%s (\"%s\"); (%slen %d) %s\n", sender, tracebuf,
+           strlen(tracebuf) == count ? "binary " : "",
+           (int)(count),
+           noack_mode ? "[no ack]" : "[looking for ack]");
+       free (tracebuf);
+   }
+
+   return 1;
+}
+
+static
+char* sendpkt_prepare_helper(char *p, char *buf, int cnt, unsigned char *csum, Bool first, Bool last)
+{
+   int i;
+
+   if (first) {
+      *p++ = '$';
+   }
+
+   for (i = 0; i < cnt;)
+      i += try_rle (buf + i, cnt - i, csum, &p);
+
+   if (last) {
+      *p++ = '#';
+      *p++ = tohex ((*csum >> 4) & 0xf);
+      *p++ = tohex (*csum & 0xf);
+   }
+
+   *p = '\0';
+
+   return p;
+}
+
 /* Send a packet to the remote machine, with error checking.
    The data of the packet is in BUF, and the length of the
    packet is in CNT.  Returns >= 0 on success, -1 otherwise.  */
 
 int putpkt_binary (char *buf, int cnt)
 {
-   int i;
    unsigned char csum = 0;
    char *buf2;
    char *p;
@@ -822,17 +877,7 @@ int putpkt_binary (char *buf, int cnt)
    /* Copy the packet into buffer BUF2, encapsulating it
       and giving it a checksum.  */
 
-   p = buf2;
-   *p++ = '$';
-
-   for (i = 0; i < cnt;)
-      i += try_rle (buf + i, cnt - i, &csum, &p);
-
-   *p++ = '#';
-   *p++ = tohex ((csum >> 4) & 0xf);
-   *p++ = tohex (csum & 0xf);
-
-   *p = '\0';
+   p = sendpkt_prepare_helper(buf2, buf, cnt, &csum, True, True);
 
    /* we might have to write a pkt when out FIFO not yet/anymore opened */
    if (!ensure_write_remote_desc()) {
@@ -845,32 +890,9 @@ int putpkt_binary (char *buf, int cnt)
       or send it over and over until we get a positive ack.  */
 
    do {
-      if (VG_(write) (write_remote_desc, buf2, p - buf2) != p - buf2) {
-         warning ("putpkt(write) error\n");
+      if (sendpkt_write_helper("putpkt", buf2, p - buf2) < 0) {
          free (buf2);
          return -1;
-      }
-
-      if (VG_(debugLog_getLevel)() >= 3) {
-         char *tracebuf = malloc(4 * (p - buf2) + 1); // worst case
-         char *tr = tracebuf;
-                                                    
-         for (UInt npr = 0; npr < p - buf2; npr++) {
-            UChar uc = (unsigned char)buf2[npr];
-            if (uc > 31 && uc < 127) {
-               *tr++ = uc;
-            } else {
-               *tr++ = '\\';
-               VG_(sprintf)(tr, "%03o", uc);
-               tr += 3;
-            }
-         }
-         *tr++ = 0;
-         dlog(3, "putpkt (\"%s\"); (%slen %d) %s\n", tracebuf,
-              strlen(tracebuf) == p - buf2 ? "binary " : "", 
-              (int)(p - buf2),
-              noack_mode ? "[no ack]" : "[looking for ack]");
-         free (tracebuf);
       }
 
       if (noack_mode)
@@ -895,6 +917,51 @@ int putpkt_binary (char *buf, int cnt)
          dlog(1, "Received 0x03 character (SIGINT)\n");
    }
    while (cc != '+');
+
+   free (buf2);
+   return 1;			/* Success! */
+}
+
+/* Same as putpkt_binary, but allow to send a partial packet.
+   This function updates the csum which must then be passed to
+   later calls to finish the packet.
+   `when` defines which state the packet is in:
+    - 0: first packet
+    - 1: intermediate packet
+    - 2: last packet
+   This is used when the final packet size is not known in advance
+   and potentially bigger than PBUFSIZ.
+*/
+
+int streampkt_binary (char *buf, int cnt, unsigned char* csum, enum streampkt_when when)
+{
+   char *buf2;
+   char *p;
+
+   if (!noack_mode) {
+      warning ("streampkt(write) error: only allowed in noack mode\n");
+      return -1;
+   }
+
+   buf2 = malloc(cnt + POVERHSIZ);
+
+   /* Copy the packet into buffer BUF2, encapsulating it
+      and giving it a checksum.  */
+
+   p = sendpkt_prepare_helper(buf2, buf, cnt, csum, when == STREAMPKT_WHEN_START, when == STREAMPKT_WHEN_END);
+
+   /* we might have to write a pkt when out FIFO not yet/anymore opened */
+   if (!ensure_write_remote_desc()) {
+      warning ("streampkt(write) error: no write_remote_desc\n");
+      free (buf2);
+      return -1;
+   }
+
+   /* Send it once (noack_mode). */
+   if (sendpkt_write_helper("streampkt", buf2, p - buf2) < 0) {
+      free (buf2);
+      return -1;
+   }
 
    free (buf2);
    return 1;			/* Success! */
@@ -1051,15 +1118,20 @@ int getpkt (char *buf)
       dlog(3, "getpkt (\"%s\");  [sending ack] \n", buf);
 
    if (!noack_mode) {
+      write_ack();
+   }
+
+   return bp - buf;
+}
+
+void write_ack (void)
+{
       if (!ensure_write_remote_desc()) {
          dlog(1, "getpkt(write ack) no write_remote_desc");
       }
       VG_(write) (write_remote_desc, "+", 1);
       dlog(3, "[sent ack]\n");
    }
-
-   return bp - buf;
-}
 
 void write_ok (char *buf)
 {

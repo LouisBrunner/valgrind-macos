@@ -74,6 +74,7 @@ typedef struct load_info_t {
   vki_uint8_t *linker_entry; // dylinker entry point
   Addr linker_offset; // dylinker text offset
   vki_size_t max_addr; // biggest address reached while loading segments
+  Addr text_slide; // slide of the text segment because of "ASLR" (arm64-only)
 } load_info_t;
 
 static void print(const HChar *str)
@@ -105,16 +106,16 @@ static void check_mmap_float(SysRes res, SizeT len, const HChar* who)
 }
 #endif
 
-static int 
-load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
+static int
+load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
                const HChar *filename, load_info_t *out_info);
 
-static int 
-load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
+static int
+load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
               const HChar *filename, load_info_t *out_info);
 
-static int 
-load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
+static int
+load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
                const HChar *filename, load_info_t *out_info);
 
 
@@ -123,7 +124,7 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    filename must be an absolute path.
    The dylinker's entry point is returned in out_info->linker_entry.
  */
-static int 
+static int
 open_dylinker(const HChar *filename, load_info_t *out_info)
 {
    struct vg_stat sb;
@@ -160,30 +161,30 @@ open_dylinker(const HChar *filename, load_info_t *out_info)
 }
 
 
-/* 
+/*
    Process an LC_SEGMENT command, mapping it into memory if appropriate.
-   fd[offset..size) is a Mach-O thin file. 
+   fd[offset..size) is a Mach-O thin file.
    Returns 0 on success, -1 on any failure.
-   If this segment contains the executable's Mach headers, their 
+   If this segment contains the executable's Mach headers, their
      loaded address is returned in out_info->text.
-   If this segment is a __UNIXSTACK, its start address is returned in 
+   If this segment is a __UNIXSTACK, its start address is returned in
      out_info->stack_start.
 */
 static int
-load_segment(int fd, vki_off_t offset, vki_off_t size, 
+load_segment(int fd, vki_off_t offset, vki_off_t size,
              struct SEGMENT_COMMAND *segcmd, const HChar *filename,
              load_info_t *out_info)
 {
    SysRes res;
    Addr addr;
-   vki_size_t filesize; // page-aligned 
+   vki_size_t filesize; // page-aligned
    vki_size_t vmsize;   // page-aligned
    vki_size_t vmend;    // page-aligned
    unsigned int prot;
-   Addr slided_addr = segcmd->vmaddr + out_info->linker_offset;
+   Addr slided_addr = segcmd->vmaddr + out_info->linker_offset + out_info->text_slide;
 
    // GrP fixme mark __UNIXSTACK as SF_STACK
-    
+
    // Don't honour the client's request to map PAGEZERO.  Why not?
    // Because when the kernel loaded the valgrind tool executable,
    // it will have mapped pagezero itself.  So further attempts
@@ -206,11 +207,6 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
       return 0;
    }
 #endif
-
-   // Record the segment containing the Mach headers themselves
-   if (segcmd->fileoff == 0  &&  segcmd->filesize != 0) {
-      out_info->text = (vki_uint8_t *)slided_addr;
-   }
 
    // Record the __UNIXSTACK start
    if (0 == VG_(strcmp)(segcmd->segname, SEG_UNIXSTACK)) {
@@ -238,16 +234,74 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
            ((segcmd->initprot & VM_PROT_WRITE) ? VKI_PROT_WRITE : 0) |
            ((segcmd->initprot & VM_PROT_EXECUTE) ? VKI_PROT_EXEC : 0));
 
-   // Map the segment    
+   // Map the segment
    filesize = VG_PGROUNDUP(segcmd->filesize);
    vmsize = VG_PGROUNDUP(segcmd->vmsize);
    if (filesize > 0) {
       addr = slided_addr;
       VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu)\n", addr, filesize);
-      res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd, 
-                                                 offset + segcmd->fileoff, 
+      res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd,
+                                                 offset + segcmd->fileoff,
                                                  filename);
+#if defined(VGA_arm64)
+      if (!sr_isError(res) || VG_(strcmp)(segcmd->segname, "__TEXT")) {
+        check_mmap(res, addr, filesize, "load_segment1");
+      } else {
+        // most of the time, we can't map at 0x100000000 because the kernel doesn't allow it
+        // however, most binaries start their TEXT there, so we need to slide it
+        // we just do a non-fixed mmap and let the kernel decide where to put it
+        // we then calculate the slide and apply it everywhere it's needed
+        VG_(debugLog)(2, "ume",
+          "failed with error %lu (%s), trying floating\n",
+          sr_Err(res), VG_(strerror)(sr_Err(res))
+        );
+        unsigned int saved_prot = prot;
+        if (sr_Err(res) == VKI_EPERM || sr_Err(res) == VKI_EINVAL) {
+          // sometimes the kernel refuses to mmap some files with R-X protection, so we mount with R-- and mprotect back to R-X
+          prot = VKI_PROT_READ;
+          VG_(debugLog)(2, "ume",
+            "failure might be due to protection, downgrading from %x to %x (will be restored post mmap through mprotect)\n",
+            saved_prot, prot
+          );
+        }
+
+        res = VG_(am_mmap_named_file_fixed_client_flags)(
+            0, filesize, prot, VKI_MAP_PRIVATE,
+            fd, offset + segcmd->fileoff, filename
+        );
+
+        if (sr_isError(res)) {
+          check_mmap_float(res, filesize, "load_segment1");
+        } else {
+          Addr new_addr = sr_Res(res);
+          out_info->text_slide = new_addr - addr;
+          slided_addr += out_info->text_slide;
+          VG_(debugLog)(2, "ume",
+            "mmap float (file) (%#lx, %lu) succeeded with slide: %#lx\n",
+            new_addr, filesize, out_info->text_slide
+          );
+
+          if (saved_prot != prot) {
+            VG_(debugLog)(2, "ume",
+              "restoring protection from %x to %x\n",
+              prot, saved_prot
+            );
+            res = VG_(do_syscall3)(__NR_mprotect, (UWord)new_addr, filesize, saved_prot );
+            if (sr_isError(res)) {
+              check_mmap_float(res, filesize, "load_segment1-mprotect");
+            }
+            VG_(am_notify_mprotect)(new_addr, filesize, saved_prot);
+          }
+        }
+      }
+#else
       check_mmap(res, addr, filesize, "load_segment1");
+#endif
+   }
+
+   // Record the segment containing the Mach headers themselves
+   if (segcmd->fileoff == 0  &&  segcmd->filesize != 0) {
+      out_info->text = (vki_uint8_t *)slided_addr;
    }
 
    // Zero-fill the remainder of the segment, if any
@@ -269,8 +323,8 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
 }
 
 
-/* 
-   Parse a LC_THREAD or LC_UNIXTHREAD command. 
+/*
+   Parse a LC_THREAD or LC_UNIXTHREAD command.
    Return 0 on success, -1 on any failure.
    If the thread is a LC_UNIXTHREAD, the stack address is returned in out_info->stack_end.
    If the executable requested a non-default stack address,
@@ -278,14 +332,14 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    The stack itself (if any) is not mapped.
    Other custom register settings are silently ignored (GrP fixme).
 */
-static int 
+static int
 load_genericthread(struct thread_command *threadcmd, int type,
                     int *customstack, load_info_t *out_info)
 {
    unsigned int flavor;
    unsigned int count;
    unsigned int *p;
-   unsigned int left; 
+   unsigned int left;
 
    p = (unsigned int *)(threadcmd + 1);
    left = (threadcmd->cmdsize - sizeof(struct thread_command)) / sizeof(*p);
@@ -297,7 +351,7 @@ load_genericthread(struct thread_command *threadcmd, int type,
       }
       flavor = *p++; left--;
       count = *p++; left--;
-      
+
       if (left < count) {
          print("bad executable (invalid thread command 2)\n");
          return -1;
@@ -331,6 +385,23 @@ load_genericthread(struct thread_command *threadcmd, int type,
          return 0;
       }
 
+#elif defined(VGA_arm64)
+      if (flavor == ARM_THREAD_STATE64 && count == ARM_THREAD_STATE64_COUNT){
+         arm_thread_state64_t *state = (arm_thread_state64_t *)p;
+         out_info->entry = (vki_uint8_t *)arm_thread_state64_get_pc(*state) + out_info->text_slide;
+         if (type == LC_UNIXTHREAD) {
+            out_info->stack_end = (vki_uint8_t *)(
+              arm_thread_state64_get_sp(*state)
+              ? arm_thread_state64_get_sp(*state)
+              : VKI_USRSTACK64
+            );
+            vg_assert(VG_IS_PAGE_ALIGNED(out_info->stack_end));
+            out_info->stack_end--;
+         }
+         if (customstack) *customstack = arm_thread_state64_get_sp(*state);
+         return 0;
+      }
+
 #else
 # error unknown platform
 #endif
@@ -343,7 +414,7 @@ load_genericthread(struct thread_command *threadcmd, int type,
 }
 
 
-/* Returns the main stack size on this platform, 
+/* Returns the main stack size on this platform,
    using getrlimit or a fixed size.
    GrP fixme 64-bit? */
 static vki_size_t default_stack_size(void)
@@ -355,13 +426,13 @@ static vki_size_t default_stack_size(void)
 }
 
 
-/* 
+/*
    Processes a LC_UNIXTHREAD command.
    Returns 0 on success, -1 on any failure.
    The stack is mapped in and returned in out_info->stack_start and out_info->stack_end.
    The thread's entry point is returned in out_info->entry.
 */
-static int 
+static int
 load_unixthread(struct thread_command *threadcmd, load_info_t *out_info)
 {
    int err;
@@ -380,8 +451,15 @@ load_unixthread(struct thread_command *threadcmd, load_info_t *out_info)
       vki_size_t stacksize = VG_PGROUNDUP(default_stack_size());
       vm_address_t stackbase = VG_PGROUNDDN(out_info->stack_end+1-stacksize);
       SysRes res;
-        
+
+#if defined(VGA_arm64)
+      // FIXME: due to ASLR, we can't use VKI_MAP_FIXED here as that address space is probably used already,
+      // however, it would be nice to be able to pass `stackbase` as an input to the advisory
+      res = VG_(am_mmap_anon_float_client)(stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+      stackbase = sr_Res(res);
+#else
       res = VG_(am_mmap_anon_fixed_client)(stackbase, stacksize, VKI_PROT_READ|VKI_PROT_WRITE|VKI_PROT_EXEC);
+#endif
       check_mmap(res, stackbase, stacksize, "load_unixthread1");
       out_info->stack_start = (vki_uint8_t *)stackbase;
    } else {
@@ -431,13 +509,13 @@ handle_lcmain ( vki_size_t requested_size,
 
 
 
-/* 
-   Processes an LC_LOAD_DYLINKER command. 
+/*
+   Processes an LC_LOAD_DYLINKER command.
    Returns 0 on success, -1 on any error.
    The linker itself is mapped into memory.
    The linker's entry point is returned in out_info->linker_entry.
 */
-static int 
+static int
 load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
 {
    const HChar *name;
@@ -449,6 +527,7 @@ load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
    linker_info.entry = NULL;
    linker_info.linker_entry = NULL;
    linker_info.linker_offset = 0;
+   linker_info.text_slide = 0;
    linker_info.max_addr = out_info->max_addr;
 
    if (dycmd->name.offset >= dycmd->cmdsize) {
@@ -457,7 +536,7 @@ load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
    }
 
    name = dycmd->name.offset + (HChar *)dycmd;
-    
+
    // GrP fixme assumes name is terminated somewhere
    ret = open_dylinker(name, &linker_info);
    if (linker_info.entry) {
@@ -468,12 +547,12 @@ load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
 }
 
 
-/* 
-    Process an LC_THREAD command. 
+/*
+    Process an LC_THREAD command.
     Returns 0 on success, -1 on any failure.
     The thread's entry point is returned in out_info->entry.
 */
-static int 
+static int
 load_thread(struct thread_command *threadcmd, load_info_t *out_info)
 {
    int customstack;
@@ -490,7 +569,7 @@ load_thread(struct thread_command *threadcmd, load_info_t *out_info)
 
 
 /*
-  Loads a Mach-O executable into memory, along with any threads, 
+  Loads a Mach-O executable into memory, along with any threads,
   stacks, and dylinker.
   Returns 0 on success, -1 on any failure.
   fd[offset..offset+size) is a Mach-O thin file.
@@ -502,8 +581,8 @@ load_thread(struct thread_command *threadcmd, load_info_t *out_info)
   The dylinker's offset (macOS 10.12) is returned in out_info->linker_offset.
   GrP fixme need to return whether dylinker was found - stack layout is different
 */
-static int 
-load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
+static int
+load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
                const HChar *filename, load_info_t *out_info)
 {
    VG_(debugLog)(1, "ume", "load_thin_file: begin:   %s\n", filename);
@@ -528,7 +607,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       print("bad executable (no Mach-O header)\n");
       return -1;
    }
-   
+
 
    // Sanity-check the header itself
    if (mh.magic != MAGIC) {
@@ -558,17 +637,17 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    }
    headers_end = headers + len;
 
-   
+
    // Map some segments into client memory:
    // LC_SEGMENT    (text, data, etc)
    // UNIXSTACK     (stack)
    // LOAD_DYLINKER (dyld)
    lcend = (struct load_command *)(headers + mh.sizeofcmds + sizeof(mh));
-   for (lc = (struct load_command *)(headers + sizeof(mh)); 
-        lc < lcend; 
+   for (lc = (struct load_command *)(headers + sizeof(mh));
+        lc < lcend;
         lc = (struct load_command *)(lc->cmdsize + (vki_uint8_t *)lc))
    {
-      if ((vki_uint8_t *)lc < headers  ||  
+      if ((vki_uint8_t *)lc < headers  ||
           lc->cmdsize+(vki_uint8_t *)lc > headers_end) {
           print("bad executable (invalid load commands)\n");
           return -1;
@@ -606,7 +685,7 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 #     endif
          err = load_segment(fd, offset, size, segcmd, filename, out_info);
          if (err) return -1;
-          
+
          break;
 
       case LC_UNIXTHREAD:
@@ -702,8 +781,8 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
 /*
  Load a fat Mach-O executable.
 */
-static int 
-load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
+static int
+load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
              const HChar *filename, load_info_t *out_info)
 {
    struct fat_header fh;
@@ -722,6 +801,8 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
    good_arch = CPU_TYPE_I386;
 #elif defined(VGA_amd64)
    good_arch = CPU_TYPE_X86_64;
+#elif defined(VGA_arm64)
+   good_arch = CPU_TYPE_ARM64;
 #else
 # error unknown architecture
 #endif
@@ -737,7 +818,7 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       print("bad executable (bad fat header)\n");
       return -1;
    }
-   
+
    // Scan arch headers looking for a good one
    arch_offset = offset + sizeof(fh);
    fh.nfat_arch = VG_(ntohl)(fh.nfat_arch);
@@ -751,7 +832,7 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       res = VG_(pread)(fd, &arch, sizeof(arch), arch_offset);
       arch_offset += sizeof(arch);
       if (sr_isError(res)  ||  sr_Res(res) != sizeof(arch)) {
-         VG_(printf)("bad executable (corrupt fat arch) %x %llu\n", 
+         VG_(printf)("bad executable (corrupt fat arch) %x %llu\n",
                      arch.cputype, (ULong)arch_offset);
          return -1;
       }
@@ -779,8 +860,8 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
  Load a Mach-O executable or dylinker.
  The file may be fat or thin.
 */
-static int 
-load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype, 
+static int
+load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
               const HChar *filename, load_info_t *out_info)
 {
    vki_uint32_t magic;
@@ -795,7 +876,7 @@ load_mach_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       print("bad executable (no Mach-O magic)\n");
       return -1;
    }
-   
+
    if (magic == MAGIC) {
       // thin
       return load_thin_file(fd, offset, size, filetype, filename, out_info);
@@ -816,8 +897,8 @@ Bool VG_(match_macho)(const void *hdr, SizeT len)
 
    // GrP fixme check more carefully for matching fat arch?
 
-   return (len >= VKI_PAGE_SIZE  &&  
-           (*magic == MAGIC  ||  *magic == VG_(ntohl)(FAT_MAGIC))) 
+   return (len >= sizeof(*magic)  &&
+           (*magic == MAGIC  ||  *magic == VG_(ntohl)(FAT_MAGIC)))
       ? True : False;
 }
 
@@ -834,13 +915,14 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
    load_info.linker_entry = NULL;
    load_info.linker_offset = 0;
    load_info.max_addr = 0;
+   load_info.text_slide = 0;
 
    err = VG_(fstat)(fd, &sb);
    if (err) {
       print("couldn't stat executable\n");
       return VKI_ENOEXEC;
    }
-   
+
    err = load_mach_file(fd, 0, sb.size, MH_EXECUTE, name, &load_info);
    if (err) return VKI_ENOEXEC;
 
@@ -856,6 +938,11 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
    info->text = (Addr) load_info.text;
    info->dynamic = load_info.linker_entry ? True : False;
 
+   if (!info->dynamic && load_info.text_slide) {
+      print("cannot slide static executables\n");
+      return VKI_ENOEXEC;
+   }
+
    info->executable_path = VG_(strdup)("ume.macho.executable_path", name);
 
    SysRes res = VG_(dup)(fd);
@@ -870,4 +957,3 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

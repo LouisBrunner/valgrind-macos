@@ -10,7 +10,6 @@
 #endif
 
 #include <stdio.h>
-#include <malloc.h>  // memalign
 #include <string.h>  // memset
 #include <assert.h>
 
@@ -317,13 +316,13 @@ TESTINST2("bfm x2, x4, #0, #63", 0xaaaaaaaaaaaaaaaa, x2, x4, 0);
 
 TESTINST3("cmp x4, x5 ; cset x3, ne", 12345LL, 6789LL, x3, x4, x5, 0);
 TESTINST3("cmp x4, x5 ; cset x3, eq", 12345LL, 6789LL, x3, x4, x5, 0);
-  
+
 TESTINST3("cmp w4, w5 ; cset x3, ne",
           0xAB12345678, 0xCD12345678, x3, x4, x5, 0);
 
 TESTINST3("cmp w4, w5 ; cset x3, eq",
           0xCD12345678, 0xCD12345670, x3, x4, x5, 0);
-  
+
 TESTINST3("cmp x4, x5 ; mrs x3, nzcv", 0xdb432311d1e3a1d0, 0xa6325ae016fbd710, x3, x4, x5, 0);
 TESTINST3("cmp x4, x5 ; mrs x3, nzcv", 0x192e7217e1ab63b0, 0xfd370f11bfcd4a4a, x3, x4, x5, 0);
 TESTINST3("cmp x4, x5 ; mrs x3, nzcv", 0xfd79baaee550b488, 0x5bc94f0d3ee4863a, x3, x4, x5, 0);

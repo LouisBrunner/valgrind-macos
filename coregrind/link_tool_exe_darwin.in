@@ -23,8 +23,8 @@
 #      the build system would have done, left to itself
 #
 # We just let the script 'die' if something is wrong, rather than do
-# proper error reporting.  We don't expect the users to run this 
-# directly.  It is only run as part of the build process, with 
+# proper error reporting.  We don't expect the users to run this
+# directly.  It is only run as part of the build process, with
 # carefully constrained inputs.
 #
 #
@@ -67,6 +67,17 @@
 # "-arch i386".  Fortunately we can figure this out by scanning the
 # gcc invocation, which itself must contain either "-arch x86_64" or
 # "-arch i386".
+#
+# arm64 is a bit different as the kernel doesn't allow running static binaries.
+# So we link dynamically and then fixup the binary.
+# This means it becomes PIE: the load address is respected but
+# the stack is not as it is allocated by the kernel and is subject to ASLR.
+# Overall, that's not a big deal.
+# However, requiring dyld to be present is a problem as it usually appears
+# in the address space where we want to put the client binary.
+# FIXME: We currently have a hardcoded hack to handle this but it should be using `$ala` instead.
+# The biggest challenge of all is fixing up the binary to be dynamic and respect `$ala`.
+# FIXME: This is currently unsolved.
 
 use warnings;
 use strict;
@@ -140,22 +151,30 @@ die "Can't find '-arch archstr' in command line"
 # build the command line
 my $cmd = "/usr/bin/ld";
 
-$cmd = "$cmd -static";
+if ($archstr eq "arm64") {
+    $cmd = "$cmd -Z -L../coregrind -lmySystem -lmydyld";
+    $cmd = "$cmd -segaddr __TEXT $ala";
+    # we add roughly ~30 bytes when using install_name_tool so we pad the header by 256 bytes to be safe
+    $cmd = "$cmd -headerpad 256";
+} else {
+    $cmd = "$cmd -static";
+    $cmd = "$cmd -image_base $ala";
+}
+
+# Xcode 16 is completely borked and crashes when you use -segaddr so we rollback to
+# the old linker in the meantime
+if (@DARWIN_VERS@ >= 150000) {
+    $cmd = "$cmd -ld_classic";
 
 # If we're building with clang (viz, the C compiler as specified
 # by the 2nd arg ends in "clang"), we also need -new_linker.  See
 # https://bugs.kde.org/show_bug.cgi?id=295427
-if ("$cc" =~ /clang$/) {
+} elsif ("$cc" =~ /clang$/) {
     $cmd = "$cmd -new_linker";
 }
 
 $cmd = "$cmd -arch $archstr";
-if (@DARWIN_VERS@ < @DARWIN_11_00@) {
-  $cmd = "$cmd -macosx_version_min @DARWIN_MIN_SDK@";
-} else {
-  # they changed the name around 11.0
-  $cmd = "$cmd -macos_version_min @DARWIN_MIN_SDK@";
-}
+$cmd = "$cmd @LD_OS_MIN_VERS_ARG@";
 $cmd = "$cmd -o $outname";
 $cmd = "$cmd -u __start -e __start";
 
@@ -163,9 +182,10 @@ my $stack_addr = Math::BigInt->new( $ala ) - $TX_STACK_OFFSET_BEFORE_TEXT;
 my $stack_addr_str = $stack_addr->as_hex();
 my $stack_size_str = Math::BigInt::as_hex($TX_STACK_SIZE);
 
-$cmd = "$cmd -image_base $ala";
-# FIXME: 14.0 and later, mark it as deprecated and ignored but it still works
-$cmd = "$cmd -stack_addr $stack_addr_str";
+# FIXME: 14.0 and later mark it as deprecated and ignored but it still works
+if ($archstr ne "arm64") {
+    $cmd = "$cmd -stack_addr $stack_addr_str";
+}
 $cmd = "$cmd -stack_size $stack_size_str";
 
 foreach my $n (2 .. $#ARGV) {
@@ -184,6 +204,31 @@ if ($r != 0) {
    exit 1;
 }
 
+if ($archstr eq "arm64") {
+    # need to adjust the load commands otherwise the kernel will load the ACTUAL dylibs
+    # (which defeats the whole purpose of making our own system libraries)
+    $cmd = "install_name_tool -change /usr/lib/libSystem.B.dylib \@rpath/libmySystem.so $outname";
+    print "link_tool_exe_darwin: $cmd\n";
+    $r = system($cmd);
+    if ($r != 0) {
+        exit 1;
+    }
+    $cmd = "install_name_tool -change /usr/lib/system/libdyld.dylib \@rpath/libmydyld.so $outname";
+    print "link_tool_exe_darwin: $cmd\n";
+    $r = system($cmd);
+    if ($r != 0) {
+        exit 1;
+    }
+    # finally add the rpath to the binary, this allows us to support the file structure
+    # when valgrind is installed and when used in-place
+    $cmd = "install_name_tool -add_rpath \@executable_path -add_rpath \@executable_path/../coregrind $outname";
+    print "link_tool_exe_darwin: $cmd\n";
+    $r = system($cmd);
+    if ($r != 0) {
+        exit 1;
+    }
+    exit 0;
+}
 
 # and now kludge the tool exe
 # see bug 267997

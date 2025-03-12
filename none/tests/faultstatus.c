@@ -1,4 +1,4 @@
-/* 
+/*
    Check that a fault signal handler gets the expected info
  */
 #include <signal.h>
@@ -23,6 +23,8 @@
 #  define DIVISION_BY_ZERO_TRIGGERS_FPE 0
 #if defined(VGO_freebsd)
 #  define DIVISION_BY_ZERO_SI_CODE      SI_LWP
+#elif defined(VGO_darwin)
+#  define DIVISION_BY_ZERO_SI_CODE      FPE_INTDIV
 #else
 #  define DIVISION_BY_ZERO_SI_CODE      SI_TKILL
 #endif
@@ -71,7 +73,7 @@ static int testsig(int sig, int want)
 	if (sig != want) {
 		fprintf(stderr, "  FAIL: expected signal %d, not %d\n", want, sig);
 		return 0;
-	} 
+	}
 	return 1;
 }
 
@@ -150,7 +152,7 @@ int main()
 	sa.sa_sigaction = handler;
 	sa.sa_flags = SA_SIGINFO;
 	sigfillset(&sa.sa_mask);
-	
+
 	for(i = 0; i < sizeof(sigs)/sizeof(*sigs); i++)
 		sigaction(sigs[i], &sa, NULL);
 
@@ -182,7 +184,7 @@ int main()
 
 		for(i = 0; i < sizeof(tests)/sizeof(*tests); i++) {
 			cur_test = &tests[i];
-		
+
 			if (sigsetjmp(escape, 1) == 0) {
 				fprintf(stderr, "Test %d: ", i+1);
 				tests[i].test();

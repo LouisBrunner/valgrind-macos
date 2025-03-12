@@ -206,7 +206,7 @@ mach_msg_return_t mach_msg(
       base = (mach_msg_base_t *)((mach_msg_vector_t *)msg)->msgv_data;
     } else {
       base = (mach_msg_base_t *)msg;
-        }
+    }
 
 	  mach_msg_size_t descriptors = 0;
     if (option & MACH_SEND_MSG && msg->msgh_bits & MACH_MSGH_BITS_COMPLEX) {
@@ -264,6 +264,27 @@ mach_msg_return_t mach_msg(
     return mr;
 #endif
 }
+
+
+#if defined(VGA_arm64)
+#include <mach/mach.h>
+#include <mach/mach_vm.h>
+#include "vki/vki-scnums-darwin.h"
+#include "pub_core_syscall.h" // VG_(do_syscall3)
+
+extern
+kern_return_t mach_vm_deallocate(
+  vm_map_t target_task,
+  mach_vm_address_t address,
+  mach_vm_size_t size
+) {
+  SysRes res = VG_(do_syscall3)(__NR_kernelrpc_mach_vm_deallocate_trap, (UWord)target_task, (UWord)address, (UWord)size);
+  if (sr_isError(res)) {
+    return KERN_FAILURE;
+  }
+  return KERN_SUCCESS;
+}
+#endif
 
 #endif // defined(VGO_darwin)
 

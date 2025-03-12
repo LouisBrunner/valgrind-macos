@@ -1,4 +1,6 @@
 *.o
+.DS_Store
+configure~
 
 # /
 /.in_place
@@ -44,10 +46,9 @@
 
 # /auxprogs/
 /auxprogs/.deps
-/auxprogs/getoff-amd64-darwin
+/auxprogs/getoff-*-darwin
 /auxprogs/getoff-arm-linux
 /auxprogs/getoff-arm64-linux
-/auxprogs/getoff-x86-darwin
 /auxprogs/getoff-amd64-linux
 /auxprogs/getoff-x86-linux
 /auxprogs/getoff-s390x-linux
@@ -1821,6 +1822,7 @@
 /none/tests/arm/vfpv4_fma
 
 # /none/tests/arm64/
+/none/tests/arm64/*.dSYM
 /none/tests/arm64/*.stderr.diff*
 /none/tests/arm64/*.stderr.out
 /none/tests/arm64/*.stdout.diff*
@@ -2503,3 +2505,5 @@ none/tests/freebsd/bug499212
 *.vgtest*.log
 /test-suite-overall.log
 test-suite.log
+
+.zed

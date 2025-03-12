@@ -466,6 +466,23 @@ int valgrind_read_memory (CORE_ADDR memaddr, unsigned char *myaddr, int len)
       return 0;
    } else {
       dlog(1, "error reading memory %p size %d\n", sourceaddr, len);
+#if defined(VGP_arm64_darwin)
+      const void *before = sourceaddr;
+      // this might be a tagged pointer, so we need to strip it for reading
+      asm volatile (
+        "xpacd %[ptr]\n"
+        : [ptr] "+r" (sourceaddr)
+      );
+      if (sourceaddr != before) {
+        dlog(3, "error, trying again after PAC/tag stripping\n");
+        int ret = valgrind_read_memory((CORE_ADDR)sourceaddr, myaddr, len);
+        if (ret == 0) {
+          return 0;
+        }
+        dlog(3, "failed to read after PAC/tag stripping, remove the top 16 bits\n");
+        return valgrind_read_memory(((CORE_ADDR)sourceaddr & 0x0000FFFFFFFFFFFF), myaddr, len);
+      }
+#endif
       return -1;
    }
 }
@@ -817,6 +834,23 @@ void set_desired_inferior (int use_general)
      ThreadId tid = tst->tid;
      dlog(1, "set_desired_inferior use_general %d found %p tid %u lwpid %d\n",
           use_general, found, tid, tst->os_state.lwpid);
+  }
+}
+
+void set_desired_inferior_from_id (int tid)
+{
+  struct thread_info *found;
+
+  found = (struct thread_info *) find_inferior_id (&all_threads, tid);
+  if (found == NULL)
+     current_inferior = (struct thread_info *) all_threads.head;
+  else
+     current_inferior = found;
+  {
+     ThreadState *tst = (ThreadState *) inferior_target_data (current_inferior);
+     ThreadId foundTID = tst->tid;
+     dlog(1, "set_desired_inferior_from_id requested tid %d found %p found tid %u lwpid %d\n",
+          tid, found, foundTID, tst->os_state.lwpid);
   }
 }
 

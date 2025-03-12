@@ -2743,6 +2743,8 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
          case Iop_Rsh32Ux4: case Iop_Rsh64Ux2:
          case Iop_Max64Fx2: case Iop_Max32Fx4:
          case Iop_Min64Fx2: case Iop_Min32Fx4:
+         case Iop_MaxN64Fx2: case Iop_MaxN32Fx4:
+         case Iop_MinN64Fx2: case Iop_MinN32Fx4:
          case Iop_RecipStep64Fx2: case Iop_RecipStep32Fx4:
          case Iop_RSqrtStep64Fx2: case Iop_RSqrtStep32Fx4:
          {
@@ -2870,6 +2872,10 @@ static HReg iselV128Expr_wrk ( ISelEnv* env, IRExpr* e )
                case Iop_Max32Fx4:       op = ARM64vecb_FMAX32x4; break;
                case Iop_Min64Fx2:       op = ARM64vecb_FMIN64x2; break;
                case Iop_Min32Fx4:       op = ARM64vecb_FMIN32x4; break;
+               case Iop_MaxN64Fx2:      op = ARM64vecb_FMAXN64x2; break;
+               case Iop_MaxN32Fx4:      op = ARM64vecb_FMAXN32x4; break;
+               case Iop_MinN64Fx2:      op = ARM64vecb_FMINN64x2; break;
+               case Iop_MinN32Fx4:      op = ARM64vecb_FMINN32x4; break;
                case Iop_RecipStep64Fx2: setRM = True;
                                         op = ARM64vecb_FRECPS64x2; break;
                case Iop_RecipStep32Fx4: setRM = True;
@@ -3793,6 +3799,21 @@ static HReg iselF16Expr_wrk ( ISelEnv* env, IRExpr* e )
       return lookupIRTemp(env, e->Iex.RdTmp.tmp);
    }
 
+   if (e->tag == Iex_Const) {
+      /* This is something of a kludge.  Since a 16 bit floating point
+         zero is just .. all zeroes, just create a 64 bit zero word
+         and transfer it.  This avoids having to create a SfromW
+         instruction for this specific case. */
+      IRConst* con = e->Iex.Const.con;
+      if (con->tag == Ico_F16i && con->Ico.F16i == 0) {
+         HReg src = newVRegI(env);
+         HReg dst = newVRegD(env);
+         addInstr(env, ARM64Instr_Imm64(src, 0));
+         addInstr(env, ARM64Instr_VDfromX(dst, src));
+         return dst;
+      }
+   }
+
    if (e->tag == Iex_Get) {
       Int offs = e->Iex.Get.offset;
       if (offs >= 0 && offs < 8192 && 0 == (offs & 1)) {
@@ -4506,6 +4527,7 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          case Ijk_NoDecode:
          case Ijk_NoRedir:
          case Ijk_Sys_syscall:
+         case Ijk_Sys_int128:
          case Ijk_InvalICache:
          case Ijk_FlushDCache:
          case Ijk_SigTRAP:
@@ -4600,6 +4622,7 @@ static void iselNext ( ISelEnv* env,
       case Ijk_NoDecode:
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
+      case Ijk_Sys_int128:
       case Ijk_InvalICache:
       case Ijk_FlushDCache:
       case Ijk_SigTRAP:

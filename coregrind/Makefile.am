@@ -20,6 +20,7 @@ AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@ += \
 	-DVG_PLATFORM="\"@VGCONF_ARCH_SEC@-@VGCONF_OS@\""
 endif
 
+noinst_PROGRAMS =
 
 EXTRA_DIST = \
 	m_debuginfo/README.txt \
@@ -150,35 +151,54 @@ mach_hdrs =
 mach_defs =
 if VGCONF_OS_IS_DARWIN
 mach_user_srcs += \
-	m_mach/mach_vmUser.c \
-        m_mach/taskUser.c \
-        m_mach/thread_actUser.c \
-        m_mach/vm_mapUser.c
+  m_mach/mach_vmUser.c \
+  m_mach/taskUser.c \
+  m_mach/thread_actUser.c \
+  m_mach/vm_mapUser.c
 mach_server_srcs += \
-	m_mach/mach_vmServer.c \
-        m_mach/taskServer.c \
-        m_mach/thread_actServer.c \
-        m_mach/vm_mapServer.c
+  m_mach/mach_vmServer.c \
+  m_mach/taskServer.c \
+  m_mach/thread_actServer.c \
+  m_mach/vm_mapServer.c
 mach_hdrs += \
-	m_mach/mach_vm.h \
-        m_mach/task.h \
-        m_mach/thread_act.h \
-        m_mach/vm_map.h
+  m_mach/mach_vm.h \
+  m_mach/task.h \
+  m_mach/thread_act.h \
+  m_mach/vm_map.h
 mach_defs += \
-	@XCODE_INC_DIR@/mach/mach_vm.defs \
-        @XCODE_INC_DIR@/mach/task.defs \
-        @XCODE_INC_DIR@/mach/thread_act.defs \
-        @XCODE_INC_DIR@/mach/vm_map.defs
+  @SDK_INC_DIR@/mach/mach_vm.defs \
+  @SDK_INC_DIR@/mach/task.defs \
+  @SDK_INC_DIR@/mach/thread_act.defs \
+  @SDK_INC_DIR@/mach/vm_map.defs
+
+if VGCONF_ARCHS_INCLUDE_ARM64
+noinst_PROGRAMS += libmySystem.so libmydyld.so
+
+libmySystem_so_SOURCES = m_mach/dummy_systemb.c
+libmySystem_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmySystem_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmySystem_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmySystem_so_LINK = ./delayed-install-systemb.sh \
+  /usr/bin/ld -dylib @LD_OS_MIN_VERS_ARG@ -L@SDK_LIB_DIR@ -lSystem -o libmySystem.so
+
+libmydyld_so_SOURCES = m_mach/dummy_dyld.c m_mach/dummy_dylddata.S
+libmydyld_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_LDFLAGS = \
+  -dynamic -dynamiclib -Wl,-dead_strip_dylibs \
+  -install_name /usr/lib/system/libdyld.dylib
+endif
 endif
 
 # Be careful w.r.t. parallel builds.  See section 27.9 of the automake info
 # page, "Handling Tools that Produce many Outputs".
-$(abs_builddir)/m_mach: 
+$(abs_builddir)/m_mach:
 	mkdir -p $@
 $(mach_user_srcs): $(mach_defs) $(abs_builddir)/m_mach
-	(cd m_mach && mig -I@XCODE_INC_DIR@ $(mach_defs))
+	(cd m_mach && mig -I@SDK_INC_DIR@ $(mach_defs))
 $(mach_hdrs): $(mach_defs) $(mach_user_srcs) $(abs_builddir)/m_mach
-	(cd m_mach && mig -I@XCODE_INC_DIR@ $(mach_defs))
+	(cd m_mach && mig -I@SDK_INC_DIR@ $(mach_defs))
 
 #----------------------------------------------------------------------------
 # Headers
@@ -398,6 +418,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-arm64-freebsd.S \
 	m_dispatch/dispatch-x86-darwin.S \
 	m_dispatch/dispatch-amd64-darwin.S \
+	m_dispatch/dispatch-arm64-darwin.S \
 	m_dispatch/dispatch-x86-solaris.S \
 	m_dispatch/dispatch-amd64-solaris.S \
 	m_extension/extension-main.c \
@@ -430,6 +451,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_mach/mach_msg.c \
 	m_mach/mach_traps-x86-darwin.S \
 	m_mach/mach_traps-amd64-darwin.S \
+	m_mach/mach_traps-arm64-darwin.S \
 	m_mach/mig_strncpy.c \
 	m_mach/dyld_cache.c \
 	m_replacemalloc/replacemalloc_core.c \
@@ -454,6 +476,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-riscv64-linux.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
+	m_sigframe/sigframe-arm64-darwin.c \
 	m_sigframe/sigframe-solaris.c \
 	m_syswrap/syscall-x86-linux.S \
 	m_syswrap/syscall-amd64-linux.S \
@@ -471,7 +494,8 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-amd64-freebsd.S \
 	m_syswrap/syscall-arm64-freebsd.S \
 	m_syswrap/syscall-x86-darwin.S \
-	m_syswrap/syscall-amd64-darwin.S \
+  m_syswrap/syscall-amd64-darwin.S \
+	m_syswrap/syscall-arm64-darwin.S \
 	m_syswrap/syscall-x86-solaris.S \
 	m_syswrap/syscall-amd64-solaris.S \
 	m_syswrap/syswrap-main.c \
@@ -497,6 +521,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-riscv64-linux.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
+	m_syswrap/syswrap-arm64-darwin.c \
 	m_syswrap/syswrap-xen.c \
 	m_syswrap/syswrap-x86-solaris.c \
 	m_syswrap/syswrap-amd64-solaris.c \
@@ -637,7 +662,7 @@ endif
 # vgpreload_core-<platform>.a
 #----------------------------------------------------------------------------
 
-noinst_PROGRAMS  = vgpreload_core-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
+noinst_PROGRAMS += vgpreload_core-@VGCONF_ARCH_PRI@-@VGCONF_OS@.so
 if VGCONF_HAVE_PLATFORM_SEC
 noinst_PROGRAMS += vgpreload_core-@VGCONF_ARCH_SEC@-@VGCONF_OS@.so
 endif
@@ -712,6 +737,10 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/amd64-avx-linux.xml \
 	m_gdbserver/amd64-coresse-valgrind.xml \
 	m_gdbserver/amd64-linux-valgrind.xml \
+	m_gdbserver/aarch64-core.xml \
+	m_gdbserver/aarch64-fpu.xml \
+	m_gdbserver/aarch64-with-fpu.xml \
+	m_gdbserver/aarch64-with-fpu-valgrind.xml \
 	m_gdbserver/arm-core-valgrind-s1.xml \
 	m_gdbserver/arm-core-valgrind-s2.xml \
 	m_gdbserver/arm-core.xml \
@@ -836,6 +865,7 @@ uninstall-local: uninstall-noinst_PROGRAMS uninstall-noinst_DSYMS
 #----------------------------------------------------------------------------
 
 if VGCONF_OS_IS_DARWIN
+if ! VGCONF_PLATFORMS_INCLUDE_ARM64_DARWIN
 
 BUILT_SOURCES += fixup_macho_loadcmds
 fixup_macho_loadcmds: fixup_macho_loadcmds.c
@@ -843,6 +873,7 @@ fixup_macho_loadcmds: fixup_macho_loadcmds.c
 
 CLEANFILES += fixup_macho_loadcmds
 
+endif
 endif
 
 EXTRA_DIST += fixup_macho_loadcmds.c

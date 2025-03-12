@@ -59,6 +59,8 @@
 
 #include "pub_core_aspacemgr.h"  // self
 
+#include "pub_core_mach.h"       // macos support
+
 
 /* --------------- Implemented in aspacemgr-common.c ---------------*/
 

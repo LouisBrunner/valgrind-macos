@@ -29,7 +29,7 @@
 #include "pub_core_machine.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_transtab.h"
-#include "pub_core_gdbserver.h" 
+#include "pub_core_gdbserver.h"
 #include "pub_core_debuginfo.h"
 
 #include "valgrind_low.h"
@@ -117,7 +117,7 @@ CORE_ADDR get_pc (void)
    unsigned long pc;
 
    collect_register_by_name ("pc", &pc);
-   
+
    dlog(1, "stop pc is %p\n", (void *) pc);
    return pc;
 }
@@ -141,7 +141,7 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
 
    VexGuestARM64State* arm = (VexGuestARM64State*) get_arch (set, tst);
 
-   switch (regno) { 
+   switch (regno) {
    // numbers here have to match the order of regs above
    // Attention: gdb order does not match valgrind order.
    case 0:  VG_(transfer) (&arm->guest_X0,   buf, dir, size, mod); break;
@@ -244,15 +244,11 @@ void transfer_register (ThreadId tid, int abs_regno, void * buf,
 static
 const char* target_xml (Bool shadow_mode)
 {
-   return NULL;
-#if 0
-   GDBTD
    if (shadow_mode) {
-      return "arm-with-vfpv3-valgrind.xml";
+      return "aarch64-with-fpu-valgrind.xml";
    } else {
-      return "arm-with-vfpv3.xml";
+      return "aarch64-with-fpu.xml";
    }
-#endif 
 }
 
 static CORE_ADDR** target_get_dtv (ThreadState *tst)

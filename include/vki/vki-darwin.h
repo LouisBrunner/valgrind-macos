@@ -54,7 +54,12 @@
 #include <sys/types.h>
 
 #define vki_dev_t dev_t
+#if defined(VGP_arm64_darwin)
+// kernel uses 16bit, but somehow it's defined as 32bit in userland
+#define vki_mode_t uint16_t
+#else
 #define vki_mode_t mode_t
+#endif
 #define vki_ino_t ino_t
 #define vki_ino64_t ino64_t
 #define vki_nlink_t nlink_t
@@ -83,12 +88,111 @@
 // magic mmap() flags
 #define	VKI_MAP_ANONYMOUS MAP_ANON	// linux synonym
 
+// See xnu/osfmk/mach/vm_statistics.h
+#define VKI_VM_MEMORY_MALLOC 1
+#define VKI_VM_MEMORY_MALLOC_SMALL 2
+#define VKI_VM_MEMORY_MALLOC_LARGE 3
+#define VKI_VM_MEMORY_MALLOC_HUGE 4
+#define VKI_VM_MEMORY_BRK 5
+#define VKI_VM_MEMORY_REALLOC 6
+#define VKI_VM_MEMORY_MALLOC_TINY 7
+#define VKI_VM_MEMORY_MALLOC_LARGE_REUSABLE 8
+#define VKI_VM_MEMORY_MALLOC_LARGE_REUSED 9
+#define VKI_VM_MEMORY_ANALYSIS_TOOL 10
+#define VKI_VM_MEMORY_MALLOC_NANO 11
+#define VKI_VM_MEMORY_MALLOC_MEDIUM 12
+#define VKI_VM_MEMORY_MALLOC_PROB_GUARD 13
+#define VKI_VM_MEMORY_MACH_MSG 20
+#define VKI_VM_MEMORY_IOKIT 21
+#define VKI_VM_MEMORY_STACK 30
+#define VKI_VM_MEMORY_GUARD  31
+#define VKI_VM_MEMORY_SHARED_PMAP 32
+#define VKI_VM_MEMORY_DYLIB 33
+#define VKI_VM_MEMORY_OBJC_DISPATCHERS 34
+#define VKI_VM_MEMORY_UNSHARED_PMAP 35
+#define VKI_VM_MEMORY_APPKIT 40
+#define VKI_VM_MEMORY_FOUNDATION 41
+#define VKI_VM_MEMORY_COREGRAPHICS 42
+#define VKI_VM_MEMORY_CORESERVICES 43
+#define VKI_VM_MEMORY_JAVA 44
+#define VKI_VM_MEMORY_COREDATA 45
+#define VKI_VM_MEMORY_COREDATA_OBJECTIDS 46
+#define VKI_VM_MEMORY_ATS 50
+#define VKI_VM_MEMORY_LAYERKIT 51
+#define VKI_VM_MEMORY_CGIMAGE 52
+#define VKI_VM_MEMORY_TCMALLOC 53
+#define VKI_VM_MEMORY_COREGRAPHICS_DATA     54
+#define VKI_VM_MEMORY_COREGRAPHICS_SHARED   55
+#define VKI_VM_MEMORY_COREGRAPHICS_FRAMEBUFFERS     56
+#define VKI_VM_MEMORY_COREGRAPHICS_BACKINGSTORES    57
+#define VKI_VM_MEMORY_COREGRAPHICS_XALLOC 58
+#define VKI_VM_MEMORY_DYLD 60
+#define VKI_VM_MEMORY_DYLD_MALLOC 61
+#define VKI_VM_MEMORY_SQLITE 62
+#define VKI_VM_MEMORY_JAVASCRIPT_CORE 63
+#define VKI_VM_MEMORY_JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR 64
+#define VKI_VM_MEMORY_JAVASCRIPT_JIT_REGISTER_FILE 65
+#define VKI_VM_MEMORY_GLSL  66
+#define VKI_VM_MEMORY_OPENCL    67
+#define VKI_VM_MEMORY_COREIMAGE 68
+#define VKI_VM_MEMORY_WEBCORE_PURGEABLE_BUFFERS 69
+#define VKI_VM_MEMORY_IMAGEIO       70
+#define VKI_VM_MEMORY_COREPROFILE   71
+#define VKI_VM_MEMORY_ASSETSD       72
+#define VKI_VM_MEMORY_OS_ALLOC_ONCE 73
+#define VKI_VM_MEMORY_LIBDISPATCH 74
+#define VKI_VM_MEMORY_ACCELERATE 75
+#define VKI_VM_MEMORY_COREUI 76
+#define VKI_VM_MEMORY_COREUIFILE 77
+#define VKI_VM_MEMORY_GENEALOGY 78
+#define VKI_VM_MEMORY_RAWCAMERA 79
+#define VKI_VM_MEMORY_CORPSEINFO 80
+#define VKI_VM_MEMORY_ASL 81
+#define VKI_VM_MEMORY_SWIFT_RUNTIME 82
+#define VKI_VM_MEMORY_SWIFT_METADATA 83
+#define VKI_VM_MEMORY_DHMM 84
+#define VKI_VM_MEMORY_SCENEKIT 86
+#define VKI_VM_MEMORY_SKYWALK 87
+#define VKI_VM_MEMORY_IOSURFACE 88
+#define VKI_VM_MEMORY_LIBNETWORK 89
+#define VKI_VM_MEMORY_AUDIO 90
+#define VKI_VM_MEMORY_VIDEOBITSTREAM 91
+#define VKI_VM_MEMORY_CM_XPC 92
+#define VKI_VM_MEMORY_CM_RPC 93
+#define VKI_VM_MEMORY_CM_MEMORYPOOL 94
+#define VKI_VM_MEMORY_CM_READCACHE 95
+#define VKI_VM_MEMORY_CM_CRABS 96
+#define VKI_VM_MEMORY_QUICKLOOK_THUMBNAILS 97
+#define VKI_VM_MEMORY_ACCOUNTS 98
+#define VKI_VM_MEMORY_SANITIZER 99
+#define VKI_VM_MEMORY_IOACCELERATOR 100
+#define VKI_VM_MEMORY_CM_REGWARP 101
+#define VKI_VM_MEMORY_EAR_DECODER 102
+#define VKI_VM_MEMORY_COREUI_CACHED_IMAGE_DATA 103
+#define VKI_VM_MEMORY_COLORSYNC 104
+#define VKI_VM_MEMORY_BTINFO 105
+#define VKI_VM_MEMORY_CM_HLS 106
+#define VKI_VM_MEMORY_ROSETTA 230
+#define VKI_VM_MEMORY_ROSETTA_THREAD_CONTEXT 231
+#define VKI_VM_MEMORY_ROSETTA_INDIRECT_BRANCH_MAP 232
+#define VKI_VM_MEMORY_ROSETTA_RETURN_STACK 233
+#define VKI_VM_MEMORY_ROSETTA_EXECUTABLE_HEAP 234
+#define VKI_VM_MEMORY_ROSETTA_USER_LDT 235
+#define VKI_VM_MEMORY_ROSETTA_ARENA 236
+#define VKI_VM_MEMORY_ROSETTA_10 239
+#define VKI_VM_MEMORY_APPLICATION_SPECIFIC_1 240
+#define VKI_VM_MEMORY_VALGRIND 242
+#define VKI_VM_MEMORY_APPLICATION_SPECIFIC_16 255
+
 // fds for mmap(MAP_ANON), displayed by vmmap
-#define VM_TAG_VALGRIND VM_MAKE_TAG(239)  // SkAnonV
+#define VM_TAG_VALGRIND VM_MAKE_TAG(VKI_VM_MEMORY_VALGRIND)  // SkAnonV
 
 // page sizes
 #define VKI_MAX_PAGE_SHIFT VKI_PAGE_SHIFT
 #define VKI_MAX_PAGE_SIZE VKI_PAGE_SIZE
+
+// pthread
+#define VKI_PTHREAD_START_CUSTOM 0x01000000
 
 // types
 typedef uint32_t vki_u32;
@@ -115,7 +219,6 @@ typedef uint32_t vki_u32;
 #define vki_timespec timespec
 #define vki_itimerval itimerval
 #define vki_timezone timezone
-
 
 #include <sys/stat.h>
 
@@ -315,6 +418,13 @@ typedef uint32_t vki_u32;
 #if DARWIN_VERS >= DARWIN_10_15
 # define VKI_F_SPECULATIVE_READ          F_SPECULATIVE_READ
 #endif
+#if DARWIN_VERS >= DARWIN_14_00
+# define VKI_F_GETPROTECTIONCLASS        F_GETPROTECTIONCLASS
+# define VKI_F_OFD_SETLK                 F_OFD_SETLK
+# define VKI_F_OFD_GETLK                 F_OFD_GETLK
+# define VKI_F_OFD_SETLKWTIMEOUT         F_OFD_SETLKWTIMEOUT
+# define VKI_F_SETCONFINED               95
+#endif
 #define VKI_F_FULLFSYNC	F_FULLFSYNC
 #define VKI_F_PATHPKG_CHECK	F_PATHPKG_CHECK
 #define VKI_F_FREEZE_FS	F_FREEZE_FS
@@ -354,6 +464,10 @@ typedef uint32_t vki_u32;
 #define	VKI_MAP_RESERVED0080	MAP_RESERVED0080
 #define	VKI_MAP_NOEXTEND	MAP_NOEXTEND
 #define	VKI_MAP_HASSEMAPHORE	MAP_HASSEMAPHORE
+#if DARWIN_VERS >= DARWIN_11_00
+#define VKI_MAP_NOCACHE MAP_NOCACHE
+#define VKI_MAP_JIT MAP_JIT
+#endif
 #define	VKI_MAP_FILE	MAP_FILE
 #define	VKI_MAP_ANON	MAP_ANON
 #define VKI_MAP_FAILED	MAP_FAILED
@@ -433,10 +547,20 @@ typedef struct {
 //typedef  struct __sigaction  vki_sigaction_toK_t;
 //typedef  struct sigaction    vki_sigaction_fromK_t;
 
+
+#define VKI_UC_TRAD        1
+#define VKI_UC_FLAVOR     30
+
 typedef
    struct {
       void* ksa_handler;
-      void (*sa_tramp)(void*,UWord,UWord,void*,void*);
+      // see sendsig_set_thread_state/sendsig in XNU for details
+#if defined(VGP_arm64_darwin)
+      // arm64 adds a token argument which needs to be passed to sigreturn
+      void (*sa_tramp)(void* catcher, UWord infostyle, UWord sig, void* p_sinfo, void* p_uctx, void* token);
+#else
+      void (*sa_tramp)(void* ua_catcher, UWord infostyle, UWord sig, void* ua_sip, void* ua_uctxp);
+#endif
       vki_sigset_t sa_mask;
       int sa_flags;
    }
@@ -804,6 +928,17 @@ typedef
 #define VKI_HW_MEMSIZE		HW_MEMSIZE
 #define VKI_HW_AVAILCPU		MW_AVAILCPU
 #define	VKI_HW_MAXID		MW_MAXID
+// seemingly private?
+#define VKI_HW_ARM 100
+#define VKI_HW_OPTIONAL 102
+#define VKI_HW_FEAT_SHA3 104
+#define VKI_HW_CPUTYPE 108
+#define VKI_HW_CPUSUBTYPE 109
+#define VKI_HW_FEAT_SB 113
+#define VKI_HW_FEAT_LRCPC 115
+#define VKI_HW_FEAT_PAUTH 119
+#define VKI_HW_FEAT_DIT 130
+#define VKI_HW_FEAT_FP16 131
 
 #define	VKI_KERN_USRSTACK32	KERN_USRSTACK32
 #define	VKI_KERN_USRSTACK64	KERN_USRSTACK64
@@ -885,6 +1020,7 @@ struct ByteRangeLockPB2
 #define VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY 128  /* max() in the provided priority in the the priority of the event manager */
 #define VKI_WQOPS_THREAD_WORKLOOP_RETURN     256  /* parks the thread after delivering the passed kevent array */
 #define VKI_WQOPS_SHOULD_NARROW              512  /* checks whether we should narrow our concurrency */
+#define VKI_WQOPS_SETUP_DISPATCH            1024  /* setup pthread workqueue-related operations */
 
 
 #include <sys/ttycom.h>
@@ -1126,6 +1262,15 @@ struct ByteRangeLockPB2
 typedef int vki_errno_t;
 
 
+// FIXME: massive hack to ensure we get stat64/statfs64 defined
+// as the 64 version of the stat syscalls are deprecated,
+// this could break at any time.
+#if __DARWIN_ONLY_64_BIT_INO_T
+struct stat64 __DARWIN_STRUCT_STAT64;
+struct statfs64 __DARWIN_STRUCT_STATFS64;
+#endif
+
+
 /* necp stuff.  This doesn't appear to exist in any user space include
    file. */
 #if DARWIN_VERS >= DARWIN_10_10
@@ -1172,6 +1317,8 @@ struct vki_necp_aggregate_result {
 #define VKI_NECP_CLIENT_ACTION_UPDATE_CACHE           14
 #define VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE     15
 #define VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT    16
+#define VKI_NECP_CLIENT_ACTION_ADD_FLOW               17
+#define VKI_NECP_CLIENT_ACTION_REMOVE_FLOW            18
 #define VKI_NECP_CLIENT_ACTION_CLAIM                  19
 #define VKI_NECP_CLIENT_ACTION_SIGN                   20
 
@@ -1181,9 +1328,33 @@ struct vki_necp_aggregate_result {
 #define VKI_IFXNAMSIZ     IFNAMSIZ + 8
 #define VKI_IFNET_SIGNATURELEN      20
 
+#define VKI_UL_COMPARE_AND_WAIT             1
+#define VKI_UL_UNFAIR_LOCK                  2
+#define VKI_UL_COMPARE_AND_WAIT_SHARED      3
+#define VKI_UL_UNFAIR_LOCK64_SHARED         4
+#define VKI_UL_COMPARE_AND_WAIT64           5
+#define VKI_UL_COMPARE_AND_WAIT64_SHARED    6
+
 struct vki_necp_client_signable {
 	uuid_t client_id;
 	u_int32_t sign_type;
+} __attribute__((__packed__));
+
+struct vki_necp_client_flow_stats {
+	u_int32_t stats_type; // NECP_CLIENT_STATISTICS_TYPE_*
+	u_int32_t stats_version; // NECP_CLIENT_STATISTICS_TYPE_*_VER
+	u_int32_t stats_size;
+	mach_vm_address_t stats_addr;
+};
+
+struct vki_necp_client_add_flow {
+	uuid_t agent_uuid;
+	uuid_t registration_id;
+	u_int16_t flags;               // NECP_CLIENT_FLOW_FLAGS_*
+	u_int16_t stats_request_count;
+	struct vki_necp_client_flow_stats stats_requests[0];
+	// sockaddr for override endpoint
+	// uint8 for override ip protocol
 } __attribute__((__packed__));
 
 struct vki_necp_cache_buffer {
@@ -1191,6 +1362,40 @@ struct vki_necp_cache_buffer {
 	u_int8_t                necp_cache_buf_ver;     //  NECP_CLIENT_CACHE_TYPE_*_VER
 	u_int32_t               necp_cache_buf_size;
 	mach_vm_address_t       necp_cache_buf_addr;
+};
+
+struct vki_ifnet_stats_per_flow {
+	u_int64_t bk_txpackets;
+	u_int64_t txpackets;
+	u_int64_t rxpackets;
+	u_int32_t txretransmitbytes;
+	u_int32_t rxoutoforderbytes;
+	u_int32_t rxmitpkts;
+	u_int32_t rcvoopack;
+	u_int32_t pawsdrop;
+	u_int32_t sack_recovery_episodes;
+	u_int32_t reordered_pkts;
+	u_int32_t dsack_sent;
+	u_int32_t dsack_recvd;
+	u_int32_t srtt;
+	u_int32_t rttupdated;
+	u_int32_t rttvar;
+	u_int32_t rttmin;
+	u_int32_t bw_sndbw_max;
+	u_int32_t bw_rcvbw_max;
+	u_int32_t ecn_recv_ece;
+	u_int32_t ecn_recv_ce;
+	u_int32_t ecn_flags;
+	u_int16_t ipv4:1,
+	    local:1,
+	    connreset:1,
+	    conntimeout:1,
+	    rxmit_drop:1,
+	    ecn_fallback_synloss:1,
+	    ecn_fallback_droprst:1,
+	    ecn_fallback_droprxmt:1,
+	    ecn_fallback_ce:1,
+	    ecn_fallback_reorder:1;
 };
 
 struct vki_necp_interface_signature {

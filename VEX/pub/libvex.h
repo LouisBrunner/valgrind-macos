@@ -229,6 +229,10 @@ typedef
 #define VEX_HWCAPS_ARM64_BF16        (1 << 13)
 #define VEX_HWCAPS_ARM64_FP16        (1 << 14)
 #define VEX_HWCAPS_ARM64_VFP16       (1 << 15)
+#define VEX_HWCAPS_ARM64_PAUTH       (1 << 16)
+#define VEX_HWCAPS_ARM64_LRCPC       (1 << 17)
+#define VEX_HWCAPS_ARM64_DIT         (1 << 18)
+#define VEX_HWCAPS_ARM64_SB          (1 << 19)
 
 /* MIPS baseline capability */
 /* Assigned Company values for bits 23:16 of the PRId Register

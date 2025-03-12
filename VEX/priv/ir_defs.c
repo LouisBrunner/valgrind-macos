@@ -77,6 +77,7 @@ void ppIRConst ( const IRConst* con )
       case Ico_U32:  vex_printf( "0x%x:I32",     (UInt)(con->Ico.U32)); break;
       case Ico_U64:  vex_printf( "0x%llx:I64",   (ULong)(con->Ico.U64)); break;
       case Ico_U128: vex_printf( "I128{0x%04x}", (UInt)(con->Ico.U128)); break;
+      case Ico_F16i: vex_printf( "F16i{0x%x}",   con->Ico.F16i); break;
       case Ico_F32:  u.f32 = con->Ico.F32;
                      vex_printf( "F32{0x%x}",   u.i32);
                      break;
@@ -269,6 +270,8 @@ void ppIROp ( IROp op )
       case Iop_128HIto64: vex_printf("128HIto64"); return;
       case Iop_128to64:   vex_printf("128to64");   return;
       case Iop_64HLto128: vex_printf("64HLto128"); return;
+
+      case Iop_CmpF16:    vex_printf("CmpF16");    return;
 
       case Iop_CmpF32:    vex_printf("CmpF32");    return;
       case Iop_F32toI32S: vex_printf("F32toI32S");  return;
@@ -675,22 +678,26 @@ void ppIROp ( IROp op )
 
       case Iop_Max32Fx8:  vex_printf("Max32Fx8"); return;
       case Iop_Max32Fx4:  vex_printf("Max32Fx4"); return;
+      case Iop_MaxN32Fx4:  vex_printf("MaxN32Fx4"); return;
       case Iop_Max32Fx2:  vex_printf("Max32Fx2"); return;
       case Iop_PwMax32Fx4:  vex_printf("PwMax32Fx4"); return;
       case Iop_PwMax32Fx2:  vex_printf("PwMax32Fx2"); return;
       case Iop_Max32F0x4: vex_printf("Max32F0x4"); return;
       case Iop_Max64Fx4:  vex_printf("Max64Fx4"); return;
       case Iop_Max64Fx2:  vex_printf("Max64Fx2"); return;
+      case Iop_MaxN64Fx2:  vex_printf("Max64NFx2"); return;
       case Iop_Max64F0x2: vex_printf("Max64F0x2"); return;
 
       case Iop_Min32Fx8:  vex_printf("Min32Fx8"); return;
       case Iop_Min32Fx4:  vex_printf("Min32Fx4"); return;
+      case Iop_MinN32Fx4:  vex_printf("MinN32Fx4"); return;
       case Iop_Min32Fx2:  vex_printf("Min32Fx2"); return;
       case Iop_PwMin32Fx4:  vex_printf("PwMin32Fx4"); return;
       case Iop_PwMin32Fx2:  vex_printf("PwMin32Fx2"); return;
       case Iop_Min32F0x4: vex_printf("Min32F0x4"); return;
       case Iop_Min64Fx4:  vex_printf("Min64Fx4"); return;
       case Iop_Min64Fx2:  vex_printf("Min64Fx2"); return;
+      case Iop_MinN64Fx2:  vex_printf("MinN64Fx2"); return;
       case Iop_Min64F0x2: vex_printf("Min64F0x2"); return;
 
       case Iop_Mul32Fx4:  vex_printf("Mul32Fx4"); return;
@@ -1598,7 +1605,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_ReinterpD64asI64:
    case Iop_Add16Fx8: case Iop_Sub16Fx8:
    case Iop_Add32Fx4: case Iop_Sub32Fx4: case Iop_Mul32Fx4: case Iop_Div32Fx4:
-   case Iop_Max32Fx4: case Iop_Min32Fx4:
+   case Iop_Max32Fx4: case Iop_Min32Fx4: case Iop_MaxN32Fx4: case Iop_MinN32Fx4:
    case Iop_Add32Fx2: case Iop_Sub32Fx2:
    case Iop_CmpEQ32Fx4: case Iop_CmpLT32Fx4:
    case Iop_CmpLE32Fx4: case Iop_CmpUN32Fx4:
@@ -1624,7 +1631,7 @@ Bool primopMightTrap ( IROp op )
    case Iop_CmpUN32F0x4:
    case Iop_RecipEst32F0x4: case Iop_Sqrt32F0x4: case Iop_RSqrtEst32F0x4:
    case Iop_Add64Fx2: case Iop_Sub64Fx2: case Iop_Mul64Fx2: case Iop_Div64Fx2:
-   case Iop_Max64Fx2: case Iop_Min64Fx2:
+   case Iop_Max64Fx2: case Iop_Min64Fx2: case Iop_MaxN64Fx2: case Iop_MinN64Fx2:
    case Iop_CmpEQ64Fx2: case Iop_CmpLT64Fx2: case Iop_CmpLE64Fx2:
    case Iop_CmpLT16Fx8: case Iop_CmpLE16Fx8: case Iop_CmpEQ16Fx8:
    case Iop_CmpUN64Fx2: case Iop_Abs64Fx2: case Iop_Neg64Fx2:
@@ -2281,6 +2288,13 @@ IRConst* IRConst_U128 ( UShort con )
    c->Ico.U128 = con;
    return c;
 }
+IRConst* IRConst_F16i ( UInt f16i )
+{
+   IRConst* c  = LibVEX_Alloc_inline(sizeof(IRConst));
+   c->tag      = Ico_F16i;
+   c->Ico.F16i = f16i;
+   return c;
+}
 IRConst* IRConst_F32 ( Float f32 )
 {
    IRConst* c = LibVEX_Alloc_inline(sizeof(IRConst));
@@ -2862,6 +2876,7 @@ IRConst* deepCopyIRConst ( const IRConst* c )
       case Ico_U16:  return IRConst_U16(c->Ico.U16);
       case Ico_U32:  return IRConst_U32(c->Ico.U32);
       case Ico_U64:  return IRConst_U64(c->Ico.U64);
+      case Ico_F16i: return IRConst_F16i(c->Ico.F16i);
       case Ico_F32:  return IRConst_F32(c->Ico.F32);
       case Ico_F32i: return IRConst_F32i(c->Ico.F32i);
       case Ico_F64:  return IRConst_F64(c->Ico.F64);
@@ -3594,11 +3609,11 @@ void typeOfPrimop ( IROp op,
       case Iop_Add64F0x2:
       case Iop_Div32F0x4:
       case Iop_Div64F0x2:
-      case Iop_Max32Fx4: case Iop_Max32F0x4:
+      case Iop_Max32Fx4: case Iop_Max32F0x4: case Iop_MaxN32Fx4:
       case Iop_PwMax32Fx4: case Iop_PwMin32Fx4:
-      case Iop_Max64Fx2: case Iop_Max64F0x2:
-      case Iop_Min32Fx4: case Iop_Min32F0x4:
-      case Iop_Min64Fx2: case Iop_Min64F0x2:
+      case Iop_Max64Fx2: case Iop_Max64F0x2: case Iop_MaxN64Fx2:
+      case Iop_Min32Fx4: case Iop_Min32F0x4: case Iop_MinN32Fx4:
+      case Iop_Min64Fx2: case Iop_Min64F0x2: case Iop_MinN64Fx2:
       case Iop_Mul32F0x4:
       case Iop_Mul64F0x2:
       case Iop_Sub32F0x4:
@@ -4252,6 +4267,7 @@ IRType typeOfIRConst ( const IRConst* con )
       case Ico_U32:   return Ity_I32;
       case Ico_U64:   return Ity_I64;
       case Ico_U128:  return Ity_I128;
+      case Ico_F16i:  return Ity_F16;
       case Ico_F32:   return Ity_F32;
       case Ico_F32i:  return Ity_F32;
       case Ico_F64:   return Ity_F64;
@@ -5365,6 +5381,7 @@ Bool eqIRConst ( const IRConst* c1, const IRConst* c2 )
       case Ico_U16: return toBool( c1->Ico.U16 == c2->Ico.U16 );
       case Ico_U32: return toBool( c1->Ico.U32 == c2->Ico.U32 );
       case Ico_U64: return toBool( c1->Ico.U64 == c2->Ico.U64 );
+      case Ico_F16i: return toBool( c1->Ico.F16i == c2->Ico.F16i );
       case Ico_F32: return toBool( c1->Ico.F32 == c2->Ico.F32 );
       case Ico_F32i: return toBool( c1->Ico.F32i == c2->Ico.F32i );
       case Ico_F64: return toBool( c1->Ico.F64 == c2->Ico.F64 );

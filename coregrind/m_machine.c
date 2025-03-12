@@ -6,7 +6,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -163,7 +163,7 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
 }
 
 void
-VG_(get_shadow_regs_area) ( ThreadId tid, 
+VG_(get_shadow_regs_area) ( ThreadId tid,
                             /*DST*/UChar* dst,
                             /*SRC*/Int shadowNo, PtrdiffT offset, SizeT size )
 {
@@ -187,7 +187,7 @@ VG_(get_shadow_regs_area) ( ThreadId tid,
 }
 
 void
-VG_(set_shadow_regs_area) ( ThreadId tid, 
+VG_(set_shadow_regs_area) ( ThreadId tid,
                             /*DST*/Int shadowNo, PtrdiffT offset, SizeT size,
                             /*SRC*/const UChar* src )
 {
@@ -433,7 +433,7 @@ void VG_(thread_stack_reset_iter)(/*OUT*/ThreadId* tid)
 }
 
 Bool VG_(thread_stack_next)(/*MOD*/ThreadId* tid,
-                            /*OUT*/Addr* stack_min, 
+                            /*OUT*/Addr* stack_min,
                             /*OUT*/Addr* stack_max)
 {
    ThreadId i;
@@ -708,7 +708,7 @@ static UInt VG_(get_machine_model)(void)
 
 #if defined(VGA_mips32) || defined(VGA_mips64)
 
-/* 
+/*
  * Initialize hwcaps by parsing /proc/cpuinfo . Returns False if it can not
  * determine what CPU it is (it searches only for the models that are or may be
  * supported by Valgrind).
@@ -1536,7 +1536,7 @@ Bool VG_(machine_get_hwcaps)( void )
      Int i, r, model;
 
      /* If the model is "unknown" don't treat this as an error. Assume
-        this is a brand-new machine model for which we don't have the 
+        this is a brand-new machine model for which we don't have the
         identification yet. Keeping fingers crossed. */
      model = VG_(get_machine_model)();
 
@@ -1800,6 +1800,7 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_arm64)
    {
+#if !defined(VGO_darwin)
      /* Use the attribute and feature registers to determine host hardware
       * capabilities. Only user-space features are read. Naming conventions
       * follow the Arm Architecture Reference Manual.
@@ -1814,7 +1815,7 @@ Bool VG_(machine_get_hwcaps)( void )
       * ----------------
       * ...5555 5544 4444 4444 3333 3333 3332 2222 2222 1111 1111 11
       * ...5432 1098 7654 3210 9876 5432 1098 7654 3210 9876 5432 1098 7654 3210
-      * ...I8MM      BF16                                                   DPB
+      * ...I8MM      BF16                GPI  GPA                 API  APA  DPB
       *
       * ID_AA64PFR0_EL1 Processor Feature Register 0
       * ---------------
@@ -1827,11 +1828,12 @@ Bool VG_(machine_get_hwcaps)( void )
 
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
-     Bool have_vfp16, have_fp16;
+     Bool have_vfp16, have_fp16, have_pauth, have_lrcpc, have_dit;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
-              = have_dpbcvadp = have_vfp16 = have_fp16 = False;
+              = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth
+              = have_lrcpc = have_dit = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1840,8 +1842,6 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigset_t          saved_set, tmp_set;
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
-
-     vg_assert(sizeof(vki_sigaction_fromK_t) == sizeof(vki_sigaction_toK_t));
 
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);
@@ -1853,7 +1853,8 @@ Bool VG_(machine_get_hwcaps)( void )
 
      r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
      vg_assert(r == 0);
-     tmp_sigill_act = saved_sigill_act;
+
+     VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
 
      /* NODEFER: signal handler does not return (from the kernel's point of
         view), hence if it is to successfully catch a signal more than once,
@@ -1862,7 +1863,8 @@ Bool VG_(machine_get_hwcaps)( void )
      tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
      tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
      tmp_sigill_act.ksa_handler = handler_unsup_insn;
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
 
      /* Does reading ID_AA64ISAR0_EL1 register throw SIGILL on base v8.0? */
      if (VG_MINIMAL_SETJMP(env_unsup_insn))
@@ -1871,8 +1873,11 @@ Bool VG_(machine_get_hwcaps)( void )
         __asm__ __volatile__("mrs x0, ID_AA64ISAR0_EL1");
 
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-     VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
+     vg_assert(r == 0);
+     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
+     vg_assert(r == 0);
+#endif
 
      va = VexArchARM64;
      vai.endness = VexEndnessLE;
@@ -1883,7 +1888,7 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(machine_get_cache_info)(&vai);
 
      // @todo PJF ARM64 if we need this then we can't parse anything in /proc
-#if !defined(VGP_arm64_freebsd)
+#if !defined(VGO_darwin) && !defined(VGP_arm64_freebsd)
      /* Check whether we need to use the fallback LLSC implementation.
         If the check fails, give up. */
      if (! VG_(parse_cpuinfo)())
@@ -1894,8 +1899,68 @@ Bool VG_(machine_get_hwcaps)( void )
         after being set that is, is 2 though 17 inclusive. */
      vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
      vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
+
+#if defined(VGO_darwin)
+     (void) handler_unsup_insn;
+
+     SizeT len = 4;
+     Int val;
+
+#define IS_ENABLED(mib, miblen) \
+        (VG_(sysctl)(mib, (miblen), &val, &len, NULL, 0) == 0 && val == 1)
+
+     Int mibCheck[] = {VKI_CTL_HW,VKI_HW_NCPU};
+     if (!IS_ENABLED(mibCheck, 2)) {
+        // some virtual machines are missing most values in sysctlbyname so we fallback to good defaults
+        vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
+     } else {
+        // sysctlbyname("hw.optional.arm.FEAT_PAuth")
+        Int mibPAUTH[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_PAUTH};
+        if (IS_ENABLED(mibPAUTH, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_LRCPC")
+        Int mibLRCPC[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_LRCPC};
+        if (IS_ENABLED(mibLRCPC, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_DIT")
+        Int mibDIT[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_DIT};
+        if (IS_ENABLED(mibDIT, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_FP16")
+        Int mibFP16[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_FP16};
+        if (IS_ENABLED(mibFP16, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
+            vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_SHA3")
+        Int mibSHA3[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SHA3};
+        if (IS_ENABLED(mibSHA3, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_SB")
+        Int mibSB[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SB};
+        if (IS_ENABLED(mibSB, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
+        }
+     }
+
+#undef IS_ENABLED
+
+     ULong ctr_el0 = 0;
+#else
      ULong ctr_el0;
      __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
+#endif
+
      vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;
      vai.arm64_iMinLine_lg2_szB = ((ctr_el0 >>  0) & 0xF) + 2;
      VG_(debugLog)(1, "machine", "ARM64: ctr_el0.dMinLine_szB = %d, "
@@ -1905,6 +1970,7 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(debugLog)(1, "machine", "ARM64: requires_fallback_LLSC: %s\n",
                    vai.arm64_requires_fallback_LLSC ? "yes" : "no");
 
+#if !defined(VGO_darwin)
      if (is_base_v8)
         return True;
 
@@ -1928,17 +1994,29 @@ Bool VG_(machine_get_hwcaps)( void )
      /* ID_AA64ISAR1_EL1 Instruction set attribute register 1 fields */
      #define ID_AA64ISAR1_I8MM_SHIFT           52
      #define ID_AA64ISAR1_BF16_SHIFT           44
+     #define ID_AA64ISAR1_GPI_SHIFT            28
+     #define ID_AA64ISAR1_GPA_SHIFT            24
+     #define ID_AA64ISAR1_LRCPC_SHIFT          20
+     #define ID_AA64ISAR1_API_SHIFT             8
+     #define ID_AA64ISAR1_APA_SHIFT             4
      #define ID_AA64ISAR1_DPB_SHIFT             0
      /* Field values */
      #define ID_AA64ISAR1_I8MM_SUPPORTED       0x1
      #define ID_AA64ISAR1_BF16_SUPPORTED       0x1
+     #define ID_AA64ISAR1_GPI_SUPPORTED        0x1
+     #define ID_AA64ISAR1_GPA_SUPPORTED        0x1
+     #define ID_AA64ISAR1_LRCPC_SUPPORTED      0x2
+     #define ID_AA64ISAR1_API_SUPPORTED        0x1
+     #define ID_AA64ISAR1_APA_SUPPORTED        0x1
      #define ID_AA64ISAR1_DPBCVAP_SUPPORTED    0x1
      #define ID_AA64ISAR1_DPBCVADP_SUPPORTED   0x2
 
      /* ID_AA64PFR0_EL1 Processor feature register 0 fields */
+     #define ID_AA64PFR0_DIT_SHIFT             48
      #define ID_AA64PFR0_VFP16_SHIFT           20
      #define ID_AA64PFR0_FP16_SHIFT            16
      /* Field values */
+     #define ID_AA64PFR0_DIT_SUPPORTED         0x1
      #define ID_AA64PFR0_VFP16_SUPPORTED       0x1
      #define ID_AA64PFR0_FP16_SUPPORTED        0x1
 
@@ -2031,7 +2109,29 @@ Bool VG_(machine_get_hwcaps)( void )
      get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_DPB_SHIFT,
              ID_AA64ISAR1_DPBCVADP_SUPPORTED, have_dpbcvadp);
 
+     /* LRCPC indicates support for LDA Release Consistent core consistent RCPC model.
+      * Optional for v8.2.
+      */
+     get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_LRCPC_SHIFT,
+             ID_AA64ISAR1_LRCPC_SUPPORTED, have_lrcpc);
+
+     /* APA or API indicate support for PAUTH instructions.
+      * Optional for v8.3.
+      */
+     get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_APA_SHIFT,
+             ID_AA64ISAR1_APA_SUPPORTED, have_pauth);
+     if (!have_pauth) {
+        get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_API_SHIFT,
+                ID_AA64ISAR1_API_SUPPORTED, have_pauth);
+     }
+
      /* Read ID_AA64PFR0_EL1 attributes */
+
+     /* DIT indicates support for Data Independent Timing instructions.
+      * Required from v8.4 onwards.
+      */
+     get_ftr(ID_AA64PFR0_EL1, ID_AA64PFR0_DIT_SHIFT,
+             ID_AA64PFR0_DIT_SUPPORTED, have_dit);
 
      /* VFP16 indicates support for half-precision vector arithmetic.
       * Optional for v8.2. Must be the same value as FP16.
@@ -2057,9 +2157,13 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_bf16)       vai.hwcaps |= VEX_HWCAPS_ARM64_BF16;
      if (have_fp16)       vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
      if (have_vfp16)      vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
+     if (have_pauth)      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+     if (have_lrcpc)      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+     if (have_dit)        vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
 
      #undef get_cpu_ftr
      #undef get_ftr
+#endif
 
      return True;
    }

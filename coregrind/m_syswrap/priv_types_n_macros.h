@@ -59,6 +59,9 @@ typedef
       RegWord arg6;
       RegWord arg7;
       RegWord arg8;
+#if defined(VGO_darwin)
+      RegWord arg9;
+#endif
 #if defined(VGO_freebsd)
       Word klass;
 #endif
@@ -68,13 +71,13 @@ typedef
 /* Current status of a syscall being done on behalf of the client. */
 typedef
    struct SyscallStatus {
-      enum { 
+      enum {
          /* call is complete, result is in 'res' */
          SsComplete=1,
          /* syscall not yet completed; must be handed to the kernel */
-         SsHandToKernel, 
+         SsHandToKernel,
          /* not currently handling a syscall for this thread */
-         SsIdle 
+         SsIdle
       } what;
       SysRes sres; /* only meaningful for .what == SsComplete */
    }
@@ -173,6 +176,16 @@ typedef
       Int o_arg6;
       Int s_arg7;
       Int s_arg8;
+#     elif defined(VGP_arm64_darwin)
+      Int o_arg1;
+      Int o_arg2;
+      Int o_arg3;
+      Int o_arg4;
+      Int o_arg5;
+      Int o_arg6;
+      Int o_arg7;
+      Int o_arg8;
+      Int o_arg9;
 #     elif defined(VGP_mips64_linux)
       Int o_arg1;
       Int o_arg2;
@@ -210,7 +223,7 @@ typedef
                        /*OUT*/UWord*
                      );
 
-      void (*after)  ( ThreadId, 
+      void (*after)  ( ThreadId,
                        SyscallArgs*,
                        SyscallStatus*
                      );
@@ -221,7 +234,7 @@ typedef
    wrappers for the relevant syscall used in the OS kernel for that
    number.  Note that the constant names don't always match the
    wrapper names in a straightforward way.  For example, on x86/Linux:
-      
+
       __NR_lchown       --> sys_lchown16()
       __NR_lchown32     --> sys_lchown()
       __NR_select       --> old_select()
@@ -240,12 +253,8 @@ extern
 SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
 
 #elif defined(VGO_darwin)
-/* XXX: Darwin still uses the old scheme of exposing the table
-   array(s) and size(s) directly to syswrap-main.c.  This should be
-   fixed. */
-
-extern const SyscallTableEntry ML_(syscall_table)[];
-extern const UInt ML_(syscall_table_size);
+extern
+const SyscallTableEntry* ML_(get_darwin_syscall_entry)( UInt sysno );
 
 #elif defined(VGO_solaris)
 extern
@@ -257,7 +266,7 @@ const SyscallTableEntry* ML_(get_freebsd_syscall_entry)( UInt sysno );
 
 #else
 #  error Unknown OS
-#endif   
+#endif
 
 /* ---------------------------------------------------------------------
    Declaring and defining wrappers.
@@ -271,7 +280,7 @@ const SyscallTableEntry* ML_(get_freebsd_syscall_entry)( UInt sysno );
    that ensures the names won't clash with other wrappers.
 
    You should create corresponding global declarations using
-   DECL_TEMPLATE (indirectly) below.  
+   DECL_TEMPLATE (indirectly) below.
 
    Note.  The silly name "arrghs" is used rather than just "args"
    because a few wrappers declare the name "args" themselves, and
@@ -345,12 +354,12 @@ const SyscallTableEntry* ML_(get_freebsd_syscall_entry)( UInt sysno );
 
 /* Add a Linux-specific, arch-independent wrapper to a syscall
    table. */
-#define LINX_(sysno, name)    WRAPPER_ENTRY_X_(linux, sysno, name) 
+#define LINX_(sysno, name)    WRAPPER_ENTRY_X_(linux, sysno, name)
 #define LINXY(sysno, name)    WRAPPER_ENTRY_XY(linux, sysno, name)
 
 /* Add a FreeBSD-specific, arch-independent wrapper to a syscall
    table. */
-#define BSDX_(sysno, name)    WRAPPER_ENTRY_X_(freebsd, sysno, name) 
+#define BSDX_(sysno, name)    WRAPPER_ENTRY_X_(freebsd, sysno, name)
 #define BSDXY(sysno, name)    WRAPPER_ENTRY_XY(freebsd, sysno, name)
 
 
@@ -541,6 +550,18 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA7(s,t,a) PSRAn(7,s,t,a)
 #  define PRA8(s,t,a) PSRAn(8,s,t,a)
 
+#elif defined(VGP_arm64_darwin)
+   /* Up to 9 parameters, all in registers. */
+#  define PRA1(s,t,a) PRRAn(1,s,t,a)
+#  define PRA2(s,t,a) PRRAn(2,s,t,a)
+#  define PRA3(s,t,a) PRRAn(3,s,t,a)
+#  define PRA4(s,t,a) PRRAn(4,s,t,a)
+#  define PRA5(s,t,a) PRRAn(5,s,t,a)
+#  define PRA6(s,t,a) PRRAn(6,s,t,a)
+#  define PRA7(s,t,a) PRRAn(7,s,t,a)
+#  define PRA8(s,t,a) PRRAn(8,s,t,a)
+#  define PRA9(s,t,a) PRRAn(9,s,t,a)
+
 #else
 #  error Unknown platform
 #endif
@@ -576,7 +597,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
    } while (0)
 
 /* big-endian: the part of the guest state being read is
-      let next = offset_of_reg + sizeof(reg) 
+      let next = offset_of_reg + sizeof(reg)
       in  [next - sizeof(t) .. next - 1]
    since the least significant parts of the guest register are stored
    in memory at the highest address.
@@ -626,7 +647,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
    } while (0)
 
 /* big-endian: the part of the guest state being read is
-      let next = offset_of_reg + sizeof(reg) 
+      let next = offset_of_reg + sizeof(reg)
       in  [next - sizeof(t) .. next - 1]
    since the least significant parts of the guest register are stored
    in memory at the highest address.

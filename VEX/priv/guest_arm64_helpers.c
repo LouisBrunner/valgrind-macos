@@ -808,6 +808,58 @@ ULong arm64g_dirtyhelper_MRS_CNTVCT_EL0 ( void )
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */
 /* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_ACNTVCT_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, S3_4_c15_c10_6" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_DIT_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, s3_3_c4_c2_5" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack. */
+void arm64g_dirtyhelper_MSR_set_PSTATE_DIT ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   __asm__ __volatile__("msr DIT, 1");
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack. */
+void arm64g_dirtyhelper_MSR_clr_PSTATE_DIT ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   __asm__ __volatile__("msr DIT, 0");
+#  endif
+}
+
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
 ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void )
 {
 #  if defined(__aarch64__) && !defined(__arm__)
@@ -1524,6 +1576,28 @@ void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
    res->w64[0] = W.w64[0] + sig1 + Y.w64[0];
 }
 
+/* CALLED FROM GENERATED CODE */
+// TODO: would be much better to have this directly in JIT'd assembly
+// but I am not sure how to do that within VEX
+ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data )
+{
+   ULong res = ptr;
+#if defined(VGP_arm64_darwin)
+   if (is_data) {
+      asm volatile (
+        "xpacd %[res]\n"
+        : [res] "+r" (res)
+      );
+   } else {
+      asm volatile (
+        "xpaci %[res]\n"
+        : [res] "+r" (res)
+      );
+   }
+#endif
+   return res;
+}
+
 
 /*---------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers.    ---*/
@@ -2109,6 +2183,7 @@ void LibVEX_GuestARM64_initialise ( /*OUT*/VexGuestARM64State* vex_state )
 //ZZ    vex_state->guest_CMSTART = 0;
 //ZZ    vex_state->guest_CMLEN   = 0;
 //ZZ    vex_state->guest_NRADDR  = 0;
+//ZZ    vex_state->guest_SC_CLASS = 0;
 //ZZ    vex_state->guest_IP_AT_SYSCALL = 0;
 //ZZ 
 //ZZ    vex_state->guest_D0  = 0;
@@ -2240,7 +2315,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 9,
+          .n_alwaysDefd = 10,
 
           /* flags thunk: OP is always defd, whereas DEP1 and DEP2
              have to be tracked.  See detailed comment in gdefs.h on
@@ -2253,8 +2328,9 @@ VexGuestLayout
                  /* 4 */ ALWAYSDEFD(guest_CMSTART),
                  /* 5 */ ALWAYSDEFD(guest_CMLEN),
                  /* 6 */ ALWAYSDEFD(guest_NRADDR),
-                 /* 7 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
-                 /* 8 */ ALWAYSDEFD(guest_TPIDR_EL0)
+                 /* 7 */ ALWAYSDEFD(guest_SC_CLASS),
+                 /* 8 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
+                 /* 9 */ ALWAYSDEFD(guest_TPIDR_EL0)
                }
         };
 

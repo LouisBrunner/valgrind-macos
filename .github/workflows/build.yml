@@ -7,19 +7,30 @@ on:
 
 env:
   TEST_FOLDER: .github/test
+  I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER: yes
 
 jobs:
   build_various_platforms:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-13]
+        os:
+          - ubuntu-24.04
+          # x86_64
+          - macos-13
+          # arm64
+          - macos-14
+          - macos-15
 
     runs-on: ${{ matrix.os }}
 
     name: Build and Test on ${{matrix.os}}
 
     steps:
+      - name: display environment (macOS)
+        run: |
+          sysctl -a
+        if: ${{ matrix.os != 'ubuntu-24.04' }}
       - name: install dependencies (macOS)
         run: |
           brew update && brew install automake
@@ -44,7 +55,7 @@ jobs:
       - name: build
         run: make
       - name: try ls -l
-        run: ./vg-in-place --gen-suppressions=all ls -l || ./vg-in-place -v -v -v -v -d -d -d -d ls -l
+        run: ./vg-in-place --gen-suppressions=all ls -l || ./vg-in-place -v -v -v -v -d -d -d -d -d ls -l
       - name: build regression tests
         run: XMLLINT=does_not_exist make check
       - name: create artifacts folder

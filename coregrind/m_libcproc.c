@@ -2,12 +2,12 @@
 /*--------------------------------------------------------------------*/
 /*--- Process-related libc stuff.                     m_libcproc.c ---*/
 /*--------------------------------------------------------------------*/
- 
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -37,6 +37,7 @@
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_seqmatch.h"
+#include "pub_core_mach.h"
 #include "pub_core_mallocfree.h"
 #include "pub_core_signals.h"
 #include "pub_core_syscall.h"
@@ -190,7 +191,7 @@ static void mash_colon_env(HChar *varp, const HChar *remove_pattern)
 	 match = VG_(string_match)(remove_pattern, entry_start);
 
 	 *output = prev;
-	 
+
 	 if (match) {
 	    output = entry_start;
 	    varp++;			/* skip ':' after removed entry */
@@ -213,7 +214,7 @@ static void mash_colon_env(HChar *varp, const HChar *remove_pattern)
 	 output--;
 	 vg_assert(*output == ':');
       }
-   }	 
+   }
 
    /* pad out the left-overs with '\0' */
    while(output < varp)
@@ -430,16 +431,16 @@ HChar **VG_(env_clone) ( HChar **oldenv )
    for (oldenvp = oldenv; oldenvp && *oldenvp; oldenvp++);
 
    envlen = oldenvp - oldenv + 1;
-   
+
    newenv = VG_(malloc)("libcproc.ec.1", envlen * sizeof(HChar *));
 
    oldenvp = oldenv;
    newenvp = newenv;
-   
+
    while (oldenvp && *oldenvp) {
       *newenvp++ = *oldenvp++;
    }
-   
+
    *newenvp = *oldenvp;
 
    return newenv;
@@ -659,7 +660,7 @@ Int VG_(setrlimit) (Int resource, const struct vki_rlimit *rlim)
 }
 
 /* Support for prctl. */
-Int VG_(prctl) (Int option, 
+Int VG_(prctl) (Int option,
                 ULong arg2, ULong arg3, ULong arg4, ULong arg5)
 {
    SysRes res = VG_(mk_SysRes_Error)(VKI_ENOSYS);
@@ -683,7 +684,7 @@ Int VG_(gettid)(void)
    SysRes res = VG_(do_syscall0)(__NR_gettid);
 
    if (sr_isError(res) && sr_Res(res) == VKI_ENOSYS) {
-      HChar pid[16];      
+      HChar pid[16];
       /*
        * The gettid system call does not exist. The obvious assumption
        * to make at this point would be that we are running on an older
@@ -712,7 +713,7 @@ Int VG_(gettid)(void)
          pid[sr_Res(res)] = '\0';
          res = VG_(mk_SysRes_Success)(  VG_(strtoll10)(pid, &s) );
          if (*s != '\0') {
-            VG_(message)(Vg_DebugMsg, 
+            VG_(message)(Vg_DebugMsg,
                "Warning: invalid file name linked to by /proc/self: %s\n",
                pid);
          }
@@ -826,7 +827,7 @@ Int VG_(getegid) ( void )
 /* Get supplementary groups into list[0 .. size-1].  Returns the
    number of groups written, or -1 if error.  Note that in order to be
    portable, the groups are 32-bit unsigned ints regardless of the
-   platform. 
+   platform.
    As a special case, if size == 0 the function returns the number of
    groups leaving list untouched. */
 Int VG_(getgroups)( Int size, UInt* list )
@@ -1059,7 +1060,7 @@ UInt VG_(read_millisecond_timer) ( void )
 #    error "Unknown OS"
 #  endif
 
-   /* COMMON CODE */  
+   /* COMMON CODE */
    if (base == 0)
       base = now;
 
@@ -1308,7 +1309,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
-#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd) || defined(VGP_arm64_darwin)
    // This arm64_linux section of this function VG_(invalidate_icache)
    // is copied from
    // https://github.com/armvixl/vixl/blob/master/src/a64/cpu-a64.cc
@@ -1319,7 +1320,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are met:
-   
+
    * Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
    * Redistributions in binary form must reproduce the above copyright notice,
@@ -1341,6 +1342,13 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    */
 
+#if defined(VGP_arm64_darwin)
+// see libplatform/src/cachecontrol/arm64/cache.s
+#define MMU_I_CLINE	6		// cache line size as 1<<MMU_I_CLINE (64)
+
+   const UInt dcache_line_size_ = 0; // we don't care about that one
+   const UInt icache_line_size_ = (1 << MMU_I_CLINE);
+#else
    // Ask what the I and D line sizes are
    ULong read_mrs;
    // Copy the content of the cache type register to a core register.
@@ -1362,6 +1370,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
 
    const UInt dcache_line_size_ = 4 * (1 << dcache_line_size_power_of_two);
    const UInt icache_line_size_ = 4 * (1 << icache_line_size_power_of_two);
+#endif
 
    Addr start = (Addr)ptr;
    // Sizes will be used to generate a mask big enough to cover a pointer.
@@ -1374,6 +1383,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr end    = start + nbytes;
 
    __asm__ __volatile__ (
+#if !defined(VGP_arm64_darwin)
      // Clean every line of the D cache containing the target data.
      "0: \n\t"
      // dc : Data Cache maintenance
@@ -1397,6 +1407,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
      // same copy of a memory location. See ARM DDI 0406B page B2-12 for more
      // information.
      "dsb ish \n\t"
+#endif
      // Invalidate every line of the I cache containing the target data.
      "1: \n\t"
      // ic : instruction cache maintenance

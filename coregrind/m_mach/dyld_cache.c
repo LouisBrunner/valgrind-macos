@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (c) 2020 Louis Brunner <louis.brunner.fr@gmail.com>
+   Copyright (c) 2020-2024 Louis Brunner <louis.brunner.fr@gmail.com>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -36,9 +36,9 @@
 #include "pub_core_debuglog.h"              // VG_(debugLog)
 #include "pub_core_mach.h"                  // VG_(dyld_cache_*)
 #include "pub_core_syscall.h"               // VG_(do_syscall1)
-#include "pub_tool_libcbase.h"              // VG_(strncmp)
-#include "pub_tool_libcprint.h"             // VG_(dmsg)
-#include "pub_tool_libcfile.h"              // VG_(stat)
+#include "pub_core_libcbase.h"              // VG_(strncmp)
+#include "pub_core_libcprint.h"             // VG_(dmsg)
+#include "pub_core_libcfile.h"              // VG_(stat)
 #include "vki/vki-scnums-darwin.h"          // __NR_shared_region_check_np
 #include "priv_dyld_internals.h"            // CACHE_MAGIC_*, dyld_cache_header, etc
 
@@ -56,6 +56,7 @@
 # define MACH_HEADER mach_header_64
 # define MAGIC MH_MAGIC_64
 
+static void output_text_debug_info(const dyld_cache_image_text_info* textInfo);
 static void output_debug_info(const dyld_cache_header* dyld_cache);
 
 typedef struct {
@@ -83,6 +84,9 @@ static int try_to_init_header(Addr address) {
 #if defined(VGA_amd64)
     VG_(strcmp)(header->magic, CACHE_MAGIC_x86_64) != 0
     && VG_(strcmp)(header->magic, CACHE_MAGIC_x86_64_HASWELL) != 0
+#elif defined(VGA_arm64)
+    VG_(strcmp)(header->magic, CACHE_MAGIC_arm64) != 0
+    && VG_(strcmp)(header->magic, CACHE_MAGIC_arm64e) != 0
 #else
     0
 #error "unknown architecture"
@@ -104,7 +108,7 @@ static int try_to_init_header(Addr address) {
   for (int i = 0; i < header->mappingCount; ++i) {
     const dyld_cache_mapping_info* mapping = &mappings[i];
     Addr map_addr = calculate_unslid(mapping->address);
-    VG_(debugLog)(4, "dyld_cache",
+    VG_(debugLog)(5, "dyld_cache",
       "mapping[%d]{\n"
       "  .address: %#lx,\n"
       "  .size: %llu (%#llx),\n"
@@ -163,7 +167,7 @@ static int try_to_init(void) {
           const dyld_subcache_entry* sub_cache = &((const dyld_subcache_entry*) sub_caches)[i];
           const uint8_t* u = sub_cache->uuid;
           sub_cache_addr = calculate_relative(dyld_cache.header, sub_cache->cacheVMOffset);
-          VG_(debugLog)(4, "dyld_cache",
+          VG_(debugLog)(5, "dyld_cache",
             "sub_cache_v2[%d]{\n"
             "  .uuid: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x,\n"
             "  .cacheVMOffset: %#lx,\n"
@@ -179,7 +183,7 @@ static int try_to_init(void) {
           const dyld_subcache_entry_v1* sub_cache = &((const dyld_subcache_entry_v1*) sub_caches)[i];
           const uint8_t* u = sub_cache->uuid;
           sub_cache_addr = calculate_relative(dyld_cache.header, sub_cache->cacheVMOffset);
-          VG_(debugLog)(4, "dyld_cache",
+          VG_(debugLog)(5, "dyld_cache",
             "sub_cache_v1[%d]{\n"
             "  .uuid: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x,\n"
             "  .cacheVMOffset: %#lx,\n"
@@ -212,6 +216,15 @@ void VG_(dyld_cache_init)(void) {
     );
     return;
   }
+#if defined(VGP_arm64_darwin)
+  // We currently detect if dyld is loading/using a library by checking if stat64 fails.
+  // However, dyld doesn't seem to call stat64 for all of them anymore.
+  // Because dynamic binaries on arm64 are mandatory, they will necessarily include those,
+  // so we request them to be loaded right away to ensure we have their symbols.
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
+#endif
 }
 
 int VG_(dyld_cache_might_be_in)(const HChar* path) {
@@ -241,6 +254,7 @@ static struct MACH_HEADER* find_image_text(const dyld_cache_header* header, cons
     const char* imagePath = (const char*) calculate_relative(header, textInfo->pathOffset);
 
     if (VG_(strcmp)(imagePath, path) == 0) {
+      output_text_debug_info(textInfo);
       *len = textInfo->textSegmentSize;
       return (struct MACH_HEADER*) calculate_unslid(textInfo->loadAddress);
     }
@@ -284,10 +298,27 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
   return 1;
 }
 
+static void output_text_debug_info(const dyld_cache_image_text_info* textInfo) {
+  const uint8_t* u = textInfo->uuid;
+  VG_(debugLog)(5, "dyld_cache",
+    "image_text_info{\n"
+    "  .uuid: %02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x,\n"
+    "  .loadAddress: %#llx,\n"
+    "  .textSegmentSize: %u,\n"
+    "  .pathOffset: %#x,\n"
+    "}\n",
+    u[0], u[1], u[2], u[3], u[4], u[5], u[6], u[7], u[8],
+    u[9], u[10], u[11], u[12], u[13], u[14], u[15],
+    textInfo->loadAddress,
+    textInfo->textSegmentSize,
+    textInfo->pathOffset
+  );
+}
+
 static void output_debug_info(const dyld_cache_header* cache) {
   const uint8_t* u1 = cache->uuid;
   const uint8_t* u2 = cache->symbolFileUUID;
-  VG_(debugLog)(4, "dyld_cache",
+  VG_(debugLog)(5, "dyld_cache",
     "shared dyld content: {\n"
     "  .magic: %s,\n"
     "  .mappingOffset: %#x,\n"
@@ -338,7 +369,7 @@ static void output_debug_info(const dyld_cache_header* cache) {
     "  .mappingWithSlideOffset: %#x,\n"
     "  .mappingWithSlideCount: %u,\n"
     "  .dylibsPBLStateArrayAddrUnused: %llu,\n"
-    "  .dylibsPBLSetAddr: %llu,\n"
+    "  .dylibsPBLSetAddr: %llx,\n"
     "  .programsPBLSetPoolAddr: %#llx,\n"
     "  .programsPBLSetPoolSize: %llu,\n"
     "  .programTrieAddr: %#llx,\n"

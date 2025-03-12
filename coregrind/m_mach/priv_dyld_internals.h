@@ -13,6 +13,9 @@
    along with this program; if not, see <http://www.gnu.org/licenses/>.
    The GNU General Public License is contained in the file COPYING.
 */
+#ifndef __PRIV_DYLD_INTERNALS_H
+#define __PRIV_DYLD_INTERNALS_H
+
 #if defined(VGO_darwin)
 
 // This file contains a bunch of structure defined in Apple's dyld
@@ -20,6 +23,8 @@
 // From Apple's `dyld/dyld/SharedCacheRuntime.cpp`
 #define CACHE_MAGIC_x86_64         "dyld_v1  x86_64"
 #define CACHE_MAGIC_x86_64_HASWELL "dyld_v1 x86_64h"
+#define CACHE_MAGIC_arm64          "dyld_v1   arm64"
+#define CACHE_MAGIC_arm64e         "dyld_v1  arm64e"
 
 // From Apple's `dyld/cache-builder/dyld_cache_format.h`
 typedef struct {
@@ -129,5 +134,7 @@ typedef struct {
   uint32_t    textSegmentSize;
   uint32_t    pathOffset;             // offset from start of cache file
 } dyld_cache_image_text_info;
+
+#endif
 
 #endif

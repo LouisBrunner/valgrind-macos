@@ -64,7 +64,6 @@ static void load_client ( /*OUT*/ExeInfo* info,
 {
    const HChar* exe_name;
    Int    ret;
-   SysRes res;
 
    vg_assert( VG_(args_the_exename) != NULL);
    exe_name = VG_(find_executable)( VG_(args_the_exename) );
@@ -82,13 +81,6 @@ static void load_client ( /*OUT*/ExeInfo* info,
    }
 
    // The client was successfully loaded!  Continue.
-
-   /* Get hold of a file descriptor which refers to the client
-      executable.  This is needed for attaching to GDB. */
-   res = VG_(open)(exe_name, VKI_O_RDONLY, VKI_S_IRUSR);
-   if (!sr_isError(res)) {
-      VG_(cl_exec_fd) = sr_Res(res);
-   }
 
    /* Copy necessary bits of 'info' that were filled in */
    *client_ip  = info->init_ip;
@@ -342,6 +334,53 @@ static const struct auxv *find_auxv(const UWord* sp)
    return (const struct auxv *)sp;
 }
 
+static Bool try_get_interp(const HChar* args_exe, HChar* interp_out)
+{
+   HChar  hdr[4096];
+   Int    len = sizeof hdr;
+   SysRes res;
+   Int fd;
+   HChar* end;
+   HChar* cp;
+   HChar* interp;
+
+   res = VG_(open)(args_exe, VKI_O_RDONLY, 0);
+   if (sr_isError(res)) {
+      return False;
+   } else {
+      fd = sr_Res(res);
+   }
+
+   res = VG_(pread)(fd, hdr, len, 0);
+
+   if (sr_isError(res)) {
+      VG_(close)(fd);
+      return False;
+   } else {
+      len = sr_Res(res);
+   }
+
+   if (0 != VG_(memcmp)(hdr, "#!", 2)) {
+       VG_(close)(fd);
+      return False;
+   }
+
+   end    = hdr + len;
+   interp = hdr + 2;
+   while (interp < end && (*interp == ' ' || *interp == '\t'))
+      interp++;
+
+   for (cp = interp; cp < end && !VG_(isspace)(*cp); cp++)
+      ;
+
+   *cp = '\0';
+
+   VG_(sprintf)(interp_out, "%s", interp);
+
+   VG_(close)(fd);
+   return True;
+}
+
 /* ----------------------------------------------------------------
 
    This sets up the client's initial stack, containing the args,
@@ -425,6 +464,10 @@ static Addr setup_client_stack(const void*  init_sp,
    vg_assert( VG_(args_for_client) );
 
    const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
+   HChar interp_name[VKI_PATH_MAX];
+   if (try_get_interp(exe_name, interp_name)) {
+      exe_name = interp_name;
+   }
    HChar resolved_name[VKI_PATH_MAX];
    VG_(realpath)(exe_name, resolved_name);
 
@@ -495,15 +538,13 @@ static Addr setup_client_stack(const void*  init_sp,
          stringsize += sizeof(struct vki_vdso_timehands);
          break;
 #endif
-#if (FREEBSD_VERS >= FREEBSD_13_0)
+      // from FreeBSD 13
       case VKI_AT_PS_STRINGS:
          stringsize += sizeof(struct vki_ps_strings);
          break;
-#endif
-#if (FREEBSD_VERS >= FREEBSD_13_1)
+      // from FreeBSD 13.1
       // case AT_FXRNG:
       // case AT_KPRELOAD:
-#endif
       default:
          break;
       }
@@ -711,10 +752,7 @@ static Addr setup_client_stack(const void*  init_sp,
       case VKI_AT_OSRELDATE:
       case VKI_AT_PAGESIZESLEN:
       case VKI_AT_CANARYLEN:
-
-#if (FREEBSD_VERS >= FREEBSD_11)
       case VKI_AT_EHDRFLAGS:
-#endif
          /* All these are pointerless, so we don't need to do
             anything about them. */
          break;
@@ -770,7 +808,7 @@ static Addr setup_client_stack(const void*  init_sp,
          break;
 #endif
 
-#if (FREEBSD_VERS >= FREEBSD_13_0)
+      // From FreeBSD 13.0
       /* @todo PJF BSDFLAGS causes serveral testcases to crash.
          Not sure why, it seems to be used for sigfastblock */
       // case AT_BSDFLAGS:
@@ -788,18 +826,16 @@ static Addr setup_client_stack(const void*  init_sp,
       case VKI_AT_ENVV:
          auxv->u.a_val = (Word)VG_(client_envp);
          break;
-#endif
 
-#if (FREEBSD_VERS >= FREEBSD_13_1)
+      // from FreeBSD 13.1
       // I think that this is a pointer to a "fenestrasX" structture
       // lots of stuff that I don't understand
       // arc4random, passing through VDSO page ...
       // case AT_FXRNG:
       // Again a pointer, to the VDSO base for use by rtld
       // case AT_KPRELOAD:
-#endif
 
-#if (FREEBSD_VERS >= FREEBSD_13_2)
+      // from FreeBSD 13.2
       case VKI_AT_USRSTACKBASE:
          VG_(debugLog)(2, "initimg",
                        "usrstackbase from OS %lx\n",
@@ -821,7 +857,6 @@ static Addr setup_client_stack(const void*  init_sp,
                        clstack_max_size);
 
          break;
-#endif
 
       case VKI_AT_PHDR:
          if (info->phdr == 0) {

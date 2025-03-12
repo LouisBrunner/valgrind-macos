@@ -41,6 +41,7 @@
 #include "pub_core_mallocfree.h"    // VG_(malloc), VG_(free)
 #include "pub_core_vkiscnums.h"
 #include "pub_core_syscall.h"       // VG_(strerror)
+#include "pub_core_clientstate.h"
 #include "pub_core_ume.h"           // self
 
 #include "priv_ume.h"
@@ -875,6 +876,12 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
 #endif
    VG_(free)(e->p);
    VG_(free)(e);
+
+   /* Get hold of a file descriptor which refers to the client
+      executable.  This is needed for attaching to GDB. */
+   SysRes res = VG_(dup)(fd);
+   if (!sr_isError(res))
+      VG_(cl_exec_fd) = sr_Res(res);
 
    return 0;
 }

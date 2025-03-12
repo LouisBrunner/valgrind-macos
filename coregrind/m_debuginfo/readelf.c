@@ -90,6 +90,10 @@
    #define ELFCOMPRESS_ZLIB 1
 #endif
 
+#if !defined(ELFCOMPRESS_ZSTD)
+   #define ELFCOMPRESS_ZSTD 2
+#endif
+
 #define SIZE_OF_ZLIB_HEADER 12
 
 /*------------------------------------------------------------*/
@@ -1730,12 +1734,13 @@ static Bool check_compression(ElfXX_Shdr* h, DiSlice* s) {
    if (h->sh_flags & SHF_COMPRESSED) {
       ElfXX_Chdr chdr;
       ML_(img_get)(&chdr, s->img, s->ioff, sizeof(ElfXX_Chdr));
-      if (chdr.ch_type != ELFCOMPRESS_ZLIB)
+      if (chdr.ch_type != ELFCOMPRESS_ZLIB && chdr.ch_type != ELFCOMPRESS_ZSTD )
          return False;
       s->ioff = ML_(img_mark_compressed_part)(s->img,
                                               s->ioff + sizeof(ElfXX_Chdr),
                                               s->szB - sizeof(ElfXX_Chdr),
-                                              (SizeT)chdr.ch_size);
+                                              (SizeT)chdr.ch_size,
+                                              (UChar)chdr.ch_type);
       s->szB = chdr.ch_size;
     } else if (h->sh_size > SIZE_OF_ZLIB_HEADER) {
        /* Read the zlib header.  In this case, it should be "ZLIB"
@@ -1761,7 +1766,8 @@ static Bool check_compression(ElfXX_Shdr* h, DiSlice* s) {
           s->ioff = ML_(img_mark_compressed_part)(s->img,
                                                   s->ioff + SIZE_OF_ZLIB_HEADER,
                                                   s->szB - SIZE_OF_ZLIB_HEADER,
-                                                  size);
+                                                  size,
+                                                  ELFCOMPRESS_ZLIB);
           s->szB = size;
        }
     }
@@ -1780,7 +1786,8 @@ static HChar* readlink_path (const HChar *path)
 
    while (tries > 0) {
       SysRes res;
-#if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux)
+#if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
+    || defined(VGP_riscv64_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                               (UWord)path, (UWord)buf, bufsiz);
 #elif defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
@@ -2705,6 +2712,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
          || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
+         || defined(VGP_riscv64_linux) \
          || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
          || defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd) \
          || defined(VGP_arm64_freebsd)
@@ -3931,7 +3939,7 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename,
                 * VG_(di_notify_mmap): in some cases, the 2 NSegments will
                 * have been merged and VG_(di_notify_mmap) only gets called
                 * once.
-                * How to detect that the segments were be merged ?
+                * How to detect that the segments were merged ?
                 * Logically, they will be merged if the first segment ends
                 * at the beginning of the second segment:
                 *   Seg1 virtual address + Seg1 segment_size

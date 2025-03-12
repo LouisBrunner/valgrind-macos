@@ -1,4 +1,4 @@
-FILE DESCRIPTORS: 3 open (3 std) at exit.
+FILE DESCRIPTORS: 3 open (3 inherited) at exit.
 Open file descriptor ...: ...
    <inherited from parent>
 
@@ -7,5 +7,3 @@ Open file descriptor ...: ...
 
 Open file descriptor ...: ...
    <inherited from parent>
-
-

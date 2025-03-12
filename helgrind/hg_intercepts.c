@@ -34,7 +34,7 @@
 
 /* RUNS ON SIMULATED CPU
    Interceptors for pthread_* functions, so that tc_main can see
-   significant thread events. 
+   significant thread events.
 
    Important: when adding a function wrapper to this file, remember to
    add a test case to tc20_verifywrap.c.  A common cause of failure is
@@ -55,6 +55,8 @@
 #include "pub_tool_clreq.h"
 #include "helgrind.h"
 #include "config.h"
+#include <string.h>
+#include <unistd.h>
 
 
 #if defined(VGO_solaris)
@@ -113,6 +115,8 @@
 #define LIBC_FUNC(ret_ty, f, args...) \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args); \
    ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBC_SONAME,f)(args)
+
+#include <osreldate.h>
 #endif
 
 // Do a client request.  These are macros rather than a functions so
@@ -132,7 +136,7 @@
 #define DO_CREQ_v_W(_creqF, _ty1F,_arg1F)                \
    do {                                                  \
       Word _arg1;                                        \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
                                  _arg1, 0,0,0,0);        \
@@ -141,8 +145,8 @@
 #define DO_CREQ_v_WW(_creqF, _ty1F,_arg1F, _ty2F,_arg2F) \
    do {                                                  \
       Word _arg1, _arg2;                                 \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       VALGRIND_DO_CLIENT_REQUEST_STMT((_creqF),          \
@@ -153,8 +157,8 @@
                      _ty2F,_arg2F)                       \
    do {                                                  \
       Word _res, _arg1, _arg2;                           \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _res = VALGRIND_DO_CLIENT_REQUEST_EXPR(2,          \
@@ -167,9 +171,9 @@
                       _ty2F,_arg2F, _ty3F, _arg3F)       \
    do {                                                  \
       Word _arg1, _arg2, _arg3;                          \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
-      assert(sizeof(_ty3F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty3F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _arg3 = (Word)(_arg3F);                            \
@@ -182,10 +186,10 @@
                        _ty4F, _arg4F)                    \
    do {                                                  \
       Word _arg1, _arg2, _arg3, _arg4;                   \
-      assert(sizeof(_ty1F) == sizeof(Word));             \
-      assert(sizeof(_ty2F) == sizeof(Word));             \
-      assert(sizeof(_ty3F) == sizeof(Word));             \
-      assert(sizeof(_ty4F) == sizeof(Word));             \
+      STATIC_ASSERT(sizeof(_ty1F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty2F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty3F) == sizeof(Word));      \
+      STATIC_ASSERT(sizeof(_ty4F) == sizeof(Word));      \
       _arg1 = (Word)(_arg1F);                            \
       _arg2 = (Word)(_arg2F);                            \
       _arg3 = (Word)(_arg3F);                            \
@@ -458,7 +462,7 @@ static int pthread_create_WRK(pthread_t *thread, const pthread_attr_t *attr,
             opportunity. */
          sched_yield();
       }
-   } else { 
+   } else {
       DO_PthAPIerror( "pthread_create", ret );
    }
 
@@ -582,7 +586,7 @@ static int pthread_join_WRK(pthread_t thread, void** value_pointer)
       before pthread_join (the original) returns.  See email below.*/
    if (ret == 0 /*success*/) {
       DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_JOIN_POST, CREQ_PTHREAD_T, thread);
-   } else { 
+   } else {
       DO_PthAPIerror( "pthread_join", ret );
    }
 
@@ -621,7 +625,7 @@ static int pthread_join_WRK(pthread_t thread, void** value_pointer)
 Me:
 I have a question re the NPTL pthread_join implementation.
 
-  Suppose I am the thread 'stayer'.  
+  Suppose I am the thread 'stayer'.
 
   If I call pthread_join(quitter), is it guaranteed that the
   thread 'quitter' has really exited before pthread_join returns?
@@ -636,10 +640,10 @@ confirmation.
   'quitter' will be running start_thread() in nptl/pthread_create.c
 
   The last action of start_thread() is to exit via
-  __exit_thread_inline(0), which simply does sys_exit 
+  __exit_thread_inline(0), which simply does sys_exit
   (nptl/pthread_create.c:403)
 
-  'stayer' meanwhile is waiting for lll_wait_tid (pd->tid) 
+  'stayer' meanwhile is waiting for lll_wait_tid (pd->tid)
   (call at nptl/pthread_join.c:89)
 
   As per comment at nptl/sysdeps/unix/sysv/linux/i386/lowlevellock.h:536,
@@ -731,7 +735,7 @@ void I_WRAP_SONAME_FNNAME_ZU
    CALL_FN_v_WWW(fn, dependent, master, master_level);
 
    DO_CREQ_v_WWW(_VG_USERREQ__HG_GNAT_MASTER_HOOK,
-                 void*,dependent, void*,master, 
+                 void*,dependent, void*,master,
                  Word, (Word)master_level);
 
    if (TRACE_GNAT_FNS) {
@@ -817,7 +821,7 @@ PTH_FUNC(int, pthreadZumutexZuinit, // pthread_mutex_init
    if (ret == 0 /*success*/) {
       DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_INIT_POST,
                    pthread_mutex_t*,mutex, long,mbRec);
-   } else { 
+   } else {
       DO_PthAPIerror( "pthread_mutex_init", ret );
    }
 
@@ -915,6 +919,50 @@ static int mutex_destroy_WRK(pthread_mutex_t *mutex)
 #  error "Unsupported OS"
 #endif
 
+#if defined(VGO_freebsd)
+
+/*
+ * Bugzilla 494337
+ *
+ * Hacks'R'Us
+ * FreeBSD 15 (backported to 14.2) add a mutex lock to
+ * exit to ensure that it is thread-safe. But this lock
+ * never gets unlocked. That meant this lock was causing
+ * all threaded apps to generate a Helgrind still holding
+ * lock errors. So in time honoured tradition, this can
+ * be fixed with a hack. This adds a wrapper to exit()
+ * that sets a global variable hg_in_exit. In the next
+ * call to pthread_mutex_lock, if that variable is 1
+ * then the pthread_mutex_lock wrapper only calls the
+ * wrapped function. It does not call the PRE and POST
+ * userreq functions. It then resets hg_in_exit to 0
+ * (because there will be more locks in the atexit
+ * processing).
+ */
+
+int hg_in_exit = 0;
+
+static int exit_WRK(int status)
+{
+   int ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+
+#if (__FreeBSD_version >= 1401500)
+   hg_in_exit = 1;
+#endif
+
+   CALL_FN_W_W(ret, fn, status);
+
+   return ret;
+}
+
+LIBC_FUNC(int, exit, int res) {
+   return exit_WRK(res);
+}
+
+#endif
+
 
 //-----------------------------------------------------------
 // glibc:   pthread_mutex_lock
@@ -928,8 +976,19 @@ static int mutex_lock_WRK(pthread_mutex_t *mutex)
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_mxlock %p", mutex); fflush(stderr);
+      char buf[30];
+      snprintf(buf, 30, "<< pthread_mxlock %p", mutex);
+      (void)write(STDERR_FILENO, buf, strlen(buf));
+      fsync(STDERR_FILENO);
    }
+
+#if defined(VGO_freebsd)
+   if (hg_in_exit) {
+      CALL_FN_W_W(ret, fn, mutex);
+      hg_in_exit = 0;
+      goto HG_MUTEX_LOCK_OUT;
+   }
+#endif
 
    DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_PRE,
                 pthread_mutex_t*,mutex, long,0/*!isTryLock*/);
@@ -944,12 +1003,18 @@ static int mutex_lock_WRK(pthread_mutex_t *mutex)
    DO_CREQ_v_WW(_VG_USERREQ__HG_PTHREAD_MUTEX_LOCK_POST,
                 pthread_mutex_t *, mutex, long, (ret == 0) ? True : False);
 
+#if defined(VGO_freebsd)
+HG_MUTEX_LOCK_OUT:
+#endif
+
    if (ret != 0) {
       DO_PthAPIerror( "pthread_mutex_lock", ret );
    }
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, " :: mxlock -> %d >>\n", ret);
+      char buf[30];
+      snprintf(buf, 30, " :: mxlock -> %d >>\n", ret);
+      (void)write(STDERR_FILENO, buf, strlen(buf));
    }
    return ret;
 }
@@ -1004,7 +1069,7 @@ PTH_FUNC(void, lmutexZulock, // lmutex_lock
 // pthread_mutex_trylock.  The handling needed here is very similar
 // to that for pthread_mutex_lock, except that we need to tell
 // the pre-lock creq that this is a trylock-style operation, and
-// therefore not to complain if the lock is nonrecursive and 
+// therefore not to complain if the lock is nonrecursive and
 // already locked by this thread -- because then it'll just fail
 // immediately with EBUSY.
 __attribute__((noinline))
@@ -1071,7 +1136,7 @@ static int mutex_timedlock_WRK(pthread_mutex_t *mutex,
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_mxtimedlock %p %p", mutex, timeout); 
+      fprintf(stderr, "<< pthread_mxtimedlock %p %p", mutex, timeout);
       fflush(stderr);
    }
 
@@ -1175,7 +1240,10 @@ static int mutex_unlock_WRK(pthread_mutex_t *mutex)
    VALGRIND_GET_ORIG_FN(fn);
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_mxunlk %p", mutex); fflush(stderr);
+      char buf[30];
+      snprintf(buf, 30, "<< pthread_mxunlk %p", mutex);
+      (void)write(STDERR_FILENO, buf, strlen(buf));
+      fsync(STDERR_FILENO);
    }
 
    DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_MUTEX_UNLOCK_PRE,
@@ -1191,7 +1259,9 @@ static int mutex_unlock_WRK(pthread_mutex_t *mutex)
    }
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, " mxunlk -> %d >>\n", ret);
+      char buf[30];
+      snprintf(buf, 30, " :: mxunlk -> %d >>\n", ret);
+      (void)write(STDERR_FILENO, buf, strlen(buf));
    }
    return ret;
 }
@@ -1351,7 +1421,7 @@ static int pthread_cond_wait_WRK(pthread_cond_t* cond,
 //
 __attribute__((noinline))
 static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
-                                      pthread_mutex_t* mutex, 
+                                      pthread_mutex_t* mutex,
                                       struct timespec* abstime,
                                       int timeout_error)
 {
@@ -1362,7 +1432,7 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
    VALGRIND_GET_ORIG_FN(fn);
 
    if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< pthread_cond_timedwait %p %p %p", 
+      fprintf(stderr, "<< pthread_cond_timedwait %p %p %p",
                       cond, mutex, abstime);
       fflush(stderr);
    }
@@ -1419,29 +1489,29 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
 }
 #if defined(VGO_linux)
    PTH_FUNC(int, pthreadZucondZutimedwaitZAZa, // pthread_cond_timedwait@*
-                 pthread_cond_t* cond, pthread_mutex_t* mutex, 
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
                  struct timespec* abstime) {
       return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
 #elif defined(VGO_freebsd)
    PTH_FUNC(int, pthreadZucondZutimedwait, // pthread_cond_timedwait
-                 pthread_cond_t* cond, pthread_mutex_t* mutex, 
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
                  struct timespec* abstime) {
       return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
 #elif defined(VGO_darwin)
    PTH_FUNC(int, pthreadZucondZutimedwait, // pthread_cond_timedwait
-                 pthread_cond_t* cond, pthread_mutex_t* mutex, 
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
                  struct timespec* abstime) {
       return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
    PTH_FUNC(int, pthreadZucondZutimedwaitZDZa, // pthread_cond_timedwait$*
-                 pthread_cond_t* cond, pthread_mutex_t* mutex, 
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
                  struct timespec* abstime) {
       return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
    PTH_FUNC(int, pthreadZucondZutimedwaitZuZa, // pthread_cond_timedwait_*
-                 pthread_cond_t* cond, pthread_mutex_t* mutex, 
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
                  struct timespec* abstime) {
       assert(0);
    }
@@ -1639,7 +1709,7 @@ static int pthread_cond_broadcast_WRK(pthread_cond_t* cond)
    DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_COND_BROADCAST_POST,
                pthread_cond_t*,cond);
 
-   if (ret != 0) { 
+   if (ret != 0) {
       DO_PthAPIerror( "pthread_cond_broadcast", ret );
    }
 
@@ -2011,7 +2081,7 @@ static int pthread_spin_init_or_unlock_WRK(pthread_spinlock_t* lock,
    if (ret == 0 /*success*/) {
       DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST,
                   pthread_spinlock_t*,lock);
-   } else { 
+   } else {
       DO_PthAPIerror( "pthread_spinlock_{init,unlock}", ret );
    }
 
@@ -2130,7 +2200,7 @@ static int pthread_spin_lock_WRK(pthread_spinlock_t *lock)
    if (ret == 0 /*success*/) {
       DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_SPIN_LOCK_POST,
                   pthread_spinlock_t*,lock);
-   } else { 
+   } else {
       DO_PthAPIerror( "pthread_spin_lock", ret );
    }
 
@@ -2221,7 +2291,7 @@ static int pthread_spin_trylock_WRK(pthread_spinlock_t *lock)
 #if defined(HAVE_PTHREAD_RWLOCK_T)
 
 /* Handled:   pthread_rwlock_init pthread_rwlock_destroy
-              pthread_rwlock_rdlock 
+              pthread_rwlock_rdlock
               pthread_rwlock_wrlock
               pthread_rwlock_unlock
               pthread_rwlock_tryrdlock
@@ -2250,7 +2320,7 @@ static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
    if (ret == 0 /*success*/) {
       DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,
                   pthread_rwlock_t*,rwl);
-   } else { 
+   } else {
       DO_PthAPIerror( "pthread_rwlock_init", ret );
    }
 
@@ -2389,7 +2459,7 @@ static int pthread_rwlock_wrlock_WRK(pthread_rwlock_t* rwlock)
    }
 
    DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 pthread_rwlock_t*,rwlock, 
+                 pthread_rwlock_t*,rwlock,
                  long,1/*isW*/, long,0/*!isTryLock*/);
 
    CALL_FN_W_W(ret, fn, rwlock);
@@ -2561,7 +2631,7 @@ static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
    }
 
    DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 pthread_rwlock_t*,rwlock, 
+                 pthread_rwlock_t*,rwlock,
                  long,1/*isW*/, long,1/*isTryLock*/);
 
    CALL_FN_W_W(ret, fn, rwlock);
@@ -2627,7 +2697,7 @@ static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
    }
 
    DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 pthread_rwlock_t*,rwlock, 
+                 pthread_rwlock_t*,rwlock,
                  long,0/*!isW*/, long,1/*isTryLock*/);
 
    CALL_FN_W_W(ret, fn, rwlock);
@@ -2959,12 +3029,12 @@ static int pthread_rwlock_unlock_WRK(pthread_rwlock_t* rwlock)
 
 #define TRACE_SEM_FNS 0
 
-/* Handled: 
+/* Handled:
      int sem_init(sem_t *sem, int pshared, unsigned value);
      int sem_destroy(sem_t *sem);
      int sem_wait(sem_t *sem);
      int sem_post(sem_t *sem);
-     sem_t* sem_open(const char *name, int oflag, 
+     sem_t* sem_open(const char *name, int oflag,
                      ... [mode_t mode, unsigned value]);
         [complete with its idiotic semantics]
      int sem_close(sem_t* sem);
@@ -3460,7 +3530,7 @@ PTH_FUNC(sem_t*, semZuopen,
    if (ret != SEM_FAILED && (oflag & O_CREAT)) {
       DO_CREQ_v_WW(_VG_USERREQ__HG_POSIX_SEM_INIT_POST,
                    sem_t*, ret, unsigned long, value);
-   } 
+   }
    if (ret == SEM_FAILED) {
       DO_PthAPIerror( "sem_open", errno );
    }
@@ -3693,7 +3763,7 @@ static long QMutex_tryLock_WRK(void* self)
    if (TRACE_QT4_FNS) {
       fprintf(stderr, " :: Q::tryLock -> %lu >>\n", ret);
    }
-   
+
    return ret;
 }
 
@@ -3730,7 +3800,7 @@ static long QMutex_tryLock_int_WRK(void* self, long arg2)
    if (TRACE_QT4_FNS) {
       fprintf(stderr, " :: Q::tryLock(int) -> %lu >>\n", ret);
    }
-   
+
    return ret;
 }
 
@@ -3833,7 +3903,7 @@ QT5_FUNC(void*, _ZN6QMutexD2Ev, void* self)
 
 //// QReadWriteLock::lockForRead()
 //// _ZN14QReadWriteLock11lockForReadEv == QReadWriteLock::lockForRead()
-//QT4_FUNC(void, ZuZZN14QReadWriteLock11lockForReadEv, 
+//QT4_FUNC(void, ZuZZN14QReadWriteLock11lockForReadEv,
 //               // _ZN14QReadWriteLock11lockForReadEv
 //               void* self)
 //{
@@ -3860,7 +3930,7 @@ QT5_FUNC(void*, _ZN6QMutexD2Ev, void* self)
 //
 //// QReadWriteLock::lockForWrite()
 //// _ZN14QReadWriteLock12lockForWriteEv == QReadWriteLock::lockForWrite()
-//QT4_FUNC(void, ZuZZN14QReadWriteLock12lockForWriteEv, 
+//QT4_FUNC(void, ZuZZN14QReadWriteLock12lockForWriteEv,
 //               // _ZN14QReadWriteLock12lockForWriteEv
 //               void* self)
 //{

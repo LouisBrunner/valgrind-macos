@@ -1,0 +1,4 @@
+prog: ../../memcheck/tests/bug445235_ada_demangle
+vgopts: --callgrind-out-file=callgrind.out
+post: awk '/fn.*ada__/{print $2}' callgrind.out
+cleanup: rm callgrind.out

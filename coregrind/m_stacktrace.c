@@ -283,7 +283,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (do_stats) stats.nr++;
 
    // Does this apply to macOS 10.14 and earlier?
-#  if defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_13_0)
+#  if defined(VGO_freebsd) && (__FreeBSD_version < 1300000)
    if (VG_(is_valid_tid)(tid_if_known) &&
       VG_(is_in_syscall)(tid_if_known) &&
       i < max_n_ips) {
@@ -521,6 +521,24 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #if defined(VGP_amd64_linux) || defined(VGP_amd64_darwin) \
     || defined(VGP_amd64_solaris) || defined(VGP_amd64_freebsd)
 
+/*
+ * Concerning the comment in the function about syscalls, I'm not sure
+ * what changed or when with FreeBSD. The situation going at least
+ * as far back as FreeBSD 12.1 (so Nov 2019) is that system calls are
+ * implemented with generated wrappers that call through an interposing
+ * table of function pointers. The result when built with clang is that
+ * code for the frame pointer prolog is generated but then an optimized
+ * sibling call is made. That means the frame pointer is popped off
+ * the stack and a jmp is made to the function in the table rather than
+ * a call.
+ *
+ * The end result is that, when we are in a syscall it is as though there were
+ * no prolog but a copy of the frame pointer is stored one 64bit word below the
+ * stack pointer. If more recent FreeBSD uses the hack that sets
+ *  ips[i] = *(Addr *)uregs.xsp - 1;
+ * then the caller of the syscall gets added twice.
+ */
+
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
                                /*OUT*/Addr* sps, /*OUT*/Addr* fps,
@@ -594,11 +612,11 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       VG_(printf)("     ipsS[%d]=%#08lx rbp %#08lx rsp %#08lx\n",
                   i-1, ips[i-1], uregs.xbp, uregs.xsp);
 
-#  if defined(VGO_darwin) || (defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_13_0))
+#  if defined(VGO_darwin) || (defined(VGO_freebsd) && __FreeBSD_version < 1300000)
    if (VG_(is_valid_tid)(tid_if_known) &&
       VG_(is_in_syscall)(tid_if_known) &&
       i < max_n_ips) {
-      /* On Darwin and FreeBSD, all the system call stubs have no function
+      /* On Darwin, all the system call stubs have no function
        * prolog.  So instead of top of the stack being a new
        * frame comprising a saved BP and a return address, we
        * just have the return address in the caller's frame.
@@ -1549,6 +1567,101 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
+      /* No luck.  We have to give up. */
+      break;
+   }
+
+   n_found = i;
+   return n_found;
+}
+
+#endif
+
+/* ------------------------ riscv64 ------------------------- */
+
+#if defined(VGP_riscv64_linux)
+
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               const UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
+{
+   Bool  debug = False;
+   Int   i;
+   Addr  fp_max;
+   UInt  n_found = 0;
+   const Int cmrf = VG_(clo_merge_recursive_frames);
+
+   vg_assert(sizeof(Addr) == sizeof(UWord));
+   vg_assert(sizeof(Addr) == sizeof(void*));
+
+   D3UnwindRegs uregs;
+   uregs.pc = startRegs->r_pc;
+   uregs.sp = startRegs->r_sp;
+   uregs.fp = startRegs->misc.RISCV64.r_fp;
+   uregs.ra = startRegs->misc.RISCV64.r_ra;
+   Addr fp_min = uregs.sp - VG_STACK_REDZONE_SZB;
+
+   /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
+      stopping when the trail goes cold, which we guess to be
+      when FP is not a reasonable stack location. */
+
+   fp_max = fp_max_orig;
+   if (fp_max >= sizeof(Addr))
+      fp_max -= sizeof(Addr);
+
+   if (debug)
+      VG_(printf)("\nmax_n_ips=%u fp_min=0x%lx fp_max_orig=0x%lx, "
+                  "fp_max=0x%lx pc=0x%lx sp=0x%lx fp=0x%lx ra=0x%lx\n",
+                  max_n_ips, fp_min, fp_max_orig, fp_max,
+                  uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+
+   if (sps) sps[0] = uregs.sp;
+   if (fps) fps[0] = uregs.fp;
+   ips[0] = uregs.pc;
+   i = 1;
+
+   /* Loop unwinding the stack, using CFI. */
+   while (True) {
+      if (debug)
+         VG_(printf)("i: %d, pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+                     i, uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+      if (i >= max_n_ips)
+         break;
+
+      if (VG_(use_CF_info)( &uregs, fp_min, fp_max )) {
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.fp;
+         ips[i++] = uregs.pc - 1;
+         if (debug)
+            VG_(printf)(
+               "USING CFI: pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+               uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+         uregs.pc = uregs.pc - 1;
+         RECURSIVE_MERGE(cmrf,ips,i);
+         continue;
+      }
+
+      /* A problem on the first frame? Lets assume it was a bad jump.
+         We will use the link register and the current stack and frame
+         pointers and see if we can use the CFI in the next round. */
+      if (i == 1) {
+         uregs.pc = uregs.ra;
+         uregs.ra = 0;
+
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.fp;
+         ips[i++] = uregs.pc - 1;
+         if (debug)
+            VG_(printf)(
+               "USING bad-jump: pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+               uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+         uregs.pc = uregs.pc - 1;
+         RECURSIVE_MERGE(cmrf,ips,i);
+         continue;
+      }
+
       /* No luck.  We have to give up. */
       break;
    }

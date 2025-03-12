@@ -6,11 +6,25 @@
    fun:main
 }
 {
+   sup1-old-glibc
+   CoreError:FdNotClosed
+   fun:__accept_nocancel
+   fun:server
+   fun:main
+}
+{
    sup2
    CoreError:FdNotClosed
    fun:socket
    fun:server
    fun:main
+}
+{
+   sup2-ppc64le
+   CoreError:FdNotClosed
+   fun:socket
+   fun:server
+   #fun:main
 }
 {
    sup3
@@ -28,6 +42,13 @@
    fun:main
 }
 {
+   sup4-old-glibc
+   CoreError:FdNotClosed
+   fun:__recvmsg_nocancel
+   fun:client
+   fun:main
+}
+{
    sup5
    CoreError:FdNotClosed
    ...
@@ -40,5 +61,44 @@
    CoreError:FdNotClosed
    fun:socket
    fun:client
+   fun:main
+}
+{
+   sup6-ppc64le
+   CoreError:FdNotClosed
+   fun:socket
+   fun:client
+   #fun:main
+}
+{
+   sup7
+   CoreError:FdNotClosed
+   fun:_so_socket
+   fun:__xnet_socket
+   fun:client
+   fun:main
+}
+{
+   sup8
+   CoreError:FdNotClosed
+   fun:__so_recvmsg
+   fun:__xnet_recvmsg
+   fun:client
+   fun:main
+}
+{
+   sup9
+   CoreError:FdNotClosed
+   fun:_so_socket
+   fun:__xnet_socket
+   fun:server
+   fun:main
+}
+{
+   sup10
+   CoreError:FdNotClosed
+   fun:__so_accept
+   fun:accept
+   fun:server
    fun:main
 }

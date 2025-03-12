@@ -458,7 +458,7 @@ Bool write_buf(int fd, const char* buf, size_t size, const char* desc,
 {
    size_t nrwritten;
    ssize_t nrw;
-   DEBUG(2, "writing %s len %lu %.*s notify: %d\n", desc, size,
+   DEBUG(2, "writing %s len %zu %.*s notify: %d\n", desc, size,
          (int)size, buf, notify);
    nrwritten = 0;
    while (nrwritten < size) {
@@ -1196,7 +1196,7 @@ static void count_len(char delim, char *buf, size_t *len)
    If speaking with GDB, early_exit will ensure the GDB user sees
    the error messages produced by vgdb:
    early_exit should be used when vgdb exits due to an early error i.e.
-   error during arg processing, before it could succesfully process the
+   error during arg processing, before it could successfully process the
    first packet from GDB.
    early_exit will then read the first packet send by GDB (i.e.
    the qSupported packet) and will reply to it with an error and then exit.
@@ -1318,7 +1318,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
             // We try to write the result to the parent, but always exit.
             size_t written = 0;
             while (written < sizeof (int)) {
-               int nrw = write (pipefd[1], ((char *)&err) + 1,
+               int nrw = write (pipefd[1], ((char *)&err) + written,
                                 sizeof (int) - written);
                if (nrw == -1) {
                   if (errno == EINTR || errno == EAGAIN)
@@ -1397,7 +1397,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
       // We try to write the result to the parent, but always exit.
       size_t written = 0;
       while (written < sizeof (int)) {
-         ssize_t nrw = write (pipefd[1], ((char *) &err) + 1,
+         ssize_t nrw = write (pipefd[1], ((char *) &err) + written,
                               sizeof (int) - written);
          if (nrw == -1) {
             if (errno == EINTR || errno == EAGAIN)

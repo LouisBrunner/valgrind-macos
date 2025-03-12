@@ -1,5 +1,7 @@
 
-AUTOMAKE_OPTIONS = 1.10
+AUTOMAKE_OPTIONS = 1.13
+
+ACLOCAL_AMFLAGS = -I m4
 
 include $(top_srcdir)/Makefile.all.am 
 
@@ -31,6 +33,7 @@ SUBDIRS = \
 	perf \
 	gdbserver_tests \
 	memcheck/tests/vbit-test \
+	none/tests/s390x/disasm-test \
 	auxprogs \
 	mpi \
 	solaris \
@@ -118,13 +121,15 @@ EXTRA_DIST = \
 	README.android_emulator \
 	README.mips \
 	README.aarch64 \
+	README.riscv64 \
 	README.solaris \
 	README.freebsd \
 	NEWS.old \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec \
-	autogen.sh
+	autogen.sh \
+	m4
 
 dist-hook: include/vgversion.h
 	cp -p include/vgversion.h $(distdir)/include/vgversion_dist.h

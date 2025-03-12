@@ -13,6 +13,7 @@ EXTRA_DIST = \
 	coredump_single_thread.stdout.exp coredump_single_thread.vgtest \
 	coredump_single_thread_sse.post.exp coredump_single_thread_sse.stderr.exp \
 	coredump_single_thread_sse.stdout.exp coredump_single_thread_sse.vgtest \
+	coredump_single_thread_sse.post.exp-illumos \
 	syscalls.stderr.exp syscalls.stdout.exp syscalls.vgtest
 
 check_PROGRAMS = \

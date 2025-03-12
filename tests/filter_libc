@@ -26,6 +26,9 @@ while (<>)
     s#_start1 \(src/lib/csu/i386/crt1_c.c.*#(below main)#;
     s#__libc_start1 \(in /...libc...\)#(below main)#;
 
+    # on Illumos
+    s#_start_crt \(in .*#(below main)#;
+
     # filter out the exact libc-start.c:### line number. (ppc64*)
     s/\(libc-start.c:[0-9]*\)$/(in \/...libc...)/;
 

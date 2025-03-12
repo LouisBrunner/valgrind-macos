@@ -484,6 +484,13 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
    *D1c = (cache_t) {  65536, 2, 64 };
    *LLc = (cache_t) { 262144, 8, 64 };
 
+#elif defined(VGA_riscv64)
+
+   // Default cache configuration is SiFive FU740-C000 (HiFive Unmatched)
+   *I1c = (cache_t) {   32768,  4, 64 };
+   *D1c = (cache_t) {   32768,  8, 64 };
+   *LLc = (cache_t) { 2097152, 16, 64 };
+
 #else
 
 #error "Unknown arch"

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2000-2017 Julian Seward 
+   Copyright (C) 2000-2017 Julian Seward
       jseward@acm.org
 
    This program is free software; you can redistribute it and/or
@@ -125,7 +125,7 @@ static UWord em_supplist_cmps = 0;
 /*------------------------------------------------------------*/
 
 /* Errors.  Extensible (via the 'extra' field).  Tools can use a normal
-   enum (with element values in the normal range (0..)) for 'ekind'. 
+   enum (with element values in the normal range (0..)) for 'ekind'.
    Functions for getting/setting the tool-relevant fields are in
    include/pub_tool_errormgr.h.
 
@@ -206,7 +206,8 @@ typedef
       // example should new core errors ever be added.
       ThreadSupp = -1,    /* Matches ThreadErr */
       FdBadCloseSupp = -2,
-      FdNotClosedSupp = -3
+      FdNotClosedSupp = -3,
+      FdBadUseSupp = -4
    }
    CoreSuppKind;
 
@@ -216,7 +217,7 @@ typedef
 /* For each caller specified for a suppression, record the nature of
    the caller name.  Not of interest to tools. */
 typedef
-   enum { 
+   enum {
       NoName,     /* Error case */
       ObjName,    /* Name is of an shared object file. */
       FunName,    /* Name is of a function. */
@@ -236,7 +237,7 @@ typedef
    SuppLoc;
 
 /* Suppressions.  Tools can get/set tool-relevant parts with functions
-   declared in include/pub_tool_errormgr.h.  Extensible via the 'extra' field. 
+   declared in include/pub_tool_errormgr.h.  Extensible via the 'extra' field.
    Tools can use a normal enum (with element values in the normal range
    (0..)) for 'skind'. */
 struct _Supp {
@@ -297,18 +298,18 @@ void VG_(set_supp_extra)  ( Supp* su, void* extra )
 /*--- Helper fns                                           ---*/
 /*------------------------------------------------------------*/
 
-// Only show core errors if the tool wants to, we're not running with -q,
+// Only show core warnings if the tool wants to, we're not running with -q,
 // and were not outputting XML.
-Bool VG_(showing_core_errors)(void)
+Bool VG_(showing_core_warnings)(void)
 {
    return VG_(needs).core_errors && VG_(clo_verbosity) >= 1 && !VG_(clo_xml);
 }
 
-/* Compare errors, to detect duplicates. 
+/* Compare errors, to detect duplicates.
 */
 static Bool eq_Error ( VgRes res, const Error* e1, const Error* e2 )
 {
-   if (e1->ekind != e2->ekind) 
+   if (e1->ekind != e2->ekind)
       return False;
    if (!VG_(eq_ExeContext)(res, e1->where, e2->where))
       return False;
@@ -519,7 +520,7 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
   again:
    VG_(printf)(
       "==%d== "
-      "---- %s ? --- [Return/N/n/Y/y/C/c] ---- ", 
+      "---- %s ? --- [Return/N/n/Y/y/C/c] ---- ",
       VG_(getpid)(), action
    );
 
@@ -527,7 +528,7 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
    if (res != 1) goto ioerror;
    /* res == 1 */
    if (ch == '\n') return False;
-   if (ch != 'N' && ch != 'n' && ch != 'Y' && ch != 'y' 
+   if (ch != 'N' && ch != 'n' && ch != 'Y' && ch != 'y'
       && ch != 'C' && ch != 'c') goto again;
 
    res = VG_(read)(VG_(clo_input_fd), &ch2, 1);
@@ -552,14 +553,14 @@ Bool VG_(is_action_requested) ( const HChar* action, Bool* clo )
    * possibly, call the GDB server
    * possibly, generate a suppression.
 */
-static 
+static
 void do_actions_on_error(const Error* err, Bool allow_db_attach, Bool count_error)
 {
    Bool still_noisy = True;
 
    /* if user wants to debug from a certain error nr, then wait for gdb/vgdb */
    if (VG_(clo_vgdb) != Vg_VgdbNo
-       && allow_db_attach 
+       && allow_db_attach
        && VG_(clo_vgdb_error) <= n_errs_shown) {
       if (!(VG_(clo_launched_with_multi)))
          VG_(umsg)("(action on error) vgdb me ... \n");
@@ -590,7 +591,7 @@ void do_actions_on_error(const Error* err, Bool allow_db_attach, Bool count_erro
 
 /* Prints an error.  Not entirely simple because of the differences
    between XML and text mode output.
- 
+
    In XML mode:
 
    * calls the tool's pre-show method, so the tool can create any
@@ -636,7 +637,7 @@ static void pp_Error ( const Error* err, Bool allow_db_attach, Bool xml, Bool co
          VG_TDICT_CALL( tool_before_pp_Error, err );
       else
          core_before_pp_Error (err);
-   
+
       /* standard preamble */
       VG_(printf_xml)("<error>\n");
       VG_(printf_xml)("  <unique>0x%x</unique>\n", err->unique);
@@ -730,8 +731,8 @@ void construct_error ( Error* err, ThreadId tid, ErrorKind ekind, Addr a,
 /* Top-level entry point to the error management subsystem.
    All detected errors are notified here; this routine decides if/when the
    user should see the error. */
-void VG_(maybe_record_error) ( ThreadId tid, 
-                               ErrorKind ekind, Addr a, 
+void VG_(maybe_record_error) ( ThreadId tid,
+                               ErrorKind ekind, Addr a,
                                const HChar* s, void* extra )
 {
           Error  err;
@@ -748,7 +749,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
       the burden of the error-management system becoming excessive in
       extremely buggy programs, although it does make it pretty
       pointless to continue the Valgrind run after this point. */
-   if (VG_(clo_error_limit) 
+   if (VG_(clo_error_limit)
        && (n_errs_shown >= M_COLLECT_NO_ERRORS_AFTER_SHOWN
            || n_errs_found >= M_COLLECT_NO_ERRORS_AFTER_FOUND)
        && !VG_(clo_xml)) {
@@ -818,7 +819,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
 	 if (p->supp != NULL) {
             /* Deal correctly with suppressed errors. */
             p->supp->count++;
-            n_errs_suppressed++;	 
+            n_errs_suppressed++;
          } else {
             n_errs_found++;
          }
@@ -844,7 +845,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    /* OK, we're really going to collect it.  The context is on the stack and
       will disappear shortly, so we must copy it.  First do the main
       (non-'extra') part.
-     
+
       Then VG_(tdict).tool_update_extra can update the 'extra' part.  This
       is for when there are more details to fill in which take time to work
       out but don't affect our earlier decision to include the error -- by
@@ -878,7 +879,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    }
 
    /* copy block pointed to by 'extra', if there is one */
-   if (NULL != p->extra && 0 != extra_size) { 
+   if (NULL != p->extra && 0 != extra_size) {
       void* new_extra = VG_(malloc)("errormgr.mre.3", extra_size);
       VG_(memcpy)(new_extra, p->extra, extra_size);
       p->extra = new_extra;
@@ -905,7 +906,7 @@ void VG_(maybe_record_error) ( ThreadId tid,
    errors that the tool wants to report immediately, eg. because they're
    guaranteed to only happen once.  This avoids all the recording and
    comparing stuff.  But they can be suppressed;  returns True if it is
-   suppressed.  Bool 'print_error' dictates whether to print the error. 
+   suppressed.  Bool 'print_error' dictates whether to print the error.
    Bool 'count_error' dictates whether to count the error in n_errs_found.
 */
 Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
@@ -919,7 +920,7 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
    ThreadState* tst = VG_(get_ThreadState)(tid);
    if (tst->err_disablement_level > 0)
       return False; /* ignored, not suppressed */
-   
+
    /* Build ourselves the error */
    construct_error ( &err, tid, ekind, a, s, extra, where );
 
@@ -967,7 +968,8 @@ Bool VG_(unique_error) ( ThreadId tid, ErrorKind ekind, Addr a, const HChar* s,
 
 static Bool is_fd_core_error (const Error *e)
 {
-   return e->ekind == FdBadClose || e->ekind == FdNotClosed;
+   return e->ekind == FdBadClose || e->ekind == FdNotClosed ||
+          e->ekind == FdBadUse;
 }
 
 static Bool core_eq_Error (VgRes res, const Error *e1, const Error *e2)
@@ -1017,6 +1019,8 @@ static const HChar *core_get_error_name(const Error *err)
       return "FdBadClose";
    case FdNotClosed:
       return "FdNotClosed";
+   case FdBadUse:
+      return "FdBadUse";
    default:
       VG_(umsg)("FATAL: unknown core error kind: %d\n", err->ekind );
       VG_(exit)(1);
@@ -1030,6 +1034,8 @@ static Bool core_error_matches_suppression(const Error* err, const Supp* su)
       return err->ekind == FdBadClose;
    case FdNotClosedSupp:
       return err->ekind == FdNotClosed;
+   case FdBadUseSupp:
+      return err->ekind == FdBadUse;
    default:
       VG_(umsg)("FATAL: unknown core suppression kind: %d\n", su->skind );
       VG_(exit)(1);
@@ -1315,8 +1321,8 @@ static Bool get_nbnc_line ( Int fd, HChar** bufpp, SizeT* nBufp, Int* lineno )
          }
          buf[i++] = ch; buf[i] = 0;
       }
-      while (i > 1 && VG_(isspace)(buf[i-1])) { 
-         i--; buf[i] = 0; 
+      while (i > 1 && VG_(isspace)(buf[i-1])) {
+         i--; buf[i] = 0;
       };
 
       // VG_(printf)("The line *%p %d is '%s'\n", lineno, *lineno, buf);
@@ -1423,10 +1429,10 @@ static Bool tool_name_present(const HChar *name, const HChar *names)
    return found;
 }
 
-/* Read suppressions from the file specified in 
+/* Read suppressions from the file specified in
    VG_(clo_suppressions)[clo_suppressions_i]
    and place them in the suppressions list.  If there's any difficulty
-   doing this, just give up -- there's no point in trying to recover.  
+   doing this, just give up -- there's no point in trying to recover.
 */
 static void load_one_suppressions_file ( Int clo_suppressions_i )
 {
@@ -1485,7 +1491,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
       }
 
       if (!VG_STREQ(buf, "{")) BOMB("expected '{' or end-of-file");
-      
+
       eof = get_nbnc_line ( fd, &buf, &nBuf, &lineno );
 
       if (eof || VG_STREQ(buf, "}")) BOMB("unexpected '}'");
@@ -1517,10 +1523,12 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
             supp->skind = FdBadCloseSupp;
          else if (VG_STREQ(supp_name, "FdNotClosed"))
             supp->skind = FdNotClosedSupp;
+         else if (VG_STREQ(supp_name, "FdBadUse"))
+            supp->skind = FdBadUseSupp;
          else
             BOMB("unknown core suppression type");
       }
-      else if (VG_(needs).tool_errors 
+      else if (VG_(needs).tool_errors
                && tool_name_present(VG_(details).name, tool_names)) {
          // A tool suppression
          if (VG_TDICT_CALL(tool_recognised_suppression, supp_name, supp)) {
@@ -1544,8 +1552,8 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
 
       buf[0] = 0;
       // tool_read_extra_suppression_info might read lines
-      // from fd till a location line. 
-      if (VG_(needs).tool_errors 
+      // from fd till a location line.
+      if (VG_(needs).tool_errors
           && !VG_TDICT_CALL(tool_read_extra_suppression_info,
                             fd, &buf, &nBuf, &lineno, supp)) {
          BOMB("bad or missing extra suppression info");
@@ -1575,7 +1583,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
          }
          if (i == VG_DEEPEST_BACKTRACE)
             BOMB("too many callers in stack trace");
-         if (i > 0 && i >= VG_(clo_backtrace_size)) 
+         if (i > 0 && i >= VG_(clo_backtrace_size))
             break;
          if (!setLocationTy(&(tmp_callers[i]), buf))
             BOMB("location should be \"...\", or should start "
@@ -1606,7 +1614,7 @@ static void load_one_suppressions_file ( Int clo_suppressions_i )
          // we didn't find any non-"..." entries
          BOMB("suppression must contain at least one location "
               "line which is not \"...\"");
-      } 
+      }
 
       // Copy tmp_callers[] into supp->callers[]
       supp->n_callers = i;
@@ -1651,7 +1659,7 @@ void VG_(load_suppressions) ( void )
    load_suppressions_called = True;
    for (i = 0; i < VG_(sizeXA)(VG_(clo_suppressions)); i++) {
       if (VG_(clo_verbosity) > 1) {
-         VG_(dmsg)("Reading suppressions file: %s\n", 
+         VG_(dmsg)("Reading suppressions file: %s\n",
                    *(HChar**) VG_(indexXA)(VG_(clo_suppressions), i));
       }
       load_one_suppressions_file( i );
@@ -1722,7 +1730,7 @@ typedef
       // n_offsets_per_ip[i] gives the nr of offsets in fun_offsets and
       // obj_offsets resulting of the expansion of ips[i].
       // The sum of all n_expanded_per_ip must be equal to n_expanded.
-      // This array allows to retrieve the position in ips corresponding to 
+      // This array allows to retrieve the position in ips corresponding to
       // an ixInput.
 
       // size (in elements) of fun_offsets and obj_offsets.
@@ -1761,13 +1769,13 @@ static void pp_ip2fo (const IPtoFunOrObjCompleter* ip2fo)
      o = 0;
      for (j = 0; j < i; j++)
         o += ip2fo->n_offsets_per_ip[j];
-     VG_(printf)("ips %d 0x08%lx offset [%d,%d] ", 
-                 i, ip2fo->ips[i], 
+     VG_(printf)("ips %d 0x08%lx offset [%d,%d] ",
+                 i, ip2fo->ips[i],
                  o, o+ip2fo->n_offsets_per_ip[i]-1);
      for (j = 0; j < ip2fo->n_offsets_per_ip[i]; j++) {
         VG_(printf)("%sfun:%s obj:%s\n",
                     j == 0 ? "" : "                              ",
-                    ip2fo->fun_offsets[o+j] == -1 ? 
+                    ip2fo->fun_offsets[o+j] == -1 ?
                     "<not expanded>" : &ip2fo->names[ip2fo->fun_offsets[o+j]],
                     ip2fo->obj_offsets[o+j] == -1 ?
                     "<not expanded>" : &ip2fo->names[ip2fo->obj_offsets[o+j]]);
@@ -1778,7 +1786,7 @@ static void pp_ip2fo (const IPtoFunOrObjCompleter* ip2fo)
 /* free the memory in ip2fo.
    At debuglog 4, su (or NULL) will be used to show the matching
    (or non matching) with ip2fo. */
-static void clearIPtoFunOrObjCompleter ( const Supp  *su, 
+static void clearIPtoFunOrObjCompleter ( const Supp  *su,
                                          IPtoFunOrObjCompleter* ip2fo)
 {
    if (DEBUG_ERRORMGR || VG_(debugLog_getLevel)() >= 4) {
@@ -1805,11 +1813,11 @@ static void clearIPtoFunOrObjCompleter ( const Supp  *su,
    in ip2fo->names and returns a pointer to the first free char. */
 static HChar* grow_names(IPtoFunOrObjCompleter* ip2fo, SizeT needed)
 {
-   if (ip2fo->names_szB 
+   if (ip2fo->names_szB
        < ip2fo->names_free + needed) {
      if (needed < ERRTXT_LEN) needed = ERRTXT_LEN;
 
-      ip2fo->names 
+      ip2fo->names
          = VG_(realloc)("foc_names",
                         ip2fo->names,
                         ip2fo->names_szB + needed);
@@ -1842,7 +1850,7 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
       const HChar* caller;
 
       (*offsets)[ixInput] = ip2fo->names_free;
-      if (DEBUG_ERRORMGR) VG_(printf)("marking %s ixInput %d offset %d\n", 
+      if (DEBUG_ERRORMGR) VG_(printf)("marking %s ixInput %d offset %d\n",
                                       needFun ? "fun" : "obj",
                                       ixInput, ip2fo->names_free);
       if (needFun) {
@@ -1885,8 +1893,8 @@ static HChar* foComplete(IPtoFunOrObjCompleter* ip2fo,
               i < last_expand_pos_ips;
               i++) {
             ip2fo->obj_offsets[i] = ip2fo->names_free;
-            if (DEBUG_ERRORMGR) 
-               VG_(printf) ("   set obj_offset %lu to %d\n", 
+            if (DEBUG_ERRORMGR)
+               VG_(printf) ("   set obj_offset %lu to %d\n",
                             i, ip2fo->names_free);
          }
       }
@@ -1934,7 +1942,7 @@ static void grow_offsets(IPtoFunOrObjCompleter* ip2fo, Int n_req)
    for (i = ip2fo->sz_offsets; i < n_req; i++)
       ip2fo->obj_offsets[i] = -1;
 
-   ip2fo->sz_offsets = n_req;   
+   ip2fo->sz_offsets = n_req;
 }
 
 // Expands more IPs from ip2fo->ips.
@@ -2014,7 +2022,7 @@ static Bool supp_pattEQinp ( const void* supplocV, const void* addrV,
          vg_assert(0);
       case ObjName:
          funobjsrc_name = foComplete(ip2fo, ixInput, False /*needFun*/);
-         break; 
+         break;
       case FunName:
          funobjsrc_name = foComplete(ip2fo, ixInput, True /*needFun*/);
          break;
@@ -2079,7 +2087,7 @@ static Bool supp_matches_callers(IPtoFunOrObjCompleter* ip2fo,
          matchAll,
          /*PATT*/supps, szbPatt, n_supps, 0/*initial ixPatt*/,
          /*INPUT*/
-         NULL, 0, 0, /* input/szbInput/nInput 0, as using an inputCompleter */  
+         NULL, 0, 0, /* input/szbInput/nInput 0, as using an inputCompleter */
          0/*initial ixInput*/,
          supploc_IsStar, supploc_IsQuery, supp_pattEQinp,
          ip2fo, haveInputInpC
@@ -2110,7 +2118,7 @@ Bool supp_matches_error(const Supp* su, const Error* err)
 
 /* Does an error context match a suppression?  ie is this a suppressible
    error?  If so, return a pointer to the Supp record, otherwise NULL.
-   Tries to minimise the number of symbol searches since they are expensive.  
+   Tries to minimise the number of symbol searches since they are expensive.
 */
 static Supp* is_suppressible_error ( const Error* err )
 {
@@ -2123,7 +2131,7 @@ static Supp* is_suppressible_error ( const Error* err )
       These names are just computed 'on demand' (so once maximum),
       then stored (efficiently, avoiding too many allocs) in ip2fo to be
       re-usable for the matching of the same IP with the next suppression
-      pattern. 
+      pattern.
 
       VG_(generic_match) gets this 'IP to Fun or Obj name completer' as one
       of its arguments. It will then pass it to the function
@@ -2158,7 +2166,7 @@ static Supp* is_suppressible_error ( const Error* err )
    su_prev = NULL;
    for (su = suppressions; su != NULL; su = su->next) {
       em_supplist_cmps++;
-      if (supp_matches_error(su, err) 
+      if (supp_matches_error(su, err)
           && supp_matches_callers(&ip2fo, su)) {
          /* got a match.  */
          /* Inform the tool that err is suppressed by su. */
@@ -2182,7 +2190,7 @@ static Supp* is_suppressible_error ( const Error* err )
    return NULL;      /* no matches */
 }
 
-/* Show accumulated error-list and suppression-list search stats. 
+/* Show accumulated error-list and suppression-list search stats.
 */
 void VG_(print_errormgr_stats) ( void )
 {

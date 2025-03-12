@@ -234,21 +234,21 @@ void* VG_(HT_gen_remove) ( VgHashTable *table, const void* node, HT_Cmp_t cmp  )
 void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
 {
    #define MAXOCCUR 20
-   UInt elt_occurences[MAXOCCUR+1];
-   UInt key_occurences[MAXOCCUR+1];
-   UInt cno_occurences[MAXOCCUR+1];
-   /* Key occurence  : how many ht elements have the same key.
-      elt_occurences : how many elements are inserted multiple time.
-      cno_occurences : how many chains have that length.
-      The last entry in these arrays collects all occurences >= MAXOCCUR. */
+   UInt elt_occurrences[MAXOCCUR+1];
+   UInt key_occurrences[MAXOCCUR+1];
+   UInt cno_occurrences[MAXOCCUR+1];
+   /* Key occurrence  : how many ht elements have the same key.
+      elt_occurrences : how many elements are inserted multiple time.
+      cno_occurrences : how many chains have that length.
+      The last entry in these arrays collects all occurrences >= MAXOCCUR. */
    #define INCOCCUR(occur,n) (n >= MAXOCCUR ? occur[MAXOCCUR]++ : occur[n]++)
    UInt i;
    UInt nkey, nelt, ncno;
    VgHashNode *cnode, *node;
 
-   VG_(memset)(key_occurences, 0, sizeof(key_occurences));
-   VG_(memset)(elt_occurences, 0, sizeof(elt_occurences));
-   VG_(memset)(cno_occurences, 0, sizeof(cno_occurences));
+   VG_(memset)(key_occurrences, 0, sizeof(key_occurrences));
+   VG_(memset)(elt_occurrences, 0, sizeof(elt_occurrences));
+   VG_(memset)(cno_occurrences, 0, sizeof(cno_occurrences));
 
    // Note that the below algorithm is quadractic in nr of elements in a chain
    // but if that happens, the hash table/function is really bad and that
@@ -264,13 +264,13 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
             if (node->key == cnode->key)
                nkey++;
          }
-         // If cnode->key not in a previous node, count occurences of key.
+         // If cnode->key not in a previous node, count occurrences of key.
          if (nkey == 0) {
             for (node = cnode; node != NULL; node = node->next) {
                if (node->key == cnode->key)
                   nkey++;
             }
-            INCOCCUR(key_occurences, nkey);
+            INCOCCUR(key_occurrences, nkey);
          }
 
          nelt = 0;
@@ -281,7 +281,7 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
                nelt++;
             }
          }
-         // If cnode element not in a previous node, count occurences of elt.
+         // If cnode element not in a previous node, count occurrences of elt.
          if (nelt == 0) {
             for (node = cnode; node != NULL; node = node->next) {
                if (node->key == cnode->key
@@ -289,10 +289,10 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
                   nelt++;
                }
             }
-            INCOCCUR(elt_occurences, nelt);
+            INCOCCUR(elt_occurrences, nelt);
          }
       }
-      INCOCCUR(cno_occurences, ncno);
+      INCOCCUR(cno_occurrences, ncno);
    }
 
    VG_(message)(Vg_DebugMsg, 
@@ -302,23 +302,23 @@ void VG_(HT_print_stats) ( const VgHashTable *table, HT_Cmp_t cmp )
                 " N-plicated elts\n");
    nkey = nelt = ncno = 0;
    for (i = 0; i <= MAXOCCUR; i++) {
-      if (elt_occurences[i] > 0 
-          || key_occurences[i] > 0 
-          || cno_occurences[i] > 0)
+      if (elt_occurrences[i] > 0 
+          || key_occurrences[i] > 0 
+          || cno_occurrences[i] > 0)
          VG_(message)(Vg_DebugMsg,
                       "%s=%2u : nr chain %6u, nr keys %6u, nr elts %6u\n",
                       i == MAXOCCUR ? ">" : "N", i,
-                      cno_occurences[i], key_occurences[i], elt_occurences[i]);
-      nkey += key_occurences[i];
-      nelt += elt_occurences[i];
-      ncno += cno_occurences[i];
+                      cno_occurrences[i], key_occurrences[i], elt_occurrences[i]);
+      nkey += key_occurrences[i];
+      nelt += elt_occurrences[i];
+      ncno += cno_occurrences[i];
    }
    VG_(message)(Vg_DebugMsg, 
                 "total nr of unique   slots: %6u, keys %6u, elts %6u."
                 " Avg chain len %3.1f\n",
                 ncno, nkey, nelt,
-                (Double)nelt/(Double)(ncno == cno_occurences[0] ?
-                                      1 : ncno - cno_occurences[0]));
+                (Double)nelt/(Double)(ncno == cno_occurrences[0] ?
+                                      1 : ncno - cno_occurrences[0]));
 }
 
 

@@ -1,5 +1,5 @@
 {
-   Test for realoc zero suppression
+   Test for realloc zero suppression
    Memcheck:ReallocZero
    fun:realloc
    fun:main

@@ -555,6 +555,9 @@ static Bool get_Dwarf_Reg( /*OUT*/Addr* a, Word regno, const RegSummary* regs )
 #  elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin) || defined(VGP_arm64_freebsd)
    if (regno == 31) { *a = regs->sp; return True; }
    if (regno == 29) { *a = regs->fp; return True; }
+#  elif defined(VGP_riscv64_linux)
+   if (regno == 2) { *a = regs->sp; return True; }
+   if (regno == 8) { *a = regs->fp; return True; }
 #  else
 #    error "Unknown platform"
 #  endif
@@ -1059,7 +1062,7 @@ GXResult ML_(evaluate_Dwarf3_Expr) ( const UChar* expr, UWord exprszB,
             if (!VG_(clo_xml))
                VG_(message)(Vg_DebugMsg,
                             "warning: evaluate_Dwarf3_Expr: unhandled "
-                            "DW_OP_ 0x%x\n", (Int)opcode);
+                            "DW_OP_ 0x%x\n", (UInt)opcode);
             FAIL("evaluate_Dwarf3_Expr: unhandled DW_OP_");
             /*NOTREACHED*/
       }

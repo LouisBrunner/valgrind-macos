@@ -81,7 +81,7 @@
   <para>When building Valgrind, 'make' dies partway with
   an assertion failure, something like this:</para>
 <screen>
-% make: expand.c:489: allocated_variable_append: 
+% make: expand.c:489: allocated_variable_append:
         Assertion 'current_variable_set_list->next != 0' failed.
 </screen>
  </question>
@@ -266,11 +266,11 @@ collect2: ld returned 1 exit status
     <literal>malloc_alloc</literal> template with your objects (not
     portable, but should work for GCC) or even writing your own memory
     allocators. But all this goes beyond the scope of this FAQ.  Start
-    by reading 
-    <ulink 
+    by reading
+    <ulink
     url="http://gcc.gnu.org/onlinedocs/libstdc++/faq/index.html#4_4_leak">
          http://gcc.gnu.org/onlinedocs/libstdc++/faq/index.html#4_4_leak</ulink>
-    if you absolutely want to do that. But beware: 
+    if you absolutely want to do that. But beware:
     allocators belong to the more messy parts of the STL and
     people went to great lengths to make the STL portable across
     platforms. Chances are good that your solution will work on your
@@ -389,7 +389,7 @@ Invalid write of size 1
     <para>When a program runs under Valgrind, its environment is slightly
     different to when it runs natively.  For example, the memory layout is
     different, and the way that threads are scheduled is different.</para>
-    
+
     <para>Most of the time this doesn't make any difference, but it can,
     particularly if your program is buggy.  For example, if your program
     crashes because it erroneously accesses memory that is unaddressable,
@@ -447,11 +447,11 @@ valgrind-listener 12345
 All heap blocks were freed -- no leaks are possible
 </programlisting>
     when you know your program calls <function>malloc</function>.  The
-    workaround is to use the option 
+    workaround is to use the option
     <option>--soname-synonyms=somalloc=NONE</option>
     or to avoid statically linking your program.</para>
 
-    <para>There will also be no replacement if you use an alternative 
+    <para>There will also be no replacement if you use an alternative
     <function>malloc library</function> such as tcmalloc, jemalloc,
     ...  In such a case, the
     option <option>--soname-synonyms=somalloc=zzzz</option> (where
@@ -474,7 +474,7 @@ int main(void)
 
   static[5] = 0;
   stack [5] = 0;
-          
+
   return 0;
 }
 </programlisting>
@@ -512,7 +512,7 @@ int main(void)
         </listitem>
         <listitem>
           <para>Do not link with tcmalloc for the builds that you use for
-            Memecheck testing.</para>
+            Memcheck testing.</para>
         </listitem>
       </itemizedlist>
     </para>
@@ -583,7 +583,7 @@ int main(void)
       <listitem>
         <para>"indirectly lost" means your program is leaking memory in
         a pointer-based structure.  (E.g. if the root node of a binary tree
-        is "definitely lost", all the children will be "indirectly lost".) 
+        is "definitely lost", all the children will be "indirectly lost".)
         If you fix the "definitely lost" leaks, the "indirectly lost" leaks
         should go away.
         </para>
@@ -615,7 +615,7 @@ int main(void)
 <qandaentry id="faq.undeferrors">
   <question id="q-undeferrors">
     <para>Memcheck's uninitialised value errors are hard to track down,
-    because they are often reported some time after they are caused.  Could 
+    because they are often reported some time after they are caused.  Could
     Memcheck record a trail of operations to better link the cause to the
     effect?  Or maybe just eagerly report any copies of uninitialised
     memory values?</para>
@@ -642,6 +642,26 @@ int main(void)
     compilers pad structs to preserve alignment) and eager checking leads to
     hundreds of false positives.  Therefore Memcheck does not support eager
     checking at this time.</para>
+  </answer>
+</qandaentry>
+
+<qandaentry id="faq.pcre2_qt">
+  <question id="q-pcre2_qt">
+    <para>I'm developing a Qt application and I get huge numbers of "Conditional jump"
+    errors. Is there anything that I can do about it?</para>
+  </question>
+  <answer id="a-pcre2_qt">
+    <para>Yes, there is a workaround. Here is an example error:</para>
+<programlisting>
+Conditional jump or move depends on uninitialised value(s)
+   at 0x1051C39B: ???
+   by 0x12657AA7: ???
+</programlisting>
+    <para>Qt Regular Expressions are built on the pcre2 library.
+    pcre2 uses JITting which means that the errors cannot be suppressed
+    (no function name). However, Qt provides a mechanism to turn off
+    the use of JITting. To do so, use the following environment variable:
+    <computeroutput>export QT_ENABLE_REGEXP_JIT=0</computeroutput></para>
   </answer>
 </qandaentry>
 
@@ -684,11 +704,11 @@ online copy of the manual. -->
 <qandaentry id="e-help">
   <question id="q-help"><para>Where can I get more help?</para></question>
   <answer id="a-help">
-  <para>Read the appropriate section(s) of the 
+  <para>Read the appropriate section(s) of the
   <ulink url="&vg-docs-url;">Valgrind Documentation</ulink>.</para>
 
-  <para><ulink url="http://search.gmane.org">Search</ulink> the 
-  <ulink url="http://news.gmane.org/gmane.comp.debugging.valgrind">valgrind-users</ulink> mailing list archives, using the group name 
+  <para><ulink url="http://search.gmane.org">Search</ulink> the
+  <ulink url="http://news.gmane.org/gmane.comp.debugging.valgrind">valgrind-users</ulink> mailing list archives, using the group name
   <computeroutput>gmane.comp.debugging.valgrind</computeroutput>.</para>
 
   <para>If you think an answer in this FAQ is incomplete or inaccurate, please
@@ -696,7 +716,7 @@ online copy of the manual. -->
 
   <para>If you have tried all of these things and are still
   stuck, you can try mailing the
-  <ulink url="&vg-lists-url;">valgrind-users mailing list</ulink>. 
+  <ulink url="&vg-lists-url;">valgrind-users mailing list</ulink>.
   Note that an email has a better change of being answered usefully if it is
   clearly written.  Also remember that, despite the fact that most of the
   community are very helpful and responsive to emailed questions, you are
@@ -713,7 +733,7 @@ online copy of the manual. -->
 
 
 
-<!-- template 
+<!-- template
 <qandadiv id="faq.installing" xreflabel="Installing">
 <title>Installing</title>
 

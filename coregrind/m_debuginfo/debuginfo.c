@@ -66,6 +66,9 @@
 # include "priv_readpdb.h"
 # include "pub_core_mach.h"
 #endif
+#if defined(VGO_freebsd)
+#include "pub_core_clientstate.h"
+#endif
 
 
 /* Set this to 1 to enable somewhat minimal debug printing for the
@@ -1155,16 +1158,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    DebugInfo* di;
    Int        actual_fd, oflags;
-#if defined(VGO_darwin)
-   SysRes     preadres;
-   // @todo PJF make this dynamic
-   // that probably means reading the sizeofcmds from the mach_header then
-   // allocating enough space for it
-   // and then one day maybe doing something for fat binaries
-   HChar      buf4k[4096];
-#else
-   Bool       elf_ok;
-#endif
 #if defined(VGO_freebsd)
    static Bool first_fixed_file = True;
 #endif
@@ -1239,8 +1232,14 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 
    /* Finally, the point of all this stattery: if it's not a regular file,
-      don't try to read debug info from it. */
-   if (! VKI_S_ISREG(statbuf.mode))
+      don't try to read debug info from it. Also if it is a "regular file"
+      but has a zero size then skip it. Having a zero size will definitely
+      fail when trying to create an DiImage and wouldn't be a valid elf or
+      macho file. This can happen when mmapping a deleted file, which
+      would normally fail in the check above, because the stat call will
+      fail.  But if the deleted file is on an NFS file system then a fake
+      (regular) empty file might be returned.  */
+   if (! VKI_S_ISREG(statbuf.mode) || statbuf.size == 0)
       return 0;
 
    /* no uses of statbuf below here. */
@@ -1300,7 +1299,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
 #  elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le)  \
-        || defined(VGA_arm) || defined(VGA_arm64)
+        || defined(VGA_arm) || defined(VGA_arm64) || defined(VGA_riscv64)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
 #  elif defined(VGP_s390x_linux)
@@ -1344,11 +1343,6 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    }
 #endif
 
-#if defined(VGO_darwin)
-   /* Peer at the first few bytes of the file, to see if it is an ELF */
-   /* object file. Ignore the file if we do not have read permission. */
-   VG_(memset)(buf4k, 0, sizeof(buf4k));
-#endif
 
    oflags = VKI_O_RDONLY;
 #  if defined(VKI_O_LARGEFILE)
@@ -1373,35 +1367,17 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       actual_fd = use_fd;
    }
 
-#if defined(VGO_darwin)
-   preadres = VG_(pread)( actual_fd, buf4k, sizeof(buf4k), 0 );
-   if (use_fd == -1) {
-      VG_(close)( actual_fd );
-   }
-
-   if (sr_isError(preadres)) {
-      DebugInfo fake_di;
-      VG_(memset)(&fake_di, 0, sizeof(fake_di));
-      fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm", filename);
-      ML_(symerr)(&fake_di, True, "can't read file to inspect Mach-O headers");
-      return 0;
-   }
-   if (sr_Res(preadres) == 0)
-      return 0;
-   vg_assert(sr_Res(preadres) > 0 && sr_Res(preadres) <= sizeof(buf4k) );
-
    expected_rw_load_count = 0;
 
-   if (!ML_(check_macho_and_get_rw_loads)( buf4k, (SizeT)sr_Res(preadres), &expected_rw_load_count ))
+#if defined(VGO_darwin)
+   if (!ML_(check_macho_and_get_rw_loads)( actual_fd, &expected_rw_load_count ))
       return 0;
 #endif
 
    /* We're only interested in mappings of object files. */
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 
-   expected_rw_load_count = 0;
-
-   elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
+   Bool elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
 
    if (use_fd == -1) {
       VG_(close)( actual_fd );
@@ -1920,7 +1896,7 @@ ULong VG_(di_notify_dsc)( const HChar* filename, Addr header, SizeT len )
    if (debug)
       VG_(dmsg)("di_notify_dsc-1: %s at %#lx-%#lx\n", filename, header, header+len);
 
-   if (!ML_(check_macho_and_get_rw_loads)( (const void*) header, len, &rw_load_count ))
+   if (!ML_(check_macho_and_get_rw_loads_from_memory)( (const void*) header, len, &rw_load_count ))
       return 0;
 
    /* See if we have a DebugInfo for this filename.  If not,
@@ -3175,12 +3151,12 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
             case Creg_MIPS_RA: return eec->uregs->ra;
-#           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
-               || defined(VGA_ppc64le)
-#           elif defined(VGP_arm64_linux) || defined(VGP_arm64_darwin) || defined(VGP_arm64_freebsd)
+#           elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd) || defined(VGP_arm64_freebsd)
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;
+#           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
+               || defined(VGA_ppc64le) || defined(VGP_riscv64_linux)
 #           else
 #             error "Unsupported arch"
 #           endif
@@ -3461,7 +3437,13 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
    case CFIC_ARM64_X29REL:
       cfa = cfsi_m->cfa_off + uregs->x29;
       break;
-
+#     elif defined(VGP_riscv64_linux)
+      case CFIC_IA_SPREL:
+         cfa = cfsi_m->cfa_off + uregs->sp;
+         break;
+      case CFIC_IA_BPREL:
+         cfa = cfsi_m->cfa_off + uregs->fp;
+         break;
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -3533,6 +3515,15 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      return compute_cfa(&uregs,
                         min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
+#elif defined(VGA_riscv64)
+   { D3UnwindRegs uregs;
+     uregs.pc = ip;
+     uregs.sp = sp;
+     uregs.fp = fp;
+     uregs.ra = 0;
+     return compute_cfa(&uregs,
+                        min_accessible,  max_accessible, ce->di, ce->cfsi_m);
+   }
 
 #  else
    return 0; /* indicates failure */
@@ -3584,6 +3575,8 @@ void VG_(ppUnwindInfo) (Addr from, Addr to)
    For arm64, the unwound registers are: X29(FP) X30(LR) SP PC.
 
    For s390, the unwound registers are: R11(FP) R14(LR) R15(SP) F0..F7 PC.
+
+   For riscv64, the unwound registers are: X2(SP) X8(FP) PC
 */
 Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
@@ -3608,6 +3601,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  elif defined(VGA_arm64)
    ipHere = uregsHere->pc;
 #  elif defined(VGP_arm64_freebsd)
+   ipHere = uregsHere->pc;
+#  elif defined(VGP_riscv64_linux)
    ipHere = uregsHere->pc;
 #  else
 #    error "Unknown arch"
@@ -3754,6 +3749,15 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);
    COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi_m->x29_how, cfsi_m->x29_off);
+#  elif defined(VGP_riscv64_linux)
+   /* Compute register values in the caller's frame. Notice that the previous
+      pc is equal to the previous ra and is calculated as such. The previous ra
+      is however set to 0 here as this helps to promptly fail cases where an
+      inner frame uses the CFIR_SAME rule for ra which is bogus. */
+   COMPUTE(uregsPrev.pc, uregsHere->ra, cfsi_m->ra_how, cfsi_m->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
+   uregsPrev.ra = 0;
 #  else
 #    error "Unknown arch"
 #  endif
@@ -5230,6 +5234,19 @@ void VG_(load_all_debuginfo) (void)
    for (DebugInfo* di = debugInfo_list; di; di = di->next) {
       VG_(di_load_di)(di);
    }
+}
+
+SizeT VG_(data_size)(void)
+{
+   HChar resolved[1000];
+   VG_(realpath)( VG_(args_the_exename), resolved);
+
+   for (DebugInfo* di = debugInfo_list; di; di = di->next) {
+      if (di->data_size  && VG_(strcmp)(di->soname, "NONE") == 0 && VG_(strcmp)(resolved, di->fsm.filename) == 0) {
+         return VG_PGROUNDUP(di->data_size);
+      }
+   }
+   return 0U;
 }
 #endif
 

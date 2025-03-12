@@ -1,0 +1,435 @@
+RV64M multiplication and division instruction set, shared operations
+mul a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x000000000a000000
+mul a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0xfffffffffffffffe
+mul a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x0000000000000001
+mul a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x8000000000000001
+mul a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+mul a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+mul a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x8000000000000000
+mul a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x0000000000000000
+mul a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mul a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mul t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000002000000
+mul zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x3fffffffffffffff
+mulh a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0xffffffffffffffff
+mulh a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0xffffffffffffffff
+mulh a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x4000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulh t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000000000
+mulh zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+mulhu a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000000
+mulhu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+mulhu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x3fffffffffffffff
+mulhu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x7ffffffffffffffe
+mulhu a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0xfffffffffffffffe
+mulhu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0x0000000000000001
+mulhu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x7fffffffffffffff
+mulhu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x4000000000000000
+mulhu a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulhu a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulhu t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000000000
+mulhu zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+div a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000002
+div a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x3fffffffffffffff
+div a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x0000000000000001
+div a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x8000000000000001
+div a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+div a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0xc000000000000000
+div a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x8000000000000000
+div a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x0000000000000001
+div a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+div a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+div t4, t5, t6 ::
+  inputs: t5=0x0000000000005000, t6=0x0000000000002000
+  output: t4=0x0000000000000002
+div zero, a0, a1 ::
+  inputs: a0=0x0000000000005000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+divu a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000002
+divu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x3fffffffffffffff
+divu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x0000000000000001
+divu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+divu a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+divu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0x4000000000000000
+divu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+divu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x0000000000000001
+divu a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+divu a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+divu t4, t5, t6 ::
+  inputs: t5=0x0000000000005000, t6=0x0000000000002000
+  output: t4=0x0000000000000002
+divu zero, a0, a1 ::
+  inputs: a0=0x0000000000005000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000001000
+rem a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000001
+rem a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x0000000000000000
+rem a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000001
+rem a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+rem t4, t5, t6 ::
+  inputs: t5=0x0000000000005000, t6=0x0000000000002000
+  output: t4=0x0000000000001000
+rem zero, a0, a1 ::
+  inputs: a0=0x0000000000005000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+remu a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000001000
+remu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000001
+remu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x0000000000000000
+remu a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x7fffffffffffffff
+remu a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+remu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+remu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x8000000000000000
+remu a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x0000000000000000
+remu a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000001
+remu a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+remu t4, t5, t6 ::
+  inputs: t5=0x0000000000005000, t6=0x0000000000002000
+  output: t4=0x0000000000001000
+remu zero, a0, a1 ::
+  inputs: a0=0x0000000000005000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+
+RV64M multiplication and division instruction set, additions
+mulw a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x000000000a000000
+mulw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000002
+  output: a0=0xfffffffffffffffe
+mulw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x000000007fffffff
+  output: a0=0x0000000000000001
+mulw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0xffffffffffffffff
+  output: a0=0xffffffff80000001
+mulw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+mulw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+mulw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0xffffffffffffffff
+  output: a0=0xffffffff80000000
+mulw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000080000000
+  output: a0=0x0000000000000000
+mulw a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000002000000
+mulw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+divw a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000002
+divw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000002
+  output: a0=0x000000003fffffff
+divw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x000000007fffffff
+  output: a0=0x0000000000000001
+divw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0xffffffffffffffff
+  output: a0=0xffffffff80000001
+divw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+divw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000000000002
+  output: a0=0xffffffffc0000000
+divw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0xffffffffffffffff
+  output: a0=0xffffffff80000000
+divw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000080000000
+  output: a0=0x0000000000000001
+divw a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+divw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+divw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000000000
+divw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+divuw a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000002
+divuw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000002
+  output: a0=0x000000003fffffff
+divuw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x000000007fffffff
+  output: a0=0x0000000000000001
+divuw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+divuw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000001
+divuw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000000000002
+  output: a0=0x0000000040000000
+divuw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+divuw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000080000000
+  output: a0=0x0000000000000001
+divuw a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+divuw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+divuw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000000000
+divuw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000001000
+remw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000001
+remw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x000000007fffffff
+  output: a0=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000080000000
+  output: a0=0x0000000000000000
+remw a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000001
+remw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+remw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000001000
+remw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000
+remuw a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000001000
+remuw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000001
+remuw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0x000000007fffffff
+  output: a0=0x0000000000000000
+remuw a0, a1, a2 ::
+  inputs: a1=0x000000007fffffff, a2=0xffffffffffffffff
+  output: a0=0x000000007fffffff
+remuw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+remuw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+remuw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0xffffffffffffffff
+  output: a0=0xffffffff80000000
+remuw a0, a1, a2 ::
+  inputs: a1=0x0000000080000000, a2=0x0000000080000000
+  output: a0=0x0000000000000000
+remuw a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000001
+remuw a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0xffffffffffffffff
+remuw t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000001000
+remuw zero, a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: zero=0x0000000000000000

@@ -576,7 +576,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_link,              sys_link),           // 86 
    GENX_(__NR_unlink,            sys_unlink),         // 87 
    GENX_(__NR_symlink,           sys_symlink),        // 88 
-   GENX_(__NR_readlink,          sys_readlink),       // 89 
+   GENXY(__NR_readlink,          sys_readlink),       // 89 
 
    GENX_(__NR_chmod,             sys_chmod),          // 90 
    GENX_(__NR_fchmod,            sys_fchmod),         // 91 
@@ -790,7 +790,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_linkat,		 sys_linkat),           // 265
    LINX_(__NR_symlinkat,	 sys_symlinkat),        // 266
-   LINX_(__NR_readlinkat,	 sys_readlinkat),       // 267
+   LINXY(__NR_readlinkat,	 sys_readlinkat),       // 267
    LINX_(__NR_fchmodat,		 sys_fchmodat),         // 268
    LINX_(__NR_faccessat,	 sys_faccessat),        // 269
 
@@ -877,6 +877,12 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
+   LINXY(__NR_open_tree,         sys_open_tree),         // 428
+   LINX_(__NR_move_mount,        sys_move_mount),        // 429
+   LINXY(__NR_fsopen,            sys_fsopen),            // 430
+   LINX_(__NR_fsconfig,          sys_fsconfig),          // 431
+   LINXY(__NR_fsmount,           sys_fsmount),           // 432
+   LINXY(__NR_fspick,            sys_fspick),            // 433
 
    LINXY(__NR_pidfd_open,        sys_pidfd_open),        // 434
    GENX_(__NR_clone3,            sys_ni_syscall),        // 435
@@ -886,6 +892,10 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat2,	 sys_faccessat2),        // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+
+   LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
+   LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
+   LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
    LINXY(__NR_memfd_secret,      sys_memfd_secret),      // 447
 

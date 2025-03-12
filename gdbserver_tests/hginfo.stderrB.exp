@@ -15,4 +15,4 @@ Lock ga 0x........ {
    kind   mbRec
  { W1:thread #x tid #x }
 }
- Address 0x........ is 0 bytes inside an unallocated block of size 1,008 in arena "client"
+ Address 0x........ is 0 bytes inside an unallocated block of size XXXX in arena "client"

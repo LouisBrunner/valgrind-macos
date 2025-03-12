@@ -57,11 +57,15 @@ extern Addr VG_(trampoline_stuff_start);
 extern Addr VG_(trampoline_stuff_end);
 
 #if defined(VGP_x86_freebsd)
-extern void VG_(x86_freebsd_SUBST_FOR_sigreturn);
+extern void VG_(x86_freebsd_SUBST_FOR_sigreturn)(void);
 #endif
 
 #if defined(VGP_amd64_freebsd)
-extern void VG_(amd64_freebsd_SUBST_FOR_sigreturn);
+extern void VG_(amd64_freebsd_SUBST_FOR_sigreturn)(void);
+#endif
+
+#if defined(VGP_arm64_freebsd)
+extern void VG_(arm64_freebsd_SUBST_FOR_sigreturn);
 #endif
 
 #if defined(VGP_arm64_freebsd)
@@ -186,6 +190,13 @@ extern UInt  VG_(mips64_linux_REDIR_FOR_strlen)( void* );
 extern Addr  VG_(nanomips_linux_SUBST_FOR_rt_sigreturn);
 extern Char* VG_(nanomips_linux_REDIR_FOR_index)( const Char*, Int );
 extern UInt  VG_(nanomips_linux_REDIR_FOR_strlen)( void* );
+#endif
+
+#if defined(VGP_riscv64_linux)
+extern Addr   VG_(riscv64_linux_SUBST_FOR_rt_sigreturn);
+extern HChar* VG_(riscv64_linux_REDIR_FOR_index)( const HChar*, Int );
+extern SizeT  VG_(riscv64_linux_REDIR_FOR_strlen)( const HChar* );
+extern Int    VG_(riscv64_linux_REDIR_FOR_strcmp)( const HChar*, const HChar* );
 #endif
 
 #if defined(VGP_x86_solaris)

@@ -42,7 +42,7 @@ typedef struct
   sem_t* xxx;
 } gomp_barrier_t;
 
-typedef long bool;
+
 
 void
 gomp_barrier_init (gomp_barrier_t *bar, unsigned count)

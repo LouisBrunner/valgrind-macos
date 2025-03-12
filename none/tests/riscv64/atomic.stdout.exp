@@ -1,0 +1,467 @@
+RV64A atomic instruction set, shared operations
+lr.w a0, (a2) ::
+  inputs: a2=&area_mid
+  output: a0=0xffffffffaf27d13b
+sc.w a1, a0, (a2) ::
+  inputs: a2=&area_mid, a0=0x0000000050d82ec4
+  output: a1=0x0000000000000000
+  [+000]  c4 2e d8 50 .. .. .. .. .. .. .. .. .. .. .. ..
+sc.w a1, a0, (a2) ::
+  inputs: a2=&area_mid, a0=0xffffffffaf27d13b
+  output: a1=0x0000000000000001
+lr.w t4, (t6) ::
+  inputs: t6=&area_mid
+  output: t4=0x0000000056a044b2
+sc.w t5, t4, (t6) ::
+  inputs: t6=&area_mid, t4=0xffffffffa95fbb4d
+  output: t5=0x0000000000000000
+  [+000]  4d bb 5f a9 .. .. .. .. .. .. .. .. .. .. .. ..
+sc.w t5, t4, (t6) ::
+  inputs: t6=&area_mid, t4=0x0000000056a044b2
+  output: t5=0x0000000000000001
+lr.w zero, (a1) ::
+  inputs: a1=&area_mid
+  output: zero=0x0000000000000000
+sc.w a0, zero, (a1) ::
+  inputs: a1=&area_mid, zero=0x0000000000000000
+  output: a0=0x0000000000000000
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+sc.w a0, zero, (a1) ::
+  inputs: a1=&area_mid, zero=0x0000000000000000
+  output: a0=0x0000000000000001
+lr.w a0, (a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xffffffffb7839b97
+sc.w zero, a0, (a1) ::
+  inputs: a1=&area_mid, a0=0x00000000487c6468
+  output: zero=0x0000000000000000
+  [+000]  68 64 7c 48 .. .. .. .. .. .. .. .. .. .. .. ..
+sc.w zero, a0, (a1) ::
+  inputs: a1=&area_mid, a0=0xffffffffb7839b97
+  output: zero=0x0000000000000000
+amoswap.w a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0xffffffffa705f65d
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amoswap.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x000000003df76c96
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amoswap.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amoswap.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xffffffffc95c9810
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+amoadd.w a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0xfffffffff7e8c6a9
+  [+000]  32 2e 2e 1b .. .. .. .. .. .. .. .. .. .. .. ..
+amoadd.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x000000003b13ff64
+  [+000]  ed 66 59 5e .. .. .. .. .. .. .. .. .. .. .. ..
+amoadd.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  f7 65 31 d4 .. .. .. .. .. .. .. .. .. .. .. ..
+amoadd.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x00000000727c80f3
+  no memory changes
+amoxor.w a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0xffffffff9ed0411e
+  [+000]  97 26 95 bd .. .. .. .. .. .. .. .. .. .. .. ..
+amoxor.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x0000000050f6fd1c
+  [+000]  95 9a b3 73 .. .. .. .. .. .. .. .. .. .. .. ..
+amoxor.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  91 17 b2 80 .. .. .. .. .. .. .. .. .. .. .. ..
+amoxor.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xffffffffb3e1553f
+  no memory changes
+amoand.w a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0xffffffff9dbf68bc
+  [+000]  88 60 05 01 .. .. .. .. .. .. .. .. .. .. .. ..
+amoand.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x000000007d9d67bc
+  [+000]  88 .. 05 21 .. .. .. .. .. .. .. .. .. .. .. ..
+amoand.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  09 04 00 22 .. .. .. .. .. .. .. .. .. .. .. ..
+amoand.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xffffffff8c8b14f4
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+amoor.w a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0xfffffffff4b23b84
+  [+000]  8d 7f f7 f7 .. .. .. .. .. .. .. .. .. .. .. ..
+amoor.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xffffffffc10a3c47
+  [+000]  cf 7f 4f e3 .. .. .. .. .. .. .. .. .. .. .. ..
+amoor.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  e9 f7 df 33 .. .. .. .. .. .. .. .. .. .. .. ..
+amoor.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xfffffffffc7bc013
+  no memory changes
+amomin.w a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0xffffffffa2acb976
+  no memory changes
+amomin.w a0, a1, (a2) ::
+  inputs: a1=0x000000007fffffff, a2=&area_mid
+  output: a0=0x000000001d3d7dbb
+  no memory changes
+amomin.w a0, a1, (a2) ::
+  inputs: a1=0x0000000080000000, a2=&area_mid
+  output: a0=0xffffffff8a3ac80e
+  [+000]  00 00 00 80 .. .. .. .. .. .. .. .. .. .. .. ..
+amomin.w a0, a1, (a2) ::
+  inputs: a1=0x00000000ffffffff, a2=&area_mid
+  output: a0=0x0000000004b0569c
+  [+000]  ff ff ff ff .. .. .. .. .. .. .. .. .. .. .. ..
+amomin.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xffffffffa7aae391
+  no memory changes
+amomin.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+amomin.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xffffffffdb5ce85e
+  no memory changes
+amomax.w a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0xffffffffa32bd88e
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+amomax.w a0, a1, (a2) ::
+  inputs: a1=0x000000007fffffff, a2=&area_mid
+  output: a0=0x0000000004afb8d5
+  [+000]  ff ff ff 7f .. .. .. .. .. .. .. .. .. .. .. ..
+amomax.w a0, a1, (a2) ::
+  inputs: a1=0x0000000080000000, a2=&area_mid
+  output: a0=0x000000001bf2425f
+  no memory changes
+amomax.w a0, a1, (a2) ::
+  inputs: a1=0x00000000ffffffff, a2=&area_mid
+  output: a0=0x0000000004033357
+  no memory changes
+amomax.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xffffffffd9eb46ea
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amomax.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amomax.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xffffffffbd76c58f
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+amominu.w a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0x00000000042fa9fa
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+amominu.w a0, a1, (a2) ::
+  inputs: a1=0x000000007fffffff, a2=&area_mid
+  output: a0=0xffffffffa7f19faf
+  [+000]  ff ff ff 7f .. .. .. .. .. .. .. .. .. .. .. ..
+amominu.w a0, a1, (a2) ::
+  inputs: a1=0x0000000080000000, a2=&area_mid
+  output: a0=0xffffffffc5c764db
+  [+000]  00 00 00 80 .. .. .. .. .. .. .. .. .. .. .. ..
+amominu.w a0, a1, (a2) ::
+  inputs: a1=0x00000000ffffffff, a2=&area_mid
+  output: a0=0x0000000077beb4a9
+  no memory changes
+amominu.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xffffffffdbe14b46
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amominu.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+amominu.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x0000000028dc3c9c
+  [+000]  00 00 00 00 .. .. .. .. .. .. .. .. .. .. .. ..
+amomaxu.w a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0x0000000049cc0fac
+  no memory changes
+amomaxu.w a0, a1, (a2) ::
+  inputs: a1=0x000000007fffffff, a2=&area_mid
+  output: a0=0xffffffff8b19183c
+  no memory changes
+amomaxu.w a0, a1, (a2) ::
+  inputs: a1=0x0000000080000000, a2=&area_mid
+  output: a0=0x000000000acd1475
+  [+000]  00 00 00 80 .. .. .. .. .. .. .. .. .. .. .. ..
+amomaxu.w a0, a1, (a2) ::
+  inputs: a1=0x00000000ffffffff, a2=&area_mid
+  output: a0=0xffffffffe3f6bf86
+  [+000]  ff ff ff ff .. .. .. .. .. .. .. .. .. .. .. ..
+amomaxu.w t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x0000000031a0d599
+  no memory changes
+amomaxu.w zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+amomaxu.w a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xffffffff9fa43077
+  no memory changes
+
+RV64A atomic instruction set, additions
+lr.d a0, (a2) ::
+  inputs: a2=&area_mid
+  output: a0=0x05d75ec6f616ee9a
+sc.d a1, a0, (a2) ::
+  inputs: a2=&area_mid, a0=0xfa28a13909e91165
+  output: a1=0x0000000000000000
+  [+000]  65 11 e9 09 39 a1 28 fa .. .. .. .. .. .. .. ..
+sc.d a1, a0, (a2) ::
+  inputs: a2=&area_mid, a0=0x05d75ec6f616ee9a
+  output: a1=0x0000000000000001
+lr.d t4, (t6) ::
+  inputs: t6=&area_mid
+  output: t4=0x141625713239066f
+sc.d t5, t4, (t6) ::
+  inputs: t6=&area_mid, t4=0xebe9da8ecdc6f990
+  output: t5=0x0000000000000000
+  [+000]  90 f9 c6 cd 8e da e9 eb .. .. .. .. .. .. .. ..
+sc.d t5, t4, (t6) ::
+  inputs: t6=&area_mid, t4=0x141625713239066f
+  output: t5=0x0000000000000001
+lr.d zero, (a1) ::
+  inputs: a1=&area_mid
+  output: zero=0x0000000000000000
+sc.d a0, zero, (a1) ::
+  inputs: a1=&area_mid, zero=0x0000000000000000
+  output: a0=0x0000000000000000
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+sc.d a0, zero, (a1) ::
+  inputs: a1=&area_mid, zero=0x0000000000000000
+  output: a0=0x0000000000000001
+lr.d a0, (a1) ::
+  inputs: a1=&area_mid
+  output: a0=0xf2db8f44cbbf37e2
+sc.d zero, a0, (a1) ::
+  inputs: a1=&area_mid, a0=0x0d2470bb3440c81d
+  output: zero=0x0000000000000000
+  [+000]  1d c8 40 34 bb 70 24 0d .. .. .. .. .. .. .. ..
+sc.d zero, a0, (a1) ::
+  inputs: a1=&area_mid, a0=0xf2db8f44cbbf37e2
+  output: zero=0x0000000000000000
+amoswap.d a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0x78fb29445f3bc8d7
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amoswap.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x34a901384a97a32f
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amoswap.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amoswap.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xb9dd5dab8e212ab7
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+amoadd.d a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0x3bfcd80321664d3e
+  [+000]  c7 b4 ab 44 04 c7 ca e7 .. .. .. .. .. .. .. ..
+amoadd.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x63d9810079bbabd9
+  [+000]  62 13 01 9d 01 70 a7 0f .. .. .. .. .. .. .. ..
+amoadd.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  3a 68 72 d5 8d c4 0e b7 .. .. .. .. .. .. .. ..
+amoadd.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x10fd4e94e9c808f5
+  no memory changes
+amoxor.d a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0x4edb6a053a967ecf
+  [+000]  46 19 d3 19 04 85 16 e5 .. .. .. .. .. .. .. ..
+amoxor.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xa1a7a4c9c0a51f6b
+  [+000]  e2 78 e0 e3 c8 4b 6a 0a .. .. .. .. .. .. .. ..
+amoxor.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  7e c0 45 b4 cf 96 e3 4e .. .. .. .. .. .. .. ..
+amoxor.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0xf63a63fedcb4d29c
+  no memory changes
+amoand.d a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0xb097e047aacc5b89
+  [+000]  .. 43 44 22 01 .. 85 a0 .. .. .. .. .. .. .. ..
+amoand.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xef136b941e54ffe8
+  [+000]  88 67 44 02 00 .. 01 ab .. .. .. .. .. .. .. ..
+amoand.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  81 61 41 03 01 .. 49 8b .. .. .. .. .. .. .. ..
+amoand.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x6c949cea66e687ae
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+amoor.d a0, a1, (a2) ::
+  inputs: a1=0xabcdef0123456789, a2=&area_mid
+  output: a0=0x623139cb7207e36c
+  [+000]  ed e7 47 73 .. ff fd eb .. .. .. .. .. .. .. ..
+amoor.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x4c1cd56194c94a4e
+  [+000]  cf 6f cd b7 .. ff dd ef .. .. .. .. .. .. .. ..
+amoor.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  ff .. 77 .. 97 ef ed ab .. .. .. .. .. .. .. ..
+amoor.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x710cf757885d2728
+  no memory changes
+amomin.d a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0x63a8769192481679
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+amomin.d a0, a1, (a2) ::
+  inputs: a1=0x7fffffffffffffff, a2=&area_mid
+  output: a0=0xb9c3e32f2103009d
+  no memory changes
+amomin.d a0, a1, (a2) ::
+  inputs: a1=0x8000000000000000, a2=&area_mid
+  output: a0=0x5127ba1c529aa0bf
+  [+000]  00 00 00 00 00 00 00 80 .. .. .. .. .. .. .. ..
+amomin.d a0, a1, (a2) ::
+  inputs: a1=0xffffffffffffffff, a2=&area_mid
+  output: a0=0x06a17746411ab40c
+  [+000]  ff ff ff ff ff ff ff ff .. .. .. .. .. .. .. ..
+amomin.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xb3fd9698098ef5b0
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amomin.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amomin.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x698bec649583f5aa
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+amomax.d a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0x2a541ab7911c2b5a
+  no memory changes
+amomax.d a0, a1, (a2) ::
+  inputs: a1=0x7fffffffffffffff, a2=&area_mid
+  output: a0=0x532f9ae1d7da8010
+  [+000]  ff ff ff ff ff ff ff 7f .. .. .. .. .. .. .. ..
+amomax.d a0, a1, (a2) ::
+  inputs: a1=0x8000000000000000, a2=&area_mid
+  output: a0=0xc2e9e9cf82c7aff8
+  no memory changes
+amomax.d a0, a1, (a2) ::
+  inputs: a1=0xffffffffffffffff, a2=&area_mid
+  output: a0=0x514c816eaff2763f
+  no memory changes
+amomax.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0xde24e0a879648e11
+  no memory changes
+amomax.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  no memory changes
+amomax.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x5d68e1a25652a804
+  no memory changes
+amominu.d a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0x086a7a39a1e6217d
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+amominu.d a0, a1, (a2) ::
+  inputs: a1=0x7fffffffffffffff, a2=&area_mid
+  output: a0=0x2112ca1cf9f1dd31
+  no memory changes
+amominu.d a0, a1, (a2) ::
+  inputs: a1=0x8000000000000000, a2=&area_mid
+  output: a0=0x822c4c377b82984c
+  [+000]  00 00 00 00 00 00 00 80 .. .. .. .. .. .. .. ..
+amominu.d a0, a1, (a2) ::
+  inputs: a1=0xffffffffffffffff, a2=&area_mid
+  output: a0=0x08847c7642a20df9
+  no memory changes
+amominu.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x8fe6d7c56a5ff965
+  no memory changes
+amominu.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amominu.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x11f7fa4450de2529
+  [+000]  00 00 00 00 00 00 00 00 .. .. .. .. .. .. .. ..
+amomaxu.d a0, a1, (a2) ::
+  inputs: a1=0x0000000000000000, a2=&area_mid
+  output: a0=0xc33ebc4b44b8ddd8
+  no memory changes
+amomaxu.d a0, a1, (a2) ::
+  inputs: a1=0x7fffffffffffffff, a2=&area_mid
+  output: a0=0xe6c097130b5efcf6
+  no memory changes
+amomaxu.d a0, a1, (a2) ::
+  inputs: a1=0x8000000000000000, a2=&area_mid
+  output: a0=0x56470887bfdd3daf
+  [+000]  00 00 00 00 00 00 00 80 .. .. .. .. .. .. .. ..
+amomaxu.d a0, a1, (a2) ::
+  inputs: a1=0xffffffffffffffff, a2=&area_mid
+  output: a0=0xef9f8c927c405d2f
+  [+000]  ff ff ff ff ff ff ff ff .. .. .. .. .. .. .. ..
+amomaxu.d t4, t5, (t6) ::
+  inputs: t5=0xabcdef0123456789, t6=&area_mid
+  output: t4=0x8d969e225f9318a0
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amomaxu.d zero, a0, (a1) ::
+  inputs: a0=0xabcdef0123456789, a1=&area_mid
+  output: zero=0x0000000000000000
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+amomaxu.d a0, zero, (a1) ::
+  inputs: zero=0xabcdef0123456789, a1=&area_mid
+  output: a0=0x478d5d7e053a4e0c
+  no memory changes

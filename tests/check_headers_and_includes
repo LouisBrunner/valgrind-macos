@@ -65,6 +65,7 @@ my %dirs_to_ignore = (
     "docs" => 1,
     "auxprogs" => 1,
     "autom4te.cache" => 1,
+    "m4" => 1,
     "nightly" => 1,
     "perf" => 1,
     "tests" => 1,

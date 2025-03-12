@@ -40,6 +40,17 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 
+#if defined(VGA_riscv64)
+/* Glibc on riscv64 does not provide a definition of user or user_regs_struct
+   in sys/user.h. Instead the definition of user_regs_struct is provided by the
+   kernel in asm/ptrace.h. Pull it and then define the expected user
+   structure. */
+#include <asm/ptrace.h>
+struct user {
+   struct user_regs_struct regs;
+};
+#endif
+
 #ifdef PTRACE_GETREGSET
 // TBD: better have a configure test instead ?
 #define HAVE_PTRACE_GETREGSET
@@ -49,10 +60,10 @@
 // So, better do not use PTRACE_GET/SETREGSET
 // Rather we use PTRACE_GETREGS or PTRACE_PEEKUSER.
 
-// The only platform on which we must use PTRACE_GETREGSET is arm64.
+// The only platform on which we must use PTRACE_GETREGSET is here.
 // The resulting vgdb cannot work in a bi-arch setup.
 // -1 means we will check that PTRACE_GETREGSET works.
-#  if defined(VGA_arm64)
+#  if defined(VGA_arm64) || defined(VGA_riscv64)
 #define USE_PTRACE_GETREGSET
 #  endif
 #endif
@@ -874,6 +885,8 @@ Bool invoker_invoke_gdbserver (pid_t pid)
    sp = p[29];
 #elif defined(VGA_mips64)
    sp = user_mod.regs[29];
+#elif defined(VGA_riscv64)
+   sp = user_mod.regs.sp;
 #else
    I_die_here : (sp) architecture missing in vgdb-invoker-ptrace.c
 #endif
@@ -961,6 +974,10 @@ Bool invoker_invoke_gdbserver (pid_t pid)
 
 #elif defined(VGA_mips64)
       assert(0); // cannot vgdb a 32 bits executable with a 64 bits exe
+
+#elif defined(VGA_riscv64)
+      assert(0);
+
 #else
       I_die_here : architecture missing in vgdb-invoker-ptrace.c
 #endif
@@ -1068,6 +1085,10 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       user_mod.regs[31] = bad_return;
       user_mod.regs[34] = shared64->invoke_gdbserver;
       user_mod.regs[25] = shared64->invoke_gdbserver;
+#elif defined(VGA_riscv64)
+      user_mod.regs.a0 = check;
+      user_mod.regs.ra = bad_return;
+      user_mod.regs.pc = shared64->invoke_gdbserver;
 #else
       I_die_here: architecture missing in vgdb-invoker-ptrace.c
 #endif

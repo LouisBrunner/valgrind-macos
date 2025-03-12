@@ -361,7 +361,7 @@ void VG_(main_thread_wrapper_NORETURN)(ThreadId tid)
       // reports 'write error' on the non registered stack.
       ThreadState *tst = VG_(get_ThreadState)(tid);
       INNER_REQUEST
-         ((void) 
+         ((void)
           VALGRIND_STACK_REGISTER(tst->os_state.valgrind_stack_base,
                                   tst->os_state.valgrind_stack_init_SP));
    }
@@ -510,6 +510,9 @@ ULong ML_(fletcher64)(UInt *buf, SizeT blocks)
    }
    return (sum2 << 32) | sum1;
 }
+
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 /* Save a complete context (VCPU state, sigmask) of a given client thread
    into the vki_ucontext_t structure.  This structure is supposed to be
@@ -665,6 +668,8 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
                   (new_esp - old_esp) + VG_STACK_REDZONE_SZB);
    }
 }
+
+#pragma GCC pop_options
 
 /* Set a client stack associated with a given thread id according to values
    passed in the vki_stack_t structure. */
@@ -2357,10 +2362,6 @@ PRE(sys_fstat)
    PRINT("sys_fstat ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "fstat", int, fildes, struct stat *, buf);
    PRE_MEM_WRITE("fstat(buf)", ARG2, sizeof(struct vki_stat));
-
-   /* Be strict. */
-   if (!ML_(fd_allowed)(ARG1, "fstat", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
 }
 
 POST(sys_fstat)
@@ -2743,7 +2744,7 @@ PRE(sys_shmsys)
 #if defined(SOLARIS_SHM_NEW)
    case VKI_SHMADV:
       /* Libc: int shmadv(int shmid, uint_t cmd, uint_t *advice); */
-      PRINT("sys_shmsys ( %ld, %ld, %lu, %ld )",
+      PRINT("sys_shmsys ( %ld, %ld, %lu, %lu )",
             SARG1, SARG2, ARG3, ARG4);
       PRE_REG_READ4(long, SC2("shmsys", "shmadv"), int, opcode,
                     int, shmid, vki_uint_t, cmd, vki_uint_t *, advice);
@@ -3306,7 +3307,7 @@ PRE(sys_ioctl)
             when we know pre-handler succeeded.
           */
       }
-      break; 
+      break;
 
    /* dtrace */
    case VKI_DTRACEHIOC_REMOVE:
@@ -3529,7 +3530,7 @@ POST(sys_ioctl)
          struct vki_lifnum *p = (struct vki_lifnum *) ARG3;
          POST_FIELD_WRITE(p->lifn_count);
       }
-      break;  
+      break;
 
    /* filio */
    case VKI_FIOSETOWN:
@@ -3642,7 +3643,7 @@ PRE(sys_execve)
 
    if (ARG1_is_fd == False)
       PRE_MEM_RASCIIZ("execve(filename)", ARG1);
-   
+
     /* Erk.  If the exec fails, then the following will have made a mess of
       things which makes it hard for us to continue.  The right thing to do is
       piece everything together again in POST(execve), but that's close to
@@ -3930,7 +3931,7 @@ PRE(sys_execve)
 #if defined(SOLARIS_EXECVE_SYSCALL_TAKES_FLAGS)
    if (ARG1_is_fd)
       VG_(message)(Vg_UserMsg, "execve(%ld, %#lx, %#lx, %lu) failed, "
-                   "errno %ld\n", SARG1, ARG2, ARG3, ARG4, ERR);
+                   "errno %lu\n", SARG1, ARG2, ARG3, ARG4, ERR);
    else
       VG_(message)(Vg_UserMsg, "execve(%#lx(%s), %#lx, %#lx, %ld) failed, errno"
                    " %lu\n", ARG1, (HChar *) ARG1, ARG2, ARG3, SARG4, ERR);
@@ -3988,11 +3989,13 @@ PRE(sys_fcntl)
       PRE_REG_READ3(long, "fcntl", int, fildes, int, cmd, int, arg);
       /* Check if a client program isn't going to poison any of V's output
          fds. */
+      /*
       if (ARG2 == VKI_F_DUP2FD &&
           !ML_(fd_allowed)(ARG3, "fcntl(F_DUP2FD)", tid, False)) {
          SET_STATUS_Failure(VKI_EBADF);
          return;
       }
+      */
       break;
 
    /* These ones use ARG3 as "native lock" (input only). */
@@ -4859,7 +4862,7 @@ PRE(sys_sigsuspend)
 
    /* Be safe. */
    if (ARG1 && ML_(safe_to_deref((void *) ARG1, sizeof(vki_sigset_t)))) {
-      VG_(sigdelset)((vki_sigset_t *) ARG1, VG_SIGVGKILL); 
+      VG_(sigdelset)((vki_sigset_t *) ARG1, VG_SIGVGKILL);
       /* We cannot mask VG_SIGVGKILL, as otherwise this thread would not
          be killable by VG_(nuke_all_threads_except).
          We thus silently ignore the user request to mask this signal.
@@ -5183,7 +5186,7 @@ PRE(sys_sigsendsys)
    if (!ML_(safe_to_deref)((void *) ARG1, sizeof(vki_procset_t))) {
       SET_STATUS_Failure(VKI_EFAULT);
    }
-   
+
    /* Exit early if there are problems. */
    if (FAILURE)
       return;
@@ -5330,7 +5333,7 @@ PRE(sys_sigresend)
    if (!ML_(safe_to_deref)((void*)ARG3, sizeof(vki_sigset_t))) {
       SET_STATUS_Failure(VKI_EFAULT);
    }
-   
+
    /* Exit early if there are problems. */
    if (FAILURE)
       return;
@@ -5796,7 +5799,7 @@ POST(sys_uuidsys)
    o p_filesz - file-based segment size mapping (includes only text and data);
                 p_memsz - p_filesz is the size of BSS
    o p_offset - offset into the ELF file where the file-based mapping starts
- 
+
    Several problematic areas to cover here:
    1. p_offset can contain a value which is not page-aligned. In that case
       we mmap a part of the file prior to p_offset to make the start address
@@ -6899,7 +6902,7 @@ PRE(sys_modctl)
 
       default:
          VG_(unimplemented)("Syswrap of the modctl call with command "
-                            "MODNVL_DEVLINKSYNC and op %ld.", ARG2);
+                            "MODNVL_DEVLINKSYNC and op %lu.", ARG2);
          /*NOTREACHED*/
          break;
       }
@@ -8222,13 +8225,13 @@ PRE(sys_auditsys)
                        long, code, int, cmd,
                        vki_au_evclass_map_t *, classmap);
 
-         if (ML_(safe_to_deref((void *) ARG3, 
+         if (ML_(safe_to_deref((void *) ARG3,
                                sizeof(vki_au_evclass_map_t)))) {
             vki_au_evclass_map_t *classmap =
                (vki_au_evclass_map_t *) ARG3;
-            PRE_FIELD_READ("auditsys(classmap.ec_number)", 
-                           classmap->ec_number);  
-            PRE_FIELD_READ("auditsys(classmap.ec_class)", 
+            PRE_FIELD_READ("auditsys(classmap.ec_number)",
+                           classmap->ec_number);
+            PRE_FIELD_READ("auditsys(classmap.ec_class)",
                            classmap->ec_class);
          }
          break;
@@ -8516,7 +8519,7 @@ PRE(sys_timer_create)
       if (ML_(safe_to_deref(evp, sizeof(struct vki_sigevent)))) {
          if ((evp->sigev_notify == VKI_SIGEV_PORT) ||
              (evp->sigev_notify == VKI_SIGEV_THREAD))
-            PRE_MEM_READ("timer_create(evp.sigev_value.sival_ptr)", 
+            PRE_MEM_READ("timer_create(evp.sigev_value.sival_ptr)",
                          (Addr) evp->sigev_value.sival_ptr,
                          sizeof(vki_port_notify_t));
       }
@@ -8535,6 +8538,7 @@ PRE(sys_timer_delete)
    /* int timer_delete(timer_t timerid); */
    PRINT("sys_timer_delete ( %ld )", SARG1);
    PRE_REG_READ1(long, "timer_delete", vki_timer_t, timerid);
+   *flags |= SfPollAfter;
 }
 
 PRE(sys_timer_settime)
@@ -8883,7 +8887,7 @@ static void repository_door_pre_mem_door_call_hook(ThreadId tid, Int fd,
                             " where rpr_request=%#x.", p->rpr_request);
          /* NOTREACHED */
          break;
-      }        
+      }
    }
 }
 
@@ -8987,7 +8991,7 @@ static void door_call_pre_mem_params_data(ThreadId tid, Int fd,
          }
       }
    } else if (VG_STREQ(pathname, VKI_REPOSITORY_DOOR_NAME)) {
-      vki_repository_door_request_t *p =	
+      vki_repository_door_request_t *p =
          (vki_repository_door_request_t *) data_ptr;
 
       PRE_FIELD_READ("door_call(\"" VKI_REPOSITORY_DOOR_NAME "\", "
@@ -10905,7 +10909,7 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(SOLARIS_OLD_SYSCALLS)
    SOLXY(__NR_lstat,                sys_lstat),                 /*  88 */
    GENX_(__NR_symlink,              sys_symlink),               /*  89 */
-   GENX_(__NR_readlink,             sys_readlink),              /*  90 */
+   GENXY(__NR_readlink,             sys_readlink),              /*  90 */
 #endif /* SOLARIS_OLD_SYSCALLS */
    GENX_(__NR_setgroups,            sys_setgroups),             /*  91 */
    GENXY(__NR_getgroups,            sys_getgroups),             /*  92 */
@@ -10945,7 +10949,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLXY(__NR_uuidsys,              sys_uuidsys),               /* 124 */
 #endif /* SOLARIS_UUIDSYS_SYSCALL */
 #if defined(HAVE_MREMAP)
-   GENX_(__NR_mremap,               sys_mremap),                /* 126 */
+   GENX_(__NR_mremap,               sys_mremap),                /* 126 (Solaris only, not Illumos) */
 #endif /* HAVE_MREMAP */
    SOLX_(__NR_mmapobj,              sys_mmapobj),               /* 127 */
    GENX_(__NR_setrlimit,            sys_setrlimit),             /* 128 */
@@ -10966,7 +10970,7 @@ static SyscallTableEntry syscall_table[] = {
    SOLX_(__NR_seteuid,              sys_seteuid),               /* 141 */
    SOLX_(__NR_forksys,              sys_forksys),               /* 142 */
 #if defined(SOLARIS_GETRANDOM_SYSCALL)
-   SOLXY(__NR_getrandom,            sys_getrandom),             /* 143 */
+   SOLXY(__NR_getrandom,            sys_getrandom),             /* 143 (Solaris) 126 (Illumos) */
 #endif /* SOLARIS_GETRANDOM_SYSCALL */
    SOLXY(__NR_sigtimedwait,         sys_sigtimedwait),          /* 144 */
    SOLX_(__NR_yield,                sys_yield),                 /* 146 */

@@ -285,6 +285,7 @@ noinst_HEADERS = \
 	m_debuginfo/lzoconf.h		\
 	m_debuginfo/lzodefs.h		\
 	m_debuginfo/minilzo.h		\
+	m_debuginfo/zstd.h              \
 	m_demangle/ansidecl.h	\
 	m_demangle/cp-demangle.h \
 	m_demangle/dyn-string.h	\
@@ -392,6 +393,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_debuginfo/storage.c \
 	m_debuginfo/tinfl.c \
 	m_debuginfo/tytypes.c \
+	m_debuginfo/zstddeclib.c \
 	m_demangle/cp-demangle.c \
 	m_demangle/cplus-dem.c \
 	m_demangle/demangle.c \
@@ -410,6 +412,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_dispatch/dispatch-mips32-linux.S \
 	m_dispatch/dispatch-mips64-linux.S \
 	m_dispatch/dispatch-nanomips-linux.S \
+	m_dispatch/dispatch-riscv64-linux.S \
 	m_dispatch/dispatch-x86-freebsd.S \
 	m_dispatch/dispatch-amd64-freebsd.S \
 	m_dispatch/dispatch-arm64-freebsd.S \
@@ -438,6 +441,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_gdbserver/valgrind-low-mips32.c \
 	m_gdbserver/valgrind-low-mips64.c \
 	m_gdbserver/valgrind-low-nanomips.c \
+	m_gdbserver/valgrind-low-riscv64.c \
 	m_gdbserver/version.c \
 	m_initimg/initimg-linux.c \
 	m_initimg/initimg-freebsd.c \
@@ -469,6 +473,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_sigframe/sigframe-mips32-linux.c \
 	m_sigframe/sigframe-mips64-linux.c \
 	m_sigframe/sigframe-nanomips-linux.c \
+	m_sigframe/sigframe-riscv64-linux.c \
 	m_sigframe/sigframe-x86-darwin.c \
 	m_sigframe/sigframe-amd64-darwin.c \
 	m_sigframe/sigframe-arm64-darwin.c \
@@ -484,6 +489,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syscall-mips32-linux.S \
 	m_syswrap/syscall-mips64-linux.S \
 	m_syswrap/syscall-nanomips-linux.S \
+	m_syswrap/syscall-riscv64-linux.S \
 	m_syswrap/syscall-x86-freebsd.S \
 	m_syswrap/syscall-amd64-freebsd.S \
 	m_syswrap/syscall-arm64-freebsd.S \
@@ -512,6 +518,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_syswrap/syswrap-mips32-linux.c \
 	m_syswrap/syswrap-mips64-linux.c \
 	m_syswrap/syswrap-nanomips-linux.c \
+	m_syswrap/syswrap-riscv64-linux.c \
 	m_syswrap/syswrap-x86-darwin.c \
 	m_syswrap/syswrap-amd64-darwin.c \
 	m_syswrap/syswrap-arm64-darwin.c \
@@ -811,7 +818,15 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/mips64-linux-valgrind.xml \
 	m_gdbserver/mips64-fpu-valgrind-s1.xml \
 	m_gdbserver/mips64-fpu-valgrind-s2.xml \
-	m_gdbserver/mips64-fpu.xml
+	m_gdbserver/mips64-fpu.xml \
+	m_gdbserver/riscv64-cpu-valgrind-s1.xml \
+	m_gdbserver/riscv64-cpu-valgrind-s2.xml \
+	m_gdbserver/riscv64-cpu.xml \
+	m_gdbserver/riscv64-linux.xml \
+	m_gdbserver/riscv64-linux-valgrind.xml \
+	m_gdbserver/riscv64-fpu-valgrind-s1.xml \
+	m_gdbserver/riscv64-fpu-valgrind-s2.xml \
+	m_gdbserver/riscv64-fpu.xml
 
 # so as to make sure these get copied into the install tree
 vglibdir = $(pkglibexecdir)

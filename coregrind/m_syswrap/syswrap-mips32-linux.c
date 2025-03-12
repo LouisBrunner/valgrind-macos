@@ -69,10 +69,10 @@
 
 /* ---------------------------------------------------------------------
                              clone() handling
-   ------------------------------------------------------------------ */ 
+   ------------------------------------------------------------------ */
 /* Call f(arg1), but first switch stacks, using 'stack' as the new
    stack, and use 'retaddr' as f's return-to address.  Also, clear all
-   the integer registers before entering f.*/ 
+   the integer registers before entering f.*/
 
 __attribute__ ((noreturn))
 void ML_ (call_on_new_stack_0_1) (Addr stack, Addr retaddr,
@@ -84,7 +84,7 @@ void ML_ (call_on_new_stack_0_1) (Addr stack, Addr retaddr,
 asm (
 ".text\n"
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
-"vgModuleLocal_call_on_new_stack_0_1:\n" 
+"vgModuleLocal_call_on_new_stack_0_1:\n"
 "   move  $29, $4\n\t"  // stack to %sp
 "   move  $31, $5\n\t"  // retaddr to $ra
 "   move  $25, $6\n\t"  // f to t9/$25
@@ -109,7 +109,7 @@ asm (
 "   li    $24, 0\n\t"
 "   jr    $25\n\t"      // jump to dst
 "   break 0x7\n"        // should never get here
-".previous\n" 
+".previous\n"
 );
 
 /*
@@ -134,17 +134,17 @@ asm (
             pid_t* child_tid    in stack 16
 
    int clone(int (*fn)(void *arg), void *child_stack, int flags, void *arg,
-             void *parent_tidptr, void *tls, void *child_tidptr) 
+             void *parent_tidptr, void *tls, void *child_tidptr)
 
    Returns an Int encoded in the linux-mips way, not a SysRes.
- */ 
+ */
 #define __NR_CLONE        VG_STRINGIFY(__NR_clone)
 #define __NR_EXIT         VG_STRINGIFY(__NR_exit)
 
 // See priv_syswrap-linux.h for arg profile.
 asm (
-".text\n" 
-"   .globl   do_syscall_clone_mips_linux\n" 
+".text\n"
+"   .globl   do_syscall_clone_mips_linux\n"
 "   do_syscall_clone_mips_linux:\n"
 "   subu    $29,$29,32\n\t"
 "   sw $31, 0($29)\n\t"
@@ -164,45 +164,45 @@ asm (
 "   lw $6,  52($29)\n\t" /* a2 = parent_tid */
 "   lw $7,  48($29)\n\t" /* a3 = child_tid */
 "   sw $7,  16($29)\n\t" /* 16(sp) = child_tid */
-"   lw $7,  56($29)\n\t" /* a3 = tls_ptr */  
+"   lw $7,  56($29)\n\t" /* a3 = tls_ptr */
     /* do the system call */
 
 "   li $2, " __NR_CLONE "\n\t" /* __NR_clone */
 "   syscall\n\t"
 "   nop\n\t"
 
-"   bnez    $7, .Lerror\n\t" 
-"   nop\n\t" 
-"   beqz    $2, .Lstart\n\t" 
-"   nop\n\t" 
+"   bnez    $7, .Lerror\n\t"
+"   nop\n\t"
+"   beqz    $2, .Lstart\n\t"
+"   nop\n\t"
 
-"   lw      $31, 0($sp)\n\t" 
-"   nop\n\t" 
-"   lw      $30, 12($sp)\n\t" 
-"   nop\n\t" 
-"   addu    $29,$29,32\n\t" /* free stack */  
-"   nop\n\t" 
-"   jr      $31\n\t" 
-"   nop\n\t" 
+"   lw      $31, 0($sp)\n\t"
+"   nop\n\t"
+"   lw      $30, 12($sp)\n\t"
+"   nop\n\t"
+"   addu    $29,$29,32\n\t" /* free stack */
+"   nop\n\t"
+"   jr      $31\n\t"
+"   nop\n\t"
 
-".Lerror:\n\t" 
-"   li      $31, 5\n\t" 
-"   jr      $31\n\t" 
-"   nop\n\t" 
+".Lerror:\n\t"
+"   li      $31, 5\n\t"
+"   jr      $31\n\t"
+"   nop\n\t"
 
-".Lstart:\n\t" 
-"   lw      $4,  4($29)\n\t" 
-"   nop\n\t" 
-"   lw      $25, 0($29)\n\t" 
-"   nop\n\t" 
-"   jalr    $25\n\t" 
-"   nop\n\t" 
+".Lstart:\n\t"
+"   lw      $4,  4($29)\n\t"
+"   nop\n\t"
+"   lw      $25, 0($29)\n\t"
+"   nop\n\t"
+"   jalr    $25\n\t"
+"   nop\n\t"
 
-"   move $4, $2\n\t" /* retval from fn is in $v0 */  
-"   li $2, " __NR_EXIT "\n\t" /* NR_exit */  
-"   syscall\n\t" 
-"   nop\n\t" 
-"   .previous\n" 
+"   move $4, $2\n\t" /* retval from fn is in $v0 */
+"   li $2, " __NR_EXIT "\n\t" /* NR_exit */
+"   syscall\n\t"
+"   nop\n\t"
+"   .previous\n"
 );
 
 #undef __NR_CLONE
@@ -215,12 +215,12 @@ static SysRes mips_PRE_sys_mmap (ThreadId tid,
                                  UWord arg4, UWord arg5, Off64T arg6);
 /* ---------------------------------------------------------------------
    More thread stuff
-   ------------------------------------------------------------------ */ 
+   ------------------------------------------------------------------ */
 
 // MIPS doesn't have any architecture specific thread stuff that
 // needs to be cleaned up da li ????!!!!???
 void
-VG_ (cleanup_thread) (ThreadArchState * arch) { } 
+VG_ (cleanup_thread) (ThreadArchState * arch) { }
 
 SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 {
@@ -365,7 +365,7 @@ static SysRes mips_PRE_sys_mmap(ThreadId tid,
          arg6  /* offset */
       );
       /* Load symbols? */
-      di_handle = VG_(di_notify_mmap)( (Addr)sr_Res(sres), 
+      di_handle = VG_(di_notify_mmap)( (Addr)sr_Res(sres),
                                        False/*allow_SkFileV*/, (Int)arg5 );
       /* Notify the tool. */
       notify_tool_of_mmap(
@@ -385,7 +385,7 @@ static SysRes mips_PRE_sys_mmap(ThreadId tid,
 }
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for mips/Linux-specific syscalls
-   ------------------------------------------------------------------ */ 
+   ------------------------------------------------------------------ */
 #define PRE(name)       DEFN_PRE_TEMPLATE(mips_linux, name)
 #define POST(name)      DEFN_POST_TEMPLATE(mips_linux, name)
 
@@ -393,7 +393,7 @@ static SysRes mips_PRE_sys_mmap(ThreadId tid,
    harass us for not having prototypes.  Really this is a kludge --
    the right thing to do is to make these wrappers 'static' since they
    aren't visible outside this file, but that requires even more macro
-   magic. */ 
+   magic. */
 //DECL_TEMPLATE (mips_linux, sys_syscall);
 DECL_TEMPLATE (mips_linux, sys_mmap);
 DECL_TEMPLATE (mips_linux, sys_mmap2);
@@ -411,9 +411,9 @@ DECL_TEMPLATE (mips_linux, sys_prctl);
 DECL_TEMPLATE (mips_linux, sys_ptrace);
 DECL_TEMPLATE (mips_linux, sys_sync_file_range);
 
-PRE(sys_mmap2) 
+PRE(sys_mmap2)
 {
-  /* Exactly like sys_mmap() except the file offset is specified in 4096 byte 
+  /* Exactly like sys_mmap() except the file offset is specified in 4096 byte
      units rather than bytes, so that it can be used for files bigger than
      2^32 bytes. */
   SysRes r;
@@ -425,9 +425,9 @@ PRE(sys_mmap2)
   r = mips_PRE_sys_mmap(tid, ARG1, ARG2, ARG3, ARG4, ARG5,
                         4096 * (Off64T) ARG6);
   SET_STATUS_from_SysRes(r);
-} 
+}
 
-PRE(sys_mmap) 
+PRE(sys_mmap)
 {
   SysRes r;
   PRINT("sys_mmap ( %#lx, %lu, %ld, %ld, %ld, %lu )",
@@ -496,25 +496,25 @@ POST(sys_ptrace)
 // applicable to every architecture -- I think only to 32-bit archs.
 // We're going to need something like linux/core_os32.h for such
 // things, eventually, I think.  --njn
- 
-PRE(sys_lstat64) 
+
+PRE(sys_lstat64)
 {
   PRINT ("sys_lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar *) ARG1, ARG2);
   PRE_REG_READ2 (long, "lstat64", char *, file_name, struct stat64 *, buf);
   PRE_MEM_RASCIIZ ("lstat64(file_name)", ARG1);
   PRE_MEM_WRITE ("lstat64(buf)", ARG2, sizeof (struct vki_stat64));
-} 
+}
 
-POST(sys_lstat64) 
+POST(sys_lstat64)
 {
   vg_assert (SUCCESS);
   if (RES == 0)
     {
       POST_MEM_WRITE (ARG2, sizeof (struct vki_stat64));
     }
-} 
+}
 
-PRE(sys_stat64) 
+PRE(sys_stat64)
 {
   PRINT ("sys_stat64 ( %#lx(%s), %#lx )", ARG1, (HChar *) ARG1, ARG2);
   PRE_REG_READ2 (long, "stat64", char *, file_name, struct stat64 *, buf);
@@ -570,9 +570,9 @@ PRE(sys_fstat64)
 POST(sys_fstat64)
 {
   POST_MEM_WRITE (ARG2, sizeof (struct vki_stat64));
-} 
+}
 
-PRE(sys_sigreturn) 
+PRE(sys_sigreturn)
 {
   PRINT ("sys_sigreturn ( )");
   vg_assert (VG_ (is_valid_tid) (tid));
@@ -580,30 +580,30 @@ PRE(sys_sigreturn)
   vg_assert (VG_ (is_running_thread) (tid));
   VG_ (sigframe_destroy) (tid, False);
   /* Tell the driver not to update the guest state with the "result",
-     and set a bogus result to keep it happy. */ 
+     and set a bogus result to keep it happy. */
   *flags |= SfNoWriteResult;
   SET_STATUS_Success (0);
-   /* Check to see if any signals arose as a result of this. */ 
+   /* Check to see if any signals arose as a result of this. */
   *flags |= SfPollAfter;
 }
 
-PRE(sys_rt_sigreturn) 
+PRE(sys_rt_sigreturn)
 {
   PRINT ("rt_sigreturn ( )");
   vg_assert (VG_ (is_valid_tid) (tid));
   vg_assert (tid >= 1 && tid < VG_N_THREADS);
   vg_assert (VG_ (is_running_thread) (tid));
-  /* Restore register state from frame and remove it */ 
+  /* Restore register state from frame and remove it */
   VG_ (sigframe_destroy) (tid, True);
   /* Tell the driver not to update the guest state with the "result",
-     and set a bogus result to keep it happy. */ 
+     and set a bogus result to keep it happy. */
   *flags |= SfNoWriteResult;
   SET_STATUS_Success (0);
-  /* Check to see if any signals arose as a result of this. */ 
+  /* Check to see if any signals arose as a result of this. */
   *flags |= SfPollAfter;
 }
 
-PRE(sys_set_thread_area) 
+PRE(sys_set_thread_area)
 {
    PRINT ("set_thread_area (%lx)", ARG1);
    PRE_REG_READ1(long, "set_thread_area", unsigned long, addr);
@@ -751,8 +751,8 @@ PRE(sys_sync_file_range)
 
 /* ---------------------------------------------------------------------
    The mips/Linux syscall table
-   ------------------------------------------------------------------ */ 
-#define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(mips_linux, sysno, name) 
+   ------------------------------------------------------------------ */
+#define PLAX_(sysno, name)    WRAPPER_ENTRY_X_(mips_linux, sysno, name)
 #define PLAXY(sysno, name)    WRAPPER_ENTRY_XY(mips_linux, sysno, name)
 
 // This table maps from __NR_xxx syscall numbers (from
@@ -849,7 +849,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..    PLAX_(__NR_select,            old_select),            // 82
    GENX_ (__NR_symlink,                sys_symlink),                 // 83
    //..    //   (__NR_oldlstat,          sys_lstat),             // 84
-   GENX_ (__NR_readlink,               sys_readlink),                // 85
+   GENXY (__NR_readlink,               sys_readlink),                // 85
    //..    //   (__NR_uselib,            sys_uselib),            // 86
    //..    //   (__NR_swapon,            sys_swapon),            // 87
    //..    //   (__NR_reboot,            sys_reboot),            // 88
@@ -977,7 +977,7 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAXY (__NR_stat64,                 sys_stat64),                  // 213
    PLAXY (__NR_lstat64,                sys_lstat64),                 // 214
    PLAXY (__NR_fstat64,                sys_fstat64),                 // 215
-   //..
+   LINX_ (__NR_pivot_root,             sys_pivot_root),              // 216
    GENXY (__NR_mincore,                sys_mincore),                 // 217
    GENX_ (__NR_madvise,                sys_madvise),                 // 218
    GENXY (__NR_getdents64,             sys_getdents64),              // 219
@@ -997,7 +997,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_removexattr,            sys_removexattr),             // 233
    LINX_ (__NR_lremovexattr,           sys_lremovexattr),            // 234
    LINX_ (__NR_fremovexattr,           sys_fremovexattr),            // 235
-   //..
+   LINXY (__NR_tkill,                  sys_tkill),                   // 236
    LINXY (__NR_sendfile64,             sys_sendfile64),              // 237
    LINXY (__NR_futex,                  sys_futex),                   // 238
    LINX_ (__NR_sched_setaffinity,      sys_sched_setaffinity),       // 239
@@ -1017,7 +1017,6 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_ (__NR_fadvise64,              sys_fadvise64),               // 254
    GENXY (__NR_statfs64,               sys_statfs64),                // 255
    GENXY (__NR_fstatfs64,              sys_fstatfs64),               // 256
-   //..
    LINXY (__NR_timer_create,           sys_timer_create),            // 257
    LINXY (__NR_timer_settime,          sys_timer_settime),           // 258
    LINXY (__NR_timer_gettime,          sys_timer_gettime),           // 259
@@ -1042,7 +1041,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_inotify_rm_watch,       sys_inotify_rm_watch),        // 277
    LINXY (__NR_waitid,                 sys_waitid),                  // 278
    //..
+   LINX_ (__NR_add_key,                sys_add_key),                 // 280
+   LINX_ (__NR_request_key,            sys_request_key),             // 281
+   LINXY (__NR_keyctl,                 sys_keyctl),                  // 282
    PLAX_ (__NR_set_thread_area,        sys_set_thread_area),         // 283
+   LINXY (__NR_inotify_init,           sys_inotify_init),            // 284
+   LINX_ (__NR_inotify_add_watch,      sys_inotify_add_watch),       // 285
+   LINX_ (__NR_inotify_rm_watch,       sys_inotify_rm_watch),        // 286
    //..
    LINXY (__NR_openat,                 sys_openat),                  // 288
    LINX_ (__NR_mkdirat,                sys_mkdirat),                 // 289
@@ -1054,7 +1059,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_renameat,               sys_renameat),                // 295
    LINX_ (__NR_linkat,                 sys_linkat),                  // 296
    LINX_ (__NR_symlinkat,              sys_symlinkat),               // 297
-   LINX_ (__NR_readlinkat,             sys_readlinkat),              // 298
+   LINXY (__NR_readlinkat,             sys_readlinkat),              // 298
    LINX_ (__NR_fchmodat,               sys_fchmodat),                // 299
    LINX_ (__NR_faccessat,              sys_faccessat),               // 300
    LINXY (__NR_pselect6,               sys_pselect6),                // 301
@@ -1072,6 +1077,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_epoll_pwait,            sys_epoll_pwait),             // 313
    //..
    LINX_ (__NR_utimensat,              sys_utimensat),               // 316
+   LINXY (__NR_signalfd,               sys_signalfd),                // 317
    //..
    LINX_ (__NR_fallocate,              sys_fallocate),               // 320
    LINXY (__NR_timerfd_create,         sys_timerfd_create),          // 321
@@ -1079,14 +1085,21 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_timerfd_settime,        sys_timerfd_settime),         // 323
    LINXY (__NR_signalfd4,              sys_signalfd4),               // 324
    LINXY (__NR_eventfd2,               sys_eventfd2),                // 325
-   //..
+   LINXY (__NR_epoll_create1,          sys_epoll_create1),           // 326
+   LINXY (__NR_dup3,                   sys_dup3),                    // 327
    LINXY (__NR_pipe2,                  sys_pipe2),                   // 328
    LINXY (__NR_inotify_init1,          sys_inotify_init1),           // 329
    LINXY (__NR_preadv,                 sys_preadv),                  // 330
    LINX_ (__NR_pwritev,                sys_pwritev),                 // 331
-   //..
+   LINXY (__NR_rt_tgsigqueueinfo,      sys_rt_tgsigqueueinfo),       // 332
+   LINXY (__NR_perf_event_open,        sys_perf_event_open),         // 333
+   LINXY (__NR_accept4,                sys_accept4),                 // 334
+   LINXY (__NR_recvmmsg,               sys_recvmmsg),                // 335
+   LINXY (__NR_fanotify_init,          sys_fanotify_init),           // 336
+   LINX_ (__NR_fanotify_mark,          sys_fanotify_mark),           // 337
    LINXY (__NR_prlimit64,              sys_prlimit64),               // 338
-   //..
+   LINXY (__NR_name_to_handle_at,      sys_name_to_handle_at),       // 339
+   LINXY (__NR_open_by_handle_at,      sys_open_by_handle_at),       // 340
    LINXY (__NR_clock_adjtime,          sys_clock_adjtime),           // 341
    LINX_ (__NR_syncfs,                 sys_syncfs),                  // 342
    LINX_ (__NR_setns,                  sys_setns),                   // 343
@@ -1112,6 +1125,16 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_statx,                   sys_statx),                   // 366
    GENX_(__NR_rseq,                    sys_ni_syscall),              // 367
 
+   LINX_(__NR_semget,                  sys_semget),                  // 393
+   LINXY(__NR_semctl,                  sys_semctl),                  // 394
+   LINX_(__NR_shmget,                  sys_shmget),                  // 395
+   LINXY(__NR_shmctl,                  sys_shmctl),                  // 396
+   LINXY(__NR_shmat,                   sys_shmat),                   // 397
+   LINXY(__NR_shmdt,                   sys_shmdt),                   // 398
+   LINX_(__NR_msgget,                  sys_msgget),                  // 399
+   LINX_(__NR_msgsnd,                  sys_msgsnd),                  // 400
+   LINXY(__NR_msgrcv,                  sys_msgrcv),                  // 401
+   LINXY(__NR_msgctl,                  sys_msgctl),                  // 402
    LINXY(__NR_clock_gettime64,         sys_clock_gettime64),         // 403
    LINX_(__NR_clock_settime64,         sys_clock_settime64),         // 404
 
@@ -1137,7 +1160,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_io_uring_setup,          sys_io_uring_setup),          // 425
    LINXY(__NR_io_uring_enter,          sys_io_uring_enter),          // 426
    LINXY(__NR_io_uring_register,       sys_io_uring_register),       // 427
-
+   LINXY(__NR_open_tree,               sys_open_tree),               // 428
+   LINX_(__NR_move_mount,              sys_move_mount),              // 429
+   LINXY(__NR_fsopen,                  sys_fsopen),                  // 430
+   LINX_(__NR_fsconfig,                sys_fsconfig),                // 431
+   LINXY(__NR_fsmount,                 sys_fsmount),                 // 432
+   LINXY(__NR_fspick,                  sys_fspick),                  // 433
    LINXY(__NR_pidfd_open,              sys_pidfd_open),              // 434
    GENX_(__NR_clone3,                  sys_ni_syscall),              // 435
    LINXY(__NR_close_range,       sys_close_range),       // 436
@@ -1146,6 +1174,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_faccessat2,             sys_faccessat2),              // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+
+   LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
+   LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
+   LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
    LINX_(__NR_fchmodat2,               sys_fchmodat2),               // 452
 };
@@ -1168,6 +1200,6 @@ SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)
 
 #endif // defined(VGP_mips32_linux)
 
-/*--------------------------------------------------------------------*/ 
-/*--- end                                     syswrap-mips-linux.c ---*/ 
-/*--------------------------------------------------------------------*/ 
+/*--------------------------------------------------------------------*/
+/*--- end                                     syswrap-mips-linux.c ---*/
+/*--------------------------------------------------------------------*/

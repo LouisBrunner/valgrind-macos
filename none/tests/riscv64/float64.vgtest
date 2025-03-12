@@ -1,0 +1,2 @@
+prog: float64
+vgopts: -q

@@ -73,8 +73,8 @@ endif
 # but the problem is macOS, not clang
 if !VGCONF_OS_IS_DARWIN
  check_PROGRAMS += \
-	shr_edx \
-	bug492210
+	bug492210 \
+	shr_edx
 endif
 
 AM_CFLAGS    += @FLAG_M64@

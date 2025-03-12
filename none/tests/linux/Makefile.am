@@ -7,6 +7,7 @@ EXTRA_DIST = \
 	blockfault.stderr.exp blockfault.vgtest \
 	brk-overflow1.stderr.exp brk-overflow1.vgtest \
 	brk-overflow2.stderr.exp brk-overflow2.vgtest \
+	bug498317.stderr.exp bug498317.supp bug498317.vgtest \
 	clonev.stdout.exp clonev.stderr.exp clonev.vgtest \
         membarrier.stderr.exp membarrier.vgtest \
 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
@@ -23,6 +24,7 @@ check_PROGRAMS = \
 	blockfault \
 	brk-overflow1 \
 	brk-overflow2 \
+	bug498317 \
 	clonev \
 	mremap \
 	mremap2 \

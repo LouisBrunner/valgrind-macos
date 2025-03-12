@@ -65,7 +65,6 @@ static void load_client(/*OUT*/ExeInfo *info,
 {
    const HChar *exe_name;
    Int ret;
-   SysRes res;
 
    vg_assert(VG_(args_the_exename));
    exe_name = VG_(find_executable)(VG_(args_the_exename));
@@ -95,12 +94,6 @@ static void load_client(/*OUT*/ExeInfo *info,
       /*NOTREACHED*/
    }
    VG_(strcpy)(out_exe_name, exe_name);
-
-   /* Get hold of a file descriptor which refers to the client executable.
-      This is needed for attaching to GDB. */
-   res = VG_(open)(exe_name, VKI_O_RDONLY, VKI_S_IRUSR);
-   if (!sr_isError(res))
-      VG_(cl_exec_fd) = sr_Res(res);
 
    /* Set initial brk values. */
    if (info->ldsoexec) {

@@ -138,7 +138,7 @@
    Anything "user-defined" or "class-specific" we can't know
    about and the user needs to use memory pool annotation.
 
-   "non-alocating placement" as the name implies does not
+   "non-allocating placement" as the name implies does not
    allocate. Placement deletes are no-ops.
 */
 
@@ -1839,6 +1839,7 @@ extern int * __error(void) __attribute__((weak));
       MALLOC_TRACE("reallocarray(%p,%llu,%llu)", ptrV, (ULong)nmemb, (ULong)size ); \
       if (nmemb > 0 && (SizeT)-1 / nmemb < size) { \
          SET_ERRNO_ENOMEM; \
+         MALLOC_TRACE(" = 0\n"); \
          return NULL; \
       } \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, nmemb*size ); \
@@ -2049,6 +2050,7 @@ extern int * __error(void) __attribute__((weak));
            (alignment & (alignment - 1)) != 0) ||                              \
           (VG_MEMALIGN_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) {           \
          SET_ERRNO_EINVAL;                                                     \
+         MALLOC_TRACE(" = 0\n");                                               \
          return 0;                                                             \
       }                                                                        \
       /* Round up to minimum alignment if necessary. */                        \
@@ -2067,6 +2069,8 @@ extern int * __error(void) __attribute__((weak));
                                                                                \
       if (!mem)                                                                \
          SET_ERRNO_ENOMEM;                                                     \
+                                                                               \
+      MALLOC_TRACE(" = %p\n", mem);                                            \
                                                                                \
       return mem;                                                              \
    }
@@ -2114,6 +2118,8 @@ extern int * __error(void) __attribute__((weak));
                pszB, pszB, size ); \
       \
       if (!mem) SET_ERRNO_ENOMEM; \
+      \
+      MALLOC_TRACE(" = %p\n", mem); \
       \
       return mem; \
    }
@@ -2258,12 +2264,14 @@ extern int * __error(void) __attribute__((weak));
       if (alignment == 0 \
           || alignment % sizeof (void *) != 0 \
           || (alignment & (alignment - 1)) != 0) { \
+         MALLOC_TRACE(" = 0\n"); \
          return VKI_EINVAL; \
       } \
       if (VG_POSIX_MEMALIGN_SIZE_0_RETURN_NULL && \
           size == 0U) { \
          /* no allocation for zero size on Solaris/Illumos */ \
          *memptr = NULL; \
+         MALLOC_TRACE(" = 0\n"); \
          return 0; \
       } \
       /* Round up to minimum alignment if necessary. */ \
@@ -2272,6 +2280,8 @@ extern int * __error(void) __attribute__((weak));
       \
       mem = (void*)VALGRIND_NON_SIMD_CALL3( info.tl_memalign, \
                alignment, orig_alignment, size ); \
+      \
+      MALLOC_TRACE(" = %p\n", mem); \
       \
       if (mem != NULL) { \
         *memptr = mem; \
@@ -2401,6 +2411,8 @@ extern int * __error(void) __attribute__((weak));
        mem = (void*)VALGRIND_NON_SIMD_CALL3( info.tl_memalign, \
                  alignment, orig_alignment, size ); \
        \
+       MALLOC_TRACE(" = %p\n", mem); \
+       \
        return mem; \
     }
 
@@ -2426,6 +2438,7 @@ extern int * __error(void) __attribute__((weak));
            || (VG_ALIGNED_ALLOC_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
            || (VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \
           SET_ERRNO_EINVAL; \
+          MALLOC_TRACE(" = 0\n"); \
           return 0; \
        } \
        \
@@ -2439,6 +2452,8 @@ extern int * __error(void) __attribute__((weak));
                  alignment, orig_alignment, size ); \
        \
        if (!mem) SET_ERRNO_ENOMEM; \
+       \
+       MALLOC_TRACE(" = %p\n", mem); \
        \
        return mem; \
     }

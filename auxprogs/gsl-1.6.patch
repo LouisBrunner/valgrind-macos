@@ -34,3 +34,35 @@ diff -r -u gsl-1.6/wavelet/dwt.c gsl-1.6-patched/wavelet/dwt.c
  
  static int
  binary_logn (const size_t n)
+diff -r -u gsl-1.6/eigen/jacobi.c gsl-1.6-patched/eigen/jacobi.c
+--- gsl-1.6/eigen/jacobi.c
++++ gsl-1.6-patched/eigen/jacobi.c
+@@ -215,7 +215,7 @@
+   {
+     const size_t n = a->size2;
+     size_t i,j,k;
+-    size_t nrot = 0;
++    unsigned int nrot = 0;
+     int status;
+ 
+     gsl_vector * eval = gsl_vector_alloc(n);
+diff -r -u gsl-1.6/configure.ac gsl-1.6-patched/configure.ac
+--- gsl-1.6/configure.ac
++++ gsl-1.6-patched/configure.ac
+@@ -325,7 +325,7 @@
+    inf = exp(1.0e10);
+    nan = inf / inf ;
+    status = (nan == nan);
+-   exit (status);
++   return status;
+ }]])],[ac_cv_c_ieee_comparisons="yes"],[ac_cv_c_ieee_comparisons="no"],[ac_cv_c_ieee_comparisons="yes"])
+ ])
+ 
+@@ -346,7 +346,7 @@
+    for (i = 0; i < 5; i++) { z = z / 10.0 ; };        
+    for (i = 0; i < 5; i++) { z = z * 10.0 ; };
+    status = (z == 0.0);
+-   exit (status);
++   return status;
+ }]])],[ac_cv_c_ieee_denormals="yes"],[ac_cv_c_ieee_denormals="no"],[ac_cv_c_ieee_denormals="yes"])
+ ])

@@ -60,6 +60,9 @@ First of all:
 
 - Consider upgrading the C++ demangler.
   auxprogs/update-demangler   helps with that
+  
+- Consider upgrading zstd compression
+  See README_DEVELOPERS for details.
 
 - Contact Gregory Czajkowski ( gregczajkowski@yahoo.com ) and ask him
   to build (make && make check) valgrind with ICC.

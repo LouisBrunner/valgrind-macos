@@ -104,7 +104,7 @@ extern UInt VG_(read_millisecond_timer) ( void );
 extern Int  VG_(gettimeofday)(struct vki_timeval *tv, struct vki_timezone *tz);
 
 #  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
-/* Get the clock value as specified by clk_id.  Asserts if unsuccesful.  */
+/* Get the clock value as specified by clk_id.  Asserts if unsuccessful.  */
 extern void VG_(clock_gettime)(struct vki_timespec *ts, vki_clockid_t clk_id);
 #  elif defined(VGO_darwin)
   /* It seems clock_gettime is only available on recent Darwin versions.
@@ -123,6 +123,10 @@ extern UInt VG_(get_user_milliseconds)(void);
 
 typedef void (*vg_atfork_t)(ThreadId);
 extern void VG_(atfork)(vg_atfork_t pre, vg_atfork_t parent, vg_atfork_t child);
+
+#if defined(VGO_freebsd)
+extern Int VG_(getosreldate)(void);
+#endif
 
 
 #endif   // __PUB_TOOL_LIBCPROC_H

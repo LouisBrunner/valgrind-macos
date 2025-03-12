@@ -63,7 +63,9 @@ EXTRA_DIST = \
 	internals/porting-to-ARM.txt \
 	internals/qemu-aarch64-linux-HOWTO.txt \
 	internals/qemu-mips64-linux-HOWTO.txt \
+	internals/qemu-riscv64-linux-HOWTO.txt \
 	internals/register-uses.txt \
+	internals/s390-opcodes.csv \
 	internals/release-HOWTO.txt \
 	internals/segments-seginfos.txt \
 	internals/t-chaining-notes.txt \
@@ -124,7 +126,7 @@ endif
 LOGFILE = print.log
 
 # validation stuff
-XMLLINT       = xmllint
+XMLLINT      ?= xmllint
 XMLLINT_FLAGS = --noblanks --noout --xinclude --postvalid --noent \
 		--path $(top_builddir)/docs/xml
 
@@ -184,14 +186,20 @@ all-docs: FAQ.txt man-pages html-docs print-docs
 
 valid-manual: $(MANUAL_XML_FILES)
 	if type $(XMLLINT) 2>/dev/null; then \
-	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml && \
-	  touch $@; \
+	  if [ -f $(XML_CATALOG_FILES) ]; then \
+	    export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+	    $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/index.xml && \
+	    touch $@; \
+	  fi \
 	fi
 
 valid-manpages: $(MANPAGES_XML_FILES)
 	if type $(XMLLINT) 2>/dev/null; then \
-	  $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml && \
-	  touch $@; \
+	  if [ -f $(XML_CATALOG_FILES) ]; then \
+	    export XML_CATALOG_FILES=$(XML_CATALOG_FILES) && \
+	    $(XMLLINT) $(XMLLINT_FLAGS) $(myxmldir)/manpages-index.xml && \
+	    touch $@; \
+	  fi \
 	fi
 
 check-local: valid-manual valid-manpages
@@ -247,12 +255,12 @@ print-docs:
 	mv index.pdf index.ps $(myprintdir) && \
 	rm $(LOGFILE)
 
-# If the docs have been built, install them.  But don't worry if they have 
+# If the docs have been built, install them.  But don't worry if they have
 # not -- developers do 'make install' not from a 'make dist'-ified distro all
 # the time.
 #
 # Note: this is done at 'make install' time.
-# Note 2: the ifeq/else/endif have to be indented one space 
+# Note 2: the ifeq/else/endif have to be indented one space
 # because otherwise it seems that automake thinks it should
 # be the one to handle the else/endif parts, not GNU make
 # as we intend.

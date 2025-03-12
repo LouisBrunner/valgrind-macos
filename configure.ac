@@ -8,17 +8,19 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-#
+# We would like to have at least autoconf 2.69
+AC_PREREQ(2.69)
+
 # Define major, minor, micro and suffix here once, then reuse them
 # for version number in valgrind.h and vg-entities (documentation).
 # suffix must be empty for a release, otherwise it is GIT or RC1, etc.
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [24])
+m4_define([v_minor_ver], [25])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
-m4_define([v_rel_date], ["?? Oct 2024"])
+m4_define([v_rel_date], ["?? Apr 2025"])
 m4_define([v_version],
 	  m4_if(v_suffix_ver, [],
 		[v_major_ver.v_minor_ver.v_micro_ver],
@@ -50,26 +52,15 @@ CXXFLAGS="$CXXFLAGS"
 #----------------------------------------------------------------------------
 
 AC_PROG_LN_S
-m4_version_prereq([2.70], [AC_PROG_CC], [AC_PROG_CC_C99])
-# Make sure we can compile in C99 mode.
-if test "$ac_prog_cc_stdc" = "c99"; then
-    AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
-fi
+
+# Provided by gnulib's m4/std-gnu11.m4 for autoconf pre 2.70
+# Make sure we can compile in C11 mode.
+AC_PROG_CC
+AS_IF([test "x$ac_cv_prog_cc_c11" = "xno"],
+      [AC_MSG_ERROR([Valgrind relies on a C compiler supporting C11])])
+
 AC_PROG_CPP
 AC_PROG_CXX
-# AC_PROG_OBJC apparently causes problems on older Linux distros (eg. with
-# autoconf 2.59).  If we ever have any Objective-C code in the Valgrind code
-# base (eg. most likely as Darwin-specific tests) we'll need one of the
-# following:
-# - put AC_PROG_OBJC in a Darwin-specific part of this file
-# - Use AC_PROG_OBJC here and up the minimum autoconf version
-# - Use the following, which is apparently equivalent:
-#     m4_ifdef([AC_PROG_OBJC],
-#        [AC_PROG_OBJC],
-#        [AC_CHECK_TOOL([OBJC], [gcc])
-#         AC_SUBST([OBJC])
-#         AC_SUBST([OBJCFLAGS])
-#        ])
 AC_PROG_RANLIB
 # Set LTO_RANLIB variable to an lto enabled ranlib
 if test "x$LTO_RANLIB" = "x"; then
@@ -77,12 +68,6 @@ if test "x$LTO_RANLIB" = "x"; then
 fi
 AC_ARG_VAR([LTO_RANLIB],[Library indexer command for link time optimisation])
 
-# provide a very basic definition for AC_PROG_SED if it's not provided by
-# autoconf (as e.g. in autoconf 2.59).
-m4_ifndef([AC_PROG_SED],
-          [AC_DEFUN([AC_PROG_SED],
-                    [AC_ARG_VAR([SED])
-                     AC_CHECK_PROGS([SED],[gsed sed])])])
 AC_PROG_SED
 
 AC_DEFUN([AC_PROG_SHA256SUM],
@@ -110,30 +95,8 @@ AC_PATH_PROG(PERL, perl)
 AC_PATH_PROG(GDB, gdb, "/no/gdb/was/found/at/configure/time")
 AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB", [path to GDB])
 
-# some older automake's don't have it so try something on our own
-ifdef([AM_PROG_AS],[AM_PROG_AS],
-[
-AS="${CC}"
-AC_SUBST(AS)
-
-ASFLAGS=""
-AC_SUBST(ASFLAGS)
-])
-
-dnl automake-1.10 does not have AM_COND_IF (added in 1.11), so we supply a
-dnl fallback definition
-dnl The macro is courtesy of Dave Hart:
-dnl   https://lists.gnu.org/archive/html/automake/2010-12/msg00045.html
-m4_ifndef([AM_COND_IF], [AC_DEFUN([AM_COND_IF], [
-if test -z "$$1_TRUE"; then :
-  m4_n([$2])[]dnl
-m4_ifval([$3],
-[else
-  $3
-])dnl
-fi[]dnl
-])])
-
+# figure out how to compile assembler sources
+AM_PROG_AS
 
 # Check if 'diff' supports -u (universal diffs) and use it if possible.
 
@@ -158,78 +121,81 @@ if test "$ac_prog_cc_stdc" = "c99"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
 fi
 
+AC_CANONICAL_HOST
+
 # macOS: Detect the Xcode SDK path and inject it in different tools
-AM_COND_IF([VGCONF_OS_IS_DARWIN],
-[
-  AC_ARG_WITH([darwin-platform],
-  [  --with-darwin-platform=PLAT  Specify which Darwin platform we are compiling for (macOS, iOS, etc)],
-  [
-      # TODO: some kind of case-insensitive check?
-      if test "x$withval" == "xmacOS"; then
-        darwin_platform="macosx"
-      elif test "x$withval" == "xmacos"; then
-        darwin_platform="macosx"
-      elif test "x$withval" == "xiOS"; then
-        darwin_platform="iphoneos"
-      elif test "x$withval" == "xios"; then
-        darwin_platform="iphoneos"
-      else
-        darwin_platform="$withval"
-      fi
-  ],
-  [
-      darwin_platform="macosx"
-  ])
+case $host_os in
+    *darwin*)
+      AC_ARG_WITH([darwin-platform],
+      [  --with-darwin-platform=PLAT  Specify which Darwin platform we are compiling for (macOS, iOS, etc)],
+      [
+          # TODO: some kind of case-insensitive check?
+          if test "x$withval" == "xmacOS"; then
+            darwin_platform="macosx"
+          elif test "x$withval" == "xmacos"; then
+            darwin_platform="macosx"
+          elif test "x$withval" == "xiOS"; then
+            darwin_platform="iphoneos"
+          elif test "x$withval" == "xios"; then
+            darwin_platform="iphoneos"
+          else
+            darwin_platform="$withval"
+          fi
+      ],
+      [
+          darwin_platform="macosx"
+      ])
 
-  AC_ARG_WITH([darwin-version],
-  [  --with-darwin-version=VERS Specify which version of Darwin you are targetting (useful for cross-compilation, depends on the darwin-platform)],
-  [
-      darwin_version="$withval"
-  ],
-  [
-      darwin_version=""
-  ])
+      AC_ARG_WITH([darwin-version],
+      [  --with-darwin-version=VERS Specify which version of Darwin you are targetting (useful for cross-compilation, depends on the darwin-platform)],
+      [
+          darwin_version="$withval"
+      ],
+      [
+          darwin_version=""
+      ])
 
-  AC_ARG_VAR([DEVELOPER_DIR],[Overrides the active developer directory (used in gcc, xcrun, etc)])
-  AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
+      AC_ARG_VAR([DEVELOPER_DIR],[Overrides the active developer directory (used in gcc, xcrun, etc)])
+      AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
 
-  AC_MSG_CHECKING([for Xcode SDK])
-  AC_ARG_WITH([xcode-path],
-  [  --with-xcode-path=PATH      Specify path for Xcode SDK],
-  [
-      # Set defaults in case `xcrun` fails
-      xcodedir="$withval"
-      xcodedir_inc="$xcodedir/usr/include"
-      xcodedir_lib="$xcodedir/usr/lib"
-      # Defining DEVELOPER_DIR will override which version of gcc, xcrun, etc is being used
-      export DEVELOPER_DIR="$xcodedir"
-  ],
-  [
-      # Use system defaults, in case `xcrun` fails
-      xcodedir="active developer directory"
-      xcodedir_inc="/usr/include"
-      xcodedir_lib="/usr/lib"
-  ])
+      AC_MSG_CHECKING([for Xcode SDK])
+      AC_ARG_WITH([xcode-path],
+      [  --with-xcode-path=PATH      Specify path for Xcode SDK],
+      [
+          # Set defaults in case `xcrun` fails
+          xcodedir="$withval"
+          xcodedir_inc="$xcodedir/usr/include"
+          xcodedir_lib="$xcodedir/usr/lib"
+          # Defining DEVELOPER_DIR will override which version of gcc, xcrun, etc is being used
+          export DEVELOPER_DIR="$xcodedir"
+      ],
+      [
+          # Use system defaults, in case `xcrun` fails
+          xcodedir="active developer directory"
+          xcodedir_inc="/usr/include"
+          xcodedir_lib="/usr/lib"
+      ])
 
-  darwin_sdk="$darwin_platform$darwin_version"
-  if test "x$XCRUN" != "xno"; then
-    if test "x$darwin_version" != "x"; then
-        if test x`xcrun --sdk $darwin_sdk --show-sdk-version` != x$darwin_version; then
-            AC_MSG_ERROR([Couldn't find SDK for $darwin_sdk version $darwin_version (check 'xcodebuild -showsdks' for available ones)])
+      darwin_sdk="$darwin_platform$darwin_version"
+      if test "x$XCRUN" != "xno"; then
+        if test "x$darwin_version" != "x"; then
+            if test x`xcrun --sdk $darwin_sdk --show-sdk-version` != x$darwin_version; then
+                AC_MSG_ERROR([Couldn't find SDK for $darwin_sdk version $darwin_version (check 'xcodebuild -showsdks' for available ones)])
+            fi
         fi
-    fi
 
-    xcrundir=`xcrun --sdk $darwin_sdk --show-sdk-path`
-    if test ! -z "$xcrundir"; then
-        xcodedir="$xcrundir"
-        xcodedir_inc="$xcodedir/usr/include"
-        xcodedir_lib="$xcodedir/usr/lib"
-    fi
-  else
-    AC_MSG_WARN([Couldn't find xcrun, most Xcode-related autodetection will be disabled and the build might fail])
-  fi
-  AC_MSG_RESULT([$xcodedir])
-])
+        xcrundir=`xcrun --sdk $darwin_sdk --show-sdk-path`
+        if test ! -z "$xcrundir"; then
+            xcodedir="$xcrundir"
+            xcodedir_inc="$xcodedir/usr/include"
+            xcodedir_lib="$xcodedir/usr/lib"
+        fi
+      else
+        AC_MSG_WARN([Couldn't find xcrun, most Xcode-related autodetection will be disabled and the build might fail])
+      fi
+      AC_MSG_RESULT([$xcodedir])
+    ;;
+esac
 
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
@@ -314,8 +280,6 @@ esac
 # all with "VGCONF_" which indicates that they are defined at
 # configure-time, and distinguishes them from the VGA_*/VGO_*/VGP_*
 # variables used when compiling C files.
-
-AC_CANONICAL_HOST
 
 AC_MSG_CHECKING([for a supported CPU])
 
@@ -423,6 +387,11 @@ case "${host_cpu}" in
         ARCH_MAX="nanomips"
         ;;
 
+     riscv64)
+       AC_MSG_RESULT([ok (${host_cpu})])
+       ARCH_MAX="riscv64"
+       ;;
+
      *)
 	AC_MSG_RESULT([no (${host_cpu})])
 	AC_MSG_ERROR([Unsupported host architecture. Sorry])
@@ -497,113 +466,6 @@ case "${host_os}" in
      *freebsd*)
         AC_MSG_RESULT([ok (${host_os})])
         VGCONF_OS="freebsd"
-        AC_DEFINE([FREEBSD_11], 1100, [FREEBSD_VERS value for FreeBSD 11.x])
-        freebsd_11=1100
-        AC_DEFINE([FREEBSD_12], 1200, [FREEBSD_VERS value for FreeBSD 12.0 to 12.1])
-        freebsd_12=1200
-        AC_DEFINE([FREEBSD_12_2], 1220, [FREEBSD_VERS value for FreeBSD 12.2])
-        freebsd_12_2=1220
-        AC_DEFINE([FREEBSD_13_0], 1300, [FREEBSD_VERS value for FreeBSD 13.0])
-        freebsd_13_0=1300
-        AC_DEFINE([FREEBSD_13_1], 1310, [FREEBSD_VERS value for FreeBSD 13.1])
-        freebsd_13_1=1310
-        AC_DEFINE([FREEBSD_13_2], 1320, [FREEBSD_VERS value for FreeBSD 13.2])
-        freebsd_13_2=1320
-        AC_DEFINE([FREEBSD_13_3], 1330, [FREEBSD_VERS value for FreeBSD 13.3])
-        freebsd_13_3=1330
-        AC_DEFINE([FREEBSD_13_4], 1340, [FREEBSD_VERS value for FreeBSD 13.4])
-        freebsd_13_4=1340
-        AC_DEFINE([FREEBSD_14_0], 1400, [FREEBSD_VERS value for FreeBSD 14.0])
-        freebsd_14_0=1400
-        AC_DEFINE([FREEBSD_14_1], 1410, [FREEBSD_VERS value for FreeBSD 14.1])
-        freebsd_14_1=1410
-        AC_DEFINE([FREEBSD_15], 1500, [FREEBSD_VERS value for FreeBSD 15.x])
-        freebsd_15=1500
-
-        AC_MSG_CHECKING([for the kernel version])
-        kernel=`uname -r`
-
-        case "${kernel}" in
-        11.*)
-           AC_MSG_RESULT([FreeBSD 11.x (${kernel})])
-           AC_DEFINE([FREEBSD_VERS], FREEBSD_11, [FreeBSD version])
-           freebsd_vers=$freebsd_11
-           ;;
-        12.*)
-           case "${kernel}" in
-           12.[[0-1]]-*)
-              AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_12, [FreeBSD version])
-              freebsd_vers=$freebsd_12
-              ;;
-           *)
-              AC_MSG_RESULT([FreeBSD 12.x (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_12_2, [FreeBSD version])
-              freebsd_vers=$freebsd_12_2
-              ;;
-           esac
-           ;;
-        13.*)
-           case "${kernel}" in
-           13.0-*)
-              AC_MSG_RESULT([FreeBSD 13.0 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_0, [FreeBSD version])
-              freebsd_vers=$freebsd_13_0
-              ;;
-           13.1-*)
-              AC_MSG_RESULT([FreeBSD 13.1 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_1, [FreeBSD version])
-              freebsd_vers=$freebsd_13_1
-              ;;
-           13.2-*)
-              AC_MSG_RESULT([FreeBSD 13.2 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_2, [FreeBSD version])
-              freebsd_vers=$freebsd_13_2
-              ;;
-           13.3-*)
-              AC_MSG_RESULT([FreeBSD 13.3 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_3, [FreeBSD version])
-              freebsd_vers=$freebsd_13_3
-              ;;
-           13.4-*)
-              AC_MSG_RESULT([FreeBSD 13.4 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_13_4, [FreeBSD version])
-              freebsd_vers=$freebsd_13_4
-              ;;
-           *)
-              AC_MSG_RESULT([unsupported (${kernel})])
-              AC_MSG_ERROR([Valgrind works on FreeBSD 11.x to 15.x])
-              ;;
-           esac
-           ;;
-        14.*)
-           case "${kernel}" in
-           14.0-*)
-              AC_MSG_RESULT([FreeBSD 14.0 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_14_0, [FreeBSD version])
-              freebsd_vers=$freebsd_14_0
-              ;;
-           14.1-*)
-              AC_MSG_RESULT([FreeBSD 14.1 (${kernel})])
-              AC_DEFINE([FREEBSD_VERS], FREEBSD_14_1, [FreeBSD version])
-              freebsd_vers=$freebsd_14_1
-              ;;
-           *)
-              AC_MSG_RESULT([unsupported (${kernel})])
-              AC_MSG_ERROR([Valgrind works on FreeBSD 11.x to 15.x])
-              ;;
-           esac
-           ;;
-        15.*)
-           AC_MSG_RESULT([FreeBSD 15.x (${kernel})])
-           AC_DEFINE([FREEBSD_VERS], FREEBSD_15, [FreeBSD version])
-           freebsd_vers=$freebsd_15
-           ;;
-        *)
-           AC_MSG_RESULT([unsupported (${kernel})])
-           AC_MSG_ERROR([Valgrind works on FreeBSD 11.x to 15.x])
-           ;;
-        esac
 
         DEFAULT_SUPP="$srcdir/freebsd.supp $srcdir/freebsd-helgrind.supp $srcdir/freebsd-drd.supp ${DEFAULT_SUPP}"
         ;;
@@ -1303,6 +1165,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
+     riscv64-linux)
+        VGCONF_ARCH_PRI="riscv64"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="RISCV64_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x58000000"
+        valt_load_address_pri_inner="0x38000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
      x86-solaris)
         VGCONF_ARCH_PRI="x86"
         VGCONF_ARCH_SEC=""
@@ -1397,6 +1270,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS64,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX )
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_NANOMIPS,
                test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_RISCV64,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -1427,6 +1302,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_MIPS64_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_NANOMIPS_LINUX,
                test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_RISCV64_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_FREEBSD)
@@ -1462,7 +1339,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX)
 AM_CONDITIONAL(VGCONF_OS_IS_FREEBSD,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD \
@@ -3252,6 +3130,26 @@ AM_CONDITIONAL(GZ_ZLIB_GNU, test x$ac_have_gz_zlib_gnu = xyes)
 CFLAGS=$safe_CFLAGS
 
 
+# does this compiler support -g -gz=zstd ?
+
+AC_MSG_CHECKING([if gcc accepts -g -gz=zstd])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-g -gz=zstd"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+  return 0;
+]])], [
+ac_have_gz_zstd=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_gz_zstd=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(GZ_ZSTD, test x$ac_have_gz_zstd = xyes)
+CFLAGS=$safe_CFLAGS
+
+
 # does this compiler support nested functions ?
 
 AC_MSG_CHECKING([if gcc accepts nested functions])
@@ -3451,6 +3349,22 @@ AC_LINK_IFELSE(
 ])
 CFLAGS=$safe_CFLAGS
 fi
+
+# check if linker accepts --no-warn-execstack
+AC_MSG_CHECKING([if the linker accepts -Wl,--no-warn-execstack])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-Wl,--no-warn-execstack"
+
+AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([ ], [return 0;])],
+[
+  AC_SUBST([FLAG_NO_WARN_EXECSTACK], ["-Wl,--no-warn-execstack"])
+  AC_MSG_RESULT([yes])
+], [
+  AC_SUBST([FLAG_NO_WARN_EXECSTACK], [""])
+  AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
 
 # does the ppc assembler support "mtocrf" et al?
 AC_MSG_CHECKING([if ppc32/64 as supports mtocrf/mfocrf])
@@ -5132,13 +5046,67 @@ fi # test "$VGCONF_OS" = "solaris"
 
 if test "$VGCONF_OS" = "freebsd" ; then
 
-AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, test $freebsd_vers -ge $freebsd_13_0)
-AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, test $freebsd_vers -ge $freebsd_15)
+AC_CHECK_FUNCS([     \
+        eventfd
+        ])
+
+AM_CONDITIONAL([FREEBSD_EVENTFD],
+               [test x$ac_cv_func_eventfd = xyes])
+
+AC_MSG_CHECKING([for the SYS___realpathat syscall (FreeBSD-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS___realpathat;
+]])], [
+freebsd_realpathat_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_REALPATHAT_SYSCALL], 1,
+          [Define to 1 if you have the new SYS___realpathat syscall.])
+], [
+freebsd_realpathat_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, test x$freebsd_realpathat_syscall = xyes)
+
+AC_MSG_CHECKING([for the SYS_kqueuex syscall (FreeBSD-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_kqueuex;
+]])], [
+freebsd_kqueuex_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_KQUEUEX_SYSCALL], 1,
+          [Define to 1 if you have the new SYS___realpathat syscall.])
+], [
+freebsd_kqueuex_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_KQUEUEX_SYSCALL, test x$freebsd_kqueuex_syscall = xyes)
+
+AC_MSG_CHECKING([for the SYS_timerfd_create syscall (FreeBSD-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+]], [[
+  return !SYS_timerfd_create;
+]])], [
+freebsd_timerfd_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([FREEBSD_TIMERFD_SYSCALL], 1,
+          [Define to 1 if you have the new SYS_timer_fd_create syscall.])
+], [
+freebsd_timerfd_syscall=no
+AC_MSG_RESULT([no])
+])
+AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, test x$freebsd_timerfd_syscall = xyes)
 
 else
 
-AM_CONDITIONAL(FREEBSD_VERS_13_PLUS, false)
-AM_CONDITIONAL(FREEBSD_VERS_15_PLUS, false)
+AM_CONDITIONAL(FREEBSD_EVENTFD, false)
+AM_CONDITIONAL(FREEBSD_REALPATHAT_SYSCALL, false)
+AM_CONDITIONAL(FREEBSD_KQUEUEX_SYSCALL, false)
+AM_CONDITIONAL(FREEBSD_TIMERFD_SYSCALL, false)
 
 fi # test "$VGCONF_OS" = "freebsd"
 
@@ -5213,6 +5181,7 @@ AC_FUNC_MMAP
 
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
+AC_CHECK_LIB([rt], [timer_delete])
 
 AC_CHECK_FUNCS([     \
         aligned_alloc \
@@ -5269,11 +5238,15 @@ AC_CHECK_FUNCS([     \
         close_range  \
         wcsncpy      \
         free_aligned_sized \
-	sbrk         \
+        sbrk         \
         wcpncpy      \
         wcsxfrm      \
         sem_timedwait \
-        sem_clockwait_np
+        sem_clockwait_np \
+        fdatasync    \
+        getrandom    \
+        getrlimitusage \
+        timer_delete
         ])
 CFLAGS="$save_CFLAGS"
 
@@ -5324,6 +5297,14 @@ AM_CONDITIONAL([HAVE_SEM_TIMEDWAIT],
                [test x$ac_cv_func_sem_timedwait = xyes])
 AM_CONDITIONAL([HAVE_SEM_CLOCKWAIT_NP],
                [test x$ac_cv_func_sem_clockwait_np = xyes])
+AM_CONDITIONAL([HAVE_FDATASYNC],
+               [test x$ac_cv_func_fdatasync = xyes])
+AM_CONDITIONAL([HAVE_GETRANDOM],
+               [test x$ac_cv_func_getrandom = xyes])
+AM_CONDITIONAL([HAVE_GETRLIMITUSAGE],
+               [test x$ac_cv_func_getrlimitusage = xyes])
+AM_CONDITIONAL([HAVE_TIMER_DELETE],
+               [test x$ac_cv_func_timer_delete = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
@@ -5358,7 +5339,8 @@ elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_FREEBSD \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
-       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX ; then
   mflag_primary=$FLAG_M64
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
   mflag_primary="$FLAG_M32 -arch i386"
@@ -5968,6 +5950,7 @@ AC_CONFIG_FILES([
    memcheck/tests/amd64-linux/Makefile
    memcheck/tests/arm64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
+   memcheck/tests/riscv64-linux/Makefile
    memcheck/tests/amd64-solaris/Makefile
    memcheck/tests/x86-solaris/Makefile
    memcheck/tests/amd64-freebsd/Makefile
@@ -6010,9 +5993,11 @@ AC_CONFIG_FILES([
    none/tests/arm/Makefile
    none/tests/arm64/Makefile
    none/tests/s390x/Makefile
+   none/tests/s390x/disasm-test/Makefile
    none/tests/mips32/Makefile
    none/tests/mips64/Makefile
    none/tests/nanomips/Makefile
+   none/tests/riscv64/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/solaris/Makefile

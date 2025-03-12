@@ -2,29 +2,17 @@ memcheck/tests/accounting                (stderr)
 memcheck/tests/addressable               (stderr)
 memcheck/tests/amd64/bug492210_1         (stderr)
 memcheck/tests/amd64/bug492210_2         (stderr)
-<<<<<<< HEAD
-=======
-memcheck/tests/amd64/fxsave-amd64        (stderr)
->>>>>>> origin/main
 memcheck/tests/amd64/pcmpgt              (stderr)
 memcheck/tests/amd64/sh-mem-vec128-plo-no (stderr)
 memcheck/tests/amd64/sh-mem-vec128-plo-yes (stderr)
 memcheck/tests/amd64/sh-mem-vec256-plo-no (stderr)
 memcheck/tests/amd64/sh-mem-vec256-plo-yes (stderr)
-<<<<<<< HEAD
-=======
-memcheck/tests/amd64/sse_memory          (stderr)
-memcheck/tests/amd64/xsave-avx           (stderr)
->>>>>>> origin/main
 memcheck/tests/atomic_incs               (stderr)
 memcheck/tests/badfree-2trace            (stderr)
 memcheck/tests/big_blocks_freed_list     (stderr)
 memcheck/tests/bug155125                 (stderr)
 memcheck/tests/bug287260                 (stderr)
-<<<<<<< HEAD
-=======
 memcheck/tests/bug445235_ada_demangle    (stderr)
->>>>>>> origin/main
 memcheck/tests/client-msg-as-xml         (stderr)
 memcheck/tests/clireq_nofill             (stderr)
 memcheck/tests/cond_ld                   (stderr)
@@ -109,10 +97,6 @@ memcheck/tests/varinfo3                  (stderr)
 memcheck/tests/varinfo4                  (stderr)
 memcheck/tests/varinfo5                  (stderr)
 memcheck/tests/varinfo6                  (stderr)
-<<<<<<< HEAD
-=======
-memcheck/tests/vbit-test/vbit-test       (stderr)
->>>>>>> origin/main
 memcheck/tests/wcpncpy                   (stderr)
 memcheck/tests/wrap5                     (stdout)
 memcheck/tests/wrap6                     (stdout)

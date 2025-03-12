@@ -8178,7 +8178,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       This is a timestamp counter of some sort.  Support reads of it only
       by passing through to the host.
       D5 3B E0 010 Rt  MRS Xt, cntvct_el0
-      D5 3C FA 110 Rt  MRS Xt, acntvct_el0 (S3_4_c15_c10_6 on Apple Silicon)
+      D5 3C FA 110 Rt  MRS Xt, acntvct_el0 (S3_4_c15_c10_6 on Darwin)
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE040
       || (INSN(31,0) & 0xFFFFFFC0) == 0xD53CFAC0

@@ -36,9 +36,9 @@
 #include "pub_core_debuglog.h"              // VG_(debugLog)
 #include "pub_core_mach.h"                  // VG_(dyld_cache_*)
 #include "pub_core_syscall.h"               // VG_(do_syscall1)
-#include "pub_tool_libcbase.h"              // VG_(strncmp)
-#include "pub_tool_libcprint.h"             // VG_(dmsg)
-#include "pub_tool_libcfile.h"              // VG_(stat)
+#include "pub_core_libcbase.h"              // VG_(strncmp)
+#include "pub_core_libcprint.h"             // VG_(dmsg)
+#include "pub_core_libcfile.h"              // VG_(stat)
 #include "vki/vki-scnums-darwin.h"          // __NR_shared_region_check_np
 #include "priv_dyld_internals.h"            // CACHE_MAGIC_*, dyld_cache_header, etc
 

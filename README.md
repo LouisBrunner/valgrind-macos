@@ -20,7 +20,6 @@ This repository contains a version of Valgrind including a few patches to improv
 
 Note that every version from macOS 10.12 onwards currently has the following issues:
 
-- crash when using wqthread which is used in certain UI frameworks, especially Apple's, e.g. CoreFoundation ([#4](https://github.com/LouisBrunner/valgrind-macos/issues/4))
 - using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
 - drd crashes on 10.15 (probably onwards)
 - dhat crashes (seen macOS 14 arm64)
@@ -77,10 +76,21 @@ Some tests are hanging and were therefore disabled on macOS:
 These errors seem to come from the CI environment itself (as they show with or without my changes).
 
 ```
-== 834 tests, 3 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
-none/tests/log-track-fds                 (stderr)
-none/tests/track-fds-exec-children       (stderr)
-none/tests/xml-track-fds                 (stderr)
+== 842 tests, 14 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
+none/tests/fdleak_cmsg                   (stderr)
+none/tests/fdleak_cmsg_supp              (stderr)
+none/tests/fdleak_creat                  (stderr)
+none/tests/fdleak_creat_sup              (stderr)
+none/tests/fdleak_dup                    (stderr)
+none/tests/fdleak_dup2                   (stderr)
+none/tests/fdleak_fcntl                  (stderr)
+none/tests/fdleak_ipv4                   (stderr)
+none/tests/fdleak_open                   (stderr)
+none/tests/fdleak_pipe                   (stderr)
+none/tests/fdleak_socketpair             (stderr)
+none/tests/file_dclose                   (stderr)
+none/tests/file_dclose_sup               (stderr)
+none/tests/socket_close                  (stderr)
 ```
 
 should be (according to the official Fedora x86_64 builds)
@@ -93,9 +103,61 @@ See [here](https://builder.sourceware.org/buildbot/#/builders?tags=%2Bvalgrind) 
 
 ### macOS
 
-See `.github/macos-VERSION-expected.txt` for more details about which tests pass on which version.
+See the `macos-VERSION-expected.txt` in [`.github/`](.github/) for more details about which tests pass on which version.
 
-Some tests are a bit flaky and might fail randomly, see `.github/flaky-tests.txt` for more details.
+Some tests are a bit flaky and might fail randomly, see [`.github/flaky-tests.txt`](.github/flaky-tests.txt) for more details.
+
+## Contributing
+
+### Suppressions
+
+Valgrind is a very thorough program and can often report false positives. There are wide range of reasons why those come up (e.g. Valgrind not tracking some OS-specific part of the memory). Moreover, Valgrind might also report issues inside standard libraries, which are relevant for maintainers of such projects, but not to the end-user.
+
+While fixing those issues would be better, it isn't always possible. This is why Valgrind supports a system called "suppressions", which is a special file format instructing which errors to ignore so the end-user doesn't see them.
+
+Because some of those errors only show in special conditions, you might be asked to provide a "suppressions" file to be added to the repository. You can also keep those local to the project you are debugging and use them when running Valgrind.
+
+To create a "suppressions" file, simply run:
+
+```bash
+valgrind YOUR_VALGRIND_OPTIONS --gen-suppressions=all YOUR_PROGRAM YOUR_PROGRAM_ARGS
+# for example:
+valgrind --trace-syscalls=yes --gen-suppressions=all ls -la
+# if you want to choose on a case-by-case basis instead of generating all the suppressions, you can do:
+valgrind --trace-syscalls=yes --gen-suppressions=yes ls -la
+```
+
+You will then see a few extra entries in your output, they will look something like that:
+
+```
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:_platform_strlen
+   fun:_mh_execute_header
+   fun:(below main)
+}
+```
+
+or
+
+```
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   write(buf)
+   fun:write$NOCANCEL
+   obj:/dev/ttys002
+   fun:_swrite
+   fun:__sflush
+   fun:__sfvwrite
+   fun:puts
+   fun:_mh_execute_header
+   fun:(below main)
+}
+```
+
+You can then add them to a new file, e.g. one called `my.supp`, replace the name `<insert_a_suppression_name_here>` with a description of the issue for later use. You can also use `#` to comment out lines, for documentation or disabling specific suppressions. Check any of the `.supp` files in this repository for examples, e.g. [`darwin19.supp`](darwin19.supp).
 
 ## Acknowledgements
 

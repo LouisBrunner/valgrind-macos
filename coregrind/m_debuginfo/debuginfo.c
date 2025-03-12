@@ -3151,7 +3151,7 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
             case Creg_MIPS_RA: return eec->uregs->ra;
-#           elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd) || defined(VGP_arm64_freebsd)
+#           elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd) || defined(VGP_arm64_darwin)
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;

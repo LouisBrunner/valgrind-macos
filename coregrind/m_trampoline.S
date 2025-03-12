@@ -2051,6 +2051,7 @@ VG_(trampoline_stuff_end):
 #endif
 #endif
 #endif
+#endif
 
 /* Let the linker know we don't need an executable stack */
 MARK_STACK_NO_EXEC

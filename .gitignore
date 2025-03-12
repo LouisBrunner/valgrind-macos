@@ -2505,3 +2505,5 @@ none/tests/freebsd/bug499212
 *.vgtest*.log
 /test-suite-overall.log
 test-suite.log
+
+.zed

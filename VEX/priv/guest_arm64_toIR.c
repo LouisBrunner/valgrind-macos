@@ -8650,6 +8650,19 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
     return True;
   }
 
+  /* ---- SB ----
+    Starts a speculative barrier.
+  */
+  if ((INSN(31,0) & 0xFFFFFFFF) == 0xD50330FF) {
+    if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SB) == 0) {
+      return False;
+    }
+
+    stmt(IRStmt_MBE(Imbe_Fence));
+    DIP("sb\n");
+    return True;
+  }
+
 
 
    if (sigill_diag) {

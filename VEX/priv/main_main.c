@@ -1858,6 +1858,7 @@ static const HChar* show_hwcaps_arm64 ( UInt hwcaps )
       { VEX_HWCAPS_ARM64_PAUTH,       "pauth" },
       { VEX_HWCAPS_ARM64_LRCPC,       "lrcpc" },
       { VEX_HWCAPS_ARM64_DIT,         "dit" },
+      { VEX_HWCAPS_ARM64_SB,          "sb" },
    };
 
    static HChar buf[sizeof prefix +                       // '\0'

@@ -1945,6 +1945,11 @@ Bool VG_(machine_get_hwcaps)( void )
         if (IS_ENABLED(mibSHA3, 4)) {
             vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
         }
+        // sysctlbyname("hw.optional.arm.FEAT_SB")
+        Int mibSB[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SB};
+        if (IS_ENABLED(mibSB, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
+        }
      }
 
 #undef IS_ENABLED

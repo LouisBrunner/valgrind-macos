@@ -1058,9 +1058,14 @@ case "$ARCH_MAX-$VGCONF_OS" in
         valt_load_address_pri_norml="0x158000000"
         valt_load_address_pri_inner="0x138000000"
         if test x$vg_cv_only32bit = xyes; then
-          AC_MSG_RESULT([32-bit build with Darwin arm64 (aach64) is unsupported])
+          AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
+          AC_MSG_ERROR([32-bit build with Darwin arm64 (aach64) is unsupported])
         fi
-          AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        if test x$I_ACKNOWLEDGE_THIS_MIGHT_CRASH_MY_COMPUTER != xyes; then
+          AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
+          AC_MSG_ERROR([Darwin arm64 is still experimental, see https://github.com/LouisBrunner/valgrind-macos/issues/56 and use at your own risk])
+        fi
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
      arm-linux)
         VGCONF_ARCH_PRI="arm"

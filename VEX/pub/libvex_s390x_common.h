@@ -69,43 +69,6 @@
 
 
 /*--------------------------------------------------------------*/
-/*--- Facility bits                                          ---*/
-/*--------------------------------------------------------------*/
-
-/* The value of the macro is the number of the facility bit as per POP. */
-#define S390_FAC_MSA     17  // message-security-assist
-#define S390_FAC_LDISP   18  // long displacement
-#define S390_FAC_HFPMAS  20  // HFP multiply-and-add-subtract
-#define S390_FAC_EIMM    21  // extended immediate
-#define S390_FAC_HFPUNX  23  // HFP unnormalized extension
-#define S390_FAC_ETF2    24  // ETF2-enhancement
-#define S390_FAC_STCKF   25  // store clock fast insn
-#define S390_FAC_PENH    26  // parsing-enhancement
-#define S390_FAC_ETF3    30  // ETF3-enhancement
-#define S390_FAC_XCPUT   31  // extract-CPU-time
-#define S390_FAC_GIE     34  // general insn extension
-#define S390_FAC_EXEXT   35  // execute extension
-#define S390_FAC_FPEXT   37  // floating-point extension
-#define S390_FAC_FPSE    41  // floating-point support enhancement
-#define S390_FAC_DFP     42  // decimal floating point
-#define S390_FAC_PFPO    44  // perform floating point operation insn
-#define S390_FAC_HIGHW   45  // high-word extension
-#define S390_FAC_LSC     45  // load/store on condition
-#define S390_FAC_DFPZC   48  // DFP zoned-conversion
-#define S390_FAC_MISC    49  // miscellaneous insn
-#define S390_FAC_CTREXE  50  // constrained transactional execution
-#define S390_FAC_LSC2    53  // load/store on condition 2 and load and zero rightmost byte
-#define S390_FAC_MSA5    57  // message-security-assist 5
-#define S390_FAC_MI2     58  // miscellaneous-instruction-extensions 2
-#define S390_FAC_TREXE   73  // transactional execution
-#define S390_FAC_MSA4    77  // message-security-assist 4
-#define S390_FAC_VX      129 // vector facility
-#define S390_FAC_VXE     135 // vector enhancements facility 1
-#define S390_FAC_VXE2    148 // vector enhancements facility 2
-#define S390_FAC_DFLT    151 // deflate-conversion facility
-#define S390_FAC_NNPA    165 // NNPA facility
-
-/*--------------------------------------------------------------*/
 /*--- Extensions                                             ---*/
 /*--------------------------------------------------------------*/
 

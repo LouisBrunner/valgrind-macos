@@ -1620,11 +1620,13 @@ Bool VG_(machine_get_hwcaps)( void )
         UInt hwcaps_bit;
         const HChar name[6];   // may need adjustment for new facility names
      } fac_hwcaps[] = {
+        { False,  18,  VEX_HWCAPS_S390X_LDISP, "LDISP" },
         { False,  21,  VEX_HWCAPS_S390X_EIMM,  "EIMM"  },
         { False,  34,  VEX_HWCAPS_S390X_GIE,   "GIE"   },
         { False,  42,  VEX_HWCAPS_S390X_DFP,   "DFP"   },
         { False,  41,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
         { False,  24,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
+        { False,   7,  VEX_HWCAPS_S390X_STFLE, "STFLE" },
         { False,  30,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
         { False,  25,  VEX_HWCAPS_S390X_STCKF, "STCKF" },
         { False,  37,  VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
@@ -1637,6 +1639,12 @@ Bool VG_(machine_get_hwcaps)( void )
         { False, 135,  VEX_HWCAPS_S390X_VXE,   "VXE"   },
         { False, 151,  VEX_HWCAPS_S390X_DFLT,  "DFLT"  },
         { False, 165,  VEX_HWCAPS_S390X_NNPA,  "NNPA"  },
+        { False, 148,  VEX_HWCAPS_S390X_VXE2,  "VXE2"  },
+        { False, 134,  VEX_HWCAPS_S390X_VXD,   "VXD"   },
+        { False,  17,  VEX_HWCAPS_S390X_MSA,   "MSA"   },
+        { False,  77,  VEX_HWCAPS_S390X_MSA4,  "MSA4"  },
+        { False, 146,  VEX_HWCAPS_S390X_MSA8,  "MSA8"  },
+        { False, 155,  VEX_HWCAPS_S390X_MSA9,  "MSA9"  },
      };
 
      /* Set hwcaps according to the detected facilities */

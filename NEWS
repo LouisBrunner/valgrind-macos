@@ -44,6 +44,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 495816  s390x: Fix disassembler segfault for C[G]RT and CL[G]RT
 496370  Illumos: signal handling is broken
 496571  False positive for null key passed to bpf_map_get_next_key syscall.
+496950  s390x: Fix hardware capabilities and EmFail codes
 497130  Recognize new DWARF5 DW_LANG constants
 497455  Update drd/scripts/download-and-build-gcc
 497723  Enabling Ada demangling breaks callgrind differentiation between

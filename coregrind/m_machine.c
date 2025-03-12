@@ -1918,6 +1918,7 @@ Bool VG_(machine_get_hwcaps)( void )
         vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
         vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
         vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
+        vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
      } else {
         // sysctlbyname("hw.optional.arm.FEAT_PAuth")
         Int mibPAUTH[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_PAUTH};

@@ -1329,12 +1329,16 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       SysRes fd = VG_(open)( filename, oflags, 0 );
       if (sr_isError(fd)) {
          if (sr_Err(fd) != VKI_EACCES) {
+#if defined(VGO_darwin)
+            const HChar* message = "can't open file to inspect mach-o header";
+#else
+            const HChar* message = "can't open file to inspect ELF header";
+#endif
             DebugInfo fake_di;
             VG_(memset)(&fake_di, 0, sizeof(fake_di));
             fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm",
                                                      filename);
-            ML_(symerr)(&fake_di, True,
-                        "can't open file to inspect ELF header");
+            ML_(symerr)(&fake_di, True, message);
          }
          return 0;
       }

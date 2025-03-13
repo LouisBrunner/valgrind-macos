@@ -1349,25 +1349,21 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    expected_rw_load_count = 0;
 
+   Bool check_ok = False;
 #if defined(VGO_darwin)
-   if (!ML_(check_macho_and_get_rw_loads)( actual_fd, &expected_rw_load_count ))
-      return 0;
-#endif
-
+   check_ok = ML_(check_macho_and_get_rw_loads)( actual_fd, &expected_rw_load_count );
+#else
    /* We're only interested in mappings of object files. */
-#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
-
-   Bool elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
+   check_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
+#endif
 
    if (use_fd == -1) {
       VG_(close)( actual_fd );
    }
 
-   if (!elf_ok) {
+   if (!check_ok) {
       return 0;
    }
-
-#  endif
 
    /* See if we have a DebugInfo for this filename.  If not,
       create one. */

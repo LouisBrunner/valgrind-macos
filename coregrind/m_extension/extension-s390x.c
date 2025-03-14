@@ -862,8 +862,7 @@ static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
       (S390_SETBITS(128, 131)
        /* 132: unassigned */
        /* 133: guarded-storage, not supported */
-       /* 134: vector packed decimal, not supported */
-       | S390_SETBITS(135, 135)
+       | S390_SETBITS(134, 135)
        /* 136: unassigned */
        /* 137: unassigned */
        | S390_SETBITS(138, 142)

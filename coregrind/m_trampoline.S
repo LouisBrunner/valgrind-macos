@@ -241,6 +241,25 @@ VG_(amd64_linux_REDIR_FOR_strcmp):
 	ret
 .size VG_(amd64_linux_REDIR_FOR_strcmp), .-VG_(amd64_linux_REDIR_FOR_strcmp)
 
+.global VG_(amd64_linux_REDIR_FOR_memcmp)
+.type   VG_(amd64_linux_REDIR_FOR_memcmp), @function
+VG_(amd64_linux_REDIR_FOR_memcmp):
+	xorl	%ecx, %ecx
+	jmp	2f
+1:
+	movzbl	(%rdi, %rcx), %eax
+	movzbl	(%rsi, %rcx), %r8d
+	addq	$1, %rcx
+	subl	%r8d, %eax
+	jne	3f
+2:
+	cmpq	%rcx, %rdx
+	jne	1b
+	xorl	%eax, %eax
+3:
+	ret
+.size VG_(amd64_linux_REDIR_FOR_memcmp), .-VG_(amd64_linux_REDIR_FOR_memcmp)
+
 .global VG_(amd64_linux_REDIR_FOR_index)
 .type   VG_(amd64_linux_REDIR_FOR_index), @function
 VG_(amd64_linux_REDIR_FOR_index):

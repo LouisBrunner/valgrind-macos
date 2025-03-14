@@ -876,6 +876,33 @@ PTH_FUNCS(int, pthreadZuonce, pthread_once_intercept,
           (pthread_once_t *once_control, void (*init_routine)(void)),
           (once_control, init_routine));
 
+#if defined(VGO_solaris)
+// see https://bugs.kde.org/show_bug.cgi?id=501479
+// temporary (?) workaround
+// Helgrind doesn't have this problem because it only redirects mutex_init
+// and not thread_mutex_init which also uses pthread_mutexattr_gettype
+// maybe DRD should do the same.
+typedef	struct{
+	int	pshared;
+	int	protocol;
+	int	prioceiling;
+	int	type;
+	int	robustness;
+} workaround_mattr_t;
+
+static int
+pthread_mutexattr_gettype_workaround(const pthread_mutexattr_t *attr, int *typep)
+{
+	workaround_mattr_t	*ap;
+
+	if (attr == NULL || (ap = attr->__pthread_mutexattrp) == NULL ||
+	    typep == NULL)
+		return (EINVAL);
+	*typep = ap->type;
+	return (0);
+}
+#endif
+
 static __always_inline
 int pthread_mutex_init_intercept(pthread_mutex_t *mutex,
                                  const pthread_mutexattr_t* attr)
@@ -885,8 +912,13 @@ int pthread_mutex_init_intercept(pthread_mutex_t *mutex,
    int mt;
    VALGRIND_GET_ORIG_FN(fn);
    mt = PTHREAD_MUTEX_DEFAULT;
+#if !defined(VGO_solaris)
    if (attr)
       pthread_mutexattr_gettype(attr, &mt);
+#else
+   if (attr)
+      pthread_mutexattr_gettype_workaround(attr, &mt);
+#endif
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_MUTEX_INIT,
                                    mutex, DRD_(pthread_to_drd_mutex_type)(mt),
                                    0, 0, 0);

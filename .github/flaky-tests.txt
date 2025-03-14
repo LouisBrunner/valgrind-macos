@@ -9,3 +9,4 @@ memcheck/tests/sem
 none/tests/sem
 # seen on macOS 14
 memcheck/tests/leak-cases-summary
+memcheck/tests/arm64/bug484935

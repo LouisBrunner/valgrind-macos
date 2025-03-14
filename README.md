@@ -9,13 +9,14 @@ This repository contains a version of Valgrind including a few patches to improv
 | macOS 10.13 and earlier[^1] | ✅  | ✅    | -      | ❌[^3] |
 | macOS 10.14 (Mojave)        | ✅  | ✅    | -      | -      |
 | macOS 10.15 (Catalina)      | ✅  | ✅    | -      | -      |
-| macOS 11 (Big Sur)          | -   | ✅    | ✅     | -      |
-| macOS 12 (Monterey)         | -   | ✅    | ✅     | -      |
-| macOS 13 (Ventura)          | -   | ✅    | ✅     | -      |
-| macOS 14 (Sonoma)           | -   | ✅    | ✅     | -      |
-| macOS 15 (Sequoia)          | -   | ✅    | ✅     | -      |
+| macOS 11 (Big Sur)          | -   | ✅    | ~[^2]  | -      |
+| macOS 12 (Monterey)         | -   | ✅    | ~      | -      |
+| macOS 13 (Ventura)          | -   | ✅    | ~      | -      |
+| macOS 14 (Sonoma)           | -   | ✅    | ~      | -      |
+| macOS 15 (Sequoia)          | -   | ✅    | ~      | -      |
 
 [^1]: Supported as part of upstream Valgrind.
+[^2]: arm64 is experimental ([#123](https://github.com/LouisBrunner/valgrind-macos/issues/123))
 [^3]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
 
 Note that every version from macOS 10.12 onwards currently has the following issues:

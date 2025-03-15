@@ -28,17 +28,18 @@
 
 /* Contributed by Florian Krohm */
 
-#include <stdarg.h>
 #include "libvex_basictypes.h"
 #include "main_util.h"        // vassert
 #include "main_globals.h"     // vex_traceflags
 #include "s390_defs.h"        // S390_MAX_MNEMONIC_LEN
 #include "s390_disasm.h"
 
+static HChar *s390_disasm_aux(const s390_opnd *, const HChar *, HChar *,
+                              Int (*)(UInt, UInt));
 
 /* Return the mnemonic padded with blanks to its right */
 static const HChar *
-mnemonic(const HChar *mnm)
+padmnm(const HChar *mnm)
 {
    vassert(vex_strlen(mnm) <= S390_MAX_MNEMONIC_LEN);
 
@@ -101,40 +102,6 @@ ar_operand(UInt archreg)
 }
 
 
-/* Build and return the extended mnemonic for the compare and branch
-   opcodes as introduced by z10. See also the opcodes in file
-   opcodes/s390-opc.txt (from binutils) that have a '$' in their name. */
-static const HChar *
-cab_operand(const HChar *base, UInt mask)
-{
-   HChar *to;
-   const HChar *from;
-
-   static HChar buf[S390_MAX_MNEMONIC_LEN + 1];
-
-   static const HChar suffix[8][3] = {
-      "", "h", "l", "ne", "e", "nl", "nh", ""
-   };
-
-   /* Guard against buffer overflow */
-   vassert(vex_strlen(base) + sizeof suffix[0] <= sizeof buf);
-
-   /* strcpy(buf, from); */
-   for (from = base, to = buf; *from; ++from, ++to) {
-      *to = *from;
-   }
-   /* strcat(buf, suffix); */
-   if (! (mask & 0x1)) {
-      for (from = suffix[mask >> 1]; *from; ++from, ++to) {
-         *to = *from;
-      }
-   }
-   *to = '\0';
-
-   return buf;
-}
-
-
 /* Return the name of a vector register for dis-assembly purposes. */
 static const HChar *
 vr_operand(UInt archreg)
@@ -161,9 +128,6 @@ vr_operand(UInt archreg)
 static const HChar *
 construct_mnemonic(const HChar *prefix, const HChar *suffix, UInt mask)
 {
-   HChar *to;
-   const HChar *from;
-
    static HChar buf[S390_MAX_MNEMONIC_LEN + 1];
 
    static HChar mask_id[16][4] = {
@@ -177,73 +141,12 @@ construct_mnemonic(const HChar *prefix, const HChar *suffix, UInt mask)
    vassert(vex_strlen(prefix) + vex_strlen(suffix) +
            sizeof mask_id[0] <= sizeof buf);
 
-   /* strcpy(buf, prefix); */
-   for (from = prefix, to = buf; *from; ++from, ++to) {
-      *to = *from;
-   }
-   /* strcat(buf, mask_id); */
-   for (from = mask_id[mask]; *from; ++from, ++to) {
-      *to = *from;
-   }
-   /* strcat(buf, suffix); */
-   for (from = suffix; *from; ++from, ++to) {
-      *to = *from;
-   }
-   *to = '\0';
+   HChar *p = buf;
+
+   p += vex_sprintf(p, "%s%s%s", prefix, mask_id[mask], suffix);
+   *p = '\0';
 
    return buf;
-}
-
-
-/* Return the special mnemonic for the BCR opcode */
-static const HChar *
-bcr_operand(UInt m1)
-{
-   if (m1 ==  0) return "nopr";
-   if (m1 == 15) return "br";
-
-   return construct_mnemonic("b", "r", m1);
-}
-
-
-/* Return the special mnemonic for the BC opcode */
-static const HChar *
-bc_operand(UInt m1)
-{
-   if (m1 ==  0) return "nop";
-   if (m1 == 15) return "b";
-
-   return construct_mnemonic("b", "", m1);
-}
-
-
-/* Return the special mnemonic for the BRC opcode */
-static const HChar *
-brc_operand(UInt m1)
-{
-   if (m1 == 0)  return "jnop";
-   if (m1 == 15) return "j";
-
-   return construct_mnemonic("j", "", m1);
-}
-
-
-/* Return the special mnemonic for the BRCL opcode */
-static const HChar *
-brcl_operand(UInt m1)
-{
-   if (m1 == 0)  return "jgnop";
-   if (m1 == 15) return "jg";
-
-   return construct_mnemonic("jg", "", m1);
-}
-
-
-/* Return the special mnemonic for a conditional load/store  opcode */
-static const HChar *
-cls_operand(const HChar *prefix, UInt mask)
-{
-   return construct_mnemonic(prefix, "", mask);
 }
 
 
@@ -279,9 +182,7 @@ udlb_operand(HChar *p, UInt d, UInt length, UInt b)
 {
    p += vex_sprintf(p, "%u", d);
    p += vex_sprintf(p, "(%u", length + 1);  // actual length is +1
-   if (b != 0) {
-      p += vex_sprintf(p, ",%s", gpr_operand(b));
-   }
+   p += vex_sprintf(p, ",%s", gpr_operand(b));
    p += vex_sprintf(p, ")");
 
    return p;
@@ -317,120 +218,247 @@ dvb_operand(HChar *p, UInt d, UInt v, UInt b, Bool displacement_is_signed)
 }
 
 
-/* The first argument is the command that says how to write the disassembled
-   insn. It is understood that the mnemonic comes first and that arguments
-   are separated by a ','. The command holds the arguments. Each argument is
-   encoded using a 4-bit S390_ARG_xyz value. The first argument is placed
-   in the least significant bits of the command and so on. There are at most
-   7 arguments in an insn and a sentinel (S390_ARG_DONE) is needed to identify
-   the end of the argument list. 8 * 4 = 32 bits are required for the
-   command. */
-void
-s390_disasm(UInt command, ...)
+/* It is expected that OPNDS contains exactly one MASK operand. Return
+   its index. Assert, if there is no mask or multiple mask fields. */
+static UInt
+unique_mask_index(const s390_opnd *opnds)
 {
-   va_list  args;
-   UInt argkind;
-   HChar buf[128];  /* holds the disassembled insn */
-   HChar *p;
-   HChar separator;
-   Int mask_suffix = -1;
+   UInt num_masks, mask_ix = 0;   // silence GCC
 
-   va_start(args, command);
-
-   p = buf;
-   separator = 0;
-
-   while (42) {
-      argkind = command & 0xF;
-      command >>= 4;
-
-      if (argkind == S390_ARG_DONE) goto done;
-
-      if (argkind == S390_ARG_CABM) separator = 0;  /* optional */
-
-      /* Write out the separator */
-      if (separator) *p++ = separator;
-
-      /* argument */
-      switch (argkind) {
-      case S390_ARG_MNM:
-         p += vex_sprintf(p, "%s", mnemonic(va_arg(args, HChar *)));
-         separator = ' ';
-         continue;
-
-      case S390_ARG_XMNM: {
-         UInt mask, kind;
-         const HChar *mnm;
-
-         kind = va_arg(args, UInt);
-
-         separator = ' ';
-         switch (kind) {
-         case S390_XMNM_BC:
-         case S390_XMNM_BCR:
-            mask = va_arg(args, UInt);
-            mnm = kind == S390_XMNM_BCR ? bcr_operand(mask) : bc_operand(mask);
-            p  += vex_sprintf(p, "%s", mnemonic(mnm));
-            break;
-
-         case S390_XMNM_BRC:
-         case S390_XMNM_BRCL:
-            mask = va_arg(args, UInt);
-            mnm = kind == S390_XMNM_BRC ? brc_operand(mask) : brcl_operand(mask);
-            p  += vex_sprintf(p, "%s", mnemonic(mnm));
-            break;
-
-         case S390_XMNM_CAB:
-            mnm  = va_arg(args, HChar *);
-            mask = va_arg(args, UInt);
-            p  += vex_sprintf(p, "%s", mnemonic(cab_operand(mnm, mask)));
-            break;
-
-         case S390_XMNM_CLS:
-            mnm  = va_arg(args, HChar *);
-            mask = va_arg(args, UInt);
-            p  += vex_sprintf(p, "%s", mnemonic(cls_operand(mnm, mask)));
-            /* There are no special opcodes when mask == 0 or 15. In that case
-               the integer mask is appended as the final operand */
-            if (mask == 0 || mask == 15) mask_suffix = mask;
-            break;
-
-         case S390_XMNM_BIC:
-            mask = va_arg(args, UInt);
-            if (mask == 0) {
-               /* There is no special opcode when mask == 0. */
-               p  += vex_sprintf(p, "%s", mnemonic("bic"));
-               p  += vex_sprintf(p, "%u,", mask);
-            } else {
-               p  += vex_sprintf(p, "%s", construct_mnemonic("bi", "", mask));
-            }
-            break;
-         }
+   num_masks = 0;
+   for (UInt ix = 0; opnds[ix].kind != S390_OPND_DONE; ++ix) {
+      if (opnds[ix].kind == S390_OPND_MASK) {
+         ++num_masks;
+         mask_ix = ix;
       }
-      continue;
+   }
+   vassert(num_masks == 1);
+   return mask_ix;
+}
 
-      case S390_ARG_GPR:
-         p += vex_sprintf(p, "%s", gpr_operand(va_arg(args, UInt)));
+
+/* Special handling for the BCR opcode */
+HChar *
+bcr_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *xmnm;
+   UInt mask = opnds[1].mask;
+
+   if (mask == 0)
+      xmnm = "nopr";
+   else if (mask == 15)
+      xmnm = "br";
+   else
+      xmnm = construct_mnemonic("b", "r", mask);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+/* Special handling for the BC opcode */
+HChar *
+bc_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *xmnm;
+   UInt mask = opnds[1].mask;
+
+   if (mask == 0)
+      xmnm = "nop";
+   else if (mask == 15)
+      xmnm = "b";
+   else
+      xmnm = construct_mnemonic("b", "", mask);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+/* Special handling for the BRC opcode */
+HChar *
+brc_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *xmnm;
+   UInt mask = opnds[1].mask;
+
+   if (mask == 0)
+      xmnm = "jnop";
+   else if (mask == 15)
+      xmnm = "j";
+   else
+      xmnm = construct_mnemonic("j", "", mask);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+/* Special handling for the BRCL opcode */
+HChar *
+brcl_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *xmnm;
+   UInt mask = opnds[1].mask;
+
+   if (mask == 0)
+      xmnm = "jgnop";
+   else if (mask == 15)
+      xmnm = "jg";
+   else
+      xmnm = construct_mnemonic("jg", "", mask);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+/* Return 1, if mask should be printed */
+static Int
+cabt_mdf(UInt ix __attribute__((unused)), UInt mask)
+{
+   return (mask & 1) || mask == 0 || mask == 14;
+}
+
+
+/* Special handling for the various compare and branch / trap opcodes:
+   CLFIT, CLGIT, C[G]IT, C[L][G]RJ, C[L][G]IJ, C[L][G]IB, C[L][G]RB,
+   CL[G]T, C[L][G]RT
+*/
+HChar *
+cabt_disasm(const s390_opnd *opnds, HChar *p)
+{
+   static HChar xmnm[S390_MAX_MNEMONIC_LEN + 1];
+
+   static const HChar suffix[8][3] = {
+      "", "h", "l", "ne", "e", "nl", "nh", ""
+   };
+
+   const HChar *base = opnds[0].xmnm.base;
+
+   /* Guard against buffer overflow */
+   vassert(vex_strlen(base) + sizeof suffix[0] <= sizeof xmnm);
+
+   HChar *x  = xmnm;
+   UInt mask = opnds[unique_mask_index(opnds)].mask;
+
+   x += vex_sprintf(x, "%s", base);
+   if (! (mask & 0x1)) {
+      x += vex_sprintf(x, "%s", suffix[mask >> 1]);
+   }
+   *x = '\0';
+
+   return s390_disasm_aux(opnds, xmnm, p, cabt_mdf);
+}
+
+
+static Int
+cls_mdf(UInt ix __attribute__((unused)), UInt mask)
+{
+   return mask == 0 || mask == 15;
+}
+
+
+/* Special handling for the various conditional load / store opcodes:
+   LOC[G]R, LOCFHR, LOC[G]HI, LOCHHI, LOC[G], LOCFH, STOC[G], STOFH
+   Also used for SEL[G]R and SELFHR
+*/
+HChar *
+cls_disasm(const s390_opnd *opnds, HChar *p)
+{
+   UInt  mask = opnds[unique_mask_index(opnds)].mask;
+   const HChar *base = opnds[0].xmnm.base;
+   const HChar *xmnm = construct_mnemonic(base, "", mask);
+
+   return s390_disasm_aux(opnds, xmnm, p, cls_mdf);
+}
+
+
+static Int
+bic_mdf(UInt ix __attribute__((unused)), UInt mask)
+{
+   return mask == 0;
+}
+
+
+/* Special handling for the BIC opcode */
+HChar *
+bic_disasm(const s390_opnd *opnds, HChar *p)
+{
+   UInt  mask = opnds[1].mask;
+   const HChar *xmnm;
+
+   if (mask == 0) {
+      /* There is no special opcode when mask == 0. */
+      xmnm = opnds[0].xmnm.base;
+   } else {
+      xmnm = construct_mnemonic("bi", "", mask);
+   }
+
+   return s390_disasm_aux(opnds, xmnm, p, bic_mdf);
+}
+
+
+/* Write out OPNDS. */
+static HChar *
+s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
+                Int (*mdf)(UInt, UInt))
+{
+   vassert(opnds[0].kind == S390_OPND_MNM ||
+           opnds[0].kind == S390_OPND_XMNM);
+
+   Int separator = 0;
+
+   for (UInt ix = 0; opnds[ix].kind != S390_OPND_DONE; ++ix) {
+      const s390_opnd *opnd = opnds + ix;
+
+      if (ix > 1 && separator)
+         *p++ = ',';
+
+      switch (opnd->kind) {
+      case S390_OPND_MNM:
+         p += vex_sprintf(p, "%s", padmnm(opnd->mnm));
+         *p++ = ' ';
          break;
 
-      case S390_ARG_FPR:
-         p += vex_sprintf(p, "%s", fpr_operand(va_arg(args, UInt)));
+      case S390_OPND_XMNM:
+         p += vex_sprintf(p, "%s", padmnm(xmnm));
+         *p++ = ' ';
          break;
 
-      case S390_ARG_AR:
-         p += vex_sprintf(p, "%s", ar_operand(va_arg(args, UInt)));
+      case S390_OPND_GPR:
+         p += vex_sprintf(p, "%s", gpr_operand(opnd->regno));
          break;
 
-      case S390_ARG_UINT:
-         p += vex_sprintf(p, "%u", va_arg(args, UInt));
+      case S390_OPND_FPR:
+         p += vex_sprintf(p, "%s", fpr_operand(opnd->regno));
          break;
 
-      case S390_ARG_INT:
-         p += vex_sprintf(p, "%d", va_arg(args, Int));
+      case S390_OPND_AR:
+         p += vex_sprintf(p, "%s", ar_operand(opnd->regno));
          break;
 
-      case S390_ARG_PCREL: {
-         Long offset = va_arg(args, Int);
+      case S390_OPND_VR:
+         p += vex_sprintf(p, "%s", vr_operand(opnd->regno));
+         break;
+
+      case S390_OPND_MASK:
+         if (mdf && mdf(ix, opnd->mask))
+            p += vex_sprintf(p, "%u", opnd->mask);
+         else {
+            if (ix != 1)
+               (*--p) = '\0';   // overwrite the separator
+            else
+               separator = 0;
+         }
+         continue;  // *not* break
+
+      case S390_OPND_UINT:
+         p += vex_sprintf(p, "%u", opnd->u);
+         break;
+
+      case S390_OPND_INT:
+         p += vex_sprintf(p, "%d", opnd->i);
+         break;
+
+      case S390_OPND_PCREL: {
+         Long offset = opnd->pcrel;
 
          /* Convert # halfwords to # bytes */
          offset <<= 1;
@@ -443,74 +471,66 @@ s390_disasm(UInt command, ...)
          break;
       }
 
-      case S390_ARG_SDXB: {
-         UInt dh, dl, x, b;
+      case S390_OPND_SDXB: {
+         UInt d = opnd->d;
+         UInt x = opnd->x;
+         UInt b = opnd->b;
 
-         dh = va_arg(args, UInt);
-         dl = va_arg(args, UInt);
-         x  = va_arg(args, UInt);
-         b  = va_arg(args, UInt);
-
-         p = dxb_operand(p, (dh << 12) | dl, x, b, 1 /* signed_displacement */);
+         p = dxb_operand(p, d, x, b, 1 /* signed_displacement */);
          break;
       }
 
-      case S390_ARG_UDXB: {
-         UInt d, x, b;
-
-         d = va_arg(args, UInt);
-         x = va_arg(args, UInt);
-         b = va_arg(args, UInt);
+      case S390_OPND_UDXB: {
+         UInt d = opnd->d;
+         UInt x = opnd->x;
+         UInt b = opnd->b;
 
          p = dxb_operand(p, d, x, b, 0 /* signed_displacement */);
          break;
       }
 
-      case S390_ARG_UDLB: {
-         UInt d, l, b;
-
-         d = va_arg(args, UInt);
-         l = va_arg(args, UInt);
-         b = va_arg(args, UInt);
+      case S390_OPND_UDLB: {
+         UInt d = opnd->d;
+         UInt l = opnd->l;
+         UInt b = opnd->b;
 
          p = udlb_operand(p, d, l, b);
          break;
       }
 
-      case S390_ARG_CABM: {
-         UInt mask;
-
-         mask = va_arg(args, UInt);
-         if (mask == 0 || mask == 14 || (mask & 0x1)) {
-            p += vex_sprintf(p, ",%u", mask);
-         }
-         break;
-      }
-
-      case S390_ARG_VR:
-         p += vex_sprintf(p, "%s", vr_operand(va_arg(args, UInt)));
-         break;
-
-      case S390_ARG_UDVB: {
-         UInt d, v, b;
-
-         d = va_arg(args, UInt);
-         v = va_arg(args, UInt);
-         b = va_arg(args, UInt);
+      case S390_OPND_UDVB: {
+         UInt d = opnd->d;
+         UInt v = opnd->v;
+         UInt b = opnd->b;
 
          p = dvb_operand(p, d, v, b, 0 /* signed_displacement */);
          break;
-         }
+      }
+
+      case S390_OPND_DONE:  // silence GCC
+         vassert(0);
+         break;
       }
 
       separator = ',';
    }
+   return p;
+}
 
- done:
-   va_end(args);
 
-   if (mask_suffix != -1)
-      p += vex_sprintf(p, ",%d", mask_suffix);
+void
+s390_disasm(const s390_opnd *opnds)
+{
+   HChar buf[128];  /* holds the disassembled insn */
+   HChar *p = buf;
+
+   if (opnds[0].kind == S390_OPND_MNM) {
+      p = s390_disasm_aux(opnds, NULL, p, NULL);
+   } else if (opnds[0].kind == S390_OPND_XMNM) {
+      p = opnds[0].xmnm.handler(opnds, p);
+   } else {
+      vassert(0);
+   }
    *p = '\0';
 
    vassert(p < buf + sizeof buf);  /* detect buffer overwrite */

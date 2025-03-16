@@ -90,7 +90,6 @@
    stp  x23, x24, [sp, #-16]!
    stp  x21, x22, [sp, #-16]!
    stp  x19, x20, [sp, #-16]!
-   stp  x4,  x5,  [sp, #-16]!
    stp  x2,  x3,  [sp, #-16]!
    stp  x0,  x1,  [sp, #-16]!
 
@@ -99,15 +98,14 @@ L_$0_1:	/* Even though we can't take a signal until the sigprocmask completes,
 	   If rip is in the range [1,2), the syscall hasn't been started yet */
 
 	/* Set the signal mask which should be current during the syscall. */
-  ldr x16, =__NR_sigprocmask
+  ldr x16, =__NR___pthread_sigmask
   ldr x0, =VKI_SIG_SETMASK
   mov x1, x2 // sysmask
   mov x2, x3 // postmask
-  mov x3, x4 // nsigwords
   svc 0x80
 
   cmp x0, #0
-  blt 7f
+  blt L_$0_7
 
 	/* OK, that worked.  Now do the syscall proper. */
 
@@ -145,21 +143,19 @@ L_$0_3:	/* In the range [3, 4), the syscall result is in %rax,
 
 L_$0_4:	/* Re-block signals.  If eip is in [4,5), then the syscall
 	   is complete and we needn't worry about it. */
-  ldr x16, =__NR_sigprocmask
+  ldr x16, =__NR___pthread_sigmask
   ldr x0, =VKI_SIG_SETMASK
   ldr x1, [sp, #24] // saved x3 == postmask
   mov x2, #0
-  ldr x3, [sp, #32] // saved x4 == nsigwords
   svc 0x80
 
   cmp x0, #0
-  blt 7f
+  blt L_$0_7
 
 L_$0_5:	/* now safe from signals */
   mov  x0, #0
   ldp  xzr, x1,  [sp], #16
   ldp  x2,  x3,  [sp], #16
-  ldp  x4,  x5,  [sp], #16
   ldp  x19, x20, [sp], #16
   ldp  x21, x22, [sp], #16
   ldp  x23, x24, [sp], #16
@@ -168,11 +164,10 @@ L_$0_5:	/* now safe from signals */
   ldp  x29, x30, [sp], #16
   ret
 
-7: /* Failure: return 0x8000 | error code */
+L_$0_7: /* Failure: return 0x8000 | error code */
   orr  x0, x0, #0x8000
   ldp  xzr, x1,  [sp], #16
   ldp  x2,  x3,  [sp], #16
-  ldp  x4,  x5,  [sp], #16
   ldp  x19, x20, [sp], #16
   ldp  x21, x22, [sp], #16
   ldp  x23, x24, [sp], #16

@@ -23,7 +23,6 @@ This repository contains a version of Valgrind including a few patches to improv
 Note that every version from macOS 10.12 onwards currently has the following issues:
 
 - using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
-- drd crashes on 10.15 (probably onwards)
 
 ## Usage
 

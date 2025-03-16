@@ -62,11 +62,13 @@ static void output_debug_info(const dyld_cache_header* dyld_cache);
 typedef struct {
   const dyld_cache_header* header;
   Addr slide;
+  Bool tried;
 } DYLDCache;
 
 static DYLDCache dyld_cache = {
   .header = NULL,
   .slide = 0,
+  .tried = False,
 };
 
 static Addr calculate_relative(const dyld_cache_header * header, Addr offset) {
@@ -209,13 +211,23 @@ Addr VG_(dyld_cache_get_slide)(void) {
   return dyld_cache.slide;
 }
 
-void VG_(dyld_cache_init)(void) {
+int ensure_init(void) {
+  if (dyld_cache.header != NULL) {
+    return 1;
+  }
+
+  // FIXME: unlikely race condition?
+  if (dyld_cache.tried) {
+    return 0;
+  }
+  dyld_cache.tried = True;
+
   if (!try_to_init()) {
     VG_(dmsg)(
       "WARNING: could not read from dyld shared cache (DSC)\n"
       "Some reports (especially memory leaks) might be missing or incorrect (false-positives)\n"
     );
-    return;
+    return 0;
   }
   // We currently detect if dyld is loading/using a library by checking if stat64 fails.
   // However, dyld doesn't seem to call stat64 for all of them anymore.
@@ -223,11 +235,23 @@ void VG_(dyld_cache_init)(void) {
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
+#endif
+
+  return 1;
+}
+
+void VG_(dyld_cache_init)(const HChar* tool) {
+  // drd crashes if you map memory segments in m_main
+  if (VG_(strcmp)(tool, "drd") == 0) {
+    return;
+  }
+
+  ensure_init();
 }
 
 int VG_(dyld_cache_might_be_in)(const HChar* path) {
   // If not init'd, there is no point
-  if (dyld_cache.header == NULL) {
+  if (!ensure_init()) {
     return 0;
   }
 
@@ -267,7 +291,7 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
   SizeT len = 0;
 
   // If not init'd, there is no point trying
-  if (dyld_cache.header == NULL) {
+  if (!ensure_init()) {
     return 0;
   }
 

@@ -23,7 +23,6 @@ Note that every version from macOS 10.12 onwards currently has the following iss
 
 - using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
 - drd crashes on 10.15 (probably onwards)
-- dhat crashes (seen macOS 14 arm64)
 
 ## Usage
 

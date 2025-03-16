@@ -1222,7 +1222,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 #if defined(VGO_darwin)
                    || VG_(strstr)(filename, DARWIN_FAKE_MEMORY_PATH) != NULL
 #endif
-                   || VG_(strstr)(filename, "/dev/shm/") != NULL;
+                   || VG_(strstr)(filename, "/dev/shm/") != NULL
+                   || VG_(strncmp)("/memfd:", filename,
+                                   VG_(strlen)("/memfd:")) == 0;
       if (!quiet && VG_(clo_verbosity) > 1) {
          VG_(memset)(&fake_di, 0, sizeof(fake_di));
          fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm", filename);
@@ -1353,12 +1355,16 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       SysRes fd = VG_(open)( filename, oflags, 0 );
       if (sr_isError(fd)) {
          if (sr_Err(fd) != VKI_EACCES) {
+#if defined(VGO_darwin)
+            const HChar* message = "can't open file to inspect mach-o header";
+#else
+            const HChar* message = "can't open file to inspect ELF header";
+#endif
             DebugInfo fake_di;
             VG_(memset)(&fake_di, 0, sizeof(fake_di));
             fake_di.fsm.filename = ML_(dinfo_strdup)("di.debuginfo.nmm",
                                                      filename);
-            ML_(symerr)(&fake_di, True,
-                        "can't open file to inspect ELF header");
+            ML_(symerr)(&fake_di, True, message);
          }
          return 0;
       }
@@ -1369,25 +1375,21 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
 
    expected_rw_load_count = 0;
 
+   Bool check_ok = False;
 #if defined(VGO_darwin)
-   if (!ML_(check_macho_and_get_rw_loads)( actual_fd, &expected_rw_load_count ))
-      return 0;
-#endif
-
+   check_ok = ML_(check_macho_and_get_rw_loads)( actual_fd, &expected_rw_load_count );
+#else
    /* We're only interested in mappings of object files. */
-#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
-
-   Bool elf_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
+   check_ok = ML_(check_elf_and_get_rw_loads) ( actual_fd, filename, &expected_rw_load_count, use_fd == -1 );
+#endif
 
    if (use_fd == -1) {
       VG_(close)( actual_fd );
    }
 
-   if (!elf_ok) {
+   if (!check_ok) {
       return 0;
    }
-
-#  endif
 
    /* See if we have a DebugInfo for this filename.  If not,
       create one. */

@@ -21,6 +21,7 @@ perl -p -e 's/socket\.c:[1-9][0-9]*/in \/...libc.../' |
 perl -p -e 's/ __close / close /' |
 perl -p -e 's/ __write / write /' |
 sed '/ _so_socket /d;' |
+sed 's/__xnet_socket/socket/' |
 awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
 awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |
 sed '/__open/d' |

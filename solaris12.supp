@@ -166,3 +166,67 @@
    fun:pthread_barrier_wait
 }
 
+#----------------------------------------------------------------------------#
+# The getattrinfo testcase causes issues on all platforms, and we assume
+# that they are due to private libc locking mechanisms.
+
+{
+   Solaris:_nsc_getdoorbuf
+   drd:ConflictingAccess
+   fun:tsdalloc
+   fun:_nsc_getdoorbuf
+}
+
+{
+   Solaris:nss_dbop_search
+   drd:ConflictingAccess
+   fun:nss_dbop_search
+}
+
+{
+   Solaris:thr_create_once
+   drd:ConflictingAccess
+   fun:thr_keycreate_once
+}
+
+{
+   Solaris:_nsc_getdoorbsize
+   drd:ConflictingAccess
+   fun:_nsc_getdoorbsize
+}
+
+{
+   Solaris:_nsc_proc_is_cache
+   drd:ConflictingAccess
+   fun:_nsc_proc_is_cache
+}
+
+{
+   Solaris:__rpc_getconfip
+   drd:ConflictingAccess
+   fun:__rpc_getconfip
+}
+
+{
+   Solaris:_nsc_proc_is_cache
+   Helgrind:Race
+   fun:_nsc_proc_is_cache
+}
+
+{
+   Solaris:thr_create_once
+   Helgrind:Race
+   fun:thr_keycreate_once
+}
+
+{
+   Solaris:_nsc_proc_is_cache
+   Helgrind:Race
+   fun:_nsc_proc_is_cache
+}
+
+{
+   Solaris:nss_dbop_search
+   Helgrind:Race
+   fun:nss_dbop_search
+}

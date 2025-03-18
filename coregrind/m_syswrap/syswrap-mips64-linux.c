@@ -835,6 +835,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_landlock_add_rule, sys_landlock_add_rule),
    LINX_ (__NR_landlock_restrict_self, sys_landlock_restrict_self),
    LINX_ (__NR_fchmodat2, sys_fchmodat2),
+   LINXY (__NR_userfaultfd, sys_userfaultfd),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

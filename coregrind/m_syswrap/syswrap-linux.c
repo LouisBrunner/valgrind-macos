@@ -14019,6 +14019,26 @@ POST(sys_fspick)
    }
 }
 
+/* int syscall(SYS_userfaultfd, int flags); */
+
+PRE(sys_userfaultfd)
+{
+   PRINT("sys_userfaultfd ( %ld )", SARG1);
+   PRE_REG_READ1(long, "userfaultfd", int, size);
+}
+
+POST(sys_userfaultfd)
+{
+   vg_assert(SUCCESS);
+   if (!ML_(fd_allowed)(RES, "userfaultfd", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless)(tid, RES);
+   }
+}
+
 #undef PRE
 #undef POST
 

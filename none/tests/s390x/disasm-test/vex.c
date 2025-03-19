@@ -24,7 +24,6 @@
 
 #include "libvex_ir.h"        // emptyIRSB
 #include "libvex.h"           // LibVEX_Init
-#include "main_util.h"        // GRRR for guest_s390_defs.h which needs STATIC_ASSERT
 #include "guest_s390_defs.h"  // disInstr_S390
 #include "host_s390_defs.h"   // s390_host_hwcaps
 #include "main_globals.h"     // vex_traceflags

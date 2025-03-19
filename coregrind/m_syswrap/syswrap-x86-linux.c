@@ -1606,6 +1606,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_shutdown,          sys_shutdown),         // 373
 
    LINX_(__NR_membarrier,        sys_membarrier),       // 375
+   LINXY(__NR_userfaultfd,       sys_userfaultfd),      // 374
    GENX_(__NR_mlock2,            sys_mlock2),           // 376
    LINX_(__NR_copy_file_range,   sys_copy_file_range),  // 377
    LINXY(__NR_preadv2,           sys_preadv2),          // 378

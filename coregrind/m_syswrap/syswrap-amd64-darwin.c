@@ -476,21 +476,14 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
      /* For whatever reason, tst->os_state.pthread appear to have a
         constant offset of 96 on 10.7, but zero on 10.6 and 10.5.  No
         idea why. */
-#      if DARWIN_VERS <= DARWIN_10_6 || DARWIN_VERS >= DARWIN_15_00
+#      if DARWIN_VERS <= DARWIN_10_6 || DARWIN_VERS >= DARWIN_10_13
        UWord magic_delta = 0;
 #      elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
        UWord magic_delta = 0x60;
 #      elif DARWIN_VERS == DARWIN_10_9 \
             || DARWIN_VERS == DARWIN_10_10 \
             || DARWIN_VERS == DARWIN_10_11 \
-            || DARWIN_VERS == DARWIN_10_12 \
-            || DARWIN_VERS == DARWIN_10_13 \
-            || DARWIN_VERS == DARWIN_10_14 \
-            || DARWIN_VERS == DARWIN_10_15 \
-            || DARWIN_VERS == DARWIN_11_00 \
-            || DARWIN_VERS == DARWIN_12_00 \
-            || DARWIN_VERS == DARWIN_13_00 \
-            || DARWIN_VERS == DARWIN_14_00
+            || DARWIN_VERS == DARWIN_10_12
        UWord magic_delta = 0xE0;
 #      else
 #        error "magic_delta: to be computed on new OS version"

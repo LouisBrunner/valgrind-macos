@@ -835,6 +835,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_execveat, sys_execveat),                                // 354
 
+   LINXY(__NR_userfaultfd, sys_userfaultfd),                          // 355
    LINX_(__NR_membarrier, sys_membarrier),                            // 356
    LINXY(__NR_recvmmsg, sys_recvmmsg),                                // 357
    LINXY(__NR_sendmmsg, sys_sendmmsg),                                // 358

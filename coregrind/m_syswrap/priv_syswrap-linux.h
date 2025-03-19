@@ -309,6 +309,9 @@ DECL_TEMPLATE(linux, sys_execveat);
 // Linux-specific (new in Linux 4.11)
 DECL_TEMPLATE(linux, sys_statx);
 
+// Linux-specific (new in Linux 4.3)
+DECL_TEMPLATE(linux, sys_userfaultfd);
+
 // Linux-specific memory protection key syscalls (since Linux 4.9)
 DECL_TEMPLATE(linux, sys_pkey_alloc);
 DECL_TEMPLATE(linux, sys_pkey_free);

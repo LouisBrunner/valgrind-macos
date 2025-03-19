@@ -31,60 +31,86 @@
 
 #include "libvex_basictypes.h"
 
-/* Macros to encode a command for s390_disasm. */
-#undef  P
-#define P(a) (S390_ARG_##a)
-#undef  ENC1
-#define ENC1(a) ((P(DONE) << 4) | P(a))
-#undef  ENC2
-#define ENC2(a,b) ((P(DONE) << 8) | (P(b) << 4) | P(a))
-#undef  ENC3
-#define ENC3(a,b,c) ((P(DONE) << 12) | (P(c) << 8) | (P(b) << 4) | P(a))
-#undef  ENC4
-#define ENC4(a,b,c,d) ((P(DONE) << 16) | (P(d) << 12) | (P(c) << 8) | \
-                       (P(b) << 4) | P(a))
-#undef  ENC5
-#define ENC5(a,b,c,d,e) ((P(DONE) << 20) | (P(e) << 16) | (P(d) << 12) | \
-                         (P(c) << 8) | (P(b) << 4) | P(a))
-#undef  ENC6
-#define ENC6(a,b,c,d,e,f) ((P(DONE) << 24) | (P(f) << 20) | (P(e) << 16) | \
-                           (P(d) << 12) | (P(c) << 8) | (P(b) << 4) | P(a))
-#undef  ENC7
-#define ENC7(a,b,c,d,e,f,g) ((P(DONE) << 28) | (P(g) << 24) | (P(f) << 20) | \
-                             (P(e) << 16) | (P(d) << 12) | (P(c) << 8) | \
-                             (P(b) << 4) | P(a))
-
 /* The different kinds of operands in an asm insn */
-enum {
-   S390_ARG_DONE = 0,
-   S390_ARG_GPR = 1,
-   S390_ARG_FPR = 2,
-   S390_ARG_AR = 3,
-   S390_ARG_INT = 4,
-   S390_ARG_UINT = 5,
-   S390_ARG_PCREL = 6,
-   S390_ARG_SDXB = 7,
-   S390_ARG_UDXB = 8,
-   S390_ARG_UDLB = 9,
-   S390_ARG_CABM = 10,
-   S390_ARG_MNM = 11,
-   S390_ARG_XMNM = 12,
-   S390_ARG_VR = 13,
-   S390_ARG_UDVB = 14,
+typedef enum {
+   S390_OPND_DONE,
+   S390_OPND_GPR,
+   S390_OPND_FPR,
+   S390_OPND_AR,
+   S390_OPND_VR,
+   S390_OPND_INT,
+   S390_OPND_UINT,
+   S390_OPND_PCREL,
+   S390_OPND_SDXB,
+   S390_OPND_UDXB,
+   S390_OPND_UDLB,
+   S390_OPND_UDVB,
+   S390_OPND_MNM,
+   S390_OPND_XMNM,
+   S390_OPND_MASK,      // used for operands that modify the mnemonic
+} opnd_t;
+
+typedef struct s390_opnd s390_opnd;
+
+struct s390_opnd {
+   opnd_t kind;         // S390_OPND_....
+   union {
+      const HChar *mnm; // MNM
+      UInt regno;       // GPR, AR, FPR, VR
+      UInt mask;        // MASK
+      Int  pcrel;       // PCREL
+      UInt u;           // UINT
+      Int  i;           // INT
+      struct {          // UDXB, SDXB, UDLB, UDVB
+         UInt d : 20;
+         union {
+            UInt x : 4;
+            UInt l : 8;
+            UInt v : 5;
+         };
+         UInt b : 4;
+      };
+      struct {
+         const HChar *base;
+         HChar *(*handler)(const s390_opnd *, HChar *);
+      } xmnm;
+   };
 };
 
-/* The different kinds of extended mnemonics */
-enum {
-   S390_XMNM_CAB = 0,
-   S390_XMNM_BCR = 1,
-   S390_XMNM_BC = 2,
-   S390_XMNM_BRC = 3,
-   S390_XMNM_BRCL = 4,
-   S390_XMNM_CLS = 5,
-   S390_XMNM_BIC = 6,
-};
+/* Convenience macro to piece together a 20-bit displacement value. */
+#define D20(dh,dl) (((dh) << 12) | (dl))
 
-void s390_disasm(UInt command, ...);
+/* Macros for operand construction */
+#define MNM(x)         { S390_OPND_MNM,   .mnm   = (x) }
+#define GPR(x)         { S390_OPND_GPR,   .regno = (x) }
+#define FPR(x)         { S390_OPND_FPR,   .regno = (x) }
+#define AR(x)          { S390_OPND_AR,    .regno = (x) }
+#define VR(x)          { S390_OPND_VR,    .regno = (x) }
+#define MASK(x)        { S390_OPND_MASK,  .mask  = (x) }
+#define UINT(x)        { S390_OPND_UINT,  .u     = (x) }
+#define INT(x)         { S390_OPND_INT,   .i     = (x) }
+#define PCREL(x)       { S390_OPND_PCREL, .pcrel = (x) }
+#define UDXB(_d,_x,_b) { S390_OPND_UDXB,  .d = (_d), .x = (_x), .b = (_b) }
+#define UDVB(_d,_v,_b) { S390_OPND_UDVB,  .d = (_d), .v = (_v), .b = (_b) }
+#define UDLB(_d,_l,_b) { S390_OPND_UDLB,  .d = (_d), .l = (_l), .b = (_b) }
+#define SDXB(dh,dl,_x,_b) \
+            { S390_OPND_SDXB, .d = D20((dh), (dl)), .x = (_x), .b = (_b) }
+#define XMNM(mnm,h) \
+            { S390_OPND_XMNM, .xmnm.base = (mnm), .xmnm.handler = (h) }
+
+#define S390_DISASM(...) \
+        s390_disasm((s390_opnd []){ __VA_ARGS__, { S390_OPND_DONE } })
+
+void s390_disasm(const s390_opnd *);
+
+/* Handlers for extended mnemonics */
+HChar *bc_disasm(const s390_opnd *, HChar *);
+HChar *bcr_disasm(const s390_opnd *, HChar *);
+HChar *brc_disasm(const s390_opnd *, HChar *);
+HChar *bic_disasm(const s390_opnd *, HChar *);
+HChar *cls_disasm(const s390_opnd *, HChar *);
+HChar *brcl_disasm(const s390_opnd *, HChar *);
+HChar *cabt_disasm(const s390_opnd *, HChar *);
 
 /*---------------------------------------------------------------*/
 /*--- end                                       s390_disasm.h ---*/

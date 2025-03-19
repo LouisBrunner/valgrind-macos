@@ -34,6 +34,7 @@
 #include "libvex_basictypes.h"        // offsetof
 #include "guest_generic_bb_to_IR.h"   // DisResult
 #include "libvex_guest_s390x.h"       // VexGuestS390XState
+#include "main_util.h"                // STATIC_ASSERT
 
 
 /* Convert one s390 insn to IR.  See the type DisOneInstrFn in

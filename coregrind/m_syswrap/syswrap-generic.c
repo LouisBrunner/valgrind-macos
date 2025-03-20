@@ -577,6 +577,7 @@ void ML_(record_fd_close_range)(ThreadId tid, Int from_fd)
       if (i->fd >= from_fd && !i->fd_closed
           && i->fd != VG_(log_output_sink).fd
           && i->fd != VG_(xml_output_sink).fd) {
+         VG_(printf)("Marking fd %d closed\n", i->fd);
          i->fd_closed = True;
          i->where_closed = ((tid == -1)
                             ? NULL
@@ -632,6 +633,7 @@ void ML_(record_fd_close)(ThreadId tid, Int fd)
            VG_(maybe_record_error)(tid, FdBadClose, 0,
                                    "file descriptor already closed", &bce);
         } else {
+          VG_(printf)("Marking fd %d closed\n", i->fd);
           i->fd_closed = True;
           i->where_closed = ((tid == -1)
               ? NULL
@@ -711,6 +713,7 @@ void ML_(record_fd_open_with_given_name)(ThreadId tid, Int fd,
       fd_count++;
    }
 
+   VG_(printf)("Marking fd %d open\n", i->fd);
    i->fd = fd;
    i->pathname = VG_(strdup)("syswrap.rfdowgn.2", pathname);
    i->description = NULL; /* Only set on close.  */

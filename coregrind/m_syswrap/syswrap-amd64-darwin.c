@@ -451,8 +451,8 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
 
    if (0) VG_(printf)(
              "wqthread_hijack: self %#lx, kport %#lx, "
-	     "stackaddr %#lx, workitem %#lx, reuse/flags %x, sp %#lx\n",
-	     self, kport, stackaddr, workitem, (UInt)reuse, sp);
+	     "stackaddr %#lx, workitem %#lx, reuse/flags %#x, kevent_count %d, sp %#lx\n",
+	     self, kport, stackaddr, workitem, (UInt)reuse, kevent_count, sp);
 
    /* Start the thread with all signals blocked.  VG_(scheduler) will
       set the mask correctly when we finally get there. */
@@ -476,22 +476,14 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
      /* For whatever reason, tst->os_state.pthread appear to have a
         constant offset of 96 on 10.7, but zero on 10.6 and 10.5.  No
         idea why. */
-#      if DARWIN_VERS <= DARWIN_10_6
+#      if DARWIN_VERS <= DARWIN_10_6 || DARWIN_VERS >= DARWIN_10_13
        UWord magic_delta = 0;
 #      elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
        UWord magic_delta = 0x60;
 #      elif DARWIN_VERS == DARWIN_10_9 \
             || DARWIN_VERS == DARWIN_10_10 \
             || DARWIN_VERS == DARWIN_10_11 \
-            || DARWIN_VERS == DARWIN_10_12 \
-            || DARWIN_VERS == DARWIN_10_13 \
-            || DARWIN_VERS == DARWIN_10_14 \
-            || DARWIN_VERS == DARWIN_10_15 \
-            || DARWIN_VERS == DARWIN_11_00 \
-            || DARWIN_VERS == DARWIN_12_00 \
-            || DARWIN_VERS == DARWIN_13_00 \
-            || DARWIN_VERS == DARWIN_14_00 \
-            || DARWIN_VERS == DARWIN_15_00
+            || DARWIN_VERS == DARWIN_10_12
        UWord magic_delta = 0xE0;
 #      else
 #        error "magic_delta: to be computed on new OS version"
@@ -514,6 +506,10 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
                           tid, (void *)tst, tst->os_state.pthread, self);
 
        vex = &tst->arch.vex;
+       if (tst->os_state.pthread - magic_delta != self) {
+         VG_(printf)("wqthread_hijack reuse: tst->os_state.pthread %#lx vs self %#lx (diff: %#lx vs %#lx)\n",
+                     tst->os_state.pthread, self, tst->os_state.pthread - self, magic_delta);
+       }
        vg_assert(tst->os_state.pthread - magic_delta == self);
    }
    else {

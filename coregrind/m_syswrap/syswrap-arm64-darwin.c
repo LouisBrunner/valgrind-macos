@@ -525,6 +525,10 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
                           tid, (void *)tst, tst->os_state.pthread, self);
 
        vex = &tst->arch.vex;
+       if (tst->os_state.pthread - magic_delta != self) {
+         VG_(printf)("wqthread_hijack reuse: tst->os_state.pthread %#lx vs self %#lx (diff: %#lx vs %#lx)\n",
+                     tst->os_state.pthread, self, tst->os_state.pthread - self, magic_delta);
+       }
        vg_assert(tst->os_state.pthread - magic_delta == self);
    }
    else {

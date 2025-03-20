@@ -397,8 +397,8 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
 
    if (0) VG_(printf)(
              "wqthread_hijack: self %#lx, kport %#lx, "
-             "stackaddr %#lx, workitem %#lx, reuse/flags %x, sp %#lx\n",
-             self, kport, stackaddr, workitem, reuse, sp);
+             "stackaddr %#lx, workitem %#lx, reuse/flags %x, kevent_count %d, sp %#lx\n",
+             self, kport, stackaddr, workitem, reuse, kevent_count, sp);
 
    /* Start the thread with all signals blocked.  VG_(scheduler) will
       set the mask correctly when we finally get there. */
@@ -454,6 +454,10 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
                          tid, tst, tst->os_state.pthread, self);
 
       vex = &tst->arch.vex;
+      if (tst->os_state.pthread - magic_delta != self) {
+        VG_(printf)("wqthread_hijack reuse: tst->os_state.pthread %#lx vs self %#lx (diff: %#lx vs %#lx)\n",
+                    tst->os_state.pthread, self, tst->os_state.pthread - self, magic_delta);
+      }
       vg_assert(tst->os_state.pthread - magic_delta == self);
    }
    else {

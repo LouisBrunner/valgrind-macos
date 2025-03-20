@@ -916,6 +916,10 @@ void dh_handle_noninsn_read_asciiz(CorePart part, ThreadId tid, const HChar* s,
    tl_assert(clo_mode == Heap);
 
    tl_assert(part == Vg_CoreSysCall);
+
+   if (str == 0)
+      return;
+
    dh_handle_noninsn_read(part, tid, s, str, VG_(strlen)((const HChar*)str+1));
 }
 

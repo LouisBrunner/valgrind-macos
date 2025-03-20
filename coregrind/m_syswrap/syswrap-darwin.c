@@ -2457,6 +2457,7 @@ static const HChar *workqop_name(int op)
    case VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY: return "SET_EVENT_MANAGER_PRIORITY";
    case VKI_WQOPS_THREAD_WORKLOOP_RETURN:     return "THREAD_WORKLOOP_RETURN";
    case VKI_WQOPS_SHOULD_NARROW:              return "SHOULD_NARROW";
+   case VKI_WQOPS_SETUP_DISPATCH:             return "SETUP_DISPATCH";
    default: return "?";
    }
 }
@@ -2514,11 +2515,29 @@ PRE(workq_ops)
       // RK fixme need anything here?
       // RK fixme may block?
       break;
-   case VKI_WQOPS_SETUP_DISPATCH:
+   case VKI_WQOPS_SETUP_DISPATCH: {
       // docs says: setup pthread workqueue-related operations
+#if DARWIN_VERS >= DARWIN_10_15
+#pragma pack(4)
+      struct workq_dispatch_config {
+        uint32_t wdc_version;
+        uint32_t wdc_flags;
+        uint64_t wdc_queue_serialno_offs;
+        uint64_t wdc_queue_label_offs;
+      };
+#pragma pack()
+      PRE_MEM_READ("workq_ops(item)", ARG2, MIN(sizeof(struct workq_dispatch_config), SARG3));
+      struct workq_dispatch_config* cfg = (struct workq_dispatch_config*)ARG2;
+      if (cfg->wdc_flags & ~VKI_WORKQ_DISPATCH_SUPPORTED_FLAGS ||
+          cfg->wdc_version < VKI_WORKQ_DISPATCH_MIN_SUPPORTED_VERSION) {
+        SET_STATUS_Failure( VKI_ENOTSUP );
+      }
+#endif
       break;
+   }
    default:
-      VG_(printf)("UNKNOWN workq_ops option %ld\n", ARG1);
+      PRINT("workq_ops ( %lu [??], ... )", ARG1);
+      log_decaying("UNKNOWN workq_ops option %lu!", ARG1);
       break;
    }
 }

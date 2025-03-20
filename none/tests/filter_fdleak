@@ -56,8 +56,4 @@ sed "s/by 0x........: main (.*)/by 0x........: main/" |
 perl -p -e "s/\(syscall-template.S:[0-9]*\)/(in \/...libc...)/" |
 perl -p -e "s/\(close.c:[0-9]*\)/(in \/...libc...)/" |
 perl -p -e "s/\(creat(?:64)?.c:[0-9]*\)/(in \/...libc...)/" |
-perl -p -e "s/\(dup2.c:[0-9]*\)/(in \/...libc...)/" |
-
-# For GitHub Actions: it keeps 2 sockets opened at all time and we can't close them
-# so we just substract them from the "inherited" count
-python3 -c 'import sys, re; r = re.compile(r"FILE DESCRIPTORS: ([0-9]+) open \(([0-9]+) inherited\) at exit\."); [print(f"FILE DESCRIPTORS: {m.group(1)} open ({int(m.group(2))-2} inherited) at exit.") if (m := r.search(line)) else print(line, end="") for line in sys.stdin]'
+perl -p -e "s/\(dup2.c:[0-9]*\)/(in \/...libc...)/"

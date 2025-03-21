@@ -35,7 +35,7 @@
 #include "s390_disasm.h"
 
 static HChar *s390_disasm_aux(const s390_opnd *, const HChar *, HChar *,
-                              Int (*)(UInt, UInt));
+                              Int (*)(UInt, UInt, UInt *));
 
 /* Return the mnemonic padded with blanks to its right */
 static const HChar *
@@ -202,19 +202,47 @@ dvb_operand(HChar *p, UInt d, UInt v, UInt b, Bool displacement_is_signed)
    } else {
       p += vex_sprintf(p, "%u", d);
    }
-   if (v != 0) {
-      p += vex_sprintf(p, "(%s", vr_operand(v));
-      if (b != 0) {
-         p += vex_sprintf(p, ",%s", gpr_operand(b));
-      }
-      p += vex_sprintf(p, ")");
-   } else {
-      if (b != 0) {
-         p += vex_sprintf(p, "(%s)", gpr_operand(b));
-      }
-   }
+   p += vex_sprintf(p, "(%s", vr_operand(v));
+   p += vex_sprintf(p, ",%s", gpr_operand(b));
+   p += vex_sprintf(p, ")");
 
    return p;
+}
+
+
+/* Return the number of MASK operands */
+static UInt
+mask_count(const s390_opnd *opnds)
+{
+   UInt num_masks = 0;
+
+   for (UInt ix = 0; opnds[ix].kind != S390_OPND_DONE; ++ix) {
+      if (opnds[ix].kind == S390_OPND_MASK) {
+         ++num_masks;
+      }
+   }
+   return num_masks;
+}
+
+
+/* Given the mask number return its index in the operands array.
+   Mask numbers begin at 1. */
+static UInt
+get_mask_index(const s390_opnd *opnds, UInt mask_no)
+{
+   vassert(mask_no <= mask_count(opnds));
+
+   UInt count = 0;
+
+   for (UInt ix = 0; opnds[ix].kind != S390_OPND_DONE; ++ix) {
+      if (opnds[ix].kind == S390_OPND_MASK) {
+         ++count;
+         if (count == mask_no)
+            return ix;
+      }
+   }
+   /* not reachable */
+   return 0;
 }
 
 
@@ -223,17 +251,9 @@ dvb_operand(HChar *p, UInt d, UInt v, UInt b, Bool displacement_is_signed)
 static UInt
 unique_mask_index(const s390_opnd *opnds)
 {
-   UInt num_masks, mask_ix = 0;   // silence GCC
+   vassert(mask_count(opnds) == 1);
 
-   num_masks = 0;
-   for (UInt ix = 0; opnds[ix].kind != S390_OPND_DONE; ++ix) {
-      if (opnds[ix].kind == S390_OPND_MASK) {
-         ++num_masks;
-         mask_ix = ix;
-      }
-   }
-   vassert(num_masks == 1);
-   return mask_ix;
+   return get_mask_index(opnds, 1);
 }
 
 
@@ -309,10 +329,12 @@ brcl_disasm(const s390_opnd *opnds, HChar *p)
 }
 
 
-/* Return 1, if mask should be printed */
+/* Return 1, if mask should be printed. In *VALUE return the mask value
+   that should be printed.  */
 static Int
-cabt_mdf(UInt ix __attribute__((unused)), UInt mask)
+cabt_mh(UInt ix __attribute__((unused)), UInt mask, UInt *value)
 {
+   *value = mask;
    return (mask & 1) || mask == 0 || mask == 14;
 }
 
@@ -344,13 +366,14 @@ cabt_disasm(const s390_opnd *opnds, HChar *p)
    }
    *x = '\0';
 
-   return s390_disasm_aux(opnds, xmnm, p, cabt_mdf);
+   return s390_disasm_aux(opnds, xmnm, p, cabt_mh);
 }
 
 
 static Int
-cls_mdf(UInt ix __attribute__((unused)), UInt mask)
+cls_mh(UInt ix __attribute__((unused)), UInt mask, UInt *value)
 {
+   *value = mask;
    return mask == 0 || mask == 15;
 }
 
@@ -366,13 +389,14 @@ cls_disasm(const s390_opnd *opnds, HChar *p)
    const HChar *base = opnds[0].xmnm.base;
    const HChar *xmnm = construct_mnemonic(base, "", mask);
 
-   return s390_disasm_aux(opnds, xmnm, p, cls_mdf);
+   return s390_disasm_aux(opnds, xmnm, p, cls_mh);
 }
 
 
 static Int
-bic_mdf(UInt ix __attribute__((unused)), UInt mask)
+bic_mh(UInt ix __attribute__((unused)), UInt mask, UInt *value)
 {
+   *value = mask;
    return mask == 0;
 }
 
@@ -391,14 +415,569 @@ bic_disasm(const s390_opnd *opnds, HChar *p)
       xmnm = construct_mnemonic("bi", "", mask);
    }
 
-   return s390_disasm_aux(opnds, xmnm, p, bic_mdf);
+   return s390_disasm_aux(opnds, xmnm, p, bic_mh);
 }
 
 
-/* Write out OPNDS. */
+/* Special handling for the VGBM opcode */
+HChar *
+vgbm_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *xmnm;
+   const HChar *v1 = vr_operand(opnds[1].regno);
+   UInt i2 = opnds[2].u;
+
+   if (i2 == 0) {
+      xmnm = padmnm("vzero");
+      p += vex_sprintf(p, "%s %s", xmnm, v1);
+   } else if (i2 == 0xffff) {
+      xmnm = padmnm("vone");
+      p += vex_sprintf(p, "%s %s", xmnm, v1);
+   } else {
+      xmnm = padmnm(opnds[0].xmnm.base);
+      p += vex_sprintf(p, "%s %s,%u", xmnm, v1, i2);
+   }
+   return p;
+}
+
+
+static Int
+mask0_mh(UInt ix __attribute__((unused)), UInt mask, UInt *value)
+{
+   *value = mask;
+   return mask != 0;
+}
+
+
+/* Write out the operands, except if the unique mask is 0 do not write it */
+HChar *
+mask0_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 1);
+
+   const HChar *mnm = opnds[0].xmnm.base;
+
+   return s390_disasm_aux(opnds, mnm, p, mask0_mh);
+}
+
+
+/* Opcode is expected to have a single MASK operand. Use its value
+   to determine a single-character suffix to be appended to the base
+   mnemonic. The mask itself is not printed. */
+HChar *
+va_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar suffix[] = { 'b', 'h', 'f', 'g', 'q' };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  mask = opnds[unique_mask_index(opnds)].mask;
+   HChar xmnm[vex_strlen(base) + 2 + 1];
+   HChar extra = '\0';
+
+   vassert(mask < sizeof suffix);
+
+   if (mask == 1 &&
+       (vex_streq(base, "vupl") || vex_streq(base, "vmal") ||
+        vex_streq(base, "vml"))) {
+      extra = 'w';
+   }
+   vex_sprintf(xmnm, "%s%c%c", base, suffix[mask], extra);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+/* Opcode is expected to have two MASK operands. Use their values
+   to determine a suffix to be appended to the base mnemonic. The
+   masks themselves are not printed. */
+HChar *
+vch_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar suffix1[] = { 'b', 'h', 'f', 'g' };
+   const HChar suffix2[] = { '\0', 's' };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m4 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m5 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + 2 + 1];
+
+   vassert(m4 < sizeof suffix1);
+   vassert(m5 < sizeof suffix2);
+
+   vex_sprintf(xmnm, "%s%c%c", base, suffix1[m4], suffix2[m5]);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+static Int
+always_mh(UInt ix __attribute__((unused)),
+          UInt mask, UInt *value)
+{
+   *value = mask;
+   return 1;
+}
+
+
+HChar *
+vfce_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 3);
+
+   const HChar  suffix1[][3] = { "sb", "db", "xb" };
+   const HChar  suffix2[] = { '\0', 's' };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m4 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m5 = opnds[get_mask_index(opnds, 2)].mask;
+   UInt  m6 = opnds[get_mask_index(opnds, 3)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix1 - 1) + 1 + 1];
+
+   if (m4 == 4 && (m5 == 0 || m5 == 4))
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m4 - 2 < sizeof suffix1 / sizeof *suffix1);
+   vassert(m6 < sizeof suffix2);
+
+   vex_sprintf(xmnm, "%s%s%c", base, suffix1[m4 - 2], suffix2[m6]);
+
+   if (m5 & 0x8) xmnm[0] = 'w';
+   if (m5 & 0x4) xmnm[2] = 'k';
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+HChar *
+vfmix_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar  suffix[][3] = { "sb", "db", "xb" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m4 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m5 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix - 1) + 1];
+
+   if (m4 == 4 && m5 == 0)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m4 - 2 < sizeof suffix / sizeof *suffix);
+
+   vex_sprintf(xmnm, "%s%s", base, suffix[m4 - 2]);
+
+   if (m5 & 0x8) xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+HChar *
+vfa_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar  suffix[][3] = { "sb", "db", "xb" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m4 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m5 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix - 1) + 1];
+
+   if (m4 == 4 && m5 == 0)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m4 - 2 < sizeof suffix / sizeof *suffix);
+
+   vex_sprintf(xmnm, "%s%s", base, suffix[m4 - 2]);
+
+   if (m5 & 0x8) xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+/* Also used for VFEE, VFENE, and VSTRS. But for those opcodes m5 < 8.
+   Hence, the return value is 0 and no mask will be written for
+   those opcodes. */
+static Int
+vfae_mh(UInt ix, UInt mask, UInt *value)
+{
+   *value = mask & 0xC;
+   return (ix == 5) && (mask & 0xC);
+}
+
+
+HChar *
+vfae_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar suffix[] = { 'b', 'h', 'f' };
+   const HChar *base = opnds[0].xmnm.base;
+
+   UInt  m4 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m5 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + 3 + 1];
+
+   HChar s = (m5 & 0x1) ? 's' : '\0';
+   HChar z = (m5 & 0x2) ? 'z' : '\0';
+
+   vex_sprintf(xmnm, "%s%c%c%c", base, z, suffix[m4], s);
+
+   return s390_disasm_aux(opnds, xmnm, p, vfae_mh);
+}
+
+
+HChar *
+vfms_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar  suffix[][3] = { "sb", "db", "xb" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m5 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m6 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix - 1) + 1];
+
+   if (m6 == 4 && m5 == 0)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m6 - 2 < sizeof suffix / sizeof *suffix);
+
+   vex_sprintf(xmnm, "%s%s", base, suffix[m6 - 2]);
+
+   if (m5 & 0x8) xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+static Int
+vmsl_mh(UInt ix, UInt mask, UInt *value)
+{
+   *value = mask;
+   return ix == 6;
+}
+
+
+HChar *
+vmsl_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar  suffix[] = { 'g' };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m5 = opnds[get_mask_index(opnds, 1)].mask;
+   /* m6 does not influence the extended mnemonic */
+   HChar xmnm[vex_strlen(base) + 1 + 1];
+
+   vassert(m5 - 3 < sizeof suffix);
+
+   vex_sprintf(xmnm, "%s%c", base, suffix[m5 - 3]);
+
+   return s390_disasm_aux(opnds, xmnm, p, vmsl_mh);
+}
+
+
+static Int
+vstrc_mh(UInt ix, UInt mask, UInt *value)
+{
+   *value = mask & 0xC;
+   return (ix == 6) && (mask & 0xC);
+}
+
+
+HChar *
+vstrc_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar suffix[] = { 'b', 'h', 'f' };
+   const HChar *base = opnds[0].xmnm.base;
+
+   UInt  m5 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m6 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + 3 + 1];
+
+   HChar s = (m6 & 0x1) ? 's' : '\0';
+   HChar z = (m6 & 0x2) ? 'z' : '\0';
+
+   vex_sprintf(xmnm, "%s%c%c%c", base, z, suffix[m5], s);
+
+   return s390_disasm_aux(opnds, xmnm, p, vstrc_mh);
+}
+
+
+HChar *
+vllebrz_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 1);
+
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   const HChar *xmnm;
+
+   switch (m3) {
+   case 1: xmnm = "vllebrzh"; break;
+   case 2: xmnm = "vllebrzf"; break;
+   case 3: xmnm = "ldrv";     break;
+   case 6: xmnm = "lerv";     break;
+   default: vassert(0);
+   }
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+HChar *
+vstebrf_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 1);
+
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   const HChar *xmnm;
+
+   if (m3 == 0)
+      xmnm = "sterv";
+   else
+      xmnm = opnds[0].xmnm.base;
+
+   return s390_disasm_aux(opnds, xmnm, p, mask0_mh);
+}
+
+
+HChar *
+vstebrg_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 1);
+
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   const HChar *xmnm;
+
+   if (m3 == 0)
+      xmnm = "stdrv";
+   else
+      xmnm = opnds[0].xmnm.base;
+
+   return s390_disasm_aux(opnds, xmnm, p, mask0_mh);
+}
+
+
+HChar *
+vllez_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 1);
+
+   const HChar suffix[][3] = { "b", "h", "f", "g", "", "", "lf" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix - 1) + 1];
+
+   vassert(m3 < sizeof suffix / sizeof *suffix);
+   vex_sprintf(xmnm, "%s%s", base, suffix[m3]);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+HChar *
+wfc_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar  suffix[][3] = { "sb", "db", "xb" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix - 1) + 1];
+
+   vassert(m3 - 2 < sizeof suffix / sizeof *suffix);
+
+   vex_sprintf(xmnm, "%s%s", base, suffix[m3 - 2]);
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+HChar *
+vfll_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar suffix[] = { 's', 'd' };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m4 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + 1 + 1];
+
+   if (m3 == 3 && m4 == 0)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m3 - 2 < sizeof suffix);
+   vex_sprintf(xmnm, "%s%c", base, suffix[m3 - 2]);
+
+   if (m4 == 8)
+      xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+static Int
+always_m4(UInt ix, UInt mask, UInt *value)
+{
+   *value = mask & 0x4;
+   return ix == 4;
+}
+
+
+HChar *
+vflr_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar suffix[] = { 'd', 'x' };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m4 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + 1 + 1];
+
+   if (m3 == 4 && m4 < 8)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m3 - 3 < sizeof suffix);
+   vex_sprintf(xmnm, "%s%c", base, suffix[m3 - 3]);
+
+   if (m4 & 0x8)
+      xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, always_m4);
+}
+
+
+HChar *
+vfi_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar  suffix[][3] = { "sb", "db", "xb" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m4 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(base) + (sizeof *suffix - 1) + 1];
+
+   if (m3 == 4 && m4 < 8)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(m3 - 2 < sizeof suffix / sizeof *suffix);
+   vex_sprintf(xmnm, "%s%s", base, suffix[m3 - 2]);
+
+   if (m4 & 0x8)
+      xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, always_m4);
+}
+
+
+HChar *
+vfpso_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 3);
+
+   const HChar  suffix1[] = { 'c', 'n', 'p' };
+   const HChar  suffix2[][3] = { "sb", "db", "xb" };
+   const HChar *base = opnds[0].xmnm.base;
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m4 = opnds[get_mask_index(opnds, 2)].mask;
+   UInt  m5 = opnds[get_mask_index(opnds, 3)].mask;
+   HChar xmnm[vex_strlen(base) + 1 + (sizeof *suffix2 - 1) + 1];
+
+   if (m3 == 4 && m4 == 0)
+      return s390_disasm_aux(opnds, base, p, always_mh);
+
+   vassert(vex_strlen("vfl") <= vex_strlen(base));
+   vassert(m5 < sizeof suffix1);
+   vassert(m3 - 2 < sizeof suffix2 / sizeof *suffix2);
+   vex_sprintf(xmnm, "%s%c%s", "vfl", suffix1[m5], suffix2[m3 - 2]);
+
+   if (m4 & 0x8)
+      xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, NULL);
+}
+
+
+static Int
+vcgd_mh(UInt ix, UInt mask, UInt *value)
+{
+   *value = mask;
+   if (ix == 5)
+      return 1;
+   if (ix == 4) {
+      if (mask >= 8)
+         *value = mask - 8;
+      return 1;
+   }
+   return 0;
+}
+
+
+static HChar *
+vcgd_like_disasm(const s390_opnd *opnds, const HChar *mnm[2], HChar *p)
+{
+   vassert(mask_count(opnds) == 3);
+   vassert(vex_strlen(mnm[0]) == vex_strlen(mnm[1]));
+
+   UInt  m3 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt  m4 = opnds[get_mask_index(opnds, 2)].mask;
+   HChar xmnm[vex_strlen(mnm[0]) + 1];
+
+   vex_sprintf(xmnm, "%s", mnm[m3 - 2]);
+   if (m4 & 0x8)
+      xmnm[0] = 'w';
+
+   return s390_disasm_aux(opnds, xmnm, p, vcgd_mh);
+}
+
+
+HChar *
+vcgd_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *mnm[2] = { "vcfeb", "vcgdb" };
+
+   return vcgd_like_disasm(opnds, mnm, p);
+}
+
+
+HChar *
+vcdg_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *mnm[2] = { "vcefb", "vcdgb" };
+
+   return vcgd_like_disasm(opnds, mnm, p);
+}
+
+
+HChar *
+vclgd_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *mnm[2] = { "vclfeb", "vclgdb" };
+
+   return vcgd_like_disasm(opnds, mnm, p);
+}
+
+
+HChar *
+vcgld_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *mnm[2] = { "vcelfb", "vcdlgb" };
+
+   return vcgd_like_disasm(opnds, mnm, p);
+}
+
+
+/* Write out OPNDS. MH is a mask handler. It decides whether or not a
+   MASK operand is written and if so, massages the mask value as needed. */
 static HChar *
 s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
-                Int (*mdf)(UInt, UInt))
+                Int (*mh)(UInt, UInt, UInt *))
 {
    vassert(opnds[0].kind == S390_OPND_MNM ||
            opnds[0].kind == S390_OPND_XMNM);
@@ -438,9 +1017,10 @@ s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
          p += vex_sprintf(p, "%s", vr_operand(opnd->regno));
          break;
 
-      case S390_OPND_MASK:
-         if (mdf && mdf(ix, opnd->mask))
-            p += vex_sprintf(p, "%u", opnd->mask);
+      case S390_OPND_MASK: {
+         UInt value;
+         if (mh && mh(ix, opnd->mask, &value))
+            p += vex_sprintf(p, "%u", value);
          else {
             if (ix != 1)
                (*--p) = '\0';   // overwrite the separator
@@ -448,6 +1028,7 @@ s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
                separator = 0;
          }
          continue;  // *not* break
+      }
 
       case S390_OPND_UINT:
          p += vex_sprintf(p, "%u", opnd->u);

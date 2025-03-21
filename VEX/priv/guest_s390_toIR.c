@@ -49,7 +49,15 @@
 static UInt s390_decode_and_irgen(const UChar *, UInt, DisResult *);
 static void s390_irgen_xonc(IROp, IRTemp, IRTemp, IRTemp);
 static void s390_irgen_CLC_EX(IRTemp, IRTemp, IRTemp);
-static const HChar *s390_irgen_BIC(UChar r1, IRTemp op2addr);
+static const HChar *s390_irgen_BIC(UChar, IRTemp);
+static const HChar *s390_irgen_VPDI(UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VFLR(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VFI(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VFPSO(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VCGD(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VCDG(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VCDLG(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_VCLGD(UChar, UChar, UChar, UChar, UChar);
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -204,9 +212,12 @@ typedef enum {
 #define VRX_rxb(insn) (((insn) >> 24) & 0xf)
 #define VRR_v1(insn) (((insn) >> 52) & 0xf)
 #define VRR_v2(insn) (((insn) >> 48) & 0xf)
+#define VRR_r2(insn) (((insn) >> 48) & 0xf)
 #define VRR_r3(insn) (((insn) >> 44) & 0xf)
+#define VRR_v3(insn) (((insn) >> 44) & 0xf)
 #define VRR_m5(insn) (((insn) >> 36) & 0xf)
 #define VRR_m4(insn) (((insn) >> 28) & 0xf)
+#define VRR_v4(insn) (((insn) >> 28) & 0xf)
 #define VRR_rxb(insn) (((insn) >> 24) & 0xf)
 #define VRRa_v1(insn) (((insn) >> 52) & 0xf)
 #define VRRa_v2(insn) (((insn) >> 48) & 0xf)
@@ -234,6 +245,16 @@ typedef enum {
 #define VRI_i2(insn) (((insn) >> 32) & 0xffff)
 #define VRI_m3(insn) (((insn) >> 28) & 0xf)
 #define VRI_rxb(insn) (((insn) >> 24) & 0xf)
+#define VRIb_v1(insn) (((insn) >> 52) & 0xf)
+#define VRIb_i2(insn) (((insn) >> 40) & 0xff)
+#define VRIb_i3(insn) (((insn) >> 32) & 0xff)
+#define VRIb_m4(insn) (((insn) >> 28) & 0xf)
+#define VRIb_rxb(insn) (((insn) >> 24) & 0xf)
+#define VRIc_v1(insn) (((insn) >> 52) & 0xf)
+#define VRIc_v3(insn) (((insn) >> 48) & 0xf)
+#define VRIc_i2(insn) (((insn) >> 32) & 0xffff)
+#define VRIc_m4(insn) (((insn) >> 28) & 0xf)
+#define VRIc_rxb(insn) (((insn) >> 24) & 0xf)
 #define VRId_v1(insn) (((insn) >> 52) & 0xf)
 #define VRId_v2(insn) (((insn) >> 48) & 0xf)
 #define VRId_v3(insn) (((insn) >> 44) & 0xf)
@@ -248,10 +269,17 @@ typedef enum {
 #define VRIe_rxb(insn) (((insn) >> 24) & 0xf)
 #define VRS_v1(insn) (((insn) >> 52) & 0xf)
 #define VRS_v3(insn) (((insn) >> 48) & 0xf)
+#define VRS_r3(insn) (((insn) >> 48) & 0xf)
 #define VRS_b2(insn) (((insn) >> 44) & 0xf)
 #define VRS_d2(insn) (((insn) >> 32) & 0xfff)
 #define VRS_m4(insn) (((insn) >> 28) & 0xf)
 #define VRS_rxb(insn) (((insn) >> 24) & 0xf)
+#define VRSc_r1(insn) (((insn) >> 52) & 0xf)
+#define VRSc_v3(insn) (((insn) >> 48) & 0xf)
+#define VRSc_b2(insn) (((insn) >> 44) & 0xf)
+#define VRSc_d2(insn) (((insn) >> 32) & 0xfff)
+#define VRSc_m4(insn) (((insn) >> 28) & 0xf)
+#define VRSc_rxb(insn) (((insn) >> 24) & 0xf)
 #define VRSd_v1(insn) (((insn) >> 28) & 0xf)
 #define VRSd_r3(insn) (((insn) >> 48) & 0xf)
 #define VSI_i3(insn) (((insn) >> 48) & 0xff)
@@ -259,6 +287,12 @@ typedef enum {
 #define VSI_d2(insn) (((insn) >> 32) & 0xfff)
 #define VSI_v1(insn) (((insn) >> 28) & 0xf)
 #define VSI_rxb(insn) (((insn) >> 24) & 0xf)
+#define VRV_v1(insn) (((insn) >> 52) & 0xf)
+#define VRV_x2(insn) (((insn) >> 48) & 0xf)
+#define VRV_b2(insn) (((insn) >> 44) & 0xf)
+#define VRV_d2(insn) (((insn) >> 32) & 0xfff)
+#define VRV_m3(insn) (((insn) >> 28) & 0xf)
+#define VRV_rxb(insn) (((insn) >> 24) & 0xf)
 
 
 /*------------------------------------------------------------*/
@@ -3674,7 +3708,7 @@ s390_format_SIL_RDU(const HChar *(*irgen)(UShort i2, IRTemp op1addr),
 
 static void
 s390_format_VRX_VRRD(const HChar *(*irgen)(UChar v1, IRTemp op2addr),
-                    UChar v1, UChar x2, UChar b2, UShort d2, UChar rxb)
+                     UChar v1, UChar x2, UChar b2, UShort d2, UChar m3, UChar rxb)
 {
    const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
@@ -3692,13 +3726,14 @@ s390_format_VRX_VRRD(const HChar *(*irgen)(UChar v1, IRTemp op2addr),
    mnm = irgen(v1, op2addr);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), UDXB(d2, x2, b2));
+      S390_DISASM(XMNM(mnm, mask0_disasm), VR(v1), UDXB(d2, x2, b2), MASK(m3));
 }
 
 
 static void
 s390_format_VRX_VRRDM(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar m3),
-                    UChar v1, UChar x2, UChar b2, UShort d2, UChar m3, UChar rxb)
+                      UChar v1, UChar x2, UChar b2, UShort d2, UChar m3, UChar rxb,
+                      HChar *(*handler)(const s390_opnd *, HChar *))
 {
    const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
@@ -3715,8 +3750,12 @@ s390_format_VRX_VRRDM(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar m3),
    v1  = s390_vr_getVRindex(v1, 1, rxb);
    mnm = irgen(v1, op2addr, m3);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), UDXB(d2, x2, b2));
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE)) {
+      if (handler)
+         S390_DISASM(XMNM(mnm, handler), VR(v1), UDXB(d2, x2, b2), MASK(m3));
+      else
+         S390_DISASM(MNM(mnm), VR(v1), UDXB(d2, x2, b2), UINT(m3));
+   }
 }
 
 
@@ -3761,8 +3800,6 @@ s390_format_VRR_VVV(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3),
 }
 
 
-// FIXME: VPDI uses this format but does not have extended mnemonics
-// FIXME: all other opcodes have extended mnms
 static void
 s390_format_VRR_VVVM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3, UChar m4),
                     UChar v1, UChar v2, UChar v3, UChar m4, UChar rxb)
@@ -3779,14 +3816,19 @@ s390_format_VRR_VVVM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3, UChar m
    v3  = s390_vr_getVRindex(v3, 3, rxb);
    mnm = irgen(v1, v2, v3, m4);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(m4));
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE)) {
+      if (irgen == s390_irgen_VPDI)
+         S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(m4));
+      else
+         S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4));
+   }
 }
 
 
 static void
 s390_format_VRR_VVVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3, UChar m4, UChar m5),
-                    UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar rxb)
+                      UChar v1, UChar v2, UChar v3, UChar m4, UChar m5, UChar rxb,
+                      HChar *(*handler)(const s390_opnd *, HChar *))
 {
    const HChar *mnm;
 
@@ -3801,7 +3843,7 @@ s390_format_VRR_VVVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3, UChar 
    mnm = irgen(v1, v2, v3, m4, m5);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(m4), UINT(m5));
+      S390_DISASM(XMNM(mnm, handler), VR(v1), VR(v2), VR(v3), MASK(m4), MASK(m5));
 }
 
 
@@ -3862,7 +3904,66 @@ s390_format_VRR_VVM(const HChar *(*irgen)(UChar v1, UChar v2, UChar m3),
    mnm = irgen(v1, v2, m3);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(m3));
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), VR(v2), MASK(m3));
+}
+
+
+static void
+s390_format_VRI_V0U(const HChar *(*irgen)(UChar v1, UShort i2),
+                    UChar v1, UShort i2, UChar rxb,
+                    HChar *(*handler)(const s390_opnd *, HChar *))
+{
+   const HChar *mnm;
+
+   if (! s390_host_has_vx) {
+      emulation_failure(EmFail_S390X_vx);
+      return;
+   }
+
+   v1  = s390_vr_getVRindex(v1, 1, rxb);
+   mnm = irgen(v1, i2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(XMNM(mnm, handler), VR(v1), UINT(i2));
+}
+
+
+static void
+s390_format_VRI_V0UUU(const HChar *(*irgen)(UChar v1, UChar i2, UChar i3,
+                                            UChar m4),
+                      UChar v1, UChar i2, UChar i3, UChar m4, UChar rxb)
+{
+   const HChar *mnm;
+
+   if (! s390_host_has_vx) {
+      emulation_failure(EmFail_S390X_vx);
+      return;
+   }
+
+   v1  = s390_vr_getVRindex(v1, 1, rxb);
+   mnm = irgen(v1, i2, i3, m4);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), UINT(i2), UINT(i3), MASK(m4));
+}
+
+
+static void
+s390_format_VRI_V0IU(const HChar *(*irgen)(UChar v1, UShort i2, UChar m3),
+                     UChar v1, UShort i2, UChar m3, UChar rxb)
+{
+   const HChar *mnm;
+
+   if (! s390_host_has_vx) {
+      emulation_failure(EmFail_S390X_vx);
+      return;
+   }
+
+   v1  = s390_vr_getVRindex(v1, 1, rxb);
+   mnm = irgen(v1, i2, m3);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), INT((Short)i2), MASK(m3));
 }
 
 
@@ -3881,7 +3982,7 @@ s390_format_VRI_VIM(const HChar *(*irgen)(UChar v1, UShort i2, UChar m3),
    mnm = irgen(v1, i2, m3);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), UINT(i2), UINT(m3));
+      S390_DISASM(MNM(mnm), VR(v1), INT((Short)i2), UINT(m3));
 }
 
 
@@ -3901,7 +4002,7 @@ s390_format_VRI_VVIM(const HChar *(*irgen)(UChar v1, UChar v3, UShort i2, UChar 
    mnm = irgen(v1, v3, i2, m4);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v3), UINT(i2), UINT(m4));
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), VR(v3), UINT(i2), MASK(m4));
 }
 
 static void
@@ -3922,7 +4023,7 @@ s390_format_VRI_VVIMM(const HChar *(*irgen)(UChar v1, UChar v2, UShort i3,
    mnm = irgen(v1, v2, i3, m4, m5);
 
    if (vex_traceflags & VEX_TRACE_FE)
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(i3), UINT(m4), UINT(m5));
+      S390_DISASM(XMNM(mnm, vfmix_like_disasm), VR(v1), VR(v2), UINT(i3), MASK(m4), MASK(m5));
 }
 
 static void
@@ -3945,7 +4046,7 @@ s390_format_VRS_RRDVM(const HChar *(*irgen)(UChar r1, IRTemp op2addr, UChar v3,
    mnm = irgen(r1, op2addr, v3, m4);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), GPR(r1), UDXB(d2, 0, b2), VR(v3), UINT(m4));
+      S390_DISASM(XMNM(mnm, va_like_disasm), GPR(r1), VR(v3), UDXB(d2, 0, b2), MASK(m4));
 }
 
 static void
@@ -3992,13 +4093,13 @@ s390_format_VRS_VRDVM(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar v3,
    mnm = irgen(v1, op2addr, v3, m4);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), UDXB(d2, 0, b2), VR(v3), UINT(m4));
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), VR(v3), UDXB(d2, 0, b2), MASK(m4));
 }
 
 
 static void
 s390_format_VRS_VRDV(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar v3),
-                     UChar v1, UChar b2, UShort d2, UChar v3, UChar rxb)
+                     UChar v1, UChar b2, UShort d2, UChar v3, UChar m4, UChar rxb)
 {
    const HChar *mnm;
    IRTemp op2addr = newTemp(Ity_I64);
@@ -4016,7 +4117,7 @@ s390_format_VRS_VRDV(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar v3),
    mnm = irgen(v1, op2addr, v3);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), UDXB(d2, 0, b2), VR(v3));
+      S390_DISASM(XMNM(mnm, mask0_disasm), VR(v1), VR(v3), UDXB(d2, 0, b2), MASK(m4));
 }
 
 
@@ -4040,7 +4141,7 @@ s390_format_VRS_VRRDM(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar r3,
    mnm = irgen(v1, op2addr, r3, m4);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), GPR(r3), UDXB(d2, 0, b2), UINT(m4));
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), GPR(r3), UDXB(d2, 0, b2), MASK(m4));
 }
 
 
@@ -4103,9 +4204,10 @@ s390_format_VRV_VVRDMT(const HChar *(*irgen)(UChar v1, IRTemp op2addr, UChar m3)
 
 static void
 s390_format_VRR_VVVVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
-                                              UChar v4, UChar m5, UChar m6),
-                        UChar v1, UChar v2, UChar v3, UChar v4, UChar m5,
-                        UChar m6, UChar rxb)
+                                             UChar v4, UChar m5, UChar m6),
+                       UChar v1, UChar v2, UChar v3, UChar v4, UChar m5,
+                       UChar m6, UChar rxb,
+                       HChar *(*handler)(const s390_opnd *, HChar *))
 {
    const HChar *mnm;
 
@@ -4121,7 +4223,7 @@ s390_format_VRR_VVVVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
    mnm = irgen(v1, v2, v3, v4, m5, m6);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), VR(v4), UINT(m5), UINT(m6));
+      S390_DISASM(XMNM(mnm, handler), VR(v1), VR(v2), VR(v3), VR(v4), MASK(m5), MASK(m6));
 }
 
 
@@ -4142,7 +4244,7 @@ s390_format_VRR_VVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar m3,
    mnm = irgen(v1, v2, m3, m5);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(m3), UINT(m5));
+      S390_DISASM(XMNM(mnm, vch_like_disasm), VR(v1), VR(v2), MASK(m3), MASK(m5));
 }
 
 
@@ -4165,7 +4267,7 @@ s390_format_VRId_VVVIM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
    mnm = irgen(v1, v2, v3, i4, m5);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(i4), UINT(m5));
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), VR(v2), VR(v3), UINT(i4), MASK(m5));
 }
 
 
@@ -4211,7 +4313,7 @@ s390_format_VRRd_VVVVM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
    mnm = irgen(v1, v2, v3, v4, m5);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), VR(v4), UINT(m5));
+      S390_DISASM(XMNM(mnm, va_like_disasm), VR(v1), VR(v2), VR(v3), VR(v4), MASK(m5));
 }
 
 
@@ -4232,15 +4334,31 @@ s390_format_VRRa_VVMMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar m3,
    v2 = s390_vr_getVRindex(v2, 2, rxb);
    mnm = irgen(v1, v2, m3, m4, m5);
 
-   if (vex_traceflags & VEX_TRACE_FE)
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(m3), UINT(m4), UINT(m5));
+   if (vex_traceflags & VEX_TRACE_FE) {
+      if (irgen == s390_irgen_VFLR)
+         S390_DISASM(XMNM(mnm, vflr_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), UINT(m5));
+      else if (irgen == s390_irgen_VFI)
+         S390_DISASM(XMNM(mnm, vfi_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), UINT(m5));
+      else if (irgen == s390_irgen_VFPSO)
+         S390_DISASM(XMNM(mnm, vfpso_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), MASK(m5));
+      else if (irgen == s390_irgen_VCGD)
+         S390_DISASM(XMNM(mnm, vcgd_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), MASK(m5));
+      else if (irgen == s390_irgen_VCDG)
+         S390_DISASM(XMNM(mnm, vcdg_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), MASK(m5));
+      else if (irgen == s390_irgen_VCLGD)
+         S390_DISASM(XMNM(mnm, vclgd_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), MASK(m5));
+      else if (irgen == s390_irgen_VCDLG)
+         S390_DISASM(XMNM(mnm, vcgld_disasm), VR(v1), VR(v2), MASK(m3), MASK(m4), MASK(m5));
+      else
+         S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(m3), UINT(m4), UINT(m5));
+   }
 }
 
 static void
 s390_format_VRRa_VVVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
                                              UChar m4, UChar m5),
                        UChar v1, UChar v2, UChar v3, UChar m4, UChar m5,
-                       UChar rxb)
+                       UChar rxb, HChar *(*handler)(const s390_opnd *, HChar *))
 {
    const HChar *mnm;
 
@@ -4254,14 +4372,19 @@ s390_format_VRRa_VVVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
    v3 = s390_vr_getVRindex(v3, 3, rxb);
    mnm = irgen(v1, v2, v3, m4, m5);
 
-   if (vex_traceflags & VEX_TRACE_FE)
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(m4), UINT(m5));
+   if (vex_traceflags & VEX_TRACE_FE) {
+      if (handler)
+         S390_DISASM(XMNM(mnm, handler), VR(v1), VR(v2), VR(v3), MASK(m4), MASK(m5));
+      else
+         S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(m4), UINT(m5));
+   }
 }
 
 static void
 s390_format_VRRa_VVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar m3,
                                             UChar m4),
-                       UChar v1, UChar v2, UChar m3, UChar m4, UChar rxb)
+                      UChar v1, UChar v2, UChar m3, UChar m4, UChar rxb,
+                      HChar *(*handler)(const s390_opnd *, HChar *))
 {
    const HChar *mnm;
 
@@ -4274,8 +4397,12 @@ s390_format_VRRa_VVMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar m3,
    v2 = s390_vr_getVRindex(v2, 2, rxb);
    mnm = irgen(v1, v2, m3, m4);
 
-   if (vex_traceflags & VEX_TRACE_FE)
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(m3), UINT(m4));
+   if (vex_traceflags & VEX_TRACE_FE) {
+      if (handler)
+         S390_DISASM(XMNM(mnm, handler), VR(v1), VR(v2), MASK(m3), MASK(m4));
+      else
+         S390_DISASM(MNM(mnm), VR(v1), VR(v2), UINT(m3), UINT(m4));
+   }
 }
 
 static void
@@ -4297,7 +4424,30 @@ s390_format_VRRa_VVVMMM(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
    mnm = irgen(v1, v2, v3, m4, m5, m6);
 
    if (vex_traceflags & VEX_TRACE_FE)
-      S390_DISASM(MNM(mnm), VR(v1), VR(v2), VR(v3), UINT(m4), UINT(m5), UINT(m6));
+      S390_DISASM(XMNM(mnm, vfce_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4), MASK(m5), MASK(m6));
+}
+
+
+static void
+s390_format_VRRa_VVVMMM2(const HChar *(*irgen)(UChar v1, UChar v2, UChar v3,
+                                               UChar m4, UChar m5, UChar m6),
+                         UChar v1, UChar v2, UChar v3, UChar m4, UChar m5,
+                         UChar m6, UChar rxb)
+{
+   const HChar *mnm;
+
+   if (!s390_host_has_vx) {
+      emulation_failure(EmFail_S390X_vx);
+      return;
+   }
+
+   v1 = s390_vr_getVRindex(v1, 1, rxb);
+   v2 = s390_vr_getVRindex(v2, 2, rxb);
+   v3 = s390_vr_getVRindex(v3, 3, rxb);
+   mnm = irgen(v1, v2, v3, m4, m5, m6);
+
+   if (vex_traceflags & VEX_TRACE_FE)
+      S390_DISASM(XMNM(mnm, vfmix_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4), MASK(m5), UINT(m6));
 }
 
 static void
@@ -16438,7 +16588,7 @@ s390_irgen_VLGV(UChar r1, IRTemp op2addr, UChar v3, UChar m4)
 }
 
 static const HChar *
-s390_irgen_VGBM(UChar v1, UShort i2, UChar m3 __attribute__((unused)))
+s390_irgen_VGBM(UChar v1, UShort i2)
 {
    put_vr_qw(v1, mkV128(i2));
 
@@ -16446,13 +16596,13 @@ s390_irgen_VGBM(UChar v1, UShort i2, UChar m3 __attribute__((unused)))
 }
 
 static const HChar *
-s390_irgen_VGM(UChar v1, UShort i2, UChar m3)
+s390_irgen_VGM(UChar v1, UChar i2, UChar i3, UChar m4)
 {
-   s390_insn_assert("vgm", m3 <= 3);
+   s390_insn_assert("vgm", m4 <= 3);
 
-   UChar  max_idx = (8 << m3) - 1;
-   UChar  from    = max_idx & (i2 >> 8);
-   UChar  to      = max_idx & i2;
+   UChar  max_idx = (8 << m4) - 1;
+   UChar  from    = max_idx & i2;
+   UChar  to      = max_idx & i3;
    ULong  all_one = (1ULL << max_idx << 1) - 1;
    ULong  value   = (all_one >> from) ^ (all_one >> to >> 1);
 
@@ -16464,7 +16614,7 @@ s390_irgen_VGM(UChar v1, UShort i2, UChar m3)
       value ^= all_one;
 
    IRExpr* fillValue;
-   switch (m3) {
+   switch (m4) {
    case 0:
       fillValue = mkU8(value);
       break;
@@ -19043,17 +19193,17 @@ s390_irgen_VFI(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
 }
 
 static const HChar *
-s390_irgen_VFLL(UChar v1, UChar v2, UChar m3, UChar m4, UChar m5)
+s390_irgen_VFLL(UChar v1, UChar v2, UChar m3, UChar m4)
 {
    s390_insn_assert("vfll", m3 == 2 || (s390_host_has_vxe && m3 == 3));
    s390_insn_assert("vfll", (m4 & 0x7) == 0);
 
    if (m3 == 2)
       s390_vector_fp_convert(Iop_F32toF64, Ity_F32, Ity_F64, False,
-                             v1, v2, m3, m4, m5);
+                             v1, v2, m3, m4, /* don't care */ 0);
    else
       s390_vector_fp_convert(Iop_F64toF128, Ity_F64, Ity_F128, False,
-                             v1, v2, m3, m4, m5);
+                             v1, v2, m3, m4, /* don't care */ 0);
 
    return "vfll";
 }
@@ -19911,9 +20061,6 @@ s390_irgen_VCxx(const HChar *mnem, s390x_vec_op_details_t details,
 static const HChar *
 s390_irgen_VCNF(UChar v1, UChar v2, UChar m3, UChar m4)
 {
-   s390_insn_assert("vcnf", m3 == 0);
-   s390_insn_assert("vcnf", m4 < 2);
-
    s390x_vec_op_details_t details = { .serialized = 0ULL };
    details.op = S390_VEC_OP_VCNF;
    details.v1 = v1;
@@ -21794,56 +21941,56 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe60000000001ULL: s390_format_VRX_VRRDM(s390_irgen_VLEBRH, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe60000000002ULL: s390_format_VRX_VRRDM(s390_irgen_VLEBRG, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe60000000003ULL: s390_format_VRX_VRRDM(s390_irgen_VLEBRF, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe60000000004ULL: s390_format_VRX_VRRDM(s390_irgen_VLLEBRZ,
                                                  VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), vllebrz_disasm);  goto ok;
    case 0xe60000000005ULL: s390_format_VRX_VRRDM(s390_irgen_VLBRREP,
                                                  VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), va_like_disasm);  goto ok;
    case 0xe60000000006ULL: s390_format_VRX_VRRDM(s390_irgen_VLBR, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), va_like_disasm);  goto ok;
    case 0xe60000000007ULL: s390_format_VRX_VRRDM(s390_irgen_VLER, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), va_like_disasm);  goto ok;
    case 0xe60000000009ULL: s390_format_VRX_VRRDM(s390_irgen_VSTEBRH,
                                                  VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe6000000000aULL: s390_format_VRX_VRRDM(s390_irgen_VSTEBRG,
                                                  VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), vstebrg_disasm);  goto ok;
    case 0xe6000000000bULL: s390_format_VRX_VRRDM(s390_irgen_VSTEBRF,
                                                  VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), vstebrf_disasm);  goto ok;
    case 0xe6000000000eULL: s390_format_VRX_VRRDM(s390_irgen_VSTBR, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), va_like_disasm);  goto ok;
    case 0xe6000000000fULL: s390_format_VRX_VRRDM(s390_irgen_VSTER, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), va_like_disasm);  goto ok;
    case 0xe60000000034ULL: /* VPKZ */ goto unimplemented;
    case 0xe60000000035ULL: s390_format_VSI_URDV(s390_irgen_VLRL, VSI_v1(ovl),
                                                 VSI_b2(ovl), VSI_d2(ovl),
@@ -21872,19 +22019,19 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe60000000055ULL: s390_format_VRRa_VVMM(s390_irgen_VCNF,
                                                  VRRa_v1(ovl), VRRa_v2(ovl),
                                                  VRRa_m3(ovl), VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl));  goto ok;
+                                                 VRRa_rxb(ovl), NULL);  goto ok;
    case 0xe60000000056ULL: s390_format_VRRa_VVMM(s390_irgen_VCLFNH,
                                                  VRRa_v1(ovl), VRRa_v2(ovl),
                                                  VRRa_m3(ovl), VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl));  goto ok;
+                                                 VRRa_rxb(ovl), NULL);  goto ok;
    case 0xe6000000005dULL: s390_format_VRRa_VVMM(s390_irgen_VCFN,
                                                  VRRa_v1(ovl), VRRa_v2(ovl),
                                                  VRRa_m3(ovl), VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl));  goto ok;
+                                                 VRRa_rxb(ovl), NULL);  goto ok;
    case 0xe6000000005eULL: s390_format_VRRa_VVMM(s390_irgen_VCLFNL,
                                                  VRRa_v1(ovl), VRRa_v2(ovl),
                                                  VRRa_m3(ovl), VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl));  goto ok;
+                                                 VRRa_rxb(ovl), NULL);  goto ok;
    case 0xe60000000058ULL: /* VCVD */ goto unimplemented;
    case 0xe60000000059ULL: /* VSRP */ goto unimplemented;
    case 0xe6000000005aULL: /* VCVDG */ goto unimplemented;
@@ -21899,7 +22046,7 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                   VRRa_v1(ovl), VRRa_v2(ovl),
                                                   VRRa_v3(ovl),
                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                  VRRa_rxb(ovl)); goto ok;
+                                                  VRRa_rxb(ovl), NULL); goto ok;
    case 0xe60000000077ULL: /* VCP */ goto unimplemented;
    case 0xe60000000078ULL: /* VMP */ goto unimplemented;
    case 0xe60000000079ULL: /* VMSP */ goto unimplemented;
@@ -21913,72 +22060,74 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe70000000000ULL: s390_format_VRX_VRRDM(s390_irgen_VLEB, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe70000000001ULL: s390_format_VRX_VRRDM(s390_irgen_VLEH, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe70000000002ULL: s390_format_VRX_VRRDM(s390_irgen_VLEG, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe70000000003ULL: s390_format_VRX_VRRDM(s390_irgen_VLEF, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe70000000004ULL: s390_format_VRX_VRRDM(s390_irgen_VLLEZ, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), vllez_disasm);  goto ok;
    case 0xe70000000005ULL: s390_format_VRX_VRRDM(s390_irgen_VLREP, VRX_v1(ovl),
+                                                 VRX_x2(ovl), VRX_b2(ovl),
+                                                 VRX_d2(ovl), VRX_m3(ovl),
+                                                 VRX_rxb(ovl), va_like_disasm);  goto ok;
+   case 0xe70000000006ULL: s390_format_VRX_VRRD(s390_irgen_VL, VRX_v1(ovl),
                                                 VRX_x2(ovl), VRX_b2(ovl),
                                                 VRX_d2(ovl), VRX_m3(ovl),
                                                 VRX_rxb(ovl));  goto ok;
-   case 0xe70000000006ULL: s390_format_VRX_VRRD(s390_irgen_VL, VRX_v1(ovl),
-                                                VRX_x2(ovl), VRX_b2(ovl),
-                                                VRX_d2(ovl), VRX_rxb(ovl));  goto ok;
    case 0xe70000000007ULL: s390_format_VRX_VRRDM(s390_irgen_VLBB, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe70000000008ULL: s390_format_VRX_VRRDM(s390_irgen_VSTEB, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe70000000009ULL: s390_format_VRX_VRRDM(s390_irgen_VSTEH, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe7000000000aULL: s390_format_VRX_VRRDM(s390_irgen_VSTEG, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe7000000000bULL: s390_format_VRX_VRRDM(s390_irgen_VSTEF, VRX_v1(ovl),
                                                  VRX_x2(ovl), VRX_b2(ovl),
                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                 VRX_rxb(ovl));  goto ok;
+                                                 VRX_rxb(ovl), NULL);  goto ok;
    case 0xe7000000000eULL: s390_format_VRX_VRRD(s390_irgen_VST, VRX_v1(ovl),
                                                 VRX_x2(ovl), VRX_b2(ovl),
-                                                VRX_d2(ovl), VRX_rxb(ovl));  goto ok;
-   case 0xe70000000012ULL: s390_format_VRV_VVRDMT(s390_irgen_VGEG, VRX_v1(ovl),
-                                                  VRX_x2(ovl), VRX_b2(ovl),
-                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                  VRX_rxb(ovl), Ity_I64);  goto ok;
-   case 0xe70000000013ULL: s390_format_VRV_VVRDMT(s390_irgen_VGEF, VRX_v1(ovl),
-                                                  VRX_x2(ovl), VRX_b2(ovl),
-                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                  VRX_rxb(ovl), Ity_I32);  goto ok;
-   case 0xe7000000001aULL: s390_format_VRV_VVRDMT(s390_irgen_VSCEG, VRX_v1(ovl),
-                                                  VRX_x2(ovl), VRX_b2(ovl),
-                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                  VRX_rxb(ovl), Ity_I64);  goto ok;
-   case 0xe7000000001bULL: s390_format_VRV_VVRDMT(s390_irgen_VSCEF, VRX_v1(ovl),
-                                                  VRX_x2(ovl), VRX_b2(ovl),
-                                                  VRX_d2(ovl), VRX_m3(ovl),
-                                                  VRX_rxb(ovl), Ity_I32);  goto ok;
-   case 0xe70000000021ULL: s390_format_VRS_RRDVM(s390_irgen_VLGV, VRS_v1(ovl),
-                                                VRS_b2(ovl), VRS_d2(ovl), VRS_v3(ovl),
-                                                VRS_m4(ovl), VRS_rxb(ovl));  goto ok;
+                                                VRX_d2(ovl), VRX_m3(ovl),
+                                                VRX_rxb(ovl));  goto ok;
+   case 0xe70000000012ULL: s390_format_VRV_VVRDMT(s390_irgen_VGEG, VRV_v1(ovl),
+                                                  VRV_x2(ovl), VRV_b2(ovl),
+                                                  VRV_d2(ovl), VRV_m3(ovl),
+                                                  VRV_rxb(ovl), Ity_I64);  goto ok;
+   case 0xe70000000013ULL: s390_format_VRV_VVRDMT(s390_irgen_VGEF, VRV_v1(ovl),
+                                                  VRV_x2(ovl), VRV_b2(ovl),
+                                                  VRV_d2(ovl), VRV_m3(ovl),
+                                                  VRV_rxb(ovl), Ity_I32);  goto ok;
+   case 0xe7000000001aULL: s390_format_VRV_VVRDMT(s390_irgen_VSCEG, VRV_v1(ovl),
+                                                  VRV_x2(ovl), VRV_b2(ovl),
+                                                  VRV_d2(ovl), VRV_m3(ovl),
+                                                  VRV_rxb(ovl), Ity_I64);  goto ok;
+   case 0xe7000000001bULL: s390_format_VRV_VVRDMT(s390_irgen_VSCEF, VRV_v1(ovl),
+                                                  VRV_x2(ovl), VRV_b2(ovl),
+                                                  VRV_d2(ovl), VRV_m3(ovl),
+                                                  VRV_rxb(ovl), Ity_I32);  goto ok;
+   case 0xe70000000021ULL: s390_format_VRS_RRDVM(s390_irgen_VLGV, VRSc_r1(ovl),
+                                                 VRSc_b2(ovl), VRSc_d2(ovl), VRSc_v3(ovl),
+                                                 VRSc_m4(ovl), VRSc_rxb(ovl));  goto ok;
    case 0xe70000000022ULL: s390_format_VRS_VRRDM(s390_irgen_VLVG, VRS_v1(ovl),
                                                 VRS_b2(ovl), VRS_d2(ovl), VRS_v3(ovl),
                                                 VRS_m4(ovl), VRS_rxb(ovl));  goto ok;
@@ -21995,9 +22144,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                  VRS_rxb(ovl));  goto ok;
    case 0xe70000000036ULL: s390_format_VRS_VRDV(s390_irgen_VLM, VRS_v1(ovl),
                                                 VRS_b2(ovl), VRS_d2(ovl), VRS_v3(ovl),
-                                                VRS_rxb(ovl));  goto ok;
+                                                VRS_m4(ovl), VRS_rxb(ovl));  goto ok;
    case 0xe70000000037ULL: s390_format_VRS_VRRD(s390_irgen_VLL, VRS_v1(ovl),
-                                                VRS_b2(ovl), VRS_d2(ovl), VRS_v3(ovl),
+                                                VRS_b2(ovl), VRS_d2(ovl), VRS_r3(ovl),
                                                 VRS_rxb(ovl));  goto ok;
    case 0xe70000000038ULL: s390_format_VRS_VRDVM(s390_irgen_VESRL, VRS_v1(ovl),
                                                  VRS_b2(ovl), VRS_d2(ovl),
@@ -22009,9 +22158,9 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                  VRS_rxb(ovl));  goto ok;
    case 0xe7000000003eULL: s390_format_VRS_VRDV(s390_irgen_VSTM, VRS_v1(ovl),
                                                 VRS_b2(ovl), VRS_d2(ovl), VRS_v3(ovl),
-                                                VRS_rxb(ovl));  goto ok;
+                                                VRS_m4(ovl), VRS_rxb(ovl));  goto ok;
    case 0xe7000000003fULL: s390_format_VRS_VRRD(s390_irgen_VSTL, VRS_v1(ovl),
-                                                VRS_b2(ovl), VRS_d2(ovl), VRS_v3(ovl),
+                                                VRS_b2(ovl), VRS_d2(ovl), VRS_r3(ovl),
                                                 VRS_rxb(ovl));  goto ok;
    case 0xe70000000040ULL: s390_format_VRI_VIM(s390_irgen_VLEIB, VRI_v1(ovl),
                                                  VRI_i2(ovl), VRI_m3(ovl),
@@ -22025,139 +22174,139 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe70000000043ULL: s390_format_VRI_VIM(s390_irgen_VLEIF, VRI_v1(ovl),
                                                VRI_i2(ovl), VRI_m3(ovl),
                                                VRI_rxb(ovl));  goto ok;break;
-   case 0xe70000000044ULL: s390_format_VRI_VIM(s390_irgen_VGBM, VRI_v1(ovl),
-                                               VRI_i2(ovl), VRI_m3(ovl),
-                                               VRI_rxb(ovl));  goto ok;
-   case 0xe70000000045ULL: s390_format_VRI_VIM(s390_irgen_VREPI, VRI_v1(ovl),
-                                               VRI_i2(ovl), VRI_m3(ovl),
-                                               VRI_rxb(ovl));  goto ok;
-   case 0xe70000000046ULL: s390_format_VRI_VIM(s390_irgen_VGM, VRI_v1(ovl),
-                                               VRI_i2(ovl), VRI_m3(ovl),
-                                               VRI_rxb(ovl));  goto ok;
+   case 0xe70000000044ULL: s390_format_VRI_V0U(s390_irgen_VGBM, VRI_v1(ovl),
+                                               VRI_i2(ovl), VRI_rxb(ovl),
+                                               vgbm_disasm);  goto ok;
+   case 0xe70000000045ULL: s390_format_VRI_V0IU(s390_irgen_VREPI, VRI_v1(ovl),
+                                                VRI_i2(ovl), VRI_m3(ovl),
+                                                VRI_rxb(ovl));  goto ok;
+   case 0xe70000000046ULL: s390_format_VRI_V0UUU(s390_irgen_VGM, VRIb_v1(ovl),
+                                                 VRIb_i2(ovl), VRIb_i3(ovl), VRIb_m4(ovl),
+                                                 VRIb_rxb(ovl));  goto ok;
    case 0xe7000000004aULL: s390_format_VRI_VVIMM(s390_irgen_VFTCI, VRIe_v1(ovl),
                                                  VRIe_v2(ovl), VRIe_i3(ovl),
                                                  VRIe_m4(ovl), VRIe_m5(ovl),
                                                  VRIe_rxb(ovl));  goto ok;
-   case 0xe7000000004dULL: s390_format_VRI_VVIM(s390_irgen_VREP, VRI_v1(ovl),
-                                               VRI_v3(ovl), VRI_i2(ovl),
-                                               VRI_m3(ovl), VRI_rxb(ovl));  goto ok;
-   case 0xe70000000050ULL: s390_format_VRR_VVM(s390_irgen_VPOPCT, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
+   case 0xe7000000004dULL: s390_format_VRI_VVIM(s390_irgen_VREP, VRIc_v1(ovl),
+                                               VRIc_v3(ovl), VRIc_i2(ovl),
+                                               VRIc_m4(ovl), VRIc_rxb(ovl));  goto ok;
+   case 0xe70000000050ULL: s390_format_VRR_VVM(s390_irgen_VPOPCT, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
                                                VRR_rxb(ovl));  goto ok;
-   case 0xe70000000052ULL: s390_format_VRR_VVM(s390_irgen_VCTZ, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe70000000053ULL: s390_format_VRR_VVM(s390_irgen_VCLZ, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
+   case 0xe70000000052ULL: s390_format_VRR_VVM(s390_irgen_VCTZ, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe70000000053ULL: s390_format_VRR_VVM(s390_irgen_VCLZ, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
    case 0xe70000000054ULL: /* VGEM */ goto unimplemented;
    case 0xe70000000056ULL: s390_format_VRR_VV(s390_irgen_VLR, VRR_v1(ovl),
                                               VRR_v2(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe7000000005cULL: s390_format_VRR_VVMM(s390_irgen_VISTR, VRR_v1(ovl),
                                                 VRR_v2(ovl), VRR_m4(ovl),
                                                 VRR_m5(ovl), VRR_rxb(ovl));  goto ok;
-   case 0xe7000000005fULL: s390_format_VRR_VVM(s390_irgen_VSEG, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
+   case 0xe7000000005fULL: s390_format_VRR_VVM(s390_irgen_VSEG, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
    case 0xe70000000060ULL: s390_format_VRR_VVVM(s390_irgen_VMRL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                                VRR_v2(ovl), VRR_v3(ovl),
+                                                VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000061ULL: s390_format_VRR_VVVM(s390_irgen_VMRH, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                                VRR_v2(ovl), VRR_v3(ovl),
+                                                VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000062ULL: s390_format_VRR_VRR(s390_irgen_VLVGP, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_r2(ovl), VRR_r3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000064ULL: s390_format_VRR_VVVM(s390_irgen_VSUM, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000065ULL: s390_format_VRR_VVVM(s390_irgen_VSUMG, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000066ULL: s390_format_VRR_VVV(s390_irgen_VCKSM, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000067ULL: s390_format_VRR_VVVM(s390_irgen_VSUMQ, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000068ULL: s390_format_VRR_VVV(s390_irgen_VN, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000069ULL: s390_format_VRR_VVV(s390_irgen_VNC, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000006aULL: s390_format_VRR_VVV(s390_irgen_VO, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000006bULL: s390_format_VRR_VVV(s390_irgen_VNO, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000006cULL: s390_format_VRR_VVV(s390_irgen_VNX, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000006dULL: s390_format_VRR_VVV(s390_irgen_VX, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000006eULL: s390_format_VRR_VVV(s390_irgen_VNN, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000006fULL: s390_format_VRR_VVV(s390_irgen_VOC, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000070ULL: s390_format_VRR_VVVM(s390_irgen_VESLV, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000072ULL: s390_format_VRId_VVVIM(s390_irgen_VERIM, VRId_v1(ovl),
                                                   VRId_v2(ovl), VRId_v3(ovl),
                                                   VRId_i4(ovl), VRId_m5(ovl),
                                                   VRId_rxb(ovl));  goto ok;
    case 0xe70000000073ULL: s390_format_VRR_VVVM(s390_irgen_VERLLV, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000074ULL: s390_format_VRR_VVV(s390_irgen_VSL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000075ULL: s390_format_VRR_VVV(s390_irgen_VSLB, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000077ULL: s390_format_VRId_VVVI(s390_irgen_VSLDB, VRId_v1(ovl),
                                                  VRId_v2(ovl), VRId_v3(ovl),
                                                  VRId_i4(ovl), VRId_rxb(ovl));  goto ok;
    case 0xe70000000078ULL: s390_format_VRR_VVVM(s390_irgen_VESRLV, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe7000000007aULL: s390_format_VRR_VVVM(s390_irgen_VESRAV, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe7000000007cULL: s390_format_VRR_VVV(s390_irgen_VSRL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000007dULL: s390_format_VRR_VVV(s390_irgen_VSRLB, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000007eULL: s390_format_VRR_VVV(s390_irgen_VSRA, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe7000000007fULL: s390_format_VRR_VVV(s390_irgen_VSRAB, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000080ULL: s390_format_VRR_VVVMM(s390_irgen_VFEE, VRR_v1(ovl),
                                                  VRR_v2(ovl), VRR_r3(ovl),
-                                                 VRR_m4(ovl), VRR_m5(ovl),
-                                                 VRR_rxb(ovl));  goto ok;
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vfae_like_disasm);  goto ok;
    case 0xe70000000081ULL: s390_format_VRR_VVVMM(s390_irgen_VFENE, VRR_v1(ovl),
                                                  VRR_v2(ovl), VRR_r3(ovl),
-                                                 VRR_m4(ovl), VRR_m5(ovl),
-                                                 VRR_rxb(ovl));  goto ok;
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vfae_like_disasm);  goto ok;
    case 0xe70000000082ULL: s390_format_VRR_VVVMM(s390_irgen_VFAE, VRR_v1(ovl),
                                                  VRR_v2(ovl), VRR_r3(ovl),
-                                                 VRR_m4(ovl), VRR_m5(ovl),
-                                                 VRR_rxb(ovl));  goto ok;
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vfae_like_disasm);  goto ok;
    case 0xe70000000084ULL: s390_format_VRR_VVVM(s390_irgen_VPDI, VRR_v1(ovl),
                                                VRR_v2(ovl), VRR_r3(ovl),
                                                VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000085ULL: s390_format_VRR_VVV(s390_irgen_VBPERM, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
+                                               VRR_v2(ovl), VRR_v3(ovl),
                                                VRR_rxb(ovl));  goto ok;
    case 0xe70000000086ULL: s390_format_VRId_VVVI(s390_irgen_VSLD, VRId_v1(ovl),
                                                  VRId_v2(ovl), VRId_v3(ovl),
@@ -22172,68 +22321,70 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe7000000008aULL: s390_format_VRR_VVVVMM(s390_irgen_VSTRC, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
-                                                  VRRd_m6(ovl),
-                                                  VRRd_rxb(ovl));  goto ok;
+                                                  VRRd_m6(ovl), VRRd_rxb(ovl),
+                                                  vstrc_disasm);  goto ok;
    case 0xe7000000008bULL: s390_format_VRR_VVVVMM(s390_irgen_VSTRS, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
-                                                  VRRd_m6(ovl),
-                                                  VRRd_rxb(ovl));  goto ok;
+                                                  VRRd_m6(ovl), VRRd_rxb(ovl),
+                                                  vfae_like_disasm);  goto ok;
    case 0xe7000000008cULL: s390_format_VRR_VVVV(s390_irgen_VPERM, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                               VRR_v2(ovl), VRR_v3(ovl),
+                                               VRR_v4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe7000000008dULL: s390_format_VRR_VVVV(s390_irgen_VSEL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                               VRR_v2(ovl), VRR_v3(ovl),
+                                               VRR_v4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe7000000008eULL: s390_format_VRR_VVVVMM(s390_irgen_VFMS, VRRe_v1(ovl),
                                                   VRRe_v2(ovl), VRRe_v3(ovl),
                                                   VRRe_v4(ovl), VRRe_m5(ovl),
-                                                  VRRe_m6(ovl),
-                                                  VRRe_rxb(ovl));  goto ok;
+                                                  VRRe_m6(ovl), VRRe_rxb(ovl),
+                                                  vfms_like_disasm);  goto ok;
    case 0xe7000000008fULL: s390_format_VRR_VVVVMM(s390_irgen_VFMA, VRRe_v1(ovl),
                                                   VRRe_v2(ovl), VRRe_v3(ovl),
                                                   VRRe_v4(ovl), VRRe_m5(ovl),
-                                                  VRRe_m6(ovl),
-                                                  VRRe_rxb(ovl));  goto ok;
+                                                  VRRe_m6(ovl), VRRe_rxb(ovl),
+                                                  vfms_like_disasm);  goto ok;
    case 0xe70000000094ULL: s390_format_VRR_VVVM(s390_irgen_VPK, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                                VRR_v2(ovl), VRR_v3(ovl),
+                                                VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe70000000095ULL: s390_format_VRR_VVVMM(s390_irgen_VPKLS, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl));  goto ok;
+                                                 VRR_v2(ovl), VRR_v3(ovl),
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vch_like_disasm);  goto ok;
    case 0xe70000000097ULL: s390_format_VRR_VVVMM(s390_irgen_VPKS, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl));  goto ok;
+                                                 VRR_v2(ovl), VRR_v3(ovl),
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vch_like_disasm);  goto ok;
    case 0xe7000000009eULL: s390_format_VRR_VVVVMM(s390_irgen_VFNMS, VRRe_v1(ovl),
                                                   VRRe_v2(ovl), VRRe_v3(ovl),
                                                   VRRe_v4(ovl), VRRe_m5(ovl),
-                                                  VRRe_m6(ovl),
-                                                  VRRe_rxb(ovl));  goto ok;
+                                                  VRRe_m6(ovl), VRRe_rxb(ovl),
+                                                  vfms_like_disasm);  goto ok;
    case 0xe7000000009fULL: s390_format_VRR_VVVVMM(s390_irgen_VFNMA, VRRe_v1(ovl),
                                                   VRRe_v2(ovl), VRRe_v3(ovl),
                                                   VRRe_v4(ovl), VRRe_m5(ovl),
-                                                  VRRe_m6(ovl),
-                                                  VRRe_rxb(ovl));  goto ok;
+                                                  VRRe_m6(ovl), VRRe_rxb(ovl),
+                                                  vfms_like_disasm);  goto ok;
    case 0xe700000000a1ULL: s390_format_VRR_VVVM(s390_irgen_VMLH, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a2ULL: s390_format_VRR_VVVM(s390_irgen_VML, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a3ULL: s390_format_VRR_VVVM(s390_irgen_VMH, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a4ULL: s390_format_VRR_VVVM(s390_irgen_VMLE, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a5ULL: s390_format_VRR_VVVM(s390_irgen_VMLO, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a6ULL: s390_format_VRR_VVVM(s390_irgen_VME, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a7ULL: s390_format_VRR_VVVM(s390_irgen_VMO, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000a9ULL: s390_format_VRRd_VVVVM(s390_irgen_VMALH, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
@@ -22268,13 +22419,13 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe700000000b2ULL: /* VD */ goto unimplemented;
    case 0xe700000000b3ULL: /* VR */ goto unimplemented;
    case 0xe700000000b4ULL: s390_format_VRR_VVVM(s390_irgen_VGFM, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000b8ULL: s390_format_VRR_VVVVMM(s390_irgen_VMSL, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
-                                                  VRRd_m6(ovl),
-                                                  VRRd_rxb(ovl));  goto ok;
+                                                  VRRd_m6(ovl), VRRd_rxb(ovl),
+                                                  vmsl_disasm);  goto ok;
    case 0xe700000000b9ULL: s390_format_VRRd_VVVVM(s390_irgen_VACCC, VRRd_v1(ovl),
                                                   VRRd_v2(ovl), VRRd_v3(ovl),
                                                   VRRd_v4(ovl), VRRd_m5(ovl),
@@ -22311,10 +22462,10 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                   VRRa_v2(ovl), VRRa_m3(ovl),
                                                   VRRa_m4(ovl), VRRa_m5(ovl),
                                                   VRRa_rxb(ovl)); goto ok;
-   case 0xe700000000c4ULL: s390_format_VRRa_VVMMM(s390_irgen_VFLL, VRRa_v1(ovl),
-                                                  VRRa_v2(ovl), VRRa_m3(ovl),
-                                                  VRRa_m4(ovl), VRRa_m5(ovl),
-                                                  VRRa_rxb(ovl)); goto ok;
+   case 0xe700000000c4ULL: s390_format_VRRa_VVMM(s390_irgen_VFLL, VRRa_v1(ovl),
+                                                 VRRa_v2(ovl), VRRa_m3(ovl),
+                                                 VRRa_m4(ovl), VRRa_rxb(ovl),
+                                                 vfll_disasm); goto ok;
    case 0xe700000000c5ULL: s390_format_VRRa_VVMMM(s390_irgen_VFLR, VRRa_v1(ovl),
                                                   VRRa_v2(ovl), VRRa_m3(ovl),
                                                   VRRa_m4(ovl), VRRa_m5(ovl),
@@ -22325,12 +22476,12 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                   VRRa_rxb(ovl)); goto ok;
    case 0xe700000000caULL: s390_format_VRRa_VVMM(s390_irgen_WFK, VRRa_v1(ovl),
                                                  VRRa_v2(ovl), VRRa_m3(ovl),
-                                                 VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl)); goto ok;
+                                                 VRRa_m4(ovl), VRRa_rxb(ovl),
+                                                 wfc_like_disasm); goto ok;
    case 0xe700000000cbULL: s390_format_VRRa_VVMM(s390_irgen_WFC, VRRa_v1(ovl),
                                                  VRRa_v2(ovl), VRRa_m3(ovl),
-                                                 VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl)); goto ok;
+                                                 VRRa_m4(ovl), VRRa_rxb(ovl),
+                                                 wfc_like_disasm); goto ok;
    case 0xe700000000ccULL: s390_format_VRRa_VVMMM(s390_irgen_VFPSO, VRRa_v1(ovl),
                                                   VRRa_v2(ovl), VRRa_m3(ovl),
                                                   VRRa_m4(ovl), VRRa_m5(ovl),
@@ -22338,49 +22489,49 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    case 0xe700000000ceULL: s390_format_VRRa_VVMM(s390_irgen_VFSQ, VRRa_v1(ovl),
                                                  VRRa_v2(ovl), VRRa_m3(ovl),
                                                  VRRa_m4(ovl),
-                                                 VRRa_rxb(ovl)); goto ok;
-   case 0xe700000000d4ULL: s390_format_VRR_VVM(s390_irgen_VUPLL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe700000000d5ULL: s390_format_VRR_VVM(s390_irgen_VUPLH, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe700000000d6ULL: s390_format_VRR_VVM(s390_irgen_VUPL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe700000000d7ULL: s390_format_VRR_VVM(s390_irgen_VUPH, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
+                                                 VRRa_rxb(ovl), vfmix_like_disasm); goto ok;
+   case 0xe700000000d4ULL: s390_format_VRR_VVM(s390_irgen_VUPLL, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe700000000d5ULL: s390_format_VRR_VVM(s390_irgen_VUPLH, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe700000000d6ULL: s390_format_VRR_VVM(s390_irgen_VUPL, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe700000000d7ULL: s390_format_VRR_VVM(s390_irgen_VUPH, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
    case 0xe700000000d8ULL: s390_format_VRR_VV(s390_irgen_VTM, VRR_v1(ovl),
                                               VRR_v2(ovl), VRR_rxb(ovl));  goto ok;
-   case 0xe700000000d9ULL: s390_format_VRR_VVM(s390_irgen_VECL, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe700000000dbULL: s390_format_VRR_VVM(s390_irgen_VEC, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe700000000deULL: s390_format_VRR_VVM(s390_irgen_VLC, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
-   case 0xe700000000dfULL: s390_format_VRR_VVM(s390_irgen_VLP, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_m4(ovl),
-                                               VRR_rxb(ovl));  goto ok;
+   case 0xe700000000d9ULL: s390_format_VRR_VVM(s390_irgen_VECL, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe700000000dbULL: s390_format_VRR_VVM(s390_irgen_VEC, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe700000000deULL: s390_format_VRR_VVM(s390_irgen_VLC, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
+   case 0xe700000000dfULL: s390_format_VRR_VVM(s390_irgen_VLP, VRRa_v1(ovl),
+                                               VRRa_v2(ovl), VRRa_m3(ovl),
+                                               VRRa_rxb(ovl));  goto ok;
    case 0xe700000000e2ULL: s390_format_VRRa_VVVMM(s390_irgen_VFS, VRRa_v1(ovl),
                                                   VRRa_v2(ovl), VRRa_v3(ovl),
                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                  VRRa_rxb(ovl)); goto ok;
+                                                  VRRa_rxb(ovl), vfa_like_disasm); goto ok;
    case 0xe700000000e3ULL: s390_format_VRRa_VVVMM(s390_irgen_VFA, VRRa_v1(ovl),
                                                   VRRa_v2(ovl), VRRa_v3(ovl),
                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                  VRRa_rxb(ovl)); goto ok;
+                                                  VRRa_rxb(ovl), vfa_like_disasm); goto ok;
    case 0xe700000000e5ULL: s390_format_VRRa_VVVMM(s390_irgen_VFD, VRRa_v1(ovl),
                                                   VRRa_v2(ovl), VRRa_v3(ovl),
                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                  VRRa_rxb(ovl)); goto ok;
+                                                  VRRa_rxb(ovl), vfa_like_disasm); goto ok;
    case 0xe700000000e7ULL: s390_format_VRRa_VVVMM(s390_irgen_VFM, VRRa_v1(ovl),
                                                   VRRa_v2(ovl), VRRa_v3(ovl),
                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                  VRRa_rxb(ovl)); goto ok;
+                                                  VRRa_rxb(ovl), vfa_like_disasm); goto ok;
    case 0xe700000000e8ULL: s390_format_VRRa_VVVMMM(s390_irgen_VFCE, VRRa_v1(ovl),
                                                    VRRa_v2(ovl), VRRa_v3(ovl),
                                                    VRRa_m3(ovl), VRRa_m4(ovl),
@@ -22396,58 +22547,58 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
                                                    VRRa_m3(ovl), VRRa_m4(ovl),
                                                    VRRa_m5(ovl),
                                                    VRRa_rxb(ovl)); goto ok;
-   case 0xe700000000eeULL: s390_format_VRRa_VVVMMM(s390_irgen_VFMIN, VRRa_v1(ovl),
-                                                   VRRa_v2(ovl), VRRa_v3(ovl),
-                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                   VRRa_m5(ovl),
-                                                   VRRa_rxb(ovl)); goto ok;
-   case 0xe700000000efULL: s390_format_VRRa_VVVMMM(s390_irgen_VFMAX, VRRa_v1(ovl),
-                                                   VRRa_v2(ovl), VRRa_v3(ovl),
-                                                   VRRa_m3(ovl), VRRa_m4(ovl),
-                                                   VRRa_m5(ovl),
-                                                   VRRa_rxb(ovl)); goto ok;
+   case 0xe700000000eeULL: s390_format_VRRa_VVVMMM2(s390_irgen_VFMIN, VRRa_v1(ovl),
+                                                    VRRa_v2(ovl), VRRa_v3(ovl),
+                                                    VRRa_m3(ovl), VRRa_m4(ovl),
+                                                    VRRa_m5(ovl),
+                                                    VRRa_rxb(ovl)); goto ok;
+   case 0xe700000000efULL: s390_format_VRRa_VVVMMM2(s390_irgen_VFMAX, VRRa_v1(ovl),
+                                                    VRRa_v2(ovl), VRRa_v3(ovl),
+                                                    VRRa_m3(ovl), VRRa_m4(ovl),
+                                                    VRRa_m5(ovl),
+                                                    VRRa_rxb(ovl)); goto ok;
    case 0xe700000000f0ULL: s390_format_VRR_VVVM(s390_irgen_VAVGL, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000f1ULL: s390_format_VRR_VVVM(s390_irgen_VACC, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000f2ULL: s390_format_VRR_VVVM(s390_irgen_VAVG, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000f3ULL: s390_format_VRR_VVVM(s390_irgen_VA, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000f5ULL: s390_format_VRR_VVVM(s390_irgen_VSCBI, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000f7ULL: s390_format_VRR_VVVM(s390_irgen_VS, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000f8ULL: s390_format_VRR_VVVMM(s390_irgen_VCEQ, VRR_v1(ovl),
-                                                 VRR_v2(ovl), VRR_r3(ovl),
-                                                 VRR_m4(ovl), VRR_m5(ovl),
-                                                 VRR_rxb(ovl));  goto ok;
+                                                 VRR_v2(ovl), VRR_v3(ovl),
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vch_like_disasm);  goto ok;
    case 0xe700000000f9ULL: s390_format_VRR_VVVMM(s390_irgen_VCHL, VRR_v1(ovl),
-                                                 VRR_v2(ovl), VRR_r3(ovl),
-                                                 VRR_m4(ovl), VRR_m5(ovl),
-                                                 VRR_rxb(ovl));  goto ok;
+                                                 VRR_v2(ovl), VRR_v3(ovl),
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vch_like_disasm);  goto ok;
    case 0xe700000000fbULL: s390_format_VRR_VVVMM(s390_irgen_VCH, VRR_v1(ovl),
-                                                 VRR_v2(ovl), VRR_r3(ovl),
-                                                 VRR_m4(ovl), VRR_m5(ovl),
-                                                 VRR_rxb(ovl));  goto ok;
+                                                 VRR_v2(ovl), VRR_v3(ovl),
+                                                 VRR_m4(ovl), VRR_m5(ovl), VRR_rxb(ovl),
+                                                 vch_like_disasm);  goto ok;
    case 0xe700000000fcULL: s390_format_VRR_VVVM(s390_irgen_VMNL, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000fdULL: s390_format_VRR_VVVM(s390_irgen_VMXL, VRR_v1(ovl),
-                                                VRR_v2(ovl), VRR_r3(ovl),
+                                                VRR_v2(ovl), VRR_v3(ovl),
                                                 VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000feULL: s390_format_VRR_VVVM(s390_irgen_VMN, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                                VRR_v2(ovl), VRR_v3(ovl),
+                                                VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xe700000000ffULL: s390_format_VRR_VVVM(s390_irgen_VMX, VRR_v1(ovl),
-                                               VRR_v2(ovl), VRR_r3(ovl),
-                                               VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
+                                                VRR_v2(ovl), VRR_v3(ovl),
+                                                VRR_m4(ovl), VRR_rxb(ovl));  goto ok;
    case 0xeb0000000004ULL: s390_format_RSY_RRRD(s390_irgen_LMG, RSY_r1(ovl),
                                                 RSY_r3(ovl), RSY_b2(ovl),
                                                 RSY_dl2(ovl),

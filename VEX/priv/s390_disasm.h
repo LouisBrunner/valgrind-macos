@@ -111,6 +111,30 @@ HChar *bic_disasm(const s390_opnd *, HChar *);
 HChar *cls_disasm(const s390_opnd *, HChar *);
 HChar *brcl_disasm(const s390_opnd *, HChar *);
 HChar *cabt_disasm(const s390_opnd *, HChar *);
+HChar *mask0_disasm(const s390_opnd *, HChar *);
+HChar *vcdg_disasm(const s390_opnd *, HChar *);
+HChar *vcgd_disasm(const s390_opnd *, HChar *);
+HChar *vcgld_disasm(const s390_opnd *, HChar *);
+HChar *vclgd_disasm(const s390_opnd *, HChar *);
+HChar *vfi_disasm(const s390_opnd *, HChar *);
+HChar *vfll_disasm(const s390_opnd *, HChar *);
+HChar *vflr_disasm(const s390_opnd *, HChar *);
+HChar *vfms_like_disasm(const s390_opnd *, HChar *);
+HChar *vfpso_disasm(const s390_opnd *, HChar *);
+HChar *vgbm_disasm(const s390_opnd *, HChar *);
+HChar *vllez_disasm(const s390_opnd *, HChar *);
+HChar *vllebrz_disasm(const s390_opnd *, HChar *);
+HChar *vmsl_disasm(const s390_opnd *, HChar *);
+HChar *vstebrf_disasm(const s390_opnd *, HChar *);
+HChar *vstebrg_disasm(const s390_opnd *, HChar *);
+HChar *vstrc_disasm(const s390_opnd *, HChar *);
+HChar *va_like_disasm(const s390_opnd *, HChar *);
+HChar *vch_like_disasm(const s390_opnd *, HChar *);
+HChar *vfa_like_disasm(const s390_opnd *, HChar *);
+HChar *wfc_like_disasm(const s390_opnd *, HChar *);
+HChar *vfae_like_disasm(const s390_opnd *, HChar *);
+HChar *vfce_like_disasm(const s390_opnd *, HChar *);
+HChar *vfmix_like_disasm(const s390_opnd *, HChar *);
 
 /*---------------------------------------------------------------*/
 /*--- end                                       s390_disasm.h ---*/

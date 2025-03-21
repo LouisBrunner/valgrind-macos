@@ -63,6 +63,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 501348  glibc built with -march=x86-64-v3 does not work due to ld.so memcmp
 501479  Illumos DRD pthread_mutex_init wrapper errors
 501365  syscall userfaultfd not wrapped
+501846  Add x86 Linux shm wrappers
 
 
 To see details of a given bug, visit

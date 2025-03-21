@@ -1384,6 +1384,7 @@
 /memcheck/tests/x86-linux/scalar_fork
 /memcheck/tests/x86-linux/scalar_supp
 /memcheck/tests/x86-linux/scalar_vfork
+/memcheck/tests/x86-linux/shm
 
 # /memcheck/tests/x86-solaris/
 /memcheck/tests/x86-solaris/*.stderr.diff

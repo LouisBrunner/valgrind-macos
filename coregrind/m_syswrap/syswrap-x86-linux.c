@@ -1622,6 +1622,11 @@ static SyscallTableEntry syscall_table[] = {
 
    GENX_(__NR_rseq,              sys_ni_syscall),       // 386
 
+   LINX_(__NR_shmget,            sys_shmget),           // 395
+   LINX_(__NR_shmctl,            sys_shmctl),           // 396
+   LINX_(__NR_shmat,             sys_shmat),            // 397
+   LINX_(__NR_shmdt,             sys_shmdt),            // 398
+
    LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
    LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404
 

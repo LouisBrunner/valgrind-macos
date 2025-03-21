@@ -1,0 +1,58 @@
+-----------------------------------------------------
+395:         __NR_shmget 3s 0m
+-----------------------------------------------------
+Syscall param shmget(key) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:20)
+
+Syscall param shmget(size) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:20)
+
+Syscall param shmget(shmflg) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:20)
+
+-----------------------------------------------------
+397:          __NR_shmat 3s 0m
+-----------------------------------------------------
+Syscall param shmat(shmid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:25)
+
+Syscall param shmat(shmaddr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:25)
+
+Syscall param shmat(shmflg) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:25)
+
+-----------------------------------------------------
+396:         __NR_shmctl 3s 0m
+-----------------------------------------------------
+Syscall param shmctl(shmid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:31)
+
+Syscall param shmctl(cmd) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:31)
+
+Syscall param shmctl(buf) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:31)
+
+Syscall param shmctl(IPC_INFO, buf) points to unaddressable byte(s)
+   ...
+   by 0x........: main (shm.c:31)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (shm.c:13)
+
+-----------------------------------------------------
+398:          __NR_shmdt 1s 0m
+-----------------------------------------------------
+Syscall param shmdt(shmaddr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (shm.c:34)
+

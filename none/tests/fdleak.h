@@ -35,8 +35,10 @@ static void close_inherited (void) {
 
    /* Only leave 0 (stdin), 1 (stdout) and 2 (stderr) open.  */
    for (i = 3; i < max_fds; i++)
-      if (fstat (i, &sb) != -1) /* Test if the file descriptor exists first. */
+      if (fstat (i, &sb) != -1) { /* Test if the file descriptor exists first. */
+         printf("trying to close fd %d\n", i);
          close(i);
+      }
 }
 #define CLOSE_INHERITED_FDS close_inherited ()
 /* Note that the following would be nicer, but close_range is fairly new.  */

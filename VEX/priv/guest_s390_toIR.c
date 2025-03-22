@@ -8477,12 +8477,12 @@ s390_irgen_LNGR(UChar r1, UChar r2)
 }
 
 static const HChar *
-s390_irgen_LNGFR(UChar r1, UChar r2 __attribute__((unused)))
+s390_irgen_LNGFR(UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
    IRTemp result = newTemp(Ity_I64);
 
-   assign(op2, unop(Iop_32Sto64, get_gpr_w1(r1)));
+   assign(op2, unop(Iop_32Sto64, get_gpr_w1(r2)));
    assign(result, mkite(binop(Iop_CmpLE64S, mkexpr(op2), mkU64(0)), mkexpr(op2),
           binop(Iop_Sub64, mkU64(0), mkexpr(op2))));
    put_gpr_dw0(r1, mkexpr(result));

@@ -783,9 +783,9 @@ asm(
 "      movq    %r8,  %r10\n"    /* a4 */
 "      movq    %r9,  %r8\n"     /* a5 */
 "      movq    16(%rbp), %r9\n" /* a6 last arg from stack, account for %rbp */
-"      movq    24(%rbp), %r11\n" /* a7 from stack */
+"      movq    32(%rbp), %r11\n" /* a7 from stack */
 "      pushq  %r11\n"
-"      movq    32(%rbp), %r11\n" /* a8 from stack */
+"      movq    24(%rbp), %r11\n" /* a8 from stack */
 "      pushq  %r11\n"
 "      subq    $8,%rsp\n"       /* fake return addr */
 "      syscall\n"

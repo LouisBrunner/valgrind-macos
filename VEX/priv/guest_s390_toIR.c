@@ -10664,14 +10664,14 @@ s390_irgen_SHY(UChar r1, IRTemp op2addr)
 }
 
 static const HChar *
-s390_irgen_SHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_SHHHR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
    IRTemp result = newTemp(Ity_I32);
 
-   assign(op2, get_gpr_w0(r1));
-   assign(op3, get_gpr_w0(r2));
+   assign(op2, get_gpr_w0(r2));
+   assign(op3, get_gpr_w0(r3));
    assign(result, binop(Iop_Sub32, mkexpr(op2), mkexpr(op3)));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_SUB_32, op2, op3);
    put_gpr_w0(r1, mkexpr(result));
@@ -10680,14 +10680,14 @@ s390_irgen_SHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
 }
 
 static const HChar *
-s390_irgen_SHHLR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_SHHLR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
    IRTemp result = newTemp(Ity_I32);
 
-   assign(op2, get_gpr_w0(r1));
-   assign(op3, get_gpr_w1(r2));
+   assign(op2, get_gpr_w0(r2));
+   assign(op3, get_gpr_w1(r3));
    assign(result, binop(Iop_Sub32, mkexpr(op2), mkexpr(op3)));
    s390_cc_thunk_putSS(S390_CC_OP_SIGNED_SUB_32, op2, op3);
    put_gpr_w0(r1, mkexpr(result));
@@ -10874,14 +10874,14 @@ s390_irgen_SLGFI(UChar r1, UInt i2)
 }
 
 static const HChar *
-s390_irgen_SLHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_SLHHHR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
    IRTemp result = newTemp(Ity_I32);
 
-   assign(op2, get_gpr_w0(r1));
-   assign(op3, get_gpr_w0(r2));
+   assign(op2, get_gpr_w0(r2));
+   assign(op3, get_gpr_w0(r3));
    assign(result, binop(Iop_Sub32, mkexpr(op2), mkexpr(op3)));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_SUB_32, op2, op3);
    put_gpr_w0(r1, mkexpr(result));
@@ -10890,14 +10890,14 @@ s390_irgen_SLHHHR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
 }
 
 static const HChar *
-s390_irgen_SLHHLR(UChar r3 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_SLHHLR(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
    IRTemp result = newTemp(Ity_I32);
 
-   assign(op2, get_gpr_w0(r1));
-   assign(op3, get_gpr_w1(r2));
+   assign(op2, get_gpr_w0(r2));
+   assign(op3, get_gpr_w1(r3));
    assign(result, binop(Iop_Sub32, mkexpr(op2), mkexpr(op3)));
    s390_cc_thunk_putZZ(S390_CC_OP_UNSIGNED_SUB_32, op2, op3);
    put_gpr_w0(r1, mkexpr(result));

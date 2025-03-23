@@ -450,6 +450,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
 	wcpncpy.stderr.exp wcpncpy.vgtest \
 	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
+	wcscat.vgtest wcscat.stderr.exp wcscat.stdout.exp \
 	wcsncpy.vgtest wcsncpy.stderr.exp \
 	wmemcmp.vgtest wmemcmp.stderr.exp \
 	wrap1.vgtest wrap1.stdout.exp wrap1.stderr.exp \
@@ -556,6 +557,7 @@ check_PROGRAMS = \
 	varinforestrict \
 	vcpu_fbench vcpu_fnfns \
 	wcs \
+	wcscat \
 	xml1 \
 	wmemcmp \
 	wrap1 wrap2 wrap3 wrap4 wrap5 wrap6 wrap7 wrap7so.so wrap8 \

@@ -1,19 +1,19 @@
 Conditional jump or move depends on uninitialised value(s)
-   at 0x........: wcpncpy (vg_replace_strmem.c:2426)
+   at 0x........: wcpncpy (vg_replace_strmem.c:2427)
    by 0x........: main (wcpncpy.c:14)
 
 Invalid write of size 4
-   at 0x........: wcpncpy (vg_replace_strmem.c:2426)
+   at 0x........: wcpncpy (vg_replace_strmem.c:2427)
    by 0x........: main (wcpncpy.c:27)
  Address 0x........ is 20 bytes inside a block of size 22 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: main (wcpncpy.c:10)
 
 Source and destination overlap in wcpncpy(0x........, 0x........)
-   at 0x........: wcpncpy (vg_replace_strmem.c:2426)
+   at 0x........: wcpncpy (vg_replace_strmem.c:2427)
    by 0x........: main (wcpncpy.c:35)
 
 Source and destination overlap in wcpncpy(0x........, 0x........)
-   at 0x........: wcpncpy (vg_replace_strmem.c:2426)
+   at 0x........: wcpncpy (vg_replace_strmem.c:2427)
    by 0x........: main (wcpncpy.c:43)
 

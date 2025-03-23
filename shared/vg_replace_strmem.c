@@ -108,6 +108,7 @@
    20480 WCSNCPY
    20490 MEMCCPY
    20500 WCPNCPY
+   20510 WCSCAT
 */
 
 #if defined(VGO_solaris)
@@ -2426,6 +2427,34 @@ static inline void my_exit ( int x )
  WCPNCPY(VG_Z_LIBC_SONAME, wcpncpy)
 #endif
 
+/*----------------------- wcscat ----------------------*/
+
+#define WCSCAT(soname, fnname) \
+ Int* VG_REPLACE_FUNCTION_EZU(20510,soname,fnname) \
+    ( Int *restrict dest, const Int *restrict src ); \
+    Int* VG_REPLACE_FUNCTION_EZU(20510,soname,fnname) \
+    ( Int *restrict dest, const Int *restrict src ) \
+ { \
+    const Int* src_orig = src; \
+    Int* dest_orig = dest; \
+    while (*dest) dest++; \
+    while (*src) *dest++ = *src++; \
+    *dest = 0; \
+      \
+    /* This is a bit redundant, I think;  any overlap and the wcscat will */ \
+    /* go forever... or until a seg fault occurs. */ \
+    if (is_overlap(dest_orig,  \
+                   src_orig,  \
+                  (Addr)dest-(Addr)dest_orig+1,  \
+                  (Addr)src-(Addr)src_orig+1)) \
+    RECORD_OVERLAP_ERROR("wcscat", dest_orig, src_orig, 0); \
+      \
+    return dest_orig; \
+ }
+
+#if defined(VGO_linux)
+ WCSCAT(VG_Z_LIBC_SONAME, __wcscat_avx2)
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/

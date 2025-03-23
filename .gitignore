@@ -1045,6 +1045,7 @@
 /memcheck/tests/vcpu_fnfns
 /memcheck/tests/vgtest_ume
 /memcheck/tests/wcs
+/memcheck/tests/wcscat
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
 /memcheck/tests/wcpncpy

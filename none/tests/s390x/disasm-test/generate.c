@@ -67,26 +67,20 @@ vr_operand(unsigned regno)
 
 
 static unsigned
-random_gpr(int allow_r0)
+random_reg(opnd_t reg_kind, int r0_allowed)
 {
+   unsigned num_regs = reg_kind == OPND_VR ? 32 : 16;
    unsigned regno;
 
-   if (allow_r0) {
-      regno = rand() % 16;
+   if (r0_allowed) {
+      regno = rand() % num_regs;
    } else {
       do {
-         regno = rand() % 16;
+         regno = rand() % num_regs;
       } while (regno == 0);
    }
 
    return regno;
-}
-
-
-static unsigned
-random_vr(void)
-{
-   return rand() % 32;
 }
 
 
@@ -159,31 +153,15 @@ sint_value(unsigned num_bits)
    function returns a register number which has not been used and
    adjusts the bitvector. */
 static unsigned
-unique_gpr(unsigned regno, unsigned *mask)
+unique_reg(opnd_t reg_kind, unsigned regno, unsigned *mask)
 {
-   assert(regno < 16);
+   unsigned num_regs = reg_kind == OPND_VR ? 32 : 16;
+   assert(regno < num_regs);
    assert(*mask != ~0U);   // Paranoia: avoid infinite loop
 
    unsigned bit = 1 << regno;
    while (*mask & bit) {
-      regno = random_gpr(/* allow_r0 */1);
-      bit = 1 << regno;
-   }
-   *mask |= bit;
-   return regno;
-}
-
-
-/* Like unique_gpr */
-static unsigned
-unique_vr(unsigned regno, unsigned *mask)
-{
-   assert(regno < 32);
-   assert(*mask != ~0U);   // Paranoia: avoid infinite loop
-
-   unsigned bit = 1 << regno;
-   while (*mask & bit) {
-      regno = random_vr();
+      regno = random_reg(reg_kind, /* r0_allowed */1);
       bit = 1 << regno;
    }
    *mask |= bit;
@@ -200,6 +178,8 @@ typedef struct {
    long long assigned_value;
 } field;
 
+static void choose_reg_and_iterate(FILE *, const opcode *, const opnd *,
+                                   field [], unsigned);
 
 /* Write out a single ASM statement for OPC. */
 static void
@@ -221,11 +201,15 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
          fputc(',', fp);
       switch (operand->kind) {
       case OPND_GPR:
-         regno = unique_gpr(fields[i].assigned_value, &gpr_mask);
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &gpr_mask);
          fprintf(fp, "%s", gpr_operand(regno));
          break;
       case OPND_VR:
-         regno = unique_vr(fields[i].assigned_value, &vr_mask);
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &vr_mask);
          fprintf(fp, "%s", vr_operand(regno));
          break;
       case OPND_D12XB:
@@ -300,18 +284,15 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
          f->assigned_value = 0;
          iterate(fp, opc, fields, ix + 1);
          /* Choose any GPR other than r0 */
-         f->assigned_value = random_gpr(/* r0_allowed */ 0);
+         f->assigned_value = random_reg(operand->kind, /* r0_allowed */ 0);
          iterate(fp, opc, fields, ix + 1);
       } else {
-         /* Choose any GPR */
-         f->assigned_value = random_gpr(/* r0_allowed */ 1);
-         iterate(fp, opc, fields, ix + 1);
+         choose_reg_and_iterate(fp, opc, operand, fields, ix);
       }
       break;
 
    case OPND_VR:
-      f->assigned_value = random_vr();   // Choose any VR
-      iterate(fp, opc, fields, ix + 1);
+      choose_reg_and_iterate(fp, opc, operand, fields, ix);
       break;
 
    case OPND_D12B:
@@ -341,13 +322,15 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
          }
       } else if (f->is_vr) {
          /* v0 is not special AFAICT */
-         f->assigned_value = random_vr();
+         f->assigned_value = random_reg(OPND_VR, /* r0_allowed */ 11);
          iterate(fp, opc, fields, ix + 1);
       } else {
          /* Base or index register */
+         /* Choose r0 */
          f->assigned_value = 0;
          iterate(fp, opc, fields, ix + 1);
-         f->assigned_value = random_gpr(/* r0_allowed */ 0);
+         /* Choose any GPR other than r0 */
+         f->assigned_value = random_reg(OPND_GPR, /* r0_allowed */ 0);
          iterate(fp, opc, fields, ix + 1);
       }
       break;
@@ -373,7 +356,7 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
          /* base or index register */
          f->assigned_value = 0;
          iterate(fp, opc, fields, ix + 1);
-         f->assigned_value = random_gpr(/* r0_allowed */ 0);
+         f->assigned_value = random_reg(OPND_GPR, /* r0_allowed */ 0);
          iterate(fp, opc, fields, ix + 1);
       }
       break;
@@ -569,6 +552,27 @@ generate_tests(const opcode *opc)
            opc->name, opc->name);
 
    return num_tests;
+}
+
+
+static void
+choose_reg_and_iterate(FILE *fp, const opcode *opc, const opnd *operand,
+                       field fields[], unsigned ix)
+{
+   field *f = fields + ix;
+
+   if (operand->allowed_values == NULL) {
+      /* No constraint. Pick register at random. */
+      f->assigned_value = random_reg(operand->kind, /* r0_allowed */ 1);
+      iterate(fp, opc, fields, ix + 1);
+   } else {
+      /* Constraint. Choose only allowed values */
+      unsigned num_val = operand->allowed_values[0];
+      for (int i = 1; i <= num_val; ++i) {
+         f->assigned_value = operand->allowed_values[i];
+         iterate(fp, opc, fields, ix + 1);
+      }
+   }
 }
 
 

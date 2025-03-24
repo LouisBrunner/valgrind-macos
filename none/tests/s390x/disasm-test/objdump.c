@@ -32,6 +32,7 @@
 
 static int get_nibble(const char *);
 static int get_byte(const char *);
+static void io_error(FILE *, const char *, const char *);
 
 
 objdump_file *
@@ -43,20 +44,24 @@ read_objdump(const char *file)
    /* Slurp file into memory */
    FILE *fp = fopen(file, "rb");
    if (fp == NULL) {
-      error("%s: fopen failed\n", file);
+      io_error(fp, file, "fopen failed\n");
       return NULL;
    }
 
    /* Determine file size */
    int rc = fseek(fp, 0, SEEK_END);
    if (rc < 0) {
-      error("%s: fseek failed\n", file);
+      io_error(fp, file, "fseek failed\n");
       return NULL;
    }
 
    long size = ftell(fp);
    if (size < 0) {
-      error("%s: ftell failed\n", file);
+      io_error(fp, file, "ftell failed\n");
+      return NULL;
+   }
+   if (size == 0) {
+      io_error(fp, file, "file is empty\n");
       return NULL;
    }
    rewind(fp);
@@ -64,7 +69,7 @@ read_objdump(const char *file)
    char *const buf = mallock(size + 1);
    size_t num_read = fread(buf, 1, size, fp);
    if (num_read != size) {
-      error("%s: fread failed\n", file);
+      io_error(fp, file, "fread failed\n");
       free(buf);
       return NULL;
    }
@@ -234,4 +239,12 @@ get_byte(const char *p)
    int n2 = get_nibble(p + 1);
 
    return (n1 << 4) + n2;
+}
+
+static void
+io_error(FILE *fp, const char *file, const char *msg)
+{
+   if (fp)
+      fclose(fp);
+   error("%s: %s", file, msg);
 }

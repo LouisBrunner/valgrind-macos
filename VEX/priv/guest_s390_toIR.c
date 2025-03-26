@@ -58,6 +58,8 @@ static const HChar *s390_irgen_VCGD(UChar, UChar, UChar, UChar, UChar);
 static const HChar *s390_irgen_VCDG(UChar, UChar, UChar, UChar, UChar);
 static const HChar *s390_irgen_VCDLG(UChar, UChar, UChar, UChar, UChar);
 static const HChar *s390_irgen_VCLGD(UChar, UChar, UChar, UChar, UChar);
+static const HChar *s390_irgen_KMA(UChar, UChar, UChar);
+static const HChar *s390_irgen_KMCTR(UChar, UChar, UChar);
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -3061,7 +3063,7 @@ s390_format_RRF_M0RERE(const HChar *(*irgen)(UChar m3, UChar r1, UChar r2),
    const HChar *mnm = irgen(m3, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), GPR(r1), GPR(r2), UINT(m3));
+      S390_DISASM(XMNM(mnm, mask0_disasm), GPR(r1), GPR(r2), MASK(m3));
 }
 
 static void
@@ -3208,8 +3210,12 @@ s390_format_RRF_R0RR2(const HChar *(*irgen)(UChar r3, UChar r1, UChar r2),
 {
    const HChar *mnm = irgen(r3, r1, r2);
 
-   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), GPR(r1), GPR(r2), GPR(r3));
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE)) {
+      if (irgen == s390_irgen_KMA || irgen == s390_irgen_KMCTR)
+         S390_DISASM(MNM(mnm), GPR(r1), GPR(r3), GPR(r2));
+      else
+         S390_DISASM(MNM(mnm), GPR(r1), GPR(r2), GPR(r3));
+   }
 }
 
 static void
@@ -3475,7 +3481,7 @@ s390_format_RXE_RRRDR(const HChar *(*irgen)(UChar r1, IRTemp op2addr, UChar m3),
    mnm = irgen(r1, op2addr, m3);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), GPR(r1), UDXB(d2, x2, b2));
+      S390_DISASM(MNM(mnm), GPR(r1), UDXB(d2, x2, b2), UINT(m3));
 }
 
 static void
@@ -20627,7 +20633,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                  goto ok;
    case 0xb29d: s390_format_S_RD(s390_irgen_LFPC, S_b2(ovl), S_d2(ovl));
                                  goto ok;
-   case 0xb2a5: s390_format_RRE_FF(s390_irgen_TRE, RRE_r1(ovl), RRE_r2(ovl));  goto ok;
+   case 0xb2a5: s390_format_RRE_RR(s390_irgen_TRE, RRE_r1(ovl), RRE_r2(ovl));  goto ok;
    case 0xb2a6: s390_format_RRF_M0RERE(s390_irgen_CU21, RRF3_r3(ovl),
                                        RRF3_r1(ovl), RRF3_r2(ovl));
       goto ok;

@@ -457,6 +457,11 @@ mask0_disasm(const s390_opnd *opnds, HChar *p)
 
    const HChar *mnm = opnds[0].xmnm.base;
 
+   if (vex_streq(mnm, "cu12") && opnds[unique_mask_index(opnds)].mask == 0)
+      mnm = "cutfu";
+   if (vex_streq(mnm, "cu21") && opnds[unique_mask_index(opnds)].mask == 0)
+      mnm = "cuutf";
+
    return s390_disasm_aux(opnds, mnm, p, mask0_mh);
 }
 

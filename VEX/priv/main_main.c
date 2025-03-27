@@ -1561,8 +1561,8 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
      case EmFail_S390X_vx:
         return "Encountered an instruction that requires the vector facility.\n"
                "  That facility is not available on this host";
-     case EmFail_S390X_ppno:
-        return "Instruction ppno is not supported on this host.";
+     case EmFail_S390X_prno:
+        return "Instruction prno is not supported on this host.";
      case EmFail_S390X_vxe:
         return "Encountered an instruction that requires the vector-extensions"
                " facility 1.\n"

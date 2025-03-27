@@ -17357,20 +17357,19 @@ s390_irgen_LCBB(UChar r1, IRTemp op2addr, UChar m3)
    return "lcbb";
 }
 
-/* Also known as "PRNO" */
 static const HChar *
-s390_irgen_PPNO(UChar r1, UChar r2)
+s390_irgen_PRNO(UChar r1, UChar r2)
 {
    if (!s390_host_has_msa5) {
-      emulation_failure(EmFail_S390X_ppno);
-      return "ppno";
+      emulation_failure(EmFail_S390X_prno);
+      return "prno";
    }
 
    /* Check for obvious specification exceptions */
-   s390_insn_assert("ppno", r1 % 2 == 0 && r2 % 2 == 0 && r1 != 0 && r2 != 0);
+   s390_insn_assert("prno", r1 % 2 == 0 && r2 % 2 == 0 && r1 != 0 && r2 != 0);
 
    extension(S390_EXT_PRNO, r1 | (r2 << 4));
-   return "ppno";
+   return "prno";
 }
 
 static const HChar *
@@ -17378,7 +17377,7 @@ s390_irgen_DFLTCC(UChar r3, UChar r1, UChar r2)
 {
    if (!s390_host_has_dflt) {
       emulation_failure(EmFail_S390X_dflt);
-      return "ppno";
+      return "dfltcc";
    }
 
    /* Check for obvious specification exceptions */
@@ -21083,7 +21082,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb93a: s390_format_RRE_RR(s390_irgen_KDSA, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb93b: s390_format_E(s390_irgen_NNPA);  goto ok;
-   case 0xb93c: s390_format_RRE_RR(s390_irgen_PPNO, RRE_r1(ovl),
+   case 0xb93c: s390_format_RRE_RR(s390_irgen_PRNO, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb93e: s390_format_RRE_RR(s390_irgen_KIMD, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;

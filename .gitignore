@@ -1181,6 +1181,8 @@
 /memcheck/tests/linux/.deps
 /memcheck/tests/linux/aligned_alloc
 /memcheck/tests/linux/brk
+/memcheck/tests/linux/bug420682_1
+/memcheck/tests/linux/bug420682_2
 /memcheck/tests/linux/bug480706
 /memcheck/tests/linux/capget
 /memcheck/tests/linux/check_preadv2_pwritev2

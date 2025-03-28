@@ -299,6 +299,7 @@
 #define __NR_pwritev2 287
 #define __NR_pkey_free 290
 #define __NR_statx 291
+#define __NR_io_pgetevents 292
 #define __NR_rseq 293
 #define __NR_io_uring_setup 425
 #define __NR_io_uring_enter 426

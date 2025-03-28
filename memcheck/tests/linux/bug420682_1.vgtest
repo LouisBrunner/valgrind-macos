@@ -1,0 +1,4 @@
+prereq: test -e bug420682_1
+prog: bug420682_1
+vgopts: -q
+post: rm -f test.txt

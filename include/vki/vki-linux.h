@@ -5484,6 +5484,11 @@ struct vki_open_how {
 
 #define VKI_BTRFS_SUPER_MAGIC    0x9123683E
 
+struct vki__aio_sigset {
+   const vki_sigset_t __user	*sigmask;
+   vki_size_t		sigsetsize;
+};
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -49,6 +49,7 @@ DECL_TEMPLATE(linux, sys_preadv);
 DECL_TEMPLATE(linux, sys_preadv2);
 DECL_TEMPLATE(linux, sys_pwritev);
 DECL_TEMPLATE(linux, sys_pwritev2);
+DECL_TEMPLATE(linux, sys_io_pgetevents);
 DECL_TEMPLATE(linux, sys_sendmmsg);
 DECL_TEMPLATE(linux, sys_recvmmsg);
 DECL_TEMPLATE(linux, sys_dup3);

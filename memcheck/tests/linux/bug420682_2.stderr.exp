@@ -1,0 +1,54 @@
+Syscall param io_pgetevents(ctx_id) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+
+Syscall param io_pgetevents(min_nr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+
+Syscall param io_pgetevents(nr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+
+Syscall param io_pgetevents(events) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+
+Syscall param io_pgetevents(timeout) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+
+Syscall param io_pgetevents(timeout) points to unaddressable byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param io_pgetevents(usig) points to unaddressable byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:16)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param io_pgetevents(ctx_id) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:29)
+
+Syscall param io_pgetevents(min_nr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:29)
+
+Syscall param io_pgetevents(nr) contains uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:29)
+
+Syscall param io_pgetevents(timeout) points to uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:29)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (bug420682_2.c:13)
+
+Syscall param io_pgetevents(usig) points to uninitialised byte(s)
+   ...
+   by 0x........: main (bug420682_2.c:29)
+ Address 0x........ is on thread 1's stack
+ in frame #1, created by main (bug420682_2.c:13)
+

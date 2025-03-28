@@ -2111,6 +2111,40 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAVE_NR_MEMBARRIER, [test x$ac_have_nr_membarrier = xyes])
 
+AC_MSG_CHECKING([for __NR_io_pgetevents])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/unistd.h>
+]], [[
+return __NR_io_pgetevents
+]])], [
+ac_have_nr_io_pgetevents=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_nr_io_pgetevents=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_NR_IO_PGETEVENTS, [test x$ac_have_nr_io_pgetevents = xyes])
+
+safe_LIBS="$LIBS"
+LIBS="-laio"
+AC_MSG_CHECKING([for libaio])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <libaio.h>
+]], [[
+io_context_t ctx;
+io_submit(ctx, 1, NULL);
+]])], [
+ac_have_libaio=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_libaio=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_LIBAIO, [test x$ac_have_libaio = xyes])
+LIBS=$safe_LIBS
+
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------

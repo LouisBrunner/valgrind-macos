@@ -134,6 +134,9 @@ s/^>[> ]*//
 #       anonymise a 'general' system calls stack trace part
 s/in _dl_sysinfo_int80 () from \/lib\/ld-linux.so.*/in syscall .../
 
+#      in __syscall_cancel_arch is just in a syscall
+s/in __syscall_cancel_arch .*/in syscall .../
+
 #       anonymise kill syscall.
 s/in kill ().*$/in syscall .../
 

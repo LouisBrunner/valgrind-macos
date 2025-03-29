@@ -524,6 +524,15 @@ always_mh(UInt ix __attribute__((unused)),
 }
 
 
+static Int
+never_mh(UInt ix __attribute__((unused)),
+         UInt mask, UInt *value)
+{
+   *value = mask;
+   return 0;
+}
+
+
 HChar *
 vfce_like_disasm(const s390_opnd *opnds, HChar *p)
 {
@@ -975,6 +984,85 @@ vcgld_disasm(const s390_opnd *opnds, HChar *p)
    const HChar *mnm[2] = { "vcelfb", "vcdlgb" };
 
    return vcgd_like_disasm(opnds, mnm, p);
+}
+
+
+/* Used by BFP / DFP convert from fixed / logical opcodes
+
+   1) Mnemonics ending in 'A', e.g. CEFBRA
+      a) m3 == m4 == 0  --> CEFBR and no mask values written
+      b) otherwise      --> CEFBRA and both mask values written
+
+   2) Mnemonics for "logical" opcodes, e.g. CELFBR
+      These do not end in 'A'
+      --> mnemonic unchanged, both mask values written
+
+   3) Neither #1 nor #2, e.g. CDFTR
+      --> mnemonic unchanged, both mask values written
+*/
+HChar *
+fp_convf_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar *base = opnds[0].xmnm.base;
+   UInt m3 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt m4 = opnds[get_mask_index(opnds, 2)].mask;
+   UInt len = vex_strlen(base);
+
+   HChar xmnm[len + 1];
+
+   vex_sprintf(xmnm, "%s", base);
+
+   if (xmnm[len - 1] == 'a' && m3 + m4 == 0) {
+      xmnm[len - 1] = '\0';
+      return s390_disasm_aux(opnds, xmnm, p, never_mh);
+   }
+   return s390_disasm_aux(opnds, xmnm, p, always_mh);
+}
+
+
+/* Return 1, if mask should be printed. In *VALUE return the mask value
+   that should be printed.  */
+static Int
+fp_convt_mh(UInt ix __attribute__((unused)), UInt mask, UInt *value)
+{
+   *value = mask;
+   return (ix == 2 || mask != 0) ? 1 : 0;
+}
+
+
+/* Used by BFP / DFP convert to fixed / logical opcodes
+
+   1) Mnemonics ending in 'A', e.g. CFEBRA
+      a) m4 == 0     --> CFEBR and no mask values written
+      b) otherwise   --> CFEBRA and both mask values written
+
+   2) Mnemonics for "logical" opcodes, e.g. CLFEBR
+      These do not end in 'A'
+      --> mnemonic unchanged, both mask values written
+
+   3) Neither #1 nor #2, e.g. CFDTR
+      --> mnemonic unchanged, both mask values written
+*/
+HChar *
+fp_convt_disasm(const s390_opnd *opnds, HChar *p)
+{
+   vassert(mask_count(opnds) == 2);
+
+   const HChar *base = opnds[0].xmnm.base;
+   UInt m4 = opnds[get_mask_index(opnds, 2)].mask;
+   UInt len = vex_strlen(base);
+
+   HChar xmnm[len + 1];
+
+   vex_sprintf(xmnm, "%s", base);
+
+   if (xmnm[len - 1] == 'a' && m4 == 0) {
+      xmnm[len - 1] = '\0';
+      return s390_disasm_aux(opnds, xmnm, p, fp_convt_mh);
+   }
+   return s390_disasm_aux(opnds, xmnm, p, always_mh);
 }
 
 

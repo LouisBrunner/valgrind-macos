@@ -3115,7 +3115,7 @@ s390_format_RRF_UUFR(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
    const HChar *mnm = irgen(m3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), FPR(r1), UINT(m3), GPR(r2), UINT(m4));
+      S390_DISASM(XMNM(mnm, fp_convf_disasm), FPR(r1), MASK(m3), GPR(r2), MASK(m4));
 }
 
 static void
@@ -3126,7 +3126,7 @@ s390_format_RRF_UURF(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
    const HChar *mnm = irgen(m3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), GPR(r1), UINT(m3), FPR(r2), UINT(m4));
+      S390_DISASM(XMNM(mnm, fp_convt_disasm), GPR(r1), MASK(m3), FPR(r2), MASK(m4));
 }
 
 
@@ -11394,8 +11394,8 @@ s390_irgen_ADB(UChar r1, IRTemp op2addr)
 }
 
 static const HChar *
-s390_irgen_CEFBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CEFBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext && m3 != S390_BFP_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
@@ -11407,24 +11407,24 @@ s390_irgen_CEFBR(UChar m3, UChar m4 __attribute__((unused)),
    put_fpr_w0(r1, binop(Iop_I32StoF32, mkexpr(encode_bfp_rounding_mode(m3)),
                         mkexpr(op2)));
 
-   return "cefbr";
+   return "cefbra";
 }
 
 static const HChar *
-s390_irgen_CDFBR(UChar m3 __attribute__((unused)),
-                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_CDFBRA(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op2, get_gpr_w1(r2));
    put_fpr_dw0(r1, unop(Iop_I32StoF64, mkexpr(op2)));
 
-   return "cdfbr";
+   return "cdfbra";
 }
 
 static const HChar *
-s390_irgen_CEGBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CEGBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext && m3 != S390_BFP_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
@@ -11436,12 +11436,12 @@ s390_irgen_CEGBR(UChar m3, UChar m4 __attribute__((unused)),
    put_fpr_w0(r1, binop(Iop_I64StoF32, mkexpr(encode_bfp_rounding_mode(m3)),
                         mkexpr(op2)));
 
-   return "cegbr";
+   return "cegbra";
 }
 
 static const HChar *
-s390_irgen_CDGBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CDGBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext && m3 != S390_BFP_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
@@ -11453,7 +11453,7 @@ s390_irgen_CDGBR(UChar m3, UChar m4 __attribute__((unused)),
    put_fpr_dw0(r1, binop(Iop_I64StoF64, mkexpr(encode_bfp_rounding_mode(m3)),
                          mkexpr(op2)));
 
-   return "cdgbr";
+   return "cdgbra";
 }
 
 static const HChar *
@@ -11601,8 +11601,8 @@ s390_irgen_CLGDBR(UChar m3, UChar m4 __attribute__((unused)),
 }
 
 static const HChar *
-s390_irgen_CFEBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CFEBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_I32);
@@ -11614,12 +11614,12 @@ s390_irgen_CFEBR(UChar m3, UChar m4 __attribute__((unused)),
    put_gpr_w1(r1, mkexpr(result));
    s390_cc_thunk_putFZ(S390_CC_OP_BFP_32_TO_INT_32, op, rounding_mode);
 
-   return "cfebr";
+   return "cfebra";
 }
 
 static const HChar *
-s390_irgen_CFDBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CFDBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_I32);
@@ -11631,12 +11631,12 @@ s390_irgen_CFDBR(UChar m3, UChar m4 __attribute__((unused)),
    put_gpr_w1(r1, mkexpr(result));
    s390_cc_thunk_putFZ(S390_CC_OP_BFP_64_TO_INT_32, op, rounding_mode);
 
-   return "cfdbr";
+   return "cfdbra";
 }
 
 static const HChar *
-s390_irgen_CGEBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CGEBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F32);
    IRTemp result = newTemp(Ity_I64);
@@ -11648,12 +11648,12 @@ s390_irgen_CGEBR(UChar m3, UChar m4 __attribute__((unused)),
    put_gpr_dw0(r1, mkexpr(result));
    s390_cc_thunk_putFZ(S390_CC_OP_BFP_32_TO_INT_64, op, rounding_mode);
 
-   return "cgebr";
+   return "cgebra";
 }
 
 static const HChar *
-s390_irgen_CGDBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CGDBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F64);
    IRTemp result = newTemp(Ity_I64);
@@ -11665,7 +11665,7 @@ s390_irgen_CGDBR(UChar m3, UChar m4 __attribute__((unused)),
    put_gpr_dw0(r1, mkexpr(result));
    s390_cc_thunk_putFZ(S390_CC_OP_BFP_64_TO_INT_64, op, rounding_mode);
 
-   return "cgdbr";
+   return "cgdbra";
 }
 
 static const HChar *
@@ -12111,12 +12111,12 @@ s390_irgen_CDGTRA(UChar m3, UChar m4 __attribute__((unused)),
       put_dpr_dw0(r1, binop(Iop_I64StoD64, mkexpr(encode_dfp_rounding_mode(m3)),
                             mkexpr(op2)));
    }
-   return (m3 == 0) ? "cdgtr" : "cdgtra";
+   return "cdgtra";
 }
 
 static const HChar *
-s390_irgen_CXGTR(UChar m3 __attribute__((unused)),
-                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_CXGTRA(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    if (! s390_host_has_dfp) {
       emulation_failure(EmFail_S390X_DFP_insn);
@@ -12129,7 +12129,7 @@ s390_irgen_CXGTR(UChar m3 __attribute__((unused)),
       assign(op2, get_gpr_dw0(r2));
       put_dpr_pair(r1, unop(Iop_I64StoD128, mkexpr(op2)));
    }
-   return "cxgtr";
+   return "cxgtra";
 }
 
 static const HChar *
@@ -12236,7 +12236,7 @@ s390_irgen_CFDTR(UChar m3, UChar m4 __attribute__((unused)),
 
 static const HChar *
 s390_irgen_CFXTR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_dfp) {
       emulation_failure(EmFail_S390X_DFP_insn);
@@ -12260,8 +12260,8 @@ s390_irgen_CFXTR(UChar m3, UChar m4 __attribute__((unused)),
 }
 
 static const HChar *
-s390_irgen_CGDTR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CGDTRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_dfp) {
       emulation_failure(EmFail_S390X_DFP_insn);
@@ -12280,12 +12280,12 @@ s390_irgen_CGDTR(UChar m3, UChar m4 __attribute__((unused)),
       put_gpr_dw0(r1, binop(Iop_D64toI64S, mkexpr(rounding_mode), mkexpr(op)));
       s390_cc_thunk_putFZ(S390_CC_OP_DFP_64_TO_INT_64, op, rounding_mode);
    }
-   return "cgdtr";
+   return "cgdtra";
 }
 
 static const HChar *
-s390_irgen_CGXTR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CGXTRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_dfp) {
       emulation_failure(EmFail_S390X_DFP_insn);
@@ -12303,7 +12303,7 @@ s390_irgen_CGXTR(UChar m3, UChar m4 __attribute__((unused)),
       put_gpr_dw0(r1, binop(Iop_D128toI64S, mkexpr(rounding_mode), mkexpr(op)));
       s390_cc_thunk_put1d128Z(S390_CC_OP_DFP_128_TO_INT_64, op, rounding_mode);
    }
-   return "cgxtr";
+   return "cgxtra";
 }
 
 static const HChar *
@@ -14643,15 +14643,15 @@ s390_irgen_KDB(UChar r1, IRTemp op2addr)
 }
 
 static const HChar *
-s390_irgen_CXFBR(UChar m3 __attribute__((unused)),
-                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_CXFBRA(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
 
    assign(op2, get_gpr_w1(r2));
    put_fpr_pair(r1, unop(Iop_I32StoF128, mkexpr(op2)));
 
-   return "cxfbr";
+   return "cxfbra";
 }
 
 static const HChar *
@@ -14671,15 +14671,15 @@ s390_irgen_CXLFBR(UChar m3 __attribute__((unused)),
 
 
 static const HChar *
-s390_irgen_CXGBR(UChar m3 __attribute__((unused)),
-                 UChar m4 __attribute__((unused)), UChar r1, UChar r2)
+s390_irgen_CXGBRA(UChar m3 __attribute__((unused)),
+                  UChar m4 __attribute__((unused)), UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
 
    assign(op2, get_gpr_dw0(r2));
    put_fpr_pair(r1, unop(Iop_I64StoF128, mkexpr(op2)));
 
-   return "cxgbr";
+   return "cxgbra";
 }
 
 static const HChar *
@@ -14698,8 +14698,8 @@ s390_irgen_CXLGBR(UChar m3 __attribute__((unused)),
 }
 
 static const HChar *
-s390_irgen_CFXBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CFXBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_I32);
@@ -14711,7 +14711,7 @@ s390_irgen_CFXBR(UChar m3, UChar m4 __attribute__((unused)),
    put_gpr_w1(r1, mkexpr(result));
    s390_cc_thunk_put1f128Z(S390_CC_OP_BFP_128_TO_INT_32, op, rounding_mode);
 
-   return "cfxbr";
+   return "cfxbra";
 }
 
 static const HChar *
@@ -14736,8 +14736,8 @@ s390_irgen_CLFXBR(UChar m3, UChar m4 __attribute__((unused)),
 
 
 static const HChar *
-s390_irgen_CGXBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_CGXBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    IRTemp op = newTemp(Ity_F128);
    IRTemp result = newTemp(Ity_I64);
@@ -14749,7 +14749,7 @@ s390_irgen_CGXBR(UChar m3, UChar m4 __attribute__((unused)),
    put_gpr_dw0(r1, mkexpr(result));
    s390_cc_thunk_put1f128Z(S390_CC_OP_BFP_128_TO_INT_64, op, rounding_mode);
 
-   return "cgxbr";
+   return "cgxbra";
 }
 
 static const HChar *
@@ -20816,22 +20816,22 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb392: s390_format_RRF_UUFR(s390_irgen_CXLFBR, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb394: s390_format_RRF_UUFR(s390_irgen_CEFBR, RRF2_m3(ovl),
+   case 0xb394: s390_format_RRF_UUFR(s390_irgen_CEFBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb395: s390_format_RRF_UUFR(s390_irgen_CDFBR, RRF2_m3(ovl),
+   case 0xb395: s390_format_RRF_UUFR(s390_irgen_CDFBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb396: s390_format_RRF_UUFR(s390_irgen_CXFBR, RRF2_m3(ovl),
+   case 0xb396: s390_format_RRF_UUFR(s390_irgen_CXFBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb398: s390_format_RRF_UURF(s390_irgen_CFEBR, RRF2_m3(ovl),
+   case 0xb398: s390_format_RRF_UURF(s390_irgen_CFEBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb399: s390_format_RRF_UURF(s390_irgen_CFDBR, RRF2_m3(ovl),
+   case 0xb399: s390_format_RRF_UURF(s390_irgen_CFDBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb39a: s390_format_RRF_UURF(s390_irgen_CFXBR, RRF2_m3(ovl),
+   case 0xb39a: s390_format_RRF_UURF(s390_irgen_CFXBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
    case 0xb39c: s390_format_RRF_UURF(s390_irgen_CLFEBR, RRF2_m3(ovl),
@@ -20852,22 +20852,22 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb3a2: s390_format_RRF_UUFR(s390_irgen_CXLGBR, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb3a4: s390_format_RRF_UUFR(s390_irgen_CEGBR, RRF2_m3(ovl),
+   case 0xb3a4: s390_format_RRF_UUFR(s390_irgen_CEGBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb3a5: s390_format_RRF_UUFR(s390_irgen_CDGBR, RRF2_m3(ovl),
+   case 0xb3a5: s390_format_RRF_UUFR(s390_irgen_CDGBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb3a6: s390_format_RRF_UUFR(s390_irgen_CXGBR, RRF2_m3(ovl),
+   case 0xb3a6: s390_format_RRF_UUFR(s390_irgen_CXGBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb3a8: s390_format_RRF_UURF(s390_irgen_CGEBR, RRF2_m3(ovl),
+   case 0xb3a8: s390_format_RRF_UURF(s390_irgen_CGEBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb3a9: s390_format_RRF_UURF(s390_irgen_CGDBR, RRF2_m3(ovl),
+   case 0xb3a9: s390_format_RRF_UURF(s390_irgen_CGDBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb3aa: s390_format_RRF_UURF(s390_irgen_CGXBR, RRF2_m3(ovl),
+   case 0xb3aa: s390_format_RRF_UURF(s390_irgen_CGXBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
    case 0xb3ac: s390_format_RRF_UURF(s390_irgen_CLGEBR, RRF2_m3(ovl),
@@ -20936,7 +20936,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                    RRE_r2(ovl));  goto ok;
    case 0xb3df: /* FIXTR */ goto unimplemented;
    case 0xb3e0: /* KDTR */ goto unimplemented;
-   case 0xb3e1: s390_format_RRF_UURF(s390_irgen_CGDTR, RRF2_m3(ovl),
+   case 0xb3e1: s390_format_RRF_UURF(s390_irgen_CGDTRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
    case 0xb3e2: /* CUDTR */ goto unimplemented;
@@ -20948,7 +20948,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb3e7: s390_format_RRE_RF(s390_irgen_ESDTR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb3e8: /* KXTR */ goto unimplemented;
-   case 0xb3e9: s390_format_RRF_UURF(s390_irgen_CGXTR, RRF2_m3(ovl),
+   case 0xb3e9: s390_format_RRF_UURF(s390_irgen_CGXTRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
    case 0xb3ea: /* CUXTR */ goto unimplemented;
@@ -20974,7 +20974,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb3f7: s390_format_RRF_FFRU(s390_irgen_RRDTR, RRF4_r3(ovl),
                                      RRF4_m4(ovl), RRF4_r1(ovl),
                                      RRF4_r2(ovl)); goto ok;
-   case 0xb3f9: s390_format_RRF_UUFR(s390_irgen_CXGTR, RRF2_m3(ovl),
+   case 0xb3f9: s390_format_RRF_UUFR(s390_irgen_CXGTRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
    case 0xb3fa: /* CXUTR */ goto unimplemented;

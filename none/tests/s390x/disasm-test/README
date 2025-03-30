@@ -107,7 +107,7 @@ number of testcases. For example, testing CRB R1,R2,M3,D4(B4)
 exhaustively would produce 16x16x16x12x16 = 786432 testcases. Instead,
 we attempt to create "interesting" testcases. Like so:
 
-- for a VR operand pick a VR at random
+- for an AR, FPR or VR operand pick a register at random
 - for a GPR operand that is not an index or base register pick a GPR
   at random
 - for a GPR that is base or index register, pick r0 and another GPR
@@ -124,12 +124,12 @@ Why are we picking these values? Boundary cases are *always*
 interesting, as is 0. '1' is picked because it is odd and '2' is picked
 because it is even.
 
-Note: if an opcode has more than one GPR operand choose different
-registers. We do this because we want to catch bugs due to mixed up
-registers.
+Note: if an opcode has more than one GPR (without specification) choose
+different registers. We do this because we want to catch bugs due to
+mixed up registers.
 E.g. If the testcase is "brxh r1,r2,8" and s390_disasm produces
 "brxh r2,r1,8" we want to catch that. Obviously, to do so the registers
-need to be different. The same applies to VRs.
+need to be different. The same applies to ARs, FPRs and VRs.
 
 
 Adding a new opcode
@@ -166,8 +166,7 @@ Integration into regression testing
 
 Status
 ------
-Only opcodes with extended mnemonics as identified in Appendix J of the
-Principles of Operation are considered.
+All opcodes which are implemented in valgrind are considered.
 
 
 TODO
@@ -176,11 +175,9 @@ TODO
     to be improved. Several interesting cases involving the T- and Z-bit
     are not considered.
 
-(2) Due to bugs and missing functionality the following miscompares are
-    observed at this point:
-    - all vector opcodes (missing functionality)
-    - c[l][g]rt  (bug in s390_disasm)
-    - bc         (bug in objdump 2.38)
+(2) Different versions of objdump produce slightly different disassembly.
+    In 2.38 base register 0 is written as "%r0". In current binutils git
+    that register will be output as "0".
 
 (3) Generated testcases may cause specification exceptions. This
     happens iff a constraint involves more than one opcode field.

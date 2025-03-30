@@ -38,8 +38,6 @@ verify_disassembly(const char *file)
 {
    verify_stats stats = { 0, 0, 0 };  // return value
 
-   vex_reset();
-
    objdump_file *ofile = read_objdump(file);
    if (ofile == NULL)
       return stats;

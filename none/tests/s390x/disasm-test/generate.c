@@ -53,6 +53,30 @@ gpr_operand(unsigned regno)
 
 
 static const char *
+ar_operand(unsigned regno)
+{
+   static const char *ars[] = {
+      "%a0", "%a1", "%a2",  "%a3",  "%a4",  "%a5",  "%a6",  "%a7",
+      "%a8", "%a9", "%a10", "%a11", "%a12", "%a13", "%a14", "%a15"
+   };
+
+   return ars[regno];
+}
+
+
+static const char *
+fpr_operand(unsigned regno)
+{
+   static const char *fprs[] = {
+      "%f0", "%f1", "%f2",  "%f3",  "%f4",  "%f5",  "%f6",  "%f7",
+      "%f8", "%f9", "%f10", "%f11", "%f12", "%f13", "%f14", "%f15"
+   };
+
+   return fprs[regno];
+}
+
+
+static const char *
 vr_operand(unsigned regno)
 {
    static const char *vrs[] = {
@@ -149,7 +173,7 @@ sint_value(unsigned num_bits)
 }
 #endif
 
-/* MASK is a bitvector. For a GPR rk the k'th bit will be set. The
+/* MASK is a bitvector. For an e.g. GPR rk the k'th bit will be set. The
    function returns a register number which has not been used and
    adjusts the bitvector. */
 static unsigned
@@ -187,11 +211,11 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
 {
    fprintf(fp, "  asm volatile(\"%s ", opc->name);
 
-   unsigned gpr_mask, vr_mask, regno;
+   unsigned gpr_mask, vr_mask, ar_mask, fpr_mask, regno;
    int inc;
    int needs_comma = 0;
 
-   gpr_mask = vr_mask = 0;
+   gpr_mask = vr_mask = ar_mask = fpr_mask = 0;
    for (int i = 0; i < opc->num_fields; i += inc) {
       const opnd *operand = fields[i].operand;
 
@@ -211,6 +235,18 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
          if (! operand->allowed_values)
             regno = unique_reg(operand->kind, regno, &vr_mask);
          fprintf(fp, "%s", vr_operand(regno));
+         break;
+      case OPND_AR:
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &ar_mask);
+         fprintf(fp, "%s", ar_operand(regno));
+         break;
+      case OPND_FPR:
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &fpr_mask);
+         fprintf(fp, "%s", fpr_operand(regno));
          break;
       case OPND_D12XB:
       case OPND_D20XB: {
@@ -291,6 +327,8 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
       }
       break;
 
+   case OPND_AR:
+   case OPND_FPR:
    case OPND_VR:
       choose_reg_and_iterate(fp, opc, operand, fields, ix);
       break;
@@ -454,6 +492,8 @@ generate(FILE *fp, const opcode *opc)
       switch (operand->kind) {
       case OPND_GPR:
       case OPND_VR:
+      case OPND_AR:
+      case OPND_FPR:
       case OPND_SINT:
       case OPND_UINT:
       case OPND_PCREL:

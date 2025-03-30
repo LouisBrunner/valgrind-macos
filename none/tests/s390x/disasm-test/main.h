@@ -29,6 +29,8 @@
 typedef enum {
    OPND_GPR,
    OPND_VR,
+   OPND_AR,
+   OPND_FPR,
    OPND_D12LB,
    OPND_D12XB,
    OPND_D12VB,

@@ -77,28 +77,6 @@ Debugging options
 --debug
   Additional debugging output.
 
---d12=INT
-  Use INT as the value for d12 fields. The given value is checked
-  for feasibility.
-
---d20=INT
-  Use INT as the value for d20 fields. The given value is checked
-  for feasibility.
-
---sint=INT
-  Use INT as the only value for signed integer fields. The given value
-  is NOT checked for feasibility (as the field width is not known).
-  The value is expected to fit in 32 bits (and is complained about
-  if it doesn't), as there are no opcodes with immediate operands
-  that have more than 32 bits.
-
---uint=INT
-  Use INT as the only value for unsigned integer fields. The given value
-  is NOT checked for feasibility (as the field width is not known).
-  The value is expected to fit in 32 bits (and is complained about
-  if it doesn't), as there are no opcodes with immediate operands
-  that have more than 32 bits.
-
 
 Testcase generation
 -------------------

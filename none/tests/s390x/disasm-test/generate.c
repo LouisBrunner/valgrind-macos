@@ -144,14 +144,14 @@ random_sint(unsigned num_bits)
 static unsigned
 d12_value(void)
 {
-   return d12_val_specified ? d12_val : random_uint(12);
+   return random_uint(12);
 }
 
 
 static int
 d20_value(void)
 {
-   return d20_val_specified ? d20_val : random_sint(20);
+   return random_sint(20);
 }
 
 
@@ -160,7 +160,7 @@ uint_value(unsigned num_bits)
 {
    if (num_bits > 32)
       fatal("integer operand > 32 bits not supported\n");
-   return uint_val_specified ? uint_val : random_uint(num_bits);
+   return random_uint(num_bits);
 }
 
 
@@ -169,7 +169,7 @@ sint_value(unsigned num_bits)
 {
    if (num_bits > 32)
       fatal("integer operand > 32 bits not supported\n");
-   return sint_val_specified ? sint_val : random_sint(num_bits);
+   return random_sint(num_bits);
 }
 #endif
 
@@ -338,17 +338,12 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
    case OPND_D12LB:
    case OPND_D12VB:
       if (f->is_displacement) {
-         if (d12_val_specified) {
-            f->assigned_value = d12_val;
-            iterate(fp, opc, fields, ix + 1);
-         } else {
-            /* Choose these interesting values */
-            static const long long values[] = { 0, 1, 2, 0xfff };
+         /* Choose these interesting values */
+         static const long long values[] = { 0, 1, 2, 0xfff };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       } else if (f->is_length) {
          /* Choose these interesting values */
@@ -376,19 +371,14 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
    case OPND_D20B:
    case OPND_D20XB:
       if (f->is_displacement) {
-         if (d20_val_specified) {
-            f->assigned_value = d20_val;
-            iterate(fp, opc, fields, ix + 1);
-         } else {
-            /* Choose these interesting values */
-            static const long long values[] = {
-               0, 1, 2, -1, -2, 0x7ffff, -0x80000
-            };
+         /* Choose these interesting values */
+         static const long long values[] = {
+            0, 1, 2, -1, -2, 0x7ffff, -0x80000
+         };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       } else {
          /* base or index register */
@@ -401,54 +391,44 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
 
    case OPND_SINT:
    case OPND_PCREL:
-      if (sint_val_specified) {
-         f->assigned_value = sint_val;
-         iterate(fp, opc, fields, ix + 1);
-      } else {
-         if (operand->allowed_values == NULL) {
-            /* No constraint: Choose these interesting values */
-            const long long values[] = {
-               0, 1, 2, -1, -2, (1LL << (operand->num_bits - 1)) - 1,
-               -(1LL << (operand->num_bits - 1))
-            };
+      if (operand->allowed_values == NULL) {
+         /* No constraint: Choose these interesting values */
+         const long long values[] = {
+            0, 1, 2, -1, -2, (1LL << (operand->num_bits - 1)) - 1,
+            -(1LL << (operand->num_bits - 1))
+         };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
-         } else {
-            /* Constraint. Choose only allowed values */
-            unsigned num_val = operand->allowed_values[0];
-            for (int i = 1; i <= num_val; ++i) {
-               f->assigned_value = operand->allowed_values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
+         }
+      } else {
+         /* Constraint. Choose only allowed values */
+         unsigned num_val = operand->allowed_values[0];
+         for (int i = 1; i <= num_val; ++i) {
+            f->assigned_value = operand->allowed_values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       }
       break;
 
    case OPND_UINT:
-      if (uint_val_specified) {
-         f->assigned_value = uint_val;
-         iterate(fp, opc, fields, ix + 1);
-      } else {
-         if (operand->allowed_values == NULL) {
-            /* No constraint: Choose these interesting values */
-            const long long values[] = {
-               0, 1, 2, (1LL << operand->num_bits) - 1
-            };
+      if (operand->allowed_values == NULL) {
+         /* No constraint: Choose these interesting values */
+         const long long values[] = {
+            0, 1, 2, (1LL << operand->num_bits) - 1
+         };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
-         } else {
-            /* Constraint. Choose only allowed values */
-            unsigned num_val = operand->allowed_values[0];
-            for (int i = 1; i <= num_val; ++i) {
-               f->assigned_value = operand->allowed_values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
+         }
+      } else {
+         /* Constraint. Choose only allowed values */
+         unsigned num_val = operand->allowed_values[0];
+         for (int i = 1; i <= num_val; ++i) {
+            f->assigned_value = operand->allowed_values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       }
       break;

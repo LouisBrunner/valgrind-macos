@@ -33,10 +33,6 @@
 #include "main.h"
 
 int verbose, debug, show_spec_exc, show_miscompares;
-int d12_val, d20_val;
-long long uint_val, sint_val;
-int d12_val_specified, d20_val_specified;
-int uint_val_specified, sint_val_specified;
 
 const char *gcc = "gcc";          // path to GCC
 const char *objdump = "objdump";  // path to objdump
@@ -62,10 +58,6 @@ static const char usage[] =
    "    --gcc=/path/to/gcc\n"
    "    --gcc-flags=FLAGS\n"
    "    --objdump=/path/to/objdump\n"
-   "    --d12=INT   - Use INT as value for d12 offsets\n"
-   "    --d20=INT   - Use INT as value for d20 offsets\n"
-   "    --sint=INT  - Use INT as value for signed integer fields\n"
-   "    --uint=INT  - Use INT as value for unsigned integer fields\n"
    "    --keep-temp - Do not remove temporary files\n"
    "    --summary   - Output test generation summary (with --all)\n"
    "    --unit-test - Run unit tests\n"
@@ -73,8 +65,6 @@ static const char usage[] =
    "    --no-show-miscompares - Do not show disassembly miscompares\n"
    ;
 
-static long long get_clo_value(const char *, const char *, long long,
-                               long long);
 static void remove_temp_files(const char *);
 static int  opcode_has_errors(const opcode *);
 
@@ -137,17 +127,6 @@ main(int argc, char *argv[])
          gcc_flags = strchr(clo, '=') + 1;
       } else if (CHECK_CLO(clo, "--objdump=")) {
          objdump = strchr(clo, '=') + 1;
-      } else if (CHECK_CLO(clo, "--d12=")) {
-         d12_val = get_clo_value(clo, "d12", 0, 0xfff);
-      } else if (CHECK_CLO(clo, "--d20=")) {
-         d20_val = get_clo_value(clo, "d20", -0x80000, 0x7ffff);
-      } else if (CHECK_CLO(clo, "--sint=")) {
-         /* Integer field is restricted to 32-bit */
-         long long max = 0x7fffffff;
-         sint_val = get_clo_value(clo, "sint", -max - 1, max);
-      } else if (CHECK_CLO(clo, "--uint=")) {
-         /* Integer field is restricted to 32-bit */
-         uint_val = get_clo_value(clo, "uint", 0, 0xffffffffU);
       } else {
          if (strncmp(clo, "--", 2) == 0)
             fatal("Invalid command line option '%s'\n", clo);
@@ -338,22 +317,6 @@ strnsave(const char *s, unsigned len)
 
    p[len] = '\0';
    return p;
-}
-
-
-static long long
-get_clo_value(const char *clo, const char *field_name, long long min,
-              long long max)
-{
-   long long value;
-
-   const char *p = strchr(clo, '=') + 1;   // succeeds
-
-   if  (sscanf(p, "%lld", &value) != 1)
-      fatal("%s value '%s' is not an integer\n", field_name, p);
-   if (value < min || value > max)
-      fatal("%s value '%lld' is out of range\n", field_name, value);
-   return value;
 }
 
 

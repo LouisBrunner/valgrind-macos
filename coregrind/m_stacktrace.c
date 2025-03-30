@@ -9,6 +9,8 @@
 
    Copyright (C) 2000-2017 Julian Seward 
       jseward@acm.org
+   Copyright (C) 2025 Mark J. Wielaard
+      mark@klomp.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -1693,10 +1695,59 @@ UInt VG_(get_StackTrace_with_deltas)(
                   tid, stack_highest_byte,
                   startRegs.r_pc, startRegs.r_sp);
 
-   return VG_(get_StackTrace_wrk)(tid, ips, n_ips, 
+   Int found = VG_(get_StackTrace_wrk)(tid, ips, n_ips,
                                        sps, fps,
                                        &startRegs,
                                        stack_highest_byte);
+
+#if defined(VGO_linux)
+   /* glibc might insert some extra frames before doing a syscall to support
+      thread cancellation.  This breaks various suppressions and regtests
+      involving checking syscall arguments. So when processing a syscall just
+      remove those extra frames from the top of the call stack.  */
+   if (VG_(is_in_syscall)(tid)) {
+      Int i;
+      Int start = 0;
+      DiEpoch ep = VG_(current_DiEpoch)();
+      for (i = 0; i < found; i++) {
+         /* This could be made a little more efficient by doing the lookups
+            for the symbols at glibc load time and check the address falls
+            inside the function symbol address range here. But given this
+            is only called during syscall processing, this is probably fine
+            for now.  */
+         const HChar *buf;
+         if (VG_(get_fnname_raw)(ep, ips[i], &buf)) { // raw, don't demangle
+            if (VG_STREQ("__syscall_cancel_arch", buf) ||
+                VG_STREQ("__internal_syscall_cancel", buf) ||
+#if defined(VGP_x86_linux) || defined(VGP_arm_linux)
+                VG_STREQ("__libc_do_syscall", buf) ||
+#endif
+#if defined(VGP_x86_linux)
+                VG_STREQ("_dl_sysinfo_int80", buf) ||
+#endif
+                VG_STREQ("__syscall_cancel", buf)) {
+               start++;
+               continue; // Maybe the next one is special too?
+            } else {
+               break; // Not special, only skip top stack names.
+            }
+         } else {
+            break; // No name, not special, don't skip.
+         }
+      }
+
+      if (start > 0) {
+         for (i = 0; i < (found - start); i++) {
+            ips[i] = ips[i + start];
+            if (sps) sps[i] = sps[i + start];
+            if (fps) fps[i] = fps[i + start];
+         }
+         return found - start;
+      }
+   }
+#endif
+
+   return found;
 }
 
 UInt VG_(get_StackTrace) ( ThreadId tid, 

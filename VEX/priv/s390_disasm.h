@@ -137,6 +137,7 @@ HChar *vfce_like_disasm(const s390_opnd *, HChar *);
 HChar *vfmix_like_disasm(const s390_opnd *, HChar *);
 HChar *fp_convf_disasm(const s390_opnd *, HChar *);
 HChar *fp_convt_disasm(const s390_opnd *, HChar *);
+HChar *adtra_like_disasm(const s390_opnd *, HChar *);
 
 /*---------------------------------------------------------------*/
 /*--- end                                       s390_disasm.h ---*/

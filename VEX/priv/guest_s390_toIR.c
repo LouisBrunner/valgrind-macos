@@ -3094,7 +3094,18 @@ s390_format_RRF_UUFF(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
    const HChar *mnm = irgen(m3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), FPR(r1), UINT(m3), FPR(r2), UINT(m4));
+      S390_DISASM(XMNM(mnm, fp_convf_disasm), FPR(r1), MASK(m3), FPR(r2), MASK(m4));
+}
+
+static void
+s390_format_RRF_UUFF2(const HChar *(*irgen)(UChar m3, UChar m4, UChar r1,
+                                           UChar r2),
+                     UChar m3, UChar m4, UChar r1, UChar r2)
+{
+   const HChar *mnm = irgen(m3, m4, r1, r2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(XMNM(mnm, fp_convt_disasm), FPR(r1), MASK(m3), FPR(r2), MASK(m4));
 }
 
 static void
@@ -3191,7 +3202,7 @@ s390_format_RRF_FUFF2(const HChar *(*irgen)(UChar, UChar, UChar, UChar),
    const HChar *mnm = irgen(r3, m4, r1, r2);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), FPR(r1), FPR(r2), FPR(r3), UINT(m4));
+      S390_DISASM(XMNM(mnm, adtra_like_disasm), FPR(r1), FPR(r2), FPR(r3), MASK(m4));
 }
 
 static void
@@ -11807,8 +11818,8 @@ s390_irgen_LDEB(UChar r1, IRTemp op2addr)
 }
 
 static const HChar *
-s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_LEDBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext && m3 != S390_BFP_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
@@ -11820,7 +11831,7 @@ s390_irgen_LEDBR(UChar m3, UChar m4 __attribute__((unused)),
    put_fpr_w0(r1, binop(Iop_F64toF32, mkexpr(encode_bfp_rounding_mode(m3)),
                         mkexpr(op)));
 
-   return "ledbr";
+   return "ledbra";
 }
 
 static const HChar *
@@ -11988,7 +11999,7 @@ s390_irgen_ADTRA(UChar r3, UChar m4, UChar r1, UChar r2)
       s390_cc_thunk_putF(S390_CC_OP_DFP_RESULT_64, result);
       put_dpr_dw0(r1, mkexpr(result));
    }
-   return (m4 == 0) ? "adtr" : "adtra";
+   return "adtra";
 }
 
 static const HChar *
@@ -14970,8 +14981,8 @@ s390_irgen_LPXBR(UChar r1, UChar r2)
 }
 
 static const HChar *
-s390_irgen_LDXBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_LDXBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext && m3 != S390_BFP_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
@@ -14983,12 +14994,12 @@ s390_irgen_LDXBR(UChar m3, UChar m4 __attribute__((unused)),
                         get_fpr_pair(r2)));
    put_fpr_dw0(r1, mkexpr(result));
 
-   return "ldxbr";
+   return "ldxbra";
 }
 
 static const HChar *
-s390_irgen_LEXBR(UChar m3, UChar m4 __attribute__((unused)),
-                 UChar r1, UChar r2)
+s390_irgen_LEXBRA(UChar m3, UChar m4 __attribute__((unused)),
+                  UChar r1, UChar r2)
 {
    if (! s390_host_has_fpext && m3 != S390_BFP_ROUND_PER_FPC) {
       emulation_warning(EmWarn_S390X_fpext_rounding);
@@ -15000,7 +15011,7 @@ s390_irgen_LEXBR(UChar m3, UChar m4 __attribute__((unused)),
                         get_fpr_pair(r2)));
    put_fpr_w0(r1, mkexpr(result));
 
-   return "lexbr";
+   return "lexbra";
 }
 
 static const HChar *
@@ -20745,18 +20756,18 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                    RRE_r2(ovl));  goto ok;
    case 0xb343: s390_format_RRE_FF(s390_irgen_LCXBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
-   case 0xb344: s390_format_RRF_UUFF(s390_irgen_LEDBR, RRF2_m3(ovl),
+   case 0xb344: s390_format_RRF_UUFF(s390_irgen_LEDBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb345: s390_format_RRF_UUFF(s390_irgen_LDXBR, RRF2_m3(ovl),
+   case 0xb345: s390_format_RRF_UUFF(s390_irgen_LDXBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb346: s390_format_RRF_UUFF(s390_irgen_LEXBR, RRF2_m3(ovl),
+   case 0xb346: s390_format_RRF_UUFF(s390_irgen_LEXBRA, RRF2_m3(ovl),
                                      RRF2_m4(ovl), RRF2_r1(ovl),
                                      RRF2_r2(ovl));  goto ok;
-   case 0xb347: s390_format_RRF_UUFF(s390_irgen_FIXBRA, RRF2_m3(ovl),
-                                     RRF2_m4(ovl), RRF2_r1(ovl),
-                                     RRF2_r2(ovl));  goto ok;
+   case 0xb347: s390_format_RRF_UUFF2(s390_irgen_FIXBRA, RRF2_m3(ovl),
+                                      RRF2_m4(ovl), RRF2_r1(ovl),
+                                      RRF2_r2(ovl));  goto ok;
    case 0xb348: s390_format_RRE_FF(s390_irgen_KXBR, RRE_r1(ovl),
                                    RRE_r2(ovl));  goto ok;
    case 0xb349: s390_format_RRE_FF(s390_irgen_CXBR, RRE_r1(ovl),
@@ -20772,15 +20783,15 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb350: /* TBEDR */ goto unimplemented;
    case 0xb351: /* TBDR */ goto unimplemented;
    case 0xb353: /* DIEBR */ goto unimplemented;
-   case 0xb357: s390_format_RRF_UUFF(s390_irgen_FIEBRA, RRF2_m3(ovl),
-                                     RRF2_m4(ovl), RRF2_r1(ovl),
-                                     RRF2_r2(ovl));  goto ok;
+   case 0xb357: s390_format_RRF_UUFF2(s390_irgen_FIEBRA, RRF2_m3(ovl),
+                                      RRF2_m4(ovl), RRF2_r1(ovl),
+                                      RRF2_r2(ovl));  goto ok;
    case 0xb358: /* THDER */ goto unimplemented;
    case 0xb359: /* THDR */ goto unimplemented;
    case 0xb35b: /* DIDBR */ goto unimplemented;
-   case 0xb35f: s390_format_RRF_UUFF(s390_irgen_FIDBRA, RRF2_m3(ovl),
-                                     RRF2_m4(ovl), RRF2_r1(ovl),
-                                     RRF2_r2(ovl));  goto ok;
+   case 0xb35f: s390_format_RRF_UUFF2(s390_irgen_FIDBRA, RRF2_m3(ovl),
+                                      RRF2_m4(ovl), RRF2_r1(ovl),
+                                      RRF2_r2(ovl));  goto ok;
    case 0xb360: /* LPXR */ goto unimplemented;
    case 0xb361: /* LNXR */ goto unimplemented;
    case 0xb362: /* LTXR */ goto unimplemented;

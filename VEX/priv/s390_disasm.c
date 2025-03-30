@@ -1066,6 +1066,24 @@ fp_convt_disasm(const s390_opnd *opnds, HChar *p)
 }
 
 
+HChar *
+adtra_like_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *base = opnds[0].xmnm.base;
+   UInt m4 = opnds[get_mask_index(opnds, 1)].mask;
+   UInt len = vex_strlen(base);
+
+   HChar xmnm[len + 1];
+
+   vex_sprintf(xmnm, "%s", base);
+
+   if (xmnm[len - 1] == 'a' && m4 == 0) {
+      xmnm[len - 1] = '\0';
+   }
+   return s390_disasm_aux(opnds, xmnm, p, mask0_mh);
+}
+
+
 /* Write out OPNDS. MH is a mask handler. It decides whether or not a
    MASK operand is written and if so, massages the mask value as needed. */
 static HChar *

@@ -5,6 +5,8 @@ Requirements
   Running `uname -r` has to print '5.11'.
 - Recent GCC tools are required, GCC 3 will probably not work. GCC version
   4.5 (or higher) is recommended.
+- On Illumos you can install the 'build-essential' metapackage which
+  includes GCC and many other developer tools.
 - Solaris ld has to be the first linker in the PATH. GNU ld cannot be used.
   There is currently no linker check in the configure script but the linking
   phase fails if GNU ld is used. Recent Solaris/illumos distributions are ok.

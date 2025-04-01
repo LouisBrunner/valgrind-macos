@@ -104,6 +104,11 @@ typedef enum {
 /*------------------------------------------------------------*/
 
 #define I_i(insn) ((insn) & 0xff)
+#define IE_i1(insn) (((insn) >> 4) & 0xf)
+#define IE_i2(insn) ((insn) & 0xf)
+#define MII_m1(insn) (((insn) >> 52) & 0xf)
+#define MII_i2(insn) (((insn) >> 40) & 0xfff)
+#define MII_i3(insn) (((insn) >> 16) & 0xffffff)
 #define RR_r1(insn) (((insn) >> 4) & 0xf)
 #define RR_r2(insn) ((insn) & 0xf)
 #define RI_r1(insn) (((insn) >> 20) & 0xf)
@@ -143,6 +148,10 @@ typedef enum {
 #define SI_i2(insn) (((insn) >> 16) & 0xff)
 #define SI_b1(insn) (((insn) >> 12) & 0xf)
 #define SI_d1(insn) ((insn) & 0xfff)
+#define SMI_m1(insn) (((insn) >> 52) & 0xf)
+#define SMI_b3(insn) (((insn) >> 44) & 0xf)
+#define SMI_d3(insn) (((insn) >> 32) & 0xfff)
+#define SMI_i2(insn) (((insn) >> 16) & 0xffff)
 #define RIE_r1(insn) (((insn) >> 52) & 0xf)
 #define RIE_r3(insn) (((insn) >> 48) & 0xf)
 #define RIE_i2(insn) (((insn) >> 32) & 0xffff)
@@ -2742,12 +2751,35 @@ s390_format_I(const HChar *(*irgen)(UChar i),
 }
 
 static void
+s390_format_IE(const HChar *(*irgen)(UChar i1, UChar i2),
+               UChar i1, UChar i2)
+{
+   const HChar *mnm = irgen(i1, i2);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(MNM(mnm), UINT(i1), UINT(i2));
+}
+
+static void
 s390_format_E(const HChar *(*irgen)(void))
 {
    const HChar *mnm = irgen();
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       S390_DISASM(MNM(mnm));
+}
+
+static void
+s390_format_MII_UPP(const HChar *(*irgen)(UChar m1, UShort i2, UShort i3),
+                    UChar m1, UShort i2, UShort i3)
+{
+   const HChar *mnm;
+
+   mnm = irgen(m1, i2, i3);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(MNM(mnm), UINT(m1), PCREL((Int)((Short)(i2 << 4) >> 4)),
+                  PCREL((Int)(Short)i3));
 }
 
 static void
@@ -3651,6 +3683,22 @@ s390_format_SIY_IRD(const HChar *(*irgen)(UChar i2, IRTemp op1addr),
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       S390_DISASM(MNM(mnm), SDXB(dh1, dl1, 0, b1), INT((Int)(Char)i2));
+}
+
+static void
+s390_format_SMI_U0RDP(const HChar *(*irgen)(UChar m1, UShort i2, IRTemp op3addr),
+                      UChar m1, UShort i2, UChar b3, UShort d3)
+{
+   const HChar *mnm;
+   IRTemp op3addr = newTemp(Ity_I64);
+
+   assign(op3addr,
+          binop(Iop_Add64, mkU64(d3), b3 != 0 ? get_gpr_dw0(b3) : mkU64(0)));
+
+   mnm = irgen(m1, i2, op3addr);
+
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      S390_DISASM(MNM(mnm), UINT(m1), PCREL((Int)(Short)i2), UDXB(d3, 0, b3));
 }
 
 static void
@@ -20307,6 +20355,27 @@ s390_irgen_KDSA(UChar r1, UChar r2)
    return "kdsa";
 }
 
+static const HChar *
+s390_irgen_BPP(UChar m1, UShort i2, IRTemp op3addr)
+{
+   /* Treat as a no-op */
+   return "bpp";
+}
+
+static const HChar *
+s390_irgen_BPRP(UChar m1, UShort i2, UShort i3)
+{
+   /* Treat as a no-op */
+   return "bprp";
+}
+
+static const HChar *
+s390_irgen_NIAI(UChar i1, UChar i2)
+{
+   /* Treat as a no-op */
+   return "niai";
+}
+
 /* New insns are added here.
    If an insn is contingent on a facility being installed also
    check whether function do_extension_STFLE needs updating. */
@@ -20667,7 +20736,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb2ec: /* ETND */ goto unimplemented;
    case 0xb2ed: /* ECPGA */ goto unimplemented;
    case 0xb2f8: /* TEND */ goto unimplemented;
-   case 0xb2fa: /* NIAI */ goto unimplemented;
+   case 0xb2fa: s390_format_IE(s390_irgen_NIAI, IE_i1(ovl),
+                               IE_i2(ovl));  goto ok;
    case 0xb2fc: /* TABORT */ goto unimplemented;
    case 0xb2ff: /* TRAP4 */ goto unimplemented;
    case 0xb300: s390_format_RRE_FF(s390_irgen_LPEBR, RRE_r1(ovl),
@@ -23295,8 +23365,10 @@ s390_decode_6byte_and_irgen(const UChar *bytes)
    }
 
    switch (((ovl >> 16) & 0xff0000000000ULL) >> 40) {
-   case 0xc5ULL: /* BPRP */ goto unimplemented;
-   case 0xc7ULL: /* BPP */ goto unimplemented;
+   case 0xc5ULL: s390_format_MII_UPP(s390_irgen_BPRP, MII_m1(ovl), MII_i2(ovl),
+                                     MII_i3(ovl));  goto ok;
+   case 0xc7ULL: s390_format_SMI_U0RDP(s390_irgen_BPP, SMI_m1(ovl), SMI_i2(ovl),
+                                       SMI_b3(ovl), SMI_d3(ovl));  goto ok;
    case 0xd0ULL: /* TRTR */ goto unimplemented;
    case 0xd1ULL: /* MVN */ goto unimplemented;
    case 0xd2ULL: s390_format_SS_L0RDRD(s390_irgen_MVC, SS_l(ovl),

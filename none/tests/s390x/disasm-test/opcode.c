@@ -228,9 +228,8 @@ static const char *opcodes[] = {
    "bxle   r1,r3,d12(b2)",
    "bxleg  r1,r3,d20(b2)",
 
-// FIXME TBD   "bpp    m1,ri2:s16,d12(b3)", // exhi
-// FIXME TBD   "bprp   m1,ri2:s12,ri3:s24", // exhi
-
+   "bpp    i1:u4,ri2:s16,d12(b3)",  // exhi
+   "bprp   i1:u4,ri2:s12,ri3:s24",  // exhi
    "bras   r1,ri2:s16",
    "brasl  r1,ri2:s32",
 
@@ -694,7 +693,7 @@ static const char *opcodes[] = {
    "nnrk   r1,r2,r3",           // mi3
    "nngrk  r1,r2,r3",           // mi3
 
-// FIXME TBD   niai    i1:u4{0:3},i2:u4{0:3}  // exhi   no spec. exc. for i1,i2
+   "niai   i1:u4,i2:u4",        // exhi
 
    // ntstg not implemented
 

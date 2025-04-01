@@ -72,6 +72,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 501850  FreeBSD syscall arguments 7 and 8 incorrect.
 501893  Missing suppression for __wcscat_avx2 (strcat-strlen-avx2.h.S:68)?
 502126  glibc 2.41 extra syscall_cancel frames
+502288  s390x: Memcheck false positives with NNPA last tensor dimension
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -417,9 +417,11 @@ static const char* const s390_NNPA_errmsg_access[s390_NNPA_message_n] = {
 };
 
 struct s390_NNPA_mem_dimensions {
+   UChar layout;
    ULong dim[5];  // total dimensions
-   ULong used[5]; // used dimensions, without padding
+   ULong used[4]; // used dimensions, without padding
    ULong step[5];
+   ULong last_dim4_size;
 };
 
 /* Determine the 5 dimensions used to represent the tensor data in memory */
@@ -431,6 +433,7 @@ NNPA_tensor0_size(const struct s390_NNPA_tensor0*  t,
    struct s390_NNPA_mem_dimensions md;
    ULong                           elem_size;
 
+   md.layout = t->layout;
    if (t->dtype == 0)
       elem_size = 2;
    else
@@ -444,7 +447,7 @@ NNPA_tensor0_size(const struct s390_NNPA_tensor0*  t,
       md.dim[3]              = (t->dim2 + 31) / 32 * 32;
       md.used[3]             = t->dim2;
       md.dim[4]              = 64;
-      md.used[4]             = t->dim1;
+      md.last_dim4_size      = elem_size * (t->dim1 % 64);
       break;
    case 1: // 4D-kernel tensor
       md.dim[0] = md.used[0] = (t->dim1 + 63) / 64;
@@ -453,7 +456,7 @@ NNPA_tensor0_size(const struct s390_NNPA_tensor0*  t,
       md.dim[3]              = (t->dim2 + 31) / 32 * 32;
       md.used[3]             = t->dim2;
       md.dim[4]              = 64;
-      md.used[4]             = t->dim1;
+      md.last_dim4_size      = elem_size * (t->dim1 % 64);
       break;
    default:
       return INSN_ERR(s390_NNPA_errmsg_layout[msg_idx]);
@@ -465,6 +468,20 @@ NNPA_tensor0_size(const struct s390_NNPA_tensor0*  t,
    md.step[0] = md.step[1] * md.dim[0]; // total size
    *out_md    = md;
    return ExtErr_OK;
+}
+
+/* Determine the size of the non-pad elements in the last dimension */
+static ULong NNPA_mem_dim4_size(const struct s390_NNPA_mem_dimensions* md,
+                                ULong                                  d0,
+                                ULong                                  d1)
+{
+   switch (md->layout) {
+   case 0: // 4D-feature tensor
+      return d1 + 1 == md->dim[1] ? md->last_dim4_size : md->step[4];
+   case 1: // 4D-kernel tensor
+      return d0 + 1 == md->dim[0] ? md->last_dim4_size : md->step[4];
+   }
+   return 0;
 }
 
 static enum ExtensionError NNPA_pre_read_tensor0(
@@ -483,8 +500,8 @@ static enum ExtensionError NNPA_pre_read_tensor0(
             for (ULong d3 = 0; d3 < md.used[3]; d3++) {
                ULong addr = t->address + d0 * md.step[1] + d1 * md.step[2] +
                             d2 * md.step[3] + d3 * md.step[4];
-               PRE_MEM_READ(tst, s390_NNPA_errmsg_access[msg_idx], addr,
-                            md.dim[4]);
+               ULong len = NNPA_mem_dim4_size(&md, d0, d1);
+               PRE_MEM_READ(tst, s390_NNPA_errmsg_access[msg_idx], addr, len);
             }
          }
       }
@@ -524,7 +541,8 @@ static void NNPA_post_write_tensor0(ThreadState*                    tst,
             for (ULong d3 = 0; d3 < md.used[3]; d3++) {
                ULong addr = t->address + d0 * md.step[1] + d1 * md.step[2] +
                             d2 * md.step[3] + d3 * md.step[4];
-               POST_MEM_WRITE(tst, addr, md.dim[4]);
+               ULong len = NNPA_mem_dim4_size(&md, d0, d1);
+               POST_MEM_WRITE(tst, addr, len);
             }
          }
       }

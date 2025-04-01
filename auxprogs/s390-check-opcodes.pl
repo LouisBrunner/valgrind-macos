@@ -175,7 +175,7 @@ my @extended_mnemonics = (      # Base mnemonic(s)
     "wftci[sdx]b",
     "wfsq*[sdx]b",
     "vl(ed|de)",
-    "prno"                      # ppno
+    "ppno"                      # prno
     );
 
 # Compile excluded mnemonics into one regular expression to optimize

@@ -1343,7 +1343,7 @@ lochi,"load halfword immediate on condition into 32 bit gpr",implemented,z13
 verllvh,"vector element rotate left logical reg halfword",implemented,z13
 cpdt,"convert from long dfp to packed","not implemented",z13
 vrepb,"vector replicate byte","implemented",z13
-ppno,"perform pseudorandom number operation",implemented,z13
+prno,"perform random number operation",implemented,z13
 irbm,"insert reference bits multiple",N/A,"privileged instruction",arch12
 tpei,"test pending external interruption",N/A,"privileged instruction",arch12
 vfeef,"vector find element equal word","implemented",z13

@@ -1,4 +1,3 @@
-
 ##------------------------------------------------------------##
 # 
 # The multiple-architecture stuff in this file is pretty
@@ -3809,18 +3808,13 @@ AC_CHECK_HEADERS([sys/lgrp_user_impl.h])
 # C-level symbol: none
 # Automake-level symbol: SOLARIS_SUN_STUDIO_AS
 #
-AC_MSG_CHECKING([if x86/amd64 assembler speaks cmovl.l (Solaris-specific)])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-]], [[
-  __asm__ __volatile__("cmovl.l %edx, %eax");
-]])], [
-solaris_have_sun_studio_as=yes
-AC_MSG_RESULT([yes])
-], [
-solaris_have_sun_studio_as=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$solaris_have_sun_studio_as = xyes)
+
+# This was using a AC_COMPILE_IFELSE with "cmovl.l %edx, %eax"
+# which at some time in the past was Sun Studio specific.
+# GNU as now understands it, so the test was misidentifying
+# the assembler. Now we ask the compiler directly.
+with_gnu_as=$(${CC} -v 2>&1 | tr ' ' '\n' | grep with-gnu-as)
+AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$with_gnu_as = x)
 
 # Solaris-specific check determining if symbols __xpg4 and __xpg6
 # are present in linked shared libraries when gcc is invoked with -std=gnu99.

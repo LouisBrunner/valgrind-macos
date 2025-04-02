@@ -1454,7 +1454,10 @@ s390_calculate_cc(ULong cc_op, ULong cc_dep1, ULong cc_dep2, ULong cc_ndep)
    switch (cc_op) {
 
    case S390_CC_OP_BITWISE:
-      return S390_CC_FOR_BINARY("ogr", cc_dep1, (ULong)0);
+      return cc_dep1 == 0 ? 0 : 1;
+
+   case S390_CC_OP_BITWISE2:
+      return cc_dep1 == 0 ? 0 : 3;
 
    case S390_CC_OP_SIGNED_COMPARE:
       return S390_CC_FOR_BINARY("cgr", cc_dep1, cc_dep2);
@@ -2045,6 +2048,21 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          return mkU32(0);
       }
 
+      /* S390_CC_OP_BITWISE2
+         Like S390_CC_OP_BITWISE, but yielding cc = 3 for nonzero result */
+      if (cc_op == S390_CC_OP_BITWISE2) {
+         if ((cond & (8 + 1)) == 8 + 1) {
+            return mkU32(1);
+         }
+         if (cond & 8) {
+            return unop(Iop_1Uto32, binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
+         }
+         if (cond & 1) {
+            return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+         }
+         return mkU32(0);
+      }
+
       /* S390_CC_OP_INSERT_CHAR_MASK_32
          Since the mask comes from an immediate field in the opcode, we
          expect the mask to be a constant here. That simplifies matters. */
@@ -2163,110 +2181,94 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
       }
 
       /* S390_CC_OP_TEST_UNDER_MASK_16
-         Since the mask comes from an immediate field in the opcode, we
-         expect the mask to be a constant here. That simplifies matters. */
+         cc_dep1 = the value to be tested, ANDed with the mask
+         cc_dep2 = a 16-bit mask; expected to be a constant here */
       if (cc_op == S390_CC_OP_TEST_UNDER_MASK_16) {
-         ULong mask16;
-         UInt msb;
+         IRExpr* val = cc_dep1;
+         ULong mask;
+         ULong msb;
 
          if (! isC64(cc_dep2)) goto missed;
 
-         mask16 = cc_dep2->Iex.Const.con->Ico.U64;
+         mask = cc_dep2->Iex.Const.con->Ico.U64;
 
-         /* Get rid of the mask16 == 0 case first. Some of the simplifications
-            below (e.g. for OVFL) only hold if mask16 == 0.  */
-         if (mask16 == 0) {   /* cc == 0 */
+         if (mask == 0) {   /* cc == 0 */
             if (cond & 0x8) return mkU32(1);
             return mkU32(0);
          }
 
-         if (cond == 15) return mkU32(1);
-
-         if (cond == 8) {
-            return unop(Iop_1Uto32, binop(Iop_CmpEQ64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          mkU64(0)));
-         }
-         if (cond == 7) {
-            return unop(Iop_1Uto32, binop(Iop_CmpNE64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          mkU64(0)));
-         }
-         if (cond == 1) {
-            return unop(Iop_1Uto32, binop(Iop_CmpEQ64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          mkU64(mask16)));
-         }
-         if (cond == 14) {  /* ! OVFL */
-            return unop(Iop_1Uto32, binop(Iop_CmpNE64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          mkU64(mask16)));
-         }
-
          /* Find MSB in mask */
          msb = 0x8000;
-         while (msb > mask16)
+         while (msb > mask)
             msb >>= 1;
 
-         if (cond == 2) {  /* cc == 2 */
-            IRExpr *c1, *c2;
+         /* If cc_dep1 results from a shift, avoid the shift operation */
+         if (val->tag == Iex_Binop && val->Iex.Binop.op == Iop_Shr64 &&
+             val->Iex.Binop.arg2->tag == Iex_Const &&
+             val->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8) {
+            UInt n_bits = val->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+            mask <<= n_bits;
+            msb <<= n_bits;
+            val = val->Iex.Binop.arg1;
+         }
 
-            /* (cc_dep & msb) != 0 && (cc_dep & mask16) != mask16 */
-            c1 = binop(Iop_CmpNE64,
-                       binop(Iop_And64, cc_dep1, mkU64(msb)), mkU64(0));
-            c2 = binop(Iop_CmpNE64,
-                       binop(Iop_And64, cc_dep1, cc_dep2),
-                       mkU64(mask16));
-            return binop(Iop_And32, unop(Iop_1Uto32, c1),
-                         unop(Iop_1Uto32, c2));
+         if (cond == 15) return mkU32(1);
+
+         if (cond == 8) { /* all bits zero */
+            return unop(Iop_1Uto32, binop(Iop_CmpEQ64, val, mkU64(0)));
+         }
+         if (cond == 7) { /* not all bits zero */
+            return unop(Iop_1Uto32, binop(Iop_CmpNE64, val, mkU64(0)));
+         }
+         if (cond == 1) { /* all bits set */
+            return unop(Iop_1Uto32, binop(Iop_CmpEQ64, val, mkU64(mask)));
+         }
+         if (cond == 14) { /* not all bits set */
+            return unop(Iop_1Uto32, binop(Iop_CmpNE64, val, mkU64(mask)));
+         }
+
+         IRExpr *masked_msb = binop(Iop_And64, val, mkU64(msb));
+
+         if (cond == 2) {  /* cc == 2 */
+            /* mixed, and leftmost bit set */
+            return unop(Iop_1Uto32,
+                        binop(Iop_And1,
+                              binop(Iop_CmpNE64, masked_msb, mkU64(0)),
+                              binop(Iop_CmpNE64, val, mkU64(mask))));
          }
 
          if (cond == 4) {  /* cc == 1 */
-            IRExpr *c1, *c2;
-
-            /* (cc_dep & msb) == 0 && (cc_dep & mask16) != 0 */
-            c1 = binop(Iop_CmpEQ64,
-                       binop(Iop_And64, cc_dep1, mkU64(msb)), mkU64(0));
-            c2 = binop(Iop_CmpNE64,
-                       binop(Iop_And64, cc_dep1, cc_dep2),
-                       mkU64(0));
-            return binop(Iop_And32, unop(Iop_1Uto32, c1),
-                         unop(Iop_1Uto32, c2));
+            /* mixed, and leftmost bit zero */
+            return unop(Iop_1Uto32,
+                        binop(Iop_And1,
+                              binop(Iop_CmpEQ64, masked_msb, mkU64(0)),
+                              binop(Iop_CmpNE64, val, mkU64(0))));
          }
 
          if (cond == 11) {  /* cc == 0,2,3 */
-            IRExpr *c1, *c2;
-
-            c1 = binop(Iop_CmpNE64,
-                       binop(Iop_And64, cc_dep1, mkU64(msb)), mkU64(0));
-            c2 = binop(Iop_CmpEQ64,
-                       binop(Iop_And64, cc_dep1, cc_dep2),
-                       mkU64(0));
-            return binop(Iop_Or32, unop(Iop_1Uto32, c1),
-                         unop(Iop_1Uto32, c2));
+            /* leftmost bit set, or all bits zero */
+            return unop(Iop_1Uto32,
+                        binop(Iop_Or1,
+                              binop(Iop_CmpNE64, masked_msb, mkU64(0)),
+                              binop(Iop_CmpEQ64, val, mkU64(0))));
          }
 
          if (cond == 3) {  /* cc == 2 || cc == 3 */
+            /* leftmost bit set, rest don't care */
             return unop(Iop_1Uto32,
-                        binop(Iop_CmpNE64,
-                              binop(Iop_And64, cc_dep1, mkU64(msb)),
-                              mkU64(0)));
+                        binop(Iop_CmpNE64, masked_msb, mkU64(0)));
          }
          if (cond == 12) { /* cc == 0 || cc == 1 */
+            /* leftmost bit zero, rest don't care */
             return unop(Iop_1Uto32,
-                        binop(Iop_CmpEQ64,
-                              binop(Iop_And64, cc_dep1, mkU64(msb)),
-                              mkU64(0)));
+                        binop(Iop_CmpEQ64, masked_msb, mkU64(0)));
          }
          if (cond == 13) { /* cc == 0 || cc == 1 || cc == 3 */
-            IRExpr *c01, *c3;
-
-            c01 = binop(Iop_CmpEQ64, binop(Iop_And64, cc_dep1, mkU64(msb)),
-                        mkU64(0));
-            c3 = binop(Iop_CmpEQ64, binop(Iop_And64, cc_dep1, cc_dep2),
-                       mkU64(mask16));
-            return binop(Iop_Or32, unop(Iop_1Uto32, c01),
-                         unop(Iop_1Uto32, c3));
+            /* leftmost bit zero, or all bits set */
+            return unop(Iop_1Uto32,
+                        binop(Iop_Or1,
+                              binop(Iop_CmpEQ64, masked_msb, mkU64(0)),
+                              binop(Iop_CmpEQ64, val, mkU64(mask))));
          }
          // fixs390: handle cond = 5,6,9,10 (the missing cases)
          // vex_printf("TUM mask = 0x%llx\n", mask16);

@@ -11094,59 +11094,52 @@ s390_irgen_TMY(UChar i2, IRTemp op1addr)
 }
 
 static const HChar *
+s390_irgen_TMxx(const HChar *mnem, UChar r1, UShort mask, UChar offs)
+{
+   if (mask == 0) {
+      s390_cc_set_val(0);
+      return mnem;
+   }
+
+   IRExpr* masked;
+   masked = binop(Iop_And64, get_gpr_dw0(r1), mkU64((ULong)mask << offs));
+
+   if ((mask & (mask - 1)) == 0) {
+      /* Single-bit mask */
+      s390_cc_thunk_put1(S390_CC_OP_BITWISE2, mktemp(Ity_I64, masked), False);
+   } else {
+      if (offs) {
+         masked = binop(Iop_Shr64, masked, mkU8(offs));
+      }
+      s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_16,
+                          mktemp(Ity_I64, masked),
+                          mktemp(Ity_I64, mkU64(mask)));
+   }
+   return mnem;
+}
+
+static const HChar *
 s390_irgen_TMHH(UChar r1, UShort i2)
 {
-   UShort mask;
-   IRTemp value = newTemp(Ity_I16);
-
-   mask = i2;
-   assign(value, get_gpr_hw0(r1));
-   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_16, value, mktemp(Ity_I16,
-                       mkU16(mask)));
-
-   return "tmhh";
+   return s390_irgen_TMxx("tmhh", r1, i2, 48);
 }
 
 static const HChar *
 s390_irgen_TMHL(UChar r1, UShort i2)
 {
-   UShort mask;
-   IRTemp value = newTemp(Ity_I16);
-
-   mask = i2;
-   assign(value, get_gpr_hw1(r1));
-   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_16, value, mktemp(Ity_I16,
-                       mkU16(mask)));
-
-   return "tmhl";
+   return s390_irgen_TMxx("tmhl", r1, i2, 32);
 }
 
 static const HChar *
 s390_irgen_TMLH(UChar r1, UShort i2)
 {
-   UShort mask;
-   IRTemp value = newTemp(Ity_I16);
-
-   mask = i2;
-   assign(value, get_gpr_hw2(r1));
-   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_16, value, mktemp(Ity_I16,
-                       mkU16(mask)));
-
-   return "tmlh";
+   return s390_irgen_TMxx("tmlh", r1, i2, 16);
 }
 
 static const HChar *
 s390_irgen_TMLL(UChar r1, UShort i2)
 {
-   UShort mask;
-   IRTemp value = newTemp(Ity_I16);
-
-   mask = i2;
-   assign(value, get_gpr_hw3(r1));
-   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_16, value, mktemp(Ity_I16,
-                       mkU16(mask)));
-
-   return "tmll";
+   return s390_irgen_TMxx("tmll", r1, i2, 0);
 }
 
 static const HChar *

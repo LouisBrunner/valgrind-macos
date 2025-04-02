@@ -2,6 +2,8 @@
 
 # Replace pthread_create with pthread_create@* which is expected on Linux
 s/pthread_create \(hg_intercepts.c:/pthread_create@* \(hg_intercepts.c:/g;
+# Illumos uses pthread function names (in some cases?)
+s/pthread_cond_timedwait \(hg_intercepts.c:/pthread_cond_timedwait@* \(hg_intercepts.c:/;
 
 # We need to remove stack frames containing redundant function
 # names from libc, for example

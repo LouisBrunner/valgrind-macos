@@ -1526,6 +1526,11 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                  struct timespec *reltime) {
       return pthread_cond_timedwait_WRK(cond, mutex, reltime, ETIME);
    }
+   PTH_FUNC(int, pthreadZucondZutimedwait, // pthread_cond_timedwait
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
+                 struct timespec* abstime) {
+      return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
+   }
 #else
 #  error "Unsupported OS"
 #endif
@@ -2810,7 +2815,7 @@ PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
 #  error "Unsupported OS"
 #endif
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_clockrdlock
 //
@@ -2917,7 +2922,7 @@ PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock
 #  error "Unsupported OS"
 #endif
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_clockwrlock
 //

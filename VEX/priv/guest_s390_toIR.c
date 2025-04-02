@@ -11066,31 +11066,26 @@ s390_irgen_SVC(UChar i)
 }
 
 static const HChar *
+s390_irgen_TMx(const HChar *mnem, UChar mask, IRTemp op1addr)
+{
+   IRTemp masked = newTemp(Ity_I8);
+
+   assign(masked, binop(Iop_And8, load(Ity_I8, mkexpr(op1addr)), mkU8(mask)));
+   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_8, masked, mktemp(Ity_I8,
+                       mkU8(mask)));
+   return mnem;
+}
+
+static const HChar *
 s390_irgen_TM(UChar i2, IRTemp op1addr)
 {
-   UChar mask;
-   IRTemp value = newTemp(Ity_I8);
-
-   mask = i2;
-   assign(value, load(Ity_I8, mkexpr(op1addr)));
-   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_8, value, mktemp(Ity_I8,
-                       mkU8(mask)));
-
-   return "tm";
+   return s390_irgen_TMx("tm", i2, op1addr);
 }
 
 static const HChar *
 s390_irgen_TMY(UChar i2, IRTemp op1addr)
 {
-   UChar mask;
-   IRTemp value = newTemp(Ity_I8);
-
-   mask = i2;
-   assign(value, load(Ity_I8, mkexpr(op1addr)));
-   s390_cc_thunk_putZZ(S390_CC_OP_TEST_UNDER_MASK_8, value, mktemp(Ity_I8,
-                       mkU8(mask)));
-
-   return "tmy";
+   return s390_irgen_TMx("tmy", i2, op1addr);
 }
 
 static const HChar *

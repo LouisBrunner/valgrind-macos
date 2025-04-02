@@ -2140,8 +2140,8 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
       }
 
       /* S390_CC_OP_TEST_UNDER_MASK_8
-         Since the mask comes from an immediate field in the opcode, we
-         expect the mask to be a constant here. That simplifies matters. */
+         cc_dep1 = the value to be tested, ANDed with the mask
+         cc_dep2 = an 8-bit mask; expected to be a constant here */
       if (cc_op == S390_CC_OP_TEST_UNDER_MASK_8) {
          ULong mask16;
 
@@ -2149,33 +2149,23 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
 
          mask16 = cc_dep2->Iex.Const.con->Ico.U64;
 
-         /* Get rid of the mask16 == 0 case first. Some of the simplifications
-            below (e.g. for OVFL) only hold if mask16 == 0.  */
          if (mask16 == 0) {   /* cc == 0 */
             if (cond & 0x8) return mkU32(1);
             return mkU32(0);
          }
 
          /* cc == 2 is a don't care */
-         if (cond == 8 || cond == 8 + 2) {
-            return unop(Iop_1Uto32, binop(Iop_CmpEQ64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          mkU64(0)));
+         if (cond == 8 || cond == 8 + 2) { /* all bits zero */
+            return unop(Iop_1Uto32, binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
          }
-         if (cond == 7 || cond == 7 - 2) {
-            return unop(Iop_1Uto32, binop(Iop_CmpNE64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          mkU64(0)));
+         if (cond == 7 || cond == 7 - 2) { /* not all bits zero */
+            return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
          }
-         if (cond == 1 || cond == 1 + 2) {
-            return unop(Iop_1Uto32, binop(Iop_CmpEQ64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          cc_dep2));
+         if (cond == 1 || cond == 1 + 2) { /* all bits set */
+            return unop(Iop_1Uto32, binop(Iop_CmpEQ64, cc_dep1, cc_dep2));
          }
-         if (cond == 14 || cond == 14 - 2) {  /* ! OVFL */
-            return unop(Iop_1Uto32, binop(Iop_CmpNE64,
-                                          binop(Iop_And64, cc_dep1, cc_dep2),
-                                          cc_dep2));
+         if (cond == 14 || cond == 14 - 2) { /* not all bits set */
+            return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, cc_dep2));
          }
          goto missed;
       }

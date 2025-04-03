@@ -691,7 +691,7 @@ static const char *opcodes[] = {
    "nnrk   r1,r2,r3",           // mi3
    "nngrk  r1,r2,r3",           // mi3
 
-   "niai   i1:u4,i2:u4",        // exhi
+   "niai   i1:u4{0..3},i2:u4{0..3}",  // exhi   no spec exc for i1,i2
 
    // ntstg not implemented
 

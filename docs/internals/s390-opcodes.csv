@@ -950,6 +950,9 @@ clgdtr,"convert to 64 bit fixed logical from long dfp with rounding mode",implem
 clgxtr,"convert to 64 bit fixed logical from extended dfp with rounding mode",implemented
 clfdtr,"convert to 32 bit fixed logical from long dfp with rounding mode",implemented
 clfxtr,"convert to 32 bit fixed logical from extended dfp with rounding mode",implemented
+cgdtra,"convert to 64 bit fixed from long dfp with rounding mode",implemented
+cgxtra,"convert to 64 bit fixed from extended dfp with rounding mode",implemented
+cxgtra,"convert from fixed extended dfp with rounding mode",implemented
 ddtra,"divide long dfp with rounding mode",implemented
 dxtra,"divide extended dfp with rounding mode",implemented
 mdtra,"multiply long dfp with rounding mode",implemented

@@ -55,12 +55,20 @@ my @extended_mnemonics = (      # Base mnemonic(s)
     "bi",                       # bic
     'brul?',
     'jc',                       # brc
+    'cf[dex]br',                # cf[dex]bra
+    'cg[dex]br',                # cg[dex]dbra
+    'c[dex]fbr',                # c[dex]fbra
+    'c[dex]gbr',                # c[dex]gbra
+    'c[dx]gtr',                 # c[dx]gtra
+    'cg[dx]tr',                 # cg[dx]tra
     'jasl?',
     'jct[gh]?',
     'jg?nop',
     'jxleg?',
     'jxhg?',
     'l[de]rv',
+    'l[de]xbr',                 # l[de]xbra
+    'ledbr',                    # ledbra
     'lfi',                      # iilf
     'llg[fh]i',                 # llilf, llill
     'notg?r',                   # nork, nogrk
@@ -215,25 +223,6 @@ while (my $line = <OPC>) {
     next if ($mnemonic eq "cuutf"); # alternate mnemonic for cu21
     next if ($mnemonic eq "cutfu"); # alternate mnemonic for cu12
 
-    next if ($mnemonic eq "cfdbra"); # indistinguishable from cfdbr
-    next if ($mnemonic eq "cfebra"); # indistinguishable from cfebr
-    next if ($mnemonic eq "cfxbra"); # indistinguishable from cfxbr
-    next if ($mnemonic eq "cgdbra"); # indistinguishable from cgdbr
-    next if ($mnemonic eq "cgebra"); # indistinguishable from cgebr
-    next if ($mnemonic eq "cgxbra"); # indistinguishable from cgxbr
-    next if ($mnemonic eq "cdfbra"); # indistinguishable from cdfbr
-    next if ($mnemonic eq "cefbra"); # indistinguishable from cefbr
-    next if ($mnemonic eq "cxfbra"); # indistinguishable from cxfbr
-    next if ($mnemonic eq "cdgbra"); # indistinguishable from cdgbr
-    next if ($mnemonic eq "cegbra"); # indistinguishable from cegbr
-    next if ($mnemonic eq "cxgbra"); # indistinguishable from cxgbr
-    next if ($mnemonic eq "ldxbra"); # indistinguishable from ldxbr
-    next if ($mnemonic eq "lexbra"); # indistinguishable from lexbr
-    next if ($mnemonic eq "ledbra"); # indistinguishable from ledbr
-    next if ($mnemonic eq "cdgtr");  # indistinguishable from cdgtra
-    next if ($mnemonic eq "cxgtra"); # indistinguishable from cxgtr
-    next if ($mnemonic eq "cgdtra"); # indistinguishable from cgdtr
-    next if ($mnemonic eq "cgxtra"); # indistinguishable from cgxtr
     next if ($mnemonic eq "fidbr");  # indistinguishable from fidbra
     next if ($mnemonic eq "fiebr");  # indistinguishable from fiebra
     next if ($mnemonic eq "fixbr");  # indistinguishable from fixbra
@@ -293,26 +282,6 @@ while (my $line = <CSV>) {
     $mnemonic    =~ s/"//g;
     $description =~ s/"//g;
 
-    next if ($mnemonic eq "cfdbra"); # indistinguishable from cfdbr
-    next if ($mnemonic eq "cfebra"); # indistinguishable from cfebr
-    next if ($mnemonic eq "cfxbra"); # indistinguishable from cfxbr
-    next if ($mnemonic eq "cgdbra"); # indistinguishable from cgdbr
-    next if ($mnemonic eq "cgebra"); # indistinguishable from cgebr
-    next if ($mnemonic eq "cgxbra"); # indistinguishable from cgxbr
-    next if ($mnemonic eq "cdfbra"); # indistinguishable from cdfbr
-    next if ($mnemonic eq "cefbra"); # indistinguishable from cefbr
-    next if ($mnemonic eq "cxfbra"); # indistinguishable from cxfbr
-    next if ($mnemonic eq "cegbra"); # indistinguishable from cegbr
-    next if ($mnemonic eq "cdgbra"); # indistinguishable from cdgbr
-    next if ($mnemonic eq "cegbra"); # indistinguishable from cegbr
-    next if ($mnemonic eq "cxgbra"); # indistinguishable from cxgbr
-    next if ($mnemonic eq "ldxbra"); # indistinguishable from ldxbr
-    next if ($mnemonic eq "lexbra"); # indistinguishable from lexbr
-    next if ($mnemonic eq "ledbra"); # indistinguishable from ledbr
-    next if ($mnemonic eq "cdgtr");  # indistinguishable from cdgtra
-    next if ($mnemonic eq "cxgtra"); # indistinguishable from cxgtr
-    next if ($mnemonic eq "cgdtra"); # indistinguishable from cgdtr
-    next if ($mnemonic eq "cgxtra"); # indistinguishable from cgxtr
     next if ($mnemonic eq "fidbr");  # indistinguishable from fidbra
     next if ($mnemonic eq "fiebr");  # indistinguishable from fiebra
     next if ($mnemonic eq "fixbr");  # indistinguishable from fixbra

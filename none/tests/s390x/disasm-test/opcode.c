@@ -106,6 +106,7 @@
    msa8  --> message-security-assist extension 8
    msa9  --> message-security-assist extension 9
    nnpa  --> neural-network-processing-assist facility
+   ppa   --> processor-assist facility
    pfpo  --> PFPO facility
    popc  --> population-count facility  == lsc
    stckf --> STCKF facility
@@ -729,7 +730,7 @@ static const char *opcodes[] = {
    "pcc",                       // msa4
 
    // plo   not implemented
-   // ppa   not implemented
+   "ppa    r1,r2,m3:{1,15}",    // ppa     no spec exception for m3
 
    "ppno   r1,r2",              // msa5
    "prno   r1,r2",              // msa5

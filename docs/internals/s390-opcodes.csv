@@ -968,7 +968,7 @@ tbeginc,"constrained transaction begin","not implemented",zEC12,
 tend,"transaction end","not implemented",zEC12,
 bpp,"branch prediction preload",implemented,zEC12,
 bprp,"branch prediction relative preload",implemented,zEC12,
-ppa,"perform processor assist","not implemented",zEC12,
+ppa,"perform processor assist",implemented,zEC12,
 niai,"next instruction access intent",implemented,zEC12,
 crdte,"compare and replace DAT table entry",N/A,"privileged instruction"
 lat,"load and trap 32 bit",implemented,zEC12,

@@ -20664,6 +20664,15 @@ s390_irgen_NIAI(UChar i1, UChar i2)
    return "niai";
 }
 
+static const HChar *
+s390_irgen_PPA(UChar m3, UChar r1, UChar r2)
+{
+   /* Treat as a no-op.  m3 could indicate one of the following:
+       1: transaction-abort assist -- fine, we don't support transactions
+      15: in-order-execution assist -- we don't claim support */
+   return "ppa";
+}
+
 /* New insns are added here.
    If an insn is contingent on a facility being installed also
    check whether function do_extension_STFLE needs updating. */
@@ -21020,7 +21029,8 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
    case 0xb2e1: /* SPCTR */ goto unimplemented;
    case 0xb2e4: /* ECCTR */ goto unimplemented;
    case 0xb2e5: /* EPCTR */ goto unimplemented;
-   case 0xb2e8: /* PPA */ goto unimplemented;
+   case 0xb2e8: s390_format_RRFa_U0RR(s390_irgen_PPA, RRF2_m3(ovl),
+                                      RRF2_r1(ovl), RRF2_r2(ovl));  goto ok;
    case 0xb2ec: /* ETND */ goto unimplemented;
    case 0xb2ed: /* ECPGA */ goto unimplemented;
    case 0xb2f8: /* TEND */ goto unimplemented;

@@ -861,7 +861,7 @@ static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
        /* 44: PFPO, not fully supported */
        | S390_SETBITS(45, 47)
        /* 48: DFP zoned-conversion, not supported */
-       /* 49: includes PPA, not supported */
+       | S390_SETBITS(49, 49)
        /* 50: constrained transactional-execution, not supported */
        | S390_SETBITS(51, 55)
        /* 56: unassigned */

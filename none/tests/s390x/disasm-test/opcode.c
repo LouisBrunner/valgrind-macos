@@ -83,8 +83,6 @@
    diop  --> distinct-operands  == lsc
    exe   --> execute-extensions
    eimm  --> extended-immediate facility
-   etf2  --> ETF2-enhancement facility
-   etf3  --> ETF2-enhancement facility
    exhi  --> execution-hint
    extr2 --> extended-translation facility 2
    extr3 --> extended-translation facility 3
@@ -397,16 +395,16 @@ static const char *opcodes[] = {
    "cvdy   r1,d20(x2,b2)",
    // cvdg not implemented
 
-   "cu24   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // extr3
+   "cu24   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // extr3  no spec exc for m3
 
-   "cu21   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",
+   "cu21   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // no spec exc for m3
 
    "cu42   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14}",           // extr3
    "cu41   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14}",           // extr3
 
-   "cu12   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",
+   "cu12   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // no spec exc for m3
 
-   "cu14   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // extr3
+   "cu14   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // extr3  no spec exc for m3
 
    "cpya   a1,a2",
 
@@ -1038,8 +1036,8 @@ static const char *opcodes[] = {
    "fidbra  f1,m3:{0,1,3..7},f2,m4",
    "fixbra  f1:{0,1,4,5,8,9,12,13},m3:{0,1,3..7},f2:{0,1,4,5,8,9,12,13},m4",
    "ldebr   f1,f2",
-   "lxdbr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
-   "lxebr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
+   "lxdbr   f1:{0,1,4,5,8,9,12,13},f2",
+   "lxebr   f1:{0,1,4,5,8,9,12,13},f2",
    "ldeb    f1,d12(x2,b2)",
    "lxdb    f1:{0,1,4,5,8,9,12,13},d12(x2,b2)",
    "lxeb    f1:{0,1,4,5,8,9,12,13},d12(x2,b2)",
@@ -1121,10 +1119,10 @@ static const char *opcodes[] = {
    // cxzt  not implemented
    "cgdtr   r1,m3,f2",
    "cgxtr   r1,m3,f2:{0,1,4,5,8,9,12,13}",
-   "cgdtra  r1,m3,f2,m4",
-   "cgxtra  r1,m3,f2:{0,1,4,5,8,9,12,13},m4",
-   "cfdtr   r1,m3,f2,m4",
-   "cfxtr   r1,m3,f2:{0,1,4,5,8,9,12,13},m4",
+   "cgdtra  r1,m3,f2,m4",                               // fpext
+   "cgxtra  r1,m3,f2:{0,1,4,5,8,9,12,13},m4",           // fpext
+   "cfdtr   r1,m3,f2,m4",                               // fpext
+   "cfxtr   r1,m3,f2:{0,1,4,5,8,9,12,13},m4",           // fpext
    "clgdtr  r1,m3,f2,m4",                               // fpext
    "clgxtr  r1,m3,f2:{0,1,4,5,8,9,12,13},m4",           // fpext
    "clfdtr  r1,m3,f2,m4",                               // fpext
@@ -1142,17 +1140,17 @@ static const char *opcodes[] = {
    "ddtra   f1,f2,f3,m4",
    "dxtra   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},m4",
    "eedtr   f1,f2",
-   "eextr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
+   "eextr   f1,f2:{0,1,4,5,8,9,12,13}",
    "esdtr   f1,f2",
-   "esxtr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
+   "esxtr   f1,f2:{0,1,4,5,8,9,12,13}",
    "iedtr   f1,f3,f2",
-   "iextr   f1:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
+   "iextr   f1:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},f2",
    "ltdtr   f1,f2",
    "ltxtr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
    // fidtr  not implemented
    // fixtr  not implemented
    "ldetr   f1,f2,m4",
-   "lxdtr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13},m4",
+   "lxdtr   f1:{0,1,4,5,8,9,12,13},f2,m4",
    "ledtr   f1,m3,f2,m4",
    "ldxtr   f1:{0,1,4,5,8,9,12,13},m3,f2:{0,1,4,5,8,9,12,13},m4",
    "mdtr    f1,f2,f3",
@@ -1162,7 +1160,7 @@ static const char *opcodes[] = {
    "qadtr   f1,f3,f2,m4",
    "qaxtr   f1:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13},m4",
    "rrdtr   f1,f3,f2,m4",
-   "rrxtr   f1:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13},m4",
+   "rrxtr   f1:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},f2,m4",
    "sldt    f1,f3,d12(x2,b2)",
    "slxt    f1:{0,1,4,5,8,9,12,13},f3:{0,1,4,5,8,9,12,13},d12(x2,b2)",
    "srdt    f1,f3,d12(x2,b2)",

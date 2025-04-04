@@ -28,6 +28,7 @@ while (<>)
 
     # on Illumos
     s#_start_crt \(in .*#(below main)#;
+    s#start_thread#(within libpthread-?.?.so)#;
 
     # filter out the exact libc-start.c:### line number. (ppc64*)
     s/\(libc-start.c:[0-9]*\)$/(in \/...libc...)/;

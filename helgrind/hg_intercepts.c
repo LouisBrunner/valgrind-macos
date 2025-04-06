@@ -3402,6 +3402,11 @@ LIBC_FUNC(int, semZutimedwait, sem_t* sem, const struct timespec* abs_timeout) {
 PTH_FUNC(int, semaZutimedwait, sem_t *sem, const struct timespec* abs_timeout) { /* sema_timedwait */
    return sem_timedwait_WRK(sem, abs_timeout);
 }
+#if defined(__illumos__)
+PTH_FUNC(int, semZutimedwait, sem_t *sem, const struct timespec* abs_timeout) { /* sem_timedwait */
+   return sem_timedwait_WRK(sem, abs_timeout);
+}
+#endif
 #else
 #  error "Unsupported OS"
 #endif

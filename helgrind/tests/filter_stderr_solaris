@@ -33,3 +33,9 @@ my $check = join "|", keys %regex;
 if (! /: pthread_/ && ! /WRK/) {
     s/($check)(.*hg_intercepts.c)/$regex{$1}$2/g;
 }
+
+# this is for free_is_write on Illumos
+# on other platforms a 10 byte alloc results in a 16 byte arena
+# on Illumos there are many other allocations resulting in a
+# 4Mbyte arena
+s/4,194,208 in arena/16 in arena/;

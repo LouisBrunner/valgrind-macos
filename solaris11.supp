@@ -62,4 +62,24 @@
    fun:gomp_team_start
    fun:GOMP_parallel
 }
+# conflict between printf and _setorientation on data symbol "_iob"
+{
+   Illumos:printf
+   Helgrind:Race
+   fun:printf
+}
+# conflict between pthread_barrier_init and pthread_barrier_wait
+{
+   Illumos:pthread_barrier_init
+   Helgrind:Race
+   fun:pthread_barrier_init
+}
+# conflict between pthread_barrier_destroy and pthread_barrier_wait
+{
+   Illumos:pthread_barrier_destroy
+   Helgrind:Race
+   fun:memset
+   fun:pthread_barrier_destroy
+   fun:pthread_barrier_destroy
+}
 

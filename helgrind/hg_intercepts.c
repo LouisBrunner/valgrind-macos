@@ -2781,8 +2781,10 @@ static int pthread_rwlock_timedrdlock_WRK(pthread_rwlock_t *rwlock,
    DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
                  pthread_rwlock_t *, rwlock, long, 0/*isW*/,
                  long, (ret == 0) ? True : False);
+
    if (ret != 0) {
-      DO_PthAPIerror("pthread_rwlock_timedrdlock", ret);
+      if (ret != ETIMEDOUT)
+         DO_PthAPIerror("pthread_rwlock_timedrdlock", ret);
    }
 
    if (TRACE_PTH_FNS) {
@@ -2847,8 +2849,10 @@ static int pthread_rwlock_clockrdlock_WRK(pthread_rwlock_t *rwlock,
                     pthread_rwlock_t *, rwlock, long, 0/*isW*/,
                    long, (ret == 0) ? True : False);
    }
+
    if (ret != 0) {
-      DO_PthAPIerror("pthread_rwlock_clockrdlock", ret);
+      if (ret != ETIMEDOUT)
+         DO_PthAPIerror("pthread_rwlock_clockrdlock", ret);
    }
 
    if (TRACE_PTH_FNS) {

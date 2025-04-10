@@ -19087,32 +19087,29 @@ s390_irgen_VSUMQ(UChar v1, UChar v2, UChar v3, UChar m4)
 static const HChar *
 s390_irgen_VTM(UChar v1, UChar v2)
 {
-   IRDirty* d;
-   IRTemp cc = newTemp(Ity_I64);
+   IRTemp  op1    = newTemp(Ity_V128);
+   IRTemp  op2    = newTemp(Ity_V128);
+   IRTemp  masked = newTemp(Ity_V128);
+   IRTemp  diff   = newTemp(Ity_V128);
+   IRTemp  cc     = newTemp(Ity_I64);
+   IRExpr* masked_is_zero;
+   IRExpr* diff_is_zero;
 
-   s390x_vec_op_details_t details = { .serialized = 0ULL };
-   details.op = S390_VEC_OP_VTM;
-   details.v2 = v1;
-   details.v3 = v2;
-   details.read_only = 1;
-
-   d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_vec_op",
-                         &s390x_dirtyhelper_vec_op,
-                         mkIRExprVec_2(IRExpr_GSPTR(),
-                                       mkU64(details.serialized)));
-
-   d->nFxState = 2;
-   vex_bzero(&d->fxState, sizeof(d->fxState));
-   d->fxState[0].fx     = Ifx_Read;
-   d->fxState[0].offset = S390X_GUEST_OFFSET(guest_v0) + v1 * sizeof(V128);
-   d->fxState[0].size   = sizeof(V128);
-   d->fxState[1].fx     = Ifx_Read;
-   d->fxState[1].offset = S390X_GUEST_OFFSET(guest_v0) + v2 * sizeof(V128);
-   d->fxState[1].size   = sizeof(V128);
-
-   stmt(IRStmt_Dirty(d));
+   assign(op1, get_vr_qw(v1));
+   assign(op2, get_vr_qw(v2));
+   assign(masked, binop(Iop_AndV128, mkexpr(op1), mkexpr(op2)));
+   assign(diff, binop(Iop_XorV128, mkexpr(op2), mkexpr(masked)));
+   masked_is_zero = binop(Iop_CmpEQ64,
+                          binop(Iop_Or64, unop(Iop_V128to64, mkexpr(masked)),
+                                unop(Iop_V128HIto64, mkexpr(masked))),
+                          mkU64(0));
+   diff_is_zero   = binop(Iop_CmpEQ64,
+                          binop(Iop_Or64, unop(Iop_V128to64, mkexpr(diff)),
+                                unop(Iop_V128HIto64, mkexpr(diff))),
+                          mkU64(0));
+   assign(cc, mkite(masked_is_zero, mkU64(0),
+                    mkite(diff_is_zero, mkU64(3), mkU64(1))));
    s390_cc_set(cc);
-
    return "vtm";
 }
 

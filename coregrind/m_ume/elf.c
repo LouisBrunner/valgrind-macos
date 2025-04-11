@@ -514,7 +514,7 @@ Bool VG_(match_ELF)(const void *hdr, SizeT len)
      the furthest-along mapping it creates.  The executable is mapped
      starting at EBASE, which is usually read from it (eg, 0x8048000
      etc) except if it's a PIE, in which case aspacem is queried for
-     the first adequately sized segement.
+     the first adequately sized segment.
 
      The returned address is recorded in info->brkbase as the start
      point of the brk (data) segment, as it is traditional to place

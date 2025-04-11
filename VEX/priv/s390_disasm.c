@@ -1093,13 +1093,10 @@ s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
    vassert(opnds[0].kind == S390_OPND_MNM ||
            opnds[0].kind == S390_OPND_XMNM);
 
-   Int separator = 0;
+   Int write_separator = 0;   // no separator after mnemonic
 
    for (UInt ix = 0; opnds[ix].kind != S390_OPND_DONE; ++ix) {
       const s390_opnd *opnd = opnds + ix;
-
-      if (ix > 1 && separator)
-         *p++ = ',';
 
       switch (opnd->kind) {
       case S390_OPND_MNM:
@@ -1132,13 +1129,9 @@ s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
          UInt value;
          if (mh && mh(ix, opnd->mask, &value))
             p += vex_sprintf(p, "%u", value);
-         else {
-            if (ix != 1)
-               (*--p) = '\0';   // overwrite the separator
-            else
-               separator = 0;
-         }
-         continue;  // *not* break
+         else
+            write_separator = 0;
+         break;
       }
 
       case S390_OPND_UINT:
@@ -1204,8 +1197,14 @@ s390_disasm_aux(const s390_opnd *opnds, const HChar *xmnm, HChar *p,
          break;
       }
 
-      separator = ',';
+      if (write_separator)
+         *p++ = ',';
+      write_separator = 1;
    }
+
+   if (p[-1] == ',')    // remove trailing separator, if any
+      *--p = '\0';
+
    return p;
 }
 

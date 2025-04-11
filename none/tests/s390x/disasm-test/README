@@ -53,7 +53,7 @@ Other non-debugging options
   Specify which GCC to use. Default is: gcc on $PATH.
 
 --gcc-flags=FLAGS
-  Specify which flags GCC to use. Default is: "-c -march=arch14".
+  Specify which flags GCC to use. Default is: "-march=arch14".
 
 --objdump=/path/to/objdump
   Specify which objdump to use. Default is: objdump on $PATH.

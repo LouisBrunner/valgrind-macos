@@ -36,7 +36,7 @@ int verbose, debug, show_spec_exc, show_miscompares;
 
 const char *gcc = "gcc";          // path to GCC
 const char *objdump = "objdump";  // path to objdump
-const char *gcc_flags = "-c -march=arch14";
+const char *gcc_flags = "-march=arch14";
 
 #define CHECK_CLO(x, s) (strncmp(x, s, sizeof s - 1) == 0)
 

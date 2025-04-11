@@ -567,7 +567,7 @@ generate_tests(const opcode *opc)
       printf("...%u testcases generated for '%s'\n", num_tests,
              opc->name);
 
-   run_cmd("%s %s %s.c", gcc, gcc_flags, opc->name);
+   run_cmd("%s -c %s %s.c", gcc, gcc_flags, opc->name);
    run_cmd("%s --disassemble=%s %s.o > %s.dump", objdump, FUNCTION,
            opc->name, opc->name);
 

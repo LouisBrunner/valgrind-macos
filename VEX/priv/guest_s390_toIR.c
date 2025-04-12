@@ -11313,12 +11313,24 @@ s390_irgen_SRNM(IRTemp op2addr)
 }
 
 static const HChar *
-s390_irgen_SRNMB(IRTemp op2addr)
+s390_irgen_SRNMB(UChar b2, UShort d2)
 {
-   UInt input_mask, fpc_mask;
+   /* Can only check at IR generation time when b2 == 0 */
+   if (b2 == 0) {
+      s390_insn_assert("srnmb", d2 <= 3 || d2 == 7);  // valid rounding mode
+      /* d2 == 7 requires fpext */
+      if (d2 == 7 && ! s390_host_has_fpext) {
+         emulation_failure(EmFail_S390X_fpext);
+         return "srnmb";
+      }
+   }
+   IRTemp op2addr = newTemp(Ity_I64);
 
-   input_mask = 7;
-   fpc_mask = 7;
+   assign(op2addr, binop(Iop_Add64, mkU64(d2), b2 != 0 ? get_gpr_dw0(b2) :
+          mkU64(0)));
+
+   UInt input_mask = 7;
+   UInt fpc_mask = 7;
 
    put_fpc_w0(binop(Iop_Or32,
                     binop(Iop_And32, get_fpc_w0(), mkU32(~fpc_mask)),
@@ -11327,25 +11339,8 @@ s390_irgen_SRNMB(IRTemp op2addr)
    return "srnmb";
 }
 
-static void
-s390_irgen_srnmb_wrapper(UChar b2, UShort d2)
-{
-   if (b2 == 0) {  /* This is the typical case */
-      if (d2 > 3) {
-         if (s390_host_has_fpext && d2 == 7) {
-            /* ok */
-         } else {
-            emulation_warning(EmWarn_S390X_invalid_rounding);
-            d2 = S390_FPC_BFP_ROUND_NEAREST_EVEN;
-         }
-      }
-   }
 
-   s390_format_S_RD(s390_irgen_SRNMB, b2, d2);
-}
-
-/* Wrapper to validate the parameter as in SRNMB is not required, as all
-   the 8 values in op2addr[61:63] correspond to a valid DFP rounding mode */
+/* All 8 values in op2addr[61:63] correspond to a valid DFP rounding mode */
 static const HChar *
 s390_irgen_SRNMT(IRTemp op2addr)
 {
@@ -21017,7 +21012,7 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                                  goto ok;
    case 0xb2b1: /* STFL */ goto unimplemented;
    case 0xb2b2: /* LPSWE */ goto unimplemented;
-   case 0xb2b8: s390_irgen_srnmb_wrapper(S_b2(ovl), S_d2(ovl));
+   case 0xb2b8: s390_format_S_RD_raw(s390_irgen_SRNMB, S_b2(ovl), S_d2(ovl));
       goto ok;
    case 0xb2b9: s390_format_S_RD(s390_irgen_SRNMT, S_b2(ovl), S_d2(ovl));
       goto ok;

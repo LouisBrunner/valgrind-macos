@@ -25,6 +25,7 @@
 #include <stddef.h>           // NULL
 #include <stdlib.h>           // exit, malloc
 #include <stdio.h>            // vfprintf
+#include <ctype.h>            // isdigit
 #include <stdarg.h>           // va_list
 #include <string.h>           // strchr
 #include <assert.h>           // assert
@@ -37,6 +38,8 @@ int verbose, debug, show_spec_exc, show_miscompares;
 const char *gcc = "gcc";          // path to GCC
 const char *objdump = "objdump";  // path to objdump
 const char *gcc_flags = "-march=arch14";
+
+#define MIN_OBJDUMP_VERSION 2044000  /* 2.44 */
 
 #define CHECK_CLO(x, s) (strncmp(x, s, sizeof s - 1) == 0)
 
@@ -63,10 +66,12 @@ static const char usage[] =
    "    --unit-test - Run unit tests\n"
    "    --show-spec-exc - Show insns causing specification exceptions\n"
    "    --no-show-miscompares - Do not show disassembly miscompares\n"
+   "    --check-prereq - Check prerequisites (e.g. objdump version)\n"
    ;
 
 static void remove_temp_files(const char *);
 static int  opcode_has_errors(const opcode *);
+static int  check_objdump(void);
 
 static int keep_temp = 0;
 static int summary = 0;
@@ -81,7 +86,7 @@ main(int argc, char *argv[])
 {
    int all = 0, verify = 0, generate = 0, unit_test = 0;
    int num_clargs = 0;
-   int run = 0;
+   int run = 0, check_prereq = 0;
    const char *clargs[argc];
 
    assert(sizeof(long long) == 8);
@@ -118,6 +123,8 @@ main(int argc, char *argv[])
          keep_temp = 1;
       } else if (CHECK_CLO(clo, "--run")) {
          run = 1;
+      } else if (CHECK_CLO(clo, "--check-prereq")) {
+         check_prereq = 1;
       } else if (CHECK_CLO(clo, "--help")) {
          printf("%s\n", usage);
          return 0;
@@ -133,6 +140,9 @@ main(int argc, char *argv[])
          clargs[num_clargs++] = clo;
       }
    }
+
+   if (check_prereq)
+      return check_objdump();
 
    /* Check consistency of command line options */
    if (verify + generate + run + all + unit_test == 0)
@@ -332,4 +342,54 @@ opcode_has_errors(const opcode *opc)
          return 1;
    }
    return 0;
+}
+
+
+/* Objdump version 2.44 or later is required, Return 0, if that's
+   the case. */
+static int
+check_objdump(void)
+{
+   unsigned need = strlen(objdump) + 3 + 1;
+   char *cmd = mallock(need);
+
+   sprintf(cmd, "%s -V", objdump);
+   FILE *fp = popen(cmd, "r");
+
+   /* The version number is expected on the first line and its
+      format ought to be one of X or X.Y or X.Y.Z where X,Y,Z are
+      positive integers. */
+   int c, rc = 1;
+   while ((c = fgetc(fp)) != EOF) {
+      if (c == '\n') break;
+      if (! isdigit(c)) continue;
+
+      /* Version number is expected to be X or X.Y or X.Y.Z */
+      char buf[32];  // assumed large enough
+      int ix = 0;
+      do {
+         buf[ix++] = c;
+         c = fgetc(fp);
+      } while (isdigit(c) || c == '.');
+      buf[ix] = '\0';
+
+      unsigned version = 0, v1, v2, v3;
+      if (sscanf(buf, "%u.%u.%u", &v1,&v2,&v3) == 3) {
+         version = v1*1000000 + v2*1000 + v3;
+      } else if (sscanf(buf, "%u.%u", &v1,&v2) == 2) {
+         version = v1*1000000 + v2*1000;
+      } else if (sscanf(buf, "%u", &v1) == 1) {
+         version = v1*1000000;
+      } else {
+         error("Could not determine objdump version\n");
+         break;
+      }
+      if (version >= MIN_OBJDUMP_VERSION)
+         rc = 0;
+      break;
+   }
+   pclose(fp);
+   free(cmd);
+
+   return rc;
 }

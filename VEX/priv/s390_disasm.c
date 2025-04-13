@@ -164,7 +164,8 @@ dxb_operand(HChar *p, UInt d, UInt x, UInt b, Bool displacement_is_signed)
       p += vex_sprintf(p, "%u", d);
    }
    if (x != 0) {
-      p += vex_sprintf(p, "(%s,%s)", gpr_operand(x), gpr_operand(b));
+      p += vex_sprintf(p, "(%s,%s)", gpr_operand(x),
+                       b != 0 ? gpr_operand(b) : "0");
    } else {
       if (b != 0) {
          p += vex_sprintf(p, "(%s)", gpr_operand(b));
@@ -182,7 +183,7 @@ udlb_operand(HChar *p, UInt d, UInt length, UInt b)
 {
    p += vex_sprintf(p, "%u", d);
    p += vex_sprintf(p, "(%u", length + 1);  // actual length is +1
-   p += vex_sprintf(p, ",%s", gpr_operand(b));
+   p += vex_sprintf(p, ",%s", b != 0 ? gpr_operand(b) : "0");
    p += vex_sprintf(p, ")");
 
    return p;
@@ -203,7 +204,7 @@ dvb_operand(HChar *p, UInt d, UInt v, UInt b, Bool displacement_is_signed)
       p += vex_sprintf(p, "%u", d);
    }
    p += vex_sprintf(p, "(%s", vr_operand(v));
-   p += vex_sprintf(p, ",%s", gpr_operand(b));
+   p += vex_sprintf(p, ",%s", b != 0 ? gpr_operand(b) : "0");
    p += vex_sprintf(p, ")");
 
    return p;
@@ -282,9 +283,11 @@ bc_disasm(const s390_opnd *opnds, HChar *p)
    const HChar *xmnm;
    UInt mask = opnds[1].mask;
 
-   if (mask == 0)
+   if (mask == 0) {
       xmnm = "nop";
-   else if (mask == 15)
+      if (opnds[2].d == 0 && opnds[2].b == 0 && opnds[2].x == 0)
+         return p += vex_sprintf(p, "nop");
+   } else if (mask == 15)
       xmnm = "b";
    else
       xmnm = construct_mnemonic("b", "", mask);
@@ -1081,6 +1084,35 @@ adtra_like_disasm(const s390_opnd *opnds, HChar *p)
       xmnm[len - 1] = '\0';
    }
    return s390_disasm_aux(opnds, xmnm, p, mask0_mh);
+}
+
+
+static Int
+rotate_mh(UInt ix __attribute__((unused)), UInt mask, UInt *value)
+{
+   *value = mask;
+   if (ix == 5 && mask == 0) return 0;
+   if (ix == 3)   // rosbg, etc
+      *value = mask & ~0x80;
+   if (ix == 4)   // risbg
+      *value = mask & ~0x80;
+   return 1;
+}
+
+
+HChar *
+rotate_disasm(const s390_opnd *opnds, HChar *p)
+{
+   const HChar *base = opnds[0].xmnm.base;
+   UInt len = vex_strlen(base);
+   HChar xmnm[len + 1];
+
+   if (opnds[0].xmnm.base[1] == 'i')
+      vex_sprintf(xmnm, "%s%c", base, (opnds[4].u & 0x80) ? 'z' : '\0');
+   else
+      vex_sprintf(xmnm, "%s%c", base, (opnds[3].u & 0x80) ? 't' : '\0');
+
+   return s390_disasm_aux(opnds, xmnm, p, rotate_mh);
 }
 
 

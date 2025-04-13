@@ -5208,7 +5208,7 @@ static UChar *
 s390_emit_RISBG(UChar *p, UChar r1, UChar r2, UChar i3, Char i4, UChar i5)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      S390_DISASM(MNM("risbg"), GPR(r1), GPR(r2), UINT(i3), UINT(i4), UINT(i5));
+      S390_DISASM(XMNM("risbg", rotate_disasm), GPR(r1), GPR(r2), MASK(i3), MASK(i4), MASK(i5));
 
    return emit_RIEf(p, 0xec0000000055ULL, r1, r2, i3, i4, i5);
 }

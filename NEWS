@@ -44,6 +44,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 494337  All threaded applications cause still holding lock errors
 495488  Add FreeBSD getrlimitusage syscall wrapper
 495816  s390x: Fix disassembler segfault for C[G]RT and CL[G]RT
+495817  s390x: Disassembly to match objdump -d output
 496370  Illumos: signal handling is broken
 496571  False positive for null key passed to bpf_map_get_next_key syscall.
 496950  s390x: Fix hardware capabilities and EmFail codes

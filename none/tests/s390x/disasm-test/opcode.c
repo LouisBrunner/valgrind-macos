@@ -743,15 +743,29 @@ static const char *opcodes[] = {
    "rll    r1,r3,d20(b2)",
    "rllg   r1,r3,d20(b2)",
 
-   "rnsbg  r1,r2,i3:u8,i4:u8,i5:u8",  // gie FIXME  un/signed  i3/4/5 ? t-bit ? z-bit?
-   "rxsbg  r1,r2,i3:u8,i4:u8,i5:u8",  // gie FIXME  ditto
-   "rosbg  r1,r2,i3:u8,i4:u8,i5:u8",  // gie FIXME  ditto
+   // Rotate and .... opcodes require special handling
+   //
+   // For rosbg and friends
+   // - Bit #0 of i3 is the T-bit and bit #1 of i3 ought to be 0.
+   // - i5 is optional and will not be written when 0
+   //
+   // For risbg and friends
+   // - Bit #0 of i4 is the Z-bit and bit #1 of i4 ought to be 0.
+   // - i5 is optional and will not be written when 0
+   //
+   // This implies that we need to model i3, i4 and i5 as masks so
+   // we can manipulate their value when disassembling or suppress
+   // the mask altogether. Note that we limit the set of allowed values
+   // for those masks to avoid excessively large numbers of testcases.
+   "rnsbg  r1,r2,m3:u8{0,1,2,63,128,129,191},m4:u6{0,1,2,63},m5:u6{0,1,2,63}",  // gie
+   "rxsbg  r1,r2,m3:u8{0,1,2,63,128,129,191},m4:u6{0,1,2,63},m5:u6{0,1,2,63}",  // gie
+   "rosbg  r1,r2,m3:u8{0,1,2,63,128,129,191},m4:u6{0,1,2,63},m5:u6{0,1,2,63}",  // gie
 
-   "risbg  r1,r2,i3:u8,i4:u8,i5:u8",  // gie FIXME  ditto
-   "risbgn r1,r2,i3:u8,i4:u8,i5:u8",  // mi1 FIXME  ditto
+   "risbg  r1,r2,m3:u6{0,1,2,63},m4:u8{0,1,2,63,128,129,191},m5:u6{0,1,2,63}",  // gie
+   "risbgn r1,r2,m3:u6{0,1,2,63},m4:u8{0,1,2,63,128,129,191},m5:u6{0,1,2,63}",  // mi1
 
-   "risbhg r1,r2,i3:u8,i4:u8,i5:u8",  // hiwo FIXME  ditto
-   "risblg r1,r2,i3:u8,i4:u8,i5:u8",  // hiwo FIXME  ditto
+   "risbhg r1,r2,m3:u5{0,1,2,31},m4:u8{0,1,2,31,128,129,159},m5:u6{0,1,2,63}",  // hiwo
+   "risblg r1,r2,m3:u5{0,1,2,31},m4:u8{0,1,2,31,128,129,159},m5:u6{0,1,2,63}",  // hiwo
 
    "srst   r1,r2",
 

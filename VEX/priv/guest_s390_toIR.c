@@ -2856,7 +2856,7 @@ s390_format_RIE_RRUUU(const HChar *(*irgen)(UChar r1, UChar r2, UChar i3,
    const HChar *mnm = irgen(r1, r2, i3, i4, i5);
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
-      S390_DISASM(MNM(mnm), GPR(r1), GPR(r2), UINT(i3), UINT(i4), UINT(i5));
+      S390_DISASM(XMNM(mnm, rotate_disasm), GPR(r1), GPR(r2), MASK(i3), MASK(i4), MASK(i5));
 }
 
 static void

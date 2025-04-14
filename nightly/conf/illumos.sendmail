@@ -5,6 +5,5 @@ body=$2
 file=$3
 filename=$( basename $3 )
 
-#(cat "$body" "$file") | mailx -s "$subject" -r "Paul Floyd <pjfloyd@wanadoo.fr>" valgrind-testresults@lists.sourceforge.net
+(cat "$body" "$file") | mailx -s "$subject" -r "Paul Floyd <pjfloyd@wanadoo.fr>" valgrind-testresults@lists.sourceforge.net
 
-(cat "$body" "$file") | mailx -s "$subject" -r "Paul Floyd <pjfloyd@wanadoo.fr>" pjfloyd@wanadoo.fr

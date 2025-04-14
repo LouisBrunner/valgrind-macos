@@ -1,4 +1,3 @@
-prereq: ! ../tests/os_test illumos
+prereq: test -e ./threadname && ! ../../tests/os_test illumos
 prog: threadname
-prereq: test -e ./threadname
 vgopts: -q

@@ -2741,6 +2741,7 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
       else
          VG_(umsg)("Cannot map memory to grow the stack for thread #%u "
                    "to %#lx\n", tid, new_stack_base);
+      VG_(message_flush)();
       return False;
    }
 

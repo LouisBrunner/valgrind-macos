@@ -30,6 +30,7 @@ usage: valgrind [options] prog-and-args
            startup exit abexit valgrindabexit all none
     --track-fds=no|yes|all    track open file descriptors? [no]
                               all includes reporting inherited file descriptors
+    --modify-fds=no|high      modify newly open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>

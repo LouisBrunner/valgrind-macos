@@ -1,9 +1,12 @@
+#define _XOPEN_SOURCE 700
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 int
-main ()
+main (void)
 {
   int oldfd = open ("foobar.txt", O_RDWR|O_CREAT, S_IRUSR | S_IWUSR);
   /*... do something with oldfd ...*/

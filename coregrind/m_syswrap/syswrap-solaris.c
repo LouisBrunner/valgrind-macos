@@ -1775,6 +1775,8 @@ PRE(sys_open)
 
 POST(sys_open)
 {
+   POST_newFd_RES;
+
    if (!ML_(fd_allowed)(RES, "open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure(VKI_EMFILE);

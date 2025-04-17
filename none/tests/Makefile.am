@@ -269,7 +269,7 @@ EXTRA_DIST = \
 	fdbaduse.stderr.exp fdbaduse.vgtest \
 	use_after_close.stderr.exp use_after_close.vgtest \
 	track_new.stderr.exp track_new.stdout.exp \
-	track_new.stderr.exp.debian32 track_new.vgtest track_new.stderr.exp-illumos
+	track_new.vgtest track_new.stderr.exp-illumos
 
 
 check_PROGRAMS = \

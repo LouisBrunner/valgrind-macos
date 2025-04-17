@@ -76,6 +76,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 502126  glibc 2.41 extra syscall_cancel frames
 502288  s390x: Memcheck false positives with NNPA last tensor dimension
 502324  s390x: Memcheck false positives with TMxx and TM/TMY
+502679  Use LTP for testing valgrind
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

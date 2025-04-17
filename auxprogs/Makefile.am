@@ -124,6 +124,9 @@ endif
 auxchecks: gsl-check
 auxclean: gsl-clean
 
+ltpchecks: ltp-check
+ltpclean: ltp-clean
+
 # You can override AUX_CHECK_DIR to use a previous download/build.
 # Must be an absolute path.
 # e.g. make auxchecks AUX_CHECK_DIR=$HOME/valgrind-auxtests
@@ -148,6 +151,14 @@ GSL_CFLAGS+=-mfpmath=sse -msse2
 endif
 endif
 
+# Linux Test Project
+LTP_VERSION=20250130
+LTP_SHA256_SUM=02e4ec326be54c3fd92968229a468c02c665d168a8a673edc38a891f7395ae10
+LTP_TAR_NAME=ltp-full-$(LTP_VERSION).tar.xz
+LTP_URL=https://github.com/linux-test-project/ltp/releases/download/$(LTP_VERSION)/$(LTP_TAR_NAME)
+LTP_TAR=$(AUX_CHECK_DIR)/$(LTP_TAR_NAME)
+LTP_SRC_DIR=$(AUX_CHECK_DIR)/ltp-full-$(LTP_VERSION)
+
 # Trick to get a literal space to use in substitutions
 sp := $(subst ,, )
 
@@ -166,6 +177,10 @@ $(GSL_TAR):
 	mkdir -p $(AUX_CHECK_DIR)
 	wget -q -O $(GSL_TAR) $(GSL_URL)
 
+$(LTP_TAR):
+	mkdir -p $(AUX_CHECK_DIR)
+	wget -q -O $(LTP_TAR) $(LTP_URL)
+
 # We need to autoreconf to make sure to get config.guess, config.sub
 # and libtool for newer architectures.
 $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
@@ -175,6 +190,15 @@ $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
 	 cd $(GSL_DIR_NAME) && \
 	 patch -p1 < $(abs_top_srcdir)/auxprogs/gsl-1.6.patch && \
 	 autoreconf -f -i -Wnone)
+	touch $@
+
+$(LTP_SRC_DIR): $(LTP_TAR)
+	echo "$(LTP_SHA256_SUM)  $(LTP_TAR)" | @SHA256SUM@ --check -
+	(cd $(AUX_CHECK_DIR) && \
+	 tar Jxf $(LTP_TAR_NAME) && \
+	 cd $(LTP_SRC_DIR) && \
+	 ./configure CC="${CC}" CXX="${CXX}" CFLAGS="$(LTP_CFLAGS)" && \
+	 ${MAKE} -j $(nproc) -C testcases/kernel/syscalls)
 	touch $@
 
 # We need make check -k because
@@ -204,9 +228,18 @@ gsl-check: $(GSL_BUILD_DIR)/gsl-build
 	diff -u $(abs_top_srcdir)/auxprogs/gsl-1.6.out.x86.exp \
 		$(GSL_BUILD_DIR)/valgrind-gsl.out
 
+ltp-check: $(LTP_SRC_DIR)
+	LTP_SRC_DIR=$(LTP_SRC_DIR) \
+	VALGRIND=$(abs_top_builddir)/vg-in-place \
+	  $(abs_top_srcdir)/auxprogs/ltp-tester.sh
+
+
 # We keep the tarball but remove the unpacked sources and build
 gsl-clean:
 	rm -rf $(GSL_SRC_NAME) $(GSL_BUILD_DIR)
+
+ltp-clean:
+	rm -rf $(LTP_SRC_DIR)
 
 #----------------------------------------------------------------------------
 # General stuff
@@ -214,7 +247,7 @@ gsl-clean:
 
 all-local: inplace-noinst_PROGRAMS inplace-noinst_DSYMS
 
-clean-local: clean-noinst_DSYMS auxclean
+clean-local: clean-noinst_DSYMS auxclean ltpclean
 
 install-exec-local: install-noinst_PROGRAMS install-noinst_DSYMS
 

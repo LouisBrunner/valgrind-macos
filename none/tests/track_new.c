@@ -1,7 +1,4 @@
-#define _XOPEN_SOURCE 700
-
 #include <fcntl.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -15,7 +12,7 @@ main (void)
   /* Lets open another file... */
   int newfd = open ("foobad.txt", O_RDWR|O_CREAT, S_IRUSR | S_IWUSR);
   /* ... oops we are using the wrong fd (but same number...) */
-  dprintf (oldfd, "some new text\n");
+  write(oldfd, "some new text\n", 14);
 
   close (newfd);
   return 0;

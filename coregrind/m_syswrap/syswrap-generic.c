@@ -1814,6 +1814,7 @@ ML_(generic_POST_sys_socketpair) ( ThreadId tid,
    Int fd1 = ((Int*)arg3)[0];
    Int fd2 = ((Int*)arg3)[1];
    vg_assert(!sr_isError(res)); /* guaranteed by caller */
+   // @todo PJF this needs something like POST_newFd_RES for the two fds?
    POST_MEM_WRITE( arg3, 2*sizeof(int) );
    if (!ML_(fd_allowed)(fd1, "socketcall.socketpair", tid, True) ||
        !ML_(fd_allowed)(fd2, "socketcall.socketpair", tid, True)) {

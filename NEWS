@@ -26,6 +26,15 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   And when the stdin/out/err descriptors are reassigned they are
   now treated as normal (non-inherited) file descriptors.
 
+* Helgrind:
+  There is a change to warnings about calls to pthread_cond_signal and
+  pthread_cond_broadcast when the associated mutex is unlocked. Previously
+  Helgrind would always warn about this. Now this error is controlled by
+  a command line option, --check-cond-signal-mutex=yes|no. The default is
+  no. This change has been made because some C and C++ standard libraries
+  use pthread_cond_signal/pthread_cond_broadcast in this way. Users are
+  obliged to use suppressions if they wish to avoid this noise.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -80,6 +89,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 502288  s390x: Memcheck false positives with NNPA last tensor dimension
 502324  s390x: Memcheck false positives with TMxx and TM/TMY
 502679  Use LTP for testing valgrind
+502871  Make Helgrind "pthread_cond_{signal,broadcast}: dubious: associated
+        lock is not held by any thread" optional
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

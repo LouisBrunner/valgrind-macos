@@ -26,7 +26,8 @@ myLog ()
 
 cd $LTP_SRC_DIR
 
-mapfile -t files < <(find testcases/kernel/syscalls -executable -and -type f | sort)
+mapfile -t files < <(find testcases/kernel/syscalls -executable -and -type f \
+                     | sort | grep -v -f $ORIG_PWD/ltp-excludes.txt)
 c=${#files[@]}; i=0
 
 for test in "${files[@]}"; do

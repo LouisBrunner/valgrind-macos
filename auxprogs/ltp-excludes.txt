@@ -1,0 +1,10 @@
+bind06
+epoll-ltp
+inotify09
+msgstress01
+sendmsg03
+setsockopt06
+setsockopt07
+signal05
+signal06
+timerfd_settime02

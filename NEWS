@@ -16,6 +16,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+* Numerous bug fixes for Illumos, in particular fixed a Valgrind crash
+  whenever a signal handler was called.
+
 * ==================== TOOL CHANGES ===================
 
 * The --track-fds=yes and --track-fds=all options now treat all

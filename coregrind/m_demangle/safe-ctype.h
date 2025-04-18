@@ -122,7 +122,6 @@ extern const unsigned char  _sch_tolower[256];
 #if 0 /* in valgrind */
 #include <ctype.h>
 #endif /* ! in valgrind */
-
 #undef isalpha
 #define isalpha(c) do_not_use_isalpha_with_safe_ctype
 #undef isalnum

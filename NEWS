@@ -19,6 +19,12 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 * Numerous bug fixes for Illumos, in particular fixed a Valgrind crash
   whenever a signal handler was called.
 
+* On FreeBSD, a change to the libc code that runs atexit handlers was
+  causing Helgrind to produce an extra error about exiting threads
+  still holding locks for. This applied to every multithreaded application.
+  The extra error is now filtered out. A syscall wrapper had been added
+  for getrlimitusage.
+
 * ==================== TOOL CHANGES ===================
 
 * The --track-fds=yes and --track-fds=all options now treat all

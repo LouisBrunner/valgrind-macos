@@ -66,6 +66,7 @@
 {
    Illumos:printf
    Helgrind:Race
+   ...
    fun:printf
 }
 # conflict between pthread_barrier_init and pthread_barrier_wait

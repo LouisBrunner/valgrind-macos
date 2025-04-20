@@ -33,6 +33,7 @@ EXTRA_DIST = \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 		bar_bad.stderr.exp-destroy-hang \
 		bar_bad.stderr.exp-freebsd \
+		bar_bad.stderr.exp-illumos \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
 		free_is_write.stderr.exp \

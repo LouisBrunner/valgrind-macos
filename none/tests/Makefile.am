@@ -165,6 +165,7 @@ EXTRA_DIST = \
 	fdleak_pipe_xml.stderr.exp fdleak_pipe_xml.vgtest \
 	fdleak_socketpair.stderr.exp fdleak_socketpair.vgtest \
 	fdleak_socketpair_xml.stderr.exp fdleak_socketpair_xml.vgtest \
+		fdleak_socketpair_xml.stderr.exp-illumos \
 	floored.stderr.exp floored.stdout.exp floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \

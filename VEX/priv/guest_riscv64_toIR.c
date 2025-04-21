@@ -522,9 +522,13 @@ static IRExpr* getFReg32(UInt fregNo)
    vassert(fregNo < 32);
    /* Note that the following access depends on the host being little-endian
       which is checked in disInstr_RISCV64(). */
-   /* TODO Check that the value is correctly NaN-boxed. If not then return
-      the 32-bit canonical qNaN, as mandated by the RISC-V ISA. */
-   return IRExpr_Get(offsetFReg(fregNo), Ity_F32);
+   IRExpr* f64       = getFReg64(fregNo);
+   IRExpr* high_half = unop(Iop_64HIto32, unop(Iop_ReinterpF64asI64, f64));
+   IRExpr* cond      = binop(Iop_CmpEQ32, high_half, mkU32(0xffffffff));
+   IRExpr* res       = IRExpr_ITE(
+      cond, IRExpr_Get(offsetFReg(fregNo), Ity_F32),
+      /* canonical nan */ unop(Iop_ReinterpI32asF32, mkU32(0x7fc00000)));
+   return res;
 }
 
 /* Write a 32-bit value into a guest floating-point register. */
@@ -2160,8 +2164,10 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       UInt  rs2     = INSN(24, 20);
       UInt  imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
       ULong simm    = vex_sx_to_64(imm11_0, 12);
-      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
-              getFReg32(rs2));
+      // do not modify the bits being transferred;
+      IRExpr* f64 = getFReg64(rs2);
+      IRExpr* i32 = unop(Iop_64to32, unop(Iop_ReinterpF64asI64, f64));
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)), i32);
       DIP("fsw %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
       return True;
    }
@@ -2456,8 +2462,16 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
        INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110000) {
       UInt rd  = INSN(11, 7);
       UInt rs1 = INSN(19, 15);
-      if (rd != 0)
-         putIReg32(irsb, rd, unop(Iop_ReinterpF32asI32, getFReg32(rs1)));
+      if (rd != 0) {
+         // For RV64, the higher 32 bits of the destination register are filled
+         // with copies of the floating-point number’s sign bit.
+         IRExpr* freg      = getFReg64(rs1);
+         IRExpr* low_half  = unop(Iop_64to32, unop(Iop_ReinterpF64asI64, freg));
+         IRExpr* sign      = binop(Iop_And32, low_half, mkU32(1u << 31));
+         IRExpr* cond      = binop(Iop_CmpEQ32, sign, mkU32(1u << 31));
+         IRExpr* high_part = IRExpr_ITE(cond, mkU32(0xffffffff), mkU32(0));
+         putIReg64(irsb, rd, binop(Iop_32HLto64, high_part, low_half));
+      }
       DIP("fmv.x.w %s, %s\n", nameIReg(rd), nameFReg(rs1));
       return True;
    }

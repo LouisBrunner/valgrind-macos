@@ -378,6 +378,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Extra stuff for C tests
 ansi_CFLAGS		= $(AM_CFLAGS) -ansi
+bug290061_CFLAGS	= -fPIC
 bug290061_LDFLAGS	= @FLAG_PIE@
 bug491394_LDADD		= -lc
 bug491394_LDFLAGS	= -nostdlib -static

@@ -16,6 +16,9 @@ EXTRA_DIST = \
 	gsl-1.6.patch \
 	gsl-1.6.supp \
 	gsl-1.6.out.x86.exp \
+	ltp-tester.sh \
+	ltp-excludes.txt \
+	ltp-error-patterns.txt \
 	posixtestsuite-1.5.1-diff.txt \
 	ppcfround.c \
 	ppc64shifts.c \

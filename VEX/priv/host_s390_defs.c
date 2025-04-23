@@ -457,7 +457,9 @@ getRRegUniverse_S390(void)
              registers 0..7 are caller saved, list them after
              FPR12 - FPR15 are also used as register pairs for 128-bit
              floating point operations
-      VRs:   registers 0..31 are available
+      VRs:   registers 16..31 are available
+             registers 0..15 are not available because they overlap
+             with FPRs 0..15
    */
    ru->allocable_start[HRcInt64] = ru->size;
    for (UInt regno = 6; regno <= 11; ++regno) {

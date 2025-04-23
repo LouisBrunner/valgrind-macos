@@ -5365,7 +5365,6 @@ no_memcpy_put:
       case Ijk_ClientReq:
       case Ijk_NoRedir:
       case Ijk_Yield:
-      case Ijk_SigTRAP:
       case Ijk_SigFPE: {
          HReg dst = s390_isel_int_expr(env, IRExpr_Const(stmt->Ist.Exit.dst));
          addInstr(env, s390_insn_xassisted(cond, dst, guest_IA,
@@ -5482,7 +5481,6 @@ iselNext(ISelEnv *env, IRExpr *next, IRJumpKind jk, Int offsIP)
    case Ijk_ClientReq:
    case Ijk_NoRedir:
    case Ijk_Yield:
-   case Ijk_SigTRAP:
    case Ijk_SigFPE: {
       HReg dst = s390_isel_int_expr(env, next);
       addInstr(env, s390_insn_xassisted(S390_CC_ALWAYS, dst, guest_IA, jk));

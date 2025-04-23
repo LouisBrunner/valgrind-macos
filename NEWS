@@ -3,10 +3,10 @@ Release 3.25.0.RC1 (18 Apr 2025)
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
-MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
-X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD, AMD64/FreeBSD
-and ARM64/FreeBSD  There is also preliminary support for X86/macOS 10.13,
-AMD64/macOS 10.13 and nanoMIPS/Linux.
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
+AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
+X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
@@ -15,6 +15,9 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   The x packet can reduce the time taken by GDB to read memory from valgrind.
 
 * ================== PLATFORM CHANGES =================
+
+* Added RISCV64 support for Linux. Specifically for the RV64GC
+  instruction set.
 
 * Numerous bug fixes for Illumos, in particular fixed a Valgrind crash
   whenever a signal handler was called.
@@ -31,6 +34,13 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
   inherited file descriptors the same as 0, 1, 2 (stdin/out/err).
   And when the stdin/out/err descriptors are reassigned they are
   now treated as normal (non-inherited) file descriptors.
+
+* A new option --modify-fds=high can be used together with
+  --track-fds=yes to create new file descriptors with the highest
+  possible number (and then decreasing) instead of always using the
+  lowest possible number (which is required by POSIX). This will help
+  catch issues where a file descriptor number might normally be reused
+  between a close and another open call.
 
 * Helgrind:
   There is a change to warnings about calls to pthread_cond_signal and
@@ -53,10 +63,12 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 290061  pie elf always loaded at 0x108000
 396415  Valgrind is not looking up $ORIGIN rpath of shebang programs
 420682  io_pgetevents is not supported
+468575  Add support for RISC-V
 469782  Valgrind does not support zstd-compressed debug sections
 487296  --track-fds=yes and --track-fds=all report erroneous information
         when fds 0, 1, or 2 are used as non-std
 489913  WARNING: unhandled amd64-linux syscall: 444 (landlock_create_ruleset)
+493433  Add --modify-fds=[no|high] option
 494246  syscall fsopen not wrapped
 494327  Crash when running Helgrind built with #define TRACE_PTH_FNS 1
 494337  All threaded applications cause still holding lock errors

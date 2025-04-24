@@ -1,4 +1,4 @@
-Release 3.25.0.RC1 (18 Apr 2025)
+Release 3.25.0.RC2 (23 Apr 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -115,6 +115,7 @@ To see details of a given bug, visit
 where XXXXXX is the bug number as listed above.
 
 (3.25.0.RC1: 18 Apr 2025)
+(3.25.0.RC2: 23 Apr 2025)
 
 Release 3.24.0 (31 Oct 2024)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

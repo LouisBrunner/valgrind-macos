@@ -403,7 +403,7 @@ static void show_block_diff(unsigned char* block1,
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\";"                                     \
          "sd " #rs1 ", 48(%[w]);"      /* Spill rs1. */                        \
-         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         "lla " #rs1 ", " rs1_val ";"   /* Load the first input. */            \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\";"                                     \
          "sd " #rs2 ", 56(%[w]);"      /* Spill rs2. */                        \

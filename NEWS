@@ -1,4 +1,4 @@
-Release 3.25.0.RC2 (23 Apr 2025)
+Release 3.25.0 (25 Apr 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -14,6 +14,12 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   'x addr,len' (available in GDB release >= 16).
   The x packet can reduce the time taken by GDB to read memory from valgrind.
 
+* Valgrind now supports zstd compressed debug sections.
+
+* The Linux Test Project (ltp) is integrated in the testsuite try
+  'make ltpchecks' (this will take a while and will point out various
+  missing syscalls and valgrind crashes!)
+
 * ================== PLATFORM CHANGES =================
 
 * Added RISCV64 support for Linux. Specifically for the RV64GC
@@ -27,6 +33,11 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   still holding locks for. This applied to every multithreaded application.
   The extra error is now filtered out. A syscall wrapper had been added
   for getrlimitusage.
+
+* On Linux various new syscalls are supported (landlock*, io_pgetevents,
+  open_tree, move_mount, fsopen, fsconfig, fsmount, fspick, userfaultfd).
+
+* s390x has support for various new instructions (BPP, BPRP, PPA and NIAI).
 
 * ==================== TOOL CHANGES ===================
 

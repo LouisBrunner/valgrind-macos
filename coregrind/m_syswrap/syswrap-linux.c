@@ -13699,17 +13699,20 @@ PRE(sys_execveat)
 
 PRE(sys_close_range)
 {
-   SysRes res = VG_(mk_SysRes_Success)(0);
-   Int beg, end;
-   Int first = ARG1;
-   Int last = ARG2;
+   UInt first = ARG1;
+   UInt last = ARG2;
+
+   vg_assert(VG_(log_output_sink).fd == -1 ||
+             VG_(log_output_sink).fd >= VG_(fd_hard_limit));
+   vg_assert(VG_(xml_output_sink).fd == -1 ||
+             VG_(xml_output_sink).fd >= VG_(fd_hard_limit));
 
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_close_range ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %"
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "close_range",
                  unsigned int, first, unsigned int, last,
-                 unsigned int, flags);
+                 int, flags);
 
    if (first > last) {
       SET_STATUS_Failure( VKI_EINVAL );
@@ -13724,29 +13727,28 @@ PRE(sys_close_range)
       return;
    }
 
-   beg = end = first;
-   do {
-      if (end > last
-	  || (end == 2/*stderr*/ && VG_(debugLog_getLevel)() > 0)
-	  || end == VG_(log_output_sink).fd
-	  || end == VG_(xml_output_sink).fd) {
-         /* Split the range if it contains a file descriptor we're not
-          * supposed to close. */
-         if (end - 1 >= beg)
-             res = VG_(do_syscall3)(__NR_close_range, (UWord)beg, (UWord)end - 1, ARG3 );
-         beg = end + 1;
+   if (VG_(debugLog_getLevel)() > 0 &&
+      first <= 2U &&
+      last >= 2U &&
+      first != last) {
+      SysRes res = VG_(mk_SysRes_Success)(0);
+      if (first <= 1U) {
+         res = VG_(do_syscall3)(__NR_close_range, first, 1U, ARG3);
       }
-   } while (end++ <= last);
-
-   /* If it failed along the way, it's presumably the flags being wrong. */
-   SET_STATUS_from_SysRes (res);
+      if (!sr_isError(res) && last >= 3U) {
+         res = VG_(do_syscall3)(__NR_close_range, 3U, last, ARG3);
+      }
+      /* If it failed along the way, it's presumably the flags being wrong. */
+      SET_STATUS_from_SysRes (res);
+   } else {
+      SET_STATUS_from_SysRes(VG_(do_syscall3)(__NR_close_range, first, last, ARG3));
+   }
 }
 
 POST(sys_close_range)
 {
-   Int fd;
-   Int first = ARG1;
-   Int last = ARG2;
+   UInt fd;
+   UInt last = ARG2;
 
    if (!VG_(clo_track_fds)
        || (ARG3 & VKI_CLOSE_RANGE_CLOEXEC) != 0)
@@ -13757,13 +13759,11 @@ POST(sys_close_range)
 
    /* If the close_range range is too wide, we don't want to loop
       through the whole range.  */
-   if (last == ~0U)
-     ML_(record_fd_close_range)(tid, first);
+   if (ARG2 >= VG_(fd_hard_limit))
+     ML_(record_fd_close_range)(tid, ARG1);
    else {
-     for (fd = first; fd <= last; fd++)
-       if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
-           && fd != VG_(log_output_sink).fd
-           && fd != VG_(xml_output_sink).fd)
+     for (fd = ARG1; fd <= last; fd++)
+       if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0))
          ML_(record_fd_close)(tid, fd);
    }
 }

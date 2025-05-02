@@ -6615,10 +6615,8 @@ POST(sys___realpathat)
 // int close_range(u_int lowfd, u_int highfd, int flags);
 PRE(sys_close_range)
 {
-   SysRes res = VG_(mk_SysRes_Success)(0);
-   unsigned int lowfd = ARG1;
-   unsigned int fd_counter; // will count from lowfd to highfd
-   unsigned int highfd = ARG2;
+   UInt lowfd = ARG1;
+   UInt highfd = ARG2;
 
    /* on linux the may lock if futexes are used
     * there is a lock in the kernel but I assume it's just
@@ -6642,46 +6640,48 @@ PRE(sys_close_range)
       return;
    }
 
-   fd_counter = lowfd;
-   do {
-      if (fd_counter > highfd
-          || (fd_counter == 2U/*stderr*/ && VG_(debugLog_getLevel)() > 0)
-          || fd_counter == VG_(log_output_sink).fd
-          || fd_counter == VG_(xml_output_sink).fd) {
-         /* Split the range if it contains a file descriptor we're not
-          * supposed to close. */
-         if (fd_counter - 1 >= lowfd) {
-            res = VG_(do_syscall3)(__NR_close_range, (UWord)lowfd, (UWord)fd_counter - 1, ARG3 );
-         }
-         lowfd = fd_counter + 1;
-      }
-   } while (fd_counter++ <= highfd);
+   vg_assert(VG_(log_output_sink).fd == -1 ||
+             VG_(log_output_sink).fd >= VG_(fd_hard_limit));
+   vg_assert(VG_(xml_output_sink).fd == -1 ||
+             VG_(xml_output_sink).fd >= VG_(fd_hard_limit));
 
-   /* If it failed along the way, it's presumably the flags being wrong. */
-   SET_STATUS_from_SysRes (res);
+   if (VG_(debugLog_getLevel)() > 0 &&
+      lowfd <= 2U &&
+      highfd >= 2U &&
+      lowfd != highfd) {
+      SysRes res = VG_(mk_SysRes_Success)(0);
+      if (lowfd <= 1U) {
+         res = VG_(do_syscall3)(__NR_close_range, lowfd, 1U, ARG3);
+      }
+      if (!sr_isError(res) && highfd >= 3U) {
+         res = VG_(do_syscall3)(__NR_close_range, 3U, highfd, ARG3);
+      }
+      /* If it failed along the way, it's presumably the flags being wrong. */
+      SET_STATUS_from_SysRes (res);
+   } else {
+      SET_STATUS_from_SysRes(VG_(do_syscall3)(__NR_close_range, lowfd, highfd, ARG3));
+   }
 }
 
 POST(sys_close_range)
 {
-   unsigned int fd;
-   unsigned int last = ARG2;
+   UInt fd;
+   UInt highfd = ARG2;
 
    if (!VG_(clo_track_fds)
        || (ARG3 & VKI_CLOSE_RANGE_CLOEXEC) != 0)
       return;
 
-   if (last >= VG_(fd_hard_limit))
-      last = VG_(fd_hard_limit) - 1;
+   if (highfd >= VG_(fd_hard_limit))
+       highfd = VG_(fd_hard_limit) - 1;
 
    /* If the close_range range is too wide, we don't want to loop
       through the whole range.  */
-   if (ARG2 == ~0U)
-     ML_(record_fd_close_range)(tid, ARG1);
-   else {
-      for (fd = ARG1; fd <= last; fd++)
-         if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0)
-             && fd != VG_(log_output_sink).fd
-             && fd != VG_(xml_output_sink).fd)
+   if (ARG2 >= VG_(fd_hard_limit)) {
+      ML_(record_fd_close_range)(tid, ARG1);
+   } else {
+      for (fd = ARG1; fd <= highfd; fd++)
+         if ((fd != 2/*stderr*/ || VG_(debugLog_getLevel)() == 0))
             ML_(record_fd_close)(tid, fd);
    }
 }

@@ -65,7 +65,7 @@ int main(void)
    
    errno = 0;
    // wrong order
-   close_range(fd3, fd1, 2);
+   close_range(fd3, fd1, 0);
    assert(errno = EINVAL);
    
    errno = 0;
@@ -81,6 +81,9 @@ int main(void)
    fd3 = open("close_range.stderr.exp", O_RDONLY);
    
    close_range(3, rl.rlim_cur+1, 0);
+   
+   int res = close_range(2U, ~0U, 0);
+   assert(res == 0);
    
    {
       unsigned a;

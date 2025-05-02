@@ -276,6 +276,9 @@ s/^0x........ in \(\w\+ (\)/\1/
 /^Missing debuginfo.*/d
 /^Missing rpms.*/d
 
+#	illumos, but only when building the port
+/\.\/gdb: warning: Couldn't determine a path for the index cache directory\./d
+
 EOF
 
 dir=`dirname $0`

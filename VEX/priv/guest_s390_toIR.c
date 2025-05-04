@@ -20676,8 +20676,8 @@ s390_irgen_PPA(UChar m3, UChar r1, UChar r2)
 static void
 s390_irgen_client_request(void)
 {
-   if (0)
-      vex_printf("%%R3 = client_request ( %%R2 )\n");
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      vex_printf("special insn: client_request");
 
    Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
                                      + S390_SPECIAL_OP_SIZE;
@@ -20691,8 +20691,8 @@ s390_irgen_client_request(void)
 static void
 s390_irgen_guest_NRADDR(void)
 {
-   if (0)
-      vex_printf("%%R3 = guest_NRADDR\n");
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      vex_printf("special insn: guest_NRADDR");
 
    put_gpr_dw0(3, IRExpr_Get(S390X_GUEST_OFFSET(guest_NRADDR), Ity_I64));
 }
@@ -20700,6 +20700,9 @@ s390_irgen_guest_NRADDR(void)
 static void
 s390_irgen_call_noredir(void)
 {
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      vex_printf("special insn: call_noredir");
+
    Addr64 next = guest_IA_curr_instr + S390_SPECIAL_OP_PREAMBLE_SIZE
                                      + S390_SPECIAL_OP_SIZE;
 
@@ -20711,6 +20714,30 @@ s390_irgen_call_noredir(void)
 
    dis_res->whatNext = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_NoRedir;
+}
+
+static void
+s390_irgen_inject_ir(void)
+{
+   if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
+      vex_printf("special insn: inject_ir");
+
+   vex_inject_ir(irsb, Iend_BE);
+
+   /* Invalidate the current insn. The reason is that the IRop we're
+      injecting here can change. In which case the translation has to
+      be redone. For ease of handling, we simply invalidate all the
+      time. */
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
+                   mkU64(guest_IA_curr_instr)));
+   stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN),
+                   mkU64(guest_IA_next_instr - guest_IA_curr_instr)));
+   vassert(guest_IA_next_instr - guest_IA_curr_instr ==
+           S390_SPECIAL_OP_PREAMBLE_SIZE + S390_SPECIAL_OP_SIZE);
+
+   put_IA(mkaddr_expr(guest_IA_next_instr));
+   dis_res->whatNext    = Dis_StopHere;
+   dis_res->jk_StopHere = Ijk_InvalICache;
 }
 
 static s390_decode_t
@@ -23775,22 +23802,7 @@ s390_decode_special_and_irgen(const UChar *bytes)
    } else if (bytes[0] == 0x18 && bytes[1] == 0x44 /* lr %r4, %r4 */) {
       s390_irgen_call_noredir();
    } else if (bytes[0] == 0x18 && bytes[1] == 0x55 /* lr %r5, %r5 */) {
-      vex_inject_ir(irsb, Iend_BE);
-
-      /* Invalidate the current insn. The reason is that the IRop we're
-         injecting here can change. In which case the translation has to
-         be redone. For ease of handling, we simply invalidate all the
-         time. */
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMSTART),
-                      mkU64(guest_IA_curr_instr)));
-      stmt(IRStmt_Put(S390X_GUEST_OFFSET(guest_CMLEN),
-                      mkU64(guest_IA_next_instr - guest_IA_curr_instr)));
-      vassert(guest_IA_next_instr - guest_IA_curr_instr ==
-              S390_SPECIAL_OP_PREAMBLE_SIZE + S390_SPECIAL_OP_SIZE);
-
-      put_IA(mkaddr_expr(guest_IA_next_instr));
-      dis_res->whatNext    = Dis_StopHere;
-      dis_res->jk_StopHere = Ijk_InvalICache;
+      s390_irgen_inject_ir();
    } else {
       /* We don't know what it is. */
       return S390_DECODE_UNKNOWN_SPECIAL_INSN;

@@ -271,6 +271,7 @@ else
 annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
 
+tc09_bad_unlock_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 bug322621_SOURCES = bug322621.cpp
 if HAVE_CXX17
 check_PROGRAMS += bug392331

@@ -507,16 +507,6 @@ call_function(IRExpr *callee_address)
    dis_res->jk_StopHere = Ijk_Call;
 }
 
-/* Function call with known target. */
-static void
-call_function_and_chase(Addr64 callee_address)
-{
-   put_IA(mkaddr_expr(callee_address));
-
-   dis_res->whatNext = Dis_StopHere;
-   dis_res->jk_StopHere = Ijk_Call;
-}
-
 /* Function return sequence */
 static void
 return_from_function(IRExpr *return_address)
@@ -573,18 +563,6 @@ static void
 always_goto(IRExpr *target)
 {
    put_IA(target);
-
-   dis_res->whatNext    = Dis_StopHere;
-   dis_res->jk_StopHere = Ijk_Boring;
-}
-
-
-/* An unconditional branch to a known target. */
-// QQQQ fixme this is now the same as always_goto
-static void
-always_goto_and_chase(Addr64 target)
-{
-   put_IA(mkaddr_expr(target));
 
    dis_res->whatNext    = Dis_StopHere;
    dis_res->jk_StopHere = Ijk_Boring;
@@ -5799,7 +5777,7 @@ static const HChar *
 s390_irgen_BRAS(UChar r1, UShort i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
-   call_function_and_chase(addr_relative(i2));
+   call_function(mkaddr_expr(addr_relative(i2)));
 
    return "bras";
 }
@@ -5808,7 +5786,7 @@ static const HChar *
 s390_irgen_BRASL(UChar r1, UInt i2)
 {
    put_gpr_dw0(r1, mkU64(guest_IA_next_instr));
-   call_function_and_chase(addr_rel_long(i2));
+   call_function(mkaddr_expr(addr_rel_long(i2)));
 
    return "brasl";
 }
@@ -5821,7 +5799,7 @@ s390_irgen_BRC(UChar m1, UShort i2)
    if (m1 == 0) {
    } else {
       if (m1 == 15) {
-         always_goto_and_chase(addr_relative(i2));
+         always_goto(mkaddr_expr(addr_relative(i2)));
       } else {
          assign(cond, s390_call_calculate_cond(m1));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
@@ -5843,7 +5821,7 @@ s390_irgen_BRCL(UChar m1, UInt i2)
    if (m1 == 0) {
    } else {
       if (m1 == 15) {
-         always_goto_and_chase(addr_rel_long(i2));
+         always_goto(mkaddr_expr(addr_rel_long(i2)));
       } else {
          assign(cond, s390_call_calculate_cond(m1));
          if_condition_goto(binop(Iop_CmpNE32, mkexpr(cond), mkU32(0)),
@@ -6154,7 +6132,7 @@ s390_irgen_CRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
@@ -6179,7 +6157,7 @@ s390_irgen_CGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
@@ -6252,7 +6230,7 @@ s390_irgen_CIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (Int)(Char)i2;
@@ -6277,7 +6255,7 @@ s390_irgen_CGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (Long)(Char)i2;
@@ -7000,7 +6978,7 @@ s390_irgen_CLRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_w1(r1));
          assign(op2, get_gpr_w1(r2));
@@ -7025,7 +7003,7 @@ s390_irgen_CLGRJ(UChar r1, UChar r2, UShort i4, UChar m3)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_dw0(r1));
          assign(op2, get_gpr_dw0(r2));
@@ -7098,7 +7076,7 @@ s390_irgen_CLIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_w1(r1));
          op2 = (UInt)i2;
@@ -7123,7 +7101,7 @@ s390_irgen_CLGIJ(UChar r1, UChar m3, UShort i4, UChar i2)
    if (m3 == 0) {
    } else {
       if (m3 == 14) {
-         always_goto_and_chase(addr_relative(i4));
+         always_goto(mkaddr_expr(addr_relative(i4)));
       } else {
          assign(op1, get_gpr_dw0(r1));
          op2 = (ULong)i2;
@@ -23945,8 +23923,6 @@ disInstr_S390_WRK(const UChar *insn)
    dres.len        = insn_length;
    dres.jk_StopHere = Ijk_INVALID;
    dres.hint        = Dis_HintNone;
-
-   /* fixs390: consider chasing of conditional jumps */
 
    /* Normal and special instruction handling starts here. */
    if (s390_decode_and_irgen(insn, insn_length, &dres) == 0) {

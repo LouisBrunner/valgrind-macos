@@ -1754,8 +1754,6 @@ static Bool dis_RV64M(/*MB_OUT*/ DisResult* dres,
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
       if (funct3 == 0b010) {
-         /* Invalid {MUL,DIV,REM}<x>, fall through. */
-      } else if (funct3 == 0b010) {
          /* MULHSU, not currently handled, fall through. */
       } else {
          if (rd != 0) {

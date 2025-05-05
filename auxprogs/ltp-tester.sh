@@ -13,31 +13,30 @@ LOGDIR=${LOGDIR:-$LTP_SRC_DIR/valgrind-ltp-logs}
 SUMMARY_LOG="$LOGDIR/summary.log"
 DIFFCMD="diff -u"
 VALGRIND="${VALGRIND:-$LTP_SRC_DIR/../../../vg-in-place}"
+# For parallel testing, consider IO intensive jobs, take nproc into account
+PARALLEL_JOBS=${PARALLEL_JOBS:-$(nproc)}
+# TESTS env var may be specified to restrict testing to selected test cases
 
 # Initialize LOGDIR
-mkdir -p $LOGDIR; rm -rf $LOGDIR/*
+mkdir -p $LOGDIR; rm -rf ${LOGDIR:?}/*
 
 myLog ()
 {
     msg="$1"
     echo "$msg"
-    echo -e "FAIL: $msg" >> $SUMMARY_LOG
+    echo -e "FAIL: $msg" >> summary
 }
 
-cd $LTP_SRC_DIR
-
-mapfile -t files < <(find testcases/kernel/syscalls -executable -and -type f \
-                     | sort | grep -v -f $ORIG_PWD/ltp-excludes.txt)
-c=${#files[@]}; i=0
-
-for test in "${files[@]}"; do
-    dir=$(dirname $test)
-    exe=$(basename $test)
+doTest ()
+{
+    t=$1
+    nr=$2
+    dir=$(dirname $t)
+    exe=$(basename $t)
     l="$LOGDIR/$exe"
     mkdir -p $l
-    i=$((++i))
+    echo "[$nr/$c] Testing $exe ..." | tee -a $l/summary
     pushd $dir >/dev/null
-        echo "[$i/$c] Testing $exe ..." | tee -a $SUMMARY_LOG
         PATH="$ORIG_PATH:$PWD"
         ./$exe >$l/log1std 2>$l/log1err ||:
         $VALGRIND -q --tool=none --log-file=$l/log2 ./$exe >$l/log2std 2>$l/log2err ||:
@@ -60,7 +59,7 @@ for test in "${files[@]}"; do
                 myLog "${exe}: unempty log2:\n$(cat log2)"
             fi
 
-            if grep -f $ORIG_PWD/ltp-error-patterns.txt * > error-patterns-found.txt; then
+            if grep -f $ORIG_PWD/ltp-error-patterns.txt log* > error-patterns-found.txt; then
                 myLog "${exe}: error string found:\n$(cat error-patterns-found.txt)"
             fi
 
@@ -73,7 +72,36 @@ for test in "${files[@]}"; do
             fi
         popd >/dev/null
     popd >/dev/null
+}
+
+cd $LTP_SRC_DIR
+
+if [ -n "$TESTS" ]; then
+    echo "Running individual syscall tests specified in the TESTS env var ..."
+    mapfile -t files < <(find testcases/kernel/syscalls -executable -and -type f \
+                         | sort | grep -f <(echo $TESTS | tr ' ' '\n' | sed 's/.*/\/\0$/'))
+else
+    echo "Running whole the LTP syscall testsuite ..."
+    mapfile -t files < <(find testcases/kernel/syscalls -executable -and -type f \
+                         | sort | grep -v -f $ORIG_PWD/ltp-excludes.txt)
+fi
+
+c=${#files[@]}; i=0
+
+# Run tests in parallel
+for test in "${files[@]}"; do
+    while test "$(jobs -l | wc -l)" -gt $PARALLEL_JOBS; do sleep 0.1; done
+    i=$((++i))
+    doTest $test $i &
+done
+
+wait
+
+# Reconstruct $SUMMARY_LOG
+for test in "${files[@]}"; do
+    exe=$(basename $test)
+    l="$LOGDIR/$exe"
+    cat $l/summary >> $SUMMARY_LOG
 done
 
 echo "TESTING FINISHED, logs in $LOGDIR"
-

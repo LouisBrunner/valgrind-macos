@@ -231,7 +231,13 @@ gsl-check: $(GSL_BUILD_DIR)/gsl-build
 	diff -u $(abs_top_srcdir)/auxprogs/gsl-1.6.out.x86.exp \
 		$(GSL_BUILD_DIR)/valgrind-gsl.out
 
+# Extract -jNUM from MAKEFLAGS.
+# Note that any spaces between -j and NUM have already been removed.
+# Also there will be only one (the last) -jNUM left in MAKEFLAGS.
+PARALLEL_JOBS=$(subst -j,,$(filter -j%,$(MAKEFLAGS)))
+
 ltp-check: $(LTP_SRC_DIR)
+	PARALLEL_JOBS=$(PARALLEL_JOBS) \
 	LTP_SRC_DIR=$(LTP_SRC_DIR) \
 	VALGRIND=$(abs_top_builddir)/vg-in-place \
 	  $(abs_top_srcdir)/auxprogs/ltp-tester.sh

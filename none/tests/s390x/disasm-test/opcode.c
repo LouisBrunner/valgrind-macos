@@ -1408,11 +1408,11 @@ parse_int(const char *p, int is_unsigned, long long *val)
       error("integer expected\n");
       return p;
    }
-   if (is_unsigned && val < 0) {
+   if (is_unsigned && *val < 0) {
       error("unsigned value expected\n");
       return p;
    }
-   return skip_digits(val < 0 ? p + 1 : p);
+   return skip_digits(*val < 0 ? p + 1 : p);
 }
 
 
@@ -1834,7 +1834,7 @@ get_opcode_by_name(const char *name)
 {
    unsigned len = strlen(name);
 
-   for (int i = 0; i < num_opcodes; ++i) {
+   for (unsigned i = 0; i < num_opcodes; ++i) {
       const char *op = opcodes[i];
       if (strncmp(op, name, len) == 0 &&
           (op[len] == ' ' || op[len] == '\0'))
@@ -1966,7 +1966,7 @@ parse_opcode(const char *spec)
 
    if (debug) {
       printf("opcode: |%s|\n", opc->name);
-      for (int i = 0; i < opc->num_opnds; ++i) {
+      for (unsigned i = 0; i < opc->num_opnds; ++i) {
          const opnd *d = opc->opnds + i;
          printf("opnd %2d: %-8s  type: %-5s", i, d->name,
                 opnd_kind_as_string(d->kind));
@@ -1977,7 +1977,7 @@ parse_opcode(const char *spec)
          if (d->allowed_values) {
             printf("  values:");
             unsigned nval = d->allowed_values[0];
-            for (int j = 1; j <= nval; ++j) {
+            for (unsigned j = 1; j <= nval; ++j) {
                if (d->is_unsigned)
                   printf(" %u", (unsigned)d->allowed_values[j]);
                else
@@ -2005,7 +2005,7 @@ get_opcode_by_index(unsigned ix)
 void
 release_opcode(opcode *opc)
 {
-   for (int i = 0; i < opc->num_opnds; ++i) {
+   for (unsigned i = 0; i < opc->num_opnds; ++i) {
       const opnd *q = opc->opnds + i;
       free(q->name);
       free(q->allowed_values);
@@ -2026,7 +2026,7 @@ static const char *unit_tests[] = {
    "err1 m", "err2 m2:", "err3 m3:s", "err4 m4:s5",
    "err5 m5{", "err6 m6:{", "err7 m7:{}", "err8 m8:{1", "err9 m9:{1,",
    "err10 m0:{2..}", "err11 m11:{2..1}", "err12 m11:u{1,2}",
-   "err13 m13:r", "err14 m14:u"
+   "err13 m13:r", "err14 m14:u", "err15 q1:u5{-1},q2:u8{3..1}"
 };
 
 
@@ -2037,6 +2037,6 @@ run_unit_tests(void)
 
    debug = 1;
 
-   for (int i = 0; i < num_tests; ++i)
+   for (unsigned i = 0; i < num_tests; ++i)
       parse_opcode(unit_tests[i]);
 }

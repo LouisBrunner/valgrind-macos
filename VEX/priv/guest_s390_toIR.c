@@ -2757,8 +2757,8 @@ s390_format_E(const HChar *(*irgen)(void))
 }
 
 static void
-s390_format_MII_UPP(const HChar *(*irgen)(UChar m1, UShort i2, UShort i3),
-                    UChar m1, UShort i2, UShort i3)
+s390_format_MII_UPP(const HChar *(*irgen)(UChar m1, UShort i2, UInt i3),
+                    UChar m1, UShort i2, UInt i3)
 {
    const HChar *mnm;
 
@@ -2766,7 +2766,7 @@ s390_format_MII_UPP(const HChar *(*irgen)(UChar m1, UShort i2, UShort i3),
 
    if (UNLIKELY(vex_traceflags & VEX_TRACE_FE))
       S390_DISASM(MNM(mnm), UINT(m1), PCREL((Int)((Short)(i2 << 4) >> 4)),
-                  PCREL((Int)(Short)i3));
+                  PCREL((Int)(i3 << 8) >> 8));
 }
 
 static void
@@ -20621,7 +20621,7 @@ s390_irgen_BPP(UChar m1, UShort i2, IRTemp op3addr)
 }
 
 static const HChar *
-s390_irgen_BPRP(UChar m1, UShort i2, UShort i3)
+s390_irgen_BPRP(UChar m1, UShort i2, UInt i3)
 {
    /* Treat as a no-op */
    return "bprp";

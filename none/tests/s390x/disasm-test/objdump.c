@@ -153,17 +153,6 @@ read_objdump(const char *file)
 
       char *dis_insn = p;
 
-      /* Remove symbolic jump targets, if any. E.g. change
-         1b68:    c0 e5 ff ff fd a4    brasl   %r14,16b0 <puts@plt>  to
-         1b68:    c0 e5 ff ff fd a4    brasl   %r14,16b0
-      */
-      p = strchr(p, '<');
-      if (p) {
-         *p-- = '\0';
-         while (isspace(*p))   // remove trailing white space
-            *p-- = '\0';
-      }
-
       if (strncmp(dis_insn, mark, strlen(mark)) == 0) {
          if (marker_seen)
             break;          // we're done

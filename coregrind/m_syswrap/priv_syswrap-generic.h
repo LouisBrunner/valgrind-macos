@@ -342,13 +342,14 @@ extern SysRes ML_(generic_PRE_sys_mmap)         ( TId, UW, UW, UW, UW, UW, Off64
 /* Helper macro for POST handlers that return a new file in RES.
    If possible sets RES (through SET_STATUS_Success) to a new
    (not yet seem before) file descriptor.  */
-#define POST_newFd_RES                       \
-  do {                                       \
-    if (VG_(clo_modify_fds) == 1) {           \
-      int newFd = ML_(get_next_new_fd)(RES); \
-      if (newFd != RES)                      \
-        SET_STATUS_Success(newFd);           \
-    }                                        \
+#define POST_newFd_RES                                       \
+  do {                                                       \
+    if ((VG_(clo_modify_fds) == VG_MODIFY_FD_YES && RES > 2) \
+        ||  (VG_(clo_modify_fds) == VG_MODIFY_FD_HIGH)) {    \
+       int newFd = ML_(get_next_new_fd)(RES);                \
+       if (newFd != RES)                                     \
+          SET_STATUS_Success(newFd);                         \
+    }                                                        \
   } while (0)
 
 /////////////////////////////////////////////////////////////////

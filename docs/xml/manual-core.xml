@@ -903,12 +903,14 @@ in most cases.  We group the available options by rough categories.</para>
 
   <varlistentry id="opt.modify-fds" xreflabel="--modify-fds">
     <term>
-      <option><![CDATA[--modify-fds=<no|high> [default: no] ]]></option>
+      <option><![CDATA[--modify-fds=<no|yes|high> [default: no] ]]></option>
     </term>
     <listitem>
       <para>When enabled, when the program opens a new file descriptor,
       the highest available file descriptor is returned instead of the
-      lowest one.</para>
+      lowest one. Use <option>yes</option> to restrict the feature from
+      the 0/1/2 file descriptors as they're often used for stdout/stderr
+      redirection.</para>
     </listitem>
   </varlistentry>
 

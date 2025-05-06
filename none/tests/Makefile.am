@@ -272,8 +272,9 @@ EXTRA_DIST = \
 	fdbaduse.stderr.exp fdbaduse.vgtest \
 	use_after_close.stderr.exp use_after_close.vgtest \
 	track_new.stderr.exp track_new.stdout.exp \
-	track_new.vgtest track_new.stderr.exp-illumos
-
+	track_new.vgtest track_new.stderr.exp-illumos \
+	track_yes.vgtest track_high.vgtest \
+	track_yes.stderr.exp track_high.stderr.exp
 
 check_PROGRAMS = \
 	args \
@@ -331,7 +332,8 @@ check_PROGRAMS = \
 	file_dclose \
 	fdbaduse \
         use_after_close \
-	track_new
+	track_new \
+	track_std
 
 if HAVE_STATIC_LIBC
 if ! VGCONF_OS_IS_LINUX

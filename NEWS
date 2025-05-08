@@ -6,6 +6,7 @@ Branch 3.25
 The following bugs have been fixed or resolved on this branch.
 
 503641  close_range syscalls started failing with 3.25.0
+503914  mount syscall param filesystemtype may be NULL
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

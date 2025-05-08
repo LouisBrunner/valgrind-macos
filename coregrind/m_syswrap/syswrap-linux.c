@@ -1000,7 +1000,8 @@ PRE(sys_mount)
 {
    // Nb: depending on 'flags', the 'type' and 'data' args may be ignored.
    // We are conservative and check everything, except the memory pointed to
-   // by 'data'.
+   // by 'data'. And since both 'source' and 'type' may be ignored, we allow
+   // them to be NULL.
    *flags |= SfMayBlock;
    PRINT("sys_mount( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x(%s), %#"
          FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
@@ -1012,7 +1013,8 @@ PRE(sys_mount)
    if (ARG1)
       PRE_MEM_RASCIIZ( "mount(source)", ARG1);
    PRE_MEM_RASCIIZ( "mount(target)", ARG2);
-   PRE_MEM_RASCIIZ( "mount(type)", ARG3);
+   if (ARG3)
+      PRE_MEM_RASCIIZ( "mount(type)", ARG3);
 }
 
 PRE(sys_oldumount)

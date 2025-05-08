@@ -26,6 +26,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 503641  close_range syscalls started failing with 3.25.0
 503677  duplicated-cond compiler warning in dis_RV64M
 503817  s390x: fix 'ordered comparison of pointer with integer zero' compiler warnings
+503914  mount syscall param filesystemtype may be NULL
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

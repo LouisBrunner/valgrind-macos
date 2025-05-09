@@ -545,6 +545,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_perf_event_open, sys_perf_event_open),               /* 241 */
    LINXY(__NR_accept4, sys_accept4),                               /* 242 */
    LINXY(__NR_recvmmsg, sys_recvmmsg),                             /* 243 */
+   GENX_(__NR_riscv_hwprobe, sys_ni_syscall),                      /* 258 */
    PLAX_(__NR_riscv_flush_icache, sys_riscv_flush_icache),         /* 259 */
    GENXY(__NR_wait4, sys_wait4),                                   /* 260 */
    LINXY(__NR_prlimit64, sys_prlimit64),                           /* 261 */

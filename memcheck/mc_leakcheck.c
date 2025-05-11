@@ -1722,7 +1722,9 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       VG_(XT_delete)(leak_xt);
    }
 
-   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
+   UInt (*umsg_or_xml)( const HChar *, ... )
+     = VG_(clo_xml) ? VG_(printf_xml) : VG_(umsg);
+   if (VG_(clo_verbosity) > 0) {
       HChar d_bytes[31];
       HChar d_blocks[31];
 #     define DBY(new,old) \
@@ -1732,23 +1734,42 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       MC_(snprintf_delta) (d_blocks, sizeof(d_blocks), (new), (old), \
                            lcp->deltamode)
 
-      VG_(umsg)("LEAK SUMMARY:\n");
-      VG_(umsg)("   definitely lost: %'lu%s bytes in %'lu%s blocks\n",
+      umsg_or_xml(VG_(clo_xml) ? "<leak_summary>\n" : "LEAK SUMMARY:\n");
+      umsg_or_xml(VG_(clo_xml) ?
+                  "  <definitely_lost>\n"
+                  "    <bytes>%'lu%s</bytes>\n"
+                  "    <blocks>%'lu%s</blocks>\n"
+                  "  </definitely_lost>\n" :
+                  "   definitely lost: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_leaked), 
                 DBY (MC_(bytes_leaked), old_bytes_leaked),
                 MC_(blocks_leaked),
                 DBL (MC_(blocks_leaked), old_blocks_leaked));
-      VG_(umsg)("   indirectly lost: %'lu%s bytes in %'lu%s blocks\n",
+      umsg_or_xml(VG_(clo_xml) ?
+                  "  <indirectly_lost>\n"
+                  "    <bytes>%'lu%s</bytes>\n"
+                  "    <blocks>%'lu%s</blocks>\n"
+                  "  </indirectly_lost>\n" :
+                  "   indirectly lost: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_indirect), 
                 DBY (MC_(bytes_indirect), old_bytes_indirect),
                 MC_(blocks_indirect),
                 DBL (MC_(blocks_indirect), old_blocks_indirect));
-      VG_(umsg)("     possibly lost: %'lu%s bytes in %'lu%s blocks\n",
+      umsg_or_xml(VG_(clo_xml) ?
+                  "  <possibly_lost>\n"
+                  "    <bytes>%'lu%s</bytes>\n"
+                  "    <blocks>%'lu%s</blocks>\n"
+                  "  </possibly_lost>\n" :
+                  "     possibly lost: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_dubious), 
                 DBY (MC_(bytes_dubious), old_bytes_dubious), 
                 MC_(blocks_dubious),
                 DBL (MC_(blocks_dubious), old_blocks_dubious));
-      VG_(umsg)("   still reachable: %'lu%s bytes in %'lu%s blocks\n",
+      umsg_or_xml(VG_(clo_xml) ?
+                  "  <still_reachable>\n"
+                  "    <bytes>%'lu%s</bytes>\n"
+                  "    <blocks>%'lu%s</blocks>\n" :
+                  "   still reachable: %'lu%s bytes in %'lu%s blocks\n",
                 MC_(bytes_reachable), 
                 DBY (MC_(bytes_reachable), old_bytes_reachable), 
                 MC_(blocks_reachable),
@@ -1756,15 +1777,21 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
       for (i = 0; i < N_LEAK_CHECK_HEURISTICS; i++)
          if (old_blocks_heuristically_reachable[i] > 0 
              || MC_(blocks_heuristically_reachable)[i] > 0) {
-            VG_(umsg)("                      of which "
+            umsg_or_xml(VG_(clo_xml) ? "" : "                      of which "
                       "reachable via heuristic:\n");
             break;
          }
       for (i = 0; i < N_LEAK_CHECK_HEURISTICS; i++)
          if (old_blocks_heuristically_reachable[i] > 0 
              || MC_(blocks_heuristically_reachable)[i] > 0)
-            VG_(umsg)("                        %-19s: "
-                      "%'lu%s bytes in %'lu%s blocks\n",
+            umsg_or_xml(VG_(clo_xml) ?
+                        "    <reachable_heuristic>\n"
+                        "      <kind>%ls</kind>\n"
+                        "      <bytes>%'lu%s</bytes>\n"
+                        "      <blocks>%'lu%s</blocks>\n"
+                        "    </reachable_heuristic>\n" :
+                        "                        %-19s: "
+                        "%'lu%s bytes in %'lu%s blocks\n",
                       pp_heuristic(i),
                       MC_(bytes_heuristically_reachable)[i], 
                       DBY (MC_(bytes_heuristically_reachable)[i],
@@ -1772,32 +1799,41 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                       MC_(blocks_heuristically_reachable)[i],
                       DBL (MC_(blocks_heuristically_reachable)[i],
                            old_blocks_heuristically_reachable[i]));
-      VG_(umsg)("        suppressed: %'lu%s bytes in %'lu%s blocks\n",
-                MC_(bytes_suppressed), 
-                DBY (MC_(bytes_suppressed), old_bytes_suppressed), 
+      if (VG_(clo_xml) && MC_(bytes_reachable)) {
+         umsg_or_xml("  </still_reachable>\n");
+      }
+      umsg_or_xml(VG_(clo_xml) ?
+                  "  <suppressed>\n"
+                  "    <bytes>%'lu%s</bytes>\n"
+                  "    <blocks>%'lu%s</blocks>\n"
+                  "  </suppressed>\n" :
+                  "        suppressed: %'lu%s bytes in %'lu%s blocks\n",
+                MC_(bytes_suppressed),
+                DBY (MC_(bytes_suppressed), old_bytes_suppressed),
                 MC_(blocks_suppressed),
                 DBL (MC_(blocks_suppressed), old_blocks_suppressed));
       if (lcp->mode != LC_Full &&
           (MC_(blocks_leaked) + MC_(blocks_indirect) +
            MC_(blocks_dubious) + MC_(blocks_reachable)) > 0) {
          if (lcp->requested_by_monitor_command)
-            VG_(umsg)("To see details of leaked memory, "
-                      "give 'full' arg to leak_check\n");
+            umsg_or_xml(VG_(clo_xml) ? "" : "To see details of leaked memory, "
+                        "give 'full' arg to leak_check\n");
          else
-            VG_(umsg)("Rerun with --leak-check=full to see details "
-                      "of leaked memory\n");
+            umsg_or_xml(VG_(clo_xml) ? "" : "Rerun with --leak-check=full to "
+                        "see details of leaked memory\n");
       }
       if (lcp->mode == LC_Full &&
           MC_(blocks_reachable) > 0 && !RiS(Reachable,lcp->show_leak_kinds)) {
-         VG_(umsg)("Reachable blocks (those to which a pointer "
-                   "was found) are not shown.\n");
+         umsg_or_xml(VG_(clo_xml) ? "" : "Reachable blocks (those to which a "
+                     "pointer was found) are not shown.\n");
          if (lcp->requested_by_monitor_command)
-            VG_(umsg)("To see them, add 'reachable any' args to leak_check\n");
+            umsg_or_xml(VG_(clo_xml) ? "" : "To see them, add 'reachable any' "
+                        "args to leak_check\n");
          else
-            VG_(umsg)("To see them, rerun with: --leak-check=full "
-                      "--show-leak-kinds=all\n");
+            umsg_or_xml(VG_(clo_xml) ? "" : "To see them, rerun with: "
+                        "--leak-check=full --show-leak-kinds=all\n");
       }
-      VG_(umsg)("\n");
+      umsg_or_xml(VG_(clo_xml) ? "</leak_summary>\n\n" : "\n");
       #undef DBL
       #undef DBY
    }
@@ -2056,11 +2092,17 @@ void MC_(detect_memory_leaks) ( ThreadId tid, LeakCheckParams* lcp)
          VG_(OSetGen_Destroy) (lr_table);
          lr_table = NULL;
       }
-      if (VG_(clo_verbosity) >= 1 && !VG_(clo_xml)) {
-         VG_(umsg)("All heap blocks were freed -- no leaks are possible\n");
-         VG_(umsg)("\n");
+      if (VG_(clo_verbosity) >= 1) {
+         if (!VG_(clo_xml)) {
+            VG_(umsg)("All heap blocks were freed -- no leaks are possible\n");
+            VG_(umsg)("\n");
+         } else
+            VG_(printf_xml)("<all_heap_blocks_freed>true</all_heap_blocks_freed>\n\n");
       }
       return;
+   } else {
+      if (VG_(clo_verbosity) >= 1 && VG_(clo_xml))
+         VG_(printf_xml)("<all_heap_blocks_freed>false</all_heap_blocks_freed>\n\n");
    }
 
    // Sanity check -- make sure they don't overlap.  One exception is that
@@ -2301,4 +2343,3 @@ void MC_(who_points_at) ( Addr address, SizeT szB)
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
-

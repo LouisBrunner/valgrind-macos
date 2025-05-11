@@ -2309,9 +2309,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    // affects what order the messages come.
    //--------------------------------------------------------------
    // First thing in the post-amble is a blank line.
-   if (VG_(clo_xml))
-      VG_(printf_xml)("\n");
-   else if (VG_(clo_verbosity) > 0)
+   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "\n");
 
    if (VG_(clo_xml)) {
@@ -2353,9 +2351,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    }
 
    if (VG_(clo_xml)) {
-      VG_(printf_xml)("\n");
       VG_(printf_xml)("</valgrindoutput>\n");
-      VG_(printf_xml)("\n");
    }
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );

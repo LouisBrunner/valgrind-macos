@@ -257,7 +257,7 @@ EXTRA_DIST = \
 	leak-segv-jmp.vgtest leak-segv-jmp.stderr.exp \
 	lks.vgtest lks.stdout.exp lks.supp lks.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
-	long_namespace_xml.stderr.exp \
+	long_namespace_xml.stderr.exp long_namespace_xml.stderr.exp-freebsd \
 	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
 	mallinfo.stderr.exp mallinfo.vgtest \
 	malloc_free_fill.vgtest \

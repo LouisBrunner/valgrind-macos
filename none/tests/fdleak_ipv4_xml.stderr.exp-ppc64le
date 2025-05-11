@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>5</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>none</protocoltool>
 
 <preamble>
@@ -101,7 +101,6 @@
   </stack>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -135,5 +134,11 @@
 <suppcounts>
 </suppcounts>
 
-</valgrindoutput>
+<error_summary>
+  <errors>2</errors>
+  <error_contexts>2</error_contexts>
+  <suppressed>0</suppressed>
+  <suppressed_contexts>0</suppressed_contexts>
+</error_summary>
 
+</valgrindoutput>

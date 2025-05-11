@@ -151,11 +151,7 @@ void VG_(print_preamble)(Bool logging_to_fd)
       VG_(printf_xml)("\n");
       VG_(printf_xml)("<valgrindoutput>\n");
       VG_(printf_xml)("\n");
-      /* track-fds introduced some new elements.  */
-      if (VG_(clo_track_fds))
-         VG_(printf_xml)("<protocolversion>5</protocolversion>\n");
-      else
-         VG_(printf_xml)("<protocolversion>4</protocolversion>\n");
+      VG_(printf_xml)("<protocolversion>6</protocolversion>\n");
       VG_(printf_xml)("<protocoltool>%s</protocoltool>\n", VG_(clo_toolname));
       VG_(printf_xml)("\n");
    }

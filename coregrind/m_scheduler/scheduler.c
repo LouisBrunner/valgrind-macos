@@ -1982,7 +1982,7 @@ Int print_client_message( ThreadId tid, const HChar *format,
       VG_(get_and_pp_StackTrace)( tid, VG_(clo_backtrace_size) );
    
    if (VG_(clo_xml))
-      VG_(printf_xml)( "</clientmsg>\n" );
+      VG_(printf_xml)( "</clientmsg>\n\n" );
 
    return count;
 }

@@ -1229,14 +1229,33 @@ void MC_(print_malloc_stats) ( void )
    
    if (VG_(clo_verbosity) == 0)
       return;
-   if (VG_(clo_xml))
-      return;
 
    /* Count memory still in use. */
    VG_(HT_ResetIter)(MC_(malloc_list));
    while ( (mc = VG_(HT_Next)(MC_(malloc_list))) ) {
       nblocks++;
       nbytes += (ULong)mc->szB;
+   }
+
+   if (VG_(clo_xml)) {
+     VG_(printf_xml)(
+        "<heap_summary>\n"
+        "  <memory_in_use_at_exit>\n"
+        "    <bytes>%'llu</bytes>\n"
+        "    <blocks>%'lu</blocks>\n"
+        "  </memory_in_use_at_exit>\n"
+        "  <total_heap_usage>\n"
+        "    <allocs>%'lu</allocs>\n"
+        "    <frees>%'lu</frees>\n"
+        "    <bytes_allocated>%'llu</bytes_allocated>\n"
+        "  </total_heap_usage>\n"
+        "</heap_summary>\n"
+        "\n",
+        nbytes, nblocks,
+        cmalloc_n_mallocs,
+        cmalloc_n_frees, cmalloc_bs_mallocd
+     );
+     return;
    }
 
    VG_(umsg)(

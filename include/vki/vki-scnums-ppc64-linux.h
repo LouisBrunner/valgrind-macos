@@ -408,6 +408,7 @@
 #define __NR_pkey_free		385
 #define __NR_pkey_mprotect	386
 #define __NR_rseq		387
+#define __NR_io_pgetevents	388
 
 #endif /* __VKI_SCNUMS_PPC64_LINUX_H */
 

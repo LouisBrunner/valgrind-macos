@@ -3544,12 +3544,12 @@ void *memcpy(void *dest, const void *src, size_t n);
 void *memcpy(void *dest, const void *src, size_t n) {
    return VG_(memcpy)(dest, src, n);
 }
-void* memmove(void *dest, const void *src, SizeT n);
-void* memmove(void *dest, const void *src, SizeT n) {
+void* memmove(void *dest, const void *src, size_t n);
+void* memmove(void *dest, const void *src, size_t n) {
    return VG_(memmove)(dest,src,n);
 }
-void* memset(void *s, int c, SizeT n);
-void* memset(void *s, int c, SizeT n) {
+void* memset(void *s, int c, size_t n);
+void* memset(void *s, int c, size_t n) {
   return VG_(memset)(s,c,n);
 }
 

@@ -1,5 +1,5 @@
 prog: realloc_size_zero
-vgopts: -q --xml=yes --xml-fd=2 --log-file=/dev/null
+vgopts: -q --xml=yes --xml-fd=2 --log-file=/dev/null  --show-possibly-lost=no
 stderr_filter: filter_xml
 
 

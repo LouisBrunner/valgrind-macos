@@ -355,6 +355,7 @@ EXTRA_DIST = \
 		realloc_size_zero.vgtest \
 	realloc_size_zero_xml.stderr.exp \
 		realloc_size_zero_xml.stdout.exp \
+		realloc_size_zero_xml.stdout.exp-glibc \
 		realloc_size_zero_xml.vgtest \
 	realloc_size_zero_yes.stderr.exp realloc_size_zero_yes.stdout.exp \
 		realloc_size_zero_yes.vgtest \

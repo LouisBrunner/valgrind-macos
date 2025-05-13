@@ -49,9 +49,9 @@ doTest ()
         # output ordering changes and more. They aren't trivially
         # comparable.  We resort to comparing at least the final
         # summary of individual test results
-        tail -10 $l/log1err | grep -E "^(passed|failed|broken|skipped|warnings):" > $l/log1summary ||:
-        tail -10 $l/log2err | grep -E "^(passed|failed|broken|skipped|warnings):" > $l/log2summary ||:
-        tail -10 $l/log3err | grep -E "^(passed|failed|broken|skipped|warnings):" > $l/log3summary ||:
+        tail -10 $l/log1err | grep -E "^(passed|failed|broken|skipped|warnings)" > $l/log1summary ||:
+        tail -10 $l/log2err | grep -E "^(passed|failed|broken|skipped|warnings)" > $l/log2summary ||:
+        tail -10 $l/log3err | grep -E "^(passed|failed|broken|skipped|warnings)" > $l/log3summary ||:
 
         # Check logs, report errors
         pushd $l >/dev/null

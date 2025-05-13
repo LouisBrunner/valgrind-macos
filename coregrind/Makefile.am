@@ -34,6 +34,8 @@ bin_PROGRAMS = \
 	valgrind \
 	vgdb
 
+bin_SCRIPTS = vgstack
+
 if VGCONF_OS_IS_LINUX
 valgrind_SOURCES = \
 	launcher-linux.c \

@@ -5692,7 +5692,8 @@ AC_CONFIG_FILES([
    include/Makefile 
    auxprogs/Makefile
    mpi/Makefile
-   coregrind/Makefile 
+   coregrind/Makefile
+   coregrind/vgstack
    memcheck/Makefile
    memcheck/tests/Makefile
    memcheck/tests/common/Makefile

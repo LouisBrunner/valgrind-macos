@@ -178,6 +178,7 @@
 /coregrind/valgrind
 /coregrind/vgdb
 /coregrind/vgpreload_core-x86-darwin.so.dSYM
+/coregrind/vgstack
 /coregrind/vg_intercept.c
 /coregrind/vg_replace_malloc.c
 /coregrind/vg_toolint.c

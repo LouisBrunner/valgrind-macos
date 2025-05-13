@@ -987,7 +987,7 @@ void VG_(show_open_fds) (const HChar* when)
    int inherited = 0;
 
    for (i = allocated_fds; i; i = i->next) {
-      if (i->where == NULL)
+      if (i->where == NULL && !i->fd_closed)
          inherited++;
    }
 

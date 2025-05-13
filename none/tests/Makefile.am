@@ -140,6 +140,7 @@ EXTRA_DIST = \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
+	fdleak_cat.vgtest fdleak_cat.stderr.exp \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_cmsg_xml.stderr.exp-ppc64le \
 	fdleak_cmsg_xml.stderr.exp fdleak_cmsg_xml.vgtest \

@@ -1968,7 +1968,7 @@ parse_opcode(const char *spec)
       printf("opcode: |%s|\n", opc->name);
       for (unsigned i = 0; i < opc->num_opnds; ++i) {
          const opnd *d = opc->opnds + i;
-         printf("opnd %2d: %-8s  type: %-5s", i, d->name,
+         printf("opnd %2u: %-8s  type: %-5s", i, d->name,
                 opnd_kind_as_string(d->kind));
          if (d->kind != OPND_D12XB && d->kind != OPND_D12B &&
              d->kind != OPND_D20XB && d->kind != OPND_D20B &&

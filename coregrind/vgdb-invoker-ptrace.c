@@ -271,10 +271,10 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
             msg, signal_expected);
       p = waitpid(pid, &status, __WALL);
       DEBUG(1, "after waitpid pid %d p %d status 0x%x %s\n", pid, p,
-            status, status_image (status));
+            (unsigned)status, status_image (status));
       if (p != pid) {
          ERROR(errno, "%s waitpid pid %d in waitstopped %d status 0x%x %s\n",
-               msg, pid, p, status, status_image (status));
+               msg, pid, p, (unsigned)status, status_image (status));
          return False;
       }
 
@@ -867,7 +867,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
         web search '[patch] Fix syscall restarts for amd64->i386 biarch'
         e.g. http://sourceware.org/ml/gdb-patches/2009-11/msg00592.html */
      *(long *)&user_save.regs.rax = *(int*)&user_save.regs.rax;
-     DEBUG(1, "Sign extending %8.8lx to %8.8lx\n",
+     DEBUG(1, "Sign extending %8.8llx to %8.8llx\n",
            user_mod.regs.rax, user_save.regs.rax);
    }
 #elif defined(VGA_arm)

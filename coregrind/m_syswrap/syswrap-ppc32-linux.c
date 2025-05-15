@@ -1079,6 +1079,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
    LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
+   LINXY(__NR_cachestat,         sys_cachestat),         // 451
    LINX_ (__NR_fchmodat2,        sys_fchmodat2),         // 452
 };
 

@@ -6196,6 +6196,26 @@ PRE(sys_fchmodat)
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
 }
 
+PRE(sys_cachestat)
+{
+    PRINT("sys_cachestat ( %lu, %#lx, %#lx, %lu )", ARG1, ARG2, ARG3, ARG4);
+    PRE_REG_READ4(long, "cachestat",
+                  unsigned long, fd, struct vki_cachestat_range  *, cstat_range,
+                  struct vki_cachestat*, cstat, unsigned long, flags);
+    if (!ML_(fd_allowed)(ARG1, "cachestat", tid, False))
+        SET_STATUS_Failure( VKI_EBADF );
+    const struct vki_cachestat_range *cstat_range = (struct vki_cachestat_range *)(Addr)ARG2;
+    PRE_MEM_READ("cachestat(cstat_range)", ARG2, sizeof(*cstat_range) );
+    const struct vki_cachestat *cstat = (struct vki_cachestat *)(Addr)ARG3;
+    PRE_MEM_WRITE("cachestat(cstat)", ARG3, sizeof(*cstat) );
+}
+
+POST(sys_cachestat)
+{
+    vg_assert(SUCCESS);
+    POST_MEM_WRITE(ARG3, sizeof(struct vki_cachestat));
+}
+
 PRE(sys_fchmodat2)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();

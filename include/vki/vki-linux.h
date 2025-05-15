@@ -5478,6 +5478,19 @@ struct vki_open_how {
 #define VKI_CLOSE_RANGE_UNSHARE (1U << 1)
 #define VKI_CLOSE_RANGE_CLOEXEC (1U << 2)
 
+struct vki_cachestat_range {
+    __vki_u64 off;
+    __vki_u64 len;
+};
+
+struct vki_cachestat {
+    __vki_u64 nr_cache;
+    __vki_u64 nr_dirty;
+    __vki_u64 nr_writeback;
+    __vki_u64 nr_evicted;
+    __vki_u64 nr_recently_evicted;
+};
+
 //----------------------------------------------------------------------
 // From linux/magic.h
 //----------------------------------------------------------------------

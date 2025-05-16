@@ -1,2 +1,3 @@
 prog: sendmsg
 vgopts: -q
+stderr_filter: filter_sendmsg

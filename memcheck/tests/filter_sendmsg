@@ -1,0 +1,5 @@
+#! /bin/sh
+
+./filter_stderr "$@" |
+sed -e "s/frame #./frame #.../" \
+    -e "/by 0x........: sendmsg (in \/...libc...)/d"

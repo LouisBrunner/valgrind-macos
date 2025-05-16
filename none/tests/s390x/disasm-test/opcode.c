@@ -965,6 +965,7 @@ static const char *opcodes[] = {
    "pfpo",                         // pfpo
    "srnm   d12(b2)",
    "srnmb  d12(b2)",               // fpext
+   "srnmt  d12(b2)",
    "sfpc   r1",
    // sfasr  not implemented
    "ste    f1,d12(x2,b2)",
@@ -976,6 +977,8 @@ static const char *opcodes[] = {
    // Chapter 10: Control Instructions                      not implemented
    // Chapter 14: I/O Instructions                          not implemented
    // Chapter 18: Hexadecimal-Floating-Point Instructions   not implemented
+   "lder    f1,f2",
+   "lde     f1,d12(x2,b2)",
 
    // Chapter 19: Binary-Floating-Point Instructions
    // Register pairs: 0-2 1-3 4-6 5-7 8-10 9-11 12-14 13-15

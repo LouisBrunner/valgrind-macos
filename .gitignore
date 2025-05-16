@@ -1435,6 +1435,7 @@
 /memcheck/tests/freebsd/eventfd2
 /memcheck/tests/freebsd/extattr
 /memcheck/tests/freebsd/fbsd278566
+/memcheck/tests/freebsd/fchroot
 /memcheck/tests/freebsd/fexecve
 /memcheck/tests/freebsd/file_locking_wait6
 /memcheck/tests/freebsd/get_set_context
@@ -1461,6 +1462,7 @@
 /memcheck/tests/freebsd/scalar_vfork
 /memcheck/tests/freebsd/sctp
 /memcheck/tests/freebsd/sctp2
+/memcheck/tests/freebsd/setcred
 /memcheck/tests/freebsd/setproctitle
 /memcheck/tests/freebsd/sigwait
 /memcheck/tests/freebsd/stat

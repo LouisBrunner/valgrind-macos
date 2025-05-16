@@ -1,0 +1,4 @@
+Syscall param fchroot(fd) contains uninitialised byte(s)
+   at 0x........: fchroot (in /...libc...)
+   by 0x........: main (fchroot.cpp:13)
+

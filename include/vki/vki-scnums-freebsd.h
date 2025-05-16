@@ -627,6 +627,8 @@
 #define __NR_kcmp                588
 
 #define __NR_getrlimitusage      589
+#define __NR_fchroot             590
+#define __NR_setcred             591
 
 #define __NR_fake_sigreturn      1000
 

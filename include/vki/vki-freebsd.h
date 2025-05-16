@@ -3257,6 +3257,23 @@ union vki_ccb {
 
 #define VKI_CAMIOCOMMAND _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
 
+//----------------------------------------------------------------------
+// From cam/scsi/scsi_all.h
+//----------------------------------------------------------------------
+struct vki_setcred {
+   vki_uid_t    sc_uid;                /* effective user id */
+   vki_uid_t    sc_ruid;               /* real user id */
+   vki_uid_t    sc_svuid;              /* saved user id */
+   vki_gid_t    sc_gid;                /* effective group id */
+   vki_gid_t    sc_rgid;               /* real group id */
+   vki_gid_t    sc_svgid;              /* saved group id */
+   vki_u_int    sc_pad;                /* see 32-bit compat structure */
+   vki_u_int    sc_supp_groups_nb;     /* number of supplementary groups */
+   vki_gid_t   *sc_supp_groups;        /* supplementary groups */
+   struct vki_mac *sc_label;           /* MAC label */
+};
+
+
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

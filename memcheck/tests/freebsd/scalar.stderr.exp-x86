@@ -5813,6 +5813,28 @@ Syscall param getrlimitusage(res) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+590:             SYS_fchroot 1s, 0m
+---------------------------------------------------------
+Syscall param fchroot(fd) contains uninitialised byte(s)
+   ...
+
+---------------------------------------------------------
+591:             SYS_setcred 3s, 1m
+---------------------------------------------------------
+Syscall param setcred(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param setcred(wcred) contains uninitialised byte(s)
+   ...
+
+Syscall param setcred(size) contains uninitialised byte(s)
+   ...
+
+Syscall param setcred(wcred) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
   1:                SYS_exit 1s 0m
 ---------------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)

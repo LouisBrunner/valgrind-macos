@@ -8,24 +8,21 @@ if [ -z "${LTP_SRC_DIR:-}" ]; then
 fi
 
 ORIG_PATH=$PATH
-ORIG_PWD=$PWD
-LOGDIR=${LOGDIR:-$LTP_SRC_DIR/valgrind-ltp-logs}
-SUMMARY_LOG="$LOGDIR/summary.log"
+SCRIPT_SRC=$(dirname $0)
+LOGDIR=${LOGDIR:-$LTP_SRC_DIR/ltp}
 DIFFCMD="diff -u"
 VALGRIND="${VALGRIND:-$LTP_SRC_DIR/../../../vg-in-place}"
 # For parallel testing, consider IO intensive jobs, take nproc into account
 PARALLEL_JOBS=${PARALLEL_JOBS:-$(nproc)}
 # TESTS env var may be specified to restrict testing to selected test cases
+# Configure the LTP testsuite behavior per
+# https://lore.kernel.org/ltp/20250505195003.GB137650@pevik/T/#t
+export LTP_COLORIZE_OUTPUT=0
+export LTP_REPRODUCIBLE_OUTPUT=1
 
-# Initialize LOGDIR
+# Initialize LOGDIR for bunsen upload (https://sourceware.org/bunsen/)
 mkdir -p $LOGDIR; rm -rf ${LOGDIR:?}/*
 
-myLog ()
-{
-    msg="$1"
-    echo "$msg"
-    echo -e "FAIL: $msg" >> summary
-}
 
 doTest ()
 {
@@ -33,14 +30,17 @@ doTest ()
     nr=$2
     dir=$(dirname $t)
     exe=$(basename $t)
-    l="$LOGDIR/$exe"
+    l="$LOGDIR/$dir/$exe"
+    rv="PASS"
     mkdir -p $l
-    echo "[$nr/$c] Testing $exe ..." | tee -a $l/summary
+    echo "[$nr/$c] Testing $exe ..."
     pushd $dir >/dev/null
         PATH="$ORIG_PATH:$PWD"
+        t1=$(date +%s)
         ./$exe >$l/log1std 2>$l/log1err ||:
         $VALGRIND -q --tool=none --log-file=$l/log2 ./$exe >$l/log2std 2>$l/log2err ||:
         $VALGRIND -q --tool=memcheck --log-file=$l/log3 ./$exe >$l/log3std 2>$l/log3err ||:
+        t2=$(date +%s)
 
         # We want to make sure that LTP syscall tests give identical
         # results with and without valgrind.  The test logs go to the
@@ -56,20 +56,28 @@ doTest ()
         # Check logs, report errors
         pushd $l >/dev/null
             if test -s log2; then
-                myLog "${exe}: unempty log2:\n$(cat log2)"
+                echo -e "${exe}: unempty log2:\n$(cat log2)" | tee -a $l/$exe.log
+                rv="FAIL"
             fi
 
-            if grep -f $ORIG_PWD/ltp-error-patterns.txt log* > error-patterns-found.txt; then
-                myLog "${exe}: error string found:\n$(cat error-patterns-found.txt)"
+            if grep -f $SCRIPT_SRC/ltp-error-patterns.txt log* > error-patterns-found.txt; then
+                echo -e "${exe}: error string found:\n$(cat error-patterns-found.txt)" | tee -a $l/$exe.log
+                rv="FAIL"
             fi
 
             if ! ${DIFFCMD} log1summary log2summary >/dev/null; then
-                myLog "${exe}: ${DIFFCMD} log1summary log2summary:\n$(${DIFFCMD} log1summary log2summary)"
+                echo -e "${exe}: ${DIFFCMD} log1summary log2summary:\n$(${DIFFCMD} log1summary log2summary)" | tee -a $l/$exe.log
+                rv="FAIL"
             fi
 
             if ! ${DIFFCMD} log2summary log3summary >/dev/null; then
-                myLog "${exe}: ${DIFFCMD} log2summary log3summary:\n$(${DIFFCMD} log2summary log3summary)"
+                echo -e "${exe}: ${DIFFCMD} log2summary log3summary:\n$(${DIFFCMD} log2summary log3summary)" | tee -a $l/$exe.log
+                rv="FAIL"
             fi
+
+            # synthetize automake style testlogs for bunsen import
+            echo ":test-result: $rv" | tee -a $l/$exe.log > $l/$exe.trs
+            echo "Test time secs: $((t2 - t1))" > $l/test-suite.log
         popd >/dev/null
     popd >/dev/null
 }
@@ -83,7 +91,7 @@ if [ -n "$TESTS" ]; then
 else
     echo "Running whole the LTP syscall testsuite ..."
     mapfile -t files < <(find testcases/kernel/syscalls -executable -and -type f \
-                         | sort | grep -v -f $ORIG_PWD/ltp-excludes.txt)
+                         | sort | grep -v -f $SCRIPT_SRC/ltp-excludes.txt)
 fi
 
 c=${#files[@]}; i=0
@@ -96,12 +104,5 @@ for test in "${files[@]}"; do
 done
 
 wait
-
-# Reconstruct $SUMMARY_LOG
-for test in "${files[@]}"; do
-    exe=$(basename $test)
-    l="$LOGDIR/$exe"
-    cat $l/summary >> $SUMMARY_LOG
-done
 
 echo "TESTING FINISHED, logs in $LOGDIR"

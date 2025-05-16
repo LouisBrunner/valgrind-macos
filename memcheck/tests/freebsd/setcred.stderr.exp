@@ -1,0 +1,30 @@
+Syscall param setcred(wcred) points to unaddressable byte(s)
+   at 0x........: setcred (in /...libc...)
+   by 0x........: main (setcred.cpp:19)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param setcred(flags) contains uninitialised byte(s)
+   at 0x........: setcred (in /...libc...)
+   by 0x........: main (setcred.cpp:22)
+
+Syscall param setcred(wcred) contains uninitialised byte(s)
+   at 0x........: setcred (in /...libc...)
+   by 0x........: main (setcred.cpp:22)
+
+Syscall param setcred(size) contains uninitialised byte(s)
+   at 0x........: setcred (in /...libc...)
+   by 0x........: main (setcred.cpp:22)
+
+Syscall param setcred(wcred) points to uninitialised byte(s)
+   at 0x........: setcred (in /...libc...)
+   by 0x........: main (setcred.cpp:22)
+ Address 0x........ is on thread 1's stack
+ in frame #2, created by __libc_start1 (???:)
+
+Syscall param setcred(wcred) points to uninitialised byte(s)
+   at 0x........: setcred (in /...libc...)
+   by 0x........: main (setcred.cpp:27)
+ Address 0x........ is 0 bytes inside a block of size 48 alloc'd
+   at 0x........: ...operator new... (vg_replace_malloc.c:...)
+   by 0x........: main (setcred.cpp:24)
+

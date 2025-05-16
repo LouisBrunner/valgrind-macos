@@ -1,0 +1,3 @@
+prereq: test -e ./fchroot
+prog: fchroot
+vgopts: -q

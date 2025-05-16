@@ -7001,6 +7001,28 @@ POST(sys_getrlimitusage)
    }
 }
 
+// SYS_fchroot 590
+// int fchroot(int fd);
+PRE(sys_fchroot)
+{
+   PRINT("sys_fchroot(%ld)", ARG1);
+   PRE_REG_READ1(int, "fchroot", int, fd);
+
+   /* Be strict. */
+   if (!ML_(fd_allowed)(ARG1, "fchroot", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+}
+
+// SYS_setcred
+// int setcred(u_int flags, const struct setcred *wcred, size_t size);
+PRE(sys_setcred)
+{
+   PRINT("sys_setcred(%ld, %#" FMT_REGWORD "x, %lu)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(int, "setcred", u_int, flags, const struct setcred*, wcred, size_t, size);
+   PRE_MEM_READ("setcred(wcred)", ARG2, sizeof(struct vki_setcred));
+}
+
+
 #undef PRE
 #undef POST
 
@@ -7693,6 +7715,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    BSDXY(__NR_timerfd_gettime,  sys_timerfd_gettime),   // 587
    BSDX_(__NR_kcmp,             sys_kcmp),              // 588
    BSDXY(__NR_getrlimitusage,   sys_getrlimitusage),    // 589
+
+   BSDX_(__NR_fchroot,          sys_fchroot),           // 590
+   BSDX_(__NR_setcred,          sys_setcred),           // 591
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
 

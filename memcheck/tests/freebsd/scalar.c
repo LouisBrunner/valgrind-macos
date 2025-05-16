@@ -2450,7 +2450,37 @@ int main(void)
    FAKE_SY("   ...\n");
    FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
    FAKE_SY("\n");
-#endif 
+#endif
+
+#if defined(SYS_fchroot)
+   GO(SYS_fchroot, "1s, 0m");
+   SY(SYS_fchroot, x0+1000);
+#else
+   FAKE_GO("590:             SYS_fchroot 1s, 0m");
+   FAKE_SY("Syscall param fchroot(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_setcred)
+   GO(SYS_setcred, "3s, 1m");
+   SY(SYS_setcred, x0+100, x0+3, x0+50);
+#else
+   FAKE_GO("591:             SYS_setcred 3s, 1m");
+   FAKE_SY("Syscall param setcred(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param setcred(wcred) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param setcred(size) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param setcred(wcred) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
 
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");

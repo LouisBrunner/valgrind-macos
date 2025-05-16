@@ -86,6 +86,7 @@ dist_noinst_SCRIPTS = \
 	filter_varinfo3 \
 	filter_memcheck \
 	filter_malloc_free \
+	filter_sendmsg \
 	filter_size_t \
 	filter_stanza \
 	filter_stanza.awk \
@@ -381,7 +382,6 @@ EXTRA_DIST = \
 	sem.stderr.exp sem.vgtest \
 	sendmsg.stderr.exp sendmsg.stderr.exp-solaris sendmsg.vgtest \
 	    sendmsg.stderr.exp-freebsd \
-	    sendmsg.stderr.exp-freebsd-x86 \
 	sh-mem.stderr.exp sh-mem.vgtest \
 	sh-mem-random.stderr.exp sh-mem-random.stdout.exp64 \
 	sh-mem-random.stdout.exp sh-mem-random.vgtest \

@@ -9,7 +9,7 @@ fi
 
 ORIG_PATH=$PATH
 SCRIPT_SRC=$(dirname $0)
-LOGDIR=${LOGDIR:-$LTP_SRC_DIR/ltp}
+LOGDIR=${LOGDIR:-$LTP_SRC_DIR/ltp/tests}
 DIFFCMD="diff -u"
 VALGRIND="${VALGRIND:-$LTP_SRC_DIR/../../../vg-in-place}"
 # For parallel testing, consider IO intensive jobs, take nproc into account
@@ -36,11 +36,9 @@ doTest ()
     echo "[$nr/$c] Testing $exe ..."
     pushd $dir >/dev/null
         PATH="$ORIG_PATH:$PWD"
-        t1=$(date +%s)
         ./$exe >$l/log1std 2>$l/log1err ||:
         $VALGRIND -q --tool=none --log-file=$l/log2 ./$exe >$l/log2std 2>$l/log2err ||:
         $VALGRIND -q --tool=memcheck --log-file=$l/log3 ./$exe >$l/log3std 2>$l/log3err ||:
-        t2=$(date +%s)
 
         # We want to make sure that LTP syscall tests give identical
         # results with and without valgrind.  The test logs go to the
@@ -56,33 +54,34 @@ doTest ()
         # Check logs, report errors
         pushd $l >/dev/null
             if test -s log2; then
-                echo -e "${exe}: unempty log2:\n$(cat log2)" | tee -a $l/$exe.log
+                echo -e "${exe}: unempty log2:\n$(cat log2)" | tee -a $LOGDIR/$exe.log
                 rv="FAIL"
             fi
 
             if grep -f $SCRIPT_SRC/ltp-error-patterns.txt log* > error-patterns-found.txt; then
-                echo -e "${exe}: error string found:\n$(cat error-patterns-found.txt)" | tee -a $l/$exe.log
+                echo -e "${exe}: error string found:\n$(cat error-patterns-found.txt)" | tee -a $LOGDIR/$exe.log
                 rv="FAIL"
             fi
 
             if ! ${DIFFCMD} log1summary log2summary >/dev/null; then
-                echo -e "${exe}: ${DIFFCMD} log1summary log2summary:\n$(${DIFFCMD} log1summary log2summary)" | tee -a $l/$exe.log
+                echo -e "${exe}: ${DIFFCMD} log1summary log2summary:\n$(${DIFFCMD} log1summary log2summary)" | tee -a $LOGDIR/$exe.log
                 rv="FAIL"
             fi
 
             if ! ${DIFFCMD} log2summary log3summary >/dev/null; then
-                echo -e "${exe}: ${DIFFCMD} log2summary log3summary:\n$(${DIFFCMD} log2summary log3summary)" | tee -a $l/$exe.log
+                echo -e "${exe}: ${DIFFCMD} log2summary log3summary:\n$(${DIFFCMD} log2summary log3summary)" | tee -a $LOGDIR/$exe.log
                 rv="FAIL"
             fi
 
             # synthetize automake style testlogs for bunsen import
-            echo ":test-result: $rv" | tee -a $l/$exe.log > $l/$exe.trs
-            echo "Test time secs: $((t2 - t1))" > $l/test-suite.log
+            echo ":test-result: $rv" | tee -a $LOGDIR/$exe.log > $LOGDIR/$exe.trs
         popd >/dev/null
     popd >/dev/null
 }
 
 cd $LTP_SRC_DIR
+
+echo "See *.log files for details on each test in this directory." > $LOGDIR/test-suite.log
 
 if [ -n "$TESTS" ]; then
     echo "Running individual syscall tests specified in the TESTS env var ..."

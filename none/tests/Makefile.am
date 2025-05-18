@@ -150,6 +150,7 @@ EXTRA_DIST = \
 	fdleak_creat_xml.stderr.exp fdleak_creat_xml.vgtest \
 	fdleak_creat_sup.stderr.exp fdleak_creat_sup.supp \
 	fdleak_creat_sup.vgtest \
+	fdleak_doubleclose0.stderr.exp fdleak_doubleclose0.vgtest \
 	fdleak_dup.stderr.exp fdleak_dup.vgtest \
 	fdleak_dup_xml.stderr.exp fdleak_dup_xml.vgtest \
 	fdleak_dup2.stderr.exp fdleak_dup2.vgtest \
@@ -283,7 +284,7 @@ check_PROGRAMS = \
 	bug492678 \
 	closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \
-	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
+	fdleak_cmsg fdleak_creat fdleak_doubleclose0 fdleak_dup fdleak_dup2 \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip \

@@ -637,7 +637,8 @@ struct BadCloseExtra {
    HChar *description;            /* Description of the file descriptor
                                      might include the pathname */
    ExeContext *where_closed;      /* record the last close of fd */
-   ExeContext *where_opened;      /* recordwhere the fd  was opened */
+   ExeContext *where_opened;      /* recordwhere the fd  was opened,
+                                     NULL if inherited file descriptor */
 };
 
 struct FdBadUse {
@@ -646,7 +647,8 @@ struct FdBadUse {
   HChar *description;            /* Description of the file descriptor
                                     might include the pathname */
   ExeContext *where_closed;      /* record the last close of fd */
-  ExeContext *where_opened;      /* recordwhere the fd  was opened */
+  ExeContext *where_opened;      /* recordwhere the fd  was opened,
+                                    NULL if inherited file descriptor */
 };
 
 struct NotClosedExtra {
@@ -1197,8 +1199,11 @@ void fd_pp_Error (const Error *err)
       VG_(pp_ExeContext)( where );
       VG_(emit)("%sPreviously closed%s\n", auxpre, auxpost);
       VG_(pp_ExeContext)(bce->where_closed);
-      VG_(emit)("%sOriginally opened%s\n", auxpre, auxpost);
-      VG_(pp_ExeContext)(bce->where_opened);
+      // Inherited file descriptors where never opened (by the program)
+      if (bce->where_opened) {
+         VG_(emit)("%sOriginally opened%s\n", auxpre, auxpost);
+         VG_(pp_ExeContext)(bce->where_opened);
+      }
    } else if (VG_(get_error_kind)(err) == FdNotClosed) {
       if (xml) VG_(emit)("  <kind>FdNotClosed</kind>\n");
       struct NotClosedExtra *nce = (struct NotClosedExtra *)

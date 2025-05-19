@@ -1570,6 +1570,7 @@
 /none/tests/fdbaduse
 /none/tests/fdleak_cmsg
 /none/tests/fdleak_creat
+/none/tests/fdleak_doubleclose0
 /none/tests/fdleak_dup
 /none/tests/fdleak_dup2
 /none/tests/fdleak_fcntl

@@ -33,6 +33,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 501741  syscall cachestat not wrapped
 503969  Make test results of make ltpchecks compatible with bunsen
 504265  FreeBSD: missing syscall wrappers for fchroot and setcred
+504341  Valgrind killed by LTP syscall testcase setrlimit05
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

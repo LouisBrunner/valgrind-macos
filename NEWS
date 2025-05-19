@@ -10,6 +10,7 @@ The following bugs have been fixed or resolved on this branch.
 503914  mount syscall param filesystemtype may be NULL
 504177  FILE DESCRIPTORS banner shows when closing some inherited fds
 504265  FreeBSD: missing syscall wrappers for fchroot and setcred
+504466  Double close causes SEGV
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

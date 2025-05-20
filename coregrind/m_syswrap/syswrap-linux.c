@@ -2295,19 +2295,27 @@ PRE(sys_prlimit64)
                  vki_pid_t, pid, unsigned int, resource,
                  const struct rlimit64 *, new_rlim,
                  struct rlimit64 *, old_rlim);
-   if (ARG3)
-      PRE_MEM_READ( "rlimit64(new_rlim)", ARG3, sizeof(struct vki_rlimit64) );
-   if (ARG4)
-      PRE_MEM_WRITE( "rlimit64(old_rlim)", ARG4, sizeof(struct vki_rlimit64) );
-
    if (ARG3) {
-      if (ML_(safe_to_deref)( (void*)(Addr)ARG3, sizeof(struct vki_rlimit64) )) {
-         if (((struct vki_rlimit64 *)(Addr)ARG3)->rlim_cur
-              > ((struct vki_rlimit64 *)(Addr)ARG3)->rlim_max) {
-            SET_STATUS_Failure( VKI_EINVAL );
-         }
+      PRE_MEM_READ( "rlimit64(new_rlim)", ARG3, sizeof(struct vki_rlimit64) );
+      if (!ML_(safe_to_deref)((void*)(Addr)ARG3, sizeof(struct vki_rlimit64))) {
+         SET_STATUS_Failure(VKI_EFAULT);
+         return;
       }
-   } else if (ARG1 == 0 || ARG1 == VG_(getpid)()) {
+   }
+   if (ARG4) {
+      PRE_MEM_WRITE( "rlimit64(old_rlim)", ARG4, sizeof(struct vki_rlimit64) );
+      if (!ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(struct vki_rlimit64))) {
+         SET_STATUS_Failure(VKI_EFAULT);
+         return;
+      }
+   }
+
+   if (ARG3 &&
+       ((struct vki_rlimit64 *)(Addr)ARG3)->rlim_cur
+        > ((struct vki_rlimit64 *)(Addr)ARG3)->rlim_max) {
+      SET_STATUS_Failure( VKI_EINVAL );
+   }
+   else if (ARG1 == 0 || ARG1 == VG_(getpid)()) {
       switch (ARG2) {
       case VKI_RLIMIT_NOFILE:
          SET_STATUS_Success( 0 );

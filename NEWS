@@ -1,9 +1,11 @@
-Branch 3.25
-~~~~~~~~~~~
+Release 3.25.1 (20 May 2025)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This point release contains only bug fixes.
 
 * ==================== FIXED BUGS ====================
 
-The following bugs have been fixed or resolved on this branch.
+The following bugs have been fixed or resolved in this point release.
 
 503098  Incorrect NAN-boxing for float registers in RISC-V
 503641  close_range syscalls started failing with 3.25.0

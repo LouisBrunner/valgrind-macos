@@ -70,6 +70,44 @@ are also created, for emulating automake-style testsuites, as expected
 by tools such as bunsen.)
 
 
+Platform-specific setup for regression tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On some platforms some setup is required otherwise some of the tests
+will fail.
+
+Inherited inotifier file descriptors
+------------------------------------
+Seen on openSUSE amd64 KDE, all processes seem to inherit an inotify
+file descriptor which interferes with some of the fdleak tests in the
+none directory. Here is an example
+
+lsof | grep inotify | grep bash
+bash      13128                      paulf   31r  a_inode               0,14         0         46 inotify
+
+I don't know how to turn this off completely. You can close the
+file descriptor for the current shell by using
+
+MY_INOTIFIER=$(lsof 2>&1 | grep $$ | grep inotify | awk '{print $4}' | sed 's/r//')
+
+if [ -n ${MY_INOTIFIER} ] ; then
+   exec {MY_INOTIFIER}<&-
+fi
+
+FreeBSD kernel modules and stack guard page
+-------------------------------------------
+The sctp and mqueuefs kernel modules need to be loaded. As root
+
+kldload sctp mqueuefs
+
+Additionally FreeBSD has strange belt and braces thread stack protection
+with both the kernel and the allocated thread stack providing guard pages.
+This interferes with the memcheck descr_belowsp test. The extra kernel
+guard page can be turned off with the following command run as root
+
+sysctl security.bsd.stack_guard_page=0
+
+
 Running the performance tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To build and run all the performance tests, run "make [--quiet] perf".

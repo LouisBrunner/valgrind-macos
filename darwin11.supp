@@ -72,7 +72,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 ################

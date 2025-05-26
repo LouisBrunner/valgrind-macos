@@ -41,6 +41,7 @@ my %patterns = (
     "Using Valgrind-([^\\s]*)"    => "X.Y.X",
     "Copyright \\(C\\) ([0-9]{4}-[0-9]{4}).*" => "XXXX-YYYY",
     '<fn>pthread_.*(@\*)</fn>'                => "",
+    "<suppressed>(.*)</suppressed>" => "...",
     "<suppressed_contexts>(.*)</suppressed_contexts>" => "..."
 );
 

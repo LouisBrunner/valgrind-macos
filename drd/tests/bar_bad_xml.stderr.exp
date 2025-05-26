@@ -204,7 +204,6 @@ destroy a barrier that has waiting threads
 
 
 destroy a barrier that was never initialised
-
 <status>
   <state>FINISHED</state>
   <time>...</time>

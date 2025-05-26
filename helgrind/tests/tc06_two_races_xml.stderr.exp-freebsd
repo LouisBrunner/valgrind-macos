@@ -249,7 +249,7 @@
 <error_summary>
   <errors>4</errors>
   <error_contexts>4</error_contexts>
-  <suppressed>7</suppressed>
+  <suppressed>...</suppressed>
   <suppressed_contexts>...</suppressed_contexts>
 </error_summary>
 

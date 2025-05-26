@@ -158,6 +158,7 @@ EXTRA_DIST = \
 	fdleak_fcntl.stderr.exp fdleak_fcntl.vgtest \
 	fdleak_fcntl_xml.stderr.exp fdleak_fcntl_xml.vgtest \
 	fdleak_ipv4.stderr.exp fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
+	fdleak_ipv4_xml.stderr.exp-ppc64be \
 	fdleak_ipv4_xml.stderr.exp-ppc64le \
 	fdleak_ipv4_xml.stderr.exp fdleak_ipv4_xml.stdout.exp \
 	fdleak_ipv4_xml.vgtest fdleak_ipv4_xml.stderr.exp-nomain \

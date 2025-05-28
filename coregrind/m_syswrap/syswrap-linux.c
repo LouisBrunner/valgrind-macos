@@ -4610,14 +4610,18 @@ PRE(sys_rt_sigaction)
    if (ARG2 != 0
        && ! ML_(safe_to_deref)((void *)(Addr)ARG2,
                                sizeof(vki_sigaction_toK_t))) {
-      VG_(umsg)("Warning: bad act handler address %p in rt_sigaction()\n",
-                (void *)(Addr)ARG2);
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(umsg)("Warning: bad act handler address %p in rt_sigaction()\n",
+                   (void *)(Addr)ARG2);
+      }
       SET_STATUS_Failure ( VKI_EFAULT );
    } else if ((ARG3 != 0
                && ! ML_(safe_to_deref)((void *)(Addr)ARG3,
                                        sizeof(vki_sigaction_fromK_t)))) {
-      VG_(umsg)("Warning: bad oldact handler address %p in rt_sigaction()\n",
-                (void *)(Addr)ARG3);
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(umsg)("Warning: bad oldact handler address %p in rt_sigaction()\n",
+                   (void *)(Addr)ARG3);
+      }
       SET_STATUS_Failure ( VKI_EFAULT );
    } else {
 

@@ -38,6 +38,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 504466  Double close causes SEGV
 504904  Hide "bad act handler address" warnings when -q (quiet) flag is set
 504909  Hide "Bad oldset address" warnings when -q (quiet) flag is set
+504919  Hide "client tried to modify addresses" warnings when -q (quiet) set
 504936  Add FreeBSD amd64 sysarch subcommands AMD64_SET_TLSBASE and
         AMD64_GET_TLSBASE
 

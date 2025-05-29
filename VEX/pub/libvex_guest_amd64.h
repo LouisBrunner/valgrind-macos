@@ -170,8 +170,11 @@ typedef
          been interrupted by a signal. */
       ULong guest_IP_AT_SYSCALL;
 
-      /* Padding to make it have an 16-aligned size */
-      ULong pad3;
+      /* Used on FreeBSD as part of a mechanism to allow signal handlers
+           to use TLS. */
+      ULong guest_TLSBASE;
+
+      /* Add padding here to make it have an 16-aligned size */
    }
    VexGuestAMD64State;
 

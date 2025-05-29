@@ -1857,12 +1857,19 @@ struct vki_ptrace_vm_entry {
 #define VKI_I386_GET_GSBASE     9
 #define VKI_I386_SET_GSBASE     10
 #define VKI_I386_GET_XFPUSTATE  11
+#define VKI_I386_SET_PKRU       12
+#define VKI_I386_CLEAR_PKRU     13
 
 #define VKI_AMD64_GET_FSBASE    128
 #define VKI_AMD64_SET_FSBASE    129
 #define VKI_AMD64_GET_GSBASE    130
 #define VKI_AMD64_SET_GSBASE    131
-#define VKI_AMD64_GET_XFPUSTATE  132
+#define VKI_AMD64_GET_XFPUSTATE 132
+#define VKI_AMD64_SET_PKRU      133
+#define VKI_AMD64_CLEAR_PKRU    134
+#define VKI_AMD64_GET_TLSBASE   135
+#define VKI_AMD64_SET_TLSBASE   136
+
 
 //----------------------------------------------------------------------
 // From sys/module.h

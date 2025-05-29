@@ -128,13 +128,18 @@ PRE(sys_sysarch)
    PRE_REG_READ2(int, "sysarch", int, number, void *, args);
    switch (ARG1) {
    case VKI_AMD64_SET_FSBASE:
-      PRINT("sys_amd64_set_fsbase ( %#lx )", ARG2);
+   case VKI_AMD64_SET_TLSBASE:
+      PRINT("sys_amd64_set_%ssbase ( %#lx )", (ARG1 == VKI_AMD64_SET_FSBASE ? "f" : "tl"), ARG2);
 
       if (ML_(safe_to_deref)((void**)ARG2, sizeof(void*))) {
          /* On FreeBSD, the syscall loads the %gs selector for us, so do it now. */
          tst = VG_(get_ThreadState)(tid);
          p = (void**)ARG2;
          tst->arch.vex.guest_FS_CONST = (UWord)*p;
+         if (ARG1 == VKI_AMD64_SET_TLSBASE) {
+            tst->arch.vex.guest_TLSBASE = (UWord)*p;
+            // kernel also calls "set_pcb_flags(pcb, PCB_TLSBASE);"
+         }
          /* "do" the syscall ourselves; the kernel never sees it */
          SET_STATUS_Success2((ULong)*p, tst->arch.vex.guest_RDX );
       } else {
@@ -165,6 +170,22 @@ PRE(sys_sysarch)
       tst = VG_(get_ThreadState)(tid);
       SET_STATUS_Success2( tst->arch.vex.guest_FPTAG[0], tst->arch.vex.guest_FPTAG[0] );
       break;
+   //case VKI_AMD64_SET_PKRU:
+   //case VKI_AMD64_CLEAR_PKRU:
+   case VKI_AMD64_GET_TLSBASE:
+      PRINT("sys_amd64_get_tlsbase ( %#lx )", ARG2);
+      PRE_MEM_WRITE( "amd64_get_fsbase(basep)", ARG2, sizeof(void *) );
+      if (ML_(safe_to_deref)((void**)ARG2, sizeof(void*))) {
+         /* "do" the syscall ourselves; the kernel never sees it */
+         tst = VG_(get_ThreadState)(tid);
+         SET_STATUS_Success2( tst->arch.vex.guest_TLSBASE, tst->arch.vex.guest_RDX );
+      } else {
+         SET_STATUS_Failure( VKI_EINVAL );
+      }
+      break;
+
+      PRINT("sys_amd64_set_tlsbase ( %#lx )", ARG2);
+      break;
    default:
       VG_(message) (Vg_UserMsg, "unhandled sysarch cmd %lu", ARG1);
       VG_(unimplemented) ("unhandled sysarch cmd");
@@ -179,6 +200,7 @@ POST(sys_sysarch)
       break;
    case VKI_AMD64_GET_FSBASE:
    case VKI_AMD64_GET_XFPUSTATE:
+   case VKI_AMD64_GET_TLSBASE:
       POST_MEM_WRITE( ARG2, sizeof(void *) );
       break;
    default:

@@ -36,6 +36,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 504265  FreeBSD: missing syscall wrappers for fchroot and setcred
 504341  Valgrind killed by LTP syscall testcase setrlimit05
 504466  Double close causes SEGV
+504936  Add FreeBSD amd64 sysarch subcommands AMD64_SET_TLSBASE and
+        AMD64_GET_TLSBASE
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

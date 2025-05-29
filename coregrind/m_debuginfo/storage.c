@@ -11,6 +11,8 @@
 
    Copyright (C) 2000-2017 Julian Seward 
       jseward@acm.org
+   Copyright (C) 2025 Mark J. Wielaard
+      mark@klomp.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -697,7 +699,7 @@ static void shrinkInlTab ( struct _DebugInfo* di )
 /* Top-level place to call to add a addr-to-inlined fn info. */
 void ML_(addInlInfo) ( struct _DebugInfo* di, 
                        Addr addr_lo, Addr addr_hi,
-                       const HChar* inlinedfn,
+                       UWord subprog,
                        UInt fndn_ix,
                        Int lineno, UShort level)
 {
@@ -705,9 +707,9 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
 
 #  define SHOWLINEINFO                                                  \
    VG_(message) (Vg_DebugMsg,                                           \
-                 "addInlInfo: fn %s inlined as addr_lo %#lx,addr_hi %#lx," \
+                 "addInlInfo: fn %lx inlined as addr_lo %#lx,addr_hi %#lx," \
                  "caller fndn_ix %u %s:%d\n",                           \
-                 inlinedfn, addr_lo, addr_hi, fndn_ix,                  \
+                 subprog, addr_lo, addr_hi, fndn_ix,                  \
                  ML_(fndn_ix2filename) (di, fndn_ix), lineno)
 
    /* Similar paranoia as in ML_(addLineInfo). Unclear if needed. */
@@ -737,7 +739,7 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
    // code resulting from inlining of inlinedfn:
    inl.addr_lo   = addr_lo;
    inl.addr_hi   = addr_hi;
-   inl.inlinedfn = inlinedfn;
+   inl.inlined.subprog = subprog;
    // caller:
    inl.fndn_ix   = fndn_ix;
    inl.lineno    = lineno;
@@ -747,6 +749,29 @@ void ML_(addInlInfo) ( struct _DebugInfo* di,
 
    addInl ( di, &inl );
 #  undef SHOWLINEINFO
+}
+
+void ML_(addSubprogram) ( struct _DebugInfo* di, DiSubprogram* sub )
+{
+   UInt          new_sz, i;
+   DiSubprogram* new_tab;
+
+   if (di->subtab_used == di->subtab_size) {
+      new_sz = 2 * di->subtab_size;
+      if (new_sz == 0) new_sz = 2560;
+      new_tab = ML_(dinfo_zalloc)( "di.storage.addSubprogram.1",
+                                   new_sz * sizeof(DiSubprogram) );
+      if (di->subtab != NULL) {
+         for (i = 0; i < di->subtab_used; i++)
+            new_tab[i] = di->subtab[i];
+         ML_(dinfo_free)(di->subtab);
+      }
+      di->subtab = new_tab;
+      di->subtab_size = new_sz;
+   }
+
+   di->subtab[di->subtab_used] = *sub;
+   di->subtab_used++;
 }
 
 DiCfSI_m* ML_(get_cfsi_m) (const DebugInfo* di, UInt pos)

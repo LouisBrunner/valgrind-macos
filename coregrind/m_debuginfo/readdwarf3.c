@@ -11,6 +11,8 @@
 
    Copyright (C) 2008-2017 OpenWorks LLP
       info@open-works.co.uk
+   Copyright (C) 2025 Mark J. Wielaard
+      mark@klomp.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -3388,147 +3390,6 @@ typedef
    }
    D3InlParser;
 
-/* Return the function name corresponding to absori.
-
-   absori is a 'cooked' reference to a DIE, i.e. absori can be either
-   in cc->escn_debug_info or in cc->escn_debug_info_alt.
-   get_inlFnName will uncook absori. 
-
-   The returned value is a (permanent) string in DebugInfo's .strchunks.
-
-   LIMITATION: absori must point in the CU of cc. If absori points
-   in another CU, returns "UnknownInlinedFun".
-
-   Here are the problems to retrieve the fun name if absori is in
-   another CU:  the DIE reading code cannot properly extract data from
-   another CU, as the abbv code retrieved in the other CU cannot be
-   translated in an abbreviation. Reading data from the alternate debug
-   info also gives problems as the string reference is also in the alternate
-   file, but when reading the alt DIE, the string form is a 'local' string,
-   but cannot be read in the current CU, but must be read in the alt CU.
-   See bug 338803 comment#3 and attachment for a failed attempt to handle
-   these problems (failed because with the patch, only one alt abbrev hash
-   table is kept, while we must handle all abbreviations in all CUs
-   referenced by an absori (being a reference to an alt CU, or a previous
-   or following CU). */
-static const HChar* get_inlFnName (Int absori, CUConst* cc, Bool td3)
-{
-   Cursor c;
-   const g_abbv *abbv;
-   ULong  atag, abbv_code;
-   UInt   has_children;
-   UWord  posn;
-   Bool type_flag, alt_flag;
-   const HChar *ret = NULL;
-   FormContents cts;
-   UInt nf_i;
-
-   /* Some inlined subroutine call dwarf entries do not have the abstract
-      origin attribute, resulting in absori being 0 (see callers of
-      get_inlFnName). This is observed at least with gcc 6.3.0 when compiling
-      valgrind with lto. So, in case we have a 0 absori, do not report an
-      error, instead, rather return an unknown inlined function. */
-   if (absori == 0) {
-      static Bool absori0_reported = False;
-      if (!absori0_reported && VG_(clo_verbosity) > 1) {
-         VG_(message)(Vg_DebugMsg,
-                      "Warning: inlined fn name without absori\n"
-                      "is shown as UnknownInlinedFun\n");
-         absori0_reported = True;
-      }
-      TRACE_D3(" <get_inlFnName>: absori is not set");
-      return ML_(addStr)(cc->di, "UnknownInlinedFun", -1);
-   }
-
-   posn = uncook_die( cc, absori, &type_flag, &alt_flag);
-   if (type_flag)
-      cc->barf("get_inlFnName: uncooked absori in type debug info");
-
-   /* LIMITATION: check we are in the same CU.
-      If not, return unknown inlined function name. */
-   /* if crossing between alt debug info<>normal info
-          or posn not in the cu range,
-      then it is in another CU. */
-   if (alt_flag != cc->is_alt_info
-       || posn < cc->cu_start_offset
-       || posn >= cc->cu_start_offset + cc->unit_length) {
-      static Bool reported = False;
-      if (!reported && VG_(clo_verbosity) > 1) {
-         VG_(message)(Vg_DebugMsg,
-                      "Warning: cross-CU LIMITATION: some inlined fn names\n"
-                      "might be shown as UnknownInlinedFun\n");
-         reported = True;
-      }
-      TRACE_D3(" <get_inlFnName><%lx>: cross-CU LIMITATION", posn);
-      return ML_(addStr)(cc->di, "UnknownInlinedFun", -1);
-   }
-
-   init_Cursor (&c, cc->escn_debug_info, posn, cc->barf, 
-                "Overrun get_inlFnName absori");
-
-   abbv_code = get_ULEB128( &c );
-   abbv      = get_abbv ( cc, abbv_code, td3);
-   atag      = abbv->atag;
-   TRACE_D3(" <get_inlFnName><%lx>: Abbrev Number: %llu (%s)\n",
-            posn, abbv_code, ML_(pp_DW_TAG)( atag ) );
-
-   if (atag == 0)
-      cc->barf("get_inlFnName: invalid zero tag on DIE");
-
-   has_children = abbv->has_children;
-   if (has_children != DW_children_no && has_children != DW_children_yes)
-      cc->barf("get_inlFnName: invalid has_children value");
-
-   if (atag != DW_TAG_subprogram)
-      cc->barf("get_inlFnName: absori not a subprogram");
-
-   nf_i = 0;
-   while (True) {
-      DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
-      DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
-      const name_form *nf = &abbv->nf[nf_i];
-      nf_i++;
-      if (attr == 0 && form == 0) break;
-      get_Form_contents( &cts, cc, &c, False/*td3*/, nf );
-      if (attr == DW_AT_name) {
-         HChar *fnname;
-         if (cts.szB >= 0)
-            cc->barf("get_inlFnName: expecting indirect string");
-         fnname = ML_(cur_read_strdup)( cts.u.cur,
-                                        "get_inlFnName.1" );
-         ret = ML_(addStr)(cc->di, fnname, -1);
-         ML_(dinfo_free) (fnname);
-         break; /* Name found, get out of the loop, as this has priority over
-                 DW_AT_specification. */
-      }
-      if (attr == DW_AT_specification) {
-         UWord cdie;
-
-         if (cts.szB == 0)
-            cc->barf("get_inlFnName: AT specification missing");
-
-         /* The recursive call to get_inlFnName will uncook its arg.
-            So, we need to cook it here, so as to reference the
-            correct section (e.g. the alt info). */
-         cdie = cook_die_using_form(cc, (UWord)cts.u.val, form);
-
-         /* hoping that there is no loop */
-         ret = get_inlFnName (cdie, cc, td3);
-         /* Unclear if having both DW_AT_specification and DW_AT_name is
-            possible but in any case, we do not break here. 
-            If we find later on a DW_AT_name, it will override the name found
-            in the DW_AT_specification.*/
-      }
-   }
-
-   if (ret)
-      return ret;
-   else {
-      TRACE_D3("AbsOriFnNameNotFound");
-      return ML_(addStr)(cc->di, "AbsOriFnNameNotFound", -1);
-   }
-}
-
 /* Returns True if the (possibly) childrens of the current DIE are interesting
    to parse. Returns False otherwise.
    If the current DIE has a sibling, the non interesting children can
@@ -3618,8 +3479,8 @@ static Bool parse_inl_DIE (
       Addr   rangeoff   = 0;
       UInt   caller_fndn_ix = 0;
       Int caller_lineno = 0;
-      Int inlinedfn_abstract_origin = 0;
-      // 0 will be interpreted as no abstract origin by get_inlFnName
+      UWord inlinedfn_abstract_origin = 0;
+      // 0 will be interpreted as no abstract origin
 
       nf_i = 0;
       while (True) {
@@ -3683,7 +3544,7 @@ static Bool parse_inl_DIE (
             ip_hi1 += cc->di->text_debug_bias;
             ML_(addInlInfo) (cc->di,
                              ip_lo, ip_hi1, 
-                             get_inlFnName (inlinedfn_abstract_origin, cc, td3),
+                             inlinedfn_abstract_origin,
                              caller_fndn_ix,
                              caller_lineno, level);
          }
@@ -3691,8 +3552,6 @@ static Bool parse_inl_DIE (
          /* This inlined call is several address ranges. */
          XArray *ranges;
          Word j;
-         const HChar *inlfnname =
-            get_inlFnName (inlinedfn_abstract_origin, cc, td3);
 
          /* Ranges are biased for the inline info using the same logic
             as what is used for biasing ranges for the var info, for which
@@ -3709,7 +3568,7 @@ static Bool parse_inl_DIE (
                              // aMax+1 as range has its last bound included
                              // while ML_(addInlInfo) expects last bound not
                              // included.
-                             inlfnname,
+                             inlinedfn_abstract_origin,
                              caller_fndn_ix,
                              caller_lineno, level);
          }
@@ -3718,11 +3577,82 @@ static Bool parse_inl_DIE (
          goto_bad_DIE;
    }
 
+   if (dtag == DW_TAG_subprogram) {
+      DiSubprogram sub;
+      sub.index = posn; /* Note posn is already cooked.  */
+      sub.isArtificial = False;
+      UWord cdie = 0;
+      const HChar *fn = NULL;
+      Bool name_or_spec = False;
+      nf_i = 0;
+      while (True) {
+         DW_AT   attr = (DW_AT)  abbv->nf[nf_i].at_name;
+         DW_FORM form = (DW_FORM)abbv->nf[nf_i].at_form;
+         const name_form *nf = &abbv->nf[nf_i];
+         nf_i++;
+         if (attr == 0 && form == 0) break;
+         get_Form_contents( &cts, cc, c_die, False/*td3*/, nf );
+         if (attr == DW_AT_sibling && cts.szB > 0) {
+            parser->sibling = cts.u.val;
+         }
+         if (attr == DW_AT_artificial && cts.u.val == 1) {
+            sub.isArtificial = True;
+         }
+         if ((attr == DW_AT_specification
+              || attr == DW_AT_abstract_origin)
+             && cts.szB > 0 && cts.u.val > 0) {
+            name_or_spec = True;
+            cdie = cook_die_using_form(cc, (UWord)cts.u.val, form);
+            sub.ref.subprog = cdie;
+            sub.isSubprogRef = True;
+         }
+         if (attr == DW_AT_name && cts.szB < 0) {
+            HChar *fnname;
+            name_or_spec = True;
+            fnname = ML_(cur_read_strdup)( cts.u.cur,
+                                           ".1" );
+            fn = ML_(addStr)(cc->di, fnname, -1);
+            ML_(dinfo_free) (fnname);
+            sub.ref.fn = fn;
+            sub.isSubprogRef = False;
+         }
+      }
+      if (name_or_spec)
+         ML_(addSubprogram) (cc->di, &sub);
+      else {
+         /* Only warn once per debug file.  */
+         static HChar *last_dbgname;
+         HChar *dbgname = cc->di->fsm.dbgname
+            ? cc->di->fsm.dbgname : cc->di->fsm.filename;
+         if (last_dbgname != dbgname) {
+            if (VG_(clo_verbosity) >= 1)
+               VG_(message)(Vg_DebugMsg, "Warning: DW_TAG_subprogram with"
+                            " no DW_AT_name and no DW_AT_specification or"
+                            " DW_AT_abstract_origin in %s\n", dbgname);
+            last_dbgname = dbgname;
+         }
+      }
+   }
+
    // Only recursively parse the (possible) children for the DIE which
-   // might maybe contain a DW_TAG_inlined_subroutine:
+   // might maybe contain a DW_TAG_inlined_subroutine or DW_TAG_subprogram.
+   // subprograms can also appear without addresses.
    Bool ret = (unit_has_addrs
-               || dtag == DW_TAG_lexical_block || dtag == DW_TAG_subprogram
-               || dtag == DW_TAG_inlined_subroutine || dtag == DW_TAG_namespace);
+               || dtag == DW_TAG_compile_unit
+               || dtag == DW_TAG_partial_unit
+               || dtag == DW_TAG_lexical_block
+               || dtag == DW_TAG_subprogram
+               || dtag == DW_TAG_inlined_subroutine
+               || dtag == DW_TAG_namespace
+               || dtag == DW_TAG_enumeration_type
+               || dtag == DW_TAG_class_type
+               || dtag == DW_TAG_structure_type
+               || dtag == DW_TAG_union_type
+               || dtag == DW_TAG_module
+               || dtag == DW_TAG_with_stmt
+               || dtag == DW_TAG_catch_block
+               || dtag == DW_TAG_try_block
+               || dtag == DW_TAG_entry_point);
    return ret;
 
   bad_DIE:
@@ -5609,8 +5539,10 @@ void new_dwarf3_reader_wrk (
    }
 
    /* Perform three DIE-reading passes.  The first pass reads DIEs from
-      alternate .debug_info (if any), the second pass reads DIEs from
-      .debug_info, and the third pass reads DIEs from .debug_types.
+      .debug_info, the second pass reads DIEs from .debug_types (if any),
+      and the third pass reads DIEs from the alternate .debug_info (if any).
+      This is in the order that cook_die numbers the DIEs, so the inlined
+      parser can add subprograms in order.
       Moving the body of this loop into a separate function would
       require a large number of arguments to be passed in, so it is
       kept inline instead.  */
@@ -5618,6 +5550,34 @@ void new_dwarf3_reader_wrk (
       ULong section_size;
 
       if (pass == 0) {
+         /* Now loop over the Compilation Units listed in the .debug_info
+            section (see D3SPEC sec 7.5) paras 1 and 2.  Each compilation
+            unit contains a Compilation Unit Header followed by precisely
+            one DW_TAG_compile_unit or DW_TAG_partial_unit DIE. */
+         init_Cursor( &info, escn_debug_info, 0, barf,
+                      "Overrun whilst reading .debug_info section" );
+         section_size = escn_debug_info.szB;
+
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
+
+         TRACE_D3("\n------ Parsing .debug_info section ------\n");
+      } else if (pass == 1) {
+         if (!ML_(sli_is_valid)(escn_debug_types))
+            continue;
+         if (!VG_(clo_read_var_info))
+            continue; // Types not needed when only reading inline info.
+         init_Cursor( &info, escn_debug_types, 0, barf,
+                      "Overrun whilst reading .debug_types section" );
+         section_size = escn_debug_types.szB;
+
+	 /* Keep track of the last line table we have seen,
+            it might turn up again.  */
+         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
+
+         TRACE_D3("\n------ Parsing .debug_types section ------\n");
+      } else {
          if (!ML_(sli_is_valid)(escn_debug_info_alt))
 	    continue;
          /* Now loop over the Compilation Units listed in the alternate
@@ -5634,34 +5594,6 @@ void new_dwarf3_reader_wrk (
          reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
 
          TRACE_D3("\n------ Parsing alternate .debug_info section ------\n");
-      } else if (pass == 1) {
-         /* Now loop over the Compilation Units listed in the .debug_info
-            section (see D3SPEC sec 7.5) paras 1 and 2.  Each compilation
-            unit contains a Compilation Unit Header followed by precisely
-            one DW_TAG_compile_unit or DW_TAG_partial_unit DIE. */
-         init_Cursor( &info, escn_debug_info, 0, barf,
-                      "Overrun whilst reading .debug_info section" );
-         section_size = escn_debug_info.szB;
-
-	 /* Keep track of the last line table we have seen,
-            it might turn up again.  */
-         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
-
-         TRACE_D3("\n------ Parsing .debug_info section ------\n");
-      } else {
-         if (!ML_(sli_is_valid)(escn_debug_types))
-            continue;
-         if (!VG_(clo_read_var_info))
-            continue; // Types not needed when only reading inline info.
-         init_Cursor( &info, escn_debug_types, 0, barf,
-                      "Overrun whilst reading .debug_types section" );
-         section_size = escn_debug_types.szB;
-
-	 /* Keep track of the last line table we have seen,
-            it might turn up again.  */
-         reset_fndn_ix_table(&fndn_ix_Table, &debug_line_offset, (ULong) -1);
-
-         TRACE_D3("\n------ Parsing .debug_types section ------\n");
       }
 
       abbv_state last_abbv;
@@ -5713,22 +5645,22 @@ void new_dwarf3_reader_wrk (
          TRACE_D3("\n");
          TRACE_D3("  Compilation Unit @ offset 0x%llx:\n", cu_start_offset);
          /* parse_CU_header initialises the CU's hashtable of abbvs ht_abbvs */
-         if (pass == 0) {
+         if (pass == 2) {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv_alt,
                              last_abbv, False, True );
          } else {
             parse_CU_Header( &cc, td3, &info, escn_debug_abbv,
-                             last_abbv, pass == 2, False );
+                             last_abbv, pass == 1, False );
          }
-         cc.escn_debug_str      = pass == 0 ? escn_debug_str_alt
+         cc.escn_debug_str      = pass == 2 ? escn_debug_str_alt
                                             : escn_debug_str;
          cc.escn_debug_ranges   = escn_debug_ranges;
          cc.escn_debug_rnglists = escn_debug_rnglists;
          cc.escn_debug_loclists = escn_debug_loclists;
          cc.escn_debug_loc      = escn_debug_loc;
-         cc.escn_debug_line     = pass == 0 ? escn_debug_line_alt
+         cc.escn_debug_line     = pass == 2 ? escn_debug_line_alt
                                             : escn_debug_line;
-         cc.escn_debug_info     = pass == 0 ? escn_debug_info_alt
+         cc.escn_debug_info     = pass == 2 ? escn_debug_info_alt
                                             : escn_debug_info;
          cc.escn_debug_types    = escn_debug_types;
          cc.escn_debug_info_alt = escn_debug_info_alt;
@@ -6161,6 +6093,99 @@ void new_dwarf3_reader_wrk (
    }
 }
 
+static Word search_one_subtab ( DebugInfo* di, UWord index )
+{
+   Word mid,
+        lo = 0,
+        hi = di->subtab_used-1;
+   UWord mid_index;
+   while (True) {
+      /* current unsearched space is from lo to hi, inclusive. */
+      if (lo > hi) return -1; /* not found */
+      mid       = (lo + hi) / 2;
+      mid_index = di->subtab[mid].index;
+
+      if (mid_index > index) { hi = mid-1; continue; }
+      if (mid_index < index) { lo = mid+1; continue; }
+      vg_assert(index == mid_index);
+      return mid;
+   }
+}
+
+/* Report an issue only once, we cannot really give too good an error
+   message since we don't know the exact DIE that was broken.
+   So only report once per DebugInfo file.  */
+static void report_resolve_subprogram_issue (DebugInfo *di, const HChar *msg)
+{
+   static HChar *last_dbgname;
+   HChar *dbgname = di->fsm.dbgname ? di->fsm.dbgname : di->fsm.filename;
+   if (last_dbgname != dbgname) {
+      if (VG_(clo_verbosity) >= 1)
+         VG_(message)(Vg_DebugMsg, "Warning: %s in %s\n", msg, dbgname);
+      last_dbgname = dbgname;
+   }
+}
+
+static void resolve_subprograms ( DebugInfo* di )
+{
+   for (UWord i = 0; i < di->inltab_used; i++) {
+      Word s = di->inltab[i].inlined.subprog;
+      if (s == 0) {
+	 report_resolve_subprogram_issue
+            (di, "zero subprog, missing DW_AT_abstract_origin in"
+             " DW_TAG_inlined_subroutine");
+         di->inltab[i].inlined.fn = ML_(addStr)(di, "UnknownInlinedFun", -1);
+         continue;
+      }
+      s = search_one_subtab (di, di->inltab[i].inlined.subprog);
+      if (s == -1) {
+         report_resolve_subprogram_issue
+            (di, "subprog not found, DW_TAG_inlined_subroutine points to"
+             " unknown DW_TAG_subprogram");
+         di->inltab[i].inlined.fn = ML_(addStr)(di, "UnknownInlinedFun", -1);
+         continue;
+      }
+      /* We allow two indirections, subprograms with abstract origins.  */
+      if (di->subtab[s].isSubprogRef) {
+         s = search_one_subtab (di, di->subtab[s].ref.subprog);
+         if (s == -1) {
+	    report_resolve_subprogram_issue
+               (di, "subprog ref not found, DW_TAG_subprogram has an"
+                " unknown DW_AT_abstract_origin or DW_AT_specification");
+            di->inltab[i].inlined.fn = ML_(addStr)(di,
+                                                   "UnknownInlinedFun", -1);
+            continue;
+         }
+      }
+      if (di->subtab[s].isSubprogRef) {
+         s = search_one_subtab (di, di->subtab[s].ref.subprog);
+         if (s == -1) {
+	    report_resolve_subprogram_issue
+               (di, "subprog ref to ref not found, DW_TAG_subprogram has an"
+                " unknown DW_AT_abstract_origin or DW_AT_specification");
+            di->inltab[i].inlined.fn = ML_(addStr)(di,
+                                                   "UnknownInlinedFun", -1);
+            continue;
+         }
+      }
+      if (di->subtab[s].isSubprogRef)
+      {
+         report_resolve_subprogram_issue
+            (di, "too many subprog indirections for DW_TAG_subprogram"
+             " with DW_AT_abstract_origin or DW_AT_specification refs");
+         di->inltab[i].inlined.fn = ML_(addStr)(di,
+                                                "UnknownInlinedFun", -1);
+         continue;
+      }
+      di->inltab[i].inlined.fn = di->subtab[s].ref.fn;
+   }
+
+   /* We don't need the SubPrograms anymore.  */
+   ML_(dinfo_free)(di->subtab);
+   di->subtab = NULL;
+   di->subtab_used = 0;
+   di->subtab_size = 0;
+}
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -6232,6 +6257,10 @@ ML_(new_dwarf3_reader) (
 
    d3rd_jmpbuf_valid  = False;
    d3rd_jmpbuf_reason = NULL;
+
+   /* Always call this even after .debug_info reading failed, to make sure
+      any known inlined subroutine names are resolved and memory freed.  */
+   resolve_subprograms (di);
 }
 
 

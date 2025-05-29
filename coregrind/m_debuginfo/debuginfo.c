@@ -2354,7 +2354,7 @@ Bool VG_(get_fnname_inl) ( DiEpoch ep, Addr a, const HChar** buf,
          ? & iipc->di->inltab[iipc->next_inltab]
          : NULL;
       vg_assert (next_inl);
-      *buf = next_inl->inlinedfn;
+      *buf = next_inl->inlined.fn;
       return True;
    }
 }
@@ -2444,7 +2444,7 @@ Bool VG_(get_fnname_no_cxx_demangle) ( DiEpoch ep, Addr a, const HChar** buf,
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      *buf = next_inl->inlinedfn;
+      *buf = next_inl->inlined.fn;
       return True;
    }
 }
@@ -2806,7 +2806,7 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      buf_fn = next_inl->inlinedfn;
+      buf_fn = next_inl->inlined.fn;
       know_fnname = True;
 
       // INLINED????

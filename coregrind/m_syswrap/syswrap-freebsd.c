@@ -3197,13 +3197,17 @@ PRE(sys_sigprocmask)
 
    if (ARG2 != 0  &&
          !ML_(safe_to_deref)((void *)(Addr)ARG2, sizeof(vki_sigset_t))) {
-      VG_(dmsg)("Warning: Bad set handler address %p in sigprocmask\n",
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(dmsg)("Warning: Bad set handler address %p in sigprocmask\n",
                 (void *)(Addr)ARG2);
+      }
       SET_STATUS_Failure ( VKI_EFAULT );
    } else if (ARG3 != 0 &&
               !ML_(safe_to_deref)((void *)(Addr)ARG3, sizeof(vki_sigset_t))) {
-      VG_(dmsg)("Warning: Bad oldset address %p in sigprocmask\n",
-                (void *)(Addr)ARG3);
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(dmsg)("Warning: Bad oldset address %p in sigprocmask\n",
+                   (void *)(Addr)ARG3);
+      }
       SET_STATUS_Failure ( VKI_EFAULT );
    } else {
       SET_STATUS_from_SysRes(VG_(do_sys_sigprocmask)(tid, ARG1 /*how*/,
@@ -3922,14 +3926,18 @@ PRE(sys_sigaction)
    if (ARG2 != 0
          && ! ML_(safe_to_deref)((void *)(Addr)ARG2,
                                  sizeof(struct vki_sigaction))) {
-      VG_(umsg)("Warning: bad act handler address %p in sigaction()\n",
-                (void *)(Addr)ARG2);
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(umsg)("Warning: bad act handler address %p in sigaction()\n",
+                   (void *)(Addr)ARG2);
+      }
       SET_STATUS_Failure ( VKI_EFAULT );
    } else if ((ARG3 != 0
                && ! ML_(safe_to_deref)((void *)(Addr)ARG3,
                                        sizeof(struct vki_sigaction)))) {
-      VG_(umsg)("Warning: bad oact handler address %p in sigaction()\n",
-                (void *)(Addr)ARG3);
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(umsg)("Warning: bad oact handler address %p in sigaction()\n",
+                   (void *)(Addr)ARG3);
+      }
       SET_STATUS_Failure ( VKI_EFAULT );
    } else {
       if (ARG2 != 0) {

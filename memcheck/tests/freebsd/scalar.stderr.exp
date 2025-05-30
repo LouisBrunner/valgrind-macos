@@ -2429,7 +2429,6 @@ Syscall param sigprocmask(oset) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Warning: Bad oldset address 0x........ in sigprocmask
 ---------------------------------------------------------
 340:         SYS_sigprocmask 3s 2m
 ---------------------------------------------------------
@@ -2450,7 +2449,6 @@ Syscall param sigprocmask(oset) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Warning: Bad set handler address 0x........ in sigprocmask
 ---------------------------------------------------------
 341:          SYS_sigsuspend 1s 1m
 ---------------------------------------------------------
@@ -3227,7 +3225,6 @@ Syscall param sigaction(oact) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Warning: bad act handler address 0x........ in sigaction()
 ---------------------------------------------------------
 417:           SYS_sigreturn 1s 1m
 ---------------------------------------------------------

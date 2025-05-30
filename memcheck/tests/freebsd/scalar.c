@@ -1405,9 +1405,6 @@ int main(void)
    GO(SYS_kenv, "(KENV_DUMP) 4s 0m");
    SY(SYS_kenv, x0+3, x0+2, x0+3, x0+4); FAIL;
 
-   GO(SYS_kenv, "(bogus) 4s 0m");
-   SY(SYS_kenv, x0+20, x0+2, x0+3, x0+4); FAIL;
-
    /* SYS_lchflags                391 */
    GO(SYS_lchflags, "2s 1m");
    SY(SYS_lchflags, x0+1, x0+2); FAIL;

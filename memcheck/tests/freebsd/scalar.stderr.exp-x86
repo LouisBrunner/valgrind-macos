@@ -1481,7 +1481,6 @@ Syscall param sysctl(oldlenp) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Warning: Bad oldlenp address 0x........ in sysctl
 ---------------------------------------------------------
 202:            SYS___sysctl (putnew) 4s 2m
 ---------------------------------------------------------
@@ -2990,22 +2989,6 @@ Syscall param kenv(value) contains uninitialised byte(s)
 Syscall param kenv(len) contains uninitialised byte(s)
    ...
 
----------------------------------------------------------
-390:                SYS_kenv (bogus) 4s 0m
----------------------------------------------------------
-Syscall param kenv(action) contains uninitialised byte(s)
-   ...
-
-Syscall param kenv(name) contains uninitialised byte(s)
-   ...
-
-Syscall param kenv(value) contains uninitialised byte(s)
-   ...
-
-Syscall param kenv(len) contains uninitialised byte(s)
-   ...
-
-Warning: Bad action 20 in kenv
 ---------------------------------------------------------
 391:            SYS_lchflags 2s 1m
 ---------------------------------------------------------

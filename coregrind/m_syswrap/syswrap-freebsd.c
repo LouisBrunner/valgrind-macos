@@ -2082,8 +2082,10 @@ PRE(sys___sysctl)
          if (ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(vki_size_t))) {
             PRE_MEM_WRITE("sysctl(oldp)", (Addr)ARG3, *(vki_size_t *)ARG4);
          } else {
-            VG_(dmsg)("Warning: Bad oldlenp address %p in sysctl\n",
-                      (void *)(Addr)ARG4);
+             if (VG_(clo_verbosity) >= 1) {
+               VG_(dmsg)("Warning: Bad oldlenp address %p in sysctl\n",
+                         (void *)(Addr)ARG4);
+             }
             SET_STATUS_Failure ( VKI_EFAULT );
          }
       } else {
@@ -3691,7 +3693,9 @@ PRE(sys_kenv)
    case VKI_KENV_DUMP:
       break;
    default:
-      VG_(dmsg)("Warning: Bad action %" FMT_REGWORD "u in kenv\n", ARG1);
+      VG_(message)(Vg_UserMsg, "unhandled kenv cmd %" FMT_REGWORD "u", ARG1);
+      VG_(unimplemented) ("unhandled kenv cmd");
+      break;
    }
 }
 

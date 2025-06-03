@@ -1,0 +1,18 @@
+#!/bin/awk -f
+
+# Filter out stuff like the following, since it is expected output for the select03 testcase:
+
+# ==22396== 
+# ==22396== Process terminating with default action of signal 11 (SIGSEGV): dumping core
+# ==22396==  Bad permissions for mapped region at address 0x483B000
+# ==22396==    at 0x4946397: select (in /usr/lib64/libc.so.6)
+# ==22396==    by 0x4020BA: run (select_var.h:26)
+# ==22396==    by 0x40B30C: fork_testrun (tst_test.c:1566)
+# ==22396==    by 0x40D4EF: tst_run_tcases (tst_test.c:1918)
+# ==22396==    by 0x401D4D: main (tst_test.h:725)
+
+skip = 0
+/==[0-9][0-9]*==/ { skip = 1 }
+/Process terminating with default action of signal 11/ { skip = 1; skipblock=1 }
+/by.*main.*tst_test.h/ { skip = 1; skipblock=0 }
+!skip && !skipblock { print }

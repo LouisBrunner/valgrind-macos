@@ -1,0 +1,29 @@
+#!/bin/awk -f
+
+# Filter out stuff like the following, since it is expected output for the select03 testcase:
+
+# mmap18: unempty log2.filtered:
+# ==24613== 
+# ==24613== Process terminating with default action of signal 11 (SIGSEGV): dumping core
+# ==24613==  Access not within mapped region at address 0x4B3AFF8
+# ==24613==    at 0x401F86: check_depth_recursive (mmap18.c:118)
+# ==24613==  If you believe this happened as a result of a stack
+# ==24613==  overflow in your program's main thread (unlikely but
+# ==24613==  possible), you can try to increase the size of the
+# ==24613==  main thread stack using the --main-stacksize= flag.
+# ==24613==  The main thread stack size used in this run was 8388608.
+# ==24620== 
+# ==24620== Process terminating with default action of signal 11 (SIGSEGV): dumping core
+# ==24620==  Access not within mapped region at address 0x4B2EFF8
+# ==24620==    at 0x401F86: check_depth_recursive (mmap18.c:118)
+# ==24620==  If you believe this happened as a result of a stack
+# ==24620==  overflow in your program's main thread (unlikely but
+# ==24620==  possible), you can try to increase the size of the
+# ==24620==  main thread stack using the --main-stacksize= flag.
+# ==24620==  The main thread stack size used in this run was 8388608.
+
+skip = 0
+/==[0-9][0-9]*==/ { skip = 1 }
+/Process terminating with default action of signal 11/ { skip = 1; skipblock=1 }
+/The main thread stack size used in this run was/ { skip = 1; skipblock=0 }
+!skip && !skipblock { print }

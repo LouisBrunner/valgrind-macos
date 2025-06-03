@@ -1,5 +1,7 @@
+# Exclude the following syscall tests because they are too slow:
 bind06
 epoll-ltp
+fork13
 fork14
 futex_cmp_requeue01
 futex_cmp_requeue02

@@ -155,8 +155,8 @@ endif
 endif
 
 # Linux Test Project
-LTP_VERSION=20250130
-LTP_SHA256_SUM=02e4ec326be54c3fd92968229a468c02c665d168a8a673edc38a891f7395ae10
+LTP_VERSION=20250530
+LTP_SHA256_SUM=27586ba78eac1e40cd422add2842f1ad70f09fea55da3bd6a25e10feb786d4f2
 LTP_TAR_NAME=ltp-full-$(LTP_VERSION).tar.xz
 LTP_URL=https://github.com/linux-test-project/ltp/releases/download/$(LTP_VERSION)/$(LTP_TAR_NAME)
 LTP_TAR=$(AUX_CHECK_DIR)/$(LTP_TAR_NAME)

@@ -4296,6 +4296,15 @@ PRE(sys_membarrier)
    PRE_REG_READ1(int, "membarrier", int, flags);
 }
 
+PRE(sys_mseal)
+{
+    /* int mseal(void *addr, size_t len, unsigned long flags) */
+    PRINT("sys_mseal ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, )", ARG1, ARG2, ARG3);
+    PRE_REG_READ3(int, "mseal", void *, addr,  vki_size_t, len, int, flags);
+    if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mseal"))
+       SET_STATUS_Failure(VKI_ENOMEM);
+}
+
 PRE(sys_syncfs)
 {
    *flags |= SfMayBlock;

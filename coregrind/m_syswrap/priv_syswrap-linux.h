@@ -355,6 +355,9 @@ DECL_TEMPLATE(linux, sys_pidfd_getfd);
 // Since Linux 6.6
 DECL_TEMPLATE(linux, sys_fchmodat2);
 
+// Since Linux 6.10
+DECL_TEMPLATE(linux, sys_mseal);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

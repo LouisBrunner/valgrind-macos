@@ -460,6 +460,7 @@
 #define __NR_set_mempolicy_home_node    (__NR_Linux + 450)
 #define __NR_cachestat                  (__NR_Linux + 451)
 #define __NR_fchmodat2                  (__NR_Linux + 452)
+#define __NR_mseal                      (__NR_Linux + 462)
 /*
  * Offset of the last Linux o32 flavoured syscall
  */

@@ -838,6 +838,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_cachestat, sys_cachestat),
    LINX_ (__NR_fchmodat2, sys_fchmodat2),
    LINXY (__NR_userfaultfd, sys_userfaultfd),
+   LINX_ (__NR_mseal, sys_mseal),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

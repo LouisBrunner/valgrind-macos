@@ -56,5 +56,6 @@
 
 #define __NR_cachestat		451
 #define __NR_fchmodat2		452
+#define __NR_mseal		462
 
 #endif

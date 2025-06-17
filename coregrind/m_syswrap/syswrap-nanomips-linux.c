@@ -842,6 +842,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_landlock_restrict_self, sys_landlock_restrict_self),
    LINXY (__NR_cachestat,              sys_cachestat),
    LINX_ (__NR_fchmodat2,              sys_fchmodat2),
+   LINX_ (__NR_mseal,                  sys_mseal),
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

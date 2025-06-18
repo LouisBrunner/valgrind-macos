@@ -100,13 +100,10 @@ typedef enum {
 } s390_opnd_t;
 
 
-/* Naming convention for operand locations:
-   R    - GPR
-   I    - immediate value
-   M    - memory (any Amode may be used)
-*/
-
-/* An operand that is either in a GPR or is addressable via a BX20 amode */
+/* An operand that is either
+   R  located in a GPR   or
+   M  located in memory and addressable via any amode   or
+   I  an immediate integer constant */
 typedef struct {
    s390_opnd_t tag;
    union {

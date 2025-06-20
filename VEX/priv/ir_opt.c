@@ -1262,7 +1262,6 @@ static Bool notBool ( Bool b )
 static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 {
    switch (op) {
-      case Iop_CmpNE32: return IRExpr_Const(IRConst_U1(toBool(0)));
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
       case Iop_Sub32:
@@ -1278,14 +1277,23 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
    }
 }
 
+/* Make a Boolean False value */
+static inline IRExpr* mkFalse(void)
+{
+   return IRExpr_Const(IRConst_U1(toBool(0)));
+}
+
+/* Make a Boolean True value */
+static inline IRExpr* mkTrue(void)
+{
+   return IRExpr_Const(IRConst_U1(toBool(1)));
+}
+
 /* Make a value containing all 1-bits, which has the same type as the
    result of the given primop. */
 static IRExpr* mkOnesOfPrimopResultType ( IROp op )
 {
    switch (op) {
-      case Iop_CmpEQ32:
-      case Iop_CmpEQ64:
-         return IRExpr_Const(IRConst_U1(toBool(1)));
       case Iop_Or8:
          return IRExpr_Const(IRConst_U8(0xFF));
       case Iop_Or16:
@@ -1440,6 +1448,13 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(u32));
             break;
          }
+         case Iop_8Sto64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            u64 <<= 56;
+            u64 = (Long)u64 >> 56;   /* signed shift */
+            e2 = IRExpr_Const(IRConst_U64(u64));
+            break;
+         }
          case Iop_16Sto32: {
             UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
             u32 <<= 16;
@@ -1474,6 +1489,12 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16));
             break;
+         case Iop_32HIto16: {
+            UInt w32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            w32 >>= 16;
+            e2 = IRExpr_Const(IRConst_U16(toUShort(w32)));
+            break;
+         }
          case Iop_32to16:
             e2 = IRExpr_Const(IRConst_U16(toUShort(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
@@ -1779,6 +1800,11 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
          switch (e->Iex.Binop.op) {
 
             /* -- Or -- */
+            case Iop_Or1:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U1
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U1))));
+               break;
             case Iop_Or8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
@@ -2432,14 +2458,31 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_ExpCmpNE8:
+            case Iop_ExpCmpNE16:
+            case Iop_ExpCmpNE32:
+            case Iop_ExpCmpNE64:
+            case Iop_CmpLT32S:
+            case Iop_CmpLT64S:
+            case Iop_CmpLE32S:
+            case Iop_CmpLE64S:
+            case Iop_CmpLT32U:
+            case Iop_CmpLT64U:
+            case Iop_CmpLE32U:
+            case Iop_CmpLE64U:
+            case Iop_CmpNE8:
+            case Iop_CmpNE16:
             case Iop_CmpNE32:
-               /* CmpNE32(t,t) ==> 0, for some IRTemp t */
+            case Iop_CmpNE64:
+               /* Integer comparisons for some kind of inequality yield
+                  'False' when both operands are identical. */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  e2 = mkFalse();
                   break;
                }
                /* CmpNE32(1Uto32(b), 0) ==> b */
-               if (isZeroU32(e->Iex.Binop.arg2)) {
+               if (e->Iex.Binop.op == Iop_CmpNE32 &&
+                   isZeroU32(e->Iex.Binop.arg2)) {
                   IRExpr* a1 = chase(env, e->Iex.Binop.arg1);
                   if (a1 && a1->tag == Iex_Unop 
                          && a1->Iex.Unop.op == Iop_1Uto32) {
@@ -2449,10 +2492,17 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
-            // in total 32 bits
+            case Iop_CmpEQ8:
+            case Iop_CmpEQ16:
             case Iop_CmpEQ32:
-            // in total 64 bits
             case Iop_CmpEQ64:
+               /* CmpEQ8/16/32/64(t,t) ==> 1, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = mkTrue();
+               }
+               break;
+
+            // in total 64 bits
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ16x4:
             case Iop_CmpEQ32x2:

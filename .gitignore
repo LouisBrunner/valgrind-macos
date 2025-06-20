@@ -1676,6 +1676,7 @@
 /none/tests/track-fds-exec-children
 /none/tests/track_new
 /none/tests/track_std
+/none/tests/track_bad
 /none/tests/unit_debuglog
 /none/tests/use_after_close
 /none/tests/valgrind_cpp_test

@@ -113,8 +113,12 @@ static void usage_NORETURN ( int need_help )
 "    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]\n"
 "         where event is one of:\n"
 "           startup exit abexit valgrindabexit all none\n"
-"    --track-fds=no|yes|all    track open file descriptors? [no]\n"
-"                              all includes reporting inherited file descriptors\n"
+"    --track-fds=no|yes|all|bad track open file descriptors? [no]\n"
+"                              all also reports on open inherited file\n"
+"                              descriptors at exit (e.g. stdin/out/err)\n"
+"                              bad only reports on file descriptor usage\n"
+"                              errors and doesn't list open file descriptors\n"
+"                              at exit\n"
 "    --modify-fds=no|yes|high  modify newly open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
@@ -643,6 +647,8 @@ static void process_option (Clo_Mode mode,
          VG_(clo_track_fds) = 2;
       else if (VG_(strcmp)(tmp_str, "no") == 0)
          VG_(clo_track_fds) = 0;
+      else if (VG_(strcmp)(tmp_str, "bad") == 0)
+         VG_(clo_track_fds) = 3;
       else
          VG_(fmsg_bad_option)(arg,
             "Bad argument, should be 'yes', 'all' or 'no'\n");
@@ -2324,7 +2330,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    }
 
    /* Print out file descriptor summary and stats. */
-   if (VG_(clo_track_fds))
+   if (VG_(clo_track_fds) && VG_(clo_track_fds) < 3)
       VG_(show_open_fds)("at exit");
 
    /* Call the tool's finalisation function.  This makes Memcheck's

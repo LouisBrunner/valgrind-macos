@@ -24,6 +24,7 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 338803  Handling of dwz debug alt files or cross-CU is broken
+493434  Add --track-fds=bad mode (no "leak" tracking)
 503098  Incorrect NAN-boxing for float registers in RISC-V
 503641  close_range syscalls started failing with 3.25.0
 503677  duplicated-cond compiler warning in dis_RV64M

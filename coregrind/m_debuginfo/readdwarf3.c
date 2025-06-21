@@ -3617,18 +3617,27 @@ static Bool parse_inl_DIE (
             sub.isSubprogRef = False;
          }
       }
+      /* Clang doesn't give a name for some artificial subprograms.
+         Just use "<artificial>" as the name.  */
+      if (!name_or_spec && sub.isArtificial) {
+         name_or_spec = True;
+         fn = ML_(addStr)(cc->di, "<artificial>", -1);
+         sub.ref.fn = fn;
+         sub.isSubprogRef = False;
+      }
       if (name_or_spec)
          ML_(addSubprogram) (cc->di, &sub);
-      else {
+      else if (nf_i > 1 /* Clang produces empty subprograms, no attrs.  */
+               && VG_(clo_verbosity) >= 1) {
          /* Only warn once per debug file.  */
          static HChar *last_dbgname;
          HChar *dbgname = cc->di->fsm.dbgname
             ? cc->di->fsm.dbgname : cc->di->fsm.filename;
          if (last_dbgname != dbgname) {
-            if (VG_(clo_verbosity) >= 1)
-               VG_(message)(Vg_DebugMsg, "Warning: DW_TAG_subprogram with"
-                            " no DW_AT_name and no DW_AT_specification or"
-                            " DW_AT_abstract_origin in %s\n", dbgname);
+            VG_(message)(Vg_DebugMsg,
+                         "Warning: <%lx> DW_TAG_subprogram with no"
+                         " DW_AT_name and no DW_AT_specification or"
+                         " DW_AT_abstract_origin in %s\n", posn, dbgname);
             last_dbgname = dbgname;
          }
       }

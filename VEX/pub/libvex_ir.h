@@ -521,7 +521,7 @@ typedef
                          // of which lo half is div and hi half is mod
       Iop_DivModS64to32, // ditto, signed
 
-      Iop_DivModU128to64, // :: V128,I64 -> V128
+      Iop_DivModU128to64, // :: I128,I64 -> I128
                           // of which lo half is div and hi half is mod
       Iop_DivModS128to64, // ditto, signed
 

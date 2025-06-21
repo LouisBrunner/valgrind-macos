@@ -2464,12 +2464,8 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             case Iop_ExpCmpNE64:
             case Iop_CmpLT32S:
             case Iop_CmpLT64S:
-            case Iop_CmpLE32S:
-            case Iop_CmpLE64S:
             case Iop_CmpLT32U:
             case Iop_CmpLT64U:
-            case Iop_CmpLE32U:
-            case Iop_CmpLE64U:
             case Iop_CmpNE8:
             case Iop_CmpNE16:
             case Iop_CmpNE32:
@@ -2492,11 +2488,16 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_CmpLE32U:
+            case Iop_CmpLE64U:
+            case Iop_CmpLE32S:
+            case Iop_CmpLE64S:
             case Iop_CmpEQ8:
             case Iop_CmpEQ16:
             case Iop_CmpEQ32:
             case Iop_CmpEQ64:
                /* CmpEQ8/16/32/64(t,t) ==> 1, for some IRTemp t */
+               /* CmpLE32U/64U/32S/64S(t,t) ==> 1, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkTrue();
                }

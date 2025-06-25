@@ -301,11 +301,17 @@ typedef enum {
    S390_NNPA_MAX               = 0x15,
    S390_NNPA_LOG               = 0x20,
    S390_NNPA_EXP               = 0x21,
+   S390_NNPA_SQRT              = 0x22,
+   S390_NNPA_INVSQRT           = 0x23,
    S390_NNPA_RELU              = 0x31,
    S390_NNPA_TANH              = 0x32,
    S390_NNPA_SIGMOID           = 0x33,
    S390_NNPA_SOFTMAX           = 0x34,
+   S390_NNPA_GELU              = 0x35,
    S390_NNPA_BATCHNORM         = 0x40,
+   S390_NNPA_MOMENTS           = 0x41,
+   S390_NNPA_LAYERNORM         = 0x42,
+   S390_NNPA_NORM              = 0x43,
    S390_NNPA_MAXPOOL2D         = 0x50,
    S390_NNPA_AVGPOOL2D         = 0x51,
    S390_NNPA_LSTMACT           = 0x60,
@@ -313,6 +319,9 @@ typedef enum {
    S390_NNPA_CONVOLUTION       = 0x70,
    S390_NNPA_MATMUL_OP         = 0x71,
    S390_NNPA_MATMUL_OP_BCAST23 = 0x72,
+   S390_NNPA_MATMUL_OP_BCAST1  = 0x73,
+   S390_NNPA_TRANSFORM         = 0xf0,
+   S390_NNPA_REDUCE            = 0xf1,
 } s390_nnpa_function_t;
 
 /* Suported NNPA functions */
@@ -321,30 +330,51 @@ static const ULong NNPA_functions[] = {
     S390_SETBIT(S390_NNPA_SUB) | S390_SETBIT(S390_NNPA_MUL) |
     S390_SETBIT(S390_NNPA_DIV) | S390_SETBIT(S390_NNPA_MIN) |
     S390_SETBIT(S390_NNPA_MAX) | S390_SETBIT(S390_NNPA_LOG) |
-    S390_SETBIT(S390_NNPA_EXP) | S390_SETBIT(S390_NNPA_RELU) |
+    S390_SETBIT(S390_NNPA_EXP) | S390_SETBIT(S390_NNPA_SQRT) |
+    S390_SETBIT(S390_NNPA_INVSQRT) | S390_SETBIT(S390_NNPA_RELU) |
     S390_SETBIT(S390_NNPA_TANH) | S390_SETBIT(S390_NNPA_SIGMOID) |
-    S390_SETBIT(S390_NNPA_SOFTMAX)),
-   (S390_SETBIT(S390_NNPA_BATCHNORM) | S390_SETBIT(S390_NNPA_MAXPOOL2D) |
-    S390_SETBIT(S390_NNPA_AVGPOOL2D) | S390_SETBIT(S390_NNPA_LSTMACT) |
-    S390_SETBIT(S390_NNPA_GRUACT) | S390_SETBIT(S390_NNPA_CONVOLUTION) |
-    S390_SETBIT(S390_NNPA_MATMUL_OP) |
-    S390_SETBIT(S390_NNPA_MATMUL_OP_BCAST23)),
+    S390_SETBIT(S390_NNPA_SOFTMAX) | S390_SETBIT(S390_NNPA_GELU)),
+   (S390_SETBIT(S390_NNPA_BATCHNORM) | S390_SETBIT(S390_NNPA_MOMENTS) |
+    S390_SETBIT(S390_NNPA_LAYERNORM) | S390_SETBIT(S390_NNPA_NORM) |
+    S390_SETBIT(S390_NNPA_MAXPOOL2D) | S390_SETBIT(S390_NNPA_AVGPOOL2D) |
+    S390_SETBIT(S390_NNPA_LSTMACT) | S390_SETBIT(S390_NNPA_GRUACT) |
+    S390_SETBIT(S390_NNPA_CONVOLUTION) | S390_SETBIT(S390_NNPA_MATMUL_OP) |
+    S390_SETBIT(S390_NNPA_MATMUL_OP_BCAST23) |
+    S390_SETBIT(S390_NNPA_MATMUL_OP_BCAST1)),
+   0,
+   (S390_SETBIT(S390_NNPA_TRANSFORM) | S390_SETBIT(S390_NNPA_REDUCE)),
 };
 
 /* Supported parameter block formats */
 static const ULong NNPA_ipbf[] = {
-   (S390_SETBIT(0)),
+   (S390_SETBIT(0) | S390_SETBIT(1)),
 };
 
 /* Supported data types and data layout formats */
+enum {
+   S390_NNPA_TYPE_1     = 0, // data type 1 (16 bit)
+   S390_NNPA_TYPE_BFP32 = 6,
+   S390_NNPA_TYPE_INT8  = 8,
+   S390_NNPA_TYPE_INT32 = 10,
+};
+
+enum {
+   S390_NNPA_4D_FEATURE_TENSOR = 0,
+   S390_NNPA_4D_KERNEL_TENSOR  = 1,
+   S390_NNPA_4D_WEIGHTS_TENSOR = 2,
+   S390_NNPA_4D_GENERIC_TENSOR = 31,
+};
+
 static const ULong NNPA_dtypes_layouts[] = {
    /* Data types */
-   (S390_SETBIT(0) | // data type 1 (16 bit)
+   (S390_SETBIT(S390_NNPA_TYPE_1) | S390_SETBIT(S390_NNPA_TYPE_BFP32) |
+    S390_SETBIT(S390_NNPA_TYPE_INT8) | S390_SETBIT(S390_NNPA_TYPE_INT32) |
 
     /* Data layout formats */
-    S390_SETBIT(32 + 0) | // 4D-feature tensor
-    S390_SETBIT(32 + 1)   // 4D-kernel tensor
-    ),
+    S390_SETBIT(32 + S390_NNPA_4D_FEATURE_TENSOR) |
+    S390_SETBIT(32 + S390_NNPA_4D_KERNEL_TENSOR) |
+    S390_SETBIT(32 + S390_NNPA_4D_WEIGHTS_TENSOR) |
+    S390_SETBIT(32 + S390_NNPA_4D_GENERIC_TENSOR)),
 };
 
 static const ULong NNPA_conversions[] = {
@@ -360,10 +390,15 @@ struct s390_NNPA_parms_qaf {
    UInt  mdis;
    ULong mts;
    ULong conversions;
-   ULong reserved2[22];
+   ULong reserved2;
+   UInt  mdnis[4];
+   struct {
+      ULong reserved[19];
+   } reserved3;
 };
 
-struct s390_NNPA_tensor0 {
+/* Tensor descriptor, common for all data-layout formats */
+struct s390_NNPA_tensor {
    UChar  layout;
    UChar  dtype;
    UShort reserved1;
@@ -372,21 +407,21 @@ struct s390_NNPA_tensor0 {
    ULong  address;
 };
 
-struct s390_NNPA_parms0 {
-   ULong                    pbvn : 16;
-   ULong                    mvn : 8;
-   ULong                    ribm : 24;
-   ULong                    reserved0 : 15;
-   ULong                    cf : 1;
-   ULong                    reserved1[6];
-   ULong                    save_area_address;
-   struct s390_NNPA_tensor0 out[2];
-   struct s390_NNPA_tensor0 reserved2[2];
-   struct s390_NNPA_tensor0 in[3];
-   ULong                    reserved3[12];
-   UInt                     param[5];
-   UInt                     reserved4;
-   ULong                    reserved5[13];
+/* Parameter block format 0 or 1 */
+struct s390_NNPA_parms {
+   ULong                   pbvn : 16;
+   ULong                   mvn : 8;
+   ULong                   ribm : 24;
+   ULong                   reserved0 : 15;
+   ULong                   cf : 1;
+   ULong                   reserved1[6];
+   ULong                   save_area_address;
+   struct s390_NNPA_tensor out[2];
+   struct s390_NNPA_tensor reserved2[2];
+   struct s390_NNPA_tensor in[3];
+   ULong                   reserved3[12];
+   UInt                    param[16];
+   ULong                   reserved4[8];
 };
 
 enum {
@@ -418,135 +453,145 @@ static const char* const s390_NNPA_errmsg_access[s390_NNPA_message_n] = {
 
 struct s390_NNPA_mem_dimensions {
    UChar layout;
-   ULong dim[5];  // total dimensions
-   ULong used[4]; // used dimensions, without padding
-   ULong step[5];
-   ULong last_dim4_size;
+   ULong dim[4];
+   ULong total_size;
+   ULong used_sticks; // occupied sticks per next-higher dimension
+   ULong stick_fill;
+   ULong last_stick_fill;
 };
 
-/* Determine the 5 dimensions used to represent the tensor data in memory */
+/* Determine the dimensions used to represent the tensor data in memory */
 static enum ExtensionError
-NNPA_tensor0_size(const struct s390_NNPA_tensor0*  t,
-                  UInt                             msg_idx,
-                  struct s390_NNPA_mem_dimensions* out_md)
+NNPA_tensor_size(const struct s390_NNPA_tensor*   t,
+                 UInt                             msg_idx,
+                 struct s390_NNPA_mem_dimensions* out_md)
 {
    struct s390_NNPA_mem_dimensions md;
    ULong                           elem_size;
+   ULong                           eps;
+
+   switch (t->dtype) {
+   case S390_NNPA_TYPE_INT8:
+      elem_size = 1;
+      break;
+   case S390_NNPA_TYPE_1:
+      elem_size = 2;
+      break;
+   case S390_NNPA_TYPE_BFP32:
+   case S390_NNPA_TYPE_INT32:
+      elem_size = 4;
+      break;
+   default:
+      return INSN_ERR(s390_NNPA_errmsg_dtype[msg_idx]);
+   }
+   eps = 128 / elem_size;
 
    md.layout = t->layout;
-   if (t->dtype == 0)
-      elem_size = 2;
-   else
-      return INSN_ERR(s390_NNPA_errmsg_dtype[msg_idx]);
-
    switch (t->layout) {
-   case 0: // 4D-feature tensor
-      md.dim[0] = md.used[0] = t->dim4;
-      md.dim[1] = md.used[1] = (t->dim1 + 63) / 64;
-      md.dim[2] = md.used[2] = t->dim3;
-      md.dim[3]              = (t->dim2 + 31) / 32 * 32;
-      md.used[3]             = t->dim2;
-      md.dim[4]              = 64;
-      md.last_dim4_size      = elem_size * (t->dim1 % 64);
+   case S390_NNPA_4D_FEATURE_TENSOR:
+      md.dim[0]      = t->dim4;
+      md.dim[1]      = (t->dim1 + eps - 1) / eps;
+      md.used_sticks = t->dim2;
+      goto common_tensor_dimensions;
+   case S390_NNPA_4D_KERNEL_TENSOR:
+      md.dim[0]      = (t->dim1 + eps - 1) / eps;
+      md.dim[1]      = t->dim4;
+      md.used_sticks = t->dim2;
+      goto common_tensor_dimensions;
+   case S390_NNPA_4D_WEIGHTS_TENSOR:
+      elem_size *= 2;
+      eps /= 2;
+      md.dim[0]      = t->dim4;
+      md.dim[1]      = (t->dim1 + eps - 1) / eps;
+      md.used_sticks = (t->dim2 + 1) / 2;
+   common_tensor_dimensions:
+      md.dim[2]          = t->dim3;
+      md.dim[3]          = (md.used_sticks + 31) / 32 * 32;
+      md.stick_fill      = elem_size * (t->dim1 >= eps ? eps : t->dim1);
+      md.last_stick_fill = elem_size * ((t->dim1 - 1) % eps + 1);
       break;
-   case 1: // 4D-kernel tensor
-      md.dim[0] = md.used[0] = (t->dim1 + 63) / 64;
-      md.dim[1] = md.used[1] = t->dim4;
-      md.dim[2] = md.used[2] = t->dim3;
-      md.dim[3]              = (t->dim2 + 31) / 32 * 32;
-      md.used[3]             = t->dim2;
-      md.dim[4]              = 64;
-      md.last_dim4_size      = elem_size * (t->dim1 % 64);
+   case S390_NNPA_4D_GENERIC_TENSOR:
+      md.dim[0] = t->dim4;
+      md.dim[1] = t->dim3;
+      md.dim[2] = t->dim2;
+      md.dim[3] = t->dim1;
+      eps       = 1;
       break;
    default:
       return INSN_ERR(s390_NNPA_errmsg_layout[msg_idx]);
    }
-   md.step[4] = elem_size * md.dim[4];
-   md.step[3] = md.step[4] * md.dim[3];
-   md.step[2] = md.step[3] * md.dim[2];
-   md.step[1] = md.step[2] * md.dim[1];
-   md.step[0] = md.step[1] * md.dim[0]; // total size
-   *out_md    = md;
+   md.total_size =
+      elem_size * eps * md.dim[3] * md.dim[2] * md.dim[1] * md.dim[0];
+   *out_md = md;
    return ExtErr_OK;
 }
 
-/* Determine the size of the non-pad elements in the last dimension */
-static ULong NNPA_mem_dim4_size(const struct s390_NNPA_mem_dimensions* md,
-                                ULong                                  d0,
-                                ULong                                  d1)
-{
-   switch (md->layout) {
-   case 0: // 4D-feature tensor
-      return d1 + 1 == md->dim[1] ? md->last_dim4_size : md->step[4];
-   case 1: // 4D-kernel tensor
-      return d0 + 1 == md->dim[0] ? md->last_dim4_size : md->step[4];
-   }
-   return 0;
-}
-
-static enum ExtensionError NNPA_pre_read_tensor0(
-   ThreadState* tst, UInt msg_idx, const struct s390_NNPA_tensor0* t)
+/* Track a tensor's memory regions with PRE_MEM_READ or POST_MEM_WRITE */
+static enum ExtensionError NNPA_track_tensor(ThreadState* tst,
+                                             UInt         msg_idx,
+                                             const struct s390_NNPA_tensor* t,
+                                             Bool do_write)
 {
    struct s390_NNPA_mem_dimensions md;
    enum ExtensionError             ret;
+   ULong                           addr = t->address;
 
-   ret = NNPA_tensor0_size(t, msg_idx, &md);
+   ret = NNPA_tensor_size(t, msg_idx, &md);
    if (ret != ExtErr_OK)
       return ret;
 
-   for (ULong d0 = 0; d0 < md.used[0]; d0++) {
-      for (ULong d1 = 0; d1 < md.used[1]; d1++) {
-         for (ULong d2 = 0; d2 < md.used[2]; d2++) {
-            for (ULong d3 = 0; d3 < md.used[3]; d3++) {
-               ULong addr = t->address + d0 * md.step[1] + d1 * md.step[2] +
-                            d2 * md.step[3] + d3 * md.step[4];
-               ULong len = NNPA_mem_dim4_size(&md, d0, d1);
-               PRE_MEM_READ(tst, s390_NNPA_errmsg_access[msg_idx], addr, len);
+   switch (md.layout) {
+   case S390_NNPA_4D_FEATURE_TENSOR:
+   case S390_NNPA_4D_KERNEL_TENSOR:
+   case S390_NNPA_4D_WEIGHTS_TENSOR:
+      for (ULong d0 = 0; d0 < md.dim[0]; d0++) {
+         for (ULong d1 = 0; d1 < md.dim[1]; d1++) {
+            ULong len;
+            switch (md.layout) {
+            case S390_NNPA_4D_FEATURE_TENSOR:
+            case S390_NNPA_4D_WEIGHTS_TENSOR:
+               len = d1 + 1 == md.dim[1] ? md.last_stick_fill : md.stick_fill;
+               break;
+            case S390_NNPA_4D_KERNEL_TENSOR:
+               len = d0 + 1 == md.dim[0] ? md.last_stick_fill : md.stick_fill;
+               break;
+            }
+            for (ULong d2 = 0; d2 < md.dim[2]; d2++) {
+               for (ULong d3 = 0; d3 < md.used_sticks; d3++) {
+                  if (md.layout == S390_NNPA_4D_WEIGHTS_TENSOR &&
+                      d3 == md.used_sticks - 1 && t->dim2 % 2 != 0) {
+                     // even elements only
+                     for (ULong i = 0; i < len - 1; i += 2) {
+                        if (do_write) {
+                           POST_MEM_WRITE(tst, addr + i, 1);
+                        } else {
+                           PRE_MEM_READ(tst, s390_NNPA_errmsg_access[msg_idx],
+                                        addr + i, 1);
+                        }
+                     }
+                  } else if (do_write) {
+                     POST_MEM_WRITE(tst, addr, len);
+                  } else {
+                     PRE_MEM_READ(tst, s390_NNPA_errmsg_access[msg_idx], addr,
+                                  len);
+                  }
+                  addr += 128;
+               }
+               addr += 128 * (md.dim[3] - md.used_sticks);
             }
          }
       }
-   }
-   return ExtErr_OK;
-}
-
-static UWord NNPA_pre_write_tensor0(ThreadState*                    tst,
-                                    UInt                            msg_idx,
-                                    const struct s390_NNPA_tensor0* t)
-{
-   struct s390_NNPA_mem_dimensions md;
-   enum ExtensionError             ret;
-
-   ret = NNPA_tensor0_size(t, msg_idx, &md);
-   if (ret != ExtErr_OK)
-      return ret;
-
-   PRE_MEM_WRITE(tst, "NNPA(out_tensor)", t->address, md.step[0]);
-   return ExtErr_OK;
-}
-
-static void NNPA_post_write_tensor0(ThreadState*                    tst,
-                                    UInt                            msg_idx,
-                                    const struct s390_NNPA_tensor0* t)
-{
-   struct s390_NNPA_mem_dimensions md;
-   enum ExtensionError             ret;
-
-   ret = NNPA_tensor0_size(t, msg_idx, &md);
-   if (ret != ExtErr_OK)
-      return;
-
-   for (ULong d0 = 0; d0 < md.used[0]; d0++) {
-      for (ULong d1 = 0; d1 < md.used[1]; d1++) {
-         for (ULong d2 = 0; d2 < md.used[2]; d2++) {
-            for (ULong d3 = 0; d3 < md.used[3]; d3++) {
-               ULong addr = t->address + d0 * md.step[1] + d1 * md.step[2] +
-                            d2 * md.step[3] + d3 * md.step[4];
-               ULong len = NNPA_mem_dim4_size(&md, d0, d1);
-               POST_MEM_WRITE(tst, addr, len);
-            }
-         }
+      break;
+   case S390_NNPA_4D_GENERIC_TENSOR:
+      if (do_write) {
+         POST_MEM_WRITE(tst, t->address, md.total_size);
+      } else {
+         PRE_MEM_READ(tst, s390_NNPA_errmsg_access[msg_idx], t->address,
+                      md.total_size);
       }
+      break;
    }
+   return ExtErr_OK;
 }
 
 static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
@@ -571,16 +616,21 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
                             NNPA_dtypes_layouts, sizeof(NNPA_dtypes_layouts));
       s390_filter_functions(&parms->conversions, sizeof(ULong),
                             NNPA_conversions, sizeof(NNPA_conversions));
+      // Clear reserved fields
+      parms->reserved1 = 0;
+      parms->reserved2 = 0;
+      parms->reserved3 = (__typeof__(parms->reserved3)){0};
    } else {
-      struct s390_NNPA_parms0*      parms          = (void*)parms_addr;
-      const struct s390_NNPA_parms0 orig_parms     = *parms;
-      ULong                         save_area_size = 0;
-      UInt                          in_tensors;
-      UInt                          out_tensors;
+      struct s390_NNPA_parms*      parms          = (void*)parms_addr;
+      const struct s390_NNPA_parms orig_parms     = *parms;
+      ULong                        save_area_size = 0;
+      UInt                         in_tensors;
+      UInt                         out_tensors;
+      enum ExtensionError          retval;
 
       parms_len = 4096;
       PRE_MEM_READ(tst, "NNPA(parms)", parms_addr,
-                   sizeof(struct s390_NNPA_parms0));
+                   sizeof(struct s390_NNPA_parms));
       if (parms->cf) {
          PRE_MEM_READ(tst, "NNPA(parms.csb)", parms_addr + 512,
                       parms_len - 512);
@@ -594,28 +644,39 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
       case S390_NNPA_DIV:
       case S390_NNPA_MIN:
       case S390_NNPA_MAX:
+      case S390_NNPA_NORM:
          in_tensors  = 2;
          out_tensors = 1;
          break;
       case S390_NNPA_LOG:
       case S390_NNPA_EXP:
+      case S390_NNPA_SQRT:
+      case S390_NNPA_INVSQRT:
       case S390_NNPA_RELU:
       case S390_NNPA_TANH:
       case S390_NNPA_SIGMOID:
+      case S390_NNPA_GELU:
          in_tensors  = 1;
          out_tensors = 1;
          break;
       case S390_NNPA_SOFTMAX:
+      case S390_NNPA_REDUCE:
          in_tensors     = 1;
          out_tensors    = 1;
          save_area_size = 8192;
          break;
       case S390_NNPA_BATCHNORM:
+      case S390_NNPA_LAYERNORM:
          in_tensors  = 3;
          out_tensors = 1;
          break;
+      case S390_NNPA_MOMENTS:
+         in_tensors  = 1;
+         out_tensors = 2;
+         break;
       case S390_NNPA_MAXPOOL2D:
       case S390_NNPA_AVGPOOL2D:
+      case S390_NNPA_TRANSFORM:
          in_tensors  = 1;
          out_tensors = 1;
          break;
@@ -627,6 +688,7 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
       case S390_NNPA_CONVOLUTION:
       case S390_NNPA_MATMUL_OP:
       case S390_NNPA_MATMUL_OP_BCAST23:
+      case S390_NNPA_MATMUL_OP_BCAST1:
          in_tensors  = 3;
          out_tensors = 1;
          break;
@@ -635,16 +697,20 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
       }
 
       for (UInt i = 0; i < in_tensors; i++) {
-         enum ExtensionError retval =
-            NNPA_pre_read_tensor0(tst, s390_NNPA_message_in + i, &parms->in[i]);
+         retval = NNPA_track_tensor(tst, s390_NNPA_message_in + i,
+                                    &parms->in[i], False);
          if (retval != ExtErr_OK)
             return retval;
       }
       for (UInt i = 0; i < out_tensors; i++) {
-         enum ExtensionError retval = NNPA_pre_write_tensor0(
-            tst, s390_NNPA_message_out + i, &parms->out[i]);
+         UInt                            msg_idx = s390_NNPA_message_out + i;
+         struct s390_NNPA_mem_dimensions md;
+
+         retval = NNPA_tensor_size(&parms->out[i], msg_idx, &md);
          if (retval != ExtErr_OK)
             return retval;
+         PRE_MEM_WRITE(tst, s390_NNPA_errmsg_access[msg_idx],
+                       parms->out[i].address, md.total_size);
       }
       if (save_area_size != 0) {
          PRE_MEM_WRITE(tst, "NNPA(save_area)", parms->save_area_address,
@@ -653,8 +719,10 @@ static enum ExtensionError do_extension_NNPA(ThreadState* tst, ULong variant)
       cc = do_NNPA_insn(&gpr0, parms_addr);
       if (cc == 0) {
          for (UInt i = 0; i < out_tensors; i++) {
-            NNPA_post_write_tensor0(tst, s390_NNPA_message_out + i,
-                                    &orig_parms.out[i]);
+            retval = NNPA_track_tensor(tst, s390_NNPA_message_out + i,
+                                       &orig_parms.out[i], True);
+            if (retval != ExtErr_OK)
+               return retval;
          }
       }
    }

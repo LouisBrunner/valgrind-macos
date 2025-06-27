@@ -1182,6 +1182,8 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_cachestat,               sys_cachestat),               // 451
    LINX_(__NR_fchmodat2,               sys_fchmodat2),               // 452
+   LINX_(__NR_statmount,               sys_statmount),               // 457
+   LINX_(__NR_listmount,               sys_listmount),               // 458
    LINX_(__NR_mseal,                   sys_mseal),                   // 462
 };
 

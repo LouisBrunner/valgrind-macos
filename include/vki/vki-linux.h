@@ -5502,6 +5502,43 @@ struct vki__aio_sigset {
    vki_size_t		sigsetsize;
 };
 
+//----------------------------------------------------------------------
+// From uapi/linux/mount.h
+//----------------------------------------------------------------------
+
+struct vki_mnt_id_req {
+   __vki_u32 size;
+   __vki_u32 spare;
+   __vki_u64 mnt_id;
+   __vki_u64 param;
+   __vki_u64 mnt_ns_id;
+};
+
+struct vki_statmount {
+	__vki_u32 size;		/* Total size, including strings */
+	__vki_u32 mnt_opts;		/* [str] Mount options of the mount */
+	__vki_u64 mask;		/* What results were written */
+	__vki_u32 sb_dev_major;	/* Device ID */
+	__vki_u32 sb_dev_minor;
+	__vki_u64 sb_magic;		/* ..._SUPER_MAGIC */
+	__vki_u32 sb_flags;		/* SB_{RDONLY,SYNCHRONOUS,DIRSYNC,LAZYTIME} */
+	__vki_u32 fs_type;		/* [str] Filesystem type */
+	__vki_u64 mnt_id;		/* Unique ID of mount */
+	__vki_u64 mnt_parent_id;	/* Unique ID of parent (for root == mnt_id) */
+	__vki_u32 mnt_id_old;	/* Reused IDs used in proc/.../mountinfo */
+	__vki_u32 mnt_parent_id_old;
+	__vki_u64 mnt_attr;		/* MOUNT_ATTR_... */
+	__vki_u64 mnt_propagation;	/* MS_{SHARED,SLAVE,PRIVATE,UNBINDABLE} */
+	__vki_u64 mnt_peer_group;	/* ID of shared peer group */
+	__vki_u64 mnt_master;	/* Mount receives propagation from this ID */
+	__vki_u64 propagate_from;	/* Propagation from in current namespace */
+	__vki_u32 mnt_root;		/* [str] Root of mount relative to root of fs */
+	__vki_u32 mnt_point;	/* [str] Mountpoint relative to current root */
+	__vki_u64 mnt_ns_id;	/* ID of the mount namespace */
+	__vki_u64 __spare2[49];
+	char str[];		/* Variable size part containing strings */
+};
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

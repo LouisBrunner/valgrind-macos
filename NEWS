@@ -44,6 +44,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 504936  Add FreeBSD amd64 sysarch subcommands AMD64_SET_TLSBASE and
         AMD64_GET_TLSBASE
 505228  Wrap linux specific mseal syscall
+502968  Wrap linux specific syscalls 457 (listmount) and 458 (statmount)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

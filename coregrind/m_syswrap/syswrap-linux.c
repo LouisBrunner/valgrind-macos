@@ -4305,6 +4305,59 @@ PRE(sys_mseal)
        SET_STATUS_Failure(VKI_ENOMEM);
 }
 
+PRE(sys_statmount)
+{
+   // int syscall(SYS_statmount, struct mnt_id_req *req,
+   //             struct statmount *smbuf, size_t bufsize,
+   //             unsigned long flags);
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_statmount ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %lu,  %#" FMT_REGWORD "x)", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "statmount", struct vki_mnt_id_req *, req, struct vki_statmount *, smbuf, vki_size_t, bufsize, unsigned long, flags);
+
+   struct vki_mnt_id_req *req = (struct vki_mnt_id_req *)(Addr)ARG1;
+   if (!ML_(safe_to_deref) ((void *)&req->size, sizeof(vki_size_t)))
+      PRE_MEM_READ("statmount(req)", ARG1, sizeof(struct vki_mnt_id_req));
+   else
+      PRE_MEM_READ("statmount(req)", ARG1, req->size);
+
+   struct vki_statmount *smbuf = (struct vki_statmount *)(Addr)ARG2;
+   if (!ML_(safe_to_deref) ((void *)&smbuf->size, sizeof(struct vki_statmount)))
+      PRE_MEM_WRITE("statmount(smbuf)", ARG2, sizeof(struct vki_statmount));
+   else
+     PRE_MEM_WRITE("statmount(smbuf)", ARG2, ARG3);
+}
+
+POST(sys_statmount)
+{
+   struct vki_statmount *smbuf = (struct vki_statmount *)(Addr)ARG2;
+   POST_MEM_WRITE((Addr)smbuf, smbuf->size);
+}
+
+PRE(sys_listmount)
+{
+   // int syscall(SYS_listmount, struct mnt_id_req *req,
+   //             uint64_t *mnt_ids, size_t nr_mnt_ids,
+   //             unsigned long flags);
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_listmount ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %lu,  %#" FMT_REGWORD "x)", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "listmount", struct vki_mnt_id_req *, req, vki_uint64_t *, mnt_ids, vki_size_t, nr_mnt_ids, unsigned long, flags);
+
+   struct vki_mnt_id_req *req = (struct vki_mnt_id_req *)(Addr)ARG1;
+   if (!ML_(safe_to_deref) ((void *)&req->size, sizeof(vki_size_t)))
+      PRE_MEM_READ("listmount(req)", ARG1, sizeof(struct vki_mnt_id_req));
+   else
+      PRE_MEM_READ("listmount(req)", ARG1, req->size);
+
+   PRE_MEM_WRITE("listmount(mnt_ids)", ARG2, ARG3 * sizeof(vki_uint64_t));
+}
+
+POST(sys_listmount)
+{
+   if (RES > 0) {
+      POST_MEM_WRITE(ARG2, RES * sizeof(vki_uint64_t));
+   }
+}
+
 PRE(sys_syncfs)
 {
    *flags |= SfMayBlock;

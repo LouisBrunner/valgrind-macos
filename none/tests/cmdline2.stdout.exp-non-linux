@@ -29,7 +29,11 @@ usage: valgrind [options] prog-and-args
          where event is one of:
            startup exit abexit valgrindabexit all none
     --track-fds=no|yes|all|bad track open file descriptors? [no]
-                              all includes reporting inherited file descriptors
+                              all also reports on open inherited file
+                              descriptors at exit (e.g. stdin/out/err)
+                              bad only reports on file descriptor usage
+                              errors and doesn't list open file descriptors
+                              at exit
     --modify-fds=no|yes|high  modify newly open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]

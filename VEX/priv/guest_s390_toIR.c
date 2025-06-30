@@ -23881,12 +23881,10 @@ s390_decode_and_irgen(const UChar *bytes, UInt insn_length, DisResult *dres)
          vpanic("s390_decode_and_irgen");
       }
 
-      vex_printf("%02x%02x", bytes[0], bytes[1]);
-      if (insn_length > 2) {
-         vex_printf(" %02x%02x", bytes[2], bytes[3]);
-      }
-      if (insn_length > 4) {
-         vex_printf(" %02x%02x", bytes[4], bytes[5]);
+      for (unsigned i = 0; i < insn_length; i += 2) {
+         if (i != 0)
+            vex_printf(" ");
+         vex_printf("%02x%02x", bytes[i], bytes[i + 1]);
       }
       vex_printf("\n");
    }

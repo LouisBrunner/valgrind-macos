@@ -1,2 +1,4 @@
-OK
-OK syscall failed
+OK: got expected pathname
+OK: sysctl failed with nullptr length: Cannot allocate memory
+OK: sysctl failed to get path with bad_len: Cannot allocate memory
+OK: sysctl failed with nullptr name: Cannot allocate memory

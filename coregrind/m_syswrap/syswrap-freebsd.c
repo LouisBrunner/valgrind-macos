@@ -1927,29 +1927,40 @@ static void sysctl_kern_usrstack(SizeT* out, SizeT* outlen)
    *outlen = sizeof(ULong);
 }
 
-static Bool sysctl_kern_proc_pathname(HChar *out, SizeT *len)
+static Int sysctl_kern_proc_pathname(HChar *out, SizeT *len)
 {
    const HChar *exe_name = VG_(resolved_exename);
+   // assert that exe_name is an absolute path
+   vg_assert(exe_name && exe_name[0] == '/');
 
    if (!len) {
-      return False;
+      return VKI_ENOMEM;
    }
 
+   if (!ML_(safe_to_deref)(len, sizeof(len))) {
+      // ???? check
+      return VKI_ENOMEM;
+   }
+
+   SizeT exe_name_length = VG_(strlen)(exe_name)+1;
    if (!out) {
-      HChar tmp[VKI_PATH_MAX];
-      if (!VG_(realpath)(exe_name, tmp)) {
-         return False;
-      }
-      *len = VG_(strlen)(tmp)+1;
-      return True;
+      *len = exe_name_length;
+      return 0;
    }
 
-   if (!VG_(realpath)(exe_name, out)) {
-      return False;
+   if (*len < exe_name_length) {
+      return VKI_ENOMEM;
    }
 
-   *len = VG_(strlen)(out)+1;
-   return True;
+   if (ML_(safe_to_deref)(out, exe_name_length)) {
+      VG_(strncpy)(out, exe_name, exe_name_length);
+   } else {
+      // ???? check
+      return VKI_EFAULT;
+   }
+
+   *len = exe_name_length;
+   return 0;
 }
 
 // SYS___sysctl   202
@@ -2031,7 +2042,7 @@ PRE(sys___sysctl)
    if (SARG2 == 2 && ML_(safe_to_deref)(name, 2*sizeof(int))) {
       if (name[0] == 1 && name[1] == 32) {
          if (sysctl_kern_ps_strings((SizeT*)ARG3, (SizeT*)ARG4)) {
-           SET_STATUS_Success(0);
+            SET_STATUS_Success(0);
          }
       }
    }
@@ -2043,8 +2054,12 @@ PRE(sys___sysctl)
       if (name[0] == 1 && name[1] == 14 && name[2] == 12) {
          vki_pid_t pid = (vki_pid_t)name[3];
          if (pid == -1 || pid == VG_(getpid)()) {
-            sysctl_kern_proc_pathname((HChar *)ARG3, (SizeT *)ARG4);
-            SET_STATUS_Success(0);
+            int res = sysctl_kern_proc_pathname((HChar *)ARG3, (SizeT *)ARG4);
+            if (res == 0) {
+               SET_STATUS_Success(0);
+            } else {
+               SET_STATUS_Failure(res);
+            }
          }
       }
    }

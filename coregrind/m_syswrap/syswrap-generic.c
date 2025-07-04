@@ -3758,6 +3758,8 @@ PRE(sys_dup2)
 {
    PRINT("sys_dup2 ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
    PRE_REG_READ2(long, "dup2", unsigned int, oldfd, unsigned int, newfd);
+   if (!ML_(fd_allowed)(ARG1, "dup2", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
    if (!ML_(fd_allowed)(ARG2, "dup2", tid, True))
       SET_STATUS_Failure( VKI_EBADF );
 }

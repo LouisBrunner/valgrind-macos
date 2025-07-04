@@ -23,6 +23,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+506076  unimplemented fcntl command: 1028 (F_CREATED_QUERY)
 338803  Handling of dwz debug alt files or cross-CU is broken
 493434  Add --track-fds=bad mode (no "leak" tracking)
 503098  Incorrect NAN-boxing for float registers in RISC-V

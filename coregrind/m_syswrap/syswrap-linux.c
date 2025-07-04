@@ -7100,6 +7100,7 @@ PRE(sys_fcntl)
    case VKI_F_GETSIG:
    case VKI_F_GETLEASE:
    case VKI_F_GETPIPE_SZ:
+   case VKI_F_CREATED_QUERY:
    case VKI_F_GET_SEALS:
       PRINT("sys_fcntl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);

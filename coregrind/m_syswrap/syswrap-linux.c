@@ -2690,12 +2690,15 @@ PRE(sys_io_submit)
                  vki_aio_context_t, ctx_id, long, nr,
                  struct iocb **, iocbpp);
    PRE_MEM_READ( "io_submit(iocbpp)", ARG3, ARG2*sizeof(struct vki_iocb *) );
-   if (ARG3 != 0) {
+   if (ML_(safe_to_deref)((void *)(Addr)ARG3, ARG2*sizeof(struct vki_iocb *))) {
       for (i = 0; i < ARG2; i++) {
          struct vki_iocb *cb = ((struct vki_iocb **)(Addr)ARG3)[i];
          struct vki_iovec *iov;
 
          PRE_MEM_READ( "io_submit(iocb)", (Addr)cb, sizeof(struct vki_iocb) );
+         if (!ML_(safe_to_deref)(&cb->aio_lio_opcode,
+                                 sizeof(cb->aio_lio_opcode)))
+            continue;
          switch (cb->aio_lio_opcode) {
          case VKI_IOCB_CMD_PREAD:
             PRE_MEM_WRITE( "io_submit(PREAD)", cb->aio_buf, cb->aio_nbytes );

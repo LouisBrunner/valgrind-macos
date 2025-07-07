@@ -37,8 +37,6 @@
 // For more details, see README_DEVELOPPERS.
 //--------------------------------------------------------------------
 
-#include "config.h" 
-
 // The code of the inner Valgrind (core or tool code) contains client
 // requests (e.g. from helgrind.h, memcheck.h, ...) to help the
 // outer Valgrind finding (relevant) errors in the inner Valgrind.

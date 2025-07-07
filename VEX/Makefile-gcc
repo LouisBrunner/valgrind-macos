@@ -68,6 +68,7 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_generic_simd128.o	        \
 		priv/host_generic_simd256.o	        \
 		priv/host_generic_reg_alloc2.o		\
+		priv/host_generic_reg_alloc3.o		\
 		priv/guest_generic_x87.o	        \
 		priv/guest_generic_bb_to_IR.o		\
 		priv/guest_x86_helpers.o		\
@@ -346,6 +347,10 @@ priv/host_generic_simd256.o: $(ALL_HEADERS) priv/host_generic_simd256.c
 priv/host_generic_reg_alloc2.o: $(ALL_HEADERS) priv/host_generic_reg_alloc2.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_reg_alloc2.o \
 					 -c priv/host_generic_reg_alloc2.c
+
+priv/host_generic_reg_alloc3.o: $(ALL_HEADERS) priv/host_generic_reg_alloc3.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_reg_alloc3.o \
+					 -c priv/host_generic_reg_alloc3.c
 
 priv/guest_x86_toIR.o: $(ALL_HEADERS) priv/guest_x86_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_x86_toIR.o \

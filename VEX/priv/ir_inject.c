@@ -67,7 +67,8 @@ load_aux(IREndness endian, IRType type, IRExpr *addr)
                   IRExpr_Load(endian, Ity_I64, addr));
    }
    if (type == Ity_I1) {
-      /* A Boolean value is stored as a 32-bit entity (see store_aux). */
+      /* A Boolean value is stored as a 32-bit entity. For an explanation
+         see comment in vbit-test/vbits.h */
       return unop(Iop_32to1, IRExpr_Load(endian, Ity_I32, addr));
    }
 
@@ -131,8 +132,8 @@ store_aux(IRSB *irsb, IREndness endian, IRExpr *addr, IRExpr *data)
       data = unop(Iop_ReinterpD64asI64, data);
    }
    if (typeOfIRExpr(irsb->tyenv, data) == Ity_I1) {
-      /* We cannot store a single bit. So we store it in a 32-bit container.
-         See also load_aux. */
+      /* A Boolean value is stored as a 32-bit entity. For an explanation
+         see comment in vbit-test/vbits.h */
       data = unop(Iop_1Uto32, data);
    }
    stmt(irsb, IRStmt_Store(endian, addr, data));

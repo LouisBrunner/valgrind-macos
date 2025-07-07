@@ -64,7 +64,7 @@ valgrind_set_vbits(opnd_t *opnd)
 {
    unsigned rc, num_bytes;
    
-   /* 1-bit wide values cannot be read. So we read a 4 bytes here */
+   /* 1-bit wide values cannot be read. So we read 4 bytes here */
    num_bytes = opnd->type == Ity_I1 ? 4 : sizeof_irtype(opnd->type);
    rc = VALGRIND_SET_VBITS(&opnd->value, &opnd->vbits.bits, num_bytes);
    assert(rc == 1);
@@ -83,8 +83,8 @@ valgrind_get_vbits(opnd_t *opnd)
 {
    unsigned rc, num_bytes;
 
-   /* 1-bit wide values cannot be stored. So we store them by writing a
-      single byte */
+   /* 1-bit wide values cannot be stored. So we store them by writing
+      4 bytes which is what ir_inject.c expects. */
    num_bytes = opnd->type == Ity_I1 ? 4 : sizeof_irtype(opnd->type);
    opnd->vbits.num_bits = bitsof_irtype(opnd->type);
    rc = VALGRIND_GET_VBITS(&opnd->value, &opnd->vbits.bits, num_bytes);

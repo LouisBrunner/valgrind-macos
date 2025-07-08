@@ -46,13 +46,12 @@
 
 /* The IR Injection Control Block. vex_inject_ir will query its contents
    to construct IR statements for testing purposes. */
-static IRICB iricb;
-
+static IRICB the_iricb;
 
 void
 LibVEX_InitIRI(const IRICB *iricb_in)
 {
-   iricb = *iricb_in;  // copy in
+   the_iricb = *iricb_in;  // copy in
 }
 
 
@@ -190,9 +189,10 @@ store(IRSB *irsb, IREndness endian, HWord haddr, IRExpr *data)
 
 /* Inject IR stmts depending on the data provided in the control
    block iricb. */
-void
-vex_inject_ir(IRSB *irsb, IREndness endian)
+static void
+vex_inject_ir_vbit(IRSB *irsb, IREndness endian)
 {
+   IRICB_vbit_payload iricb = the_iricb.vbit;
    IRExpr *data, *rounding_mode, *opnd1, *opnd2, *opnd3, *opnd4;
 
    rounding_mode = NULL;
@@ -318,6 +318,19 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
          ppIRStmt(irsb->stmts[irsb->stmts_used - 1]);
       }
       vex_printf("\nEND inject\n");
+   }
+}
+
+void
+vex_inject_ir(IRSB *irsb, IREndness endian)
+{
+   switch (the_iricb.kind) {
+   case IRICB_vbit:
+      vex_inject_ir_vbit(irsb, endian);
+      break;
+
+   default:
+      vpanic("unknown IRICB kind");
    }
 }
 

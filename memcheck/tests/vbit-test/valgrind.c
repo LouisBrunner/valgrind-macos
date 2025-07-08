@@ -31,7 +31,7 @@
 IRICB
 new_iricb(const irop_t *op, test_data_t *data)
 {
-   IRICB cb;
+   IRICB_vbit_payload cb;
 
    cb.op = op->op;
    cb.result = (HWord)&data->result.value;
@@ -52,7 +52,7 @@ new_iricb(const irop_t *op, test_data_t *data)
    cb.immediate_index = op->immediate_index;
    cb.immediate_type  = op->immediate_type;
 
-   return cb;
+   return (IRICB) { .kind = IRICB_vbit, .vbit = cb };
 }
 
 

@@ -955,8 +955,17 @@ PRE(sys_clone)
                    "x\n", ARG_FLAGS);
       VG_(message)(Vg_UserMsg, "\n");
       VG_(message)(Vg_UserMsg, "The only supported clone() uses are:\n");
-      VG_(message)(Vg_UserMsg, " - via a threads library (LinuxThreads or NPTL)\n");
-      VG_(message)(Vg_UserMsg, " - via the implementation of fork or vfork\n");
+      VG_(message)(Vg_UserMsg,
+                   " - via a threads library (VM, FS and FILES flags set)\n");
+      VG_(message)(Vg_UserMsg,
+                   " - via the implementation of vfork (VFORK or VFORK and VM flags set)\n");
+      VG_(message)(Vg_UserMsg,
+                   " - via plain fork (no VM, FS, FILES, VFORK flags set)\n");
+      VG_(message)(Vg_UserMsg, " clone call had %s%s%s%sflags set\n",
+                   cloneflags & VKI_CLONE_VM ? "CLONE_VM " : "",
+                   cloneflags & VKI_CLONE_FS ? "CLONE_FS " : "",
+                   cloneflags & VKI_CLONE_FILES ? "CLONE_FILES " : "",
+                   cloneflags & VKI_CLONE_VFORK ? "CLONE_VFORK " : "");
       VG_(unimplemented)
          ("Valgrind does not support general clone().");
    }

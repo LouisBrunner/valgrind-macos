@@ -3694,10 +3694,12 @@ void typeOfPrimop ( IROp op,
       case Iop_MulI128by10E:
       case Iop_MulI128by10ECarry:
       case Iop_PwExtUSMulQAdd8x16:
-      case Iop_DivU128: case Iop_DivS128:
+         BINARY(Ity_V128,Ity_V128, Ity_V128);
+
+      case Iop_DivU128:  case Iop_DivS128:
       case Iop_DivU128E: case Iop_DivS128E:
       case Iop_ModU128:  case Iop_ModS128:
-         BINARY(Ity_V128,Ity_V128, Ity_V128);
+         BINARY(Ity_I128,Ity_I128, Ity_I128);
 
       case Iop_2xMultU64Add128CarryOut:
       case Iop_Perm8x16x2:

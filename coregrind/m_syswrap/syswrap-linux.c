@@ -7202,8 +7202,9 @@ PRE(sys_fcntl)
    default:
       PRINT("sys_fcntl[UNKNOWN] ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %"
             FMT_REGWORD "u )", ARG1, ARG2, ARG3);
-      VG_(umsg)("Warning: unimplemented fcntl command: %" FMT_REGWORD "u\n",
-                ARG2);
+      if (VG_(clo_verbosity) >= 1)
+         VG_(umsg)("Warning: unimplemented fcntl command: %" FMT_REGWORD "u\n",
+                   ARG2);
       SET_STATUS_Failure( VKI_EINVAL );
       break;
    }

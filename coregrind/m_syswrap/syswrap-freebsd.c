@@ -3708,8 +3708,10 @@ PRE(sys_kenv)
    case VKI_KENV_DUMP:
       break;
    default:
-      VG_(message)(Vg_UserMsg, "unhandled kenv cmd %" FMT_REGWORD "u", ARG1);
-      VG_(unimplemented) ("unhandled kenv cmd");
+      if (VG_(clo_verbosity) >= 1) {
+         VG_(umsg)("Warning: unimplemented kenv action: %" FMT_REGWORD "d\n",
+            ARG1);
+      }
       break;
    }
 }

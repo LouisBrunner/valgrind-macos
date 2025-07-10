@@ -16,3 +16,11 @@ setsockopt07
 signal05
 signal06
 timerfd_settime02
+# The following fcntl syscall tests time out, need at least
+# LTP_TIMEOUT_MUL=5 when run under memcheck
+fcntl14
+fcntl14_64
+fcntl34
+fcntl34_64
+fcntl36
+fcntl36_64

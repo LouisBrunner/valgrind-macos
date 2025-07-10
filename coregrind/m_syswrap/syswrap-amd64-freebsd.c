@@ -183,9 +183,6 @@ PRE(sys_sysarch)
          SET_STATUS_Failure( VKI_EINVAL );
       }
       break;
-
-      PRINT("sys_amd64_set_tlsbase ( %#lx )", ARG2);
-      break;
    default:
       VG_(message) (Vg_UserMsg, "unhandled sysarch cmd %lu", ARG1);
       VG_(unimplemented) ("unhandled sysarch cmd");

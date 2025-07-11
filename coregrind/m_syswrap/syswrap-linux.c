@@ -4315,7 +4315,10 @@ PRE(sys_mseal)
     /* int mseal(void *addr, size_t len, unsigned long flags) */
     PRINT("sys_mseal ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, )", ARG1, ARG2, ARG3);
     PRE_REG_READ3(int, "mseal", void *, addr,  vki_size_t, len, int, flags);
-    if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mseal"))
+    /* First check for overflow which produces EINVAL.  */
+    if ((Addr)ARG1 > ((SizeT)(-1) - (SizeT)ARG2)) {
+       SET_STATUS_Failure(VKI_EINVAL);
+    } else if (!ML_(valid_client_addr)(ARG1, ARG2, tid, "mseal"))
        SET_STATUS_Failure(VKI_ENOMEM);
 }
 

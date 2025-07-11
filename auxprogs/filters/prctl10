@@ -1,0 +1,18 @@
+#!/bin/awk -f
+
+# Filter out stuff like the following, since it is expected output for the
+# prctl10 testcase:
+
+# ==298306== 
+# ==298306== Process terminating with default action of signal 11 (SIGSEGV): dumping core
+# ==298306==  General Protection Fault
+# ==298306==    at 0x40152B: verify_prctl (prctl10.c:75)
+# ==298306==    by 0x40A894: fork_testrun.isra.0 (tst_test.c:1617)
+# ==298306==    by 0x40CC53: tst_run_tcases (tst_test.c:1970)
+# ==298306==    by 0x4011BD: main (tst_test.h:729)
+
+skip = 0
+/==[0-9][0-9]*==/ { skip = 1 }
+/Process terminating with default action of signal 11/ { skip = 1; skipblock=1 }
+/by.*main.*tst_test.h/ { skip = 1; skipblock=0 }
+!skip && !skipblock { print }

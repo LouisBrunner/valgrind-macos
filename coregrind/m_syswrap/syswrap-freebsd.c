@@ -4864,8 +4864,8 @@ PRE(sys_kmq_notify)
 // int kmq_unlink(const char *path);
 PRE(sys_kmq_unlink)
 {
-   PRINT("sys_kmq_unlink ( %#" FMT_REGWORD "x(%s) )", ARG1,(char *)ARG1);
-   PRE_REG_READ1(int, "mq_unlink", const char *, name);
+   PRINT("sys_kmq_unlink ( %#" FMT_REGWORD "x(%s) )", ARG1,(HChar *)ARG1);
+   PRE_REG_READ1(int, "mq_unlink", const HChar *, name);
    PRE_MEM_RASCIIZ( "mq_unlink(name)", ARG1 );
 }
 
@@ -7054,7 +7054,7 @@ POST(sys_getrlimitusage)
 // int fchroot(int fd);
 PRE(sys_fchroot)
 {
-   PRINT("sys_fchroot(%ld)", ARG1);
+   PRINT("sys_fchroot(%" FMT_REGWORD "d)", ARG1);
    PRE_REG_READ1(int, "fchroot", int, fd);
 
    /* Be strict. */
@@ -7066,11 +7066,55 @@ PRE(sys_fchroot)
 // int setcred(u_int flags, const struct setcred *wcred, size_t size);
 PRE(sys_setcred)
 {
-   PRINT("sys_setcred(%ld, %#" FMT_REGWORD "x, %lu)", ARG1, ARG2, ARG3);
+   PRINT("sys_setcred(%" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "setcred", u_int, flags, const struct setcred*, wcred, size_t, size);
    PRE_MEM_READ("setcred(wcred)", ARG2, sizeof(struct vki_setcred));
 }
 
+// SYS_exterrctl
+// int exterrctl(u_int op, u_int flags, _In_reads_bytes_(4) void *ptr
+PRE(sys_exterrctl)
+{
+   PRINT("sys_exterrctl(%" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x)",
+         ARG1, ARG2, ARG3);
+   PRE_REG_READ3(int, "exterrctl", u_int, op, u_int, flags, void*, ptr);
+   // the void* points to struct uexterror which at the time of writing has 10 fields
+   // but this syscall just turns this feature on and off and it's only th first 4 bytes
+   // for the version that gets checked
+   PRE_MEM_READ("exterrctl(ptr)", ARG3, 4);
+}
+
+// SYS_inotify_add_watch_at
+// int inotify_add_watch_at(int fd, int dfd, _In_z_ const char *path, uint32_t mask);
+PRE(sys_inotify_add_watch_at)
+{
+   PRINT("sys_inotify_add_watch_at(%" FMT_REGWORD "d, %" FMT_REGWORD "d, %" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x)", SARG1, SARG2, ARG3, (HChar*)ARG3, ARG4);
+   PRE_REG_READ4(int, "inotify_add_watch_at", int, fd, int, dfd, const char*, path, uint32_t, mask);
+   PRE_MEM_RASCIIZ("inotify_add_watch_at(path)", ARG3);
+   if (!ML_(fd_allowed)(ARG1, "inotify_add_watch_at", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   }
+   if (ARG2 != VKI_AT_FDCWD) {
+      if (!ML_(fd_allowed)(ARG2, "inotify_add_watch_at", tid, False)) {
+         SET_STATUS_Failure( VKI_EBADF );
+      }
+   }
+}
+
+// SYS_inotify_rm_watch
+// int inotify_rm_watch(int fd, int wd);
+PRE(sys_inotify_rm_watch)
+{
+   PRINT("sys_inotify_rm_watch(%" FMT_REGWORD "d, %" FMT_REGWORD "d)", SARG1, SARG2);
+   PRE_REG_READ2(int, "sys_inotify_rm_watch", int, fd, int, wd);
+   if (!ML_(fd_allowed)(ARG1, "inotify_rm_watch", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   }
+   // PJF I don't think that this can be AT_FDCWD
+   if (!ML_(fd_allowed)(ARG2, "inotify_rm_watch", tid, False)) {
+      SET_STATUS_Failure( VKI_EBADF );
+   }
+}
 
 #undef PRE
 #undef POST
@@ -7767,6 +7811,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    BSDX_(__NR_fchroot,          sys_fchroot),           // 590
    BSDX_(__NR_setcred,          sys_setcred),           // 591
+
+   BSDX_(__NR_exterrctl,        sys_exterrctl),         // 592
+   BSDX_(__NR_inotify_add_watch_at, sys_inotify_add_watch_at), // 593
+   BSDX_(__NR_inotify_rm_watch, sys_inotify_rm_watch),  // 593
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
 

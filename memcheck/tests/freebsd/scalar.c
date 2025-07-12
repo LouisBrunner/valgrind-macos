@@ -2479,6 +2479,59 @@ int main(void)
    FAKE_SY("\n");
 #endif
 
+#if defined(SYS_exterrctl)
+   GO(SYS_exterrctl, "3s, 1m");
+   SY(SYS_exterrctl, x0, x0+1, x0+1);
+#else
+   FAKE_GO("592:           SYS_exterrctl 3s, 1m");
+   FAKE_SY("Syscall param exterrctl(op) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param exterrctl(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param exterrctl(ptr) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param exterrctl(ptr) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\ Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_inotify_add_watch_at)
+   GO(SYS_inotify_add_watch_at, "3s, 1m");
+   SY(SYS_inotify_add_watch_at, x0, x0+1, x0+1);
+#else
+   FAKE_GO("593:SYS_inotify_add_watch_at 3s, 1m");
+   FAKE_SY("Syscall param inotify_add_watch_at(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param inotify_add_watch_at(dfd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param inotify_add_watch_at(path) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param inotify_add_watch_at(path) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_inotify_rm_watch)
+   GO(SYS_inotify_rm_watch, "2s, 0m");
+   SY(SYS_inotify_rm_watch, x0+1000, x0+1000);
+#else
+   FAKE_GO("594:    SYS_inotify_rm_watch 2s, 0m");
+   FAKE_SY("Syscall param sys_inotify_rm_watch(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param sys_inotify_rm_watch(wd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+#endif
+
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");
    SY(SYS_exit, x0); FAIL;

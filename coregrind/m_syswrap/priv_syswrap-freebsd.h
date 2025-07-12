@@ -543,6 +543,10 @@ DECL_TEMPLATE(freebsd, sys_getrlimitusage) // 589
 DECL_TEMPLATE(freebsd, sys_fchroot) // 590
 DECL_TEMPLATE(freebsd, sys_setcred) // 591
 
+DECL_TEMPLATE(freebsd, sys_exterrctl) // 592
+DECL_TEMPLATE(freebsd, sys_inotify_add_watch_at) // 593
+DECL_TEMPLATE(freebsd, sys_inotify_rm_watch) // 594
+
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)
 
 #endif   // PRIV_SYSWRAP_FREEBSD_H

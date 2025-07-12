@@ -24,3 +24,8 @@ fcntl34
 fcntl34_64
 fcntl36
 fcntl36_64
+# Tests fail because valgrind only supports a limited number
+# of clone flags.
+clone08
+close_range02
+kcmp03

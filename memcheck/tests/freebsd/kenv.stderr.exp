@@ -46,7 +46,7 @@ Syscall param kenv(value) points to unaddressable byte(s)
 
 HEAP SUMMARY:
     in use at exit: 0 bytes in 0 blocks
-  total heap usage: 5 allocs, 5 frees, 4,765 bytes allocated
+  total heap usage: 5 allocs, 5 frees, XXX bytes allocated
 
 For a detailed leak analysis, rerun with: --leak-check=full
 

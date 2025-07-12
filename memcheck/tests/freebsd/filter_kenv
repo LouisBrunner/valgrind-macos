@@ -7,4 +7,4 @@
 # on the FreeBSD version, so we want to filter the size of
 # KENV_DUMP allocation
 
-gsed 's/4,765 bytes allocated/XXX bytes allocated'
+gsed 's/ [^ ]* bytes allocated/ XXX bytes allocated/'

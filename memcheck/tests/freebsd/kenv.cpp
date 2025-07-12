@@ -117,7 +117,7 @@ int main(int argc, char** argv)
          char* freeBuf{new char[32]};
          delete [] freeBuf;
          kenv(KENV_GET, name.c_str(), freeBuf, 32);
-         int res{kenv(KENV_GET, name.c_str(), buf.get(), 2*bufSize)};
+         kenv(KENV_GET, name.c_str(), buf.get(), 2*bufSize);
       }
 
    }

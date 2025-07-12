@@ -2968,13 +2968,14 @@ Syscall param kenv(name) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Syscall param kenv(value) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 ---------------------------------------------------------
 390:                SYS_kenv (KENV_DUMP) 4s 0m
 ---------------------------------------------------------
 Syscall param kenv(action) contains uninitialised byte(s)
-   ...
-
-Syscall param kenv(name) contains uninitialised byte(s)
    ...
 
 Syscall param kenv(value) contains uninitialised byte(s)
@@ -2982,6 +2983,10 @@ Syscall param kenv(value) contains uninitialised byte(s)
 
 Syscall param kenv(len) contains uninitialised byte(s)
    ...
+
+Syscall param kenv(value) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 391:            SYS_lchflags 2s 1m

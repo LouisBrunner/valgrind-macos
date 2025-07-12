@@ -3697,19 +3697,39 @@ PRE(sys_nmount)
 PRE(sys_kenv)
 {
    PRINT("sys_kenv ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", ARG1,ARG2,ARG3,ARG4);
-   PRE_REG_READ4(int, "kenv",
-                 int, action, const char *, name, char *, value, int, len);
    switch (ARG1) {
    case VKI_KENV_GET:
-   case VKI_KENV_SET:
-   case VKI_KENV_UNSET:
+      // read from arg1, write to arg2
+      PRE_REG_READ4(int, "kenv",
+                    int, action, const char *, name, char *, value, int, len);
       PRE_MEM_RASCIIZ("kenv(name)", ARG2);
-   /* FALLTHROUGH */
+      PRE_MEM_WRITE("kenv(value)", ARG3, ARG4);
+      break;
+   case VKI_KENV_SET:
+      PRE_REG_READ3(int, "kenv",
+                   int, action, const char *, name, char *, value);
+      PRE_MEM_RASCIIZ("kenv(name)", ARG2);
+      PRE_MEM_RASCIIZ("kenv(value)", ARG3);
+      break;
+   case VKI_KENV_UNSET:
+      PRE_REG_READ2(int, "kenv", int, action, const char *, name);
+      PRE_MEM_RASCIIZ("kenv(name)", ARG2);
+      break;
    case VKI_KENV_DUMP:
+   case VKI_KENV_DUMP_LOADER:
+   case VKI_KENV_DUMP_STATIC:
+      PRRSN;
+      PRA1("kenv",int,action);
+      // ARG2 name is ignored
+      PRA3("kenv",char*,value);
+      PRA4("kenv",int,len);
+      if (ARG3) {
+         PRE_MEM_WRITE("kenv(value)", ARG3, ARG4);
+      }
       break;
    default:
       if (VG_(clo_verbosity) >= 1) {
-         VG_(umsg)("Warning: unimplemented kenv action: %" FMT_REGWORD "d\n",
+         VG_(umsg)("Warning: bad or unimplemented kenv action: %" FMT_REGWORD "d\n",
             ARG1);
       }
       break;
@@ -3724,7 +3744,7 @@ POST(sys_kenv)
          POST_MEM_WRITE(ARG3, ARG4);
          break;
       case VKI_KENV_DUMP:
-         if (ARG3 != (Addr)NULL) {
+         if (ARG3) {
             POST_MEM_WRITE(ARG3, ARG4);
          }
          break;

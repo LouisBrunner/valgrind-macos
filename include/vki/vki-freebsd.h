@@ -2228,10 +2228,12 @@ struct vki_kinfo_file {
 //----------------------------------------------------------------------
 // From sys/kenv.h
 //----------------------------------------------------------------------
-#define VKI_KENV_GET    0
-#define VKI_KENV_SET    1
-#define VKI_KENV_UNSET     2
-#define VKI_KENV_DUMP      3
+#define VKI_KENV_GET         0
+#define VKI_KENV_SET         1
+#define VKI_KENV_UNSET       2
+#define VKI_KENV_DUMP        3
+#define VKI_KENV_DUMP_LOADER 4
+#define VKI_KENV_DUMP_STATIC 5
 
 //----------------------------------------------------------------------
 // From sys/sysctl.h (and related)

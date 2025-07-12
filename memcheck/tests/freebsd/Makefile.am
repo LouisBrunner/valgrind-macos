@@ -70,6 +70,8 @@ EXTRA_DIST = \
 	getfsstat.supp \
 		getfsstat.stderr.exp-x86 \
 	getrlimitusage.vgtest getrlimitusage.stderr.exp \
+	kenv.vgtest \
+	kenv.stderr.exp \
 	kqueue.vgtest \
 	kqueue.stderr.exp \
 	kqueue.stdout.exp \
@@ -156,6 +158,7 @@ check_PROGRAMS = \
 	fexecve \
 	file_locking_wait6 \
 	get_set_context get_set_login getfh \
+	kenv \
 	kqueue linkat memalign misc \
 	openpty \
 	pdfork_pdkill getfsstat inlinfo inlinfo_nested.so \
@@ -236,6 +239,7 @@ extattr_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@ @FLAG_W_NO_U
 get_set_login_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 getfh_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 getfsstat_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
+kenv_SOURCES			= kenv.cpp
 linkat_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 memalign_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 misc_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@

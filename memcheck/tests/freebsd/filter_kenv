@@ -1,0 +1,10 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+
+# want to run without -q to see invalid action message
+# but the size of the kernel environment depends
+# on the FreeBSD version, so we want to filter the size of
+# KENV_DUMP allocation
+
+gsed 's/4,765 bytes allocated/XXX bytes allocated'

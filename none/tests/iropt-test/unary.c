@@ -1,0 +1,229 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
+
+/*
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
+
+   Copyright (C) 2025  Florian Krohm
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+#include <stdio.h>      // printf
+#include <stdint.h>     // UINT64_MAX
+#include "vtest.h"
+
+static void check_result(const irop_t *, const test_data_t *);
+static void run_tests(const irop_t *, test_data_t *, unsigned, uint64_t *);
+
+
+void
+test_unary_op(const irop_t *op, test_data_t *data)
+{
+   opnd_t *opnd = &data->opnds[0];
+
+   switch (opnd->type) {
+   case Ity_I1: {
+      uint64_t values[] = { 0, 1 };
+
+      run_tests(op, data, NUM_EL(values), values);
+      break;
+   }
+
+   case Ity_I8: {
+      uint64_t values[] = { 0, 1, 2, UINT8_MAX - 1, UINT8_MAX };
+
+      run_tests(op, data, NUM_EL(values), values);
+      break;
+   }
+
+   case Ity_I16: {
+      uint64_t values[] = { 0, 1, 2, UINT16_MAX - 1, UINT16_MAX,
+         /* and for the benefit of Iop_16HIto8: */
+         1 << 8, 2 << 8, UINT8_MAX << 8
+      };
+
+      run_tests(op, data, NUM_EL(values), values);
+      break;
+   }
+
+   case Ity_I32: {
+      uint64_t values[] = { 0, 1, 2, UINT32_MAX - 1, UINT32_MAX,
+         /* and for the benefit of Iop_32HIto16: */
+         1 << 16, 2 << 16, (uint64_t)UINT16_MAX << 16
+      };
+      run_tests(op, data, NUM_EL(values), values);
+      break;
+   }
+
+   case Ity_I64: {
+      uint64_t values[] = { 0, 1, 2, UINT64_MAX - 1, UINT64_MAX,
+         /* and for the benefit of Iop_64HIto32: */
+         (uint64_t)1 << 32, (uint64_t)2 << 32, (uint64_t)UINT32_MAX << 32
+      };
+      run_tests(op, data, NUM_EL(values), values);
+      break;
+   }
+
+   default:
+      panic(__func__);
+   }
+}
+
+
+static void
+run_tests(const irop_t *op, test_data_t *data, unsigned num_val,
+          uint64_t *values)
+{
+   opnd_t *opnd = &data->opnds[0];
+
+   for (unsigned i = 0; i < num_val; ++i) {
+      opnd->value = values[i];
+
+      valgrind_execute_test(op, data);
+      check_result(op, data);
+   }
+}
+
+
+/* Check the result of a unary operation. */
+static void
+check_result(const irop_t *op, const test_data_t *data)
+{
+   uint64_t result = data->result.value;
+   uint64_t opnd   = data->opnds[0].value;
+   uint64_t expected;
+
+   switch (op->op) {
+   case Iop_Not1:   expected = ~opnd & 0x1;        break;
+   case Iop_Not8:   expected = ~opnd & UINT8_MAX;  break;
+   case Iop_Not16:  expected = ~opnd & UINT16_MAX; break;
+   case Iop_Not32:  expected = ~opnd & UINT32_MAX; break;
+   case Iop_Not64:  expected = ~opnd & UINT64_MAX; break;
+
+   case Iop_1Uto8:  expected = opnd; break;
+// case Iop_1Uto16: expected = opnd; break;
+   case Iop_1Uto32: expected = opnd; break;
+   case Iop_1Uto64: expected = opnd; break;
+
+   case Iop_1Sto8:
+      expected = sign_extend(opnd, 1) & UINT8_MAX;
+      break;
+   case Iop_1Sto16:
+      expected = sign_extend(opnd, 1) & UINT16_MAX;
+      break;
+   case Iop_1Sto32:
+      expected = sign_extend(opnd, 1) & UINT32_MAX;
+      break;
+   case Iop_1Sto64:
+      expected = sign_extend(opnd, 1) & UINT64_MAX;
+      break;
+
+   case Iop_8Uto16: expected = opnd; break;
+   case Iop_8Uto32: expected = opnd; break;
+   case Iop_8Uto64: expected = opnd; break;
+
+   case Iop_8Sto16:
+      expected = sign_extend(opnd, 8) & UINT16_MAX;
+      break;
+   case Iop_8Sto32:
+      expected = sign_extend(opnd, 8) & UINT32_MAX;
+      break;
+   case Iop_8Sto64:
+      expected = sign_extend(opnd, 8) & UINT64_MAX;
+      break;
+
+   case Iop_16Uto32: expected = opnd; break;
+   case Iop_16Uto64: expected = opnd; break;
+
+   case Iop_16Sto32:
+      expected = sign_extend(opnd, 16) & UINT32_MAX;
+      break;
+   case Iop_16Sto64:
+      expected = sign_extend(opnd, 16) & UINT64_MAX;
+      break;
+
+   case Iop_32Uto64: expected = opnd; break;
+
+   case Iop_32Sto64:
+      expected = sign_extend(opnd, 32) & UINT64_MAX;
+      break;
+
+// case Iop_8to1:    expected = opnd & 0x1;       break;
+// case Iop_16to1:   expected = opnd & 0x1;       break;
+   case Iop_16to8:   expected = opnd & UINT8_MAX; break;
+   case Iop_16HIto8: expected = opnd >> 8;        break;
+      break;
+
+   case Iop_32to1:    expected = opnd & 0x1;        break;
+   case Iop_32to8:    expected = opnd & UINT8_MAX;  break;
+   case Iop_32to16:   expected = opnd & UINT16_MAX; break;
+   case Iop_32HIto16: expected = opnd >> 16;        break;
+
+   case Iop_64to1:    expected = opnd & 0x1;        break;
+   case Iop_64to8:    expected = opnd & UINT8_MAX;  break;
+   case Iop_64to16:   expected = opnd & UINT16_MAX; break;
+   case Iop_64to32:   expected = opnd & UINT32_MAX; break;
+   case Iop_64HIto32: expected = opnd >> 32;        break;
+
+   case Iop_CmpNEZ8:
+// case Iop_CmpNEZ16:
+   case Iop_CmpNEZ32:
+   case Iop_CmpNEZ64:
+      expected = opnd != 0;
+      break;
+
+   case Iop_CmpwNEZ32: expected = opnd == 0 ? 0 : UINT32_MAX; break;
+   case Iop_CmpwNEZ64: expected = opnd == 0 ? 0 : UINT64_MAX; break;
+
+// case Iop_Left8:
+// case Iop_Left16:
+   case Iop_Left32: {
+      int32_t opnd_s = (int32_t)opnd;
+      expected = (opnd_s | -opnd_s) & UINT32_MAX;
+      break;
+   }
+
+   case Iop_Left64: {
+      int64_t opnd_s = (int64_t)opnd;
+      expected = (opnd_s | -opnd_s) & UINT64_MAX;
+      break;
+   }
+
+   default:
+      panic("%s: operator %s not handled\n", __func__, op->name);
+   }
+
+   if (verbose > 1) {
+      printf("expected:  value = ");
+      print_value(stdout, expected, bitsof_irtype(data->result.type));
+      printf("\n");
+   }
+
+   int ok = 1;
+   switch (data->result.type) {
+   case Ity_I1:  ok = result == expected; break;
+   case Ity_I8:  ok = result == expected; break;
+   case Ity_I16: ok = result == expected; break;
+   case Ity_I32: ok = result == expected; break;
+   case Ity_I64: ok = result == expected; break;
+   default:
+      panic(__func__);
+   }
+
+   if (! ok)
+      complain(op, data, expected);
+}

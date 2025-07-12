@@ -2610,6 +2610,11 @@ static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
    return env == NULL ? e : fold_Expr_WRK(env, e);
 }
 
+IRExpr* foldIRExpr ( IRExpr** env, IRExpr* e )
+{
+   return fold_Expr(env, e);
+}
+
 /* Apply the subst to a simple 1-level expression -- guaranteed to be
    1-level due to previous flattening pass. */
 

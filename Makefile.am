@@ -34,6 +34,7 @@ SUBDIRS = \
 	gdbserver_tests \
 	memcheck/tests/vbit-test \
 	none/tests/s390x/disasm-test \
+	none/tests/iropt-test \
 	auxprogs \
 	mpi \
 	solaris \

@@ -1,0 +1,4 @@
+prog: iropt-test
+prereq: test -x iropt-test-sec
+vgopts: -q --vex-guest-chase=no
+

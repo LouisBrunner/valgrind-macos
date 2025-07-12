@@ -2405,6 +2405,9 @@ extern IRExpr* deepCopyIRExpr ( const IRExpr* );
 /* Pretty-print an IRExpr. */
 extern void ppIRExpr ( const IRExpr* );
 
+/* Fold an IRExpr. Return folded result. */
+extern IRExpr* foldIRExpr ( IRExpr**, IRExpr* );
+
 /* NULL-terminated IRExpr vector constructors, suitable for
    use as arg lists in clean/dirty helper calls. */
 extern IRExpr** mkIRExprVec_0 ( void );

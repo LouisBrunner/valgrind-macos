@@ -2244,6 +2244,18 @@
 /none/tests/riscv64/integer
 /none/tests/riscv64/muldiv
 
+# /none/tests/iropt-test/
+/none/tests/iropt-test/*.dSYM
+/none/tests/iropt-test/*.stderr.diff*
+/none/tests/iropt-test/*.stderr.out
+/none/tests/iropt-test/*.stdout.diff*
+/none/tests/iropt-test/*.stdout.out
+/none/tests/iropt-test/.deps
+/none/tests/iropt-test/Makefile
+/none/tests/iropt-test/Makefile.in
+/none/tests/iropt-test/iropt-test
+/none/tests/iropt-test/iropt-test-sec
+
 # /none/tests/s390x/disasm-test/
 /none/tests/s390x/disasm-test/*.dSYM
 /none/tests/s390x/disasm-test/*.stderr.diff*

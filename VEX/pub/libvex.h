@@ -963,6 +963,7 @@ extern void LibVEX_ShowStats ( void );
 typedef
    enum {
       IRICB_vbit,
+      IRICB_iropt,
    }
    IRICB_t;
 
@@ -994,9 +995,23 @@ typedef
 
 typedef
    struct {
+      IROp   op;            // the operation to perform
+      HWord  result;        // address of the result
+      HWord  opnd1;         // address of 1st operand
+      HWord  opnd2;         // address of 2nd operand
+      IRType t_result;      // type of result
+      IRType t_opnd1;       // type of 1st operand
+      IRType t_opnd2;       // type of 2nd operand
+      UInt   num_operands;
+   }
+   IRICB_iropt_payload;
+
+typedef
+   struct {
       IRICB_t kind;
       union {
          IRICB_vbit_payload vbit;
+         IRICB_iropt_payload iropt;
       };
    }
    IRICB;

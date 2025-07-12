@@ -1,0 +1,4 @@
+prog: iropt-test
+#args: -v -v
+vgopts: -q --vex-guest-chase=no
+

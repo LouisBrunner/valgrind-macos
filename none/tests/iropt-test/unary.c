@@ -29,6 +29,7 @@
 static void check_result(const irop_t *, const test_data_t *);
 static void run_tests(const irop_t *, test_data_t *, unsigned, uint64_t *);
 static uint64_t left(uint64_t, unsigned);
+static uint32_t popcount(uint64_t);
 
 
 void
@@ -181,7 +182,7 @@ check_result(const irop_t *op, const test_data_t *data)
    case Iop_64HIto32: expected = opnd >> 32;        break;
 
    case Iop_CmpNEZ8:
-// case Iop_CmpNEZ16:
+   case Iop_CmpNEZ16:
    case Iop_CmpNEZ32:
    case Iop_CmpNEZ64:
       expected = opnd != 0;
@@ -194,6 +195,11 @@ check_result(const irop_t *op, const test_data_t *data)
    case Iop_Left16: expected = left(opnd, 16); break;
    case Iop_Left32: expected = left(opnd, 32); break;
    case Iop_Left64: expected = left(opnd, 64); break;
+
+   case Iop_PopCount32:
+   case Iop_PopCount64:
+      expected = popcount(opnd);
+      break;
 
    default:
       panic("%s: operator %s not handled\n", __func__, op->name);
@@ -249,4 +255,17 @@ left(uint64_t val, unsigned width)
   default:
      panic(__func__);
   }
+}
+
+
+/* Naive implementation of counting 1-bits */
+static uint32_t
+popcount(uint64_t value)
+{
+   uint32_t count;
+
+   for (count = 0; value != 0; value >>= 1) {
+      count += value & 1;
+   }
+   return count;
 }

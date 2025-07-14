@@ -1346,6 +1346,31 @@ static UInt fold_Clz32 ( UInt value )
    return 0;
 }
 
+/* Helpers for folding PopCount32/64.
+   https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
+   As many iterations as 1-bits present.
+*/
+static UInt fold_PopCount64 ( ULong value )
+{
+   UInt count;
+
+   for (count = 0; value != 0; ++count) {
+      value &= value - 1;      // clear the least significant 1-bit
+   }
+   return count;
+}
+
+static UInt fold_PopCount32 ( UInt value )
+{
+   UInt count;
+
+   for (count = 0; value != 0; ++count) {
+      value &= value - 1;      // clear the least significant 1-bit
+   }
+   return count;
+}
+
+
 /* V64 holds 8 summary-constant bits in V128/V256 style.  Convert to
    the corresponding real constant. */
 //XXX re-check this before use
@@ -1604,6 +1629,12 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                     (0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U8)
                  )));
             break;
+         case Iop_CmpNEZ16:
+            e2 = IRExpr_Const(IRConst_U1(toBool(
+                    0 !=
+                    (0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16)
+                 )));
+            break;
          case Iop_CmpNEZ32:
             e2 = IRExpr_Const(IRConst_U1(toBool(
                     0 != 
@@ -1675,6 +1706,17 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             if (u64 != 0ULL)
                e2 = IRExpr_Const(IRConst_U64(fold_Clz64(u64)));
+            break;
+         }
+
+         case Iop_PopCount32: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            e2 = IRExpr_Const(IRConst_U32(fold_PopCount32(u32)));
+            break;
+         }
+         case Iop_PopCount64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            e2 = IRExpr_Const(IRConst_U64(fold_PopCount64(u64)));
             break;
          }
 

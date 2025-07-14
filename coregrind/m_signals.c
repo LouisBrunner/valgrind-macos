@@ -1317,10 +1317,8 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
              || new_act->ksa_handler == VKI_SIG_IGN) )
       goto bad_signo_reserved;
 
-   /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
-   if ( (signo == VKI_SIGKILL || signo == VKI_SIGSTOP)
-       && new_act
-       && new_act->ksa_handler != VKI_SIG_DFL)
+   /* Reject any attempt to set the handler for SIGKILL/STOP. */
+   if ( (signo == VKI_SIGKILL || signo == VKI_SIGSTOP) && new_act )
       goto bad_sigkill_or_sigstop;
 
    /* If the client supplied non-NULL old_act, copy the relevant SCSS

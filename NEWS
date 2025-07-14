@@ -54,6 +54,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 502968  Wrap linux specific syscalls 457 (listmount) and 458 (statmount)
 506499  Unhandled syscall 592 (exterrctl - FreeBSD
 506795  Better report which clone flags are problematic
+506930  valgrind allows SIGKILL being reset to SIG_DFL
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

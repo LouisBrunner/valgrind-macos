@@ -1105,7 +1105,7 @@
 /memcheck/tests/amd64-linux/Makefile.in
 
 # /memcheck/tests/amd64-solaris/
-/memcheck/tests/amd64-solaris/*.stderr.diff
+/memcheck/tests/amd64-solaris/*.stderr.diff*
 /memcheck/tests/amd64-solaris/*.stderr.out
 /memcheck/tests/amd64-solaris/*.stdout.diff
 /memcheck/tests/amd64-solaris/*.stdout.out
@@ -1274,7 +1274,7 @@
 /memcheck/tests/s390x/vstrs
 
 # /memcheck/tests/solaris/
-/memcheck/tests/solaris/*.stderr.diff
+/memcheck/tests/solaris/*.stderr.diff*
 /memcheck/tests/solaris/*.stderr.out
 /memcheck/tests/solaris/*.stdout.diff
 /memcheck/tests/solaris/*.stdout.out
@@ -1392,7 +1392,7 @@
 /memcheck/tests/x86-linux/shm
 
 # /memcheck/tests/x86-solaris/
-/memcheck/tests/x86-solaris/*.stderr.diff
+/memcheck/tests/x86-solaris/*.stderr.diff*
 /memcheck/tests/x86-solaris/*.stderr.out
 /memcheck/tests/x86-solaris/*.stdout.diff
 /memcheck/tests/x86-solaris/*.stdout.out
@@ -1793,11 +1793,11 @@
 /none/tests/amd64-linux/map_32bits
 
 # /none/tests/amd64-solaris/
-/none/tests/amd64-solaris/*.stderr.diff
+/none/tests/amd64-solaris/*.stderr.diff*
 /none/tests/amd64-solaris/*.stderr.out
 /none/tests/amd64-solaris/*.stdout.diff
 /none/tests/amd64-solaris/*.stdout.out
-/none/tests/amd64-solaris/*.post.diff
+/none/tests/amd64-solaris/*.post.diff*
 /none/tests/amd64-solaris/*.post.out
 /none/tests/amd64-solaris/.deps
 /none/tests/amd64-solaris/Makefile
@@ -2434,11 +2434,11 @@ none/tests/freebsd/bug499212
 /none/tests/x86-linux/sigcontext
 
 # /none/tests/x86-solaris/
-/none/tests/x86-solaris/*.stderr.diff
+/none/tests/x86-solaris/*.stderr.diff*
 /none/tests/x86-solaris/*.stderr.out
 /none/tests/x86-solaris/*.stdout.diff
 /none/tests/x86-solaris/*.stdout.out
-/none/tests/x86-solaris/*.post.diff
+/none/tests/x86-solaris/*.post.diff*
 /none/tests/x86-solaris/*.post.out
 /none/tests/x86-solaris/.deps
 /none/tests/x86-solaris/Makefile

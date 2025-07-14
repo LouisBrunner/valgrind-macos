@@ -2525,6 +2525,9 @@ none/tests/freebsd/bug499212
 # /VEX/switchback/
 /VEX/switchback/switchback
 
+# /VEX/useful/
+/VEX/useful/vex
+
 *.vgtest*.trs
 *.vgtest*.log
 /test-suite-overall.log

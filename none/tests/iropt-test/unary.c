@@ -28,6 +28,7 @@
 
 static void check_result(const irop_t *, const test_data_t *);
 static void run_tests(const irop_t *, test_data_t *, unsigned, uint64_t *);
+static uint64_t left(uint64_t, unsigned);
 
 
 void
@@ -189,19 +190,10 @@ check_result(const irop_t *op, const test_data_t *data)
    case Iop_CmpwNEZ32: expected = opnd == 0 ? 0 : UINT32_MAX; break;
    case Iop_CmpwNEZ64: expected = opnd == 0 ? 0 : UINT64_MAX; break;
 
-// case Iop_Left8:
-// case Iop_Left16:
-   case Iop_Left32: {
-      int32_t opnd_s = (int32_t)opnd;
-      expected = (opnd_s | -opnd_s) & UINT32_MAX;
-      break;
-   }
-
-   case Iop_Left64: {
-      int64_t opnd_s = (int64_t)opnd;
-      expected = (opnd_s | -opnd_s) & UINT64_MAX;
-      break;
-   }
+   case Iop_Left8:  expected = left(opnd, 8);  break;
+   case Iop_Left16: expected = left(opnd, 16); break;
+   case Iop_Left32: expected = left(opnd, 32); break;
+   case Iop_Left64: expected = left(opnd, 64); break;
 
    default:
       panic("%s: operator %s not handled\n", __func__, op->name);
@@ -226,4 +218,35 @@ check_result(const irop_t *op, const test_data_t *data)
 
    if (! ok)
       complain(op, data, expected);
+}
+
+
+/* An implementation for Iop_Left/8/16/32/64.
+   The semantics of those operators are defined in Section 2.5 of
+   https://valgrind.org/docs/memcheck2005.pdf as follows:
+
+   Iop_Left(v) is the same as v, except that all bits to the left of the
+   rightmost 1-bit in v are set. */
+static uint64_t
+left(uint64_t val, unsigned width)
+{
+  uint64_t ret = 0;
+
+  /* Find the rightmost 1-bit, then sign-extend. */
+  for (unsigned bit = 0; bit < width; ++bit) {
+    if (val & ((uint64_t)1 << bit)) {
+      ret = (int64_t)((uint64_t)val << (63 - bit)) >> (63 - bit);
+      break;
+    }
+  }
+
+  /* Truncate to desired width */
+  switch (width) {
+  case 8:  return ret & UINT8_MAX;
+  case 16: return ret & UINT16_MAX;
+  case 32: return ret & UINT32_MAX;
+  case 64: return ret & UINT64_MAX;
+  default:
+     panic(__func__);
+  }
 }

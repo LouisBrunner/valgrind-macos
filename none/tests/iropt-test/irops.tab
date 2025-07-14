@@ -87,8 +87,8 @@
    { OPNAME(CmpwNEZ32), Ity_I32,  1, Ity_I32 },
    { OPNAME(CmpwNEZ64), Ity_I64,  1, Ity_I64 },
 
-// { OPNAME(Left8),  Ity_I8,   1, Ity_I8  }, // no folding yet
-// { OPNAME(Left16), Ity_I16,  1, Ity_I16 }, // no folding yet
+   { OPNAME(Left8),  Ity_I8,   1, Ity_I8  },
+   { OPNAME(Left16), Ity_I16,  1, Ity_I16 },
    { OPNAME(Left32), Ity_I32,  1, Ity_I32 },
    { OPNAME(Left64), Ity_I64,  1, Ity_I64 },
 

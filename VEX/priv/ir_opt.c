@@ -1633,6 +1633,22 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             break;
          }
 
+         case Iop_Left8: {
+            UChar u8 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            Char  s8 = (Char)(u8 & 0xFF);
+            s8 = (s8 | (-s8));
+            e2 = IRExpr_Const( IRConst_U8( (UChar)s8 ));
+            break;
+         }
+
+         case Iop_Left16: {
+            UShort u16 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
+            Short  s16 = (Short)(u16 & 0xFFFF);
+            s16 = (s16 | (-s16));
+            e2 = IRExpr_Const( IRConst_U16( (UShort)s16 ));
+            break;
+         }
+
          case Iop_Left32: {
             UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
             Int  s32 = (Int)(u32 & 0xFFFFFFFF);

@@ -855,7 +855,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       case VKI_SIGFPE:
       case VKI_SIGILL:
       case VKI_SIGTRAP:
-#if defined(VGO_freebsd)
+#if defined(VKI_SIGSYS)
       case VKI_SIGSYS:
 #endif
 	 /* For these, we always want to catch them and report, even
@@ -1832,6 +1832,9 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       case VKI_SIGPIPE:	/* term */
       case VKI_SIGALRM:	/* term */
       case VKI_SIGTERM:	/* term */
+#     if defined(VKI_SIGSTKFLT)
+      case VKI_SIGSTKFLT:	/* term */
+#     endif
       case VKI_SIGUSR1:	/* term */
       case VKI_SIGUSR2:	/* term */
       case VKI_SIGIO:	/* term */
@@ -3004,6 +3007,9 @@ void sync_signalhandler ( Int sigNo,
 	     || sigNo == VKI_SIGBUS
 	     || sigNo == VKI_SIGFPE
 	     || sigNo == VKI_SIGILL
+#if defined(VKI_SIGSYS)
+	     || sigNo == VKI_SIGSYS
+#endif
 	     || sigNo == VKI_SIGTRAP);
 
    info->si_code = sanitize_si_code(info->si_code);

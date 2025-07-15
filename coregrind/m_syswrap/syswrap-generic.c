@@ -2678,7 +2678,12 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
       (fixed/hint/any), and ask aspacem what we should do. */
    mreq.start = arg1;
    mreq.len   = arg2;
-   if (arg4 & VKI_MAP_FIXED) {
+   if ((arg4 & VKI_MAP_FIXED)
+#if defined(VKI_MAP_FIXED_NOREPLACE)
+       || (arg4 & VKI_MAP_FIXED_NOREPLACE)
+#endif
+      )
+   {
       mreq.rkind = MFixed;
    } else
 #if defined(VGO_solaris) && defined(VKI_MAP_ALIGN)
@@ -2710,6 +2715,11 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    advised = VG_(am_get_advisory)( &mreq, True/*client*/, &mreq_ok );
    if (!mreq_ok) {
       /* Our request was bounced, so we'd better fail. */
+#if defined(VKI_MAP_FIXED_NOREPLACE)
+      if (arg4 & VKI_MAP_FIXED_NOREPLACE) {
+         return VG_(mk_SysRes_Error)( VKI_EEXIST );
+      }
+#endif
       return VG_(mk_SysRes_Error)( VKI_EINVAL );
    }
 
@@ -2741,6 +2751,13 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    if ((arg4 & VKI_MAP_32BIT) && !(arg4 & VKI_MAP_FIXED)
        && sr_isError(sres)) {
       return VG_(mk_SysRes_Error)( VKI_ENOMEM );
+   }
+#  endif
+
+#  if defined(VKI_MAP_FIXED_NOREPLACE)
+   /* FIXED_NOREPLACE is fatal, no retries. */
+   if ((arg4 & VKI_MAP_FIXED_NOREPLACE) && sr_isError(sres)) {
+      return VG_(mk_SysRes_Error)( VKI_EEXIST );
    }
 #  endif
 

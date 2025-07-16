@@ -104,3 +104,58 @@ bitsof_irtype(IRType ty)
       panic(__func__);
    }
 }
+
+
+uint64_t
+get_random_value(IRType type)
+{
+   uint64_t val = rand();
+
+   switch (type) {
+   case Ity_I1:  return val & 0x1;
+   case Ity_I8:  return val & UINT8_MAX;
+   case Ity_I16: return val & UINT16_MAX;
+   case Ity_I32: return val & UINT32_MAX;
+   case Ity_I64:
+      /* Note, that RAND_MAX == INT32_MAX. Therefore, simply concatenating
+         two rand() values would never produce a value with MSB == 1 */
+      val <<= (32 + 1);
+      val |= rand() << 1;
+      val |= rand() & 0x1;
+      return val;
+
+   default:
+      panic(__func__);
+   }
+}
+
+
+const uint64_t *
+get_selected_values(IRType type, unsigned *num_val)
+{
+   static const uint64_t values_1bit[]  = { 0, 1 };
+   static const uint64_t values_8bit[]  = { 0, 1, 2,
+      UINT8_MAX  - 1, UINT8_MAX };
+   static const uint64_t values_16bit[] = { 0, 1, 2,
+      UINT8_MAX  - 1, UINT8_MAX, UINT8_MAX + 1,
+      UINT16_MAX - 1, UINT16_MAX };
+   static const uint64_t values_32bit[] = { 0, 1, 2,
+      UINT8_MAX  - 1, UINT8_MAX,  UINT8_MAX  + 1,
+      UINT16_MAX - 1, UINT16_MAX, UINT16_MAX + 1,
+      UINT32_MAX - 1, UINT32_MAX };
+   static const uint64_t values_64bit[] = { 0, 1, 2,
+      UINT8_MAX  - 1, UINT8_MAX,  UINT8_MAX  + 1,
+      UINT16_MAX - 1, UINT16_MAX, UINT16_MAX + 1,
+      UINT32_MAX - 1, UINT32_MAX, UINT32_MAX + 1,
+      UINT64_MAX - 1, UINT64_MAX };
+
+   switch (type) {
+   case Ity_I1:  *num_val = NUM_EL(values_1bit);  return values_1bit;
+   case Ity_I8:  *num_val = NUM_EL(values_8bit);  return values_8bit;
+   case Ity_I16: *num_val = NUM_EL(values_16bit); return values_16bit;
+   case Ity_I32: *num_val = NUM_EL(values_32bit); return values_32bit;
+   case Ity_I64: *num_val = NUM_EL(values_64bit); return values_64bit;
+   default:
+      panic(__func__);
+   }
+}

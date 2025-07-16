@@ -23,11 +23,13 @@
 */
 
 #include <stdio.h>      // printf
+#include <stdlib.h>     // rand
 #include <stdint.h>     // UINT64_MAX
 #include "vtest.h"
 
 static void check_result(const irop_t *, const test_data_t *);
-static void run_tests(const irop_t *, test_data_t *, unsigned, uint64_t *);
+static void run_selected_tests(const irop_t *, test_data_t *);
+static void run_random_tests(const irop_t *, test_data_t *);
 static uint64_t left(uint64_t, unsigned);
 static uint32_t popcount(uint64_t);
 
@@ -38,47 +40,25 @@ test_unary_op(const irop_t *op, test_data_t *data)
    opnd_t *opnd = &data->opnds[0];
 
    switch (opnd->type) {
-   case Ity_I1: {
-      uint64_t values[] = { 0, 1 };
-
-      run_tests(op, data, NUM_EL(values), values);
-      break;
-   }
-
+   case Ity_I1:
    case Ity_I8: {
-      uint64_t values[] = { 0, 1, 2, UINT8_MAX - 1, UINT8_MAX };
+      /* Exhaustive */
+      unsigned max = (1 << bitsof_irtype(opnd->type)) - 1;
+      for (unsigned i = 0; i <= max; ++i) {
+         opnd->value = i;
 
-      run_tests(op, data, NUM_EL(values), values);
+         valgrind_execute_test(op, data);
+         check_result(op, data);
+      }
       break;
    }
 
-   case Ity_I16: {
-      uint64_t values[] = { 0, 1, 2, UINT16_MAX - 1, UINT16_MAX,
-         /* and for the benefit of Iop_16HIto8: */
-         1 << 8, 2 << 8, UINT8_MAX << 8
-      };
-
-      run_tests(op, data, NUM_EL(values), values);
+   case Ity_I16:
+   case Ity_I32:
+   case Ity_I64:
+      run_selected_tests(op, data);
+      run_random_tests(op, data);
       break;
-   }
-
-   case Ity_I32: {
-      uint64_t values[] = { 0, 1, 2, UINT32_MAX - 1, UINT32_MAX,
-         /* and for the benefit of Iop_32HIto16: */
-         1 << 16, 2 << 16, (uint64_t)UINT16_MAX << 16
-      };
-      run_tests(op, data, NUM_EL(values), values);
-      break;
-   }
-
-   case Ity_I64: {
-      uint64_t values[] = { 0, 1, 2, UINT64_MAX - 1, UINT64_MAX,
-         /* and for the benefit of Iop_64HIto32: */
-         (uint64_t)1 << 32, (uint64_t)2 << 32, (uint64_t)UINT32_MAX << 32
-      };
-      run_tests(op, data, NUM_EL(values), values);
-      break;
-   }
 
    default:
       panic(__func__);
@@ -87,13 +67,29 @@ test_unary_op(const irop_t *op, test_data_t *data)
 
 
 static void
-run_tests(const irop_t *op, test_data_t *data, unsigned num_val,
-          uint64_t *values)
+run_selected_tests(const irop_t *op, test_data_t *data)
 {
    opnd_t *opnd = &data->opnds[0];
+   unsigned num_val;
+   const uint64_t *values = get_selected_values(opnd->type, &num_val);
 
    for (unsigned i = 0; i < num_val; ++i) {
       opnd->value = values[i];
+
+      valgrind_execute_test(op, data);
+      check_result(op, data);
+   }
+}
+
+
+/* Test with pseudo-random numbers */
+static void
+run_random_tests(const irop_t *op, test_data_t *data)
+{
+   opnd_t *opnd = &data->opnds[0];
+
+   for (unsigned i = 0; i < num_random_tests; ++i) {
+      opnd->value = get_random_value(opnd->type);
 
       valgrind_execute_test(op, data);
       check_result(op, data);

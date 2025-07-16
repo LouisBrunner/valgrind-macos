@@ -84,8 +84,11 @@ void panic(const char *, ...) __attribute__((noreturn));
 void complain(const irop_t *, const test_data_t *, uint64_t expected);
 
 unsigned bitsof_irtype(IRType);
+uint64_t get_random_value(IRType);
+const uint64_t *get_selected_values(IRType, unsigned *);
 
 /* Exported variables */
 extern int verbose;
+extern unsigned num_random_tests;
 
 #endif // VTEST_H

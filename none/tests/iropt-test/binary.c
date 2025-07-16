@@ -27,80 +27,29 @@
 #include "vtest.h"
 
 static void check_result(const irop_t *, const test_data_t *);
-static void run_tests(const irop_t *, test_data_t *, unsigned, uint64_t *,
-                      unsigned, uint64_t *);
+static void run_tests(const irop_t *, test_data_t *);
+static void run_shift_tests(const irop_t *, test_data_t *);
 static int  is_shift_op(IROp);
 
 
 void
 test_binary_op(const irop_t *op, test_data_t *data)
 {
-   opnd_t *opnd_l = &data->opnds[0];
-
-   switch (opnd_l->type) {
-   case Ity_I1: {
-      uint64_t values[] = { 0, 1 };
-
-      run_tests(op, data, NUM_EL(values), values, NUM_EL(values), values);
-      break;
-   }
-
-   case Ity_I8: {
-      uint64_t values[] = { 0, 1, 2, UINT8_MAX - 1, UINT8_MAX };
-      uint64_t shifts[] = { 0, 1, 2, 6, 7 };
-
-      if (is_shift_op(op->op))
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(shifts), shifts);
-      else
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(values), values);
-      break;
-   }
-
-   case Ity_I16: {
-      uint64_t values[] = { 0, 1, 2, UINT16_MAX - 1, UINT16_MAX };
-      uint64_t shifts[] = { 0, 1, 2, 14, 15 };
-
-      if (is_shift_op(op->op))
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(shifts), shifts);
-      else
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(values), values);
-      break;
-   }
-
-   case Ity_I32: {
-      uint64_t values[] = { 0, 1, 2, UINT32_MAX - 1, UINT32_MAX };
-      uint64_t shifts[] = { 0, 1, 2, 30, 31 };
-
-      if (is_shift_op(op->op))
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(shifts), shifts);
-      else
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(values), values);
-      break;
-   }
-
-   case Ity_I64: {
-      uint64_t values[] = { 0, 1, 2, UINT64_MAX - 1, UINT64_MAX };
-      uint64_t shifts[] = { 0, 1, 2, 62, 63 };
-
-      if (is_shift_op(op->op))
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(shifts), shifts);
-      else
-         run_tests(op, data, NUM_EL(values), values, NUM_EL(values), values);
-      break;
-   }
-
-   default:
-      panic(__func__);
-   }
+   if (is_shift_op(op->op))
+      run_shift_tests(op, data);
+   else
+      run_tests(op, data);
 }
 
 
 static void
-run_tests(const irop_t *op, test_data_t *data, unsigned num_val_l,
-          uint64_t *values_l, unsigned num_val_r, uint64_t *values_r)
+run_selected_tests(const irop_t *op, test_data_t *data)
 {
    opnd_t *opnd_l = &data->opnds[0];
    opnd_t *opnd_r = &data->opnds[1];
+   unsigned num_val_l, num_val_r;
+   const uint64_t *values_l = get_selected_values(opnd_l->type, &num_val_l);
+   const uint64_t *values_r = get_selected_values(opnd_r->type, &num_val_r);
 
    for (unsigned i = 0; i < num_val_l; ++i) {
       opnd_l->value = values_l[i];
@@ -111,6 +60,63 @@ run_tests(const irop_t *op, test_data_t *data, unsigned num_val_l,
          check_result(op, data);
       }
    }
+}
+
+
+/* Test with pseudo-random numbers */
+static void
+run_random_tests(const irop_t *op, test_data_t *data)
+{
+   opnd_t *opnd_l = &data->opnds[0];
+   opnd_t *opnd_r = &data->opnds[1];
+
+   for (unsigned i = 0; i < num_random_tests; ++i) {
+      opnd_l->value = get_random_value(opnd_l->type);
+      opnd_r->value = get_random_value(opnd_r->type);
+
+      valgrind_execute_test(op, data);
+      check_result(op, data);
+   }
+}
+
+
+/* OP is a shift operator. */
+static void
+run_shift_tests(const irop_t *op, test_data_t *data)
+{
+   opnd_t *opnd_l = &data->opnds[0];
+   opnd_t *opnd_r = &data->opnds[1];
+   unsigned num_shiftee;
+   const uint64_t *shiftee = get_selected_values(opnd_l->type, &num_shiftee);
+   unsigned  max_shift_amount = bitsof_irtype(opnd_r->type) - 1;
+
+   /* Shift selected values with all possible shift amounts */
+   for (unsigned i = 0; i < num_shiftee; ++i) {
+      opnd_l->value = shiftee[i];
+      for (unsigned j = 0; j < max_shift_amount; ++j) {
+         opnd_r->value = j;
+
+         valgrind_execute_test(op, data);
+         check_result(op, data);
+      }
+   }
+
+   /* Shift random values with random shift amounts */
+   for (unsigned i = 0; i < num_random_tests; ++i) {
+      opnd_l->value = get_random_value(opnd_l->type);
+      opnd_r->value = get_random_value(opnd_r->type) & max_shift_amount;
+
+      valgrind_execute_test(op, data);
+      check_result(op, data);
+   }
+}
+
+
+static void
+run_tests(const irop_t *op, test_data_t *data)
+{
+   run_selected_tests(op, data);
+   run_random_tests(op, data);
 }
 
 

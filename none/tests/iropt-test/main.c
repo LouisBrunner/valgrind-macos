@@ -38,18 +38,23 @@ static void check_irops_table(void);
 static test_data_t *new_test_data(const irop_t *);
 
 int verbose = 0;
+unsigned num_random_tests;
 
 
 int
 main(int argc, char *argv[])
 {
    assert(sizeof(long long) == 8);
+   assert(RAND_MAX == INT32_MAX);
 
    for (int i = 1; i < argc; ++i) {
       if (strcmp(argv[i], "-v") == 0)
          ++verbose;
-      else if (strcmp(argv[i], "--help") == 0) {
+      else if (strncmp(argv[i], "-r", 2) == 0) {
+         num_random_tests = atoi(argv[i] + 2);
+      } else if (strcmp(argv[i], "--help") == 0) {
         printf("\niropt-test [ -v | --help ]\n");
+        printf("\n\t -rNUM number of random tests per IRop\n");
         printf("\n\t -v    verbose mode; shows IROps being tested\n");
         printf("\n\t -v -v verbose mode, extreme edition\n\n");
         return 0;
@@ -72,7 +77,7 @@ main(int argc, char *argv[])
       const irop_t *op = irops +i;
 
       if (verbose)
-         printf("\nTesting operator %s\n", op->name);
+         printf("Testing operator %s\n", op->name);
 
       test_data_t *data = new_test_data(op);
 

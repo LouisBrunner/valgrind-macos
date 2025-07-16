@@ -199,23 +199,23 @@ check_result(const irop_t *op, const test_data_t *data)
    case Iop_CmpEQ16:
    case Iop_CmpEQ32:
    case Iop_CmpEQ64:
-//   case Iop_CasCmpEQ8:
-//   case Iop_CasCmpEQ16:
-//   case Iop_CasCmpEQ32:
-//   case Iop_CasCmpEQ64:
+   case Iop_CasCmpEQ8:
+   case Iop_CasCmpEQ16:
+   case Iop_CasCmpEQ32:
+   case Iop_CasCmpEQ64:
       expected = opnd_l == opnd_r;
       break;
 
    case Iop_CmpNE8:
-//   case Iop_CmpNE16:
+   case Iop_CmpNE16:
    case Iop_CmpNE32:
    case Iop_CmpNE64:
    case Iop_CasCmpNE8:
-//   case Iop_CasCmpNE16:
+   case Iop_CasCmpNE16:
    case Iop_CasCmpNE32:
    case Iop_CasCmpNE64:
    case Iop_ExpCmpNE8:
-//   case Iop_ExpCmpNE16:
+   case Iop_ExpCmpNE16:
    case Iop_ExpCmpNE32:
    case Iop_ExpCmpNE64:
       expected = opnd_l != opnd_r;

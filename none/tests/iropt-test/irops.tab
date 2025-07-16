@@ -111,12 +111,12 @@
 
    // BINARY
    { OPNAME(Add8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
-// { OPNAME(Add16),   Ity_I16, 2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(Add16),   Ity_I16, 2, Ity_I16, Ity_I16 },
    { OPNAME(Add32),   Ity_I32, 2, Ity_I32, Ity_I32 },
    { OPNAME(Add64),   Ity_I64, 2, Ity_I64, Ity_I64 },
 
    { OPNAME(Sub8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
-// { OPNAME(Sub16),   Ity_I16, 2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(Sub16),   Ity_I16, 2, Ity_I16, Ity_I16 },
    { OPNAME(Sub32),   Ity_I32, 2, Ity_I32, Ity_I32 },
    { OPNAME(Sub64),   Ity_I64, 2, Ity_I64, Ity_I64 },
 
@@ -197,13 +197,13 @@
    { OPNAME(Xor32), Ity_I32, 2, Ity_I32, Ity_I32 },
    { OPNAME(Xor64), Ity_I64, 2, Ity_I64, Ity_I64 },
 
-// { OPNAME(CmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8  }, // no folding yet
-// { OPNAME(CmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(CmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(CmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16 },
    { OPNAME(CmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32 },
    { OPNAME(CmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64 },
 
    { OPNAME(CmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
-// { OPNAME(CmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(CmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 },
    { OPNAME(CmpNE32), Ity_I1,  2, Ity_I32, Ity_I32 },
    { OPNAME(CmpNE64), Ity_I1,  2, Ity_I64, Ity_I64 },
 
@@ -219,18 +219,18 @@
    { OPNAME(CmpLE32S), Ity_I1,  2, Ity_I32, Ity_I32 },
    { OPNAME(CmpLE64S), Ity_I1,  2, Ity_I64, Ity_I64 },
 
-// { OPNAME(CasCmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8  }, // no folding yet
-// { OPNAME(CasCmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16 }, // no folding yet
-// { OPNAME(CasCmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32 }, // no folding yet
-// { OPNAME(CasCmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64 }, // no folding yet
+   { OPNAME(CasCmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(CasCmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16 },
+   { OPNAME(CasCmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CasCmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64 },
 
    { OPNAME(CasCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
-// { OPNAME(CasCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(CasCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 },
    { OPNAME(CasCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32 },
    { OPNAME(CasCmpNE64), Ity_I1,  2, Ity_I64, Ity_I64 },
 
    { OPNAME(ExpCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
-// { OPNAME(ExpCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(ExpCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 },
    { OPNAME(ExpCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32 },
    { OPNAME(ExpCmpNE64), Ity_I1,  2, Ity_I64, Ity_I64 },
 

@@ -2019,6 +2019,11 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         + e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
+            case Iop_Add16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
+               break;
             case Iop_Add32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
@@ -2035,6 +2040,11 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         - e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+            case Iop_Sub16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        - e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
                break;
             case Iop_Sub32:
                e2 = IRExpr_Const(IRConst_U32(
@@ -2153,12 +2163,26 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- CmpEQ -- */
+            case Iop_CmpEQ8:
+            case Iop_CasCmpEQ8:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+            case Iop_CmpEQ16:
+            case Iop_CasCmpEQ16:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
+               break;
             case Iop_CmpEQ32:
+            case Iop_CasCmpEQ32:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
             case Iop_CmpEQ64:
+            case Iop_CasCmpEQ64:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U64))));
@@ -2171,6 +2195,13 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
                         != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))));
+               break;
+            case Iop_CmpNE16:
+            case Iop_CasCmpNE16:
+            case Iop_ExpCmpNE16:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
                break;
             case Iop_CmpNE32:
             case Iop_CasCmpNE32:

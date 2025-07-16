@@ -33,6 +33,7 @@ static void run_random_tests(const irop_t *, test_data_t *);
 static uint64_t left(uint64_t, unsigned);
 static uint32_t popcount(uint64_t);
 static uint32_t clz(uint64_t, unsigned);
+static uint32_t ctz(uint64_t, unsigned);
 
 
 void
@@ -201,6 +202,9 @@ check_result(const irop_t *op, const test_data_t *data)
    case Iop_ClzNat32: expected = clz(opnd, 32); break;
    case Iop_ClzNat64: expected = clz(opnd, 64); break;
 
+   case Iop_CtzNat32: expected = ctz(opnd, 32); break;
+   case Iop_CtzNat64: expected = ctz(opnd, 64); break;
+
    default:
       panic("%s: operator %s not handled\n", __func__, op->name);
    }
@@ -282,4 +286,23 @@ clz(uint64_t value, unsigned num_bits)
       value >>= 1;
    }
    return num_bits - last_seen_1bit;
+}
+
+
+static uint32_t
+ctz(uint64_t value, unsigned num_bits )
+{
+  unsigned count = 0;
+  unsigned num_nibbles = num_bits / 4;
+
+  for (unsigned i = 0; i < num_nibbles; ++i) {
+    UInt nibble = value & 0xF;
+    if ((nibble & 0x1) == 0x1) return count;
+    if ((nibble & 0x2) == 0x2) return count + 1;
+    if ((nibble & 0x4) == 0x4) return count + 2;
+    if ((nibble & 0x8) == 0x8) return count + 3;
+    count  += 4;
+    value >>= 4;
+  }
+  return count;
 }

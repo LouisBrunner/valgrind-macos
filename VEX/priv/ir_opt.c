@@ -1365,6 +1365,30 @@ static UInt fold_ClzNat32 ( UInt value )
    return 32;
 }
 
+/* Helpers for folding CtzNat32/64. */
+static UInt fold_CtzNat_WRK ( ULong value, UInt num_bits )
+{
+  UInt count = 0;
+
+  for (UInt i = 1; i <= num_bits; ++i) {
+    if (value & 0x1)
+      return count;
+    value >>= 1;
+    ++count;
+  }
+  return count;
+}
+
+static UInt fold_CtzNat64 ( ULong value )
+{
+   return fold_CtzNat_WRK(value, 64);
+}
+
+static UInt fold_CtzNat32 ( UInt value )
+{
+   return fold_CtzNat_WRK(value, 32);
+}
+
 /* Helpers for folding PopCount32/64.
    https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
    As many iterations as 1-bits present.
@@ -1736,6 +1760,17 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
          case Iop_ClzNat64: {
             ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             e2 = IRExpr_Const(IRConst_U64(fold_ClzNat64(u64)));
+            break;
+         }
+
+         case Iop_CtzNat32: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            e2 = IRExpr_Const(IRConst_U32(fold_CtzNat32(u32)));
+            break;
+         }
+         case Iop_CtzNat64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            e2 = IRExpr_Const(IRConst_U64(fold_CtzNat64(u64)));
             break;
          }
 

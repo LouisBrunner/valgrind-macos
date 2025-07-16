@@ -2653,6 +2653,17 @@ ML_(generic_PRE_sys_mmap) ( ThreadId tid,
    VG_(core_panic)("can't use ML_(generic_PRE_sys_mmap) on Darwin");
 #  endif
 
+   /* fd (arg4) is only used when flags (arg4) does not contain
+      MAP_ANONYMOUS. ML_(fd_allowed) might just warn (with --track-fds)
+      and not fail, unless it is a Valgrind owned file descriptor.
+      So also check with fcntl (F_GETFD) to know if it really is a bad
+      fd. Fail early in that case with EBADF.  */
+   if (!(arg4 & VKI_MAP_ANONYMOUS)
+       && (!ML_(fd_allowed)(arg5, "mmap", tid, False)
+           || VG_(fcntl) (arg5, VKI_F_GETFD, 0) < 0)) {
+      return VG_(mk_SysRes_Error)( VKI_EBADF );
+   }
+
    if (arg2 == 0) {
       /* SuSV3 says: If len is zero, mmap() shall fail and no mapping
          shall be established. */

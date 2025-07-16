@@ -56,6 +56,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506499  Unhandled syscall 592 (exterrctl - FreeBSD
 506795  Better report which clone flags are problematic
 506930  valgrind allows SIGKILL being reset to SIG_DFL
+506970  mmap needs an EBADF fd_allowed check
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

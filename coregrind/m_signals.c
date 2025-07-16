@@ -178,7 +178,7 @@
 
        else
        if    thread is blocked in a syscall marked SfMayBlock
-       then  signals may be delivered to async_sighandler, since we
+       then  signals may be delivered to async_signalhandler, since we
              temporarily unblocked them for the duration of the syscall,
              by using the real (SCSS) mask for this thread
 
@@ -2999,7 +2999,7 @@ void sync_signalhandler ( Int sigNo,
    Bool from_user;
 
    if (0) 
-      VG_(printf)("sync_sighandler(%d, %p, %p)\n", sigNo, info, uc);
+      VG_(printf)("sync_signalhandler(%d, %p, %p)\n", sigNo, info, uc);
 
    vg_assert(info != NULL);
    vg_assert(info->si_signo == sigNo);

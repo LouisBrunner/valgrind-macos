@@ -98,8 +98,8 @@
 // { OPNAME(Ctz32),  Ity_I32,  1, Ity_I32 }, // deprecated, undefined behaviour
 // { OPNAME(Ctz64),  Ity_I64,  1, Ity_I64 }, // deprecated, undefined behaviour
 
-// { OPNAME(ClzNat32), Ity_I32, 1, Ity_I32 }, // no folding yet
-// { OPNAME(ClzNat64), Ity_I64, 1, Ity_I64 }, // no folding yet
+   { OPNAME(ClzNat32), Ity_I32, 1, Ity_I32 },
+   { OPNAME(ClzNat64), Ity_I64, 1, Ity_I64 },
 
 // { OPNAME(CtzNat32), Ity_I32, 1, Ity_I32 }, // no folding yet
 // { OPNAME(CtzNat64), Ity_I64, 1, Ity_I64 }, // no folding yet

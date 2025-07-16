@@ -32,6 +32,7 @@ static void run_selected_tests(const irop_t *, test_data_t *);
 static void run_random_tests(const irop_t *, test_data_t *);
 static uint64_t left(uint64_t, unsigned);
 static uint32_t popcount(uint64_t);
+static uint32_t clz(uint64_t, unsigned);
 
 
 void
@@ -197,6 +198,9 @@ check_result(const irop_t *op, const test_data_t *data)
       expected = popcount(opnd);
       break;
 
+   case Iop_ClzNat32: expected = clz(opnd, 32); break;
+   case Iop_ClzNat64: expected = clz(opnd, 64); break;
+
    default:
       panic("%s: operator %s not handled\n", __func__, op->name);
    }
@@ -264,4 +268,18 @@ popcount(uint64_t value)
       count += value & 1;
    }
    return count;
+}
+
+
+static uint32_t
+clz(uint64_t value, unsigned num_bits)
+{
+   unsigned last_seen_1bit = 0;
+
+   for (int i = 1; i <= num_bits; ++i) {
+      if (value & 0x1)
+         last_seen_1bit = i;
+      value >>= 1;
+   }
+   return num_bits - last_seen_1bit;
 }

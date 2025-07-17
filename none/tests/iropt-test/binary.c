@@ -233,9 +233,11 @@ check_result(const irop_t *op, const test_data_t *data)
       break;
 
    case Iop_CmpLT32S: {
-      int32_t opnd_ls = (int32_t)(opnd_l & UINT32_MAX);
-      int32_t opnd_rs = (int32_t)(opnd_r & UINT32_MAX);
-      expected = opnd_ls < opnd_rs;
+      uint32_t u32l = opnd_l & UINT32_MAX;
+      uint32_t u32r = opnd_r & UINT32_MAX;
+      int32_t  s32l = (int32_t)u32l;
+      int32_t  s32r = (int32_t)u32r;
+      expected = s32l < s32r;
       break;
    }
 
@@ -249,9 +251,11 @@ check_result(const irop_t *op, const test_data_t *data)
       break;
 
    case Iop_CmpLE32S: {
-      int32_t opnd_ls = (int32_t)(opnd_l & UINT32_MAX);
-      int32_t opnd_rs = (int32_t)(opnd_r & UINT32_MAX);
-      expected = opnd_ls <= opnd_rs;
+      uint32_t u32l = opnd_l & UINT32_MAX;
+      uint32_t u32r = opnd_r & UINT32_MAX;
+      int32_t  s32l = (int32_t)u32l;
+      int32_t  s32r = (int32_t)u32r;
+      expected = s32l <= s32r;
       break;
    }
 
@@ -259,9 +263,22 @@ check_result(const irop_t *op, const test_data_t *data)
       expected = (int64_t)opnd_l <= (int64_t)opnd_r;
       break;
 
+   case Iop_CmpORD32U:
+   case Iop_CmpORD64U:
+      expected = (opnd_l < opnd_r) ? 8 : (opnd_l > opnd_r) ? 4 : 2;
+      break;
+
    case Iop_CmpORD32S: {
-      int32_t opnd_ls = (int32_t)(opnd_l & UINT32_MAX);
-      int32_t opnd_rs = (int32_t)(opnd_r & UINT32_MAX);
+      uint32_t u32l = opnd_l & UINT32_MAX;
+      uint32_t u32r = opnd_r & UINT32_MAX;
+      int32_t  s32l = (int32_t)u32l;
+      int32_t  s32r = (int32_t)u32r;
+      expected = (s32l < s32r) ? 8 : (s32l > s32r) ? 4 : 2;
+      break;
+   }
+   case Iop_CmpORD64S: {
+      int64_t opnd_ls = (int64_t)opnd_l;
+      int64_t opnd_rs = (int64_t)opnd_r;
       expected = (opnd_ls < opnd_rs) ? 8 : (opnd_ls > opnd_rs) ? 4 : 2;
       break;
    }
@@ -270,6 +287,14 @@ check_result(const irop_t *op, const test_data_t *data)
       opnd_l &= UINT32_MAX;
       opnd_r &= UINT32_MAX;
       expected = opnd_l > opnd_r ? opnd_l : opnd_r;
+      break;
+
+   case Iop_8HLto16:
+      expected = (opnd_l << 8) | opnd_r;
+      break;
+
+   case Iop_16HLto32:
+      expected = (opnd_l << 16) | opnd_r;
       break;
 
    case Iop_32HLto64:

@@ -109,7 +109,7 @@ bitsof_irtype(IRType ty)
 uint64_t
 get_random_value(IRType type)
 {
-   uint64_t val = rand();
+   uint64_t val = mrand48();
 
    switch (type) {
    case Ity_I1:  return val & 0x1;
@@ -117,11 +117,8 @@ get_random_value(IRType type)
    case Ity_I16: return val & UINT16_MAX;
    case Ity_I32: return val & UINT32_MAX;
    case Ity_I64:
-      /* Note, that RAND_MAX == INT32_MAX. Therefore, simply concatenating
-         two rand() values would never produce a value with MSB == 1 */
-      val <<= (32 + 1);
-      val |= rand() << 1;
-      val |= rand() & 0x1;
+      val <<= 32;
+      val |= mrand48();
       return val;
 
    default:

@@ -45,7 +45,7 @@ int
 main(int argc, char *argv[])
 {
    assert(sizeof(long long) == 8);
-   assert(RAND_MAX == INT32_MAX);
+   srand48(42L);
 
    for (int i = 1; i < argc; ++i) {
       if (strcmp(argv[i], "-v") == 0)

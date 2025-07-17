@@ -120,18 +120,18 @@
    { OPNAME(Sub32),   Ity_I32, 2, Ity_I32, Ity_I32 },
    { OPNAME(Sub64),   Ity_I64, 2, Ity_I64, Ity_I64 },
 
-// { OPNAME(Mul8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
-// { OPNAME(Mul16),   Ity_I16, 2, Ity_I16, Ity_I16 },
-// { OPNAME(Mul32),   Ity_I32, 2, Ity_I32, Ity_I32 },
-// { OPNAME(Mul64),   Ity_I64, 2, Ity_I64, Ity_I64 },
+   { OPNAME(Mul8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(Mul16),   Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(Mul32),   Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(Mul64),   Ity_I64, 2, Ity_I64, Ity_I64 },
 
-// { OPNAME(MullU8),  Ity_I16,  2, Ity_I8,  Ity_I8  }, // no folding yet
-// { OPNAME(MullU16), Ity_I32,  2, Ity_I16, Ity_I16 }, // no folding yet
-// { OPNAME(MullU32), Ity_I64,  2, Ity_I32, Ity_I32 }, // no folding yet
+   { OPNAME(MullU8),  Ity_I16,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(MullU16), Ity_I32,  2, Ity_I16, Ity_I16 },
+   { OPNAME(MullU32), Ity_I64,  2, Ity_I32, Ity_I32 },
 // { OPNAME(MullU64), Ity_I128, 2, Ity_I64, Ity_I64 }, // 128 bit
 
-// { OPNAME(MullS8),  Ity_I16,  2, Ity_I8,  Ity_I8  }, // no folding yet
-// { OPNAME(MullS16), Ity_I32,  2, Ity_I16, Ity_I16 }, // no folding yet
+   { OPNAME(MullS8),  Ity_I16,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(MullS16), Ity_I32,  2, Ity_I16, Ity_I16 },
    { OPNAME(MullS32), Ity_I64,  2, Ity_I32, Ity_I32 },
 // { OPNAME(MullS64), Ity_I128, 2, Ity_I64, Ity_I64 }, // 128 bit
 

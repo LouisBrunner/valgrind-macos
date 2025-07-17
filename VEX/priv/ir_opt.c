@@ -2067,6 +2067,16 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- Mul -- */
+            case Iop_Mul8:
+               e2 = IRExpr_Const(IRConst_U8(toUChar(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        * e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+            case Iop_Mul16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        * e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
+               break;
             case Iop_Mul32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
@@ -2078,6 +2088,53 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                         * e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
 
+            case Iop_MullU8: {
+               UChar  u8a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U8;
+               UChar  u8b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               Int    res = u8a * u8b;  /* Compiler will promote to int */
+               e2 = IRExpr_Const(IRConst_U16(toUShort(res)));
+               break;
+            }
+            case Iop_MullU16: {
+               UShort u16a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U16;
+               UShort u16b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U16;
+               Int    res = u16a * u16b;  /* Compiler will promote to int */
+               e2 = IRExpr_Const(IRConst_U32(res));
+               break;
+            }
+            case Iop_MullU32: {
+               UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt  u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               ULong res = (ULong)u32a * (ULong)u32b;
+               e2 = IRExpr_Const(IRConst_U64(res));
+               break;
+            }
+            case Iop_MullS8: {
+               /* very paranoid */
+               UChar  u8a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U8;
+               UChar  u8b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               Char   s8a = (Char)u8a;
+               Char   s8b = (Char)u8b;
+               Short  s16a = (Short)s8a;
+               Short  s16b = (Short)s8b;
+               Int    sres = s16a * s16b;
+               UShort ures = toUShort(sres);
+               e2 = IRExpr_Const(IRConst_U16(ures));
+               break;
+            }
+            case Iop_MullS16: {
+               /* very paranoid */
+               UShort u16a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U16;
+               UShort u16b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U16;
+               Short  s16a = (Short)u16a;
+               Short  s16b = (Short)u16b;
+               Int    s32a = (Int)s16a;
+               Int    s32b = (Int)s16b;
+               Int    sres = s32a * s32b;
+               UInt   ures = (UInt)sres;
+               e2 = IRExpr_Const(IRConst_U32(ures));
+               break;
+            }
             case Iop_MullS32: {
                /* very paranoid */
                UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;

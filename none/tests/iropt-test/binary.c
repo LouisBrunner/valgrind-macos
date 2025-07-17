@@ -144,6 +144,48 @@ check_result(const irop_t *op, const test_data_t *data)
       expected = opnd_l - opnd_r;
       break;
 
+   case Iop_Mul8:
+   case Iop_MullU8: {
+      uint8_t u8l = opnd_l;
+      uint8_t u8r = opnd_r;
+      expected = u8l * u8r;
+      break;
+   }
+   case Iop_Mul16:
+   case Iop_MullU16: {
+      uint16_t u16l = opnd_l;
+      uint16_t u16r = opnd_r;
+      expected = u16l * u16r;
+      break;
+   }
+   case Iop_Mul32:
+   case Iop_MullU32: {
+      uint32_t u32l = opnd_l;
+      uint32_t u32r = opnd_r;
+      expected = (uint64_t)u32l * (uint64_t)u32r;
+      break;
+   }
+
+   case Iop_Mul64:
+      expected = opnd_l * opnd_r;
+      break;
+
+   case Iop_MullS8: {
+      uint8_t u8l = opnd_l;
+      uint8_t u8r = opnd_r;
+      int8_t  s8l = (int8_t)u8l;
+      int8_t  s8r = (int8_t)u8r;
+      expected = (int16_t)s8l * (int16_t)s8r;
+      break;
+   }
+   case Iop_MullS16: {
+      uint16_t u16l = opnd_l;
+      uint16_t u16r = opnd_r;
+      int16_t  s16l = (int16_t)u16l;
+      int16_t  s16r = (int16_t)u16r;
+      expected = (int32_t)s16l * (int32_t)s16r;
+      break;
+   }
    case Iop_MullS32:
       expected = (int64_t)(int32_t)opnd_l * (int64_t)(int32_t)opnd_r;
       break;

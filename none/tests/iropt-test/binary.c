@@ -148,20 +148,26 @@ check_result(const irop_t *op, const test_data_t *data)
       expected = (int64_t)(int32_t)opnd_l * (int64_t)(int32_t)opnd_r;
       break;
 
+   case Iop_Shl8:
+   case Iop_Shl16:
    case Iop_Shl32:
-      expected = opnd_l << opnd_r;
-      break;
-
    case Iop_Shl64:
       expected = opnd_l << opnd_r;
       break;
 
+   case Iop_Shr8:
+   case Iop_Shr16:
    case Iop_Shr32:
+   case Iop_Shr64:
       expected = opnd_l >> opnd_r;
       break;
 
-   case Iop_Shr64:
-      expected = opnd_l >> opnd_r;
+   case Iop_Sar8:
+      expected = ((int64_t)(opnd_l << 56) >> 56) >> opnd_r;
+      break;
+
+   case Iop_Sar16:
+      expected = ((int64_t)(opnd_l << 48) >> 48) >> opnd_r;
       break;
 
    case Iop_Sar32:

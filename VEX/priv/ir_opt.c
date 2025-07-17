@@ -2093,6 +2093,22 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- Shl -- */
+            case Iop_Shl8:
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 7)
+                  e2 = IRExpr_Const(IRConst_U8(toUChar(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                           << shift))));
+               break;
+            case Iop_Shl16:
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 15)
+                  e2 = IRExpr_Const(IRConst_U16(toUShort(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                           << shift))));
+               break;
             case Iop_Shl32:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
                shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);
@@ -2111,6 +2127,28 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                break;
 
             /* -- Sar -- */
+            case Iop_Sar8: {
+               Int s8;
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               s8    = (Char)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 7) {
+                  s8 >>=/*signed*/ shift;
+                  e2 = IRExpr_Const(IRConst_U8(toUChar(s8)));
+               }
+               break;
+            }
+            case Iop_Sar16: {
+               Int s16;
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               s16   = (Short)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U16);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 15) {
+                  s16 >>=/*signed*/ shift;
+                  e2 = IRExpr_Const(IRConst_U16(toUShort(s16)));
+               }
+               break;
+            }
             case Iop_Sar32: {
                /* paranoid ... */
                /*signed*/ Int s32;
@@ -2137,6 +2175,24 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- Shr -- */
+            case Iop_Shr8: {
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 7)
+                  e2 = IRExpr_Const(IRConst_U8(toUChar(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                           >> shift))));
+               break;
+            }
+            case Iop_Shr16: {
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 15)
+                  e2 = IRExpr_Const(IRConst_U16(toUShort(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                           >> shift))));
+               break;
+            }
             case Iop_Shr32: {
                /* paranoid ... */
                /*unsigned*/ UInt u32;

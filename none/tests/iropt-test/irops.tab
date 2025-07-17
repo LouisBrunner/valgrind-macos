@@ -164,18 +164,18 @@
 // { OPNAME(ModU128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 // { OPNAME(ModS128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-// { OPNAME(Shl8),  Ity_I8,  2, Ity_I8,  Ity_I8 },  // no folding yet
-// { OPNAME(Shl16), Ity_I16, 2, Ity_I16, Ity_I8 },  // no folding yet
+   { OPNAME(Shl8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Shl16), Ity_I16, 2, Ity_I16, Ity_I8 },
    { OPNAME(Shl32), Ity_I32, 2, Ity_I32, Ity_I8 },
    { OPNAME(Shl64), Ity_I64, 2, Ity_I64, Ity_I8 },
 
-// { OPNAME(Shr8),  Ity_I8,  2, Ity_I8,  Ity_I8 },  // no folding yet
-// { OPNAME(Shr16), Ity_I16, 2, Ity_I16, Ity_I8 },  // no folding yet
+   { OPNAME(Shr8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Shr16), Ity_I16, 2, Ity_I16, Ity_I8 },
    { OPNAME(Shr32), Ity_I32, 2, Ity_I32, Ity_I8 },
    { OPNAME(Shr64), Ity_I64, 2, Ity_I64, Ity_I8 },
 
-// { OPNAME(Sar8),  Ity_I8,  2, Ity_I8,  Ity_I8 },  // no folding yet
-// { OPNAME(Sar16), Ity_I16, 2, Ity_I16, Ity_I8 },  // no folding yet
+   { OPNAME(Sar8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Sar16), Ity_I16, 2, Ity_I16, Ity_I8 },
    { OPNAME(Sar32), Ity_I32, 2, Ity_I32, Ity_I8 },
    { OPNAME(Sar64), Ity_I64, 2, Ity_I64, Ity_I8 },
 

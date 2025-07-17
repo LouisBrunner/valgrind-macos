@@ -40,6 +40,7 @@ extern void ML_(call_on_new_stack_0_1) ( Addr stack, Addr retaddr,
 
 // Linux-specific (but non-arch-specific) syscalls
 
+DECL_TEMPLATE(linux, sys_ustat);
 DECL_TEMPLATE(linux, sys_clone)
 DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);

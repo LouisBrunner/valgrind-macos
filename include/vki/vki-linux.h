@@ -172,6 +172,25 @@ typedef int __vki_kernel_key_t;
 typedef int __vki_kernel_mqd_t;
 
 //----------------------------------------------------------------------
+// From pre-git history /include/linux/types.h
+//----------------------------------------------------------------------
+
+struct vki_ustat {
+#if defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
+	long			f_tfree;
+#else
+	int			f_tfree;
+#endif
+#if defined(VGA_s390x)
+	unsigned int		f_tinode;
+#else
+	unsigned long		f_tinode;
+#endif
+	char			f_fname[6];
+	char			f_fpack[6];
+};
+
+//----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/types.h
 //----------------------------------------------------------------------
 

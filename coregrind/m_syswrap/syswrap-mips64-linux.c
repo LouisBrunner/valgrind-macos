@@ -216,7 +216,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_vmsplice);
-DECL_TEMPLATE (mips_linux, sys_ustat);
 DECL_TEMPLATE (mips_linux, sys_sysfs);
 DECL_TEMPLATE (mips_linux, sys_swapon);
 DECL_TEMPLATE (mips_linux, sys_swapoff);
@@ -246,12 +245,6 @@ PRE(sys_sched_rr_get_interval)
    PRE_REG_READ2(long, "sched_rr_get_interval", vki_pid_t, pid,
                  struct timespec *, timer);
    *flags |= SfMayBlock;
-}
-
-PRE(sys_ustat)
-{
-   PRINT("sys_ustat ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG2);
-   PRE_REG_READ2(long, "ustat", int, flags, const void *, path);
 }
 
 PRE(sys_swapon)
@@ -649,7 +642,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_utime, sys_utime),
    GENX_ (__NR_mknod, sys_mknod),
    LINX_ (__NR_personality, sys_personality),
-   PLAX_ (__NR_ustat, sys_ustat),
+   LINXY (__NR_ustat, sys_ustat),
    GENXY (__NR_statfs, sys_statfs),
    GENXY (__NR_fstatfs, sys_fstatfs),
    PLAX_ (__NR_sysfs, sys_sysfs),

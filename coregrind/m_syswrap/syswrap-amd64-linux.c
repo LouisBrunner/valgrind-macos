@@ -633,7 +633,7 @@ static SyscallTableEntry syscall_table[] = {
    //   (__NR_uselib,            sys_uselib),         // 134 
 
    LINX_(__NR_personality,       sys_personality),    // 135 
-   //   (__NR_ustat,             sys_ustat),          // 136 
+   LINXY(__NR_ustat,             sys_ustat),          // 136
    GENXY(__NR_statfs,            sys_statfs),         // 137 
    GENXY(__NR_fstatfs,           sys_fstatfs),        // 138 
    //   (__NR_sysfs,             sys_sysfs),          // 139 

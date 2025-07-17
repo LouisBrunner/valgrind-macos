@@ -14204,6 +14204,19 @@ POST(sys_userfaultfd)
    }
 }
 
+PRE(sys_ustat)
+{
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_ustat ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG2);
+   PRE_REG_READ2(long, "ustat", __vki_u32, dev, struct vki_ustat *, ubuf);
+   PRE_MEM_WRITE( "ustat(ubuf)", ARG2, sizeof(struct vki_ustat) );
+}
+
+POST(sys_ustat)
+{
+   POST_MEM_WRITE( ARG2, sizeof(struct vki_ustat) );
+}
+
 #undef PRE
 #undef POST
 

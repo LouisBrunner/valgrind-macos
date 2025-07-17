@@ -685,7 +685,7 @@ static SyscallTableEntry syscall_table[] = {
 
    GENX_(__NR_umask,             sys_umask),             // 60
    GENX_(__NR_chroot,            sys_chroot),            // 61
-//..    //   (__NR_ustat,             sys_ustat)              // 62 SVr4 -- deprecated
+   LINXY(__NR_ustat,             sys_ustat),             // 62 SVr4 -- deprecated
    GENXY(__NR_dup2,              sys_dup2),              // 63
    GENX_(__NR_getppid,           sys_getppid),           // 64
 

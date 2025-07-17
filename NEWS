@@ -55,6 +55,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506076  unimplemented fcntl command: 1028 (F_CREATED_QUERY)
 506499  Unhandled syscall 592 (exterrctl - FreeBSD
 506795  Better report which clone flags are problematic
+506928  Wrap (deprecated) linux specific ustat syscall
 506930  valgrind allows SIGKILL being reset to SIG_DFL
 506970  mmap needs an EBADF fd_allowed check
 

@@ -30,6 +30,7 @@ static void check_result(const irop_t *, const test_data_t *);
 static void run_tests(const irop_t *, test_data_t *);
 static void run_shift_tests(const irop_t *, test_data_t *);
 static int  is_shift_op(IROp);
+static int  is_division_op(IROp);
 
 
 void
@@ -56,6 +57,8 @@ run_selected_tests(const irop_t *op, test_data_t *data)
       for (unsigned j = 0; j < num_val_r; ++j) {
          opnd_r->value = values_r[j];
 
+         if (is_division_op(op->op) && opnd_r->value == 0) continue;
+
          valgrind_execute_test(op, data);
          check_result(op, data);
       }
@@ -73,6 +76,8 @@ run_random_tests(const irop_t *op, test_data_t *data)
    for (unsigned i = 0; i < num_random_tests; ++i) {
       opnd_l->value = get_random_value(opnd_l->type);
       opnd_r->value = get_random_value(opnd_r->type);
+
+      if (is_division_op(op->op) && opnd_r->value == 0) continue;
 
       valgrind_execute_test(op, data);
       check_result(op, data);
@@ -188,6 +193,27 @@ check_result(const irop_t *op, const test_data_t *data)
    }
    case Iop_MullS32:
       expected = (int64_t)(int32_t)opnd_l * (int64_t)(int32_t)opnd_r;
+      break;
+
+   case Iop_DivU32:
+   case Iop_DivU64:
+      expected = opnd_l / opnd_r;
+      break;
+
+   case Iop_DivS32:
+      expected = (int32_t)opnd_l / (int32_t)opnd_r;
+      break;
+
+   case Iop_DivS64:
+      expected = (int64_t)opnd_l / (int64_t)opnd_r;
+      break;
+
+   case Iop_DivU32E:
+      expected = (opnd_l << 32) / opnd_r;
+      break;
+
+   case Iop_DivS32E:
+      expected = (int64_t)(opnd_l << 32) / (int32_t)opnd_r;
       break;
 
    case Iop_Shl8:
@@ -387,6 +413,21 @@ is_shift_op(IROp op)
    case Iop_Shl8: case Iop_Shl16: case Iop_Shl32: case Iop_Shl64:
    case Iop_Shr8: case Iop_Shr16: case Iop_Shr32: case Iop_Shr64:
    case Iop_Sar8: case Iop_Sar16: case Iop_Sar32: case Iop_Sar64:
+      return 1;
+   default:
+      return 0;
+   }
+}
+
+
+static int
+is_division_op(IROp op)
+{
+   switch (op) {
+   case Iop_DivU32: case Iop_DivU64:
+   case Iop_DivS32: case Iop_DivS64:
+   case Iop_DivU32E:
+   case Iop_DivS32E:
       return 1;
    default:
       return 0;

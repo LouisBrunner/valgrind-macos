@@ -2149,6 +2149,54 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                break;
             }
 
+            /* -- Div -- */
+            case Iop_DivS32: {
+               Int s32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               Int s32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (s32b != 0)
+                  e2 = IRExpr_Const(IRConst_U32(s32a / s32b));
+               break;
+            }
+            case Iop_DivS64: {
+               Long s64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               Long s64b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               if (s64b != 0)
+                  e2 = IRExpr_Const(IRConst_U64(s64a / s64b));
+               break;
+            }
+            case Iop_DivU32: {
+               UInt u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (u32b != 0)
+                  e2 = IRExpr_Const(IRConst_U32(u32a / u32b));
+               break;
+            }
+            case Iop_DivU64: {
+               ULong u64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               ULong u64b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               if (u64b != 0)
+                  e2 = IRExpr_Const(IRConst_U64(u64a / u64b));
+               break;
+            }
+            case Iop_DivS32E: {
+               Int s32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               Int s32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (s32b != 0) {
+                  Long s64a = (Long)s32a << 32;
+                  e2 = IRExpr_Const(IRConst_U32(toUInt(s64a / s32b)));
+               }
+               break;
+            }
+            case Iop_DivU32E: {
+               UInt u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (u32b != 0) {
+                  ULong u64a = (ULong)u32a << 32;
+                  e2 = IRExpr_Const(IRConst_U32(toUInt(u64a / u32b)));
+               }
+               break;
+            }
+
             /* -- Shl -- */
             case Iop_Shl8:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);

@@ -135,20 +135,20 @@
    { OPNAME(MullS32), Ity_I64,  2, Ity_I32, Ity_I32 },
 // { OPNAME(MullS64), Ity_I128, 2, Ity_I64, Ity_I64 }, // 128 bit
 
-// { OPNAME(DivU32),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // no folding yet
-// { OPNAME(DivU64),  Ity_I64,  2, Ity_I64,  Ity_I64  }, // no folding yet
+   { OPNAME(DivU32),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+   { OPNAME(DivU64),  Ity_I64,  2, Ity_I64,  Ity_I64  },
 // { OPNAME(DivU128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-// { OPNAME(DivS32),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // no folding yet
-// { OPNAME(DivS64),  Ity_I64,  2, Ity_I64,  Ity_I64  }, // no folding yet
+   { OPNAME(DivS32),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+   { OPNAME(DivS64),  Ity_I64,  2, Ity_I64,  Ity_I64  },
 // { OPNAME(DivS128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-// { OPNAME(DivU32E),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // semantics ?
-// { OPNAME(DivU64E),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // semantics ?
+   { OPNAME(DivU32E),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+// { OPNAME(DivU64E),  Ity_I64,  2, Ity_I64,  Ity_I64  }, // 128 bit
 // { OPNAME(DivU128E), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-// { OPNAME(DivS32E),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // semantics ?
-// { OPNAME(DivS64E),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // semantics ?
+   { OPNAME(DivS32E),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+// { OPNAME(DivS64E),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // 128 bit
 // { OPNAME(DivS128E), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
 // { OPNAME(DivModU32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet

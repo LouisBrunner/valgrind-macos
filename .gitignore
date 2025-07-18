@@ -943,6 +943,7 @@
 /memcheck/tests/Makefile
 /memcheck/tests/Makefile.in
 /memcheck/tests/mallinfo
+/memcheck/tests/mallinfo2
 /memcheck/tests/malloc1
 /memcheck/tests/malloc2
 /memcheck/tests/malloc3

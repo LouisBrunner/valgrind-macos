@@ -2433,6 +2433,41 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    mi->keepcost = 0; // may want some value in here
 }
 
+// The aforementioned older function, mallinfo(), is deprecated since the type
+// used for the fields is too small.
+void VG_(mallinfo2) ( ThreadId tid, struct vg_mallinfo2* mi )
+{
+   UWord  i, free_blocks, free_blocks_size;
+   Arena* a = arenaId_to_ArenaP(VG_AR_CLIENT);
+
+   // Traverse free list and calculate free blocks statistics.
+   // This may seem slow but glibc works the same way.
+   free_blocks_size = free_blocks = 0;
+   for (i = 0; i < N_MALLOC_LISTS; i++) {
+      Block* b = a->freelist[i];
+      if (b == NULL) continue;
+      for (;;) {
+         free_blocks++;
+         free_blocks_size += (UWord)get_pszB(a, b);
+         b = get_next_b(b);
+         if (b == a->freelist[i]) break;
+      }
+   }
+
+   // We don't have fastbins so smblks & fsmblks are always 0. Also we don't
+   // have a separate mmap allocator so set hblks & hblkhd to 0.
+   mi->arena    = a->stats__bytes_mmaped;
+   mi->ordblks  = free_blocks + VG_(free_queue_length);
+   mi->smblks   = 0;
+   mi->hblks    = 0;
+   mi->hblkhd   = 0;
+   mi->usmblks  = 0;
+   mi->fsmblks  = 0;
+   mi->uordblks = a->stats__bytes_on_loan - VG_(free_queue_volume);
+   mi->fordblks = free_blocks_size + VG_(free_queue_volume);
+   mi->keepcost = 0; // may want some value in here
+}
+
 SizeT VG_(arena_redzone_size) ( ArenaId aid )
 {
    ensure_mm_init (VG_AR_CLIENT);

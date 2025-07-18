@@ -103,6 +103,7 @@
    10190 PANIC
    10200 MALLOC_STATS
    10210 MALLINFO
+   10215 MALLINFO2
    10220 DEFAULT_ZONE
    10230 CREATE_ZONE
    10240 ZONE_FROM_PTR
@@ -2519,6 +2520,33 @@ static void panic(const char *str)
 
 #elif defined(VGO_darwin)
  //MALLINFO(VG_Z_LIBC_SONAME, mallinfo);
+
+#endif
+
+
+/*---------------------- mallinfo2 ----------------------*/
+
+// mi must be static;  if it is auto then Memcheck thinks it is
+// uninitialised when used by the caller of this function, because Memcheck
+// doesn't know that the call to mallinfo2 fills in mi.
+#define MALLINFO2(soname, fnname) \
+   \
+   struct vg_mallinfo2 VG_REPLACE_FUNCTION_EZU(10215,soname,fnname) ( void ); \
+   struct vg_mallinfo2 VG_REPLACE_FUNCTION_EZU(10215,soname,fnname) ( void ) \
+   { \
+      static struct vg_mallinfo2 mi; \
+      DO_INIT; \
+      MALLOC_TRACE("mallinfo2()\n"); \
+      (void)VALGRIND_NON_SIMD_CALL1( info.mallinfo2, &mi ); \
+      return mi; \
+   }
+
+#if defined(VGO_linux)
+ MALLINFO2(VG_Z_LIBC_SONAME, mallinfo2);
+ MALLINFO2(SO_SYN_MALLOC,    mallinfo2);
+
+#elif defined(VGO_darwin)
+ //MALLINFO2(VG_Z_LIBC_SONAME, mallinfo2);
 
 #endif
 

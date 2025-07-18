@@ -261,6 +261,7 @@ EXTRA_DIST = \
 	long_namespace_xml.stderr.exp long_namespace_xml.stderr.exp-freebsd \
 	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
 	mallinfo.stderr.exp mallinfo.vgtest \
+	mallinfo2.stderr.exp mallinfo2.vgtest \
 	malloc_free_fill.vgtest \
 	malloc_free_fill.stderr.exp \
 	malloc_usable.stderr.exp malloc_usable.vgtest \
@@ -521,6 +522,7 @@ check_PROGRAMS = \
 	leak-segv-jmp \
 	long-supps \
 	mallinfo \
+	mallinfo2 \
 	malloc_free_fill \
 	malloc_usable malloc1 malloc2 malloc3 manuel1 manuel2 manuel3 \
 	match-overrun \
@@ -682,6 +684,7 @@ bug472219_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 calloc_overflow_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 malloc_usable_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_UNINITIALIZED@
 mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
+mallinfo2_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 strchr_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@

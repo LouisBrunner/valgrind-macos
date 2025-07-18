@@ -2147,6 +2147,7 @@ void do_client_request ( ThreadId tid )
 	 info->tl_malloc_usable_size   = VG_(tdict).tool_malloc_usable_size;
 
 	 info->mallinfo                = VG_(mallinfo);
+	 info->mallinfo2               = VG_(mallinfo2);
 	 info->clo_trace_malloc        = VG_(clo_trace_malloc);
          info->clo_realloc_zero_bytes_frees    = VG_(clo_realloc_zero_bytes_frees);
 

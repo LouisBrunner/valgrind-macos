@@ -29,3 +29,8 @@ fcntl36_64
 clone08
 close_range02
 kcmp03
+# Test fails because it tests something valgrind doesn't support:
+# We don't have fastbins so smblks & fsmblks are always 0. Also we
+# don't have a separate mmap allocator so set hblks & hblkhd to 0.
+mallinfo02
+mallinfo2_01

@@ -61,6 +61,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506910  openat2 with RESOLVE_NO_MAGICLINKS succeeds on /proc/self/exe
 506928  Wrap (deprecated) linux specific ustat syscall
 506930  valgrind allows SIGKILL being reset to SIG_DFL
+506967  Implement and override mallinfo2
 506970  mmap needs an EBADF fd_allowed check
 507173  s390x: Crash when constant folding is disabled
 

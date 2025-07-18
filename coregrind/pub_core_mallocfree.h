@@ -106,6 +106,21 @@ struct vg_mallinfo {
    int keepcost; /* top-most, releasable (via malloc_trim) space */
 };
 
+/* This struct definition MUST match the system one. */
+/* SVID2/XPG mallinfo structure */
+struct vg_mallinfo2 {
+   SizeT arena;    /* total space allocated from system */
+   SizeT ordblks;  /* number of non-inuse chunks */
+   SizeT smblks;   /* unused -- always zero */
+   SizeT hblks;    /* number of mmapped regions */
+   SizeT hblkhd;   /* total space in mmapped regions */
+   SizeT usmblks;  /* unused -- always zero */
+   SizeT fsmblks;  /* unused -- always zero */
+   SizeT uordblks; /* total allocated space */
+   SizeT fordblks; /* total non-inuse space */
+   SizeT keepcost; /* top-most, releasable (via malloc_trim) space */
+};
+
 extern void* VG_(arena_malloc)  ( ArenaId arena, const HChar* cc, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
 extern void* VG_(arena_calloc)  ( ArenaId arena, const HChar* cc,
@@ -132,6 +147,7 @@ extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 extern SizeT VG_(arena_redzone_size) ( ArenaId aid );
 
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
+extern void  VG_(mallinfo2) ( ThreadId tid, struct vg_mallinfo2* mi );
 
 // VG_(arena_perm_malloc) is for permanent allocation of small blocks.
 // See VG_(perm_malloc) in pub_tool_mallocfree.h for more details.

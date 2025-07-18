@@ -54,6 +54,7 @@ struct vg_mallocfunc_info {
    void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
    SizeT (*tl_malloc_usable_size)  (ThreadId tid, void* payload);
    void  (*mallinfo)               (ThreadId tid, struct vg_mallinfo* mi);
+   void  (*mallinfo2)              (ThreadId tid, struct vg_mallinfo2* mi);
    Bool	clo_trace_malloc;
    Bool  clo_realloc_zero_bytes_frees;
 };

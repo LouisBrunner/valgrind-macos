@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	brk-overflow1.stderr.exp brk-overflow1.vgtest \
 	brk-overflow2.stderr.exp brk-overflow2.vgtest \
 	bug498317.stderr.exp bug498317.supp bug498317.vgtest \
+	bug506910.stderr.exp bug506910.vgtest \
 	clonev.stdout.exp clonev.stderr.exp clonev.vgtest \
         membarrier.stderr.exp membarrier.vgtest \
 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
@@ -26,6 +27,7 @@ check_PROGRAMS = \
 	brk-overflow1 \
 	brk-overflow2 \
 	bug498317 \
+	bug506910 \
 	clonev \
 	mremap \
 	mremap2 \
@@ -46,6 +48,7 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Special needs
+bug506910_SOURCES = bug506910.cpp
 clonev_LDADD = -lpthread
 open_client_SOURCES = open_client.cpp
 pthread_stack_LDADD = -lpthread

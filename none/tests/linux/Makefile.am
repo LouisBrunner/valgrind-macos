@@ -17,6 +17,7 @@ EXTRA_DIST = \
 	mremap4.stderr.exp mremap4.vgtest \
 	mremap5.stderr.exp mremap5.vgtest \
 	mremap6.stderr.exp mremap6.vgtest \
+	open_client.stderr.exp open_client.vgtest \
 	pthread-stack.stderr.exp pthread-stack.vgtest \
 	stack-overflow.stderr.exp stack-overflow.vgtest
 
@@ -32,6 +33,7 @@ check_PROGRAMS = \
 	mremap4 \
 	mremap5 \
 	mremap6 \
+	open_client \
 	pthread-stack \
 	stack-overflow
 
@@ -45,6 +47,7 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Special needs
 clonev_LDADD = -lpthread
+open_client_SOURCES = open_client.cpp
 pthread_stack_LDADD = -lpthread
 
 stack_overflow_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ \

@@ -1,0 +1,2 @@
+prog: open_client
+vgopts: -q

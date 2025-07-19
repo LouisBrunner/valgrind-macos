@@ -5347,6 +5347,39 @@ PRE(sys_freebsd11_mknodat)
 // int openat(int fd, const char *path, int flags, ...);
 PRE(sys_openat)
 {
+   // check that we are not trying to open the client exe for writing
+   if ((ARG3 & VKI_O_WRONLY) ||
+       (ARG3 & VKI_O_RDWR)) {
+      vg_assert(VG_(resolved_exename) && VG_(resolved_exename)[0] == '/');
+      Int fd = ARG1;
+      const HChar* path = (const HChar*)ARG2;
+      if (ML_(safe_to_deref)(path, 1)) { // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
+         if (fd  == VKI_AT_FDCWD) {
+            HChar tmp[VKI_PATH_MAX];
+            if (VG_(realpath)(path, tmp)) {
+               if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                     SET_STATUS_Failure( VKI_ETXTBSY );
+               }
+            }
+         } else {
+            const HChar* dirname;
+            if (VG_(resolve_filename)(fd, &dirname) == False) {
+               goto no_client_write; // let the OS do the error handling
+            }
+            HChar tmp1[VKI_PATH_MAX];
+            VG_(snprintf)(tmp1, VKI_PATH_MAX, "%s/%s", dirname, path);
+            tmp1[VKI_PATH_MAX - 1] = '\0';
+            //VG_(free)((void*)dirname);
+            HChar tmp2[VKI_PATH_MAX];
+            if (VG_(realpath)(tmp1, tmp2)) {
+               if (!VG_(strcmp)(tmp2, VG_(resolved_exename))) {
+                     SET_STATUS_Failure( VKI_ETXTBSY );
+               }
+            }
+         }
+      }
+   }
+no_client_write:
    if (ARG3 & VKI_O_CREAT) {
       // 4-arg version
       PRINT("sys_openat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,(char*)ARG2,ARG3,ARG4);

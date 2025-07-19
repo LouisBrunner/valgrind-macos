@@ -53,6 +53,8 @@ EXTRA_DIST = \
 	ksh_test.ksh \
 	ksh_test.stderr.exp \
 	ksh_test.stdout.exp \
+	open_client.vgtest \
+	open_client.stderr.exp \
 	sanity_level_thread.vgtest \
 	sanity_level_thread.stderr.exp \
 	swapcontext.vgtest \
@@ -69,7 +71,7 @@ EXTRA_DIST = \
 	usrstack.stdout.exp
 
 check_PROGRAMS = \
-	auxv bug452274 bug498317 bug499212 fexecve hello_world osrel \
+	auxv bug452274 bug498317 bug499212 fexecve hello_world open_client osrel \
         proc_pid_file sanity_level_thread swapcontext umtx_shm_creat usrstack
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
@@ -80,7 +82,7 @@ osrel_CFLAGS = ${AM_CFLAGS}
 swapcontext_CFLAGS = ${AM_CFLAGS}
 
 hello_world_SOURCES = hello_world.cpp
-
+open_client_SOURCES = open_client.cpp
 proc_pid_file_SOURCES = proc_pid_file.cpp
 
 sanity_level_thread_SOURCES = sanity_level_thread.cpp

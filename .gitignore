@@ -1895,6 +1895,7 @@
 /none/tests/linux/mremap4
 /none/tests/linux/mremap5
 /none/tests/linux/mremap6
+/none/tests/linux/open_client
 /none/tests/linux/pthread-stack
 /none/tests/linux/stack-overflow
 
@@ -2328,6 +2329,7 @@ none/tests/freebsd/bug499212
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
+/none/tests/freebsd/open_client
 /none/tests/freebsd/proc_pid_file
 /none/tests/freebsd/sanity_level_thread
 /none/tests/freebsd/usrstack

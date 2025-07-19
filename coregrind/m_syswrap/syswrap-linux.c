@@ -5966,25 +5966,89 @@ PRE(sys_openat)
 {
    HChar  name[30];   // large enough
    SysRes sres;
+   Bool   proc_self_exe = False;
+
+   /* Check for /proc/self/exe or /proc/<pid>/exe case
+    * first so that we can then use the later checks. */
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0
+           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
+      proc_self_exe = True;
+   }
 
    if (ARG3 & VKI_O_CREAT) {
       // 4-arg version
       PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
             SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
       PRE_REG_READ4(long, "openat",
-                    int, dfd, const char *, filename, int, flags, int, mode);
+                    int, dirfd, const char *, pathname, int, flags, int, mode);
    } else {
       // 3-arg version
       PRINT("sys_openat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
             SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
       PRE_REG_READ3(long, "openat",
-                    int, dfd, const char *, filename, int, flags);
+                    int, dirfd, const char *, pathname, int, flags);
    }
 
-   PRE_MEM_RASCIIZ( "openat(filename)", ARG2 );
+   PRE_MEM_RASCIIZ( "openat(pathname)", ARG2 );
 
-   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
-      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+   // check that we are not trying to open the client exe for writing
+   if ((ARG3 & VKI_O_WRONLY) ||
+       (ARG3 & VKI_O_RDWR)) {
+      if (proc_self_exe) {
+         SET_STATUS_Failure( VKI_ETXTBSY );
+         return;
+      } else {
+         vg_assert(VG_(resolved_exename));
+         if (!VG_(strncmp)(VG_(resolved_exename), "#!", 2)) {
+            goto no_client_write;
+         }
+         Int fd = ARG1;
+         const HChar* path = (const HChar*)ARG2;
+         if (ML_(safe_to_deref)(path, 1)) {
+            // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
+            if (path[0] == '/') {
+               // ignore fd
+               HChar tmp[VKI_PATH_MAX];
+               if (VG_(realpath)(path, tmp)) {
+                  if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                     SET_STATUS_Failure( VKI_ETXTBSY );
+                     return;
+                  }
+               }
+            } else {
+               if (fd  == VKI_AT_FDCWD) {
+                  HChar tmp[VKI_PATH_MAX];
+                  if (VG_(realpath)(path, tmp)) {
+                     if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                        SET_STATUS_Failure( VKI_ETXTBSY );
+                     }
+                  }
+               } else {
+                  const HChar* dirname;
+                  if (VG_(resolve_filename)(fd, &dirname) == False) {
+                     goto no_client_write; // let the OS do the error handling
+                  }
+                  HChar tmp1[VKI_PATH_MAX];
+                  VG_(snprintf)(tmp1, VKI_PATH_MAX, "%s/%s", dirname, path);
+                  tmp1[VKI_PATH_MAX - 1] = '\0';
+                  HChar tmp2[VKI_PATH_MAX];
+                  if (VG_(realpath)(tmp1, tmp2)) {
+                     if (!VG_(strcmp)(tmp2, VG_(resolved_exename))) {
+                        SET_STATUS_Failure( VKI_ETXTBSY );
+                        return;
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+no_client_write:
+
+   /* For absolute filenames, dirfd is ignored.  If dirfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dirfd against AT_FDCWD,
       be sure only to compare the bottom 32 bits. */
    if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
        && *(Char *)(Addr)ARG2 != '/'
@@ -6027,20 +6091,10 @@ PRE(sys_openat)
       return;
    }
 
-   /* And for /proc/self/exe or /proc/<pid>/exe case. */
+   if (proc_self_exe) {
 
-   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0 
-           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
-      sres = VG_(dup)( VG_(cl_exec_fd) );
-      SET_STATUS_from_SysRes( sres );
-      if (!sr_isError(sres)) {
-         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
-         if (off < 0)
-            SET_STATUS_Failure( VKI_EMFILE );
-      }
-      return;
+      // do the syscall with VG_(resolved_exename)
+      SET_STATUS_from_SysRes(VG_(do_syscall4)(SYSNO, ARG1, (Word)VG_(resolved_exename), ARG3, ARG4));
    }
 
    /* Otherwise handle normally */
@@ -13900,43 +13954,109 @@ PRE(sys_openat2)
 {
    HChar  name[30];   // large enough
    SysRes sres;
-   struct vki_open_how * how;
+   struct vki_open_how* how = (struct vki_open_how *)ARG3;
+   Bool   proc_self_exe = False;
+   Bool   can_deref_how = how && ML_(safe_to_deref)(how, sizeof(*how));
+
+   // ARG4 is supposed to be sizeof(struct vki_open_how)
+   // but we can't trust it
+   if (can_deref_how) {
+      // check that we are not trying to open the client exe for writing
+      // this doesn't handle all of the RESOLVE options, there may be cases
+      // like RESOLVE_NO_XDEV and RESOLVE_BENEATH where the path is
+      // invalid and we might return the wrong errno
+      if (how->vki_resolve != VKI_RESOLVE_IN_ROOT &&
+          how->vki_resolve != VKI_RESOLVE_NO_MAGICLINKS) {
+         /* Check for /proc/self/exe or /proc/<pid>/exe case
+          * first so that we can then use the later checks. */
+         VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+         if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+             && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0
+                 || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
+            proc_self_exe = True;
+         }
+      }
+   }
 
    PRINT("sys_openat2 ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %ld )",
             SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "openat2",
-                    int, dfd, const char *, filename, struct vki_open_how *, how, vki_size_t, size);
+                    int, dirfd, const char *, pathname, struct vki_open_how *, how, vki_size_t, size);
 
-   PRE_MEM_RASCIIZ( "openat2(filename)", ARG2 );
+   PRE_MEM_RASCIIZ( "openat2(pathname)", ARG2 );
    PRE_MEM_READ( "openat2(how)", ARG3, sizeof(struct vki_open_how));
 
-   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
-      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+   if (can_deref_how &&
+       ((how->vki_flags & VKI_O_WRONLY) ||
+       (how->vki_flags & VKI_O_RDWR))) {
+      if (proc_self_exe) {
+         SET_STATUS_Failure( VKI_ETXTBSY );
+         return;
+      } else {
+         vg_assert(VG_(resolved_exename));
+         if (!VG_(strncmp)(VG_(resolved_exename), "#!", 2)) {
+            goto no_client_write;
+         }
+         Int fd = ARG1;
+         const HChar* path = (const HChar*)ARG2;
+         if (ML_(safe_to_deref)(path, 1)) {
+            // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
+            if (path[0] == '/' && how->vki_resolve != VKI_RESOLVE_IN_ROOT) {
+               // absolute path, ignore fd
+               HChar tmp[VKI_PATH_MAX];
+               if (VG_(realpath)(path, tmp)) {
+                  if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                     SET_STATUS_Failure( VKI_ETXTBSY );
+                     return;
+                  }
+               }
+            } else {
+               // relative or rooted path
+               // or RESOLVE_IN_ROOT
+               if (how->vki_resolve == VKI_RESOLVE_IN_ROOT) {
+                  while (*path == '/' && *path != '\0') {
+                     ++path;
+                  }
+               }
+               if (fd  == VKI_AT_FDCWD) {
+                  HChar tmp[VKI_PATH_MAX];
+                  if (VG_(realpath)(path, tmp)) {
+                     if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                        SET_STATUS_Failure( VKI_ETXTBSY );
+                        return;
+                     }
+                  }
+               } else {
+                  // build absolute path from fd and path
+                  const HChar* dirname;
+                  if (VG_(resolve_filename)(fd, &dirname) == False) {
+                     goto no_client_write; // let the OS do the error handling
+                  }
+                  HChar tmp1[VKI_PATH_MAX];
+                  VG_(snprintf)(tmp1, VKI_PATH_MAX, "%s/%s", dirname, path);
+                  tmp1[VKI_PATH_MAX - 1] = '\0';
+                  HChar tmp2[VKI_PATH_MAX];
+                  if (VG_(realpath)(tmp1, tmp2)) {
+                     if (!VG_(strcmp)(tmp2, VG_(resolved_exename))) {
+                        SET_STATUS_Failure( VKI_ETXTBSY );
+                        return;
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+ no_client_write:
+
+   /* For absolute filenames, dirfd is ignored.  If dirfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dirfd against AT_FDCWD,
       be sure only to compare the bottom 32 bits. */
    if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
        && *(Char *)(Addr)ARG2 != '/'
        && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat2", tid, False))
+       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
-
-   how = (struct vki_open_how *)ARG3;
-
-   if (how && ML_(safe_to_deref) (how, sizeof(struct vki_open_how))) {
-      if (how->vki_mode) {
-         if (!(how->vki_flags & ((vki_uint64_t)VKI_O_CREAT | VKI_O_TMPFILE))) {
-            SET_STATUS_Failure( VKI_EINVAL );
-         }
-      }
-      if (how->vki_resolve & ~((vki_uint64_t)VKI_RESOLVE_NO_XDEV |
-                            VKI_RESOLVE_NO_MAGICLINKS |
-                            VKI_RESOLVE_NO_SYMLINKS |
-                            VKI_RESOLVE_BENEATH |
-                            VKI_RESOLVE_IN_ROOT |
-                            VKI_RESOLVE_CACHED)) {
-          SET_STATUS_Failure( VKI_EINVAL );
-      }
-   }
-
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the
       fake file we cooked up at startup (in m_main).  Also, seek the
@@ -13972,20 +14092,10 @@ PRE(sys_openat2)
       return;
    }
 
-   /* And for /proc/self/exe or /proc/<pid>/exe case. */
+   if (proc_self_exe) {
 
-   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0
-           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
-      sres = VG_(dup)( VG_(cl_exec_fd) );
-      SET_STATUS_from_SysRes( sres );
-      if (!sr_isError(sres)) {
-         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
-         if (off < 0)
-            SET_STATUS_Failure( VKI_EMFILE );
-      }
-      return;
+      // do the syscall with VG_(resolved_exename)
+      SET_STATUS_from_SysRes(VG_(do_syscall4)(SYSNO, ARG1, (Word)VG_(resolved_exename), ARG3, ARG4));
    }
 
    /* Otherwise handle normally */

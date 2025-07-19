@@ -4602,8 +4602,23 @@ Bool ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
 }
 #endif // defined(VGO_linux)
 
+// int open(const char *path, int flags, mode_t mode);
 PRE(sys_open)
 {
+#if defined(VGO_linux)
+   HChar  name[30];   // large enough
+   Bool   proc_self_exe = False;
+
+   /* Check for /proc/self/exe or /proc/<pid>/exe case
+    * first so that we can then use the later checks. */
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG1, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG1, name) == 0
+           || VG_(strcmp)((HChar *)(Addr)ARG1, "/proc/self/exe") == 0)) {
+      proc_self_exe = True;
+   }
+#endif
+
    if (ARG2 & VKI_O_CREAT) {
       // 3-arg version
       PRINT("sys_open ( %#" FMT_REGWORD "x(%s), %ld, %ld )",ARG1,
@@ -4619,13 +4634,39 @@ PRE(sys_open)
    }
    PRE_MEM_RASCIIZ( "open(filename)", ARG1 );
 
+   // check that we are not trying to open the client exe for writing
+   if ((ARG2 & VKI_O_WRONLY) ||
+       (ARG2 & VKI_O_RDWR)) {
+#if defined(VGO_linux)
+      if (proc_self_exe) {
+
+         SET_STATUS_Failure( VKI_ETXTBSY );
+         return;
+      } else {
+#endif
+      vg_assert(VG_(resolved_exename));
+      const HChar* path = (const HChar*)ARG1;
+      if (ML_(safe_to_deref)(path, 1)) {
+         // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
+         HChar tmp[VKI_PATH_MAX];
+         if (VG_(realpath)(path, tmp)) {
+            if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+               SET_STATUS_Failure( VKI_ETXTBSY );
+               return;
+            }
+         }
+      }
+#if defined(VGO_linux)
+      }
+#endif
+   }
+
 #if defined(VGO_linux)
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the
       fake file we cooked up at startup (in m_main).  Also, seek the
       cloned fd back to the start. */
    {
-      HChar  name[30];   // large enough
       HChar* arg1s = (HChar*) (Addr)ARG1;
       SysRes sres;
 
@@ -4648,6 +4689,11 @@ PRE(sys_open)
    if (ML_(handle_auxv_open)(status, (const HChar *)(Addr)ARG1, ARG2)
        || ML_(handle_self_exe_open)(status, (const HChar *)(Addr)ARG1, ARG2))
       return;
+
+   if (proc_self_exe) {
+      // do the syscall with VG_(resolved_exename)
+      SET_STATUS_from_SysRes(VG_(do_syscall3)(SYSNO, (Word)VG_(resolved_exename), ARG2, ARG3));
+   }
 #endif // defined(VGO_linux)
 
    /* Otherwise handle normally */

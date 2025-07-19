@@ -674,15 +674,18 @@ Int VG_(fstat) ( Int fd, struct vg_stat* vgbuf )
 #  endif
 }
 
-#if defined(VGO_freebsd)
 /* extend this to other OSes as and when needed */
 SysRes VG_(lstat) ( const HChar* file_name, struct vg_stat* vgbuf )
 {
    SysRes res;
    VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
 
-#if (__FreeBSD_version < 1200031)
+#if !defined(VGO_freebsd) || (__FreeBSD_version < 1200031)
+#if defined(VGO_freebsd)
    struct vki_freebsd11_stat buf;
+#else
+   struct vki_stat buf;
+#endif
    res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
 #else
    struct vki_stat buf;
@@ -693,7 +696,6 @@ SysRes VG_(lstat) ( const HChar* file_name, struct vg_stat* vgbuf )
    }
    return res;
 }
-#endif
 
 #undef TRANSLATE_TO_vg_stat
 #undef TRANSLATE_statx_TO_vg_stat
@@ -1803,7 +1805,6 @@ const HChar *VG_(dirname)(const HChar *path)
    return buf;
 }
 
-#if defined(VGO_freebsd)
 /*
  * I did look at nicking this from FreeBSD, it's fairly easy to port
  * but I was put off by the copyright and 3-clause licence
@@ -1819,7 +1820,7 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
 {
    vg_assert(path);
    vg_assert(resolved);
-#if (__FreeBSD_version >= 1300080)
+#if defined(VGO_freebsd) && (__FreeBSD_version >= 1300080)
    return !sr_isError(VG_(do_syscall5)(__NR___realpathat, VKI_AT_FDCWD, (RegWord)path, (RegWord)resolved, VKI_PATH_MAX, 0));
 #else
    // poor man's realpath
@@ -1847,7 +1848,13 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
       if (resolved_name[0] == '.' && resolved_name[1] == '/') {
          resolved_name += 2;
       }
-      VG_(snprintf)(resolved, VKI_PATH_MAX, "%s/%s", VG_(get_startup_wd)(), resolved_name);
+      HChar wd[VKI_PATH_MAX];
+#if defined(VGO_linux) || defined(VGO_solaris)
+      res = VG_(do_syscall2)(__NR_getcwd, (UWord)wd, VKI_PATH_MAX);
+#elif defined(VGO_freebsd)
+      res = VG_(do_syscall2)(__NR___getcwd, (UWord)wd, VKI_PATH_MAX);
+#endif
+      VG_(snprintf)(resolved, VKI_PATH_MAX, "%s/%s", wd, resolved_name);
    } else {
       VG_(snprintf)(resolved, VKI_PATH_MAX, "%s", resolved_name);
    }
@@ -1855,7 +1862,6 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
    return True;
 #endif
 }
-#endif
 
 
 /*--------------------------------------------------------------------*/

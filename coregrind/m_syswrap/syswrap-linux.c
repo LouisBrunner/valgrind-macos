@@ -6094,8 +6094,7 @@ no_client_write:
    if (proc_self_exe) {
 
       // do the syscall with VG_(resolved_exename)
-      SET_STATUS_from_SysRes(VG_(do_syscall4)(SYSNO, ARG1, (Word)VG_(resolved_exename), ARG3, ARG4));
-      return;
+      ARG2 = (Word)VG_(resolved_exename);
    }
 
    /* Otherwise handle normally */
@@ -14095,8 +14094,7 @@ PRE(sys_openat2)
 
    if (proc_self_exe) {
       // do the syscall with VG_(resolved_exename)
-      SET_STATUS_from_SysRes(VG_(do_syscall4)(SYSNO, ARG1, (Word)VG_(resolved_exename), ARG3, ARG4));
-      return;
+      ARG2 = (Word)VG_(resolved_exename);
    }
 
    /* Otherwise handle normally */

@@ -680,17 +680,34 @@ SysRes VG_(lstat) ( const HChar* file_name, struct vg_stat* vgbuf )
    SysRes res;
    VG_(memset)(vgbuf, 0, sizeof(*vgbuf));
 
-#if !defined(VGO_freebsd) || (__FreeBSD_version < 1200031)
-#if defined(VGO_freebsd)
-   struct vki_freebsd11_stat buf;
+#if defined(VGO_linux)
+
+struct vki_stat buf;
+
+#if defined(__NR_newfstatat)
+   res = VG_(do_syscall4)(__NR_newfstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, VKI_AT_SYMLINK_NOFOLLOW);
 #else
-   struct vki_stat buf;
+   res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
 #endif
+
+#elif defined(VGO_freebsd)
+
+#if (__FreeBSD_version < 1200031)
+   struct vki_freebsd11_stat buf;
    res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
 #else
    struct vki_stat buf;
    res = VG_(do_syscall4)(__NR_fstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, VKI_AT_SYMLINK_NOFOLLOW);
 #endif
+
+#else
+
+   /* check this on illumos and Darwin */
+   struct vki_stat buf;
+   res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
+
+#endif
+
    if (!sr_isError(res)) {
       TRANSLATE_TO_vg_stat(vgbuf, &buf);
    }

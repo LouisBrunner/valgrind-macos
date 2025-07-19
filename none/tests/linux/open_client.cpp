@@ -36,6 +36,7 @@ int main(int argc, char** argv)
             }
         }
 
+#if defined(SYS_open)
         for (auto f : flags)
         {
             int res = syscall(SYS_open, n.c_str(), f, 0666);
@@ -52,6 +53,7 @@ int main(int argc, char** argv)
                 }
             }
         }
+#endif
     }
 
     if ((dotdot = open("..", O_DIRECTORY | O_RDONLY)) == -1)
@@ -154,6 +156,7 @@ int main(int argc, char** argv)
         }
     }
 
+#if defined(SYS_open)
     for (auto f : flags)
     {
         int res = syscall(SYS_open, "linux/open_client", f, 0666);
@@ -169,6 +172,7 @@ int main(int argc, char** argv)
             }
         }
     }
+#endif
 
 #if defined(SYS_openat2)
     for (auto f : flags)

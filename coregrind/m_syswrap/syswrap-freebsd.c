@@ -3730,7 +3730,7 @@ PRE(sys_kenv)
    default:
       if (VG_(clo_verbosity) >= 1) {
          VG_(umsg)("Warning: bad or unimplemented kenv action: %" FMT_REGWORD "d\n",
-            ARG1);
+            SARG1);
       }
       break;
    }
@@ -7087,7 +7087,7 @@ POST(sys_getrlimitusage)
 // int fchroot(int fd);
 PRE(sys_fchroot)
 {
-   PRINT("sys_fchroot(%" FMT_REGWORD "d)", ARG1);
+   PRINT("sys_fchroot(%" FMT_REGWORD "d)", SARG1);
    PRE_REG_READ1(int, "fchroot", int, fd);
 
    /* Be strict. */
@@ -7099,7 +7099,7 @@ PRE(sys_fchroot)
 // int setcred(u_int flags, const struct setcred *wcred, size_t size);
 PRE(sys_setcred)
 {
-   PRINT("sys_setcred(%" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u)", ARG1, ARG2, ARG3);
+   PRINT("sys_setcred(%" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD "u)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "setcred", u_int, flags, const struct setcred*, wcred, size_t, size);
    PRE_MEM_READ("setcred(wcred)", ARG2, sizeof(struct vki_setcred));
 }

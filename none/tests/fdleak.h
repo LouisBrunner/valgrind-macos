@@ -26,6 +26,7 @@
  * - For Ubuntu 8.04, see also
  *   https://bugs.launchpad.net/ubuntu/+source/seahorse/+bug/235184
  */
+__attribute__((unused))
 static void close_inherited (void) {
    struct stat sb;
    int i; int max_fds = sysconf (_SC_OPEN_MAX);

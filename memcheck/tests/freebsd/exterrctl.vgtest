@@ -1,0 +1,3 @@
+prereq: test -x ./exterrctl
+prog: exterrctl
+vgopts: -q

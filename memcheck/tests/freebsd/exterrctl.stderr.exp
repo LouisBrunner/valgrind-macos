@@ -1,0 +1,22 @@
+Syscall param exterrctl(op) contains uninitialised byte(s)
+   at 0x........: exterrctl (in /...libc...)
+   by 0x........: main (exterrctl.cpp:18)
+
+Syscall param exterrctl(flags) contains uninitialised byte(s)
+   at 0x........: exterrctl (in /...libc...)
+   by 0x........: main (exterrctl.cpp:18)
+
+Syscall param exterrctl(ptr) contains uninitialised byte(s)
+   at 0x........: exterrctl (in /...libc...)
+   by 0x........: main (exterrctl.cpp:18)
+
+Syscall param exterrctl(ptr) points to unaddressable byte(s)
+   at 0x........: exterrctl (in /...libc...)
+   by 0x........: main (exterrctl.cpp:18)
+ Address 0x........ is 0 bytes inside a block of size 176 free'd
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (exterrctl.cpp:16)
+ Block was alloc'd at
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (exterrctl.cpp:15)
+

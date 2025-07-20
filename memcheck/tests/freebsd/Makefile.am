@@ -51,6 +51,8 @@ EXTRA_DIST = \
 	eventfd2.stderr.exp \
 	extattr.vgtest \
 	extattr.stderr.exp \
+	exterrctl.vgtest \
+	exterrctl.stderr.exp \
 	fbsd278566.vgtest \
 	fbsd278566.stderr.exp \
 	fchroot.vgtest \
@@ -183,6 +185,10 @@ if HAVE_AIO_READV
 check_PROGRAMS += aiov
 endif
 
+if HAVE_EXTERRCTL
+check_PROGRAMS += exterrctl
+endif
+
 if HAVE_FCHROOT
 check_PROGRAMS += fchroot
 fchroot_SOURCES = fchroot.cpp
@@ -236,6 +242,9 @@ delete_sized_mismatch_CXXFLAGS	= ${AM_CXXFLAGS} --std=c++14
 delete_sized_mismatch_SOURCES	= delete_sized_mismatch.cpp
 errno_aligned_allocs_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 extattr_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@ @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
+if HAVE_EXTERRCTL
+exterrctl_SOURCES = exterrctl.cpp
+endif
 get_set_login_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 getfh_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
 getfsstat_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@

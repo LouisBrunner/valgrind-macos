@@ -1434,6 +1434,7 @@
 /memcheck/tests/freebsd/eventfd1
 /memcheck/tests/freebsd/eventfd2
 /memcheck/tests/freebsd/extattr
+/memcheck/tests/freebsd/exterrctl
 /memcheck/tests/freebsd/fbsd278566
 /memcheck/tests/freebsd/fchroot
 /memcheck/tests/freebsd/fexecve

@@ -32,16 +32,17 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 338803  Handling of dwz debug alt files or cross-CU is broken
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
 493434  Add --track-fds=bad mode (no "leak" tracking)
+501741  syscall cachestat not wrapped
+502359  Add --modify-fds=yes option
+502968  Wrap linux specific syscalls 457 (listmount) and 458 (statmount)
 503098  Incorrect NAN-boxing for float registers in RISC-V
 503641  close_range syscalls started failing with 3.25.0
 503677  duplicated-cond compiler warning in dis_RV64M
 503817  s390x: fix 'ordered comparison of pointer with integer zero' compiler warnings
 503914  mount syscall param filesystemtype may be NULL
+503969  Make test results of make ltpchecks compatible with bunsen
 504101  Add a "vgstack" script
 504177  FILE DESCRIPTORS banner shows when closing some inherited fds
-501741  syscall cachestat not wrapped
-502359  Add --modify-fds=yes option
-503969  Make test results of make ltpchecks compatible with bunsen
 504265  FreeBSD: missing syscall wrappers for fchroot and setcred
 504341  Valgrind killed by LTP syscall testcase setrlimit05
 504466  Double close causes SEGV
@@ -51,14 +52,13 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 504936  Add FreeBSD amd64 sysarch subcommands AMD64_SET_TLSBASE and
         AMD64_GET_TLSBASE
 505228  Wrap linux specific mseal syscall
-502968  Wrap linux specific syscalls 457 (listmount) and 458 (statmount)
 505673  Valgrind crashes with an internal error and SIGBUS when
         the guest tries to open its own file with O_WRONLY|O_CREAT|O_TRUNC
 506076  unimplemented fcntl command: 1028 (F_CREATED_QUERY)
 506499  Unhandled syscall 592 (exterrctl - FreeBSD
 506795  Better report which clone flags are problematic
-506928  Wrap (deprecated) linux specific ustat syscall
 506910  openat2 with RESOLVE_NO_MAGICLINKS succeeds on /proc/self/exe
+506928  Wrap (deprecated) linux specific ustat syscall
 506930  valgrind allows SIGKILL being reset to SIG_DFL
 506970  mmap needs an EBADF fd_allowed check
 507173  s390x: Crash when constant folding is disabled

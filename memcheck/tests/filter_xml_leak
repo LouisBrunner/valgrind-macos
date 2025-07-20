@@ -1,0 +1,5 @@
+#!/bin/sh
+
+./filter_xml "$@" |
+
+sed -e '/<leak_summary>...<\/leak_summary>/,+1d'

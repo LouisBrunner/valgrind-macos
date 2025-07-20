@@ -82,6 +82,7 @@ dist_noinst_SCRIPTS = \
 	filter_leak_cpp_interior \
 	filter_libc_variants \
 	filter_xml \
+	filter_xml_leak \
 	filter_strchr \
 	filter_varinfo3 \
 	filter_memcheck \

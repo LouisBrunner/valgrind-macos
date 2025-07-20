@@ -27,7 +27,6 @@ check_PROGRAMS = \
 	brk-overflow1 \
 	brk-overflow2 \
 	bug498317 \
-	bug506910 \
 	clonev \
 	mremap \
 	mremap2 \
@@ -35,9 +34,12 @@ check_PROGRAMS = \
 	mremap4 \
 	mremap5 \
 	mremap6 \
-	open_client \
 	pthread-stack \
 	stack-overflow
+
+if HAVE_OPENAT2
+        check_PROGRAMS += bug506910 open_client
+endif
 
 if HAVE_NR_MEMBARRIER
         check_PROGRAMS += membarrier
@@ -48,9 +50,11 @@ AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Special needs
+if HAVE_OPENAT2
 bug506910_SOURCES = bug506910.cpp
-clonev_LDADD = -lpthread
 open_client_SOURCES = open_client.cpp
+endif
+clonev_LDADD = -lpthread
 pthread_stack_LDADD = -lpthread
 
 stack_overflow_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@ \

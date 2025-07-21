@@ -149,6 +149,9 @@ s/__libc_do_syscall ().*/0x........ in syscall .../
 #       extra source code line
 /libc-do-syscall.S/d
 
+#       variation of the previous extra source code line
+/syscall_cancel.S/d
+
 #       anonymise kill syscall.
 s/in kill ().*$/in syscall .../
 

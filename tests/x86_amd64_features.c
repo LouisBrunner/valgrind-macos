@@ -148,7 +148,8 @@ static Bool go(char* cpu)
    assert( !(cmask != 0 && dmask != 0 && bmask != 0) );
    assert( !(cmask == 0 && dmask == 0 && bmask == 0) );
 
-   if (require_amd && !vendorStringEquals("AuthenticAMD"))
+   if (require_amd && !vendorStringEquals("AuthenticAMD") &&
+       !vendorStringEquals("GenuineIntel"))
       return FEATURE_NOT_PRESENT;
       // regardless of what that feature actually is
 

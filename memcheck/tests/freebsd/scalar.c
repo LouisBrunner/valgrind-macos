@@ -1271,7 +1271,11 @@ int main(void)
 
    /* SYS_sigwaitinfo             346 */
    GO(SYS_sigwaitinfo, "2s 2m");
-   SY(SYS_sigwaitinfo, x0+1, x0+2, x0+3); FAIL;
+   SY(SYS_sigwaitinfo, x0+1, x0+2); FAIL;
+
+   GO(SYS_sigwaitinfo, "(NULL info) 2s 1m");
+   SY(SYS_sigwaitinfo, x0, x0); FAIL;
+
 
    /* SYS___acl_get_file          347 */
    GO(SYS___acl_get_file, "3s 2m");
@@ -1547,6 +1551,10 @@ int main(void)
    /* SYS_sigwait                 429 */
    GO(SYS_sigwait, "2s 2m");
    SY(SYS_sigwait, x0+1, x0+2); SUCC;
+   assert(res == EFAULT);
+
+   GO(SYS_sigwait, "(NULL ags) 2s 2m");
+   SY(SYS_sigwait, x0, x0); SUCC;
    assert(res == EFAULT);
 
    // thr_create                  430

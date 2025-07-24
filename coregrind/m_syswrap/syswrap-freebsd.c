@@ -3317,9 +3317,7 @@ PRE(sys_sigwaitinfo)
          ARG1,ARG2);
    PRE_REG_READ2(int, "sigwaitinfo",
                  const vki_sigset_t *, set, vki_siginfo_t *, info);
-   if (ARG1 != 0) {
-      PRE_MEM_READ(  "sigwaitinfo(set)",  ARG1, sizeof(vki_sigset_t));
-   }
+   PRE_MEM_READ(  "sigwaitinfo(set)",  ARG1, sizeof(vki_sigset_t));
    if (ARG2 != 0) {
       PRE_MEM_WRITE( "sigwaitinfo(info)", ARG2, sizeof(vki_siginfo_t) );
    }
@@ -4099,21 +4097,20 @@ PRE(sys_sigwait)
          ARG1,ARG2);
    PRE_REG_READ2(int, "sigwait",
                  const vki_sigset_t *, set, int *, sig);
-   if (ARG1 != 0) {
-      PRE_MEM_READ(  "sigwait(set)",  ARG1, sizeof(vki_sigset_t));
-      vki_sigset_t* set = (vki_sigset_t*)ARG1;
-      if (ML_(safe_to_deref)(set, sizeof(vki_sigset_t))) {
-         *flags |= SfMayBlock;
-      }
+   PRE_MEM_READ(  "sigwait(set)",  ARG1, sizeof(vki_sigset_t));
+   vki_sigset_t* set = (vki_sigset_t*)ARG1;
+   if (ML_(safe_to_deref)(set, sizeof(vki_sigset_t))) {
+      *flags |= SfMayBlock;
    }
-   if (ARG2 != 0) {
-      PRE_MEM_WRITE( "sigwait(sig)", ARG2, sizeof(int));
-   }
+   PRE_MEM_WRITE( "sigwait(sig)", ARG2, sizeof(int));
 }
 
+// sigwait doesn't follow the norm of returning -1 on error
+// instead it returns errno if there is an error
 POST(sys_sigwait)
 {
-   if (RES == 0 && ARG2 != 0) {
+   if (RES == 0)
+   {
       POST_MEM_WRITE( ARG2, sizeof(int));
    }
 }

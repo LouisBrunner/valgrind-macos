@@ -2510,6 +2510,19 @@ Syscall param sigwaitinfo(info) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+346:         SYS_sigwaitinfo (NULL info) 2s 1m
+---------------------------------------------------------
+Syscall param sigwaitinfo(set) contains uninitialised byte(s)
+   ...
+
+Syscall param sigwaitinfo(info) contains uninitialised byte(s)
+   ...
+
+Syscall param sigwaitinfo(set) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 347:      SYS___acl_get_file 3s 2m
 ---------------------------------------------------------
 Syscall param acl_get_file(path) contains uninitialised byte(s)
@@ -3345,6 +3358,23 @@ Syscall param __acl_aclcheck_link(aclp) points to unaddressable byte(s)
 
 ---------------------------------------------------------
 429:             SYS_sigwait 2s 2m
+---------------------------------------------------------
+Syscall param sigwait(set) contains uninitialised byte(s)
+   ...
+
+Syscall param sigwait(sig) contains uninitialised byte(s)
+   ...
+
+Syscall param sigwait(set) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param sigwait(sig) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+429:             SYS_sigwait (NULL ags) 2s 2m
 ---------------------------------------------------------
 Syscall param sigwait(set) contains uninitialised byte(s)
    ...

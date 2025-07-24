@@ -197,13 +197,27 @@ The last file to change is .gitignore in the top directory. Add a new entry,
 for example "/tool/tests/newtest".
 
 The 'scalar' tests are something of a special case. Scalar in this sense
-refers to the registers (or stack slots) used to pas in arguments. These tests
+refers to the registers (or stack slots) used to pass in arguments. These tests
 directly use the 'syscall' syscall via a macro, SY. They make little effort
 to use the sysall in a realistic manner. Rather, the objective is to
 exhaustively test all of the arguemnts and referenced memory of syscalls.
+The variable 'x0' is a long integer, containing the value of 0 but
+also uninitialised. It can be used on its own or with some other value
+to ensure that all of the syscall arguemts are uninitialised.
 A second macro, GO, is used precede the syscall (and subsequent errors)
 with a header. The GO string includes the name of the syscall, a count of
-expected scalar errors and a count of memory errors.
+expected scalar errors and a count of memory errors. The tests are usually
+followed by the FAIL macro, which ensures that the syscall failed.
+An example scalar test is
+
+   /* SYS_link                    9 */
+   GO(SYS_link, "2s 2m");
+   SY(SYS_link, x0, x0); FAIL;
+
+
+This syscall takes two strings so the expected errors are
+2 scalar (for the pointer arguments) and 2 memory (for
+the strings themselves).
 
 When your test is done check for mistakes in Makefile.am.
 In the top directory run

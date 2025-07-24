@@ -196,7 +196,18 @@ Make sure that the test runs and passes.
 The last file to change is .gitignore in the top directory. Add a new entry,
 for example "/tool/tests/newtest".
 
-Check for mistakes in Makefile.am. In the top directory run
+The 'scalar' tests are something of a special case. Scalar in this sense
+refers to the registers (or stack slots) used to pas in arguments. These tests
+directly use the 'syscall' syscall via a macro, SY. They make little effort
+to use the sysall in a realistic manner. Rather, the objective is to
+exhaustively test all of the arguemnts and referenced memory of syscalls.
+A second macro, GO, is used precede the syscall (and subsequent errors)
+with a header. The GO string includes the name of the syscall, a count of
+expected scalar errors and a count of memory errors.
+
+When your test is done check for mistakes in Makefile.am.
+In the top directory run
+
     make post-regtest-checks
 
 You should only see

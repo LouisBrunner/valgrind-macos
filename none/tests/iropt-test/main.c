@@ -81,9 +81,9 @@ main(int argc, char *argv[])
 
       test_data_t *data = new_test_data(op);
 
-      IRICB iricb = new_iricb(op, data);
+      IRICB *iricb = new_iricb(op, data);
 
-      valgrind_vex_init_for_iri(&iricb);
+      valgrind_vex_init_for_iri(iricb);
 
       switch (op->num_opnds) {
       case 1:

@@ -44,27 +44,6 @@ panic(const char *fmt, ...)
 }
 
 
-/* Issue a complaint because the result of an operation differs from what
-   was expected. */
-void
-complain(const irop_t *op, const test_data_t *data, uint64_t expected)
-{
-   fprintf(stderr, "*** Incorrect result for operator %s\n", op->name);
-
-   for (unsigned i = 0; i < op->num_opnds; ++i) {
-      fprintf(stderr, "    opnd %u:  ", i);
-      print_opnd(stderr, &data->opnds[i]);
-      fprintf(stderr, "\n");
-   }
-   fprintf(stderr, "    result:  ");
-   print_opnd(stderr, &data->result);
-   fprintf(stderr, "\n");
-   fprintf(stderr, "    expect:  ");
-   print_value(stderr, expected, bitsof_irtype(op->result_type));
-   fprintf(stderr, "\n");
-}
-
-
 void
 print_value(FILE *fp, uint64_t val, unsigned num_bits)
 {
@@ -80,14 +59,6 @@ print_value(FILE *fp, uint64_t val, unsigned num_bits)
    default:
       panic("%s: num_bits = %u", __func__, num_bits);
    }
-}
-
-
-void
-print_opnd(FILE *fp, const opnd_t *opnd)
-{
-   fprintf(fp, "value = ");
-   print_value(fp, opnd->value, bitsof_irtype(opnd->type));
 }
 
 

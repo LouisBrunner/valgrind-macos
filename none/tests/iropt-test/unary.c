@@ -27,9 +27,9 @@
 #include <stdint.h>     // UINT64_MAX
 #include "vtest.h"
 
-static void check_result(const irop_t *, const test_data_t *);
 static void run_selected_tests(const irop_t *, test_data_t *);
 static void run_random_tests(const irop_t *, test_data_t *);
+static uint64_t get_expected_value(const irop_t *, const test_data_t *);
 static uint64_t left(uint64_t, unsigned);
 static uint32_t popcount(uint64_t);
 static uint32_t clz(uint64_t, unsigned);
@@ -49,8 +49,7 @@ test_unary_op(const irop_t *op, test_data_t *data)
       for (unsigned i = 0; i <= max; ++i) {
          opnd->value = i;
 
-         valgrind_execute_test(op, data);
-         check_result(op, data);
+         valgrind_execute_test(op, data, get_expected_value(op, data));
       }
       break;
    }
@@ -78,8 +77,7 @@ run_selected_tests(const irop_t *op, test_data_t *data)
    for (unsigned i = 0; i < num_val; ++i) {
       opnd->value = values[i];
 
-      valgrind_execute_test(op, data);
-      check_result(op, data);
+      valgrind_execute_test(op, data, get_expected_value(op, data));
    }
 }
 
@@ -93,17 +91,15 @@ run_random_tests(const irop_t *op, test_data_t *data)
    for (unsigned i = 0; i < num_random_tests; ++i) {
       opnd->value = get_random_value(opnd->type);
 
-      valgrind_execute_test(op, data);
-      check_result(op, data);
+      valgrind_execute_test(op, data, get_expected_value(op, data));
    }
 }
 
 
-/* Check the result of a unary operation. */
-static void
-check_result(const irop_t *op, const test_data_t *data)
+/* Compute the expected result of a unary operation. */
+static uint64_t
+get_expected_value(const irop_t *op, const test_data_t *data)
 {
-   uint64_t result = data->result.value;
    uint64_t opnd   = data->opnds[0].value;
    uint64_t expected;
 
@@ -209,25 +205,7 @@ check_result(const irop_t *op, const test_data_t *data)
       panic("%s: operator %s not handled\n", __func__, op->name);
    }
 
-   if (verbose > 1) {
-      printf("expected:  value = ");
-      print_value(stdout, expected, bitsof_irtype(data->result.type));
-      printf("\n");
-   }
-
-   int ok = 1;
-   switch (data->result.type) {
-   case Ity_I1:  ok = result == expected; break;
-   case Ity_I8:  ok = result == expected; break;
-   case Ity_I16: ok = result == expected; break;
-   case Ity_I32: ok = result == expected; break;
-   case Ity_I64: ok = result == expected; break;
-   default:
-      panic(__func__);
-   }
-
-   if (! ok)
-      complain(op, data, expected);
+   return expected;
 }
 
 

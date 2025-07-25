@@ -26,7 +26,7 @@
 #include <stdint.h>     // UINT64_MAX
 #include "vtest.h"
 
-static void check_result(const irop_t *, const test_data_t *);
+static uint64_t get_expected_value(const irop_t *, const test_data_t *);
 static void run_tests(const irop_t *, test_data_t *);
 static void run_shift_tests(const irop_t *, test_data_t *);
 static int  is_shift_op(IROp);
@@ -59,8 +59,7 @@ run_selected_tests(const irop_t *op, test_data_t *data)
 
          if (is_division_op(op->op) && opnd_r->value == 0) continue;
 
-         valgrind_execute_test(op, data);
-         check_result(op, data);
+         valgrind_execute_test(op, data, get_expected_value(op, data));
       }
    }
 }
@@ -79,8 +78,7 @@ run_random_tests(const irop_t *op, test_data_t *data)
 
       if (is_division_op(op->op) && opnd_r->value == 0) continue;
 
-      valgrind_execute_test(op, data);
-      check_result(op, data);
+      valgrind_execute_test(op, data, get_expected_value(op, data));
    }
 }
 
@@ -101,8 +99,7 @@ run_shift_tests(const irop_t *op, test_data_t *data)
       for (unsigned j = 0; j < max_shift_amount; ++j) {
          opnd_r->value = j;
 
-         valgrind_execute_test(op, data);
-         check_result(op, data);
+         valgrind_execute_test(op, data, get_expected_value(op, data));
       }
    }
 
@@ -111,8 +108,7 @@ run_shift_tests(const irop_t *op, test_data_t *data)
       opnd_l->value = get_random_value(opnd_l->type);
       opnd_r->value = get_random_value(opnd_r->type) & max_shift_amount;
 
-      valgrind_execute_test(op, data);
-      check_result(op, data);
+      valgrind_execute_test(op, data, get_expected_value(op, data));
    }
 }
 
@@ -125,11 +121,10 @@ run_tests(const irop_t *op, test_data_t *data)
 }
 
 
-/* Check the result of a binary operation. */
-static void
-check_result(const irop_t *op, const test_data_t *data)
+/* Compute the expected result of a binary operation. */
+static uint64_t
+get_expected_value(const irop_t *op, const test_data_t *data)
 {
-   uint64_t result = data->result.value;
    uint64_t opnd_l = data->opnds[0].value;
    uint64_t opnd_r = data->opnds[1].value;
    uint64_t expected;
@@ -384,25 +379,7 @@ check_result(const irop_t *op, const test_data_t *data)
       panic(__func__);
    }
 
-   if (verbose > 1) {
-      printf("expected:  value = ");
-      print_value(stdout, expected, bitsof_irtype(data->result.type));
-      printf("\n");
-   }
-
-   int ok = 1;
-   switch (data->result.type) {
-   case Ity_I1:  ok = result == expected; break;
-   case Ity_I8:  ok = result == expected; break;
-   case Ity_I16: ok = result == expected; break;
-   case Ity_I32: ok = result == expected; break;
-   case Ity_I64: ok = result == expected; break;
-   default:
-      panic(__func__);
-   }
-
-   if (! ok)
-      complain(op, data, expected);
+   return expected;
 }
 
 

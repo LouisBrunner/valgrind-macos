@@ -26,9 +26,10 @@
 #include "valgrind.h"  // VALGRIND_VEX_INJECT_IR
 #include "vtest.h"
 
+static IRICB iricb;
 
 /* Return a completely initialised control block */
-IRICB
+IRICB *
 new_iricb(const irop_t *op, test_data_t *data)
 {
    IRICB_iropt_payload cb;
@@ -45,7 +46,10 @@ new_iricb(const irop_t *op, test_data_t *data)
 
    cb.num_operands = op->num_opnds;
 
-   return (IRICB) { .kind = IRICB_iropt, .iropt = cb };
+   iricb.kind  = IRICB_iropt;
+   iricb.iropt = cb;
+
+   return &iricb;
 }
 
 
@@ -69,24 +73,47 @@ valgrind_vex_inject_ir(void)
 /* Execute the test under valgrind. Well, yes, we're not really executing
    it here, just preparing for it... */
 void
-valgrind_execute_test(const irop_t *op, test_data_t *data)
+valgrind_execute_test(const irop_t *op, test_data_t *data, uint64_t expected)
 {
-   if (verbose > 1)
+   if (verbose > 1) {
       printf("---------- Running a test\n");
 
-   for (unsigned i = 0; i < op->num_opnds; ++i) {
-      if (verbose > 1) {
-         printf("opnd #%u:   ", i);
-         print_opnd(stdout, &data->opnds[i]);
+      for (unsigned i = 0; i < op->num_opnds; ++i) {
+         const opnd_t *opnd = data->opnds + i;
+         printf("opnd %u:    value = ", i);
+         print_value(stdout, opnd->value, bitsof_irtype(opnd->type));
          printf("\n");
       }
    }
 
    valgrind_vex_inject_ir();
+   uint64_t result = data->result.value;
 
+   unsigned num_result_bits = bitsof_irtype(data->result.type);
    if (verbose > 1) {
-      printf("result:    ");
-      print_opnd(stdout, &data->result);
+      printf("result:    value = ");
+      print_value(stdout, result, num_result_bits);
       printf("\n");
+      printf("expected:  value = ");
+      print_value(stdout, expected, num_result_bits);
+      printf("\n");
+   }
+
+   /* Check result */
+   if (result != expected) {
+      fprintf(stderr, "*** Incorrect result for operator %s\n", op->name);
+
+      for (unsigned i = 0; i < op->num_opnds; ++i) {
+         const opnd_t *opnd = data->opnds + i;
+         fprintf(stderr, "    opnd %u:  ", i);
+         print_value(stderr, opnd->value, bitsof_irtype(opnd->type));
+         fprintf(stderr, "\n");
+      }
+      fprintf(stderr, "    result:  ");
+      print_value(stderr, result, num_result_bits);
+      fprintf(stderr, "\n");
+      fprintf(stderr, "    expect:  ");
+      print_value(stderr, expected, num_result_bits);
+      fprintf(stderr, "\n");
    }
 }

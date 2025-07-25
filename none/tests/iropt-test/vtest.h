@@ -69,19 +69,17 @@ typedef struct {
 
 
 /* Function prototypes */
-void print_opnd(FILE *, const opnd_t *);
 void print_value(FILE *, uint64_t, unsigned);
 
 void test_unary_op(const irop_t *, test_data_t *);
 void test_binary_op(const irop_t *, test_data_t *);
 
 void valgrind_vex_init_for_iri(IRICB *);
-void valgrind_execute_test(const irop_t *, test_data_t *);
+void valgrind_execute_test(const irop_t *, test_data_t *, uint64_t);
 
-IRICB new_iricb(const irop_t *, test_data_t *);
+IRICB *new_iricb(const irop_t *, test_data_t *);
 
 void panic(const char *, ...) __attribute__((noreturn));
-void complain(const irop_t *, const test_data_t *, uint64_t expected);
 
 unsigned bitsof_irtype(IRType);
 uint64_t get_random_value(IRType);

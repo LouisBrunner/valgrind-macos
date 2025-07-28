@@ -271,12 +271,12 @@ without too much problem by following these steps:
       export VALGRIND_LIB=$DIR/.in_place
 
     VALGRIND_LIB is where the default.supp and vgpreload_ libraries
-    are found (which is under /usr/libexec/valgrind for an installed
+    are found (which is under /usr/local/libexec/valgrind for an installed
     version).
 
 (2) Run gdb on the tool executable.  Eg:
 
-      gdb /usr/local/lib/valgrind/lackey-ppc32-linux
+      gdb /usr/local/libexec/valgrind/lackey-ppc32-linux
 
     or
 

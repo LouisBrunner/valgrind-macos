@@ -31,6 +31,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 338803  Handling of dwz debug alt files or cross-CU is broken
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
+493430  Review all syscalls that use or return (new) file descriptors
 493434  Add --track-fds=bad mode (no "leak" tracking)
 501741  syscall cachestat not wrapped
 502359  Add --modify-fds=yes option

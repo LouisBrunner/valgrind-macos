@@ -2944,6 +2944,8 @@ PRE(sys_fsync)
    *flags |= SfMayBlock;
    PRINT("sys_fsync ( %" FMT_REGWORD "u )", ARG1);
    PRE_REG_READ1(long, "fsync", unsigned int, fd);
+   if ( !ML_(fd_allowed)(ARG1, "fsync", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_fdatasync)
@@ -2951,6 +2953,8 @@ PRE(sys_fdatasync)
    *flags |= SfMayBlock;
    PRINT("sys_fdatasync ( %" FMT_REGWORD "u )", ARG1);
    PRE_REG_READ1(long, "fdatasync", unsigned int, fd);
+   if ( !ML_(fd_allowed)(ARG1, "fdatasync", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_msync)
@@ -3215,6 +3219,8 @@ PRE(sys_fstatfs)
    PRE_REG_READ2(long, "fstatfs",
                  unsigned int, fd, struct statfs *, buf);
    PRE_MEM_WRITE( "fstatfs(buf)", ARG2, sizeof(struct vki_statfs) );
+   if ( !ML_(fd_allowed)(ARG1, "fstatfs", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 POST(sys_fstatfs)
@@ -3230,6 +3236,8 @@ PRE(sys_fstatfs64)
    PRE_REG_READ3(long, "fstatfs64",
                  unsigned int, fd, vki_size_t, size, struct statfs64 *, buf);
    PRE_MEM_WRITE( "fstatfs64(buf)", ARG3, ARG2 );
+   if ( !ML_(fd_allowed)(ARG1, "fstatfs64", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 POST(sys_fstatfs64)
 {
@@ -3288,6 +3296,8 @@ PRE(sys_flock)
    *flags |= SfMayBlock;
    PRINT("sys_flock ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2 );
    PRE_REG_READ2(long, "flock", unsigned int, fd, unsigned int, operation);
+   if ( !ML_(fd_allowed)(ARG1, "flock", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 // Pre_read a char** argument.
@@ -3818,6 +3828,8 @@ PRE(sys_fchdir)
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchdir ( %" FMT_REGWORD "u )", ARG1);
    PRE_REG_READ1(long, "fchdir", unsigned int, fd);
+   if ( !ML_(fd_allowed)(ARG1, "fchdir", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_fchown)
@@ -3827,6 +3839,8 @@ PRE(sys_fchown)
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "fchown",
                  unsigned int, fd, vki_uid_t, owner, vki_gid_t, group);
+   if ( !ML_(fd_allowed)(ARG1, "fchown", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_fchmod)
@@ -3834,6 +3848,8 @@ PRE(sys_fchmod)
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_fchmod ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
    PRE_REG_READ2(long, "fchmod", unsigned int, fildes, vki_mode_t, mode);
+   if ( !ML_(fd_allowed)(ARG1, "fchmod", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 #if !defined(VGP_nanomips_linux) && !defined (VGO_freebsd)
@@ -3910,6 +3926,8 @@ PRE(sys_ftruncate)
    *flags |= SfMayBlock;
    PRINT("sys_ftruncate ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
    PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
+   if ( !ML_(fd_allowed)(ARG1, "ftruncate", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_truncate)
@@ -3936,6 +3954,8 @@ PRE(sys_ftruncate64)
    PRE_REG_READ2(long, "ftruncate64",
                  unsigned int,fd, UWord,length);
 #endif
+   if ( !ML_(fd_allowed)(ARG1, "ftruncate64", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_truncate64)
@@ -4801,6 +4821,9 @@ PRE(sys_poll)
       PRE_MEM_READ( "poll(ufds.fd)",
                     (Addr)(&ufds[i].fd), sizeof(ufds[i].fd) );
       if (ML_(safe_to_deref)(&ufds[i].fd, sizeof(ufds[i].fd)) && ufds[i].fd >= 0) {
+         if (!ML_(fd_allowed)(ufds[i].fd, "poll(ufds.fd)", tid, False)) {
+            /* do nothing? Just let fd_allowed produce a warning? */
+         }
          PRE_MEM_READ( "poll(ufds.events)",
                        (Addr)(&ufds[i].events), sizeof(ufds[i].events) );
       }

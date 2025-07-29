@@ -2518,6 +2518,8 @@ PRE(sys_fadvise64)
    PRE_REG_READ5(long, "fadvise64",
                  int, fd, vki_u32, MERGE64_FIRST(offset), vki_u32, MERGE64_SECOND(offset),
                  vki_size_t, len, int, advice);
+   if ( !ML_(fd_allowed)(SARG1, "fadvise64", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_fadvise64_64)
@@ -2527,6 +2529,8 @@ PRE(sys_fadvise64_64)
    PRE_REG_READ6(long, "fadvise64_64",
                  int, fd, vki_u32, MERGE64_FIRST(offset), vki_u32, MERGE64_SECOND(offset),
                  vki_u32, MERGE64_FIRST(len), vki_u32, MERGE64_SECOND(len), int, advice);
+   if ( !ML_(fd_allowed)(SARG1, "fadvise64_64", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 /* ---------------------------------------------------------------------
@@ -2861,6 +2865,8 @@ PRE(sys_fanotify_mark)
                  int, dfd, const char *, pathname);
    if (ARG5)
       PRE_MEM_RASCIIZ( "fanotify_mark(path)", ARG5);
+   if ( !ML_(fd_allowed)(SARG1, "fanotify_mark", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 #else
 #  error Unexpected word size
 #endif
@@ -2897,6 +2903,7 @@ PRE(sys_inotify_init1)
 POST(sys_inotify_init1)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "inotify_init", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -2943,6 +2950,7 @@ PRE(sys_mq_open)
 POST(sys_mq_open)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "mq_open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -3373,6 +3381,7 @@ PRE(sys_timerfd_create)
 }
 POST(sys_timerfd_create)
 {
+   POST_newFd_RES;
    if (linux_kernel_2_6_22())
    {
       /* 2.6.22 kernel: timerfd system call. */
@@ -3615,6 +3624,9 @@ PRE(sys_fchown16)
          FMT_REGWORD "u )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "fchown16",
                  unsigned int, fd, vki_old_uid_t, owner, vki_old_gid_t, group);
+   if ( !ML_(fd_allowed)(ARG1, "fchown16", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
+
 }
 
 /* ---------------------------------------------------------------------
@@ -3709,6 +3721,9 @@ PRE(sys_fgetxattr)
                  int, fd, char *, name, void *, value, vki_size_t, size);
    PRE_MEM_RASCIIZ( "fgetxattr(name)", ARG2 );
    PRE_MEM_WRITE( "fgetxattr(value)", ARG3, ARG4 );
+   if ( !ML_(fd_allowed)(SARG1, "fgetxattr", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
+
 }
 POST(sys_fgetxattr)
 {
@@ -3756,6 +3771,9 @@ PRE(sys_flistxattr)
    PRE_REG_READ3(ssize_t, "flistxattr",
                  int, fd, char *, list, vki_size_t, size);
    PRE_MEM_WRITE( "flistxattr(list)", ARG2, ARG3 );
+   if ( !ML_(fd_allowed)(ARG1, "flistxattr", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
+
 }
 POST(sys_flistxattr)
 {
@@ -3789,6 +3807,9 @@ PRE(sys_fremovexattr)
    PRINT("sys_fremovexattr ( %ld, %#" FMT_REGWORD "x )", SARG1, ARG2);
    PRE_REG_READ2(long, "fremovexattr", int, fd, char *, name);
    PRE_MEM_RASCIIZ( "fremovexattr(name)", ARG2 );
+   if ( !ML_(fd_allowed)(SARG1, "fremovexattr", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
+
 }
 
 /* ---------------------------------------------------------------------
@@ -4151,6 +4172,7 @@ PRE(sys_perf_event_open)
 POST(sys_perf_event_open)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "perf_event_open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -4229,6 +4251,7 @@ PRE(sys_memfd_create)
 POST(sys_memfd_create)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "memfd_create", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -4255,6 +4278,7 @@ POST(sys_landlock_create_ruleset)
 {
    /* Returns either the abi version or a file descriptor.  */
    if (ARG3 != VKI_LANDLOCK_CREATE_RULESET_VERSION) {
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "landlock_create_ruleset", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
@@ -4295,6 +4319,7 @@ PRE(sys_memfd_secret)
 POST(sys_memfd_secret)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "memfd_secret", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -4626,6 +4651,7 @@ PRE(sys_signalfd)
 }
 POST(sys_signalfd)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "signalfd", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -4647,6 +4673,7 @@ PRE(sys_signalfd4)
 }
 POST(sys_signalfd4)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "signalfd4", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -6143,6 +6170,8 @@ PRE(sys_fchownat)
                  int, dfd, const char *, path,
                  vki_uid_t, owner, vki_gid_t, group);
    PRE_MEM_RASCIIZ( "fchownat(path)", ARG2 );
+   if ( !ML_(fd_allowed)(SARG1, "fchownat", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_futimesat)
@@ -6156,6 +6185,9 @@ PRE(sys_futimesat)
       PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
    if (ARG3 != 0)
       PRE_MEM_READ( "futimesat(tvp)", ARG3, 2 * sizeof(struct vki_timeval) );
+   if ( !ML_(fd_allowed)(SARG1, "futimesat", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
+
 }
 
 PRE(sys_utimensat)
@@ -6345,6 +6377,9 @@ PRE(sys_fchmodat)
    PRE_REG_READ3(long, "fchmodat",
                  int, dfd, const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
+   if ( !ML_(fd_allowed)(SARG1, "fchmodat", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
+
 }
 
 PRE(sys_cachestat)
@@ -6377,6 +6412,8 @@ PRE(sys_fchmodat2)
                  int, dfd, const char *, path, vki_mode_t, mode,
                  unsigned int, flags);
    PRE_MEM_RASCIIZ( "fchmodat2(pathname)", ARG2 );
+   if ( !ML_(fd_allowed)(SARG1, "fchmodat2", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_faccessat)
@@ -6387,6 +6424,9 @@ PRE(sys_faccessat)
    PRE_REG_READ3(long, "faccessat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
+   if ( !ML_(fd_allowed)(SARG1, "faccessat", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
+
 }
 
 PRE(sys_faccessat2)
@@ -6397,6 +6437,8 @@ PRE(sys_faccessat2)
    PRE_REG_READ4(long, "faccessat2",
                  int, dfd, const char *, pathname, int, mode, int, flags);
    PRE_MEM_RASCIIZ( "faccessat2(pathname)", ARG2 );
+   if ( !ML_(fd_allowed)(SARG1, "faccessat2", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_name_to_handle_at)
@@ -6441,6 +6483,7 @@ PRE(sys_open_by_handle_at)
 POST(sys_open_by_handle_at)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "open_by_handle_at", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -7014,6 +7057,8 @@ PRE(sys_finit_module)
    PRE_REG_READ3(long, "finit_module",
                  int, fd, const char *, params, int, flags);
    PRE_MEM_RASCIIZ("finit_module(params)", ARG2);
+   if ( !ML_(fd_allowed)(ARG1, "finit_module", tid, False) )
+     SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_delete_module)
@@ -7284,6 +7329,7 @@ POST(sys_fcntl)
 {
    vg_assert(SUCCESS);
    if (ARG2 == VKI_F_DUPFD) {
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl(DUPFD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
@@ -7293,6 +7339,7 @@ POST(sys_fcntl)
       }
    }
    else if (ARG2 == VKI_F_DUPFD_CLOEXEC) {
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl(DUPFD_CLOEXEC)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
@@ -7398,6 +7445,7 @@ POST(sys_fcntl64)
 {
    vg_assert(SUCCESS);
    if (ARG2 == VKI_F_DUPFD) {
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl64(DUPFD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
@@ -7407,6 +7455,7 @@ POST(sys_fcntl64)
       }
    }
    else if (ARG2 == VKI_F_DUPFD_CLOEXEC) {
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl64(DUPFD_CLOEXEC)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure( VKI_EMFILE );
@@ -13521,6 +13570,7 @@ POST(sys_bpf)
       case VKI_BPF_MAP_GET_FD_BY_ID:
       case VKI_BPF_BTF_GET_FD_BY_ID:
       case VKI_BPF_RAW_TRACEPOINT_OPEN:
+         POST_newFd_RES;
          if (!ML_(fd_allowed)(RES, "bpf", tid, True)) {
             VG_(close)(RES);
             SET_STATUS_Failure(VKI_EMFILE);
@@ -13543,6 +13593,7 @@ POST(sys_bpf)
          break;
       case VKI_BPF_PROG_LOAD:
          /* Return a file descriptor for loaded program, write into log_buf. */
+         POST_newFd_RES;
          if (!ML_(fd_allowed)(RES, "bpf", tid, True)) {
             VG_(close)(RES);
             SET_STATUS_Failure(VKI_EMFILE);
@@ -13571,6 +13622,7 @@ POST(sys_bpf)
          break;
       case VKI_BPF_BTF_LOAD:
          /* Return a file descriptor for BTF data, write into btf_log_buf. */
+         POST_newFd_RES;
          if (!ML_(fd_allowed)(RES, "bpf", tid, True)) {
             VG_(close)(RES);
             SET_STATUS_Failure(VKI_EMFILE);
@@ -13729,6 +13781,7 @@ PRE(sys_io_uring_setup)
 POST(sys_io_uring_setup)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "io_uring_setup", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14104,6 +14157,7 @@ PRE(sys_openat2)
 POST(sys_openat2)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "openat2", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14120,6 +14174,7 @@ PRE(sys_pidfd_open)
 
 POST(sys_pidfd_open)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "pidfd", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14138,6 +14193,7 @@ PRE(sys_pidfd_getfd)
 POST(sys_pidfd_getfd)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "pidfd_getfd", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14167,6 +14223,7 @@ PRE(sys_open_tree)
 
 POST(sys_open_tree)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "open_tree", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14219,6 +14276,7 @@ PRE(sys_fsopen)
 
 POST(sys_fsopen)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "fsopen", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14239,6 +14297,7 @@ PRE(sys_fsmount)
 
 POST(sys_fsmount)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "fsmount", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14284,6 +14343,7 @@ PRE(sys_fspick)
 
 POST(sys_fspick)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "fspick", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -14304,6 +14364,7 @@ PRE(sys_userfaultfd)
 POST(sys_userfaultfd)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "userfaultfd", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );

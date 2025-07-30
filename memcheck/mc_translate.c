@@ -6064,7 +6064,7 @@ void do_shadow_Store ( MCEnv* mce,
          case Ity_I32:  c = IRConst_U32 (V_BITS32_DEFINED); break;
          case Ity_I16:  c = IRConst_U16 (V_BITS16_DEFINED); break;
          case Ity_I8:   c = IRConst_U8  (V_BITS8_DEFINED);  break;
-         default:       VG_(tool_panic)("memcheck:do_shadow_Store(LE)");
+         default:       VG_(tool_panic)("memcheck:do_shadow_Store");
       }
       vdata = IRExpr_Const( c );
    }

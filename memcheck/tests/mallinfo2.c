@@ -18,16 +18,16 @@ static size_t check(size_t min, size_t max)
 
   if (! s_quiet)
   {
-    printf("arena = %d\n", mi.arena);	    /* non-mmapped space allocated from system */
-    printf("ordblks = %d\n", mi.ordblks);   /* number of free chunks */
-    printf("smblks = %d\n", mi.smblks);	    /* number of fastbin blocks */
-    printf("hblks = %d\n", mi.hblks);	    /* number of mmapped regions */
-    printf("hblkhd = %d\n", mi.hblkhd);	    /* space in mmapped regions */
-    printf("usmblks = %d\n", mi.usmblks);   /* maximum total allocated space */
-    printf("fsmblks = %d\n", mi.fsmblks);   /* space available in freed fastbin blocks */
-    printf("uordblks = %d\n", mi.uordblks); /* total allocated space */
-    printf("fordblks = %d\n", mi.fordblks); /* total free space */
-    printf("keepcost = %d\n", mi.keepcost); /* top-most, releasable (via malloc_trim) space */
+    printf("arena = %zu\n", mi.arena);	    /* non-mmapped space allocated from system */
+    printf("ordblks = %zu\n", mi.ordblks);   /* number of free chunks */
+    printf("smblks = %zu\n", mi.smblks);	    /* number of fastbin blocks */
+    printf("hblks = %zu\n", mi.hblks);	    /* number of mmapped regions */
+    printf("hblkhd = %zu\n", mi.hblkhd);	    /* space in mmapped regions */
+    printf("usmblks = %zu\n", mi.usmblks);   /* maximum total allocated space */
+    printf("fsmblks = %zu\n", mi.fsmblks);   /* space available in freed fastbin blocks */
+    printf("uordblks = %zu\n", mi.uordblks); /* total allocated space */
+    printf("fordblks = %zu\n", mi.fordblks); /* total free space */
+    printf("keepcost = %zu\n", mi.keepcost); /* top-most, releasable (via malloc_trim) space */
     printf("(min = %zu, max = %zu)\n", min, max);
     printf("\n");
   }

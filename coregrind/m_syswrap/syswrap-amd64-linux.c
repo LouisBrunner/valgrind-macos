@@ -636,7 +636,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_ustat,             sys_ustat),          // 136
    GENXY(__NR_statfs,            sys_statfs),         // 137 
    GENXY(__NR_fstatfs,           sys_fstatfs),        // 138 
-   //   (__NR_sysfs,             sys_sysfs),          // 139 
+   LINXY(__NR_sysfs,             sys_sysfs),          // 139
 
    GENX_(__NR_getpriority,             sys_getpriority),             // 140 
    GENX_(__NR_setpriority,             sys_setpriority),             // 141 

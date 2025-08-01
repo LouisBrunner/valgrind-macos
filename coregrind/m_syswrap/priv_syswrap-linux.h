@@ -61,6 +61,7 @@ DECL_TEMPLATE(linux, sys_vmsplice);
 DECL_TEMPLATE(linux, sys_readahead);
 DECL_TEMPLATE(linux, sys_move_pages);
 DECL_TEMPLATE(linux, sys_cachestat);
+DECL_TEMPLATE(linux, sys_sysfs);
 
 // clone is similar enough between linux variants to have a generic
 // version, but which will call an extern defined in syswrap-<platform>-linux.c

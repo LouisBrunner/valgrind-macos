@@ -573,7 +573,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_fchdir,  sys_fchdir),                                   // 133
 // ?????(__NR_bdflush, ),                                             // 134
 
-// ?????(__NR_sysfs, ),                                               // 135
+   LINXY(__NR_sysfs, sys_sysfs),                                      // 135
    LINX_(__NR_personality, sys_personality),                          // 136
    GENX_(137, sys_ni_syscall), /* unimplemented (by the kernel) */    // 137
    GENX_(138, sys_ni_syscall), /* unimplemented (by the kernel) */    // 138

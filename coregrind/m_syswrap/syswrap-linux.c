@@ -4407,6 +4407,42 @@ PRE(sys_syncfs)
    PRE_REG_READ1(long, "syncfs", unsigned int, fd);
 }
 
+PRE(sys_sysfs)
+{
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   switch (ARG1) {
+      case 1:
+         PRINT("sys_sysfs ( %lu, %lu )", ARG1, ARG2);
+         PRE_REG_READ2(long, "sysfs", int, flags, const void *, path);
+         PRE_MEM_RASCIIZ("sysfs(path)", ARG2);
+         break;
+      case 2:
+         PRINT("sys_sysfs ( %lu, %lu, %#" FMT_REGWORD "x )",
+               ARG1, ARG2, ARG3);
+         PRE_REG_READ3(long, "sysfs", int, flags, int, desc, void *, path);
+         PRE_MEM_WRITE("sysfs(path)", ARG3, 1);
+         break;
+      case 3:
+         PRINT("sys_sysfs ( %lu )", ARG1);
+         PRE_REG_READ1(long, "sysfs", int, flags);
+         break;
+      default:
+         if (VG_(clo_verbosity) >= 1) {
+            VG_(message)(Vg_DebugMsg,
+               "WARNING: unhandled sysfs option %lu\n", ARG1);
+         }
+         break;
+   }
+}
+
+POST(sys_sysfs)
+{
+   if (ARG1 == 2) {
+      // For option 2, getting the fsname, there is no way to know how big the buffer needs to be.
+      POST_MEM_WRITE(ARG3, VG_(strlen)((void *)ARG3));
+   }
+}
+
 PRE(sys_statx)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();

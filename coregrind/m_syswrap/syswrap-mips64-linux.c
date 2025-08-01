@@ -216,7 +216,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_vmsplice);
-DECL_TEMPLATE (mips_linux, sys_sysfs);
 DECL_TEMPLATE (mips_linux, sys_swapon);
 DECL_TEMPLATE (mips_linux, sys_swapoff);
 DECL_TEMPLATE (mips_linux, sys_setdomainname);
@@ -257,13 +256,6 @@ PRE(sys_swapoff)
 {
    PRINT("sys_swapoff ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "swapoff", const void *, path);
-}
-
-PRE(sys_sysfs)
-{
-   PRINT("sys_sysfs ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
-         SARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "sysfs", int, flags, int, desc, const void *, path);
 }
 
 /* Very much MIPS specific */
@@ -645,7 +637,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_ustat, sys_ustat),
    GENXY (__NR_statfs, sys_statfs),
    GENXY (__NR_fstatfs, sys_fstatfs),
-   PLAX_ (__NR_sysfs, sys_sysfs),
+   LINXY (__NR_sysfs, sys_sysfs),
    GENX_ (__NR_getpriority, sys_getpriority),
    GENX_ (__NR_setpriority, sys_setpriority),
    LINXY (__NR_sched_setparam, sys_sched_setparam),

@@ -13893,12 +13893,12 @@ PRE(sys_execveat)
    return;
 #endif
 
+   Int arg_1 = (Int) ARG1;
    const HChar *path = (const HChar*) ARG2;
    Addr arg_2    = ARG3;
    Addr arg_3    = ARG4;
    const HChar   *buf;
    HChar         *abs_path = NULL;
-   Bool check_at_symlink = False;
    Bool check_pathptr = True;
 
    if (ML_(safe_to_deref) (path, 1)) {
@@ -13906,8 +13906,12 @@ PRE(sys_execveat)
         * and just pass the pathname, try to determine
         * the absolute path otherwise. */
        if (path[0] != '/') {
-           /* Check dirfd is a valid fd. */
-           if (!ML_(fd_allowed)(ARG1, "execveat", tid, False)) {
+           /* Check dirfd is a valid fd.
+            * BUT: allow special value of AT_FDCWD (-101) per the execveat(2) man page:
+            *      If pathname is relative and dirfd is the special value AT_FDCWD,
+            *      then pathname is interpreted relative to the current working directory
+            *      of the calling process  (like execve(2)). */
+           if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "execveat", tid, False)) {
                SET_STATUS_Failure( VKI_EBADF );
                return;
            }
@@ -13915,37 +13919,32 @@ PRE(sys_execveat)
               set then dirfd describes the whole path. */
            if (path[0] == '\0') {
                if (ARG5 & VKI_AT_EMPTY_PATH) {
-                   if (VG_(resolve_filename)(ARG1, &buf)) {
+                   if (VG_(resolve_filename)(arg_1, &buf)) {
                        path = buf;
                        check_pathptr = False;
                    }
                }
-           }
-           else if (ARG1 == VKI_AT_FDCWD) {
-               check_at_symlink = True;
-           } else
-               if (ARG5 & VKI_AT_SYMLINK_NOFOLLOW)
-                   check_at_symlink = True;
-               else if (VG_(resolve_filename)(ARG1, &buf)) {
+           } else if (VG_(resolve_filename)(arg_1, &buf)) {
 		   abs_path = VG_(malloc)("execveat",
                                           (VG_(strlen)(buf) + 1
                                           + VG_(strlen)(path) + 1));
                    VG_(sprintf)(abs_path, "%s/%s", buf, path);
                    path = abs_path;
                    check_pathptr = False;
-               }
-               else
-                   path = NULL;
-           if (check_at_symlink) {
-               struct vg_stat statbuf;
-               SysRes statres;
-
-               statres = VG_(stat)(path, &statbuf);
-               if (sr_isError(statres) || VKI_S_ISLNK(statbuf.mode)) {
-                   SET_STATUS_Failure( VKI_ELOOP );
-                   return;
-               }
            }
+       }
+       if (ARG5 & VKI_AT_SYMLINK_NOFOLLOW) {
+          struct vg_stat statbuf;
+          SysRes statres;
+          statres = VG_(stat)(path, &statbuf);
+          if (sr_isError(statres) || VKI_S_ISLNK(statbuf.mode)) {
+             SET_STATUS_Failure( VKI_ELOOP );
+             return;
+          }
+       }
+       if(ARG5 & ~(VKI_AT_SYMLINK_NOFOLLOW | VKI_AT_EMPTY_PATH)) {
+          SET_STATUS_Failure( VKI_EINVAL );
+          return;
        }
    } else {
        SET_STATUS_Failure(VKI_EFAULT);

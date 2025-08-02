@@ -2048,7 +2048,7 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, IRExpr* e )
             addInstr(env, ARM64Instr_Unary(dst, src, ARM64un_NOT));
             return dst;
          }
-         case Iop_Clz64: {
+         case Iop_ClzNat64: {
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, ARM64Instr_Unary(dst, src, ARM64un_CLZ));

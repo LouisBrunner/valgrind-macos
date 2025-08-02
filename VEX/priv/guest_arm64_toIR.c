@@ -3504,12 +3504,12 @@ Bool dis_ARM64_data_processing_register(/*MB_OUT*/DisResult* dres,
       if (is64) {
          assign(dst, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(srcZ), mkU64(0)),
                                 mkU64(isCLS ? 63 : 64),
-                                unop(Iop_Clz64, mkexpr(srcZ))));
+                                unop(Iop_ClzNat64, mkexpr(srcZ))));
          putIReg64orZR(dd, mkexpr(dst));
       } else {
          assign(dst, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(srcZ), mkU64(0)),
                                 mkU64(isCLS ? 31 : 32),
-                                unop(Iop_Clz64, mkexpr(srcZ))));
+                                unop(Iop_ClzNat64, mkexpr(srcZ))));
          putIReg32orZR(dd, unop(Iop_64to32, mkexpr(dst)));
       }
       DIP("cl%c %s, %s\n", isCLS ? 's' : 'z',

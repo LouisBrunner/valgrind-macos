@@ -6213,16 +6213,23 @@ PRE(sys_fchownat)
 PRE(sys_futimesat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_futimesat ( %ld, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",
-         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*) ARG2;
+   PRINT("sys_futimesat ( %d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",
+         arg_1, ARG2, path, ARG3);
    PRE_REG_READ3(long, "futimesat",
                  int, dfd, char *, filename, struct timeval *, tvp);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
    if (ARG3 != 0)
       PRE_MEM_READ( "futimesat(tvp)", ARG3, 2 * sizeof(struct vki_timeval) );
-   if ( !ML_(fd_allowed)(SARG1, "futimesat", tid, False) )
-     SET_STATUS_Failure( VKI_EBADF );
+   if (ML_(safe_to_deref) (path, 1)) {
+      /* If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted ... */
+      if (path[0] != '/')
+         if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "futimesat", tid, False) )
+            SET_STATUS_Failure( VKI_EBADF );
+      /* If pathname is absolute, then dirfd is ignored. */
+   }
 
 }
 

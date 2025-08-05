@@ -68,6 +68,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506967  Implement and override mallinfo2
 506970  mmap needs an EBADF fd_allowed check
 507173  s390x: Crash when constant folding is disabled
+507868  futimesat doesn't handle AT_FDCWD
 507873  Make fchmodat and fchmodat2 syscall wrappers accept AT_FDCWD
 507897  Allow for patching LTP sources
 

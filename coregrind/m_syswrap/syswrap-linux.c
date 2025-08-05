@@ -6407,15 +6407,21 @@ POST(sys_readlinkat)
 
 PRE(sys_fchmodat)
 {
+   Int arg_1 = (Int) ARG1;
+   const HChar *path = (const HChar*) ARG2;
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_fchmodat ( %ld, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )",
-         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
+   PRINT("sys_fchmodat ( %d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )",
+         arg_1, ARG2, path, ARG3);
    PRE_REG_READ3(long, "fchmodat",
                  int, dfd, const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
-   if ( !ML_(fd_allowed)(SARG1, "fchmodat", tid, False) )
-     SET_STATUS_Failure( VKI_EBADF );
-
+   if (ML_(safe_to_deref) (path, 1)) {
+      // If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted ...
+      if (path[0] != '/')
+         if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fchmodat", tid, False) )
+            SET_STATUS_Failure( VKI_EBADF );
+      // If pathname is absolute, then dirfd is ignored
+   }
 }
 
 PRE(sys_cachestat)
@@ -6440,16 +6446,23 @@ POST(sys_cachestat)
 
 PRE(sys_fchmodat2)
 {
+   Int arg_1 = (Int) ARG1;
+   const HChar *path = (const HChar*) ARG2;
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_fchmodat2 ( %ld, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
+   PRINT("sys_fchmodat2 ( %d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
 	  FMT_REGWORD "u )",
-         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
+         arg_1, ARG2, path, ARG3, ARG4);
    PRE_REG_READ4(long, "fchmodat2",
                  int, dfd, const char *, path, vki_mode_t, mode,
                  unsigned int, flags);
    PRE_MEM_RASCIIZ( "fchmodat2(pathname)", ARG2 );
-   if ( !ML_(fd_allowed)(SARG1, "fchmodat2", tid, False) )
-     SET_STATUS_Failure( VKI_EBADF );
+   if (ML_(safe_to_deref) (path, 1)) {
+      // If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted ...
+      if (path[0] != '/')
+          if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fchmodat2", tid, False) )
+             SET_STATUS_Failure( VKI_EBADF );
+      // If pathname is absolute, then dirfd is ignored
+   }
 }
 
 PRE(sys_faccessat)

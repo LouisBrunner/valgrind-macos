@@ -199,6 +199,7 @@ $(LTP_SRC_DIR): $(LTP_TAR)
 	echo "$(LTP_SHA256_SUM)  $(LTP_TAR)" | @SHA256SUM@ --check -
 	(cd $(AUX_CHECK_DIR) && \
 	 tar Jxf $(LTP_TAR_NAME) && \
+	 $(abs_top_srcdir)/auxprogs/ltp-apply-patches.sh $(LTP_SRC_DIR) && \
 	 cd $(LTP_SRC_DIR) && \
 	 ./configure CC="${CC}" CXX="${CXX}" CFLAGS="$(LTP_CFLAGS)" && \
 	 ${MAKE} -j $(nproc) -C testcases/kernel/syscalls)

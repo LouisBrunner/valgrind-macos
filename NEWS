@@ -37,6 +37,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 502359  Add --modify-fds=yes option
 502968  Wrap linux specific syscalls 457 (listmount) and 458 (statmount)
 503098  Incorrect NAN-boxing for float registers in RISC-V
+503241  s390x: Support z17 changes to the NNPA instruction
 503641  close_range syscalls started failing with 3.25.0
 503677  duplicated-cond compiler warning in dis_RV64M
 503817  s390x: fix 'ordered comparison of pointer with integer zero' compiler warnings

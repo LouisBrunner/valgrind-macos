@@ -2,27 +2,43 @@ include $(top_srcdir)/Makefile.all.am
 
 dist_noinst_SCRIPTS = \
 	change-copyright-year \
+	pybuild.sh \
 	dump_insn_ppc.sh \
 	gen-mdg \
 	gsl19test \
+	ltp-tester.sh \
+	ltp-apply-patches.sh \
 	make_or_upd_vgversion_h \
 	nightly-build-summary \
+	s390-check-opcodes.pl \
+	s390-runone \
 	update-demangler \
 	posixtestsuite-1.5.1-diff-results
+
+LTP_FILTERS = \
+	filters/mmap18 \
+	filters/prctl10 \
+	filters/select03
+
+LTP_PATCHES = \
+	ltp-patches/0001-Make-sure-32-bit-powerpc-syscall-defs-don-t-leak-to-.patch
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
 	docs/valgrind-di-server-manpage.xml \
+	pylintrc \
 	gsl-1.6.patch \
 	gsl-1.6.supp \
 	gsl-1.6.out.x86.exp \
-	ltp-tester.sh \
 	ltp-excludes.txt \
 	ltp-error-patterns.txt \
 	posixtestsuite-1.5.1-diff.txt \
 	ppcfround.c \
 	ppc64shifts.c \
-	primes.c
+	primes.c \
+	ltp-patches/README \
+	$(LTP_FILTERS) \
+	$(LTP_PATCHES)
 
 #----------------------------------------------------------------------------
 # valgrind_listener  (built for the primary target only)

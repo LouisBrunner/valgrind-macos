@@ -71,6 +71,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 507868  futimesat doesn't handle AT_FDCWD
 507873  Make fchmodat and fchmodat2 syscall wrappers accept AT_FDCWD
 507897  Allow for patching LTP sources
+508029  Review the vmsplice syscall wrapper
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

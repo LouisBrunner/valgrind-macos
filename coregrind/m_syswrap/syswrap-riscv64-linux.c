@@ -383,7 +383,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_pselect6, sys_pselect6),                             /* 72 */
    LINXY(__NR_ppoll, sys_ppoll),                                   /* 73 */
    LINXY(__NR_signalfd4, sys_signalfd4),                           /* 74 */
-   LINX_(__NR_vmsplice, sys_vmsplice),                             /* 75 */
+   LINXY(__NR_vmsplice, sys_vmsplice),                             /* 75 */
    LINX_(__NR_splice, sys_splice),                                 /* 76 */
    LINX_(__NR_tee, sys_tee),                                       /* 77 */
    LINXY(__NR_readlinkat, sys_readlinkat),                         /* 78 */

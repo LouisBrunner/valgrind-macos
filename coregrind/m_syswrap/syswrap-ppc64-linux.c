@@ -691,7 +691,7 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_sethostname,       sys_sethostname),        //  74
 
    GENX_(__NR_setrlimit,         sys_setrlimit),          //  75
-// _____(__NR_getrlimit,         sys_getrlimit),          //  76
+   GENXY(__NR_getrlimit,         sys_getrlimit),          //  76
    GENXY(__NR_getrusage,         sys_getrusage),          //  77
    GENXY(__NR_gettimeofday,      sys_gettimeofday),       //  78
 // _____(__NR_settimeofday,      sys_settimeofday),       //  79
@@ -847,9 +847,9 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_fcntl64,           sys_fcntl64),            // 204 !!!!?? 32bit only */
 
    GENX_(__NR_madvise,           sys_madvise),            // 205
-// _____(__NR_mincore,           sys_mincore),            // 206
+   GENXY(__NR_mincore,           sys_mincore),            // 206
    LINX_(__NR_gettid,            sys_gettid),             // 207
-// _____(__NR_tkill,             sys_tkill),              // 208
+   LINXY(__NR_tkill,             sys_tkill),              // 208
    LINX_(__NR_setxattr,          sys_setxattr),           // 209
 
    LINX_(__NR_lsetxattr,         sys_lsetxattr),          // 210
@@ -934,6 +934,10 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_pselect6,          sys_pselect6),           // 280
    LINXY(__NR_ppoll,             sys_ppoll),              // 281
+   LINX_(__NR_unshare,           sys_unshare),            // 282
+   LINX_(__NR_splice,            sys_splice),             // 283
+   LINX_(__NR_tee,               sys_tee),                // 284
+   LINXY(__NR_vmsplice,          sys_vmsplice),           // 285
 
    LINXY(__NR_openat,            sys_openat),             // 286
    LINX_(__NR_mkdirat,           sys_mkdirat),            // 287
@@ -972,6 +976,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_preadv,            sys_preadv),           // 320
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 322
+   LINXY(__NR_fanotify_init,     sys_fanotify_init),    // 323
+   LINX_(__NR_fanotify_mark,     sys_fanotify_mark),    // 324
 
    LINXY(__NR_prlimit64,         sys_prlimit64),        // 325
    LINXY(__NR_socket,            sys_socket),           // 326
@@ -1001,6 +1007,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 352
+   LINX_(__NR_kcmp,              sys_kcmp),             // 354
 
    LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 355
    LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 356
@@ -1008,6 +1015,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 359
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 360
+   LINXY(__NR_bpf,               sys_bpf),              // 361
 
    LINX_(__NR_execveat,          sys_execveat),         // 362
 

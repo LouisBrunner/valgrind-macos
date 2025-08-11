@@ -3521,7 +3521,7 @@ PTH_FUNC(sem_t*, semZuopen,
 
    if (TRACE_SEM_FNS) {
       fprintf(stderr, "<< sem_open(\"%s\",%ld,%lx,%lu) ",
-                      name,oflag,mode,value);
+                      name,oflag,(unsigned long)mode,value);
       fflush(stderr);
    }
 
@@ -3761,7 +3761,7 @@ static long QMutex_tryLock_WRK(void* self)
                 void *, self, long, (ret & 0xFF) ? True : False);
 
    if (TRACE_QT4_FNS) {
-      fprintf(stderr, " :: Q::tryLock -> %lu >>\n", ret);
+      fprintf(stderr, " :: Q::tryLock -> %ld >>\n", ret);
    }
 
    return ret;
@@ -3798,7 +3798,7 @@ static long QMutex_tryLock_int_WRK(void* self, long arg2)
                void *, self, long, (ret & 0xFF) ? True : False);
 
    if (TRACE_QT4_FNS) {
-      fprintf(stderr, " :: Q::tryLock(int) -> %lu >>\n", ret);
+      fprintf(stderr, " :: Q::tryLock(int) -> %ld >>\n", ret);
    }
 
    return ret;

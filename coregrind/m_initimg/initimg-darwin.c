@@ -404,7 +404,7 @@ Addr setup_client_stack( void*  init_sp,
       auxsize +                               /* auxv */
       VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
-   if (0) VG_(printf)("stacksize = %d\n", stacksize);
+   if (0) VG_(printf)("stacksize = %u\n", stacksize);
 
    /* client_SP is the client's stack pointer */
    client_SP = clstack_end + 1 - stacksize;
@@ -426,10 +426,10 @@ Addr setup_client_stack( void*  init_sp,
    VG_(clstk_end)  = clstack_end;
 
    if (0)
-      VG_(printf)("stringsize=%d auxsize=%d stacksize=%d maxsize=0x%x\n"
+      VG_(printf)("stringsize=%u auxsize=%u stacksize=%u maxsize=0x%x\n"
                   "clstack_start %p\n"
                   "clstack_end   %p\n",
-	          stringsize, auxsize, stacksize, (Int)clstack_max_size,
+	          stringsize, auxsize, stacksize, (UInt)clstack_max_size,
                   (void*)clstack_start, (void*)clstack_end);
 
    /* ==================== allocate space ==================== */

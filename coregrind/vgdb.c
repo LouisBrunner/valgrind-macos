@@ -760,8 +760,8 @@ getpkt(char *buf, int fromfd, int ackfd)
      if (csum == (c1 << 4) + c2)
         break;
 
-     TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-               (c1 << 4) + c2, csum, buf);
+     TSFPRINTF(stderr, "Bad checksum, sentsum=%#x, csum=%#x, buf=%s\n",
+               (UInt)(c1 << 4) + c2, csum, buf);
      ssize_t res = 0;
      while (res == 0) {
         res = write(ackfd, "-", 1);
@@ -1108,8 +1108,8 @@ receive_packet_start:
    buf[bufcnt] ='\0';
 
    if (!(csum == (c1 << 4) + c2)) {
-      TSFPRINTF(stderr, "Bad checksum, sentsum=0x%x, csum=0x%x, buf=%s\n",
-                (c1 << 4) + c2, csum, buf);
+      TSFPRINTF(stderr, "Bad checksum, sentsum=%#x, csum=%#x, buf=%s\n",
+                (UInt)(c1 << 4) + c2, csum, buf);
       if (!noackmode)
          if (!write_to_gdb ("-", 1))
             return -1;

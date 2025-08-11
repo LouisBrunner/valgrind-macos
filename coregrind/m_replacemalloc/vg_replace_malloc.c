@@ -332,7 +332,7 @@ extern int * __error(void) __attribute__((weak));
       malloc_type_descriptor_v0_t desc = (malloc_type_descriptor_v0_t)typeID; \
       MALLOC_TRACE(#fnname "(%llu, %#llx (%d, %#x, %d, %#x))", \
         (ULong)n, typeID, \
-        desc.summary.version, desc.summary.callsite_flags, \
+        desc.summary.version, (UInt)desc.summary.callsite_flags, \
         desc.summary.type_kind, *(UInt*)&desc.summary.layout_semantics); \
       \
       void* replacement = info.tl_malloc; \

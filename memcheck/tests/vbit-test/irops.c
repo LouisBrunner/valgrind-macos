@@ -1453,6 +1453,6 @@ get_irop(IROp op)
       }
    }
 
-   fprintf(stderr, "unknown opcode %d\n", op);
+   fprintf(stderr, "unknown opcode %u\n", op);
    exit(1);
 }

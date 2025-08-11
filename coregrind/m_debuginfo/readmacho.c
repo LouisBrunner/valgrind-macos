@@ -1134,11 +1134,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1) {
         if (has_dynamic) {
          VG_(message)(Vg_DebugMsg,
-            "   reading syms   from primary file (%d %d)\n",
+            "   reading syms   from primary file (%u %u)\n",
             dysymcmd.nextdefsym, dysymcmd.nlocalsym );
         } else {
           VG_(message)(Vg_DebugMsg,
-              "   reading syms   from primary file (%d)\n",
+              "   reading syms   from primary file (%u)\n",
               symcmd.nsyms );
         }
       }
@@ -1435,7 +1435,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             if (0)
             VG_(message)(Vg_DebugMsg,
                          "Reading dwarf3 for %s (%#lx) from %s"
-                         " (%lld %lld %lld %lld %lld %lld)\n",
+                         " (%llu %llu %llu %llu %llu %llu)\n",
                          di->fsm.filename, di->text_avma, dsymfilename,
                          debug_info_mscn.szB, debug_abbv_mscn.szB,
                          debug_line_mscn.szB, debug_str_mscn.szB,

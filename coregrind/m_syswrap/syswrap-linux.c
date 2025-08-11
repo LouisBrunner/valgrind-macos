@@ -6475,26 +6475,34 @@ PRE(sys_fchmodat2)
 PRE(sys_faccessat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_faccessat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
-         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+   Int arg_1 = (Int) ARG1;
+   const HChar *path = (const HChar*) ARG2;
+   Int arg_3 = (Int) ARG3;
+   PRINT("sys_faccessat ( %d, %#" FMT_REGWORD "x(%s), %d )",
+         arg_1, ARG2, path, arg_3);
    PRE_REG_READ3(long, "faccessat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
-   if ( !ML_(fd_allowed)(SARG1, "faccessat", tid, False) )
-     SET_STATUS_Failure( VKI_EBADF );
-
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "faccessat", tid, False) )
+         SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_faccessat2)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_faccessat2 ( %ld, %#" FMT_REGWORD "x(%s), %ld, %ld )",
-         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, SARG4);
+   Int arg_1 = (Int) ARG1;
+   const HChar *path = (const HChar*) ARG2;
+   Int arg_3 = (Int) ARG3;
+   Int arg_4 = (Int) ARG4;
+   PRINT("sys_faccessat2 ( %d, %#" FMT_REGWORD "x(%s), %d, %d )",
+         arg_1, ARG2, path, arg_3, arg_4);
    PRE_REG_READ4(long, "faccessat2",
                  int, dfd, const char *, pathname, int, mode, int, flags);
    PRE_MEM_RASCIIZ( "faccessat2(pathname)", ARG2 );
-   if ( !ML_(fd_allowed)(SARG1, "faccessat2", tid, False) )
-     SET_STATUS_Failure( VKI_EBADF );
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "faccessat2", tid, False) )
+         SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_name_to_handle_at)

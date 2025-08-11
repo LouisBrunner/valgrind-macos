@@ -10,6 +10,8 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* New VEX API function LibVEX_set_VexControl
+
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ===================
@@ -75,6 +77,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508027  Fix mips32 FTBFS
 508029  Review the vmsplice syscall wrapper
 508030  Add several missing syscall hooks to ppc64-linux
+508093  VALGRIND_CLO_CHANGE does not update vex_control
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

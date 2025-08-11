@@ -206,6 +206,11 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
    vcon->regalloc_version               = 3;
 }
 
+void LibVEX_set_VexControl ( VexControl vcon )
+{
+   __builtin_memcpy(&vex_control, &vcon, sizeof vex_control);
+}
+
 
 /* Exported to library client. */
 

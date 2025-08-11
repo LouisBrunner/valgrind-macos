@@ -939,6 +939,10 @@ void VG_(process_dynamic_option) (Clo_Mode mode, HChar *value)
    struct process_option_state dummy;
    process_option (mode, value, &dummy);
    // No need to handle a process_option_state once valgrind has started.
+
+   /* Update vex_control in case VALGRIND_CLO_CHANGE was used to modify a
+      VexControl member. */
+   LibVEX_set_VexControl(VG_(clo_vex_control));
 }
 
 /* Peer at previously set up VG_(args_for_valgrind) and do some

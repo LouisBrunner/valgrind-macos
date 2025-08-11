@@ -581,6 +581,8 @@ typedef
 extern 
 void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon );
 
+extern
+void LibVEX_set_VexControl ( VexControl );
 
 /*-------------------------------------------------------*/
 /*--- Storage management control                      ---*/

@@ -25,6 +25,7 @@
 */
 
 #include "config.h"
+#include <cstdint>
 #include <mach-o/loader.h>
 
 __attribute__((constructor))
@@ -63,7 +64,7 @@ struct DyldSharedCache {
 
 // FIXME: genuinely no clue how to implement those
 typedef os_unfair_lock_t os_unfair_recursive_lock_t;
-typedef os_unfair_lock_flags_t os_unfair_lock_options_t;
+typedef uint32_t os_unfair_lock_options_t;
 
 typedef bool (*FuncLookup)(const char* name, void** addr);
 

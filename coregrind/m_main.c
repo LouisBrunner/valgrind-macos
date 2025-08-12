@@ -294,6 +294,7 @@ static void usage_NORETURN ( int need_help )
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"
 "    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
+"    --vex-iropt-fold-expr=no|yes           [yes]\n"
 "    --vex-guest-max-insns=<1..100>         [50]\n"
 "    --vex-guest-chase=no|yes               [yes]\n"
 "    Precise exception control.  Possible values for 'mode' are as follows\n"
@@ -761,6 +762,8 @@ static void process_option (Clo_Mode mode,
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
    else if VG_BINT_CLO(arg, "--vex-regalloc-version",
                        VG_(clo_vex_control).regalloc_version, 2, 3) {}
+   else if VG_BOOL_CLOM(cloPD, arg, "--vex-iropt-fold-expr",
+                        VG_(clo_vex_control).iropt_fold_expr) {}
 
    else if (VG_STRINDEX_CLO(arg, "--vex-iropt-register-updates",
                            pxStrings, ix)

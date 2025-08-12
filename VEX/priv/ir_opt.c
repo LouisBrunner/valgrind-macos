@@ -1462,6 +1462,8 @@ static IRExpr* chase1 ( IRExpr** env, IRExpr* e )
 __attribute__((noinline))
 static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
 {
+   if (UNLIKELY(vex_control.iropt_fold_expr == False)) return e;
+
    Int     shift;
    IRExpr* e2 = e; /* e2 is the result of folding e, if possible */
 

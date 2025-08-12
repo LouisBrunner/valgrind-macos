@@ -572,6 +572,9 @@ typedef
          - '3': current, faster implementation; perhaps producing slightly worse
                 spilling decisions. */
       UInt regalloc_version;
+      /* When false constant folding and algebric simplification is disabled.
+         This is used in the iropt tester. */
+      Bool iropt_fold_expr;
    }
    VexControl;
 

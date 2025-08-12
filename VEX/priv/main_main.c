@@ -204,6 +204,7 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
    vcon->guest_max_insns                = 60;
    vcon->guest_chase                    = True;
    vcon->regalloc_version               = 3;
+   vcon->iropt_fold_expr                = True;
 }
 
 void LibVEX_set_VexControl ( VexControl vcon )

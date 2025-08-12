@@ -72,6 +72,9 @@ run_random_tests(const irop_t *op, test_data_t *data)
    opnd_t *opnd_l = &data->opnds[0];
    opnd_t *opnd_r = &data->opnds[1];
 
+   /* 1-bit wide operands are tested exhaustively. Skip random tests. */
+   if (opnd_l->type == Ity_I1 && opnd_r->type == Ity_I1) return;
+
    for (unsigned i = 0; i < num_random_tests; ++i) {
       opnd_l->value = get_random_value(opnd_l->type);
       opnd_r->value = get_random_value(opnd_r->type);

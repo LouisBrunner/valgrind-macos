@@ -3994,11 +3994,181 @@ PRE(sys_getdents)
    PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
 }
 
+/* Check if the given file descriptor points to a /proc/PID/fd or /proc/PID/fdinfo directory.
+   Returns True if it's a directory we should filter Valgrind FDs from. */
+static Bool is_proc_fd_directory(Int fd)
+{
+   const HChar* path;
+   if (!VG_(resolve_filename)(fd, &path))
+      return False;
+   
+   HChar ppfd[32]; /* large enough for /proc/<pid>/fd and /proc/<pid>/fdinfo */
+   HChar ppfdinfo[32];
+   VG_(sprintf)(ppfd, "/proc/%d/fd", VG_(getpid)());
+   VG_(sprintf)(ppfdinfo, "/proc/%d/fdinfo", VG_(getpid)());
+
+   if (VG_(strcmp)(path, "/proc/self/fd") == 0
+		   || VG_(strcmp)(path, "/proc/self/fdinfo") == 0
+		   || VG_(strcmp)(path, ppfd) == 0
+		   || VG_(strcmp)(path, ppfdinfo) == 0)
+       return True;
+   
+   return False;
+}
+
+
+/* Helper function to decide if an FD entry should be kept */
+static Bool should_keep_fd_entry(const HChar *name)
+{
+   if (VG_(strcmp)(name, ".") == 0 || VG_(strcmp)(name, "..") == 0)
+      return True;
+
+   Bool is_numeric = True;
+   for (Int i = 0; name[i] != '\0'; i++) {
+      if (name[i] < '0' || name[i] > '9') {
+         is_numeric = False;
+         if (VG_(clo_verbosity) > 1)
+            VG_(dmsg)("Warning: Non-numeric entry '%s' found in /proc/*/fd directory\n", name);
+         break;
+      }
+   }
+
+   if (is_numeric && name[0] != '\0') {
+      Int fd_num = VG_(strtoll10)(name, NULL);
+      /* Hide FDs beyond soft limit or Valgrind's output FDs */
+      if (fd_num >= VG_(fd_soft_limit) ||
+          fd_num == VG_(log_output_sink).fd ||
+          fd_num == VG_(xml_output_sink).fd)
+         return False;
+   }
+
+   return True;
+}
+
+/* Filter and compact dirent entries */
+static SizeT filter_dirent_entries(struct vki_dirent *dirp, SizeT orig_size)
+{
+   struct vki_dirent *dp = dirp;
+   struct vki_dirent *write_pos = dirp;
+   SizeT bytes_processed = 0;
+   SizeT new_size = 0;
+
+   while (bytes_processed < orig_size) {
+      if (should_keep_fd_entry(dp->d_name)) {
+         if (write_pos != dp)
+            VG_(memmove)(write_pos, dp, dp->d_reclen);
+         new_size += dp->d_reclen;
+         write_pos = (struct vki_dirent *)((HChar *)write_pos + dp->d_reclen);
+      }
+
+      bytes_processed += dp->d_reclen;
+      dp = (struct vki_dirent *)((HChar *)dp + dp->d_reclen);
+   }
+
+   return new_size;
+}
+
+/* Filter and compact dirent64 entries */
+static SizeT filter_dirent64_entries(struct vki_dirent64 *dirp, SizeT orig_size)
+{
+   struct vki_dirent64 *dp = dirp;
+   struct vki_dirent64 *write_pos = dirp;
+   SizeT bytes_processed = 0;
+   SizeT new_size = 0;
+
+   while (bytes_processed < orig_size) {
+      if (should_keep_fd_entry(dp->d_name)) {
+         if (write_pos != dp)
+            VG_(memmove)(write_pos, dp, dp->d_reclen);
+         new_size += dp->d_reclen;
+         write_pos = (struct vki_dirent64 *)((HChar *)write_pos + dp->d_reclen);
+      }
+
+      bytes_processed += dp->d_reclen;
+      dp = (struct vki_dirent64 *)((HChar *)dp + dp->d_reclen);
+   }
+
+   return new_size;
+}
+
+/* Filter out Valgrind's internal file descriptors from getdents results with refill capability.
+   When entries are filtered out, attempts to read more entries to avoid empty results.
+   Returns filtered size on success, or -1 if retry syscall failed. */
+static SizeT filter_valgrind_fds_from_getdents_with_refill(Int fd, struct vki_dirent *dirp, SizeT orig_size, SizeT buf_size, /*MOD*/SyscallStatus* status)
+{
+   SizeT new_size = filter_dirent_entries(dirp, orig_size);
+
+   /* If we filtered out everything, try to read more entries.
+      Since new_size == 0, the buffer is completely unused. */
+   while (new_size == 0) {
+      SysRes retry = VG_(do_syscall3)(__NR_getdents, fd, (UWord)dirp, buf_size);
+      if (sr_isError(retry)) {
+         /* Set the syscall status and return error indicator */
+         SET_STATUS_from_SysRes(retry);
+         return -1;
+      }
+      if (sr_Res(retry) == 0) {
+         /* Real EOF - stop trying */
+         break;
+      }
+
+      /* Filter the new batch */
+      SizeT retry_size = sr_Res(retry);
+      new_size = filter_dirent_entries(dirp, retry_size);
+   }
+
+   return new_size;
+}
+
+/* Filter out Valgrind's internal file descriptors from getdents64 results with refill capability.
+   Same logic as getdents version but for 64-bit dirent structures.
+   Returns filtered size on success, or -1 if retry syscall failed. */
+static SizeT filter_valgrind_fds_from_getdents64_with_refill(Int fd, struct vki_dirent64 *dirp, SizeT orig_size, SizeT buf_size, /*MOD*/SyscallStatus* status)
+{
+   SizeT new_size = filter_dirent64_entries(dirp, orig_size);
+
+   /* If we filtered out everything, try to read more entries.
+      Since new_size == 0, the buffer is completely unused. */
+   while (new_size == 0) {
+      SysRes retry = VG_(do_syscall3)(__NR_getdents64, fd, (UWord)dirp, buf_size);
+      if (sr_isError(retry)) {
+         /* Set the syscall status and return error indicator */
+         SET_STATUS_from_SysRes(retry);
+         return -1;
+      }
+      if (sr_Res(retry) == 0) {
+         /* Real EOF - stop trying */
+         break;
+      }
+
+      /* Filter the new batch */
+      SizeT retry_size = sr_Res(retry);
+      new_size = filter_dirent64_entries(dirp, retry_size);
+   }
+
+   return new_size;
+}
+
 POST(sys_getdents)
 {
    vg_assert(SUCCESS);
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, RES );
+   if (RES > 0) {
+      SizeT result_size = RES;
+      
+      /* Only filter Valgrind FDs when listing /proc/PID/fd or /proc/PID/fdinfo directories */
+      if (is_proc_fd_directory(ARG1)) {
+         SizeT filtered_size = filter_valgrind_fds_from_getdents_with_refill(ARG1, (struct vki_dirent *)ARG2, RES, ARG3, status);
+         if ((SizeT)filtered_size == (SizeT)-1) {
+            /* Error already set by filter function */
+            return;
+         }
+         result_size = filtered_size;
+         if (result_size != RES)
+            SET_STATUS_Success(result_size);
+      }
+      
+      POST_MEM_WRITE( ARG2, result_size );
+   }
 }
 
 PRE(sys_getdents64)
@@ -4015,8 +4185,23 @@ PRE(sys_getdents64)
 POST(sys_getdents64)
 {
    vg_assert(SUCCESS);
-   if (RES > 0)
-      POST_MEM_WRITE( ARG2, RES );
+   if (RES > 0) {
+      SizeT result_size = RES;
+      
+      /* Only filter Valgrind FDs when listing /proc/PID/fd or /proc/PID/fdinfo directories */
+      if (is_proc_fd_directory(ARG1)) {
+         SizeT filtered_size = filter_valgrind_fds_from_getdents64_with_refill(ARG1, (struct vki_dirent64 *)ARG2, RES, ARG3, status);
+         if ((SizeT)filtered_size == (SizeT)-1) {
+            /* Error already set by filter function */
+            return;
+         }
+         result_size = filtered_size;
+         if (result_size != RES)
+            SET_STATUS_Success(result_size);
+      }
+      
+      POST_MEM_WRITE( ARG2, result_size );
+   }
 }
 
 PRE(sys_getgroups)

@@ -1,0 +1,2 @@
+prog: getdents_filter
+vgopts: -q

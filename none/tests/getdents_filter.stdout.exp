@@ -1,0 +1,16 @@
+retry_test_start
+retry:0
+retry:1
+retry:2
+retry:3
+retry_test_end
+0
+1
+2
+3
+fdinfo:0
+fdinfo:1
+fdinfo:2
+fdinfo:3
+regular:1000
+regular:1001

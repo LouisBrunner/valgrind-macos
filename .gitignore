@@ -1701,6 +1701,7 @@
 /none/tests/vgprintf
 /none/tests/vgprintf_nvalgrind
 /none/tests/yield
+/none/tests/getdents_filter
 
 # /none/tests/amd64/
 /none/tests/amd64/*.dSYM

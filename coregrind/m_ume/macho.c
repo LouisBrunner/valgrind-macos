@@ -833,7 +833,7 @@ load_fat_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       arch_offset += sizeof(arch);
       if (sr_isError(res)  ||  sr_Res(res) != sizeof(arch)) {
          VG_(printf)("bad executable (corrupt fat arch) %x %llu\n",
-                     arch.cputype, (ULong)arch_offset);
+                     (UInt)arch.cputype, (ULong)arch_offset);
          return -1;
       }
 

@@ -7596,7 +7596,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
       DIP("ldra%c %s, [%s, #%lld/%llx]%s\n",
           M ? 'b' : 'a',
-          nameIRegOrZR(False, tt), nameIReg64orSP(nn), offset, offset,
+          nameIRegOrZR(False, tt), nameIReg64orSP(nn), offset, (ULong)offset,
           W ? "!" : "");
       return True;
    }

@@ -721,10 +721,10 @@ void VG_(show_open_ports)(void)
 
    for (i = allocated_ports; i; i = i->next) {
       if (i->name) {
-         VG_(message)(Vg_UserMsg, "Open Mach port 0x%x: %s\n", i->port,
+         VG_(message)(Vg_UserMsg, "Open Mach port %#x: %s\n", i->port,
                       i->name);
       } else {
-         VG_(message)(Vg_UserMsg, "Open Mach port 0x%x\n", i->port);
+         VG_(message)(Vg_UserMsg, "Open Mach port %#x\n", i->port);
       }
 
       if (i->where) {
@@ -1024,7 +1024,7 @@ static void maybe_show_syncstats ( void )
       for (i = 0; i < syncstats_used; i++) {
          if (i >= 40) break; // just show the top 40
          VG_(printf)("  [%3d] (%s) upd %6llu  diff %4llu+,%3llu-"
-                     "  %s %s 0x%08llx\n",
+                     "  %s %s %#08llx\n",
                      i, show_CheckHowOften(syncstats[i].cho),
                      syncstats[i].n_checks,
                      syncstats[i].n_mappings_added,
@@ -1272,7 +1272,7 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
 
    if (0 || VG_(clo_trace_syscalls)) {
        VG_(debugLog)(0, "syswrap-darwin",
-                     "sync_mappings (%s) (\"%s\", \"%s\", 0x%lx)\n",
+                     "sync_mappings (%s) (\"%s\", \"%s\", %#lx)\n",
                      show_CheckHowOften(check), when, where, num);
    }
 
@@ -1307,11 +1307,11 @@ Bool ML_(sync_mappings)(const HChar* when, const HChar* where, UWord num)
       if (VG_(clo_trace_syscalls)) {
           if (cs->is_added) {
              VG_(debugLog)(0, "syswrap-darwin",
-                "  added region 0x%010lx..0x%010lx prot %u at %s (%s)\n",
+                "  added region %#010lx..%#010lx prot %u at %s (%s)\n",
                 cs->start, cs->end + 1, (UInt)cs->prot, where, when);
 	  } else {
              VG_(debugLog)(0, "syswrap-darwin",
-                "  removed region 0x%010lx..0x%010lx at %s (%s)\n",
+                "  removed region %#010lx..%#010lx at %s (%s)\n",
                 cs->start, cs->end + 1, where, when);
 	  }
       }
@@ -1373,12 +1373,12 @@ PRE(ioctl)
    case VKI_DTRACEHIOC_REMOVE:
    case VKI_BIOCFLUSH:
    case VKI_BIOCPROMISC:
-      PRINT("ioctl ( %lu, 0x%lx )", ARG1, ARG2);
+      PRINT("ioctl ( %lu, %#lx )", ARG1, ARG2);
       PRE_REG_READ2(long, "ioctl",
                     unsigned int, fd, unsigned int, request);
       return;
    default:
-      PRINT("ioctl ( %lu, 0x%lx, %#lx )", ARG1, ARG2, ARG3);
+      PRINT("ioctl ( %lu, %#lx, %#lx )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "ioctl",
                     unsigned int, fd, unsigned int, request, unsigned long, arg);
    }
@@ -2069,7 +2069,7 @@ PRE(fcntl)
       PRE_MEM_READ( "fcntl(F_OFD_SETLKWTIMEOUT, fltimeout)", ARG3, sizeof(struct flocktimeout));
       break;
    case VKI_F_SETCONFINED:
-      PRINT("fcntl ( %lu, %s, fd:%ld )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRINT("fcntl ( %lu, %s, fd:%ld )", ARG1, name_for_fcntl(ARG2), SARG3);
       PRE_REG_READ3(long, "fcntl",
                     unsigned int, fd, unsigned int, cmd, int, arg);
       break;
@@ -2353,7 +2353,7 @@ PRE(disconnectx)
 PRE(kevent)
 {
    PRINT("kevent( %ld, %#lx, %ld, %#lx, %ld, %#lx )",
-         SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+         SARG1, ARG2, SARG3, ARG4, SARG5, ARG6);
    PRE_REG_READ6(int,"kevent", int,kq,
                  const struct vki_kevent *,changelist, int,nchanges,
                  struct vki_kevent *,eventlist, int,nevents,
@@ -2371,7 +2371,7 @@ PRE(kevent)
 
 POST(kevent)
 {
-   PRINT("kevent ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent));
+   PRINT("kevent ret %ld dst %#lx (%zu)", (Word)RES, ARG4, sizeof(struct vki_kevent));
    if (RES > 0) POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent));
 }
 
@@ -2397,7 +2397,7 @@ PRE(kevent64)
 
 POST(kevent64)
 {
-   PRINT("kevent64 ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent64));
+   PRINT("kevent64 ret %lu dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent64));
    if (RES > 0) {
       ML_(sync_mappings)("after", "kevent64", 0);
       POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent64));
@@ -2780,7 +2780,7 @@ PRE(__pthread_fchdir)
 PRE(kdebug_trace)
 {
    PRINT("kdebug_trace(%#lx (%s), %#lx, %#lx, %#lx, %#lx, %#lx)",
-         SARG1, kdebug_debugid(SARG1), SARG2, SARG3, SARG4, SARG5, SARG6);
+         ARG1, kdebug_debugid(ARG1), ARG2, ARG3, ARG4, ARG5, ARG6);
    /*
      Don't check anything - some clients pass fewer arguments.
    PRE_REG_READ6(long, "kdebug_trace",
@@ -3220,7 +3220,7 @@ PRE(chmod_extended)
    /* DDD: Note: this is not really correct.  Handling of
       fchmod_extended is broken in the same way. */
    PRINT("chmod_extended ( %#lx(%s), %ld, %ld, %ld, %#lx )",
-         ARG1, ARG1 ? (HChar*)ARG1 : "(null)", ARG2, ARG3, ARG4, ARG5);
+         ARG1, ARG1 ? (HChar*)ARG1 : "(null)", SARG2, SARG3, SARG4, ARG5);
    PRE_REG_READ5(long, "chmod_extended",
                  unsigned int, fildes,
                  uid_t, uid,
@@ -3663,7 +3663,7 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 
       // Known bits are cleared. Die if any bits are left.
       if (a[g] != 0) {
-         VG_(message)(Vg_UserMsg, "UNKNOWN attrlist flags %d:0x%x\n", g, a[g]);
+         VG_(message)(Vg_UserMsg, "UNKNOWN attrlist flags %d:%#x\n", g, a[g]);
       }
    }
 }
@@ -3757,7 +3757,7 @@ POST(getdirentriesattr)
 
    POST_MEM_WRITE(ARG3, p - (char *)ARG3);
 
-   PRINT("got %d records, %ld/%lu bytes\n",
+   PRINT("got %u records, %lu/%lu bytes\n",
          count, (Addr)p-(Addr)ARG3, ARG4);
 }
 
@@ -4164,7 +4164,7 @@ PRE(connect)
 PRE(accept)
 {
    *flags |= SfMayBlock;
-   PRINT("accept ( %ld, %#lx, %#lx )", SARG1, ARG2, SARG3);
+   PRINT("accept ( %ld, %#lx, %#lx )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "accept",
                  int, s, struct sockaddr *, addr, int *, addrlen);
    ML_(generic_PRE_sys_accept)(tid, ARG1,ARG2,ARG3);
@@ -4633,7 +4633,7 @@ PRE(auditon)
       break;
 
    default:
-      VG_(message)(Vg_UserMsg, "UNKNOWN auditon cmd %ld\n", ARG1);
+      VG_(message)(Vg_UserMsg, "UNKNOWN auditon cmd %ld\n", SARG1);
       break;
    }
 }
@@ -4929,7 +4929,7 @@ PRE(sigsuspend)
    /* I think the first arg is the 32-bit signal mask (by value), and
       the other two args are ignored. */
    *flags |= SfMayBlock;
-   PRINT("sigsuspend ( mask=0x%08lx )", ARG1 );
+   PRINT("sigsuspend ( mask=%#08lx )", ARG1 );
    PRE_REG_READ1(int, "sigsuspend", int, sigmask);
 }
 
@@ -5208,7 +5208,7 @@ static void import_complex_message(ThreadId tid, mach_msg_header_t *mh)
       case MACH_MSG_OOL_PORTS_DESCRIPTOR:
          // out-of-line array of ports - map it
          // GrP fixme see fixmes above
-         PRINT("got %d ool ports %p..%#lx", desc->ool_ports.count, desc->ool_ports.address, (Addr)desc->ool_ports.address+desc->ool_ports.count*sizeof(mach_port_t));
+         PRINT("got %u ool ports %p..%#lx", desc->ool_ports.count, desc->ool_ports.address, (Addr)desc->ool_ports.address+desc->ool_ports.count*sizeof(mach_port_t));
 
          if (desc->ool_ports.count > 0) {
             Addr start = VG_PGROUNDDN((Addr)desc->ool_ports.address);
@@ -5230,7 +5230,7 @@ static void import_complex_message(ThreadId tid, mach_msg_header_t *mh)
          break;
 
       default:
-         VG_(printf)("UNKNOWN Mach descriptor type %u!\n", desc->type.type);
+         VG_(printf)("UNKNOWN Mach descriptor type %d!\n", desc->type.type);
          break;
       }
    }
@@ -5369,7 +5369,7 @@ static size_t export_complex_message(ThreadId tid, mach_msg_header_t *mh)
          }
          break;
       default:
-         VG_(printf)("UNKNOWN Mach descriptor type %u!\n", desc->type.type);
+         VG_(printf)("UNKNOWN Mach descriptor type %d!\n", desc->type.type);
          break;
       }
    }
@@ -5727,7 +5727,7 @@ PRE(mach_port_set_context)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_set_context(%s, %s, 0x%llx)",
+   PRINT("mach_port_set_context(%s, %s, %#llx)",
         name_for_port(MACH_REMOTE),
         name_for_port(req->name), req->context);
 
@@ -5818,7 +5818,7 @@ PRE(mach_port_extract_member)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_extract_member(%s, 0x%x, 0x%x)",
+   PRINT("mach_port_extract_member(%s, %#x, %#x)",
          name_for_port(MACH_REMOTE),
          req->name, req->pset);
 
@@ -5855,7 +5855,7 @@ PRE(mach_port_allocate)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_allocate(mach_task_self(), %d, ...)", req->right);
+   PRINT("mach_port_allocate(mach_task_self(), %u, ...)", req->right);
 
    MACH_ARG(mach_port_allocate.right) = req->right;
 
@@ -5880,9 +5880,9 @@ POST(mach_port_allocate)
          // GrP fixme port tracking is too imprecise
          // vg_assert(!port_exists(reply->name));
          record_unnamed_port(tid, reply->name, MACH_ARG(mach_port_allocate.right));
-         PRINT("got port 0x%x", reply->name);
+         PRINT("got port %#x", reply->name);
       } else {
-         VG_(printf)("UNKNOWN inserted port 0x%x into remote task\n", reply->name);
+         VG_(printf)("UNKNOWN inserted port %#x into remote task\n", reply->name);
       }
    } else {
       PRINT("mig return %d", reply->RetCode);
@@ -5953,7 +5953,7 @@ PRE(mach_port_get_refs)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_get_refs(%s, %s, 0x%x)",
+   PRINT("mach_port_get_refs(%s, %s, %#x)",
          name_for_port(MACH_REMOTE),
          name_for_port(req->name), req->right);
 
@@ -5977,7 +5977,7 @@ POST(mach_port_get_refs)
    Reply *reply = (Reply *)ARG1;
 
    if (!reply->RetCode) {
-      PRINT("got refs=%d", reply->refs);
+      PRINT("got refs=%u", reply->refs);
    } else {
       PRINT("mig return %d", reply->RetCode);
    }
@@ -5998,9 +5998,9 @@ PRE(mach_port_mod_refs)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_mod_refs(%s, %s, 0x%x, 0x%x)",
+   PRINT("mach_port_mod_refs(%s, %s, %#x, %#x)",
          name_for_port(MACH_REMOTE),
-         name_for_port(req->name), req->right, req->delta);
+         name_for_port(req->name), req->right, (UInt)req->delta);
 
    MACH_ARG(mach_port_mod_refs.port) = req->name;
    MACH_ARG(mach_port_mod_refs.right) = req->right;
@@ -6193,7 +6193,7 @@ PRE(mach_port_request_notification)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_request_notification(%s, %s, %d, %d, %d, %d, ...)",
+   PRINT("mach_port_request_notification(%s, %s, %d, %u, %u, %d, ...)",
          name_for_port(MACH_REMOTE),
          name_for_port(req->name), req->msgid, req->sync,
          req->notify.name, req->notify.disposition);
@@ -6223,7 +6223,7 @@ PRE(mach_port_insert_right)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_insert_right(%s, %s, %d, %d)",
+   PRINT("mach_port_insert_right(%s, %s, %u, %d)",
          name_for_port(MACH_REMOTE),
          name_for_port(req->name), req->poly.name, req->poly.disposition);
 
@@ -6258,7 +6258,7 @@ PRE(mach_port_extract_right)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_extract_right(%s, %s, %d)",
+   PRINT("mach_port_extract_right(%s, %s, %u)",
          name_for_port(MACH_REMOTE),
          name_for_port(req->name), req->msgt_name);
 
@@ -6287,7 +6287,7 @@ PRE(mach_port_get_attributes)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_get_attributes(%s, %s, %d, ..., %d)",
+   PRINT("mach_port_get_attributes(%s, %s, %d, ..., %u)",
          name_for_port(MACH_REMOTE),
          name_for_port(req->name), req->flavor, req->port_info_outCnt);
 
@@ -6314,7 +6314,7 @@ PRE(mach_port_set_attributes)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_set_attributes(%s, %s, %d, ..., %d)",
+   PRINT("mach_port_set_attributes(%s, %s, %d, ..., %u)",
         name_for_port(MACH_REMOTE),
         name_for_port(req->name), req->flavor, req->port_infoCnt);
 
@@ -6339,7 +6339,7 @@ PRE(mach_port_insert_member)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_port_insert_member(%s, 0x%x, 0x%x)",
+   PRINT("mach_port_insert_member(%s, %#x, %#x)",
          name_for_port(MACH_REMOTE), req->name, req->pset);
 
    AFTER = POST_FN(mach_port_insert_member);
@@ -6582,7 +6582,7 @@ PRE(task_policy_set)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("task_policy_set(%s) flavor:%d", name_for_port(MACH_REMOTE), req->flavor);
+   PRINT("task_policy_set(%s) flavor:%u", name_for_port(MACH_REMOTE), req->flavor);
 
    AFTER = POST_FN(task_policy_set);
 }
@@ -6690,7 +6690,7 @@ PRE(task_info)
 
     Request *req = (Request *)ARG1;
 
-    PRINT("task_info(%s) flavor:%d", name_for_port(MACH_REMOTE), req->flavor);
+    PRINT("task_info(%s) flavor:%u", name_for_port(MACH_REMOTE), req->flavor);
 
     AFTER = POST_FN(task_info);
 }
@@ -6729,7 +6729,7 @@ PRE(task_set_info)
 
     Request *req = (Request *)ARG1;
 
-    PRINT("task_set_info(%s) flavor:%d", name_for_port(MACH_REMOTE), req->flavor);
+    PRINT("task_set_info(%s) flavor:%u", name_for_port(MACH_REMOTE), req->flavor);
 
     AFTER = POST_FN(task_set_info);
 }
@@ -6845,7 +6845,7 @@ PRE(vm_allocate)
 
    PRINT("vm_allocate (%s, at %#llx, size %llu, flags %#x)",
          name_for_port(MACH_REMOTE),
-         (ULong)req->address, (ULong)req->size, req->flags);
+         (ULong)req->address, (ULong)req->size, (UInt)req->flags);
 
    MACH_ARG(vm_allocate.size) = req->size;
    MACH_ARG(vm_allocate.flags) = req->flags;
@@ -7019,7 +7019,7 @@ PRE(vm_inherit)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("vm_inherit(%s, at %#llx, size %llu, value %d)",
+   PRINT("vm_inherit(%s, at %#llx, size %llu, value %u)",
          name_for_port(MACH_REMOTE),
          (ULong)req->address, (ULong)req->size,
          req->new_inheritance);
@@ -7110,7 +7110,7 @@ PRE(mach_vm_read)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_read(from %s at 0x%llx size %llu)",
+   PRINT("mach_vm_read(from %s at %#llx size %llu)",
          name_for_port(MACH_REMOTE), req->address, req->size);
 
    MACH_ARG(mach_vm_read.addr) = req->address;
@@ -7215,7 +7215,7 @@ PRE(vm_copy)
    PRINT("vm_copy(%s, %#llx, %lld, %#llx)",
          name_for_port(MACH_REMOTE),
          (ULong)req->source_address,
-         (ULong)req->size, (ULong)req->dest_address);
+         (Long)req->size, (ULong)req->dest_address);
 
    MACH_ARG(vm_copy.src) = req->source_address;
    MACH_ARG(vm_copy.dst) = req->dest_address;
@@ -7410,7 +7410,7 @@ PRE(mach_make_memory_entry_64)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_make_memory_entry_64(%s, %llu, %llu, %d, ..., %u)",
+   PRINT("mach_make_memory_entry_64(%s, %llu, %llu, %d, ..., %d)",
          name_for_port(MACH_REMOTE),
          req->size, req->offset, req->permission, req->parent_entry.type);
 
@@ -7495,7 +7495,7 @@ PRE(mach_vm_purgable_control)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_purgable_control(%s, 0x%llx, %d, %d)",
+   PRINT("mach_vm_purgable_control(%s, %#llx, %d, %d)",
          name_for_port(MACH_REMOTE),
          (ULong)req->address, req->control, req->state);
 
@@ -7538,9 +7538,9 @@ PRE(mach_vm_allocate)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_allocate (%s, at 0x%llx, size %llu, flags 0x%x)",
+   PRINT("mach_vm_allocate (%s, at %#llx, size %llu, flags %#x)",
          name_for_port(MACH_REMOTE),
-         req->address, req->size, req->flags);
+         req->address, req->size, (UInt)req->flags);
 
    MACH_ARG(mach_vm_allocate.size) = req->size;
    MACH_ARG(mach_vm_allocate.flags) = req->flags;
@@ -7564,7 +7564,7 @@ POST(mach_vm_allocate)
 
    if (!reply->RetCode) {
       if (MACH_REMOTE == vg_task_port) {
-         PRINT("allocated at 0x%llx", reply->address);
+         PRINT("allocated at %#llx", reply->address);
          // requesting 0 bytes returns address 0 with no error
          if (MACH_ARG(mach_vm_allocate.size)) {
             ML_(notify_core_and_tool_of_mmap)(
@@ -7572,7 +7572,7 @@ POST(mach_vm_allocate)
                   VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
          }
       } else {
-         PRINT("allocated at 0x%llx in remote task %s", reply->address,
+         PRINT("allocated at %#llx in remote task %s", reply->address,
                name_for_port(MACH_REMOTE));
       }
    } else {
@@ -7594,7 +7594,7 @@ PRE(mach_vm_deallocate)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_deallocate(%s, at 0x%llx, size %llu)",
+   PRINT("mach_vm_deallocate(%s, at %#llx, size %llu)",
          name_for_port(MACH_REMOTE),
          req->address, req->size);
 
@@ -7652,7 +7652,7 @@ PRE(mach_vm_protect)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_protect(%s, at 0x%llx, size %llu, set_max %d, prot %d)",
+   PRINT("mach_vm_protect(%s, at %#llx, size %llu, set_max %d, prot %d)",
          name_for_port(MACH_REMOTE), req->address, req->size,
          req->set_maximum, req->new_protection);
 
@@ -7710,7 +7710,7 @@ PRE(mach_vm_inherit)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_inherit(to %s, at 0x%llx, size %llu, value %u)",
+   PRINT("mach_vm_inherit(to %s, at %#llx, size %llu, value %u)",
          name_for_port(MACH_REMOTE),
          req->address, req->size, req->new_inheritance);
 
@@ -7753,7 +7753,7 @@ PRE(mach_vm_copy)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_copy(%s, 0x%llx, %llu, 0x%llx)",
+   PRINT("mach_vm_copy(%s, %#llx, %llu, %#llx)",
          name_for_port(MACH_REMOTE),
          req->source_address, req->size, req->dest_address);
 
@@ -7802,7 +7802,7 @@ PRE(mach_vm_read_overwrite)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_read_overwrite(%s, 0x%llx, %llu, 0x%llx)",
+   PRINT("mach_vm_read_overwrite(%s, %#llx, %llu, %#llx)",
          name_for_port(MACH_REMOTE),
          req->address, req->size, req->data);
 
@@ -7857,12 +7857,12 @@ PRE(mach_vm_map)
    Request *req = (Request *)ARG1;
 
    // GrP fixme check these
-   PRINT("mach_vm_map(in %s->%s at 0x%llx, size %llu, cur_prot:%x max_prot:%x ...)",
+   PRINT("mach_vm_map(in %s->%s at %#llx, size %llu, cur_prot:%x max_prot:%x ...)",
          name_for_port(req->Head.msgh_remote_port),
          name_for_port(req->object.name),
          req->address, req->size,
-         req->cur_protection,
-         req->max_protection);
+         (UInt)req->cur_protection,
+         (UInt)req->max_protection);
 
    MACH_ARG(mach_vm_map.size) = req->size;
    MACH_ARG(mach_vm_map.copy) = req->copy;
@@ -7888,7 +7888,7 @@ POST(mach_vm_map)
 
    if (!reply->RetCode) {
       // GrP fixme check src and dest tasks
-      PRINT("mapped at 0x%llx", reply->address);
+      PRINT("mapped at %#llx", reply->address);
 #     if 0
       // GrP fixme max prot
       ML_(notify_core_and_tool_of_mmap)(
@@ -7927,7 +7927,7 @@ PRE(mach_vm_remap)
    Request *req = (Request *)ARG1;
 
    // GrP fixme check these
-   PRINT("mach_vm_remap(in %s, at 0x%llx, size %llu, from %s ...)",
+   PRINT("mach_vm_remap(in %s, at %#llx, size %llu, from %s ...)",
          name_for_port(MACH_REMOTE),
          req->target_address, req->size,
          name_for_port(req->src_task.name));
@@ -7955,7 +7955,7 @@ POST(mach_vm_remap)
 
    if (!reply->RetCode) {
       // GrP fixme check src and dest tasks
-      PRINT("mapped at 0x%llx", reply->target_address);
+      PRINT("mapped at %#llx", reply->target_address);
       // GrP fixme max prot
       ML_(notify_core_and_tool_of_mmap)(
             reply->target_address, VG_PGROUNDUP(MACH_ARG(mach_vm_remap.size)),
@@ -7981,7 +7981,7 @@ PRE(mach_vm_region_recurse)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("mach_vm_region_recurse(in %s, at 0x%llx, depth %u, count %u)",
+   PRINT("mach_vm_region_recurse(in %s, at %#llx, depth %u, count %u)",
          name_for_port(MACH_REMOTE),
          req->address, req->nesting_depth, req->infoCnt);
 
@@ -8006,7 +8006,7 @@ POST(mach_vm_region_recurse)
    Reply *reply = (Reply *)ARG1;
 
    if (!reply->RetCode) {
-       PRINT("got region at 0x%llx, size %llu, depth %u, count %u",
+       PRINT("got region at %#llx, size %llu, depth %u, count %u",
              reply->address, reply->size,
              reply->nesting_depth, reply->infoCnt);
        // GrP fixme mark info contents beyond infoCnt as bogus
@@ -8338,7 +8338,7 @@ PRE(thread_get_state)
    PRINT("thread_get_state(%s, %d)",
          name_for_port(req->Head.msgh_request_port), req->flavor);
        /*} else {
-       PRINT("thread_get_state(0x%x, %d)",
+       PRINT("thread_get_state(%#x, %d)",
              req->Head.msgh_request_port, req->flavor);
              }*/
 
@@ -8358,7 +8358,7 @@ PRE(thread_policy)
    // GrP fixme   if (self) {
       PRINT("thread_policy(%s, ...)", name_for_port(mh->msgh_request_port));
       /*} else {
-      PRINT("thread_policy(thread 0x%x, ...)", mh->msgh_request_port);
+      PRINT("thread_policy(thread %#x, ...)", mh->msgh_request_port);
       }*/
 
    AFTER = POST_FN(thread_policy);
@@ -8437,7 +8437,7 @@ PRE(bootstrap_register)
 
    Request *req = (Request *)ARG1;
 
-   PRINT("bootstrap_register(port 0x%x, \"%s\")",
+   PRINT("bootstrap_register(port %#x, \"%s\")",
          req->service_port.name, req->service_name);
 
    /* The required entry in the allocated_ports list (mapping) might
@@ -8548,7 +8548,7 @@ PRE(mach_msg_bootstrap)
       return;
 
    default:
-      PRINT("UNHANDLED bootstrap message [id %d, to %s, reply 0x%x]\n",
+      PRINT("UNHANDLED bootstrap message [id %d, to %s, reply %#x]\n",
             mh->msgh_id, name_for_port(mh->msgh_request_port),
             mh->msgh_reply_port);
       return;
@@ -8588,7 +8588,7 @@ PRE(mach_msg_host)
 
    default:
       // unknown message to host self
-      log_decaying("UNKNOWN host message [id %d, to %s, reply 0x%x]",
+      log_decaying("UNKNOWN host message [id %d, to %s, reply %#x]",
                    mh->msgh_id, name_for_port(mh->msgh_request_port),
                    mh->msgh_reply_port);
       return;
@@ -8792,7 +8792,7 @@ PRE(mach_msg_task)
 
    default:
       // unknown message to task self
-      log_decaying("UNKNOWN task message [id %d, to %s, reply 0x%x]",
+      log_decaying("UNKNOWN task message [id %d, to %s, reply %#x]",
                    mh->msgh_id, name_for_port(mh->msgh_remote_port),
                    mh->msgh_reply_port);
       return;
@@ -8830,7 +8830,7 @@ PRE(mach_msg_thread)
       return;
    default:
       // unknown message to a thread
-      VG_(printf)("UNKNOWN thread message [id %d, to %s, reply 0x%x]\n",
+      VG_(printf)("UNKNOWN thread message [id %d, to %s, reply %#x]\n",
                   mh->msgh_id, name_for_port(mh->msgh_request_port),
                   mh->msgh_reply_port);
       return;
@@ -9098,14 +9098,14 @@ PRE(mach_msg)
                mh->msgh_id == 29876)
                do_mapping_update = True;
 
-            PRINT("com.apple.windowserver.active service mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("com.apple.windowserver.active service mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
             break;
 
          // com.apple.FontServer
          case 13024:
-            PRINT("com.apple.FontServerservice mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("com.apple.FontServerservice mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
             break;
@@ -9118,7 +9118,7 @@ PRE(mach_msg)
          case 78945700:
             if (mh->msgh_id == 78945695)
                do_mapping_update = False;
-            PRINT("com.apple.system.notification_center mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("com.apple.system.notification_center mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
             break;
@@ -9136,14 +9136,14 @@ PRE(mach_msg)
             if (mh->msgh_id == 10002||
                 mh->msgh_id == 10003)
                do_mapping_update = True;
-            PRINT("com.apple.CoreServices.coreservicesd mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("com.apple.CoreServices.coreservicesd mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
             break;
 
          // com.apple.system.logger
          case 118:
-            PRINT("com.apple.system.logger mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("com.apple.system.logger mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
             break;
@@ -9152,21 +9152,21 @@ PRE(mach_msg)
          case 1999646836: // might adds vm mapping
             if (mh->msgh_id == 1999646836)
                do_mapping_update = True;
-            PRINT("om.apple.coreservices.launchservicesd mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("om.apple.coreservices.launchservicesd mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
             break;
 
          // com.apple.ocspd
          case 33012:
-            PRINT("com.apple.ocspd mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("com.apple.ocspd mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
 
          default:
             // arbitrary message to arbitrary port
             do_mapping_update = True;
-            PRINT("UNHANDLED mach_msg [id %d, to %s, reply 0x%x]",
+            PRINT("UNHANDLED mach_msg [id %d, to %s, reply %#x]",
                mh->msgh_id, name_for_port(mh->msgh_request_port),
                mh->msgh_reply_port);
       }
@@ -9243,16 +9243,16 @@ PRE(mach_msg2)
 #define MACH_MSG2_UNSHIFT_HIGH(x) ((x) >> 32)
 #define MACH_MSG2_UNSHIFT_LOW(x) ((x) & 0xffffffff)
 
-  Word msgh_bits = MACH_MSG2_UNSHIFT_LOW(ARG3);
-  Word send_size = MACH_MSG2_UNSHIFT_HIGH(ARG3);
+  UWord msgh_bits = MACH_MSG2_UNSHIFT_LOW(ARG3);
+  UWord send_size = MACH_MSG2_UNSHIFT_HIGH(ARG3);
   Word msgh_remote_port = MACH_MSG2_UNSHIFT_LOW(ARG4);
   Word msgh_local_port = MACH_MSG2_UNSHIFT_HIGH(ARG4);
   Word msgh_voucher = MACH_MSG2_UNSHIFT_LOW(ARG5);
-  Word msgh_id = MACH_MSG2_UNSHIFT_HIGH(ARG5);
-  Word desc_count = MACH_MSG2_UNSHIFT_LOW(ARG6);
+  UWord msgh_id = MACH_MSG2_UNSHIFT_HIGH(ARG5);
+  UWord desc_count = MACH_MSG2_UNSHIFT_LOW(ARG6);
   Word rcv_name = MACH_MSG2_UNSHIFT_HIGH(ARG6);
-  Word rcv_size = MACH_MSG2_UNSHIFT_LOW(ARG7);
-  Word priority = MACH_MSG2_UNSHIFT_HIGH(ARG7);
+  UWord rcv_size = MACH_MSG2_UNSHIFT_LOW(ARG7);
+  UWord priority = MACH_MSG2_UNSHIFT_HIGH(ARG7);
 
 #undef MACH_MSG2_UNSHIFT_HIGH
 #undef MACH_MSG2_UNSHIFT_LOW
@@ -9375,7 +9375,7 @@ POST(mach_msg_unhandled)
 POST(mach_msg_unhandled_check)
 {
    if (ML_(sync_mappings)("after", "mach_msg_receive (unhandled_check)", 0))
-      PRINT("mach_msg_unhandled_check tid:%d missed mapping change()", tid);
+      PRINT("mach_msg_unhandled_check tid:%u missed mapping change()", tid);
 }
 
 
@@ -9588,7 +9588,7 @@ POST(task_for_pid)
 
    task = *(mach_port_t *)ARG3;
    record_named_port(tid, task, MACH_PORT_RIGHT_SEND, "task-%p");
-   PRINT("task 0x%x", task);
+   PRINT("task %#x", task);
 }
 
 
@@ -9606,7 +9606,7 @@ POST(pid_for_task)
    POST_MEM_WRITE(ARG2, sizeof(vki_pid_t));
 
    pid = *(vki_pid_t *)ARG2;
-   PRINT("pid %u", pid);
+   PRINT("pid %d", pid);
 }
 
 
@@ -9702,7 +9702,7 @@ POST(mk_timer_cancel)
 PRE(iokit_user_client_trap)
 {
    PRINT("iokit_user_client_trap(%s, %ld, %lx, %lx, %lx, %lx, %lx, %lx)",
-         name_for_port(ARG1), ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+         name_for_port(ARG1), SARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
    PRE_REG_READ8(kern_return_t, "iokit_user_client_trap",
                  mach_port_t,connect, unsigned int,index,
                  uintptr_t,p1, uintptr_t,p2, uintptr_t,p3,
@@ -10036,7 +10036,7 @@ PRE(fsgetpath)
                  vki_uint32_t, "objid_low32", vki_uint32_t, "objid_high32");
 #else
    PRINT("fsgetpath(%#lx, %ld, %#lx {%u,%u}, %lu)",
-         ARG1, ARG2, ARG3,
+         ARG1, SARG2, ARG3,
          ((unsigned int *)ARG3)[0],
          ((unsigned int *)ARG3)[1], ARG4);
    PRE_REG_READ4(ssize_t, "fsgetpath",
@@ -10065,7 +10065,7 @@ POST(audit_session_self)
 PRE(fgetattrlist)
 {
    PRINT("fgetattrlist(%ld, %#lx, %#lx, %lu, %lu)",
-         ARG1, ARG2, ARG3, ARG4, ARG5);
+         SARG1, ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(int, "fgetattrlist",
                  int,fd, struct vki_attrlist *,attrList,
                  void *,attrBuf, vki_size_t,attrBufSize, unsigned int,options);
@@ -10349,7 +10349,7 @@ PRE(kernelrpc_mach_port_extract_member_trap)
 PRE(iopolicysys)
 {
    // munge_???
-   PRINT("iopolicysys(FIXME)(0x%lx, 0x%lx, 0x%lx)", ARG1, ARG2, ARG3);
+   PRINT("iopolicysys(FIXME)(%#lx, %#lx, %#lx)", ARG1, ARG2, ARG3);
    /* mem effects unknown */
 }
 POST(iopolicysys)
@@ -10361,7 +10361,7 @@ PRE(process_policy)
 {
    // munge_???
    PRINT("process_policy(FIXME)("
-         "scope:0x%lx, action:0x%lx, policy:0x%lx, policy_subtype:0x%lx,"
+         "scope:%#lx, action:%#lx, policy:%#lx, policy_subtype:%#lx,"
          " attr:%lx, target_pid:%lx, target_threadid:%lx)",
          ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7);
    /* mem effects unknown */
@@ -10587,7 +10587,7 @@ POST(getattrlistbulk)
 
 PRE(faccessat)
 {
-    uint32_t fd = ARG1;
+    int32_t fd = ARG1;
     PRINT("faccessat(fd:%d, path:%#lx(%s), amode:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "faccessat",
@@ -10601,7 +10601,7 @@ PRE(faccessat)
 
 PRE(fstatat64)
 {
-    uint32_t fd = ARG1;
+    int32_t fd = ARG1;
     PRINT("fstatat64(fd:%d, path:%#lx(%s), ub:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "fstatat64",
@@ -10621,7 +10621,7 @@ POST(fstatat64)
 PRE(unlinkat)
 {
     PRINT("unlinkat ( %ld, %#lx(%s), %#lx )",
-          SARG1, ARG2, (HChar*)ARG2, SARG3);
+          SARG1, ARG2, (HChar*)ARG2, ARG3);
     PRE_REG_READ3(long, "unlinkat",
                   int, fd, const char *, path, int, flag);
     PRE_MEM_RASCIIZ( "unlinkat(path)", ARG2 );
@@ -10681,8 +10681,8 @@ PRE(csrctl)
       break;
 
    default:
-      PRINT("csrctl(op:%ld [??], useraddr:%#lx, usersize:%#lx)", ARG1, ARG2, ARG3);
-      log_decaying("UNKNOWN csrctl %ld!", ARG1);
+      PRINT("csrctl(op:%ld [??], useraddr:%#lx, usersize:%#lx)", SARG1, ARG2, ARG3);
+      log_decaying("UNKNOWN csrctl %ld!", SARG1);
       break;
    }
 }
@@ -10710,19 +10710,19 @@ PRE(guarded_open_dprotected_np)
 PRE(guarded_write_np)
 {
     PRINT("guarded_write_np(fd:%ld, guard:%#lx, cbuf:%#lx, nbyte:%llu) FIXME",
-        ARG1, ARG2, ARG3, (ULong)ARG4);
+        SARG1, ARG2, ARG3, (ULong)ARG4);
 }
 
 PRE(guarded_pwrite_np)
 {
     PRINT("guarded_pwrite_np(fd:%ld, guard:%#lx, buf:%#lx, nbyte:%llu, offset:%lld) FIXME",
-        ARG1, ARG2, ARG3, (ULong)ARG4, (Long)ARG5);
+        SARG1, ARG2, ARG3, (ULong)ARG4, (Long)ARG5);
 }
 
 PRE(guarded_writev_np)
 {
     PRINT("guarded_writev_np(fd:%ld, guard:%#lx, iovp:%#lx, iovcnt:%llu) FIXME",
-        ARG1, ARG2, ARG3, (ULong)ARG4);
+        SARG1, ARG2, ARG3, (ULong)ARG4);
 }
 
 PRE(openat)
@@ -10797,7 +10797,7 @@ PRE(kdebug_trace_string)
 PRE(kevent_qos)
 {
    PRINT("kevent_qos( %ld, %#lx, %ld, %#lx, %ld, %#lx, %ld, %ld )",
-         SARG1, ARG2, SARG3, ARG4, SARG5, ARG6, SARG7, ARG8);
+         SARG1, ARG2, SARG3, ARG4, SARG5, ARG6, SARG7, SARG8);
    PRE_REG_READ8(int,"kevent_qos",
                  int,kq,
                  const struct vki_kevent_qos_s *,changelist,
@@ -10820,7 +10820,7 @@ PRE(kevent_qos)
 
 POST(kevent_qos)
 {
-   PRINT("kevent_qos ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent_qos_s));
+   PRINT("kevent_qos ret %ld dst %#lx (%zu)", (Word)RES, ARG4, sizeof(struct vki_kevent_qos_s));
    if (RES > 0) {
       ML_(sync_mappings)("after", "kevent_qos", 0);
       POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent_qos_s));
@@ -10863,7 +10863,7 @@ PRE(pselect)
 
 PRE(getentropy)
 {
-    PRINT("getentropy(buffer:%#lx, size:%ld)", ARG1, ARG2);
+    PRINT("getentropy(buffer:%#lx, size:%ld)", ARG1, SARG2);
     PRE_REG_READ2(int, "getentropy",
                   void*, buffer, size_t, size);
     PRE_MEM_WRITE( "getentropy(buffer)", ARG1, ARG2 );
@@ -11017,7 +11017,7 @@ PRE(necp_client_action)
       break;
 #endif
    default:
-      VG_(printf)("UNKNOWN necp_client_action action %ld\n", ARG2);
+      VG_(printf)("UNKNOWN necp_client_action action %ld\n", SARG2);
       break;
    }
 }
@@ -11044,7 +11044,7 @@ PRE(ulock_wake)
              name, ul_flags, ARG2, name_for_port(ARG3));
      } else {
        PRINT("ulock_wake(operation:%s (flags: %#x), addr:%#lx, wake_value:%ld /*unused*/)",
-             name, ul_flags, ARG2, ARG3);
+             name, ul_flags, ARG2, SARG3);
      }
     PRE_REG_READ3(int, "ulock_wake",
                   uint32_t, operation, void*, addr, uint64_t, wake_value);
@@ -11052,8 +11052,8 @@ PRE(ulock_wake)
 }
 
    default:
-      PRINT("ulock_wake(operation:%ld (opcode: %u [??], flags: %#x), addr:%#lx, wake_value:%ld)", ARG1, ul_opcode, ul_flags, ARG2, ARG3);
-      log_decaying("UNKNOWN ulock_wake %ld (opcode: %u [??], flags: %#x)!", ARG1, ul_opcode, ul_flags);
+      PRINT("ulock_wake(operation:%ld (opcode: %u [??], flags: %#x), addr:%#lx, wake_value:%ld)", SARG1, ul_opcode, ul_flags, ARG2, SARG3);
+      log_decaying("UNKNOWN ulock_wake %ld (opcode: %u [??], flags: %#x)!", SARG1, ul_opcode, ul_flags);
       break;
    }
 }
@@ -11068,7 +11068,7 @@ PRE(ulock_wait)
     case VKI_UL_COMPARE_AND_WAIT: {
       const char* name = ulop_name(ul_opcode);
       PRINT("ulock_wait(operation:%s (flags: %#x), addr:%#lx, value:%ld, timeout:%ld)",
-            name, ul_flags, ARG2, ARG3, ARG4);
+            name, ul_flags, ARG2, SARG3, SARG4);
       PRE_REG_READ4(int, "ulock_wait",
                     uint32_t, operation, void*, addr, uint64_t, value, uint32_t, timeout);
       PRE_MEM_READ("ulock_wait(addr)", ARG2, 4 );
@@ -11076,8 +11076,8 @@ PRE(ulock_wait)
     }
 
     default:
-      PRINT("ulock_wait(operation:%ld (opcode: %u [??], flags: %#x), addr:%#lx, value:%ld, timeout:%ld)", ARG1, ul_opcode, ul_flags, ARG2, ARG3, ARG4);
-      log_decaying("UNKNOWN ulock_wait %ld (opcode: %u [??], flags: %#x)!", ARG1, ul_opcode, ul_flags);
+      PRINT("ulock_wait(operation:%ld (opcode: %u [??], flags: %#x), addr:%#lx, value:%ld, timeout:%ld)", SARG1, ul_opcode, ul_flags, ARG2, SARG3, SARG4);
+      log_decaying("UNKNOWN ulock_wait %ld (opcode: %u [??], flags: %#x)!", SARG1, ul_opcode, ul_flags);
       break;
     }
 
@@ -11088,7 +11088,7 @@ PRE(terminate_with_payload)
 {
     PRINT("terminate_with_payload"
           "(pid: %ld, reason_namespace:%ld, reason_code:%ld, payload:%#lx, payload_size:%ld, reason_string:%s, reason_flags:%#x)",
-          ARG1, ARG2, ARG3, ARG4, ARG5, (char*)ARG6, (uint)ARG7);
+          SARG1, SARG2, SARG3, ARG4, SARG5, (char*)ARG6, (uint)ARG7);
     PRE_REG_READ7(int, "terminate_with_payload", int, pid,
                   uint32_t, reason_namespace, uint64_t, reason_code, void*, payload,
                   uint32_t, payload_size, const char*, reason_string, uint64_t, reason_flags);
@@ -11100,7 +11100,7 @@ PRE(abort_with_payload)
 {
     PRINT("abort_with_payload"
           "(reason_namespace:%ld, reason_code:%ld, payload:%#lx, payload_size:%ld, reason_string:%s, reason_flags:%#x)",
-          ARG1, ARG2, ARG3, ARG4, (char*)ARG5, (uint)ARG6);
+          SARG1, SARG2, ARG3, SARG4, (char*)ARG5, (uint)ARG6);
     PRE_REG_READ6(uint32_t, "abort_with_payload",
                   uint32_t, reason_namespace, uint64_t, reason_code, void*, payload,
                   uint32_t, payload_size, const char*, reason_string, uint64_t, reason_flags);
@@ -11113,7 +11113,7 @@ PRE(host_create_mach_voucher_trap)
     // munge_wwww -- no need to call helper
     PRINT("host_create_mach_voucher_trap"
         "(host:%s, recipes:%#lx, recipes_size:%ld, voucher:%#lx)",
-        name_for_port(ARG1), ARG2, ARG3, ARG4);
+        name_for_port(ARG1), ARG2, SARG3, ARG4);
     PRE_MEM_READ( "host_create_mach_voucher_trap(recipes)", ARG2, ARG3 );
     PRE_MEM_WRITE( "host_create_mach_voucher_trap(voucher)", ARG4, sizeof(mach_port_name_t) );
 }
@@ -11203,7 +11203,7 @@ PRE(mach_generate_activity_id)
     // munge_www -- no need to call helper
     PRINT("mach_generate_activity_id"
         "(target:%s, count:%ld)",
-        name_for_port(ARG1), ARG2);
+        name_for_port(ARG1), SARG2);
     PRE_REG_READ3(long, "mach_generate_activity_id",
                   mach_port_name_t, target, int, count, uint64_t *, activity_id);
     if (ARG2 <= 0 || ARG2 > MACH_ACTIVITY_ID_COUNT_MAX) {
@@ -11276,7 +11276,7 @@ POST(openat_nocancel)
 PRE(kevent_id)
 {
   PRINT("kevent_id(id:%ld, changelist:%#lx, nchanges:%ld, eventlist:%#lx, nevents:%ld, data_out:%#lx, data_available:%ld, flags:%lx)",
-        ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+        SARG1, ARG2, SARG3, ARG4, SARG5, ARG6, SARG7, ARG8);
   PRE_REG_READ8(int,"kevent_id",
                 uint64_t,id,
                 const struct vki_kevent_qos_s *,changelist,
@@ -11299,7 +11299,7 @@ PRE(kevent_id)
 
 POST(kevent_id)
 {
-   PRINT("kevent_id ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent_qos_s));
+   PRINT("kevent_id ret %ld dst %#lx (%zu)", (Word)RES, ARG4, sizeof(struct vki_kevent_qos_s));
    if (RES > 0) {
       POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent_qos_s));
    }
@@ -11326,7 +11326,7 @@ POST(thread_get_special_reply_port)
 PRE(kernelrpc_mach_port_get_attributes_trap)
 {
   PRINT("kernelrpc_mach_port_get_attributes_trap( %s, %s, %ld, %#lx, %#lx )",
-        name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, ARG5);
+        name_for_port(ARG1), name_for_port(ARG2), SARG3, ARG4, ARG5);
   PRE_REG_READ5(kern_return_t, "kernelrpc_mach_port_get_attributes_trap",
                 mach_port_name_t, target, mach_port_name_t, name, mach_port_flavor_t, flavor,
 	              mach_port_info_t, port_info_out, mach_msg_type_number_t*, port_info_outCnt);
@@ -11348,7 +11348,7 @@ PRE(kernelrpc_mach_port_get_attributes_trap)
 
 PRE(task_restartable_ranges_register)
 {
-   PRINT("task_restartable_ranges_register(%s, %#lx, %ld)", name_for_port(ARG1), ARG2, ARG3);
+   PRINT("task_restartable_ranges_register(%s, %#lx, %ld)", name_for_port(ARG1), ARG2, SARG3);
 }
 
 POST(task_restartable_ranges_register)
@@ -11372,7 +11372,7 @@ POST(task_restartable_ranges_register)
 PRE(kernelrpc_mach_port_request_notification_trap)
 {
   PRINT("kernelrpc_mach_port_request_notification_trap(%s, %s, %ld, %ld, %s, %ld, %#lx)",
-         name_for_port(ARG1), name_for_port(ARG2), ARG3, ARG4, name_for_port(ARG5), ARG6, ARG7);
+         name_for_port(ARG1), name_for_port(ARG2), SARG3, SARG4, name_for_port(ARG5), SARG6, ARG7);
   PRE_REG_READ7(kern_return_t, "kernelrpc_mach_port_request_notification_trap",
     ipc_space_t, task, mach_port_name_t, name, mach_msg_id_t, msgid,
 	  mach_port_mscount_t, sync, mach_port_name_t, notify, mach_msg_type_name_t, notifyPoly,
@@ -11461,7 +11461,7 @@ PRE(shared_region_map_and_slide_np)
 
 PRE(task_read_for_pid)
 {
-  PRINT("task_read_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), ARG2, ARG3);
+  PRINT("task_read_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), SARG2, ARG3);
   PRE_REG_READ3(kern_return_t, "task_read_for_pid", mach_port_name_t, target_tport, int, pid, mach_port_name_t*, t);
 
   if (ARG3 != 0) {
@@ -11480,7 +11480,7 @@ POST(task_read_for_pid)
 PRE(ulock_wait2)
 {
   PRINT("ulock_wait2(%ld, %#lx, %ld, %#lx, %ld)",
-        ARG1, ARG2, ARG3, ARG4, ARG5);
+        SARG1, ARG2, SARG3, ARG4, SARG5);
   PRE_REG_READ5(int, "ulock_wait2",
                 uint32_t, operation, void*, addr, uint64_t, value,
                 uint32_t, timeout, uint64_t, value2);
@@ -11581,7 +11581,7 @@ PRE(kernelrpc_mach_vm_purgable_control_trap)
    munge_wlww(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
    PRINT("kernelrpc_mach_vm_purgable_control_trap"
          "(target:%s, address:%#llx, control:%ld, state:%#lx)",
-         name_for_port(a1), a2, a3, a4);
+         name_for_port(a1), a2, (Word)a3, a4);
    PRE_REG_READ4(kern_return_t, "kernelrpc_mach_vm_purgable_control_trap",
                  mach_port_name_t, target, mach_vm_offset_t, address,
                  vm_purgable_t, control, int*/*really user_addr_t*/, state);
@@ -11594,8 +11594,8 @@ POST(kernelrpc_mach_vm_purgable_control_trap)
    UWord a1; ULong a2; UWord a3; UWord a4;
    munge_wlww(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
    if (RES == 0) {
-      POST_MEM_WRITE(a4, sizeof(int));
-      PRINT("-> state: %#x", *(int*)a4);
+      POST_MEM_WRITE(a4, sizeof(uint));
+      PRINT("-> state: %#x", *(uint*)a4);
    }
 }
 
@@ -11627,7 +11627,7 @@ PRE(kdebug_trace64)
 PRE(syscall)
 {
   PRINT("syscall(%ld, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx) = ",
-        ARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+        SARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
   const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG1));
   if (sys) {
     // shift the arguments

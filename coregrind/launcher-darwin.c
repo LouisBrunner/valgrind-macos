@@ -393,7 +393,7 @@ int main(int argc, char** argv, char** envp)
    asprintf(&new_line, VALGRIND_LAUNCHER "=%s", launcher_name);
 
    /* tediously augment the env: VALGRIND_STARTUP_PWD_%PID_XYZZY=current_working_dir */
-   asprintf(&set_cwd, "VALGRIND_STARTUP_PWD_%u_XYZZY=%s", getppid(), cwd);
+   asprintf(&set_cwd, "VALGRIND_STARTUP_PWD_%d_XYZZY=%s", getppid(), cwd);
 
    // Note that Apple binaries get a secret fourth arg, "char* apple", which
    // contains the executable path.  Don't forget about it.

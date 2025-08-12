@@ -495,6 +495,7 @@ case "${host_os}" in
       AC_ADD_DARWIN_VERS([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
       AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
       AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
+      AC_ADD_DARWIN_VERS([DARWIN_15_04], 150400, [DARWIN_VERS value for macOS 15.4])
 
       AC_DEFINE([SDK_10_XX], 101200, [SDK_VERS value for Xcode SDK earlier than macOS 10.13 / iOS 11])
       AC_DEFINE([SDK_10_13], 101300, [SDK_VERS value for Xcode SDK macOS 10.13 / iOS 11])
@@ -626,8 +627,13 @@ case "${host_os}" in
           DARWIN_VERS=$DARWIN_14_00
           DARWIN_KERNEL_VERS=23
           ;;
+        macosx-24.4.*|macosx-24.5.*|macosx-24.6.*)
+          AC_MSG_RESULT([Darwin 24.4 (${kernel}) / macOS 15.4/5/6 Sequoia])
+          DARWIN_VERS=$DARWIN_15_04
+          DARWIN_KERNEL_VERS=24
+          ;;
         macosx-24.*|iphoneos-18.*)
-          AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15 Sequoia])
+          AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15 Sequoia / iOS 18])
           DARWIN_VERS=$DARWIN_15_00
           DARWIN_KERNEL_VERS=24
           ;;

@@ -1172,7 +1172,7 @@ int main (int argc, char** argv)
                  break;
 
            if (i >= M_CONNECTIONS) {
-              fprintf(stderr, "\n\nMore than %d concurrent connections.\n"
+              fprintf(stderr, "\n\nMore than %u concurrent connections.\n"
                       "Restart the server giving --max-connect=INT on the\n"
                       "commandline to increase the limit.\n\n",
                       M_CONNECTIONS);

@@ -1309,7 +1309,7 @@ int jGLDLI_add_image_info (char *arg_own_buf, UWord load_address, UWord mod_date
     commands_start += lc->cmdsize;
   }
 
-  counter += VG_(sprintf)(arg_own_buf + counter, "{\"load_address\":%ld,\"mod_date\":%lu,\"pathname\":\"%s\",\"uuid\":\"%s\",\"mach_header\":{\"magic\":%u,\"cputype\":%u,\"cpusubtype\":%u,\"filetype\":%u}],\"segments\":[",
+  counter += VG_(sprintf)(arg_own_buf + counter, "{\"load_address\":%lu,\"mod_date\":%lu,\"pathname\":\"%s\",\"uuid\":\"%s\",\"mach_header\":{\"magic\":%u,\"cputype\":%d,\"cpusubtype\":%d,\"filetype\":%u}],\"segments\":[",
                           load_address, mod_date, pathname, uuid_str, mh->magic, mh->cputype, mh->cpusubtype, mh->filetype);
 
   commands_start = load_address + sizeof(struct MACH_HEADER);
@@ -1322,7 +1322,7 @@ int jGLDLI_add_image_info (char *arg_own_buf, UWord load_address, UWord mod_date
       }
       first_segment = False;
       struct SEGMENT_COMMAND* sc = (struct SEGMENT_COMMAND*)commands_start;
-      counter += VG_(sprintf)(arg_own_buf + counter, "{\"name\":\"%s\",\"vmaddr\":%llu,\"vmsize\":%llu,\"fileoff\":%llu,\"filesize\":%llu,\"maxprot\":%u}]",
+      counter += VG_(sprintf)(arg_own_buf + counter, "{\"name\":\"%s\",\"vmaddr\":%llu,\"vmsize\":%llu,\"fileoff\":%llu,\"filesize\":%llu,\"maxprot\":%d}]",
                               sc->segname, sc->vmaddr, sc->vmsize, sc->fileoff, sc->filesize, sc->maxprot);
     }
     commands_start += lc->cmdsize;

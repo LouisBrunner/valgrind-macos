@@ -162,7 +162,7 @@ void thread_state_from_vex(thread_state_t mach_generic,
       vg_assert(0);
 
    default:
-      VG_(printf)("thread_state_from_vex: flavor:%#x\n",  flavor);
+      VG_(printf)("thread_state_from_vex: flavor:%#x\n", (UInt)flavor);
       vg_assert(0);
    }
 }

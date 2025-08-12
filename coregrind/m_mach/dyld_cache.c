@@ -426,7 +426,7 @@ static void output_debug_info(const dyld_cache_header* cache) {
     cache->progClosuresTrieAddr,
     cache->progClosuresTrieSize,
     cache->platform,
-    cache->formatVersion,
+    (UInt)cache->formatVersion,
     cache->dylibsExpectedOnDisk,
     cache->simulator,
     cache->locallyBuiltCache,

@@ -204,6 +204,7 @@ usage: valgrind [options] prog-and-args
     --vex-iropt-verbosity=<0..9>           [0]
     --vex-iropt-level=<0..2>               [2]
     --vex-iropt-unroll-thresh=<0..400>     [120]
+    --vex-iropt-fold-expr=no|yes           [yes]
     --vex-guest-max-insns=<1..100>         [50]
     --vex-guest-chase=no|yes               [yes]
     Precise exception control.  Possible values for 'mode' are as follows

@@ -6199,15 +6199,18 @@ PRE(sys_mknodat)
 
 PRE(sys_fchownat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*) ARG2;
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_fchownat ( %ld, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
-          FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
+   PRINT("sys_fchownat ( %d, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
+          FMT_REGWORD "x )", arg_1, ARG2, path, ARG3, ARG4);
    PRE_REG_READ4(long, "fchownat",
                  int, dfd, const char *, path,
                  vki_uid_t, owner, vki_gid_t, group);
    PRE_MEM_RASCIIZ( "fchownat(path)", ARG2 );
-   if ( !ML_(fd_allowed)(SARG1, "fchownat", tid, False) )
-     SET_STATUS_Failure( VKI_EBADF );
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ( (arg_1 != VKI_AT_FDCWD) && !ML_(fd_allowed)(arg_1, "fchownat", tid, False) )
+        SET_STATUS_Failure( VKI_EBADF );
 }
 
 PRE(sys_futimesat)

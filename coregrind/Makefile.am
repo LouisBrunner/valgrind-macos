@@ -181,10 +181,16 @@ libmySystem_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmySystem_so_LINK = ./delayed-install-systemb.sh \
   /usr/bin/ld -dylib @LD_OS_MIN_VERS_ARG@ -L@SDK_LIB_DIR@ -lSystem -o libmySystem.so
 
-libmydyld_so_SOURCES = m_mach/dummy_dyld.cpp m_mach/dummy_dylddata.S
+libmydyld_so_SOURCES =  m_mach/dummy_dylddata.S
+# For some reasons, macOS 14 really doesn't like that C++ setup, so we only do it when required
+if DARWIN_USE_CXX_DYLD
+libmydyld_so_SOURCES += m_mach/dummy_dyld.cpp
+libmydyld_so_CXXFLAGS = -ffreestanding -fno-exceptions -fno-rtti -nostdlib -nostdlib++ -nostdinc++
+else
+#libmydyld_so_SOURCES += m_mach/dummy_dyld.c
+endif
 libmydyld_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmydyld_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-libmydyld_so_CXXFLAGS = -ffreestanding -fno-exceptions -fno-rtti -nostdlib -nostdlib++ -nostdinc++
 libmydyld_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmydyld_so_LDFLAGS = \
   -dynamic -dynamiclib -Wl,-dead_strip_dylibs \

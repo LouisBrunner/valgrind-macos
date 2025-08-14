@@ -627,14 +627,14 @@ case "${host_os}" in
           DARWIN_VERS=$DARWIN_14_00
           DARWIN_KERNEL_VERS=23
           ;;
-        macosx-24.4.*|macosx-24.5.*|macosx-24.6.*)
-          AC_MSG_RESULT([Darwin 24.4 (${kernel}) / macOS 15.4/5/6 Sequoia])
-          DARWIN_VERS=$DARWIN_15_04
+        macosx-24.0.*|macosx-24.1.*|macosx-24.2.*|macosx-24.3.*|iphoneos-18.*)
+          AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15.0/1/2/3 Sequoia / iOS 18])
+          DARWIN_VERS=$DARWIN_15_00
           DARWIN_KERNEL_VERS=24
           ;;
-        macosx-24.*|iphoneos-18.*)
-          AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15 Sequoia / iOS 18])
-          DARWIN_VERS=$DARWIN_15_00
+        macosx-24.*)
+          AC_MSG_RESULT([Darwin 24.4 (${kernel}) / macOS 15.4+ Sequoia])
+          DARWIN_VERS=$DARWIN_15_04
           DARWIN_KERNEL_VERS=24
           ;;
         *)
@@ -653,6 +653,8 @@ case "${host_os}" in
       AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X / macOS / iOS version])
       AC_SUBST(DARWIN_VERS)
       DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"
+
+      AM_CONDITIONAL(DARWIN_USE_CXX_DYLD, test $DARWIN_VERS -ge $DARWIN_15_04)
 
       AC_MSG_CHECKING([for the the minimum macOS SDK version])
       case "${darwin_platform}" in

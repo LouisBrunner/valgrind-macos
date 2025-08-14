@@ -25,8 +25,6 @@
 */
 
 #include "config.h"
-#include <cstdint>
-#include <mach-o/loader.h>
 
 __attribute__((constructor))
 static void mydyld_init(void) {
@@ -35,6 +33,7 @@ static void mydyld_init(void) {
 #if DARWIN_VERS >= DARWIN_15_04
 // Adapted from dyld's source code
 #include <mach/mach.h>
+#include <mach-o/loader.h>
 #include <os/lock.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -64,7 +63,7 @@ struct DyldSharedCache {
 
 // FIXME: genuinely no clue how to implement those
 typedef os_unfair_lock_t os_unfair_recursive_lock_t;
-typedef uint32_t os_unfair_lock_options_t;
+typedef int os_unfair_lock_options_t;
 
 typedef bool (*FuncLookup)(const char* name, void** addr);
 

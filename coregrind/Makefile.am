@@ -184,6 +184,7 @@ libmySystem_so_LINK = ./delayed-install-systemb.sh \
 libmydyld_so_SOURCES = m_mach/dummy_dyld.cpp m_mach/dummy_dylddata.S
 libmydyld_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmydyld_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libmydyld_so_CXXFLAGS = -ffreestanding -fno-exceptions -fno-rtti -nostdlib -nostdlib++ -nostdinc++
 libmydyld_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmydyld_so_LDFLAGS = \
   -dynamic -dynamiclib -Wl,-dead_strip_dylibs \

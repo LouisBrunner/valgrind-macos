@@ -654,8 +654,6 @@ case "${host_os}" in
       AC_SUBST(DARWIN_VERS)
       DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"
 
-      AM_CONDITIONAL(DARWIN_USE_CXX_DYLD, test $DARWIN_VERS -ge $DARWIN_15_04)
-
       AC_MSG_CHECKING([for the the minimum macOS SDK version])
       case "${darwin_platform}" in
       macosx)
@@ -1373,6 +1371,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_DARWIN_OR_FREEBSD,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN)
 
+AM_CONDITIONAL(DARWIN_USE_CXX_DYLD, test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN \
+  -a $DARWIN_VERS -ge $DARWIN_15_04)
 
 # Sometimes, in the Makefile.am files, it's useful to know whether or not
 # there is a secondary target.

@@ -9258,7 +9258,10 @@ s390_widen_emit(UChar *buf, const s390_insn *insn, UInt from_size,
 
       case 2:
          if (insn->size == 4) {  /* 16 --> 32 */
-            return s390_emit_LHI(buf, r1, value);
+            if (sign_extend)
+               return s390_emit_LHI(buf, r1, value);
+            else
+               return s390_emit_IILF(buf, r1, value);
          }
          if (insn->size == 8) {  /* 16 --> 64 */
             if (sign_extend)

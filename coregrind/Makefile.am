@@ -186,8 +186,6 @@ libmydyld_so_SOURCES =  m_mach/dummy_dylddata.S
 if DARWIN_USE_CXX_DYLD
 libmydyld_so_SOURCES += m_mach/dummy_dyld.cpp
 libmydyld_so_CXXFLAGS = -ffreestanding -fno-exceptions -fno-rtti -nostdlib -nostdlib++ -nostdinc++
-else
-#libmydyld_so_SOURCES += m_mach/dummy_dyld.c
 endif
 libmydyld_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
 libmydyld_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)

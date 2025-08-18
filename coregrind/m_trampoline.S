@@ -604,6 +604,51 @@ VG_(ppc64_linux_REDIR_FOR_strchr):
 .L1end:
 
 	
+	/* this function is written using the "dotless" ABI convention */
+	.align 2
+	.globl VG_(ppc64_linux_REDIR_FOR_strcmp)
+#if !defined VGP_ppc64be_linux || _CALL_ELF == 2
+        /* Little Endian uses ELF version 2 */
+        .type VG_(ppc64_linux_REDIR_FOR_strcmp),@function
+VG_(ppc64_linux_REDIR_FOR_strcmp):
+#else
+        /* Big Endian uses ELF version 1 */
+	.section        ".opd","aw"
+	.align 3
+VG_(ppc64_linux_REDIR_FOR_strcmp):
+	.quad   .L.VG_(ppc64_linux_REDIR_FOR_strcmp),.TOC.@tocbase,0
+	.previous
+	.size	VG_(ppc64_linux_REDIR_FOR_strcmp), \
+			.LFE0-.L.VG_(ppc64_linux_REDIR_FOR_strcmp)
+	.type	VG_(ppc64_linux_REDIR_FOR_strcmp), @function
+
+.L.VG_(ppc64_linux_REDIR_FOR_strcmp):
+#endif
+#if _CALL_ELF == 2
+0:      addis        2,12,.TOC.-0b@ha
+        addi         2,2,.TOC.-0b@l
+        .localentry  VG_(ppc64_linux_REDIR_FOR_strcmp), .-VG_(ppc64_linux_REDIR_FOR_strcmp)
+#endif
+.LFB0:
+        .cfi_startproc
+        li 10,0
+.L3:
+        lbzx 8,3,10
+        lbzx 9,4,10
+        cmpwi 0,8,0
+        beq 0,.L2
+        cmpw 0,8,9
+        addi 10,10,1
+        beq 0,.L3
+.L2:
+        subf 3,9,8
+        extsw 3,3
+        blr
+        .long 0
+        .byte 0,0,0,0,0,0,0,0
+        .cfi_endproc
+.LFE0:
+
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 

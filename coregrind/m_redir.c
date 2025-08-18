@@ -1508,6 +1508,12 @@ void VG_(redir_initialise) ( void )
          NULL /* not mandatory - so why bother at all? */
          /* glibc-2.5 (FC6, ppc64) seems fine without it */
       );
+
+      add_hardwired_spec(
+         "ld64.so.2", "strcmp",
+         (Addr)&VG_(ppc64_linux_REDIR_FOR_strcmp),
+         NULL
+      );
    }
 
 #  elif defined(VGP_arm_linux)

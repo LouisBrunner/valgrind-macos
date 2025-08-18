@@ -74,6 +74,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 507868  futimesat doesn't handle AT_FDCWD
 507873  Make fchmodat and fchmodat2 syscall wrappers accept AT_FDCWD
 507897  Allow for patching LTP sources
+507970  -Wcalloc-transposed-args warnings in valgrind-di-server.c
 508027  Fix mips32 FTBFS
 508029  Review the vmsplice syscall wrapper
 508030  Add several missing syscall hooks to ppc64-linux

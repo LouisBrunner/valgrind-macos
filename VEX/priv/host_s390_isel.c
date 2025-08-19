@@ -1254,7 +1254,17 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto do_multiply;
 
       case Iop_MullS8:
+         arg1 = IRExpr_Unop(Iop_8Sto32, arg1);
+         arg2 = IRExpr_Unop(Iop_8Sto32, arg2);
+         is_signed_multiply = True;
+         goto do_multiply;
+
       case Iop_MullS16:
+         arg1 = IRExpr_Unop(Iop_16Sto32, arg1);
+         arg2 = IRExpr_Unop(Iop_16Sto32, arg2);
+         is_signed_multiply = True;
+         goto do_multiply;
+
       case Iop_MullS32:
          is_signed_multiply = True;
          goto do_multiply;
@@ -1278,9 +1288,16 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             /* Multiply */
             addInstr(env, s390_insn_mul(arg_size, r10, r11, op2, is_signed_multiply));
 
+            res  = newVRegI(env);
+            if (arg_size == 1 || arg_size == 2) {
+               /* For 8-bit and 16-bit multiplication the result is in
+                  r11[32:63] */
+               addInstr(env, s390_insn_move(size, res, r11));
+               return res;
+            }
+
             /* The result is in registers r10 and r11. Combine them into a SIZE-bit
                value into the destination register. */
-            res  = newVRegI(env);
             addInstr(env, s390_insn_move(arg_size, res, r10));
             value = s390_opnd_imm(arg_size * 8);
             addInstr(env, s390_insn_alu(size, S390_ALU_LSH, res, value));

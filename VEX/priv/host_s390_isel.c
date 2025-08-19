@@ -3638,12 +3638,14 @@ s390_isel_cc(ISelEnv *env, IRExpr *cond)
 
       case Iop_CmpNE8:
       case Iop_CasCmpNE8:
+      case Iop_ExpCmpNE8:
          op     = S390_ZERO_EXTEND_8;
          result = S390_CC_NE;
          goto do_compare_ze;
 
       case Iop_CmpEQ16:
       case Iop_CasCmpEQ16:
+      case Iop_ExpCmpNE16:
          op     = S390_ZERO_EXTEND_16;
          result = S390_CC_E;
          goto do_compare_ze;

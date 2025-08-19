@@ -4943,6 +4943,12 @@ AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
 AC_CHECK_LIB([rt], [timer_delete])
 
+if test "$VGCONF_OS" = "solaris" ; then
+# for mallinfo
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="$saved_LDFLAGS -lmalloc"
+fi
+
 AC_CHECK_FUNCS([     \
         aligned_alloc \
         clock_gettime\
@@ -5012,6 +5018,10 @@ AC_CHECK_FUNCS([     \
         setcred      \
         exterrctl
         ])
+
+if test "$VGCONF_OS" = "solaris" ; then
+LDFLAGS="$saved_LDFLAGS"
+fi
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
 # libraries with any shared object and/or executable. This is NOT what we

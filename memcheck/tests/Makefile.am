@@ -684,9 +684,16 @@ bug472219_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 calloc_overflow_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 malloc_usable_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_UNINITIALIZED@
 mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
+if VGCONF_OS_IS_SOLARIS
+mallinfo_LDADD = -lmalloc
+endif
 mallinfo2_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
+if VGCONF_OS_IS_SOLARIS
+sbfragment_LDADD = -lmalloc
+endif
+
 strchr_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 big_debuginfo_symbol_SOURCES = big_debuginfo_symbol.cpp

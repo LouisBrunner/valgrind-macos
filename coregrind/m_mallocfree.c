@@ -2433,6 +2433,7 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    mi->keepcost = 0; // may want some value in here
 }
 
+#if defined(VGO_linux)
 // The aforementioned older function, mallinfo(), is deprecated since the type
 // used for the fields is too small.
 void VG_(mallinfo2) ( ThreadId tid, struct vg_mallinfo2* mi )
@@ -2467,6 +2468,7 @@ void VG_(mallinfo2) ( ThreadId tid, struct vg_mallinfo2* mi )
    mi->fordblks = free_blocks_size + VG_(free_queue_volume);
    mi->keepcost = 0; // may want some value in here
 }
+#endif
 
 SizeT VG_(arena_redzone_size) ( ArenaId aid )
 {

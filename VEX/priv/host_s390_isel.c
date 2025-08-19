@@ -1243,10 +1243,17 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       s390_opnd_RMI op2, value, opnd;
       s390_insn *insn;
       Bool is_commutative, is_signed_multiply, is_signed_divide;
+      Bool is_single_multiply = False;
 
       is_commutative = True;
 
       switch (expr->Iex.Binop.op) {
+      case Iop_Mul8:
+      case Iop_Mul16:
+      case Iop_Mul32:
+      case Iop_Mul64:
+         is_single_multiply = True;
+         /* fall through */
       case Iop_MullU8:
       case Iop_MullU16:
       case Iop_MullU32:
@@ -1271,7 +1278,7 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       do_multiply: {
             HReg r10, r11;
-            UInt arg_size = size / 2;
+            UInt arg_size = is_single_multiply ? size : size / 2;
 
             order_commutative_operands(arg1, arg2);
 
@@ -1292,6 +1299,12 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             if (arg_size == 1 || arg_size == 2) {
                /* For 8-bit and 16-bit multiplication the result is in
                   r11[32:63] */
+               addInstr(env, s390_insn_move(size, res, r11));
+               return res;
+            }
+
+            /* For Iop_Mul64 the result is in r11[0:63] */
+            if (expr->Iex.Binop.op == Iop_Mul64) {
                addInstr(env, s390_insn_move(size, res, r11));
                return res;
             }

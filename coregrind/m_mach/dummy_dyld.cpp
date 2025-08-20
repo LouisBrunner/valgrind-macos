@@ -25,16 +25,14 @@
 */
 
 #include "config.h"
-#include <cstdint>
-#include <mach-o/loader.h>
 
-__attribute__((constructor))
-static void mydyld_init(void) {
-}
+#if DARWIN_VERS < DARWIN_15_04
+#error "This file is only for macOS 15.4 and later"
+#endif
 
-#if DARWIN_VERS >= DARWIN_15_04
 // Adapted from dyld's source code
 #include <mach/mach.h>
+#include <mach-o/loader.h>
 #include <os/lock.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -64,7 +62,7 @@ struct DyldSharedCache {
 
 // FIXME: genuinely no clue how to implement those
 typedef os_unfair_lock_t os_unfair_recursive_lock_t;
-typedef uint32_t os_unfair_lock_options_t;
+typedef int os_unfair_lock_options_t;
 
 typedef bool (*FuncLookup)(const char* name, void** addr);
 
@@ -132,4 +130,3 @@ struct [[clang::ptrauth_vtable_pointer(process_independent, address_discriminati
 
 __attribute__((used,section ("__DATA_CONST,__helper")))
 static const DummySystemHelpers helpers;
-#endif

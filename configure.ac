@@ -627,14 +627,14 @@ case "${host_os}" in
           DARWIN_VERS=$DARWIN_14_00
           DARWIN_KERNEL_VERS=23
           ;;
-        macosx-24.4.*|macosx-24.5.*|macosx-24.6.*)
-          AC_MSG_RESULT([Darwin 24.4 (${kernel}) / macOS 15.4/5/6 Sequoia])
-          DARWIN_VERS=$DARWIN_15_04
+        macosx-24.0.*|macosx-24.1.*|macosx-24.2.*|macosx-24.3.*|iphoneos-18.*)
+          AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15.0/1/2/3 Sequoia / iOS 18])
+          DARWIN_VERS=$DARWIN_15_00
           DARWIN_KERNEL_VERS=24
           ;;
-        macosx-24.*|iphoneos-18.*)
-          AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15 Sequoia / iOS 18])
-          DARWIN_VERS=$DARWIN_15_00
+        macosx-24.*)
+          AC_MSG_RESULT([Darwin 24.4 (${kernel}) / macOS 15.4+ Sequoia])
+          DARWIN_VERS=$DARWIN_15_04
           DARWIN_KERNEL_VERS=24
           ;;
         *)
@@ -1371,6 +1371,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_DARWIN_OR_FREEBSD,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_DARWIN \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN)
 
+AM_CONDITIONAL(DARWIN_USE_CXX_DYLD, test x$VGCONF_PLATFORM_PRI_CAPS = xARM64_DARWIN \
+  -a $DARWIN_VERS -ge $DARWIN_15_04)
 
 # Sometimes, in the Makefile.am files, it's useful to know whether or not
 # there is a secondary target.

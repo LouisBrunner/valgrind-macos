@@ -28,15 +28,16 @@
 
 #if DARWIN_VERS >= DARWIN_15_04
 .section __TPRO_CONST,__dyld_apis
-.globl __TPRO_CONST.__dyld_apis
+.global __TPRO_CONST.__dyld_apis
 __TPRO_CONST.__dyld_apis:
 #elif DARWIN_VERS >= DARWIN_15_00
 .section __TPRO_CONST,__dyld4
-.globl __TPRO_CONST.__dyld4
+.global __TPRO_CONST.__dyld4
 __TPRO_CONST.__dyld4:
 #else
 .section __DATA,__dyld4
-.globl __DATA.__dyld4
+.global __DATA.__dyld4
+.balign 4
 __DATA.__dyld4:
 #endif
 
@@ -44,7 +45,7 @@ __DATA.__dyld4:
   .quad 0 ; (set by dyld, null)
 
 # dyld used by 15.4 and later replaces these with __DATA_CONST,__helper
-#if DARWIN_VERS < DARWIN_15_04 
+#if DARWIN_VERS < DARWIN_15_04
 ; void*               allImageInfos;
   .quad 0 ; (set by dyld, null)
 ; dyld4::ProgramVars  defaultVars; (5 pointers)
@@ -64,7 +65,7 @@ __DATA.__dyld4:
   .quad 0 ; (used by dyld, non-null)
 
 .section __DATA,__fake
-.globl __DATA.__fake
+.global __DATA.__fake
 __DATA.__fake:
 dyld4_ProgramVars_NXArgcPtr:
   .quad 0
@@ -77,12 +78,12 @@ dyld4_ProgramVars___prognamePtr:
 #endif
 
 .text
-.globl dyld_stub_binder
+.global dyld_stub_binder
 dyld_stub_binder:
   ret
 
 #if DARWIN_VERS >= DARWIN_15_04
-.globl  _do_syscall
+.global  _do_syscall
 _do_syscall:
   mov     x16, x0
 

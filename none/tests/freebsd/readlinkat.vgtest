@@ -1,0 +1,4 @@
+prereq: rm -f readlinkat_link.cpp && ln -s readlinkat.cpp readlinkat_link.cpp
+prog: readlinkat
+vgopts: -q
+post: rm -f readlinkat_link.cpp

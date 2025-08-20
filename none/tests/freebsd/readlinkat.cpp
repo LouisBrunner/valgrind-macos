@@ -7,21 +7,24 @@
 
 int main()
 {
-    char path[MAXPATHLEN];
     char linkedPath[MAXPATHLEN];
     char currentDirectory[MAXPATHLEN];
-    char parentDirectory[MAXPATHLEN];
 
     getcwd(currentDirectory, MAXPATHLEN);
+    std::string absolutePath{currentDirectory};
+    absolutePath += "/readlinkat_link.cpp";
 
     ssize_t res = readlinkat(AT_FDCWD, "readlinkat_link.cpp", linkedPath, MAXPATHLEN);
     if (res == -1)
     {
         std::cerr << "Error: readlinkat test 1 failed\n";
     }
-    if (!strcmp(linkedPath, "readlink.cpp"))
+    else
     {
-        std::cerr << "Error: readlinkat test 1 unexpected resolved path - " << linkedPath << '\n';
+        if (!strcmp(linkedPath, "readlink.cpp"))
+        {
+            std::cerr << "Error: readlinkat test 1 unexpected resolved path - " << linkedPath << '\n';
+        }
     }
 
     int dotdot;
@@ -32,13 +35,16 @@ int main()
     else
     {
         res = readlinkat(dotdot, "freebsd/readlinkat_link.cpp", linkedPath, MAXPATHLEN);
-         if (res == -1)
+        if (res == -1)
         {
             std::cerr << "Error: readlinkat test 2 failed\n";
         }
-        if (!strcmp(linkedPath, "readlink.cpp"))
+        else
         {
-            std::cerr << "Error: readlinkat test 2 unexpected resolved path - " << linkedPath << '\n';
+            if (!strcmp(linkedPath, "readlink.cpp"))
+            {
+                std::cerr << "Error: readlinkat test 2 unexpected resolved path - " << linkedPath << '\n';
+            }
         }
     }
     close(dotdot);
@@ -53,4 +59,16 @@ int main()
     {
         std::cerr << "Error: readlinkat test 3 unexpected resolved path - " << linkedPath << '\n';
     }
+
+    int uninit;
+    res = readlinkat(uninit, absolutePath.c_str(), linkedPath, MAXPATHLEN);
+    if (res == -1)
+    {
+        std::cerr << "Error: readlinkat test 4 failed\n";
+    }
+    if (!strcmp(linkedPath, "readlink.cpp"))
+    {
+        std::cerr << "Error: readlinkat test 4 unexpected resolved path - " << linkedPath << '\n';
+    }
+
 }

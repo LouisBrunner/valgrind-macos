@@ -2372,6 +2372,7 @@ SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* ptr )
    return get_pszB(a, b);
 }
 
+#if defined(VGO_linux) || defined(VGO_solaris)
 
 // Implementation of mallinfo(). There is no recent standard that defines
 // the behavior of mallinfo(). The meaning of the fields in struct mallinfo
@@ -2432,6 +2433,7 @@ void VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi )
    mi->fordblks = free_blocks_size + VG_(free_queue_volume);
    mi->keepcost = 0; // may want some value in here
 }
+#endif
 
 #if defined(VGO_linux)
 // The aforementioned older function, mallinfo(), is deprecated since the type

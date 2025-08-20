@@ -162,7 +162,6 @@ get_expected_value(const irop_t *op, const test_data_t *data)
 // case Iop_16to1:   expected = opnd & 0x1;       break;
    case Iop_16to8:   expected = opnd & UINT8_MAX; break;
    case Iop_16HIto8: expected = opnd >> 8;        break;
-      break;
 
    case Iop_32to1:    expected = opnd & 0x1;        break;
    case Iop_32to8:    expected = opnd & UINT8_MAX;  break;

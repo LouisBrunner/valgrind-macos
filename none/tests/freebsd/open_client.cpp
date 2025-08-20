@@ -49,7 +49,7 @@ int main(int argc, char** argv)
     int dotdot;
     if ((dotdot = open("..", O_DIRECTORY | O_RDONLY)) == -1)
     {
-        throw std::runtime_error("failed to open ,.");
+        throw std::runtime_error("failed to open ..");
     }
     else
     {

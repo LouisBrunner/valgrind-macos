@@ -102,7 +102,6 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "x86-lzcnt" ) == 0 ) {
      level = 0x80000001;
      cmask = 1 << 5;
-     require_amd = True;
 #if defined(VGA_amd64)
    } else if ( strcmp( cpu, "amd64-sse3" ) == 0 ) {
      level = 1;
@@ -119,7 +118,6 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "amd64-lzcnt" ) == 0 ) {
      level = 0x80000001;
      cmask = 1 << 5;
-     require_amd = True;
    } else if ( strcmp( cpu, "amd64-sse42" ) == 0 ) {
      level = 1;
      cmask = 1 << 20;

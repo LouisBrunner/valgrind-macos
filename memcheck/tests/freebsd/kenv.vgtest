@@ -1,0 +1,2 @@
+prog: kenv
+stderr_filter: filter_kenv

@@ -31,7 +31,6 @@
    fun:_objc_init
    fun:_os_object_init
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -41,7 +40,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:dyld_register_image_state_change_handler
-   ...
 }
 
 {
@@ -51,7 +49,6 @@
    fun:?alloc
    ...
    fun:dyld_register_image_state_change_handler
-   ...
 }
 
 {
@@ -62,7 +59,6 @@
    ...
    fun:map_images_nolock
    fun:map_images
-   ...
 }
 
 {
@@ -73,7 +69,6 @@
    ...
    fun:map_images_nolock
    fun:map_images
-   ...
 }
 
 {
@@ -83,7 +78,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -93,7 +87,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -103,7 +96,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {

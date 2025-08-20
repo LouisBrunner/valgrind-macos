@@ -334,6 +334,9 @@ static const struct auxv *find_auxv(const UWord* sp)
    return (const struct auxv *)sp;
 }
 
+/*
+ * @todo PJF Make this multi-platform
+ */
 static Bool try_get_interp(const HChar* args_exe, HChar* interp_out)
 {
    HChar  hdr[4096];

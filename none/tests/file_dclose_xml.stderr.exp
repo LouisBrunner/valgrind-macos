@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>5</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>none</protocoltool>
 
 <preamble>
@@ -96,7 +96,6 @@ time passes and we close 3 again
   </stack>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -109,6 +108,4 @@ time passes and we close 3 again
   </pair>
 </errorcounts>
 
-
 </valgrindoutput>
-

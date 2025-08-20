@@ -213,6 +213,12 @@
    obj:/*libc-@GLIBC_VERSION@*.so
 }
 
+{
+   libaio-CentOS-7.9-(PPC)
+   Memcheck:Addr4
+   fun:io_getevents
+}
+
 ##----------------------------------------------------------------------##
 # MontaVista Linux 4.0.1 on ppc32
 {

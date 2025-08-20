@@ -1,6 +1,7 @@
-prog: disasm-test
-# args: --all        # enable this eventually
 #
-# NOTE: there are extra newlines in the output which are *not*
-# present when disasm-test is invoked by hand.
-# Not sure where they are coming from. 
+# We do not want disasm-test to be run under the auspices of valgrind.
+# Therefore the real test here is run in the "post" command.
+#
+prereq: ./disasm-test --check-prereq
+prog: /bin/true
+post: ./disasm-test --all --summary

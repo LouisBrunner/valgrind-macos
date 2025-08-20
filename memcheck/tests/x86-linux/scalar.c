@@ -137,7 +137,7 @@ int main(void)
 
    // __NR_mount 21
    GO(__NR_mount, "5s 3m");
-   SY(__NR_mount, x0, x0, x0, x0, x0); FAIL;
+   SY(__NR_mount, x0, x0, x0-1, x0, x0); FAIL;
    
    // __NR_umount 22
    GO(__NR_umount, "1s 1m");

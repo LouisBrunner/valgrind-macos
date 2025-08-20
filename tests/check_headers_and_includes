@@ -63,6 +63,7 @@ my %dirs_to_ignore = (
     "Inst" => 1,            # the nightly scripts creates this
     "VEX" => 1,
     "docs" => 1,
+    "scripts" => 1,
     "auxprogs" => 1,
     "autom4te.cache" => 1,
     "m4" => 1,

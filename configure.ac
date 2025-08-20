@@ -1,4 +1,3 @@
-
 ##------------------------------------------------------------##
 #
 # The multiple-architecture stuff in this file is pretty
@@ -17,10 +16,10 @@ AC_PREREQ(2.69)
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [25])
+m4_define([v_minor_ver], [26])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
-m4_define([v_rel_date], ["?? Apr 2025"])
+m4_define([v_rel_date], ["?? Oct 2025"])
 m4_define([v_version],
 	  m4_if(v_suffix_ver, [],
 		[v_major_ver.v_minor_ver.v_micro_ver],
@@ -36,7 +35,7 @@ AC_SUBST(VG_DATE, v_rel_date)
 
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 tar-ustar subdir-objects])
 
 AM_MAINTAINER_MODE
 
@@ -2390,6 +2389,40 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAVE_NR_MEMBARRIER, [test x$ac_have_nr_membarrier = xyes])
 
+AC_MSG_CHECKING([for __NR_io_pgetevents])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/unistd.h>
+]], [[
+return __NR_io_pgetevents
+]])], [
+ac_have_nr_io_pgetevents=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_nr_io_pgetevents=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_NR_IO_PGETEVENTS, [test x$ac_have_nr_io_pgetevents = xyes])
+
+safe_LIBS="$LIBS"
+LIBS="-laio"
+AC_MSG_CHECKING([for libaio])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <libaio.h>
+]], [[
+io_context_t ctx;
+io_submit(ctx, 1, NULL);
+]])], [
+ac_have_libaio=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_libaio=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_LIBAIO, [test x$ac_have_libaio = xyes])
+LIBS=$safe_LIBS
+
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------
@@ -4054,18 +4087,13 @@ AC_CHECK_HEADERS([sys/lgrp_user_impl.h])
 # C-level symbol: none
 # Automake-level symbol: SOLARIS_SUN_STUDIO_AS
 #
-AC_MSG_CHECKING([if x86/amd64 assembler speaks cmovl.l (Solaris-specific)])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-]], [[
-  __asm__ __volatile__("cmovl.l %edx, %eax");
-]])], [
-solaris_have_sun_studio_as=yes
-AC_MSG_RESULT([yes])
-], [
-solaris_have_sun_studio_as=no
-AC_MSG_RESULT([no])
-])
-AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$solaris_have_sun_studio_as = xyes)
+
+# This was using a AC_COMPILE_IFELSE with "cmovl.l %edx, %eax"
+# which at some time in the past was Sun Studio specific.
+# GNU as now understands it, so the test was misidentifying
+# the assembler. Now we ask the compiler directly.
+with_gnu_as=$(${CC} -v 2>&1 | tr ' ' '\n' | grep with-gnu-as)
+AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, test x$with_gnu_as = x)
 
 # Solaris-specific check determining if symbols __xpg4 and __xpg6
 # are present in linked shared libraries when gcc is invoked with -std=gnu99.
@@ -5196,6 +5224,12 @@ AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([rt], [clock_gettime])
 AC_CHECK_LIB([rt], [timer_delete])
 
+if test "$VGCONF_OS" = "solaris" ; then
+# for mallinfo
+saved_LDFLAGS="$LDFLAGS"
+LDFLAGS="$saved_LDFLAGS -lmalloc"
+fi
+
 AC_CHECK_FUNCS([     \
         aligned_alloc \
         clock_gettime\
@@ -5205,6 +5239,7 @@ AC_CHECK_FUNCS([     \
         getaddrinfo  \
         klogctl      \
         mallinfo     \
+        mallinfo2    \
         memchr       \
         memfd_create \
         memset       \
@@ -5259,9 +5294,16 @@ AC_CHECK_FUNCS([     \
         fdatasync    \
         getrandom    \
         getrlimitusage \
-        timer_delete
+        timer_delete \
+        fchroot      \
+        setcred      \
+        exterrctl
         ])
 CFLAGS="$save_CFLAGS"
+
+if test "$VGCONF_OS" = "solaris" ; then
+LDFLAGS="$saved_LDFLAGS"
+fi
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
 # libraries with any shared object and/or executable. This is NOT what we
@@ -5318,6 +5360,12 @@ AM_CONDITIONAL([HAVE_GETRLIMITUSAGE],
                [test x$ac_cv_func_getrlimitusage = xyes])
 AM_CONDITIONAL([HAVE_TIMER_DELETE],
                [test x$ac_cv_func_timer_delete = xyes])
+AM_CONDITIONAL([HAVE_FCHROOT],
+               [test x$ac_cv_func_fchroot = xyes])
+AM_CONDITIONAL([HAVE_SETCRED],
+               [test x$ac_cv_func_setcred = xyes])
+AM_CONDITIONAL([HAVE_EXTERRCTL],
+               [test x$ac_cv_func_exterrctl = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
@@ -6007,6 +6055,7 @@ AC_CONFIG_FILES([
    none/tests/arm64/Makefile
    none/tests/s390x/Makefile
    none/tests/s390x/disasm-test/Makefile
+   none/tests/iropt-test/Makefile
    none/tests/mips32/Makefile
    none/tests/mips64/Makefile
    none/tests/nanomips/Makefile
@@ -6040,6 +6089,8 @@ AC_CONFIG_FILES([coregrind/link_tool_exe_darwin],
                 [chmod +x coregrind/link_tool_exe_darwin])
 AC_CONFIG_FILES([coregrind/link_tool_exe_solaris],
                 [chmod +x coregrind/link_tool_exe_solaris])
+AC_CONFIG_FILES([coregrind/vgstack],
+                [chmod +x coregrind/vgstack])
 AC_CONFIG_FILES([tests/filter_stderr_basic],
                 [chmod +x tests/filter_stderr_basic])
 AC_CONFIG_FILES([tests/filter_discards],

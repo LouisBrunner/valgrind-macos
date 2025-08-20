@@ -92,6 +92,7 @@ typedef Int ArenaId;
 #  error Unknown platform
 #endif
 
+#if defined(VGO_linux)
 /* This struct definition MUST match the system one. */
 /* SVID2/XPG mallinfo structure */
 struct vg_mallinfo {
@@ -106,6 +107,37 @@ struct vg_mallinfo {
    int fordblks; /* total non-inuse space */
    int keepcost; /* top-most, releasable (via malloc_trim) space */
 };
+
+/* This struct definition MUST match the system one. */
+/* SVID2/XPG mallinfo structure */
+struct vg_mallinfo2 {
+   SizeT arena;    /* total space allocated from system */
+   SizeT ordblks;  /* number of non-inuse chunks */
+   SizeT smblks;   /* unused -- always zero */
+   SizeT hblks;    /* number of mmapped regions */
+   SizeT hblkhd;   /* total space in mmapped regions */
+   SizeT usmblks;  /* unused -- always zero */
+   SizeT fsmblks;  /* unused -- always zero */
+   SizeT uordblks; /* total allocated space */
+   SizeT fordblks; /* total non-inuse space */
+   SizeT keepcost; /* top-most, releasable (via malloc_trim) space */
+};
+#elif defined(VGO_solaris)
+
+struct vg_mallinfo  {
+        unsigned long arena;    /* total space in arena */
+        unsigned long ordblks;  /* number of ordinary blocks */
+        unsigned long smblks;   /* number of small blocks */
+        unsigned long hblks;    /* number of holding blocks */
+        unsigned long hblkhd;   /* space in holding block headers */
+        unsigned long usmblks;  /* space in small blocks in use */
+        unsigned long fsmblks;  /* space in free small blocks */
+        unsigned long uordblks; /* space in ordinary blocks in use */
+        unsigned long fordblks; /* space in free ordinary blocks */
+        unsigned long keepcost; /* cost of enabling keep option */
+};
+
+#endif
 
 extern void* VG_(arena_malloc)  ( ArenaId arena, const HChar* cc, SizeT nbytes );
 extern void  VG_(arena_free)    ( ArenaId arena, void* ptr );
@@ -132,7 +164,12 @@ extern SizeT VG_(arena_malloc_usable_size) ( ArenaId aid, void* payload );
 
 extern SizeT VG_(arena_redzone_size) ( ArenaId aid );
 
+#if defined(VGO_linux) || defined(VGO_solaris)
 extern void  VG_(mallinfo) ( ThreadId tid, struct vg_mallinfo* mi );
+#endif
+#if defined(VGO_linux)
+extern void  VG_(mallinfo2) ( ThreadId tid, struct vg_mallinfo2* mi );
+#endif
 
 // VG_(arena_perm_malloc) is for permanent allocation of small blocks.
 // See VG_(perm_malloc) in pub_tool_mallocfree.h for more details.

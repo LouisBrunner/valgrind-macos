@@ -1526,6 +1526,11 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                  struct timespec *reltime) {
       return pthread_cond_timedwait_WRK(cond, mutex, reltime, ETIME);
    }
+   PTH_FUNC(int, pthreadZucondZutimedwait, // pthread_cond_timedwait
+                 pthread_cond_t* cond, pthread_mutex_t* mutex,
+                 struct timespec* abstime) {
+      return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
+   }
 #else
 #  error "Unsupported OS"
 #endif
@@ -2745,6 +2750,7 @@ static int pthread_rwlock_tryrdlock_WRK(pthread_rwlock_t* rwlock)
 #  error "Unsupported OS"
 #endif
 
+static Bool in_pthread_rwlock_timedrdlock_WRK = False;
 
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_timedrdlock
@@ -2768,13 +2774,17 @@ static int pthread_rwlock_timedrdlock_WRK(pthread_rwlock_t *rwlock,
                  pthread_rwlock_t *, rwlock,
                  long, 0/*isW*/, long, 0/*isTryLock*/);
 
+   in_pthread_rwlock_timedrdlock_WRK = True;
    CALL_FN_W_WW(ret, fn, rwlock, timeout);
+   in_pthread_rwlock_timedrdlock_WRK = False;
 
    DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
                  pthread_rwlock_t *, rwlock, long, 0/*isW*/,
                  long, (ret == 0) ? True : False);
+
    if (ret != 0) {
-      DO_PthAPIerror("pthread_rwlock_timedrdlock", ret);
+      if (ret != ETIMEDOUT)
+         DO_PthAPIerror("pthread_rwlock_timedrdlock", ret);
    }
 
    if (TRACE_PTH_FNS) {
@@ -2810,7 +2820,7 @@ PTH_FUNC(int, pthreadZurwlockZutimedrdlock, // pthread_rwlock_timedrdlock
 #  error "Unsupported OS"
 #endif
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_clockrdlock
 //
@@ -2826,17 +2836,23 @@ static int pthread_rwlock_clockrdlock_WRK(pthread_rwlock_t *rwlock,
       fprintf(stderr, "<< pthread_rwl_clockrdl %p", rwlock); fflush(stderr);
    }
 
-   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 pthread_rwlock_t *, rwlock,
-                 long, 0/*isW*/, long, 0/*isTryLock*/);
+   if (!in_pthread_rwlock_timedrdlock_WRK) {
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                    pthread_rwlock_t *, rwlock,
+                    long, 0/*isW*/, long, 0/*isTryLock*/);
+   }
 
    CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
 
-   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                 pthread_rwlock_t *, rwlock, long, 0/*isW*/,
-                 long, (ret == 0) ? True : False);
+   if (!in_pthread_rwlock_timedrdlock_WRK) {
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                    pthread_rwlock_t *, rwlock, long, 0/*isW*/,
+                   long, (ret == 0) ? True : False);
+   }
+
    if (ret != 0) {
-      DO_PthAPIerror("pthread_rwlock_clockrdlock", ret);
+      if (ret != ETIMEDOUT)
+         DO_PthAPIerror("pthread_rwlock_clockrdlock", ret);
    }
 
    if (TRACE_PTH_FNS) {
@@ -2853,6 +2869,7 @@ PTH_FUNC(int, pthreadZurwlockZuclockrdlock, // pthread_rwlock_clockrdlock
 }
 #endif
 
+static Bool in_pthread_rwlock_timedwrlock_WRK = False;
 
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_timedwrlock
@@ -2875,7 +2892,9 @@ static int pthread_rwlock_timedwrlock_WRK(pthread_rwlock_t *rwlock,
                  pthread_rwlock_t *, rwlock,
                  long, 1/*isW*/, long, 0/*isTryLock*/);
 
+   in_pthread_rwlock_timedwrlock_WRK = True;
    CALL_FN_W_WW(ret, fn, rwlock, timeout);
+   in_pthread_rwlock_timedwrlock_WRK = False;
 
    DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
                  pthread_rwlock_t *, rwlock, long, 1/*isW*/,
@@ -2917,9 +2936,10 @@ PTH_FUNC(int, pthreadZurwlockZutimedwrlock, // pthread_rwlock_timedwrlock
 #  error "Unsupported OS"
 #endif
 
-#if defined(VGO_linux)
+#if defined(VGO_linux) || defined(VGO_solaris)
 //-----------------------------------------------------------
 // glibc:   pthread_rwlock_clockwrlock
+// Illumos: pthread_rwlock_clockwrlock
 //
 __attribute__((noinline)) __attribute__((unused))
 static int pthread_rwlock_clockwrlock_WRK(pthread_rwlock_t *rwlock,
@@ -2933,15 +2953,19 @@ static int pthread_rwlock_clockwrlock_WRK(pthread_rwlock_t *rwlock,
       fprintf(stderr, "<< pthread_rwl_clockwrl %p", rwlock); fflush(stderr);
    }
 
-   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
-                 pthread_rwlock_t *, rwlock,
-                 long, 1/*isW*/, long, 0/*isTryLock*/);
+   if (!in_pthread_rwlock_timedwrlock_WRK) {
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_PRE,
+                    pthread_rwlock_t *, rwlock,
+                    long, 1/*isW*/, long, 0/*isTryLock*/);
+   }
 
    CALL_FN_W_WWW(ret, fn, rwlock, clockid, timeout);
 
-   DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
-                 pthread_rwlock_t *, rwlock, long, 1/*isW*/,
-                 long, (ret == 0) ? True : False);
+   if (!in_pthread_rwlock_timedwrlock_WRK) {
+      DO_CREQ_v_WWW(_VG_USERREQ__HG_PTHREAD_RWLOCK_LOCK_POST,
+                    pthread_rwlock_t *, rwlock, long, 1/*isW*/,
+                    long, (ret == 0) ? True : False);
+   }
    if (ret != 0) {
       DO_PthAPIerror("pthread_rwlock_clockwrlock", ret);
    }
@@ -3382,6 +3406,11 @@ LIBC_FUNC(int, semZutimedwait, sem_t* sem, const struct timespec* abs_timeout) {
 PTH_FUNC(int, semaZutimedwait, sem_t *sem, const struct timespec* abs_timeout) { /* sema_timedwait */
    return sem_timedwait_WRK(sem, abs_timeout);
 }
+#if defined(__illumos__)
+PTH_FUNC(int, semZutimedwait, sem_t *sem, const struct timespec* abs_timeout) { /* sem_timedwait */
+   return sem_timedwait_WRK(sem, abs_timeout);
+}
+#endif
 #else
 #  error "Unsupported OS"
 #endif

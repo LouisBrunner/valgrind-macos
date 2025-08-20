@@ -27,6 +27,7 @@
 
 int main(void)
 {
+   setlinebuf(stdout);
    printf("initial rounding mode = %u\n", get_rounding_mode());
 
    /* Set basic rounding modes in various ways */
@@ -57,7 +58,7 @@ int main(void)
    srnmb(0,001);
    printf("rounding mode = %u\n", get_rounding_mode());
 
-   srnmb0(004);    // -> emul warning invalid rounding mode
+   srnmb0(004);    // -> specification exception
    printf("rounding mode = %u\n", get_rounding_mode());
 
    return 0;

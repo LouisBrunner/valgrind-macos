@@ -5,6 +5,7 @@ dist_noinst_SCRIPTS = \
 		      filter_stderr_solaris \
 		      filter_helgrind \
 		      filter_xml \
+                      filter_fiw \
 		      filter_freebsd.awk \
 		      filter_stderr_freebsd \
 		      filter_bug392331
@@ -33,6 +34,7 @@ EXTRA_DIST = \
 	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
 		bar_bad.stderr.exp-destroy-hang \
 		bar_bad.stderr.exp-freebsd \
+		bar_bad.stderr.exp-illumos \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
 		free_is_write.stderr.exp \
@@ -270,6 +272,7 @@ else
 annotate_hbefore_CFLAGS = $(AM_CFLAGS)
 endif
 
+tc09_bad_unlock_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 bug322621_SOURCES = bug322621.cpp
 if HAVE_CXX17
 check_PROGRAMS += bug392331

@@ -183,7 +183,7 @@ main(int argc, char *argv[])
 
       valgrind_vex_init_for_iri(&iricb);
 
-      switch (iricb.num_operands) {
+      switch (iricb.vbit.num_operands) {
       case 1:
          num_unary_tests += test_unary_op(op, data);
          break;

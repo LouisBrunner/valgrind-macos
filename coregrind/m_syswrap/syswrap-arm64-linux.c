@@ -623,7 +623,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_pselect6,          sys_pselect6),          // 72
    LINXY(__NR_ppoll,             sys_ppoll),             // 73
    LINXY(__NR_signalfd4,         sys_signalfd4),         // 74
-   LINX_(__NR_vmsplice,          sys_vmsplice),          // 75
+   LINXY(__NR_vmsplice,          sys_vmsplice),          // 75
    LINX_(__NR_splice,            sys_splice),            // 76
    LINX_(__NR_tee,               sys_tee),               // 77
    LINXY(__NR_readlinkat,        sys_readlinkat),        // 78
@@ -824,6 +824,8 @@ static SyscallTableEntry syscall_main_table[] = {
    //   (__NR_pkey_alloc,        sys_ni_syscall),        // 289
    //   (__NR_pkey_free,         sys_ni_syscall),        // 290
    LINXY(__NR_statx,             sys_statx),             // 291
+   LINX_(__NR_io_pgetevents,     sys_io_pgetevents),     // 292
+
 
    GENX_(__NR_rseq,              sys_ni_syscall),        // 293
 
@@ -851,7 +853,11 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_memfd_secret,      sys_memfd_secret),      // 447
 
+   LINXY(__NR_cachestat,         sys_cachestat),         // 451
    LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
+   LINXY(__NR_statmount,         sys_statmount),         // 457
+   LINXY(__NR_listmount,         sys_listmount),         // 458
+   LINX_(__NR_mseal,             sys_mseal),             // 462
 };
 
 

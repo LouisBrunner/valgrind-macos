@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>memcheck</protocoltool>
 
 <preamble>
@@ -344,11 +344,12 @@
   <what>Syscall param exit(status) contains uninitialised byte(s)</what>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
 </status>
+
+<heap_summary>...</heap_summary>
 
 <error>
   <unique>0x........</unique>
@@ -403,6 +404,8 @@
   </stack>
 </error>
 
+<leak_summary>...</leak_summary>
+
 <errorcounts>
   <pair>
     <count>...</count>
@@ -432,5 +435,6 @@
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>...</error_summary>
 
+</valgrindoutput>

@@ -419,6 +419,13 @@ extern Bool VG_(clo_keep_debuginfo);
 /* Track open file descriptors? 0 = No, 1 = Yes, 2 = All (including std)  */
 extern UInt  VG_(clo_track_fds);
 
+/* Whether to adjust file descriptor numbers. Yes does for all nonstd file
+   descriptors. High does for all file descriptors.  */
+#define VG_MODIFY_FD_NO 0
+#define VG_MODIFY_FD_YES 1
+#define VG_MODIFY_FD_HIGH 2
+extern UInt  VG_(clo_modify_fds);
+
 
 /* Used to expand file names.  "option_name" is the option name, eg.
    "--log-file".  'format' is what follows, eg. "cachegrind.out.%p".  In

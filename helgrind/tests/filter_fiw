@@ -1,0 +1,8 @@
+#! /bin/sh
+
+# free_is_write may have different arena sizes 
+
+./filter_stderr "$@" |
+
+sed 's/size [^ ]* in arena/size ... in arena/'
+   

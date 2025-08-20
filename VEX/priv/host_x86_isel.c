@@ -1306,14 +1306,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             addInstr(env, X86Instr_Sh32(Xsh_SAR, 31, dst));
             return dst;
          }
-         case Iop_Ctz32: {
+         case Iop_CtzNat32: {
             /* Count trailing zeroes, implemented by x86 'bsfl' */
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Bsfr32(True,src,dst));
             return dst;
          }
-         case Iop_Clz32: {
+         case Iop_ClzNat32: {
             /* Count leading zeroes.  Do 'bsrl' to establish the index
                of the highest set bit, and subtract that value from
                31. */

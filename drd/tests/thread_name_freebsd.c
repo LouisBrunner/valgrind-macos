@@ -20,7 +20,7 @@ static void* thread_func(void* argp)
 {
   const int thread_num = (ptrdiff_t)(argp);
   pthread_mutex_t invalid_mutex;
-  char thread_name[32];
+  char thread_name[33];
 
   snprintf(thread_name, sizeof(thread_name),
            "thread_func instance %d", thread_num + 1);

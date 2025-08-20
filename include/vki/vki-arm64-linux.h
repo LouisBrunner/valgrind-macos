@@ -215,6 +215,7 @@ struct vki_sigcontext {
 #define VKI_MAP_FIXED	0x10		/* Interpret addr exactly */
 #define VKI_MAP_ANONYMOUS	0x20	/* don't use a file */
 #define VKI_MAP_NORESERVE       0x4000  /* don't check for reservations */
+#define VKI_MAP_FIXED_NOREPLACE	0x100000 /* fail EEXIST if fixed map fails */
 
 //----------------------------------------------------------------------
 // From linux-3.10.5/uapi/include/asm-generic/fcntl.h

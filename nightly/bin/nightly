@@ -198,6 +198,8 @@ fi
 gdb_version="`gdb --version 2> /dev/null | head -1`"
 if [ `uname -o` = "Solaris" ]; then
   libc="Solaris libc"
+elif [ `uname -o` = "illumos" ]; then
+  libc="Illumos libc"
 elif  [ `uname -o` = "FreeBSD" ]; then
   libc="FreeBSD libc"
 else

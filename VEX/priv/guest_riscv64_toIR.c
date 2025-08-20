@@ -522,9 +522,13 @@ static IRExpr* getFReg32(UInt fregNo)
    vassert(fregNo < 32);
    /* Note that the following access depends on the host being little-endian
       which is checked in disInstr_RISCV64(). */
-   /* TODO Check that the value is correctly NaN-boxed. If not then return
-      the 32-bit canonical qNaN, as mandated by the RISC-V ISA. */
-   return IRExpr_Get(offsetFReg(fregNo), Ity_F32);
+   IRExpr* f64       = getFReg64(fregNo);
+   IRExpr* high_half = unop(Iop_64HIto32, unop(Iop_ReinterpF64asI64, f64));
+   IRExpr* cond      = binop(Iop_CmpEQ32, high_half, mkU32(0xffffffff));
+   IRExpr* res       = IRExpr_ITE(
+      cond, IRExpr_Get(offsetFReg(fregNo), Ity_F32),
+      /* canonical nan */ unop(Iop_ReinterpI32asF32, mkU32(0x7fc00000)));
+   return res;
 }
 
 /* Write a 32-bit value into a guest floating-point register. */
@@ -1754,8 +1758,6 @@ static Bool dis_RV64M(/*MB_OUT*/ DisResult* dres,
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
       if (funct3 == 0b010) {
-         /* Invalid {MUL,DIV,REM}<x>, fall through. */
-      } else if (funct3 == 0b010) {
          /* MULHSU, not currently handled, fall through. */
       } else {
          if (rd != 0) {
@@ -2162,8 +2164,10 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       UInt  rs2     = INSN(24, 20);
       UInt  imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
       ULong simm    = vex_sx_to_64(imm11_0, 12);
-      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
-              getFReg32(rs2));
+      // do not modify the bits being transferred;
+      IRExpr* f64 = getFReg64(rs2);
+      IRExpr* i32 = unop(Iop_64to32, unop(Iop_ReinterpF64asI64, f64));
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)), i32);
       DIP("fsw %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
       return True;
    }
@@ -2458,8 +2462,16 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
        INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110000) {
       UInt rd  = INSN(11, 7);
       UInt rs1 = INSN(19, 15);
-      if (rd != 0)
-         putIReg32(irsb, rd, unop(Iop_ReinterpF32asI32, getFReg32(rs1)));
+      if (rd != 0) {
+         // For RV64, the higher 32 bits of the destination register are filled
+         // with copies of the floating-point number’s sign bit.
+         IRExpr* freg      = getFReg64(rs1);
+         IRExpr* low_half  = unop(Iop_64to32, unop(Iop_ReinterpF64asI64, freg));
+         IRExpr* sign      = binop(Iop_And32, low_half, mkU32(1u << 31));
+         IRExpr* cond      = binop(Iop_CmpEQ32, sign, mkU32(1u << 31));
+         IRExpr* high_part = IRExpr_ITE(cond, mkU32(0xffffffff), mkU32(0));
+         putIReg64(irsb, rd, binop(Iop_32HLto64, high_part, low_half));
+      }
       DIP("fmv.x.w %s, %s\n", nameIReg(rd), nameFReg(rs1));
       return True;
    }
@@ -3170,13 +3182,15 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
 {
    /* ------------ RV64Zicsr standard extension ------------- */
 
-   /* ----------------- csrrw rd, csr, rs1 ------------------ */
-   if (INSN(6, 0) == 0b1110011 && INSN(14, 12) == 0b001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt csr = INSN(31, 20);
-      if (csr != 0x001 && csr != 0x002 && csr != 0x003) {
-         /* Invalid CSRRW, fall through. */
+   /* -------------- csrr{w,s,c} rd, csr, rs1 --------------- */
+   if (INSN(6, 0) == 0b1110011) {
+      UInt rd     = INSN(11, 7);
+      UInt funct3 = INSN(14, 12);
+      UInt rs1    = INSN(19, 15);
+      UInt csr    = INSN(31, 20);
+      if ((funct3 != 0b001 && funct3 != 0b010 && funct3 != 0b011) ||
+          (csr != 0x001 && csr != 0x002 && csr != 0x003)) {
+         /* Invalid CSRR{W,S,C}, fall through. */
       } else {
          switch (csr) {
          case 0x001: {
@@ -3187,66 +3201,27 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
                putIReg64(irsb, rd,
                          unop(Iop_32Uto64,
                               binop(Iop_And32, mkexpr(fcsr), mkU32(0x1f))));
-            putFCSR(irsb,
-                    binop(Iop_Or32,
-                          binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffffe0)),
-                          binop(Iop_And32, getIReg32(rs1), mkU32(0x1f))));
-            break;
-         }
-         case 0x002: {
-            /* frm */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(
-                  irsb, rd,
-                  unop(Iop_32Uto64,
-                       binop(Iop_And32, binop(Iop_Shr32, mkexpr(fcsr), mkU8(5)),
-                             mkU32(0x7))));
-            putFCSR(irsb,
-                    binop(Iop_Or32,
-                          binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffff1f)),
-                          binop(Iop_Shl32,
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
-                                mkU8(5))));
-            break;
-         }
-         case 0x003: {
-            /* fcsr */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(irsb, rd, unop(Iop_32Uto64, mkexpr(fcsr)));
-            putFCSR(irsb, binop(Iop_And32, getIReg32(rs1), mkU32(0xff)));
-            break;
-         }
-         default:
-            vassert(0);
-         }
-         DIP("csrrs %s, %s, %s\n", nameIReg(rd), nameCSR(csr), nameIReg(rs1));
-         return True;
-      }
-   }
 
-   /* ----------------- csrrs rd, csr, rs1 ------------------ */
-   if (INSN(6, 0) == 0b1110011 && INSN(14, 12) == 0b010) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt csr = INSN(31, 20);
-      if (csr != 0x001 && csr != 0x002 && csr != 0x003) {
-         /* Invalid CSRRS, fall through. */
-      } else {
-         switch (csr) {
-         case 0x001: {
-            /* fflags */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(irsb, rd,
-                         unop(Iop_32Uto64,
-                              binop(Iop_And32, mkexpr(fcsr), mkU32(0x1f))));
-            putFCSR(irsb, binop(Iop_Or32, mkexpr(fcsr),
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0x1f))));
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b001:
+               expr = binop(Iop_Or32,
+                            binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffffe0)),
+                            binop(Iop_And32, getIReg32(rs1), mkU32(0x1f)));
+               break;
+            case 0b010:
+               expr = binop(Iop_Or32, mkexpr(fcsr),
+                            binop(Iop_And32, getIReg32(rs1), mkU32(0x1f)));
+               break;
+            case 0b011:
+               expr = binop(Iop_And32, mkexpr(fcsr),
+                            unop(Iop_Not32, binop(Iop_And32, getIReg32(rs1),
+                                                  mkU32(0x1f))));
+               break;
+            default:
+               vassert(0);
+            }
+            putFCSR(irsb, expr);
             break;
          }
          case 0x002: {
@@ -3259,11 +3234,33 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
                   unop(Iop_32Uto64,
                        binop(Iop_And32, binop(Iop_Shr32, mkexpr(fcsr), mkU8(5)),
                              mkU32(0x7))));
-            putFCSR(irsb,
-                    binop(Iop_Or32, mkexpr(fcsr),
-                          binop(Iop_Shl32,
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
-                                mkU8(5))));
+
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b001:
+               expr = binop(
+                  Iop_Or32, binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffff1f)),
+                  binop(Iop_Shl32, binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
+                        mkU8(5)));
+               break;
+            case 0b010:
+               expr = binop(Iop_Or32, mkexpr(fcsr),
+                            binop(Iop_Shl32,
+                                  binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
+                                  mkU8(5)));
+               break;
+            case 0b011:
+               expr =
+                  binop(Iop_And32, mkexpr(fcsr),
+                        unop(Iop_Not32,
+                             binop(Iop_Shl32,
+                                   binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
+                                   mkU8(5))));
+               break;
+            default:
+               vassert(0);
+            }
+            putFCSR(irsb, expr);
             break;
          }
          case 0x003: {
@@ -3272,14 +3269,47 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
             assign(irsb, fcsr, getFCSR());
             if (rd != 0)
                putIReg64(irsb, rd, unop(Iop_32Uto64, mkexpr(fcsr)));
-            putFCSR(irsb, binop(Iop_Or32, mkexpr(fcsr),
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0xff))));
+
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b001:
+               expr = binop(Iop_And32, getIReg32(rs1), mkU32(0xff));
+               break;
+            case 0b010:
+               expr = binop(Iop_Or32, mkexpr(fcsr),
+                            binop(Iop_And32, getIReg32(rs1), mkU32(0xff)));
+               break;
+            case 0b011:
+               expr = binop(Iop_And32, mkexpr(fcsr),
+                            unop(Iop_Not32, binop(Iop_And32, getIReg32(rs1),
+                                                  mkU32(0xff))));
+               break;
+            default:
+               vassert(0);
+            }
+            putFCSR(irsb, expr);
             break;
          }
          default:
             vassert(0);
          }
-         DIP("csrrs %s, %s, %s\n", nameIReg(rd), nameCSR(csr), nameIReg(rs1));
+
+         const HChar* name;
+         switch (funct3) {
+         case 0b001:
+            name = "csrrw";
+            break;
+         case 0b010:
+            name = "csrrs";
+            break;
+         case 0b011:
+            name = "csrrc";
+            break;
+         default:
+            vassert(0);
+         }
+         DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameCSR(csr),
+             nameIReg(rs1));
          return True;
       }
    }

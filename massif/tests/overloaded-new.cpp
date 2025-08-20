@@ -19,7 +19,7 @@ __attribute__((noinline)) void* operator new (std::size_t n)
     return (void*)12345;
 }
 
-__attribute__((noinline)) void* operator new (std::size_t n, std::nothrow_t const &)
+__attribute__((noinline)) void* operator new (std::size_t n, std::nothrow_t const &) noexcept
 {
     return (void*)23456;
 }
@@ -29,7 +29,7 @@ __attribute__((noinline)) void* operator new[] (std::size_t n)
     return (void*)34567;
 }
 
-__attribute__((noinline)) void* operator new[] (std::size_t n, std::nothrow_t const &)
+__attribute__((noinline)) void* operator new[] (std::size_t n, std::nothrow_t const &) noexcept
 {
     return (void*)45678;
 }
@@ -54,12 +54,12 @@ __attribute__((noinline)) void* operator new[](std::size_t size, std::align_val_
     return (void*)89012;
 }
 
-__attribute__((noinline)) void operator delete (void* p)
+__attribute__((noinline)) void operator delete (void* p) noexcept
 {
 
 }
 
-__attribute__((noinline)) void operator delete[] (void* p)
+__attribute__((noinline)) void operator delete[] (void* p) noexcept
 {
 
 }

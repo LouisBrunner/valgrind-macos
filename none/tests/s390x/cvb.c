@@ -1,104 +1,89 @@
+#include <assert.h>
 #include <stdio.h>
 
-static unsigned long test[] ={
-	0x000000000000000a,
-	0x000000000000001a,
-	0x000000000000012a,
-	0x000000000000123a,
-	0x000000000001234a,
-	0x000000000012345a,
-	0x000000000123456a,
-	0x000000001234567a,
-	0x000000012345678a,
-	0x000000123456789a,
-	0x000001234567890a,
-	0x000000000000000b,
-	0x000000000000001b,
-	0x000000000000012b,
-	0x000000000000123b,
-	0x000000000001234b,
-	0x000000000012345b,
-	0x000000000123456b,
-	0x000000001234567b,
-	0x000000012345678b,
-	0x000000123456789b,
-	0x000001234567890b,
-	0x000000000000000c,
-	0x000000000000001c,
-	0x000000000000012c,
-	0x000000000000123c,
-	0x000000000001234c,
-	0x000000000012345c,
-	0x000000000123456c,
-	0x000000001234567c,
-	0x000000012345678c,
-	0x000000123456789c,
-	0x000001234567890c,
-	0x000000000000000d,
-	0x000000000000001d,
-	0x000000000000012d,
-	0x000000000000123d,
-	0x000000000001234d,
-	0x000000000012345d,
-	0x000000000123456d,
-	0x000000001234567d,
-	0x000000012345678d,
-	0x000000123456789d,
-	0x000001234567890d,
-	0x000000000000000e,
-	0x000000000000001e,
-	0x000000000000012e,
-	0x000000000000123e,
-	0x000000000001234e,
-	0x000000000012345e,
-	0x000000000123456e,
-	0x000000001234567e,
-	0x000000012345678e,
-	0x000000123456789e,
-	0x000001234567890e,
-	0x000000000000000f,
-	0x000000000000001f,
-	0x000000000000012f,
-	0x000000000000123f,
-	0x000000000001234f,
-	0x000000000012345f,
-	0x000000000123456f,
-	0x000000001234567f,
-	0x000000012345678f,
-	0x000000123456789f,
-	0x000001234567890f,
-        /* min and max */
-	0x000002147483647c,
-	0x000002147483648d,
-
-/* fixs390: we also need to check if invalid values cause a fixed-point-devide exception.
-   Not yet implemented. */
-/*	0x000002147483648c,
-	0x000002147483649d,
-	0x00000000000000fa, */
-
+/* Valid values (excluding sign code) */
+static const unsigned long valid[] = {
+   0x0000000000000000,
+   0x0000000000000010,
+   0x0000000000000120,
+   0x0000000000001230,
+   0x0000000000012340,
+   0x0000000000123450,
+   0x0000000001234560,
+   0x0000000012345670,
+   0x0000000123456780,
+   0x0000001234567890,
+   0x0000012345678900,
 };
 
+/* Boundary values (excluding sign code) */
+static const unsigned long max = 0x0000021474836470;
+static const unsigned long min = 0x0000021474836480;
 
-static signed int dec_to_hex(unsigned long *addr)
+/* Valid sign codes */
+static const unsigned sign_code_pos[] = { 0xa, 0xc, 0xe, 0xf };
+static const unsigned sign_code_neg[] = { 0xb, 0xd };
+
+#define NUM_EL(x)   (sizeof(x) / sizeof(*(x)))
+
+/* The value pointed to by ADDR is valid including sign code. */
+static signed int
+dec_to_hex(unsigned long *addr)
 {
-        register signed int res asm("2") = 0;
-        register unsigned long *_addr asm("4") = addr;
+   long res;
+   int res1, res2;
 
-        asm volatile(
-        "       cvb %0,0(0,%1)"
-                : "=d" (res) : "d" (_addr) : "memory");
-        return res & 0xffffffff;
+   res = 0;
+   asm volatile("cvb %0,0(0,%1)"
+                : "+d" (res) : "a" (addr) : "memory");
+
+   // bits [0:31] ought to be unchanged
+   // Catch bits that are set but shouldn't be
+   assert((res >> 32) == 0);
+   res1 = (int)res;
+
+   res = -1;
+   asm volatile("cvb %0,0(0,%1)"
+                : "+d" (res) : "a" (addr) : "memory");
+
+   // bits [0:31] ought to be unchanged
+   // Catch bits that are cleared but shouldn't be
+   assert((res >> 32) == -1);
+   res2 = (int)(res & 0xffffffff);
+
+   // Successful conversion
+   assert(res1 == res2);
+
+   return res1;
 }
 
-
-
-
-int main()
+int main(void)
 {
-	int i;
+   for (int sign_code = 0xa; sign_code <= 0xf; ++sign_code) {
+      printf("Testing in-range values with sign code 0x%x\n", sign_code);
+      for (int i = 0; i < NUM_EL(valid); ++i) {
+         unsigned long value = valid[i] | sign_code;
+         printf("0x%016lx  -->  %d\n", value, dec_to_hex(&value));
+      }
+   }
+   printf("\n");
 
-	for (i = 0; i < sizeof(test) / sizeof(test[0]); i++)
-	printf("%d\n", dec_to_hex(&test[i]));
-	return 0;
+   printf("Testing max. value 0x%lx\n", max >> 4);
+   for (int i = 0; i < NUM_EL(sign_code_pos); ++i) {
+      unsigned sign_code = sign_code_pos[i];
+      unsigned long value = max | sign_code;
+      printf("0x%016lx  -->  %d\n", value, dec_to_hex(&value));
+   }
+   printf("\n");
+
+   printf("Testing min. value 0x%lx\n", min >> 4);
+   for (int i = 0; i < NUM_EL(sign_code_neg); ++i) {
+      unsigned sign_code = sign_code_neg[i];
+      unsigned long value = min | sign_code;
+      printf("0x%016lx  -->  %d\n", value, dec_to_hex(&value));
+   }
+
+   /* fixs390: check behaviour for invalid values, out-of-range values and values with invalid sign code */
+
+   return 0;
 }

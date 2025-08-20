@@ -22,13 +22,20 @@ sed "s/operator delete\[\](void\*, unsigned int/operator delete[](void*, unsigne
 sed "s/4294967295/18446744073709551615/" |
 sed "s/malloc_zone_memalign/posix_memalign/" |
 perl    -p -e "s/(m_replacemalloc\/)?vg_replace_malloc.c/vg_replace_malloc.c/" |
+perl -0 -p -e  "s/<heap_summary>.*<\/heap_summary>/<heap_summary>...<\/heap_summary>/s" |
+perl -0 -p -e  "s/<error_summary>.*<\/error_summary>/<error_summary>...<\/error_summary>/s" |
+perl -0 -p -e  "s/<leak_summary>.*<\/leak_summary>/<leak_summary>...<\/leak_summary>/s" |
 perl -0 -p -e "s/<suppcounts>.*<\/suppcounts>/<suppcounts>...<\/suppcounts>/s" |
 perl    -p -e "s/<time>.*<\/time>/<time>...<\/time>/s" |
 perl -0 -p -e "s/<vargv>.*<\/vargv>/<vargv>...<\/vargv>/s" |
+perl -0 -p -e "s/<suppressed>.*<\/suppressed>/<suppressed>...<\/suppressed>/s" |
+perl -0 -p -e "s/<suppressed_contexts>.*<\/suppressed_contexts>/<suppressed_from>...<\/suppressed_from>/s" |
 
 # Remove stack traces for Syscall param errors (see filter_stderr for more).  
 # Chops everything within <stack>...</stack>.
-perl -p -0 -e 's/(<what>Syscall param[^\n]*\n)([^\n]*(stack|frame|ip|obj|fn|dir|file|line)[^\n]*\n)+/$1/gs'
+perl -p -0 -e 's/(<what>Syscall param[^\n]*\n)([^\n]*(stack|frame|ip|obj|fn|dir|file|line)[^\n]*\n)+/$1/gs' |
+
+sed "/<all_heap_blocks_freed>/,+1d"
 
 # Collected wisdom re Perl magic incantation:
 #

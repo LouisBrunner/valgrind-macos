@@ -238,4 +238,9 @@
    Helgrind:Race
    fun:thr_exit
 }
-
+# sigh, this is our own variable in coregrind/m_replacemalloc/vg_replace_malloc.c
+{
+   FREEBSD15-AMD64-MALLOC
+   Helgrind:Race
+   fun:malloc
+}

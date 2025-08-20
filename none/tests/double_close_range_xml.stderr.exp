@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>5</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>none</protocoltool>
 
 <preamble>
@@ -123,7 +123,6 @@ Double closing range (5, 7).
   </stack>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -140,6 +139,4 @@ Double closing range (5, 7).
   </pair>
 </errorcounts>
 
-
 </valgrindoutput>
-

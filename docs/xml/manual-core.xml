@@ -886,18 +886,44 @@ in most cases.  We group the available options by rough categories.</para>
 
   <varlistentry id="opt.track-fds" xreflabel="--track-fds">
     <term>
-      <option><![CDATA[--track-fds=<yes|no|all> [default: no] ]]></option>
+      <option><![CDATA[--track-fds=<yes|no|all|bad> [default: no] ]]></option>
     </term>
     <listitem>
-      <para>When enabled, Valgrind will print out a list of open file
-      descriptors on exit or on request, via the gdbserver monitor
-      command <varname>v.info open_fds</varname>.  Along with each
-      file descriptor is printed a stack backtrace of where the file
-      was opened and any details relating to the file descriptor such
-      as the file name or socket details. Use <option>all</option> to
-      include reporting on <computeroutput>stdin</computeroutput>,
+      <para>When enabled, Valgrind will track all file descriptor
+      usage. It will produce errors for bad file descriptor usage like
+      closing a file descriptor twice, using a file descriptor
+      (number) that was never created, or passing an already closed
+      file descriptor to a system call. It will also print out a list
+      of open file descriptors on exit. Or on request, via the
+      gdbserver monitor command <varname>v.info open_fds</varname>.</para>
+
+      <para>When an error is generated, or when listing the still open
+      file descriptors at exit, a stack backtrace of where the file
+      was opened is printed. If the file descriptor has already been
+      closed, it will also include a backtrace of where it was
+      previously closed. Any error will include details relating to
+      the file descriptor such as the file name or socket details.</para>
+
+      <para>Use <option>all</option> to also include reporting
+      on <computeroutput>stdin</computeroutput>,
       <computeroutput>stdout</computeroutput> and
-      <computeroutput>stderr</computeroutput>.</para>
+      <computeroutput>stderr</computeroutput> (or other inherited file
+      descriptors) at exit.  If <option>bad</option> option is used,
+      then exclude reporting on leaked file descriptors at exit and
+      only produce errors about bad file decriptors usage.</para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.modify-fds" xreflabel="--modify-fds">
+    <term>
+      <option><![CDATA[--modify-fds=<no|yes|high> [default: no] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, when the program opens a new file descriptor,
+      the highest available file descriptor is returned instead of the
+      lowest one. Use <option>yes</option> to restrict the feature from
+      the 0/1/2 file descriptors as they're often used for stdout/stderr
+      redirection.</para>
     </listitem>
   </varlistentry>
 

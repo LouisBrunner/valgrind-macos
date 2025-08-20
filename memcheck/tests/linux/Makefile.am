@@ -9,6 +9,8 @@ EXTRA_DIST = \
 		aligned_alloc.stderr.exp-glibc238 \
 	brk.stderr.exp brk.vgtest \
 	bug480706.stderr.exp bug480706.vgtest \
+	bug420682_1.stderr.exp bug420682_1.vgtest \
+	bug420682_2.stderr.exp bug420682_2.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	capget.stderr.exp4 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
@@ -100,6 +102,13 @@ if HAVE_STRLCAT
         check_PROGRAMS += strlcat_strlcpy
 endif
 
+if HAVE_LIBAIO
+        check_PROGRAMS += bug420682_1
+if HAVE_NR_IO_PGETEVENTS
+        check_PROGRAMS += bug420682_2
+endif
+endif
+
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
@@ -108,6 +117,14 @@ timerfd_syscall_LDADD = -lrt
 
 if HAVE_OPENSSL
 bug480706_LDADD             = -lcrypto
+endif
+
+if HAVE_LIBAIO
+bug420682_1_LDADD               = -laio
+endif
+
+if HAVE_NR_IO_PGETEVENTS
+bug420682_2_CFLAGS              = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 endif
 
 # Build shared object for dlclose_leak

@@ -1,0 +1,248 @@
+/* -*- mode: C; c-basic-offset: 3; -*- */
+
+/*
+   This file is part of Valgrind, a dynamic binary instrumentation
+   framework.
+
+   Copyright (C) 2025  Florian Krohm
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, see <http://www.gnu.org/licenses/>.
+
+   The GNU General Public License is contained in the file COPYING.
+*/
+
+#define OPNAME(op) #op, Iop_##op
+
+/* Definition of IROps:
+   - no IROps having floating point operands or result
+   - no IROPs having vector operands or results (V128, V256)
+   - no IROPs having integer operands or results with more than 64 bit
+*/
+   // UNARY
+   { OPNAME(Not1),   Ity_I1,  1, Ity_I1,  },
+   { OPNAME(Not8),   Ity_I8,  1, Ity_I8,  },
+   { OPNAME(Not16),  Ity_I16, 1, Ity_I16, },
+   { OPNAME(Not32),  Ity_I32, 1, Ity_I32, },
+   { OPNAME(Not64),  Ity_I64, 1, Ity_I64, },
+
+   { OPNAME(1Uto8),  Ity_I8,  1, Ity_I1,  },
+// { OPNAME(1Uto16), Ity_I16, 1, Ity_I1,  }, // missing in libvex_ir.h
+   { OPNAME(1Uto32), Ity_I32, 1, Ity_I1,  },
+   { OPNAME(1Uto64), Ity_I64, 1, Ity_I1,  },
+   { OPNAME(1Sto8),  Ity_I8,  1, Ity_I1,  },
+   { OPNAME(1Sto16), Ity_I16, 1, Ity_I1,  },
+   { OPNAME(1Sto32), Ity_I32, 1, Ity_I1,  },
+   { OPNAME(1Sto64), Ity_I64, 1, Ity_I1,  },
+
+   { OPNAME(8Uto16), Ity_I16, 1, Ity_I8,  },
+   { OPNAME(8Uto32), Ity_I32, 1, Ity_I8,  },
+   { OPNAME(8Uto64), Ity_I64, 1, Ity_I8,  },
+   { OPNAME(8Sto16), Ity_I16, 1, Ity_I8,  },
+   { OPNAME(8Sto32), Ity_I32, 1, Ity_I8,  },
+   { OPNAME(8Sto64), Ity_I64, 1, Ity_I8,  },
+
+   { OPNAME(16Uto32), Ity_I32, 1, Ity_I16, },
+   { OPNAME(16Uto64), Ity_I64, 1, Ity_I16, },
+   { OPNAME(16Sto32), Ity_I32, 1, Ity_I16, },
+   { OPNAME(16Sto64), Ity_I64, 1, Ity_I16, },
+
+   { OPNAME(32Uto64), Ity_I64, 1, Ity_I32, },
+   { OPNAME(32Sto64), Ity_I64, 1, Ity_I32, },
+
+// { OPNAME(8to1),    Ity_I1, 1, Ity_I8,  }, // missing in libvex_ir.h
+// { OPNAME(16to1),   Ity_I1, 1, Ity_I16, }, // missing in libvex_ir.h
+   { OPNAME(16to8),   Ity_I8, 1, Ity_I16, },
+   { OPNAME(16HIto8), Ity_I8, 1, Ity_I16, },
+
+   { OPNAME(32to1),    Ity_I1,  1, Ity_I32, },
+   { OPNAME(32to8),    Ity_I8,  1, Ity_I32, },
+   { OPNAME(32to16),   Ity_I16, 1, Ity_I32, },
+   { OPNAME(32HIto16), Ity_I16, 1, Ity_I32, },
+
+   { OPNAME(64to1),    Ity_I1,  1, Ity_I64, },
+   { OPNAME(64to8),    Ity_I8,  1, Ity_I64, },
+   { OPNAME(64to16),   Ity_I16, 1, Ity_I64, },
+   { OPNAME(64to32),   Ity_I32, 1, Ity_I64, },
+   { OPNAME(64HIto32), Ity_I32, 1, Ity_I64, },
+
+// { OPNAME(128to64),   Ity_I64, 1, Ity_I128, },      // 128 bit
+// { OPNAME(128HIto64), Ity_I64, 1, Ity_I128, },      // 128 bit
+
+   { OPNAME(CmpNEZ8),   Ity_I1,  1, Ity_I8  },
+   { OPNAME(CmpNEZ16),  Ity_I1,  1, Ity_I16 },
+   { OPNAME(CmpNEZ32),  Ity_I1,  1, Ity_I32 },
+   { OPNAME(CmpNEZ64),  Ity_I1,  1, Ity_I64 },
+
+   { OPNAME(CmpwNEZ32), Ity_I32,  1, Ity_I32 },
+   { OPNAME(CmpwNEZ64), Ity_I64,  1, Ity_I64 },
+
+   { OPNAME(Left8),  Ity_I8,   1, Ity_I8  },
+   { OPNAME(Left16), Ity_I16,  1, Ity_I16 },
+   { OPNAME(Left32), Ity_I32,  1, Ity_I32 },
+   { OPNAME(Left64), Ity_I64,  1, Ity_I64 },
+
+// { OPNAME(Clz32),  Ity_I32,  1, Ity_I32 }, // deprecated, undefined behaviour
+// { OPNAME(Clz64),  Ity_I64,  1, Ity_I64 }, // deprecated, undefined behaviour
+
+// { OPNAME(Ctz32),  Ity_I32,  1, Ity_I32 }, // deprecated, undefined behaviour
+// { OPNAME(Ctz64),  Ity_I64,  1, Ity_I64 }, // deprecated, undefined behaviour
+
+   { OPNAME(ClzNat32), Ity_I32, 1, Ity_I32 },
+   { OPNAME(ClzNat64), Ity_I64, 1, Ity_I64 },
+
+   { OPNAME(CtzNat32), Ity_I32, 1, Ity_I32 },
+   { OPNAME(CtzNat64), Ity_I64, 1, Ity_I64 },
+
+   { OPNAME(PopCount32), Ity_I32, 1, Ity_I32 },
+   { OPNAME(PopCount64), Ity_I64, 1, Ity_I64 },
+
+
+
+   // BINARY
+   { OPNAME(Add8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(Add16),   Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(Add32),   Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(Add64),   Ity_I64, 2, Ity_I64, Ity_I64 },
+
+   { OPNAME(Sub8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(Sub16),   Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(Sub32),   Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(Sub64),   Ity_I64, 2, Ity_I64, Ity_I64 },
+
+   { OPNAME(Mul8),    Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(Mul16),   Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(Mul32),   Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(Mul64),   Ity_I64, 2, Ity_I64, Ity_I64 },
+
+   { OPNAME(MullU8),  Ity_I16,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(MullU16), Ity_I32,  2, Ity_I16, Ity_I16 },
+   { OPNAME(MullU32), Ity_I64,  2, Ity_I32, Ity_I32 },
+// { OPNAME(MullU64), Ity_I128, 2, Ity_I64, Ity_I64 }, // 128 bit
+
+   { OPNAME(MullS8),  Ity_I16,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(MullS16), Ity_I32,  2, Ity_I16, Ity_I16 },
+   { OPNAME(MullS32), Ity_I64,  2, Ity_I32, Ity_I32 },
+// { OPNAME(MullS64), Ity_I128, 2, Ity_I64, Ity_I64 }, // 128 bit
+
+   { OPNAME(DivU32),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+   { OPNAME(DivU64),  Ity_I64,  2, Ity_I64,  Ity_I64  },
+// { OPNAME(DivU128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
+
+   { OPNAME(DivS32),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+   { OPNAME(DivS64),  Ity_I64,  2, Ity_I64,  Ity_I64  },
+// { OPNAME(DivS128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
+
+   { OPNAME(DivU32E),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+// { OPNAME(DivU64E),  Ity_I64,  2, Ity_I64,  Ity_I64  }, // 128 bit
+// { OPNAME(DivU128E), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
+
+   { OPNAME(DivS32E),  Ity_I32,  2, Ity_I32,  Ity_I32  },
+// { OPNAME(DivS64E),  Ity_I32,  2, Ity_I32,  Ity_I32  }, // 128 bit
+// { OPNAME(DivS128E), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
+
+// { OPNAME(DivModU32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
+// { OPNAME(DivModU64to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
+// { OPNAME(DivModU64to64),  Ity_I64,  2, Ity_I64, Ity_I128 }, // 128 bit
+// { OPNAME(DivModU128to64), Ity_I128, 2, Ity_I64, Ity_I128 }, // 128 bit
+
+// { OPNAME(DivModS32to32),  Ity_I64,  2, Ity_I32, Ity_I32  }, // no folding yet
+// { OPNAME(DivModS32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
+// { OPNAME(DivModS64to64),  Ity_I64,  2, Ity_I64, Ity_I128 }, // 128 bit
+// { OPNAME(DivModU128to64), Ity_I128, 2, Ity_I64, Ity_I128 }, // 128 bit
+
+// { OPNAME(ModU128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
+// { OPNAME(ModS128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
+
+   { OPNAME(Shl8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Shl16), Ity_I16, 2, Ity_I16, Ity_I8 },
+   { OPNAME(Shl32), Ity_I32, 2, Ity_I32, Ity_I8 },
+   { OPNAME(Shl64), Ity_I64, 2, Ity_I64, Ity_I8 },
+
+   { OPNAME(Shr8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Shr16), Ity_I16, 2, Ity_I16, Ity_I8 },
+   { OPNAME(Shr32), Ity_I32, 2, Ity_I32, Ity_I8 },
+   { OPNAME(Shr64), Ity_I64, 2, Ity_I64, Ity_I8 },
+
+   { OPNAME(Sar8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Sar16), Ity_I16, 2, Ity_I16, Ity_I8 },
+   { OPNAME(Sar32), Ity_I32, 2, Ity_I32, Ity_I8 },
+   { OPNAME(Sar64), Ity_I64, 2, Ity_I64, Ity_I8 },
+
+   { OPNAME(Or1),   Ity_I1,  2, Ity_I1,  Ity_I1  },
+   { OPNAME(Or8),   Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(Or16),  Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(Or32),  Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(Or64),  Ity_I64, 2, Ity_I64, Ity_I64 },
+
+   { OPNAME(And1),  Ity_I1,  2, Ity_I1,  Ity_I1  },
+   { OPNAME(And8),  Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(And16), Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(And32), Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(And64), Ity_I64, 2, Ity_I64, Ity_I64 },
+
+// { OPNAME(Xor1),  Ity_I1,  2, Ity_I1,  Ity_I1  }, // missing in libvex_ir.h
+   { OPNAME(Xor8),  Ity_I8,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(Xor16), Ity_I16, 2, Ity_I16, Ity_I16 },
+   { OPNAME(Xor32), Ity_I32, 2, Ity_I32, Ity_I32 },
+   { OPNAME(Xor64), Ity_I64, 2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(CmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16 },
+   { OPNAME(CmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(CmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 },
+   { OPNAME(CmpNE32), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpNE64), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpLT32U), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpLT64U), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpLT32S), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpLT64S), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpLE32U), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpLE64U), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpLE32S), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpLE64S), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CasCmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(CasCmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16 },
+   { OPNAME(CasCmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CasCmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CasCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(CasCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 },
+   { OPNAME(CasCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CasCmpNE64), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(ExpCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(ExpCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16 },
+   { OPNAME(ExpCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32 },
+   { OPNAME(ExpCmpNE64), Ity_I1,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpORD32U), Ity_I32,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpORD64U), Ity_I64,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(CmpORD32S), Ity_I32,  2, Ity_I32, Ity_I32 },
+   { OPNAME(CmpORD64S), Ity_I64,  2, Ity_I64, Ity_I64 },
+
+   { OPNAME(Max32U), Ity_I32,  2, Ity_I32, Ity_I32 },
+
+   { OPNAME(8HLto16),   Ity_I16,  2, Ity_I8,  Ity_I8  },
+   { OPNAME(16HLto32),  Ity_I32,  2, Ity_I16, Ity_I16 },
+   { OPNAME(32HLto64),  Ity_I64,  2, Ity_I32, Ity_I32 },
+// { OPNAME(64HLto128), Ity_I128, 2, Ity_I64, Ity_I64 }, // 128 bit

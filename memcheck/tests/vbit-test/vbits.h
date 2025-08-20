@@ -48,7 +48,19 @@ typedef struct {
 
 /* A type large enough to hold any IRType'd value. At this point
    we do not expect to test with specific floating point values.
-   So we don't need to represent them. */
+   So we don't need to represent them.
+
+   NOTE: Values of type Ity_I1 are stored in the u32 variant. This is
+   inconsistent with the way such values are stored elsewhere in VEX,
+   namely, in an 8-bit container. Why is that?
+   The reason is that libvex_ir.h does not provide an Iop_8to1 operator.
+   However, that would be needed in ir_inject.c when loading a 1-bit value
+   from memory (see function load_aux there). Instead of today's
+      return unop(Iop_32to1, IRExpr_Load(endian, Ity_I32, addr));
+   we'd like to write
+      return unop(Iop_8to1, IRExpr_Load(endian, Ity_I8, addr));
+   But cannot do. Grrrrr...
+ */
 typedef union {
    uint8_t   u8;
    uint16_t  u16;

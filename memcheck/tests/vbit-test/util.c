@@ -86,7 +86,7 @@ static void
 print_value(FILE *fp, value_t val, unsigned num_bits)
 {
    switch (num_bits) {
-   case 1:  fprintf(fp, "%02x",   val.u8);  break;
+   case 1:  fprintf(fp, "%01x",   val.u32); break; // see comment in vbits.h
    case 8:  fprintf(fp, "%02x",   val.u8);  break;
    case 16: fprintf(fp, "%04x",   val.u16); break;
    case 32: fprintf(fp, "%08x",   val.u32); break;

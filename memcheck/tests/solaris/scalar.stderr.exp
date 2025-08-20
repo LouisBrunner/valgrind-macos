@@ -618,7 +618,6 @@ Syscall param shmsys_shmdt(opcode) contains uninitialised byte(s)
 Syscall param shmsys_shmdt(shmaddr) contains uninitialised byte(s)
    ...
 
-Warning: client syscall shmdt tried to modify addresses 0x........-0x........
 ---------------------------------------------------------
  52:              SYS_shmsys (SHMGET) 4s 0m
 ---------------------------------------------------------

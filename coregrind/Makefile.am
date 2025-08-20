@@ -35,6 +35,8 @@ bin_PROGRAMS = \
 	valgrind \
 	vgdb
 
+bin_SCRIPTS = vgstack
+
 if VGCONF_OS_IS_LINUX
 valgrind_SOURCES = \
 	launcher-linux.c \
@@ -61,7 +63,7 @@ AR = ${LTO_AR}
 RANLIB = ${LTO_RANLIB}
 
 valgrind_CPPFLAGS  = $(AM_CPPFLAGS_PRI)
-valgrind_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS)
+valgrind_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS) -fhosted
 valgrind_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 valgrind_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
 # If there is no secondary platform, and the platforms include x86-darwin,
@@ -103,7 +105,7 @@ vgdb_SOURCES += vgdb-invoker-freebsd.c
 endif
 
 vgdb_CPPFLAGS  = $(AM_CPPFLAGS_PRI) $(GDB_SCRIPTS_DIR)
-vgdb_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS)
+vgdb_CFLAGS    = $(AM_CFLAGS_PRI) $(LTO_CFLAGS) -fhosted
 vgdb_CCASFLAGS = $(AM_CCASFLAGS_PRI)
 vgdb_LDFLAGS   = $(AM_CFLAGS_PRI) @LIB_UBSAN@
 if VGCONF_PLATVARIANT_IS_ANDROID

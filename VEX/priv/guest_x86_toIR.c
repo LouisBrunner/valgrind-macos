@@ -3418,14 +3418,14 @@ static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
           binop(Iop_Shl32, mkexpr(src32),
                            mkU8(32 - 8 * sizeofIRType(ty))));
 
-   // Clz32 has undefined semantics when its input is zero, so
-   // special-case around that.
+   /* Guard against 0 input value. Use ClzNat32 operator for all other
+      values */
    IRTemp res32 = newTemp(Ity_I32);
    assign(res32,
           IRExpr_ITE(
              binop(Iop_CmpEQ32, mkexpr(src32x), mkU32(0)),
              mkU32(8 * sizeofIRType(ty)),
-             unop(Iop_Clz32, mkexpr(src32x))
+             unop(Iop_ClzNat32, mkexpr(src32x))
    ));
 
    IRTemp res = newTemp(ty);
@@ -6512,18 +6512,16 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
       elimination of previous stores to this field work better. */
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
 
-   /* Result: iff source value is zero, we can't use
-      Iop_Clz32/Iop_Ctz32 as they have no defined result in that case.
-      But anyway, Intel x86 semantics say the result is undefined in
-      such situations.  Hence handle the zero case specially. */
+   /* Intel x86 semantics say the result is undefined iff source value is
+      zero. Hence handle the zero case specially. */
 
    /* Bleh.  What we compute:
 
-          bsf32:  if src == 0 then 0 else  Ctz32(src)
-          bsr32:  if src == 0 then 0 else  31 - Clz32(src)
+          bsf32:  if src == 0 then 0 else  CtzNat32(src)
+          bsr32:  if src == 0 then 0 else  31 - ClzNat32(src)
 
-          bsf16:  if src == 0 then 0 else  Ctz32(16Uto32(src))
-          bsr16:  if src == 0 then 0 else  31 - Clz32(16Uto32(src))
+          bsf16:  if src == 0 then 0 else  CtzNat32(16Uto32(src))
+          bsr16:  if src == 0 then 0 else  31 - ClzNat32(16Uto32(src))
 
       First, widen src to 32 bits if it is not already.
 
@@ -6540,10 +6538,10 @@ UInt dis_bs_E_G ( UChar sorb, Int sz, Int delta, Bool fwds )
            IRExpr_ITE( 
               mkexpr(srcB),
               /* src != 0 */
-              fwds ? unop(Iop_Ctz32, mkexpr(src32))
+              fwds ? unop(Iop_CtzNat32, mkexpr(src32))
                    : binop(Iop_Sub32, 
                            mkU32(31), 
-                           unop(Iop_Clz32, mkexpr(src32))),
+                           unop(Iop_ClzNat32, mkexpr(src32))),
               /* src == 0 -- leave dst unchanged */
               widenUto32( getIReg( sz, gregOfRM(modrm) ) )
            )

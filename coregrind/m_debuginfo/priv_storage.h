@@ -11,6 +11,8 @@
 
    Copyright (C) 2000-2017 Julian Seward 
       jseward@acm.org
+   Copyright (C) 2025 Mark J. Wielaard
+      mark@klomp.org
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -142,7 +144,10 @@ typedef
       /* Word 2 */
       Addr   addr_hi;            /* highest address following the inlined fn */
       /* Word 3 */
-      const HChar* inlinedfn;    /* inlined function name */
+      union {
+         UWord subprog;          /* subprogram DIE (cooked) reference.  */
+         const HChar* fn;        /* inlined function name (after resolving)  */
+      } inlined;
       /* Word 4 and 5 */
       UInt   fndn_ix;            /* index in di->fndnpool of caller source
                                     dirname/filename */
@@ -150,6 +155,18 @@ typedef
       UShort level:LEVEL_BITS;   /* level of inlining */
    }
    DiInlLoc;
+
+typedef
+   struct {
+      UWord index; /* cooked DIE index.  */
+      union {
+         const HChar *fn; /* Name of subprogram.  */
+         UWord subprog;   /* DW_AT_specification of another subprogram.  */
+      } ref;
+      Bool isSubprogRef; /* True is ref is a subprog reference.  */
+      Bool isArtificial; /* True is the subprogram has DW_AT_artificial.  */
+   }
+   DiSubprogram;
 
 /* --------------------- CF INFO --------------------- */
 
@@ -949,6 +966,12 @@ struct _DebugInfo {
    UWord   inltab_size;
    SizeT   maxinl_codesz;
 
+   /* Storage for subprogram attributes. To use in inltab after pass over
+      all debuginfo to resolve names.  */
+   DiSubprogram* subtab;
+   UWord         subtab_used;
+   UWord         subtab_size;
+
    /* A set of expandable arrays to store CFI summary info records.
       The machine specific information (i.e. the DiCfSI_m struct)
       are stored in cfsi_m_pool, as these are highly duplicated.
@@ -1131,9 +1154,11 @@ void ML_(addLineInfo) ( struct _DebugInfo* di,
 extern
 void ML_(addInlInfo) ( struct _DebugInfo* di, 
                        Addr addr_lo, Addr addr_hi,
-                       const HChar* inlinedfn,
+                       UWord subprog,
                        UInt fndn_ix,
                        Int lineno, UShort level);
+
+extern void ML_(addSubprogram) ( struct _DebugInfo* di, DiSubprogram* sub );
 
 /* Add a CFI summary record.  The supplied DiCfSI_m is copied. */
 extern void ML_(addDiCfSI) ( struct _DebugInfo* di, 

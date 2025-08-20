@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>memcheck</protocoltool>
 
 <preamble>
@@ -58,6 +58,7 @@
   <text>new/new[] aligned failed and should throw an exception, but Valgrind
   </text>
 </clientmsg>
+
 <clientmsg>
   <tid>...</tid>
   <text>   cannot throw exceptions and so is aborting instead.  Sorry.
@@ -95,6 +96,8 @@
   <time>...</time>
 </status>
 
+<heap_summary>...</heap_summary>
+
 <errorcounts>
   <pair>
     <count>...</count>
@@ -104,5 +107,6 @@
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>...</error_summary>
 
+</valgrindoutput>

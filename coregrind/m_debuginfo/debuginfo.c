@@ -2436,7 +2436,7 @@ Bool VG_(get_fnname_inl) ( DiEpoch ep, Addr a, const HChar** buf,
          ? & iipc->di->inltab[iipc->next_inltab]
          : NULL;
       vg_assert (next_inl);
-      *buf = next_inl->inlinedfn;
+      *buf = next_inl->inlined.fn;
       return True;
    }
 }
@@ -2526,7 +2526,7 @@ Bool VG_(get_fnname_no_cxx_demangle) ( DiEpoch ep, Addr a, const HChar** buf,
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      *buf = next_inl->inlinedfn;
+      *buf = next_inl->inlined.fn;
       return True;
    }
 }
@@ -2892,7 +2892,7 @@ const HChar* VG_(describe_IP)(DiEpoch ep, Addr eip, const InlIPCursor *iipc)
          : NULL;
       vg_assert (next_inl);
       // The function we are in is called by next_inl.
-      buf_fn = next_inl->inlinedfn;
+      buf_fn = next_inl->inlined.fn;
       know_fnname = True;
 
       // INLINED????
@@ -3640,7 +3640,6 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  endif
 
 #  if defined(VGA_s390x)
-   const Bool is_s390x = True;
    const Addr old_S390X_F0 = uregsHere->f0;
    const Addr old_S390X_F1 = uregsHere->f1;
    const Addr old_S390X_F2 = uregsHere->f2;
@@ -3649,16 +3648,9 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    const Addr old_S390X_F5 = uregsHere->f5;
    const Addr old_S390X_F6 = uregsHere->f6;
    const Addr old_S390X_F7 = uregsHere->f7;
+#   define SAVE_TO_PREV(p,reg) do { p = reg; } while (0)
 #  else
-   const Bool is_s390x = False;
-   const Addr old_S390X_F0 = 0;
-   const Addr old_S390X_F1 = 0;
-   const Addr old_S390X_F2 = 0;
-   const Addr old_S390X_F3 = 0;
-   const Addr old_S390X_F4 = 0;
-   const Addr old_S390X_F5 = 0;
-   const Addr old_S390X_F6 = 0;
-   const Addr old_S390X_F7 = 0;
+#   define SAVE_TO_PREV(p,reg) do { vg_assert(0); } while (0)
 #  endif
 
 #  define COMPUTE(_prev, _here, _how, _off)             \
@@ -3690,29 +3682,29 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                if (!ok) return False;                   \
                break;                                   \
             case CFIR_S390X_F0:                               \
-               if (is_s390x) { _prev = old_S390X_F0; break; } \
-               vg_assert(0+0-0);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F0);             \
+               break;                                         \
             case CFIR_S390X_F1:                               \
-               if (is_s390x) { _prev = old_S390X_F1; break; } \
-               vg_assert(0+1-1);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F1);             \
+               break;                                         \
             case CFIR_S390X_F2:                               \
-               if (is_s390x) { _prev = old_S390X_F2; break; } \
-               vg_assert(0+2-2);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F2);             \
+               break;                                         \
             case CFIR_S390X_F3:                               \
-               if (is_s390x) { _prev = old_S390X_F3; break; } \
-               vg_assert(0+3-3);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F3);             \
+               break;                                         \
             case CFIR_S390X_F4:                               \
-               if (is_s390x) { _prev = old_S390X_F4; break; } \
-               vg_assert(0+4-4);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F4);             \
+               break;                                         \
             case CFIR_S390X_F5:                               \
-               if (is_s390x) { _prev = old_S390X_F5; break; } \
-               vg_assert(0+5-5);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F5);             \
+               break;                                         \
             case CFIR_S390X_F6:                               \
-               if (is_s390x) { _prev = old_S390X_F6; break; } \
-               vg_assert(0+6-6);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F6);             \
+               break;                                         \
             case CFIR_S390X_F7:                               \
-               if (is_s390x) { _prev = old_S390X_F7; break; } \
-               vg_assert(0+7-7);                              \
+               SAVE_TO_PREV(_prev, old_S390X_F7);             \
+               break;                                         \
             default:                                    \
                vg_assert(0*0);                          \
          }                                              \

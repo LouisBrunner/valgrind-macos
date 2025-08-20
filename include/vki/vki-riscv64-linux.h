@@ -186,6 +186,7 @@ typedef struct vki_sigaltstack {
 //----------------------------------------------------------------------
 
 #define VKI_MAP_NORESERVE       0x4000  /* don't check for reservations */
+#define VKI_MAP_FIXED_NOREPLACE	0x100000 /* fail EEXIST if fixed map fails */
 
 //----------------------------------------------------------------------
 // From linux-6.0/include/uapi/linux/mman.h

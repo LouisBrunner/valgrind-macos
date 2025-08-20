@@ -1,2 +1,3 @@
 prog: free_is_write
 vgopts: --free-is-write=yes
+stderr_filter: filter_fiw

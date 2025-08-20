@@ -485,7 +485,7 @@ static SyscallTableEntry syscall_table[] = {
 
    GENX_(__NR_umask,  sys_umask),                                     // 60
    GENX_(__NR_chroot,  sys_chroot),                                   // 61
-// ?????(__NR_ustat, sys_ustat), /* deprecated in favor of statfs */  // 62
+   LINXY(__NR_ustat, sys_ustat), /* deprecated in favor of statfs */  // 62
    GENXY(__NR_dup2,  sys_dup2),                                       // 63
    GENX_(__NR_getppid,  sys_getppid),                                 // 64
 
@@ -573,7 +573,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_fchdir,  sys_fchdir),                                   // 133
 // ?????(__NR_bdflush, ),                                             // 134
 
-// ?????(__NR_sysfs, ),                                               // 135
+   LINXY(__NR_sysfs, sys_sysfs),                                      // 135
    LINX_(__NR_personality, sys_personality),                          // 136
    GENX_(137, sys_ni_syscall), /* unimplemented (by the kernel) */    // 137
    GENX_(138, sys_ni_syscall), /* unimplemented (by the kernel) */    // 138
@@ -862,6 +862,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_statx, sys_statx),                                      // 379
 
    GENX_(__NR_rseq, sys_ni_syscall),                                  // 381
+   LINX_(__NR_io_pgetevents, sys_io_pgetevents),                      // 382
 
    LINXY(__NR_io_uring_setup, sys_io_uring_setup),                    // 425
    LINXY(__NR_io_uring_enter, sys_io_uring_enter),                    // 426
@@ -887,7 +888,11 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_memfd_secret, sys_memfd_secret),                        // 447
 
+   LINXY (__NR_cachestat, sys_cachestat),                             // 451
    LINX_ (__NR_fchmodat2, sys_fchmodat2),                             // 452
+   LINXY (__NR_statmount, sys_statmount),                             // 457
+   LINXY (__NR_listmount, sys_listmount),                             // 458
+   LINX_ (__NR_mseal, sys_mseal),                                     // 462
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

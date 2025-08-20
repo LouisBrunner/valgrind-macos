@@ -1578,6 +1578,12 @@ static void test_float32_additions(void)
    TESTINST_1_1_FI(4, "fcvt.s.lu fa0, a0", 0x0000000001000001, 0x60, fa0, a0);
    /* 2**24+1 (DYN-RMM) -> 2**24+2 (NX) */
    TESTINST_1_1_FI(4, "fcvt.s.lu fa0, a0", 0x0000000001000001, 0x80, fa0, a0);
+
+   // check nan-boxing
+   /* fabs.s rd, rs1 */
+   TESTINST_1_2_F(4, "fsgnjx.s fa0, fa1, fa1", 0xfaffffff3f800000,
+                  0xfaffffff3f800000, 0x00, fa0, fa1, fa1);
+
 }
 
 int main(void)

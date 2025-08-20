@@ -17,12 +17,14 @@ EXTRA_DIST = \
 	scalar_supp.stderr.exp \
 	scalar_supp.vgtest scalar_supp.supp \
 	scalar_vfork.stderr.exp scalar_vfork.vgtest \
-	scalar_openat2.vgtest scalar_openat2.stderr.exp
+	scalar_openat2.vgtest scalar_openat2.stderr.exp \
+	shm.vgtest shm.stderr.exp
 
 check_PROGRAMS = \
 	bug133694 \
 	int3-x86 \
-	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork
+	scalar scalar_exit_group scalar_fork scalar_supp scalar_vfork \
+	shm
 
 if HAVE_OPENAT2
 check_PROGRAMS += scalar_openat2
@@ -38,3 +40,4 @@ if HAVE_OPENAT2
 scalar_openat2_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 endif
 scalar_supp_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
+shm_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@

@@ -52,7 +52,7 @@
    sup5
    CoreError:FdNotClosed
    ...
-   fun:recvmsg
+   fun:*recvmsg
    fun:client
    fun:main
 }

@@ -1628,14 +1628,14 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             addInstr(env, AMD64Instr_Sh64(Ash_SAR, 63, dst));
             return dst;
          }
-         case Iop_Ctz64: {
+         case Iop_CtzNat64: {
             /* Count trailing zeroes, implemented by amd64 'bsfq' */
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, AMD64Instr_Bsfr64(True,src,dst));
             return dst;
          }
-         case Iop_Clz64: {
+         case Iop_ClzNat64: {
             /* Count leading zeroes.  Do 'bsrq' to establish the index
                of the highest set bit, and subtract that value from
                63. */

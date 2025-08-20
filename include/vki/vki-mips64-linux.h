@@ -306,6 +306,7 @@ struct vki_sigcontext {
 #define VKI_MAP_LOCKED      0x8000          /* pages are locked */
 #define VKI_MAP_POPULATE    0x10000         /* populate (prefault) pagetables */
 #define VKI_MAP_NONBLOCK    0x20000         /* do not block on IO */
+#define VKI_MAP_FIXED_NOREPLACE	0x100000    /* fail EEXIST if fixed map fails */
 
 //----------------------------------------------------------------------
 // From linux-2.6.35.9/include/asm-mips/fcntl.h

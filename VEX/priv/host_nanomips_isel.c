@@ -815,7 +815,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                return r_dst;
             }
 
-            case Iop_Clz32: {
+            case Iop_ClzNat32: {
                HReg r_dst = newVRegI(env);
                HReg r_src = iselWordExpr_R(env, e->Iex.Unop.arg);
                addInstr(env, NANOMIPSInstr_Unary(NMun_CLZ, r_dst, r_src));

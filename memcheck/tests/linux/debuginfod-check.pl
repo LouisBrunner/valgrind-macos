@@ -30,8 +30,8 @@ sub mysystem($)
 }
 
 # Check that debuginfod and debuginfod-find can be found
-mysystem("debuginfod --help > /dev/null");
-mysystem("debuginfod-find --help > /dev/null");
+mysystem("debuginfod --help > /dev/null 2> /dev/null");
+mysystem("debuginfod-find --help > /dev/null 2> /dev/null");
 
 $SIG{'INT'} = sub { cleanup_and_exit(1) };
 

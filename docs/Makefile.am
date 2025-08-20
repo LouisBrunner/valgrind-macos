@@ -76,6 +76,8 @@ EXTRA_DIST = \
 	internals/why-no-libc.txt \
 	internals/xml-output.txt \
 	internals/xml-output-protocol4.txt \
+	internals/xml-output-protocol5.txt \
+	internals/xml-output-protocol6.txt \
 	lib/line-wrap.xsl \
 	lib/vg_basic.css \
 	lib/vg-fo.xsl \

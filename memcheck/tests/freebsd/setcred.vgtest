@@ -1,0 +1,3 @@
+prereq: test -e ./setcred
+prog: setcred
+vgopts: -q

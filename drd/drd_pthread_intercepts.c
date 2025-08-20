@@ -1556,7 +1556,14 @@ sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
    CALL_FN_W_WWWW(ret, fn, name, oflag, mode, value);
    // To do: figure out why gcc 9.2.1 miscompiles this function if the printf()
    // call below is left out.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-zero-length"
+#endif
    printf("");
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_POST_SEM_OPEN,
                                    ret != SEM_FAILED ? ret : 0,
                                    name, oflag, mode, value);

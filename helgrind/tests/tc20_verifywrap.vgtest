@@ -1,3 +1,3 @@
 prereq: test -e tc20_verifywrap && ! ../../tests/os_test freebsd
 prog: tc20_verifywrap
-vgopts: --read-var-info=yes --sigill-diagnostics=no
+vgopts: --read-var-info=yes --sigill-diagnostics=no --check-cond-signal-mutex=yes

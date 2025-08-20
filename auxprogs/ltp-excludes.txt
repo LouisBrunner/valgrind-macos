@@ -1,0 +1,36 @@
+# Exclude the following syscall tests because they are too slow:
+bind06
+epoll-ltp
+fork13
+fork14
+futex_cmp_requeue01
+futex_cmp_requeue02
+inotify09
+msgstress01
+pidfd_send_signal01
+pidfd_send_signal02
+pidfd_send_signal03
+sendmsg03
+setsockopt06
+setsockopt07
+signal05
+signal06
+timerfd_settime02
+# The following fcntl syscall tests time out, need at least
+# LTP_TIMEOUT_MUL=5 when run under memcheck
+fcntl14
+fcntl14_64
+fcntl34
+fcntl34_64
+fcntl36
+fcntl36_64
+# Tests fail because valgrind only supports a limited number
+# of clone flags.
+clone08
+close_range02
+kcmp03
+# Test fails because it tests something valgrind doesn't support:
+# We don't have fastbins so smblks & fsmblks are always 0. Also we
+# don't have a separate mmap allocator so set hblks & hblkhd to 0.
+mallinfo02
+mallinfo2_01

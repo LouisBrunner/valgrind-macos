@@ -1,0 +1,2 @@
+prereq: test -x bug506910
+prog: bug506910

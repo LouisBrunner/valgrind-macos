@@ -344,7 +344,7 @@ static int gen_cvin(int cvin)
 ////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
-
+/*
 __attribute__((noinline))
 void test_ldr_pc(void) {
     // special case of ldr PC, [rN, +imm?]
@@ -395,6 +395,7 @@ void test_ldr_pc(void) {
 
     }    
 }
+*/
 
 static int old_main(void)
 {
@@ -649,7 +650,7 @@ static int old_main(void)
 
     TESTCARRYEND
 
-    test_ldr_pc();
+    // test_ldr_pc();
 #if 0
 	printf("ROR\n");
 	TESTCARRY

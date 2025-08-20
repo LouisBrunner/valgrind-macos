@@ -1555,6 +1555,17 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       return dst;
    }
 
+   /* ---------------------- MULTIPLEX ---------------------- */
+   case Iex_ITE: {
+      /* ITE(ccexpr, iftrue, iffalse) */
+      HReg cond    = iselIntExpr_R(env, e->Iex.ITE.cond);
+      HReg iftrue  = iselFltExpr(env, e->Iex.ITE.iftrue);
+      HReg iffalse = iselFltExpr(env, e->Iex.ITE.iffalse);
+      HReg dst     = newVRegF(env);
+      addInstr(env, RISCV64Instr_FpCSEL(dst, iftrue, iffalse, cond));
+      return dst;
+   }
+
    default:
       break;
    }

@@ -1,0 +1,4 @@
+prog: track_std
+vgopts: -q --track-fds=yes --modify-fds=yes
+stderr_filter: filter_fdleak
+

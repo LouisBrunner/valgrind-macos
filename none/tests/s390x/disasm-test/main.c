@@ -25,6 +25,7 @@
 #include <stddef.h>           // NULL
 #include <stdlib.h>           // exit, malloc
 #include <stdio.h>            // vfprintf
+#include <ctype.h>            // isdigit
 #include <stdarg.h>           // va_list
 #include <string.h>           // strchr
 #include <assert.h>           // assert
@@ -33,14 +34,12 @@
 #include "main.h"
 
 int verbose, debug, show_spec_exc, show_miscompares;
-int d12_val, d20_val;
-long long uint_val, sint_val;
-int d12_val_specified, d20_val_specified;
-int uint_val_specified, sint_val_specified;
 
 const char *gcc = "gcc";          // path to GCC
 const char *objdump = "objdump";  // path to objdump
-const char *gcc_flags = "-c -march=arch14";
+const char *gcc_flags = "-march=arch14";
+
+#define MIN_OBJDUMP_VERSION 2044000  /* 2.44 */
 
 #define CHECK_CLO(x, s) (strncmp(x, s, sizeof s - 1) == 0)
 
@@ -62,21 +61,17 @@ static const char usage[] =
    "    --gcc=/path/to/gcc\n"
    "    --gcc-flags=FLAGS\n"
    "    --objdump=/path/to/objdump\n"
-   "    --d12=INT   - Use INT as value for d12 offsets\n"
-   "    --d20=INT   - Use INT as value for d20 offsets\n"
-   "    --sint=INT  - Use INT as value for signed integer fields\n"
-   "    --uint=INT  - Use INT as value for unsigned integer fields\n"
    "    --keep-temp - Do not remove temporary files\n"
    "    --summary   - Output test generation summary (with --all)\n"
    "    --unit-test - Run unit tests\n"
    "    --show-spec-exc - Show insns causing specification exceptions\n"
    "    --no-show-miscompares - Do not show disassembly miscompares\n"
+   "    --check-prereq - Check prerequisites (e.g. objdump version)\n"
    ;
 
-static long long get_clo_value(const char *, const char *, long long,
-                               long long);
 static void remove_temp_files(const char *);
 static int  opcode_has_errors(const opcode *);
+static int  check_objdump(void);
 
 static int keep_temp = 0;
 static int summary = 0;
@@ -91,7 +86,7 @@ main(int argc, char *argv[])
 {
    int all = 0, verify = 0, generate = 0, unit_test = 0;
    int num_clargs = 0;
-   int run = 0;
+   int run = 0, check_prereq = 0;
    const char *clargs[argc];
 
    assert(sizeof(long long) == 8);
@@ -128,6 +123,8 @@ main(int argc, char *argv[])
          keep_temp = 1;
       } else if (CHECK_CLO(clo, "--run")) {
          run = 1;
+      } else if (CHECK_CLO(clo, "--check-prereq")) {
+         check_prereq = 1;
       } else if (CHECK_CLO(clo, "--help")) {
          printf("%s\n", usage);
          return 0;
@@ -137,23 +134,15 @@ main(int argc, char *argv[])
          gcc_flags = strchr(clo, '=') + 1;
       } else if (CHECK_CLO(clo, "--objdump=")) {
          objdump = strchr(clo, '=') + 1;
-      } else if (CHECK_CLO(clo, "--d12=")) {
-         d12_val = get_clo_value(clo, "d12", 0, 0xfff);
-      } else if (CHECK_CLO(clo, "--d20=")) {
-         d20_val = get_clo_value(clo, "d20", -0x80000, 0x7ffff);
-      } else if (CHECK_CLO(clo, "--sint=")) {
-         /* Integer field is restricted to 32-bit */
-         long long max = 0x7fffffff;
-         sint_val = get_clo_value(clo, "sint", -max - 1, max);
-      } else if (CHECK_CLO(clo, "--uint=")) {
-         /* Integer field is restricted to 32-bit */
-         uint_val = get_clo_value(clo, "uint", 0, 0xffffffffU);
       } else {
          if (strncmp(clo, "--", 2) == 0)
             fatal("Invalid command line option '%s'\n", clo);
          clargs[num_clargs++] = clo;
       }
    }
+
+   if (check_prereq)
+      return check_objdump();
 
    /* Check consistency of command line options */
    if (verify + generate + run + all + unit_test == 0)
@@ -296,6 +285,7 @@ error(const char *fmt, ...)
 {
    va_list args;
    va_start(args, fmt);
+   fprintf(stderr, "error: ");
    vfprintf(stderr, fmt, args);
    va_end(args);
 }
@@ -340,22 +330,6 @@ strnsave(const char *s, unsigned len)
 }
 
 
-static long long
-get_clo_value(const char *clo, const char *field_name, long long min,
-              long long max)
-{
-   long long value;
-
-   const char *p = strchr(clo, '=') + 1;   // succeeds
-
-   if  (sscanf(p, "%lld", &value) != 1)
-      fatal("%s value '%s' is not an integer\n", field_name, p);
-   if (value < min || value > max)
-      fatal("%s value '%lld' is out of range\n", field_name, value);
-   return value;
-}
-
-
 /* Return 1, if the given opcode has at least one invalid operand.
    This indicates that there were parse errors earlier. */
 static int
@@ -368,4 +342,54 @@ opcode_has_errors(const opcode *opc)
          return 1;
    }
    return 0;
+}
+
+
+/* Objdump version 2.44 or later is required, Return 0, if that's
+   the case. */
+static int
+check_objdump(void)
+{
+   unsigned need = strlen(objdump) + 3 + 1;
+   char *cmd = mallock(need);
+
+   sprintf(cmd, "%s -V", objdump);
+   FILE *fp = popen(cmd, "r");
+
+   /* The version number is expected on the first line and its
+      format ought to be one of X or X.Y or X.Y.Z where X,Y,Z are
+      positive integers. */
+   int c, rc = 1;
+   while ((c = fgetc(fp)) != EOF) {
+      if (c == '\n') break;
+      if (! isdigit(c)) continue;
+
+      /* Version number is expected to be X or X.Y or X.Y.Z */
+      char buf[32];  // assumed large enough
+      int ix = 0;
+      do {
+         buf[ix++] = c;
+         c = fgetc(fp);
+      } while (isdigit(c) || c == '.');
+      buf[ix] = '\0';
+
+      unsigned version = 0, v1, v2, v3;
+      if (sscanf(buf, "%u.%u.%u", &v1,&v2,&v3) == 3) {
+         version = v1*1000000 + v2*1000 + v3;
+      } else if (sscanf(buf, "%u.%u", &v1,&v2) == 2) {
+         version = v1*1000000 + v2*1000;
+      } else if (sscanf(buf, "%u", &v1) == 1) {
+         version = v1*1000000;
+      } else {
+         error("Could not determine objdump version\n");
+         break;
+      }
+      if (version >= MIN_OBJDUMP_VERSION)
+         rc = 0;
+      break;
+   }
+   pclose(fp);
+   free(cmd);
+
+   return rc;
 }

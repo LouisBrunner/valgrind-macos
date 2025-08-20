@@ -1116,8 +1116,10 @@ static Bool show_used_suppressions ( void )
       any_supp = True;
    }
 
-   if (VG_(clo_xml))
+   if (VG_(clo_xml)) {
       VG_(printf_xml)("</suppcounts>\n");
+      VG_(printf_xml)("\n");
+   }
 
    return any_supp;
 }
@@ -1134,10 +1136,19 @@ void VG_(show_all_errors) (  Int verbosity, Bool xml, Int show_error_list)
    if (verbosity == 0 && show_error_list == 0)
       return;
 
-   /* If we're printing XML, just show the suppressions and stop. */
+   /* If we're printing XML, show the suppressions, the summary and stop. */
    if (xml) {
       if (show_error_list > 0)
          (void)show_used_suppressions();
+      VG_(printf_xml)("<error_summary>\n"
+                      "  <errors>%u</errors>\n"
+                      "  <error_contexts>%u</error_contexts>\n"
+                      "  <suppressed>%u</suppressed>\n"
+                      "  <suppressed_contexts>%u</suppressed_contexts>\n"
+                      "</error_summary>\n",
+                      n_errs_found, n_err_contexts,
+                      n_errs_suppressed, n_supp_contexts );
+      VG_(printf_xml)("\n");
       return;
    }
 

@@ -1,0 +1,9 @@
+hello world
+FILE DESCRIPTORS: 3 open (1 inherited) at exit.
+Open file descriptor ...: ...
+   ...
+
+Open file descriptor ...: /dev/null
+   ...
+
+

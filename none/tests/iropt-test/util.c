@@ -114,7 +114,7 @@ get_selected_values(IRType type, unsigned *num_val)
    static const uint64_t values_64bit[] = { 0, 1, 2,
       UINT8_MAX  - 1, UINT8_MAX,  UINT8_MAX  + 1,
       UINT16_MAX - 1, UINT16_MAX, UINT16_MAX + 1,
-      UINT32_MAX - 1, UINT32_MAX, UINT32_MAX + 1,
+      UINT32_MAX - 1, UINT32_MAX, (uint64_t)UINT32_MAX + 1,
       UINT64_MAX - 1, UINT64_MAX };
 
    switch (type) {

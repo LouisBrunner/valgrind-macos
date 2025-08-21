@@ -25,25 +25,6 @@
 #include <stdio.h>     // fprintf
 #include <stdlib.h>    // exit
 #include <assert.h>    // assert
-#if defined(__APPLE__)
-#include <machine/endian.h>
-#define __BYTE_ORDER    BYTE_ORDER
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#elif defined(__sun)
-#define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN    4321
-#  if defined(_LITTLE_ENDIAN)
-#  define __BYTE_ORDER    __LITTLE_ENDIAN
-#  else
-#  define __BYTE_ORDER    __BIG_ENDIAN
-#  endif
-#elif defined(__linux__)
-#include <endian.h>
-#else
-#define __BYTE_ORDER    BYTE_ORDER
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#include <sys/endian.h>
-#endif
 #include <inttypes.h>
 #include "vtest.h"
 
@@ -92,7 +73,7 @@ print_value(FILE *fp, value_t val, unsigned num_bits)
    case 32: fprintf(fp, "%08x",   val.u32); break;
    case 64: fprintf(fp, "%016"PRIx64, val.u64); break;
    case 128:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          fprintf(fp, "%016"PRIx64, val.u128[1]);
          fprintf(fp, "%016"PRIx64, val.u128[0]);
       } else {
@@ -101,7 +82,7 @@ print_value(FILE *fp, value_t val, unsigned num_bits)
       }
       break;
    case 256:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          fprintf(fp, "%016"PRIx64, val.u256[3]);
          fprintf(fp, "%016"PRIx64, val.u256[2]);
          fprintf(fp, "%016"PRIx64, val.u256[1]);

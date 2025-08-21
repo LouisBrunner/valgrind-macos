@@ -24,25 +24,6 @@
 
 #include <stdio.h>   // fprintf
 #include <assert.h>  // assert
-#if defined(__APPLE__)
-#include <machine/endian.h>
-#define __BYTE_ORDER    BYTE_ORDER
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#elif defined(__sun)
-#define __LITTLE_ENDIAN 1234
-#define __BIG_ENDIAN    4321
-#  if defined(_LITTLE_ENDIAN)
-#  define __BYTE_ORDER    __LITTLE_ENDIAN
-#  else
-#  define __BYTE_ORDER    __BIG_ENDIAN
-#  endif
-#elif defined(__linux__)
-#include <endian.h>
-#else
-#include <sys/endian.h>
-#define __BYTE_ORDER    BYTE_ORDER
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#endif
 #include <inttypes.h>
 #include "vbits.h"
 #include "vtest.h"
@@ -79,7 +60,7 @@ print_vbits(FILE *fp, vbits_t v)
    case 32:  fprintf(fp, "%08x",   v.bits.u32); break;
    case 64:  fprintf(fp, "%016"PRIx64, v.bits.u64); break;
    case 128:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          fprintf(fp, "%016"PRIx64, v.bits.u128[1]);
          fprintf(fp, "%016"PRIx64, v.bits.u128[0]);
       } else {
@@ -88,7 +69,7 @@ print_vbits(FILE *fp, vbits_t v)
       }
       break;
    case 256:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          fprintf(fp, "%016"PRIx64, v.bits.u256[3]);
          fprintf(fp, "%016"PRIx64, v.bits.u256[2]);
          fprintf(fp, "%016"PRIx64, v.bits.u256[1]);
@@ -340,7 +321,7 @@ undefined_vbits_Narrow256_AtoB(unsigned int src_num_bits,
          }
       }
    }
-   if (__BYTE_ORDER == __LITTLE_ENDIAN)
+   if (! host_is_big_endian())
       new.bits.u128[1] = new_value;
    else
       /* Big endian, swap the upper and lower 32-bits of new_value */
@@ -396,7 +377,7 @@ undefined_vbits_Narrow256_AtoB(unsigned int src_num_bits,
          }
       }
    }
-   if (__BYTE_ORDER == __LITTLE_ENDIAN)
+   if (! host_is_big_endian())
       new.bits.u128[0] = new_value;
    else
       /* Big endian, swap the upper and lower 32-bits of new_value */
@@ -472,12 +453,12 @@ truncate_vbits(vbits_t v, unsigned num_bits)
       if (v.num_bits <= 64)
          bits = get_bits64(v);
       else if (v.num_bits == 128)
-         if (__BYTE_ORDER == __LITTLE_ENDIAN)
+         if (! host_is_big_endian())
             bits = v.bits.u128[0];
          else
             bits = v.bits.u128[1];
       else if (v.num_bits == 256)
-         if (__BYTE_ORDER == __LITTLE_ENDIAN)
+         if (! host_is_big_endian())
             bits = v.bits.u256[0];
          else
             bits = v.bits.u256[3];
@@ -499,7 +480,7 @@ truncate_vbits(vbits_t v, unsigned num_bits)
    if (num_bits == 128) {
       assert(v.num_bits == 256);
       /* From 256 bits to 128 */
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          new.bits.u128[0] = v.bits.u256[0];
          new.bits.u128[1] = v.bits.u256[1];
       } else {
@@ -539,7 +520,7 @@ left_vbits(vbits_t v, unsigned num_bits)
       case 32:  new.bits.u32 = bits & ~0u;    break;
       case 64:  new.bits.u64 = bits & ~0ll;   break;
       case 128:
-         if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+         if (! host_is_big_endian()) {
             new.bits.u128[0] = bits;
             if (bits & (1ull << 63)) {  // MSB is set
                new.bits.u128[1] = ~0ull;
@@ -556,7 +537,7 @@ left_vbits(vbits_t v, unsigned num_bits)
          }
          break;
       case 256:
-         if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+         if (! host_is_big_endian()) {
             new.bits.u256[0] = bits;
             if (bits & (1ull << 63)) {  // MSB is set
                new.bits.u256[1] = ~0ull;
@@ -587,7 +568,7 @@ left_vbits(vbits_t v, unsigned num_bits)
    }
 
    if (v.num_bits == 128) {
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          if (v.bits.u128[1] != 0) {
             new.bits.u128[0] = v.bits.u128[0];
             new.bits.u128[1] = left64(v.bits.u128[1]);
@@ -616,7 +597,7 @@ left_vbits(vbits_t v, unsigned num_bits)
 
       assert(num_bits == 256);
 
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          uint64_t b1 = new.bits.u128[1];
          uint64_t b0 = new.bits.u128[0];
 
@@ -725,7 +706,7 @@ concat_vbits(vbits_t v1, vbits_t v2)
    case 32:  new.bits.u64 = v1.bits.u32;
              new.bits.u64 = (new.bits.u64 << 32) | v2.bits.u32; break;
    case 64:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          new.bits.u128[0] = v2.bits.u64;
          new.bits.u128[1] = v1.bits.u64;
       } else {
@@ -734,7 +715,7 @@ concat_vbits(vbits_t v1, vbits_t v2)
       }
       break;
    case 128:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          new.bits.u256[0] = v2.bits.u128[0];
          new.bits.u256[1] = v2.bits.u128[1];
          new.bits.u256[2] = v1.bits.u128[0];
@@ -765,13 +746,13 @@ upper_vbits(vbits_t v)
    case 32:  new.bits.u16 = v.bits.u32 >> 16; break;
    case 64:  new.bits.u32 = v.bits.u64 >> 32; break;
    case 128: 
-      if (__BYTE_ORDER == __LITTLE_ENDIAN)
+      if (! host_is_big_endian())
          new.bits.u64 = v.bits.u128[1];
       else
          new.bits.u64 = v.bits.u128[0];
       break;
    case 256:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          new.bits.u128[0] = v.bits.u256[2];
          new.bits.u128[1] = v.bits.u256[3];
       } else {
@@ -806,7 +787,7 @@ zextend_vbits(vbits_t v, unsigned num_bits)
       case 32:  new.bits.u32 = bits; break;
       case 64:  new.bits.u64 = bits; break;
       case 128:
-         if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+         if (! host_is_big_endian()) {
             new.bits.u128[0] = bits;
             new.bits.u128[1] = 0;
          } else {
@@ -815,7 +796,7 @@ zextend_vbits(vbits_t v, unsigned num_bits)
          }
          break;
       case 256:
-         if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+         if (! host_is_big_endian()) {
             new.bits.u256[0] = bits;
             new.bits.u256[1] = 0;
             new.bits.u256[2] = 0;
@@ -836,7 +817,7 @@ zextend_vbits(vbits_t v, unsigned num_bits)
    if (v.num_bits == 128) {
       assert(num_bits == 256);
 
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          new.bits.u256[0] = v.bits.u128[0];
          new.bits.u256[1] = v.bits.u128[1];
          new.bits.u256[2] = 0;
@@ -892,7 +873,7 @@ onehot_vbits(unsigned bitno, unsigned num_bits)
    case 32:  new.bits.u32 = 1u   << bitno; break;
    case 64:  new.bits.u64 = 1ull << bitno; break;
    case 128:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          if (bitno < 64) {
             new.bits.u128[0] = 1ull << bitno;
             new.bits.u128[1] = 0;
@@ -911,7 +892,7 @@ onehot_vbits(unsigned bitno, unsigned num_bits)
       }
       break;
    case 256:
-      if (__BYTE_ORDER == __LITTLE_ENDIAN) {
+      if (! host_is_big_endian()) {
          if (bitno < 64) {
             new.bits.u256[0] = 1ull << bitno;
             new.bits.u256[1] = 0;

@@ -26,7 +26,6 @@
 #define VEX_H
 
 void  vex_init(void);
-void  vex_reset(void);
 const char *vex_disasm(const unsigned char *, int *);
 
 #endif // VEX_H

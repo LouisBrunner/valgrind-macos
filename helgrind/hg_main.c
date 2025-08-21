@@ -165,6 +165,7 @@ Bool HG_(clo_ignore_thread_creation) = True;
 #else
 Bool HG_(clo_ignore_thread_creation) = False;
 #endif /* VGO_solaris */
+Bool HG_(clo_check_cond_signal_mutex) = False;
 
 static
 ThreadId map_threads_maybe_reverse_lookup_SLOW ( Thread* thr ); /*fwds*/
@@ -2454,7 +2455,7 @@ static void evh__HG_PTHREAD_COND_SIGNAL_PRE ( ThreadId tid, void* cond )
             HG_(record_error_Misc)(thr,
                "pthread_cond_{signal,broadcast}: associated lock is a rwlock");
          }
-         if (lk->heldBy == NULL) {
+         if (HG_(clo_check_cond_signal_mutex) && lk->heldBy == NULL) {
             HG_(record_error_Dubious)(thr,
                "pthread_cond_{signal,broadcast}: dubious: "
                "associated lock is not held by any thread");
@@ -5840,7 +5841,8 @@ static Bool hg_process_cmd_line_option ( const HChar* arg )
                             HG_(clo_check_stack_refs)) {}
    else if VG_BOOL_CLO(arg, "--ignore-thread-creation",
                             HG_(clo_ignore_thread_creation)) {}
-
+   else if VG_BOOL_CLO(arg, "--check-cond-signal-mutex",
+                            HG_(clo_check_cond_signal_mutex)) {}
    else
       return VG_(replacement_malloc_process_cmd_line_option)(arg);
 
@@ -5859,14 +5861,19 @@ static void hg_print_usage ( void )
 "    --history-backtrace-size=<number>  record <number> callers for full\n"
 "        history level [8]\n"
 "    --delta-stacktrace=no|yes [yes on linux amd64/x86]\n"
-"        no : always compute a full history stacktrace from unwind info\n"
-"        yes : derive a stacktrace from the previous stacktrace\n"
+"        no: always compute a full history stacktrace from unwind info\n"
+"        yes: derive a stacktrace from the previous stacktrace\n"
 "          if there was no call/return or similar instruction\n"
 "    --conflict-cache-size=N   size of 'full' history cache [2000000]\n"
 "    --check-stack-refs=no|yes race-check reads and writes on the\n"
 "                              main stack and thread stacks? [yes]\n"
 "    --ignore-thread-creation=yes|no Ignore activities during thread\n"
-"                              creation [%s]\n",
+"                              creation [%s]\n"""
+"    --check-cond-signal-mutex=yes|no [no]\n"
+"        no: do not check that the associated mutex is locked for calls\n"
+"          to pthread_cond_{signal,broadcast}\n"
+"        yes: generate 'dubious' error messages if the associated mutex\n"
+"          is unlocked\n",
 HG_(clo_ignore_thread_creation) ? "yes" : "no"
    );
 }

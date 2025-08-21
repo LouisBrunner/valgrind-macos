@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>memcheck</protocoltool>
 
 <preamble>
@@ -191,6 +191,7 @@
   <text>I am in child_fn_1
   </text>
 </clientmsg>
+
 <error>
   <unique>0x........</unique>
   <tid>...</tid>
@@ -296,11 +297,14 @@
   </stack>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
 </status>
+
+<heap_summary>...</heap_summary>
+
+<leak_summary>...</leak_summary>
 
 <errorcounts>
   <pair>
@@ -327,5 +331,6 @@
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>...</error_summary>
 
+</valgrindoutput>

@@ -357,7 +357,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:dyld_register_image_state_change_handler
-   ...
 }
 
 {
@@ -367,7 +366,6 @@
    fun:?alloc
    ...
    fun:dyld_register_image_state_change_handler
-   ...
 }
 
 {
@@ -378,7 +376,6 @@
    ...
    fun:map_images_nolock
    fun:map_images
-   ...
 }
 
 {
@@ -389,7 +386,6 @@
    ...
    fun:map_images_nolock
    fun:map_images
-   ...
 }
 
 {
@@ -399,7 +395,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -409,7 +404,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -419,7 +413,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -429,7 +422,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -439,7 +431,6 @@
    fun:?alloc
    ...
    fun:_libxpc_initializer
-   ...
 }
 
 {
@@ -449,7 +440,6 @@
    fun:malloc
    fun:realloc
    fun:new_sem_from_pool
-   ...
 }
 
 ##----------------------------------------------------------------------##

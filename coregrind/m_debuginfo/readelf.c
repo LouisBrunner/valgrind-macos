@@ -2200,17 +2200,24 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
                      }
                   }
                }
-               if (!loaded) {
-#                 if defined(SOLARIS_PT_SUNDWTRACE_THRP)
-                  if ((a_phdr.p_memsz == VKI_PT_SUNWDTRACE_SIZE)
-                     && ((a_phdr.p_flags & (PF_R | PF_W | PF_X)) == PF_R)) {
+#              if defined(SOLARIS_PT_SUNDWTRACE_THRP)
+               if ((a_phdr.p_memsz == VKI_PT_SUNWDTRACE_SIZE)
+                  && ((a_phdr.p_flags & (PF_R | PF_W | PF_X)) == PF_R)) {
+                  if (dtrace_data_vaddr != 0) {
+                     ML_(symerr)(di, True, "Multiple dtrace_data headers detected");
+                     goto out;
+                  }
+                  dtrace_data_vaddr = a_phdr.p_vaddr;
+
+                  /* DTrace related section might be outside all mapped regions. */
+                  if (!loaded) {
                      TRACE_SYMTAB("PT_LOAD[%ld]:   ignore dtrace_data program "
                                   "header\n", i);
-                     dtrace_data_vaddr = a_phdr.p_vaddr;
                      continue;
                   }
-#                 endif /* SOLARIS_PT_SUNDWTRACE_THRP */
-
+               }
+#              endif /* SOLARIS_PT_SUNDWTRACE_THRP */
+               if (!loaded) {
                   ML_(symerr)(di, False,
                               "ELF section outside all mapped regions");
                   /* This problem might be solved by further memory mappings.

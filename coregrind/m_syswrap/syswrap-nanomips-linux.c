@@ -628,7 +628,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_pselect6,               sys_pselect6),
    LINXY (__NR_ppoll,                  sys_ppoll),
    LINXY (__NR_signalfd4,              sys_signalfd4),
-   LINX_ (__NR_vmsplice,               sys_vmsplice),
+   LINXY (__NR_vmsplice,               sys_vmsplice),
    LINX_ (__NR_splice,                 sys_splice),
    LINX_ (__NR_tee,                    sys_tee),
    LINXY (__NR_readlinkat,             sys_readlinkat),
@@ -840,7 +840,11 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_landlock_create_ruleset,sys_landlock_create_ruleset),
    LINX_ (__NR_landlock_add_rule,      sys_landlock_add_rule),
    LINX_ (__NR_landlock_restrict_self, sys_landlock_restrict_self),
+   LINXY (__NR_cachestat,              sys_cachestat),
    LINX_ (__NR_fchmodat2,              sys_fchmodat2),
+   LINXY (__NR_statmount,              sys_statmount),
+   LINXY (__NR_listmount,              sys_listmount),
+   LINX_ (__NR_mseal,                  sys_mseal),
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) (UInt sysno)

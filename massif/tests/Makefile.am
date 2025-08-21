@@ -109,6 +109,7 @@ deep_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 ignoring_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 insig_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 long_names_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
+malloc_usable_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@
 one_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 thresholds_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
 realloc_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@

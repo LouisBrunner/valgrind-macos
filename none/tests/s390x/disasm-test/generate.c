@@ -53,6 +53,30 @@ gpr_operand(unsigned regno)
 
 
 static const char *
+ar_operand(unsigned regno)
+{
+   static const char *ars[] = {
+      "%a0", "%a1", "%a2",  "%a3",  "%a4",  "%a5",  "%a6",  "%a7",
+      "%a8", "%a9", "%a10", "%a11", "%a12", "%a13", "%a14", "%a15"
+   };
+
+   return ars[regno];
+}
+
+
+static const char *
+fpr_operand(unsigned regno)
+{
+   static const char *fprs[] = {
+      "%f0", "%f1", "%f2",  "%f3",  "%f4",  "%f5",  "%f6",  "%f7",
+      "%f8", "%f9", "%f10", "%f11", "%f12", "%f13", "%f14", "%f15"
+   };
+
+   return fprs[regno];
+}
+
+
+static const char *
 vr_operand(unsigned regno)
 {
    static const char *vrs[] = {
@@ -67,26 +91,20 @@ vr_operand(unsigned regno)
 
 
 static unsigned
-random_gpr(int allow_r0)
+random_reg(opnd_t reg_kind, int r0_allowed)
 {
+   unsigned num_regs = reg_kind == OPND_VR ? 32 : 16;
    unsigned regno;
 
-   if (allow_r0) {
-      regno = rand() % 16;
+   if (r0_allowed) {
+      regno = rand() % num_regs;
    } else {
       do {
-         regno = rand() % 16;
+         regno = rand() % num_regs;
       } while (regno == 0);
    }
 
    return regno;
-}
-
-
-static unsigned
-random_vr(void)
-{
-   return rand() % 32;
 }
 
 
@@ -126,14 +144,14 @@ random_sint(unsigned num_bits)
 static unsigned
 d12_value(void)
 {
-   return d12_val_specified ? d12_val : random_uint(12);
+   return random_uint(12);
 }
 
 
 static int
 d20_value(void)
 {
-   return d20_val_specified ? d20_val : random_sint(20);
+   return random_sint(20);
 }
 
 
@@ -142,7 +160,7 @@ uint_value(unsigned num_bits)
 {
    if (num_bits > 32)
       fatal("integer operand > 32 bits not supported\n");
-   return uint_val_specified ? uint_val : random_uint(num_bits);
+   return random_uint(num_bits);
 }
 
 
@@ -151,39 +169,23 @@ sint_value(unsigned num_bits)
 {
    if (num_bits > 32)
       fatal("integer operand > 32 bits not supported\n");
-   return sint_val_specified ? sint_val : random_sint(num_bits);
+   return random_sint(num_bits);
 }
 #endif
 
-/* MASK is a bitvector. For a GPR rk the k'th bit will be set. The
+/* MASK is a bitvector. For an e.g. GPR rk the k'th bit will be set. The
    function returns a register number which has not been used and
    adjusts the bitvector. */
 static unsigned
-unique_gpr(unsigned regno, unsigned *mask)
+unique_reg(opnd_t reg_kind, unsigned regno, unsigned *mask)
 {
-   assert(regno < 16);
+   unsigned num_regs = reg_kind == OPND_VR ? 32 : 16;
+   assert(regno < num_regs);
    assert(*mask != ~0U);   // Paranoia: avoid infinite loop
 
    unsigned bit = 1 << regno;
    while (*mask & bit) {
-      regno = random_gpr(/* allow_r0 */1);
-      bit = 1 << regno;
-   }
-   *mask |= bit;
-   return regno;
-}
-
-
-/* Like unique_gpr */
-static unsigned
-unique_vr(unsigned regno, unsigned *mask)
-{
-   assert(regno < 32);
-   assert(*mask != ~0U);   // Paranoia: avoid infinite loop
-
-   unsigned bit = 1 << regno;
-   while (*mask & bit) {
-      regno = random_vr();
+      regno = random_reg(reg_kind, /* r0_allowed */1);
       bit = 1 << regno;
    }
    *mask |= bit;
@@ -200,6 +202,8 @@ typedef struct {
    long long assigned_value;
 } field;
 
+static void choose_reg_and_iterate(FILE *, const opcode *, const opnd *,
+                                   field [], unsigned);
 
 /* Write out a single ASM statement for OPC. */
 static void
@@ -207,11 +211,11 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
 {
    fprintf(fp, "  asm volatile(\"%s ", opc->name);
 
-   unsigned gpr_mask, vr_mask, regno;
+   unsigned gpr_mask, vr_mask, ar_mask, fpr_mask, regno;
    int inc;
    int needs_comma = 0;
 
-   gpr_mask = vr_mask = 0;
+   gpr_mask = vr_mask = ar_mask = fpr_mask = 0;
    for (int i = 0; i < opc->num_fields; i += inc) {
       const opnd *operand = fields[i].operand;
 
@@ -221,12 +225,28 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
          fputc(',', fp);
       switch (operand->kind) {
       case OPND_GPR:
-         regno = unique_gpr(fields[i].assigned_value, &gpr_mask);
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &gpr_mask);
          fprintf(fp, "%s", gpr_operand(regno));
          break;
       case OPND_VR:
-         regno = unique_vr(fields[i].assigned_value, &vr_mask);
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &vr_mask);
          fprintf(fp, "%s", vr_operand(regno));
+         break;
+      case OPND_AR:
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &ar_mask);
+         fprintf(fp, "%s", ar_operand(regno));
+         break;
+      case OPND_FPR:
+         regno = fields[i].assigned_value;
+         if (! operand->allowed_values)
+            regno = unique_reg(operand->kind, regno, &fpr_mask);
+         fprintf(fp, "%s", fpr_operand(regno));
          break;
       case OPND_D12XB:
       case OPND_D20XB: {
@@ -300,18 +320,17 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
          f->assigned_value = 0;
          iterate(fp, opc, fields, ix + 1);
          /* Choose any GPR other than r0 */
-         f->assigned_value = random_gpr(/* r0_allowed */ 0);
+         f->assigned_value = random_reg(operand->kind, /* r0_allowed */ 0);
          iterate(fp, opc, fields, ix + 1);
       } else {
-         /* Choose any GPR */
-         f->assigned_value = random_gpr(/* r0_allowed */ 1);
-         iterate(fp, opc, fields, ix + 1);
+         choose_reg_and_iterate(fp, opc, operand, fields, ix);
       }
       break;
 
+   case OPND_AR:
+   case OPND_FPR:
    case OPND_VR:
-      f->assigned_value = random_vr();   // Choose any VR
-      iterate(fp, opc, fields, ix + 1);
+      choose_reg_and_iterate(fp, opc, operand, fields, ix);
       break;
 
    case OPND_D12B:
@@ -319,17 +338,12 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
    case OPND_D12LB:
    case OPND_D12VB:
       if (f->is_displacement) {
-         if (d12_val_specified) {
-            f->assigned_value = d12_val;
-            iterate(fp, opc, fields, ix + 1);
-         } else {
-            /* Choose these interesting values */
-            static const long long values[] = { 0, 1, 2, 0xfff };
+         /* Choose these interesting values */
+         static const long long values[] = { 0, 1, 2, 0xfff };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       } else if (f->is_length) {
          /* Choose these interesting values */
@@ -341,13 +355,15 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
          }
       } else if (f->is_vr) {
          /* v0 is not special AFAICT */
-         f->assigned_value = random_vr();
+         f->assigned_value = random_reg(OPND_VR, /* r0_allowed */ 11);
          iterate(fp, opc, fields, ix + 1);
       } else {
          /* Base or index register */
+         /* Choose r0 */
          f->assigned_value = 0;
          iterate(fp, opc, fields, ix + 1);
-         f->assigned_value = random_gpr(/* r0_allowed */ 0);
+         /* Choose any GPR other than r0 */
+         f->assigned_value = random_reg(OPND_GPR, /* r0_allowed */ 0);
          iterate(fp, opc, fields, ix + 1);
       }
       break;
@@ -355,79 +371,64 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
    case OPND_D20B:
    case OPND_D20XB:
       if (f->is_displacement) {
-         if (d20_val_specified) {
-            f->assigned_value = d20_val;
-            iterate(fp, opc, fields, ix + 1);
-         } else {
-            /* Choose these interesting values */
-            static const long long values[] = {
-               0, 1, 2, -1, -2, 0x7ffff, -0x80000
-            };
+         /* Choose these interesting values */
+         static const long long values[] = {
+            0, 1, 2, -1, -2, 0x7ffff, -0x80000
+         };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       } else {
          /* base or index register */
          f->assigned_value = 0;
          iterate(fp, opc, fields, ix + 1);
-         f->assigned_value = random_gpr(/* r0_allowed */ 0);
+         f->assigned_value = random_reg(OPND_GPR, /* r0_allowed */ 0);
          iterate(fp, opc, fields, ix + 1);
       }
       break;
 
    case OPND_SINT:
    case OPND_PCREL:
-      if (sint_val_specified) {
-         f->assigned_value = sint_val;
-         iterate(fp, opc, fields, ix + 1);
-      } else {
-         if (operand->allowed_values == NULL) {
-            /* No constraint: Choose these interesting values */
-            const long long values[] = {
-               0, 1, 2, -1, -2, (1LL << (operand->num_bits - 1)) - 1,
-               -(1LL << (operand->num_bits - 1))
-            };
+      if (operand->allowed_values == NULL) {
+         /* No constraint: Choose these interesting values */
+         const long long values[] = {
+            0, 1, 2, -1, -2, (1LL << (operand->num_bits - 1)) - 1,
+            -(1LL << (operand->num_bits - 1))
+         };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
-         } else {
-            /* Constraint. Choose only allowed values */
-            unsigned num_val = operand->allowed_values[0];
-            for (int i = 1; i <= num_val; ++i) {
-               f->assigned_value = operand->allowed_values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
+         }
+      } else {
+         /* Constraint. Choose only allowed values */
+         unsigned num_val = operand->allowed_values[0];
+         for (int i = 1; i <= num_val; ++i) {
+            f->assigned_value = operand->allowed_values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       }
       break;
 
    case OPND_UINT:
-      if (uint_val_specified) {
-         f->assigned_value = uint_val;
-         iterate(fp, opc, fields, ix + 1);
-      } else {
-         if (operand->allowed_values == NULL) {
-            /* No constraint: Choose these interesting values */
-            const long long values[] = {
-               0, 1, 2, (1LL << operand->num_bits) - 1
-            };
+      if (operand->allowed_values == NULL) {
+         /* No constraint: Choose these interesting values */
+         const long long values[] = {
+            0, 1, 2, (1LL << operand->num_bits) - 1
+         };
 
-            for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-               f->assigned_value = values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
-         } else {
-            /* Constraint. Choose only allowed values */
-            unsigned num_val = operand->allowed_values[0];
-            for (int i = 1; i <= num_val; ++i) {
-               f->assigned_value = operand->allowed_values[i];
-               iterate(fp, opc, fields, ix + 1);
-            }
+         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
+            f->assigned_value = values[i];
+            iterate(fp, opc, fields, ix + 1);
+         }
+      } else {
+         /* Constraint. Choose only allowed values */
+         unsigned num_val = operand->allowed_values[0];
+         for (int i = 1; i <= num_val; ++i) {
+            f->assigned_value = operand->allowed_values[i];
+            iterate(fp, opc, fields, ix + 1);
          }
       }
       break;
@@ -471,6 +472,8 @@ generate(FILE *fp, const opcode *opc)
       switch (operand->kind) {
       case OPND_GPR:
       case OPND_VR:
+      case OPND_AR:
+      case OPND_FPR:
       case OPND_SINT:
       case OPND_UINT:
       case OPND_PCREL:
@@ -564,11 +567,32 @@ generate_tests(const opcode *opc)
       printf("...%u testcases generated for '%s'\n", num_tests,
              opc->name);
 
-   run_cmd("%s %s %s.c", gcc, gcc_flags, opc->name);
+   run_cmd("%s -c %s %s.c", gcc, gcc_flags, opc->name);
    run_cmd("%s --disassemble=%s %s.o > %s.dump", objdump, FUNCTION,
            opc->name, opc->name);
 
    return num_tests;
+}
+
+
+static void
+choose_reg_and_iterate(FILE *fp, const opcode *opc, const opnd *operand,
+                       field fields[], unsigned ix)
+{
+   field *f = fields + ix;
+
+   if (operand->allowed_values == NULL) {
+      /* No constraint. Pick register at random. */
+      f->assigned_value = random_reg(operand->kind, /* r0_allowed */ 1);
+      iterate(fp, opc, fields, ix + 1);
+   } else {
+      /* Constraint. Choose only allowed values */
+      unsigned num_val = operand->allowed_values[0];
+      for (int i = 1; i <= num_val; ++i) {
+         f->assigned_value = operand->allowed_values[i];
+         iterate(fp, opc, fields, ix + 1);
+      }
+   }
 }
 
 

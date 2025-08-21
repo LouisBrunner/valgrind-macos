@@ -28,8 +28,13 @@ usage: valgrind [options] prog-and-args
     --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]
          where event is one of:
            startup exit abexit valgrindabexit all none
-    --track-fds=no|yes|all    track open file descriptors? [no]
-                              all includes reporting inherited file descriptors
+    --track-fds=no|yes|all|bad track open file descriptors? [no]
+                              all also reports on open inherited file
+                              descriptors at exit (e.g. stdin/out/err)
+                              bad only reports on file descriptor usage
+                              errors and doesn't list open file descriptors
+                              at exit
+    --modify-fds=no|yes|high  modify newly open file descriptors? [no]
     --time-stamp=no|yes       add timestamps to log messages? [no]
     --log-fd=<number>         log messages to file descriptor [2=stderr]
     --log-file=<file>         log messages to <file>
@@ -201,6 +206,7 @@ usage: valgrind [options] prog-and-args
     --vex-iropt-verbosity=<0..9>           [0]
     --vex-iropt-level=<0..2>               [2]
     --vex-iropt-unroll-thresh=<0..400>     [120]
+    --vex-iropt-fold-expr=no|yes           [yes]
     --vex-guest-max-insns=<1..100>         [50]
     --vex-guest-chase=no|yes               [yes]
     Precise exception control.  Possible values for 'mode' are as follows

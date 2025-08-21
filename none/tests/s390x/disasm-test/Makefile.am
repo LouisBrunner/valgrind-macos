@@ -1,7 +1,7 @@
 include $(top_srcdir)/Makefile.all.am
 
-EXTRA_DIST = disasm-test.vgtest disasm-test.stderr.exp disasm-test.stdout.exp
-
+EXTRA_DIST = disasm-test.vgtest disasm-test.stderr.exp disasm-test.stdout.exp \
+             disasm-test.post.exp
 dist_noinst_SCRIPTS = filter_stderr
 
 #----------------------------------------------------------------------------
@@ -29,7 +29,7 @@ disasm_test_SOURCES      = $(SOURCES)
 disasm_test_CPPFLAGS     = $(AM_CPPFLAGS_PRI) \
                            -I$(top_srcdir)/VEX/pub \
                            -I$(top_srcdir)/VEX/priv
-disasm_test_CFLAGS       = $(AM_CFLAGS_PRI)
-disasm_test_DEPENDENCIES =
+disasm_test_CFLAGS       = $(AM_CFLAGS_PRI) -fhosted
+disasm_test_DEPENDENCIES = $(top_builddir)/VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 disasm_test_LDADD        = $(top_builddir)/VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 disasm_test_LDFLAGS      = $(AM_CFLAGS_PRI) @LIB_UBSAN@

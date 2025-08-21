@@ -32,7 +32,6 @@
    fun:_os_object_init
    fun:libdispatch_init
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -41,7 +40,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:dyld_register_image_state_change_handler
-   ...
 }
 
 {
@@ -51,7 +49,6 @@
    fun:?alloc
    ...
    fun:dyld_register_image_state_change_handler
-   ...
 }
 
 {
@@ -62,7 +59,6 @@
    ...
    fun:map_images_nolock
    fun:map_2_images
-   ...
 }
 
 {
@@ -73,7 +69,6 @@
    ...
    fun:map_images_nolock
    fun:map_2_images
-   ...
 }
 
 {
@@ -83,7 +78,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -93,7 +87,6 @@
    fun:malloc_zone_?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -103,7 +96,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 #{
@@ -130,7 +122,6 @@
    fun:malloc_zone_memalign
    ...
    fun:_ZN4dyld24initializeMainExecutableEv
-   ...
 }
 
 {
@@ -140,7 +131,6 @@
    fun:?alloc
    ...
    fun:libSystem_atfork_child
-   ...
 }
 
 {
@@ -151,7 +141,6 @@
    fun:__smakebuf
    ...
    fun:printf
-   ...
 }
 
 {
@@ -198,7 +187,6 @@
    fun:?alloc
    ...
    fun:libSystem_initializer
-   ...
 }
 
 {
@@ -208,7 +196,6 @@
    fun:malloc_zone_memalign
    ...
    fun:_ZN4dyld24initializeMainExecutableEv
-   ...
 }
 
 

@@ -413,10 +413,10 @@ static ULong read_ULong_le ( UChar* src )
 static Frame* mk_Frame_asciiz ( const char* tag, const char* str )
 {
    assert(strlen(tag) == 4);
-   Frame* f = calloc(sizeof(Frame), 1);
+   Frame* f = calloc(1, sizeof(Frame));
    size_t n_str = strlen(str);
    f->n_data = 4 + n_str + 1;
-   f->data = calloc(f->n_data, 1);
+   f->data = calloc(1, f->n_data);
    memcpy(&f->data[0], tag, 4);
    memcpy(&f->data[4], str, n_str);
    assert(f->data[4 + n_str] == 0);
@@ -462,9 +462,9 @@ static Bool parse_Frame_asciiz ( Frame* fr, const HChar* tag,
 static Frame* mk_Frame_le64 ( const HChar* tag, ULong n1 )
 {
    assert(strlen(tag) == 4);
-   Frame* f = calloc(sizeof(Frame), 1);
+   Frame* f = calloc(1, sizeof(Frame));
    f->n_data = 4 + 1*8;
-   f->data = calloc(f->n_data, 1);
+   f->data = calloc(1, f->n_data);
    memcpy(&f->data[0], tag, 4);
    write_ULong_le(&f->data[4 + 0*8], n1);
    return f;
@@ -473,9 +473,9 @@ static Frame* mk_Frame_le64 ( const HChar* tag, ULong n1 )
 static Frame* mk_Frame_le64_le64 ( const HChar* tag, ULong n1, ULong n2 )
 {
    assert(strlen(tag) == 4);
-   Frame* f = calloc(sizeof(Frame), 1);
+   Frame* f = calloc(1, sizeof(Frame));
    f->n_data = 4 + 2*8;
-   f->data = calloc(f->n_data, 1);
+   f->data = calloc(1, f->n_data);
    memcpy(&f->data[0], tag, 4);
    write_ULong_le(&f->data[4 + 0*8], n1);
    write_ULong_le(&f->data[4 + 1*8], n2);
@@ -503,9 +503,9 @@ static Frame* mk_Frame_le64_le64_le64_bytes (
                  /*OUT*/UChar** data )
 {
    assert(strlen(tag) == 4);
-   Frame* f = calloc(sizeof(Frame), 1);
+   Frame* f = calloc(1, sizeof(Frame));
    f->n_data = 4 + 3*8 + n_data;
-   f->data = calloc(f->n_data, 1);
+   f->data = calloc(1, f->n_data);
    memcpy(&f->data[0], tag, 4);
    write_ULong_le(&f->data[4 + 0*8], n1);
    write_ULong_le(&f->data[4 + 1*8], n2);
@@ -706,9 +706,9 @@ static Bool handle_transaction ( int conn_no )
    // Reject obviously-insane length fields.
    if (rd_len > 4*1024*1024) goto fail;
    assert(req == NULL);
-   req = calloc(sizeof(Frame), 1);
+   req = calloc(1, sizeof(Frame));
    req->n_data = rd_len;
-   req->data = calloc(rd_len, 1);
+   req->data = calloc(1, rd_len);
    if (rd_len > 0) {
       Int r = my_read(sd, req->data, req->n_data);
       if (r != rd_len) goto fail;

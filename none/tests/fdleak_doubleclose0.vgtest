@@ -1,0 +1,3 @@
+prog: fdleak_doubleclose0
+vgopts: -q --track-fds=yes
+stderr_filter: filter_fdleak

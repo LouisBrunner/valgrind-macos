@@ -113,8 +113,13 @@ static void usage_NORETURN ( int need_help )
 "    --vgdb-stop-at=event1,event2,... invoke gdbserver for given events [none]\n"
 "         where event is one of:\n"
 "           startup exit abexit valgrindabexit all none\n"
-"    --track-fds=no|yes|all    track open file descriptors? [no]\n"
-"                              all includes reporting inherited file descriptors\n"
+"    --track-fds=no|yes|all|bad track open file descriptors? [no]\n"
+"                              all also reports on open inherited file\n"
+"                              descriptors at exit (e.g. stdin/out/err)\n"
+"                              bad only reports on file descriptor usage\n"
+"                              errors and doesn't list open file descriptors\n"
+"                              at exit\n"
+"    --modify-fds=no|yes|high  modify newly open file descriptors? [no]\n"
 "    --time-stamp=no|yes       add timestamps to log messages? [no]\n"
 "    --log-fd=<number>         log messages to file descriptor [2=stderr]\n"
 "    --log-file=<file>         log messages to <file>\n"
@@ -289,6 +294,7 @@ static void usage_NORETURN ( int need_help )
 "    --vex-iropt-verbosity=<0..9>           [0]\n"
 "    --vex-iropt-level=<0..2>               [2]\n"
 "    --vex-iropt-unroll-thresh=<0..400>     [120]\n"
+"    --vex-iropt-fold-expr=no|yes           [yes]\n"
 "    --vex-guest-max-insns=<1..100>         [50]\n"
 "    --vex-guest-chase=no|yes               [yes]\n"
 "    Precise exception control.  Possible values for 'mode' are as follows\n"
@@ -642,9 +648,22 @@ static void process_option (Clo_Mode mode,
          VG_(clo_track_fds) = 2;
       else if (VG_(strcmp)(tmp_str, "no") == 0)
          VG_(clo_track_fds) = 0;
+      else if (VG_(strcmp)(tmp_str, "bad") == 0)
+         VG_(clo_track_fds) = 3;
       else
          VG_(fmsg_bad_option)(arg,
             "Bad argument, should be 'yes', 'all' or 'no'\n");
+   }
+   else if VG_STR_CLO(arg, "--modify-fds",         tmp_str) {
+      if (VG_(strcmp)(tmp_str, "high") == 0)
+         VG_(clo_modify_fds) = VG_MODIFY_FD_HIGH;
+      else if (VG_(strcmp)(tmp_str, "yes") == 0)
+        VG_(clo_modify_fds) = VG_MODIFY_FD_YES;
+      else if (VG_(strcmp)(tmp_str, "no") == 0)
+         VG_(clo_modify_fds) = VG_MODIFY_FD_NO;
+      else
+         VG_(fmsg_bad_option)(arg,
+            "Bad argument, should be 'high', 'yes', or 'no'\n");
    }
    else if VG_BOOL_CLOM(cloPD, arg, "--trace-children",   VG_(clo_trace_children)) {}
    else if VG_BOOL_CLOM(cloPD, arg, "--child-silent-after-fork",
@@ -743,6 +762,8 @@ static void process_option (Clo_Mode mode,
                        VG_(clo_vex_control).iropt_level, 0, 2) {}
    else if VG_BINT_CLO(arg, "--vex-regalloc-version",
                        VG_(clo_vex_control).regalloc_version, 2, 3) {}
+   else if VG_BOOL_CLOM(cloPD, arg, "--vex-iropt-fold-expr",
+                        VG_(clo_vex_control).iropt_fold_expr) {}
 
    else if (VG_STRINDEX_CLO(arg, "--vex-iropt-register-updates",
                            pxStrings, ix)
@@ -921,6 +942,10 @@ void VG_(process_dynamic_option) (Clo_Mode mode, HChar *value)
    struct process_option_state dummy;
    process_option (mode, value, &dummy);
    // No need to handle a process_option_state once valgrind has started.
+
+   /* Update vex_control in case VALGRIND_CLO_CHANGE was used to modify a
+      VexControl member. */
+   LibVEX_set_VexControl(VG_(clo_vex_control));
 }
 
 /* Peer at previously set up VG_(args_for_valgrind) and do some
@@ -2276,9 +2301,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    // affects what order the messages come.
    //--------------------------------------------------------------
    // First thing in the post-amble is a blank line.
-   if (VG_(clo_xml))
-      VG_(printf_xml)("\n");
-   else if (VG_(clo_verbosity) > 0)
+   if (VG_(clo_verbosity) > 0 && !VG_(clo_xml))
       VG_(message)(Vg_UserMsg, "\n");
 
    if (VG_(clo_xml)) {
@@ -2293,7 +2316,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    }
 
    /* Print out file descriptor summary and stats. */
-   if (VG_(clo_track_fds))
+   if (VG_(clo_track_fds) && VG_(clo_track_fds) < 3)
       VG_(show_open_fds)("at exit");
 
    /* Call the tool's finalisation function.  This makes Memcheck's
@@ -2320,9 +2343,7 @@ void shutdown_actions_NORETURN( ThreadId tid,
    }
 
    if (VG_(clo_xml)) {
-      VG_(printf_xml)("\n");
       VG_(printf_xml)("</valgrindoutput>\n");
-      VG_(printf_xml)("\n");
    }
 
    VG_(sanity_check_general)( True /*include expensive checks*/ );
@@ -3569,12 +3590,12 @@ void *memcpy(void *dest, const void *src, size_t n);
 void *memcpy(void *dest, const void *src, size_t n) {
    return VG_(memcpy)(dest, src, n);
 }
-void* memmove(void *dest, const void *src, SizeT n);
-void* memmove(void *dest, const void *src, SizeT n) {
+void* memmove(void *dest, const void *src, size_t n);
+void* memmove(void *dest, const void *src, size_t n) {
    return VG_(memmove)(dest,src,n);
 }
-void* memset(void *s, int c, SizeT n);
-void* memset(void *s, int c, SizeT n) {
+void* memset(void *s, int c, size_t n);
+void* memset(void *s, int c, size_t n) {
   return VG_(memset)(s,c,n);
 }
 

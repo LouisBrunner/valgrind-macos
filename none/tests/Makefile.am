@@ -106,6 +106,7 @@ EXTRA_DIST = \
 	bitfield1.stderr.exp bitfield1.vgtest \
 	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
 	bug234814.vgtest bug234814.stderr.exp bug234814.stdout.exp \
+	bug290061.vgtest bug290061.stderr.exp \
 	bug491394.vgtest bug491394.stderr.exp \
 	bug492678.vgtest bug492678.stderr.exp \
 	closeall.stderr.exp closeall.vgtest \
@@ -139,6 +140,7 @@ EXTRA_DIST = \
 	execve.vgtest execve.stdout.exp execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
 	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
+	fdleak_cat.vgtest fdleak_cat.stderr.exp \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_cmsg_xml.stderr.exp-ppc64le \
 	fdleak_cmsg_xml.stderr.exp fdleak_cmsg_xml.vgtest \
@@ -148,6 +150,7 @@ EXTRA_DIST = \
 	fdleak_creat_xml.stderr.exp fdleak_creat_xml.vgtest \
 	fdleak_creat_sup.stderr.exp fdleak_creat_sup.supp \
 	fdleak_creat_sup.vgtest \
+	fdleak_doubleclose0.stderr.exp fdleak_doubleclose0.vgtest \
 	fdleak_dup.stderr.exp fdleak_dup.vgtest \
 	fdleak_dup_xml.stderr.exp fdleak_dup_xml.vgtest \
 	fdleak_dup2.stderr.exp fdleak_dup2.vgtest \
@@ -155,6 +158,7 @@ EXTRA_DIST = \
 	fdleak_fcntl.stderr.exp fdleak_fcntl.vgtest \
 	fdleak_fcntl_xml.stderr.exp fdleak_fcntl_xml.vgtest \
 	fdleak_ipv4.stderr.exp fdleak_ipv4.stdout.exp fdleak_ipv4.vgtest \
+	fdleak_ipv4_xml.stderr.exp-ppc64be \
 	fdleak_ipv4_xml.stderr.exp-ppc64le \
 	fdleak_ipv4_xml.stderr.exp fdleak_ipv4_xml.stdout.exp \
 	fdleak_ipv4_xml.vgtest fdleak_ipv4_xml.stderr.exp-nomain \
@@ -164,6 +168,7 @@ EXTRA_DIST = \
 	fdleak_pipe_xml.stderr.exp fdleak_pipe_xml.vgtest \
 	fdleak_socketpair.stderr.exp fdleak_socketpair.vgtest \
 	fdleak_socketpair_xml.stderr.exp fdleak_socketpair_xml.vgtest \
+		fdleak_socketpair_xml.stderr.exp-illumos \
 	floored.stderr.exp floored.stdout.exp floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
@@ -266,17 +271,23 @@ EXTRA_DIST = \
 	log-track-fds.stderr.exp log-track-fds.vgtest \
 	xml-track-fds.stderr.exp xml-track-fds.vgtest \
 	fdbaduse.stderr.exp fdbaduse.vgtest \
-	use_after_close.stderr.exp use_after_close.vgtest
-
+	use_after_close.stderr.exp use_after_close.vgtest \
+	track_new.stderr.exp track_new.stdout.exp \
+	track_new.vgtest track_new.stderr.exp-illumos \
+	track_yes.vgtest track_high.vgtest \
+	track_yes.stderr.exp track_high.stderr.exp \
+	track_bad.vgtest track_bad.stderr.exp
 
 check_PROGRAMS = \
 	args \
 	async-sigs \
 	bitfield1 \
-	bug129866 bug234814 bug492678\
+	bug129866 bug234814 \
+	bug290061 \
+	bug492678 \
 	closeall coolo_strlen \
 	discard exec-sigmask execve faultstatus fcntl_setown \
-	fdleak_cmsg fdleak_creat fdleak_dup fdleak_dup2 \
+	fdleak_cmsg fdleak_creat fdleak_doubleclose0 fdleak_dup fdleak_dup2 \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip \
@@ -322,7 +333,10 @@ check_PROGRAMS = \
 	socket_close \
 	file_dclose \
 	fdbaduse \
-        use_after_close
+        use_after_close \
+	track_new \
+	track_std \
+	track_bad
 
 if HAVE_STATIC_LIBC
 if ! VGCONF_OS_IS_LINUX
@@ -371,6 +385,8 @@ AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
 # Extra stuff for C tests
 ansi_CFLAGS		= $(AM_CFLAGS) -ansi
+bug290061_CFLAGS	= -fPIC
+bug290061_LDFLAGS	= @FLAG_PIE@
 bug491394_LDADD		= -lc
 bug491394_LDFLAGS	= -nostdlib -static
 bug491394_CFLAGS	= ${AM_CFLAGS} -Os

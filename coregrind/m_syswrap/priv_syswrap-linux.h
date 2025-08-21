@@ -40,6 +40,7 @@ extern void ML_(call_on_new_stack_0_1) ( Addr stack, Addr retaddr,
 
 // Linux-specific (but non-arch-specific) syscalls
 
+DECL_TEMPLATE(linux, sys_ustat);
 DECL_TEMPLATE(linux, sys_clone)
 DECL_TEMPLATE(linux, sys_mount);
 DECL_TEMPLATE(linux, sys_oldumount);
@@ -49,6 +50,7 @@ DECL_TEMPLATE(linux, sys_preadv);
 DECL_TEMPLATE(linux, sys_preadv2);
 DECL_TEMPLATE(linux, sys_pwritev);
 DECL_TEMPLATE(linux, sys_pwritev2);
+DECL_TEMPLATE(linux, sys_io_pgetevents);
 DECL_TEMPLATE(linux, sys_sendmmsg);
 DECL_TEMPLATE(linux, sys_recvmmsg);
 DECL_TEMPLATE(linux, sys_dup3);
@@ -58,6 +60,8 @@ DECL_TEMPLATE(linux, sys_tee);
 DECL_TEMPLATE(linux, sys_vmsplice);
 DECL_TEMPLATE(linux, sys_readahead);
 DECL_TEMPLATE(linux, sys_move_pages);
+DECL_TEMPLATE(linux, sys_cachestat);
+DECL_TEMPLATE(linux, sys_sysfs);
 
 // clone is similar enough between linux variants to have a generic
 // version, but which will call an extern defined in syswrap-<platform>-linux.c
@@ -352,6 +356,13 @@ DECL_TEMPLATE(linux, sys_pidfd_getfd);
 
 // Since Linux 6.6
 DECL_TEMPLATE(linux, sys_fchmodat2);
+
+// Since Linux 6.8
+DECL_TEMPLATE(linux, sys_listmount);
+DECL_TEMPLATE(linux, sys_statmount);
+
+// Since Linux 6.10
+DECL_TEMPLATE(linux, sys_mseal);
 
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone

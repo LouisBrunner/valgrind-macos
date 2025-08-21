@@ -48,8 +48,8 @@ vbit_test_CPPFLAGS     = $(AM_CPPFLAGS_PRI) \
                          -I$(top_srcdir)/include  \
                          -I$(top_srcdir)/memcheck \
                          -I$(top_srcdir)/VEX/pub
-vbit_test_CFLAGS       = $(AM_CFLAGS_PRI)
-vbit_test_DEPENDENCIES = 
+vbit_test_CFLAGS       = $(AM_CFLAGS_PRI) -fhosted
+vbit_test_DEPENDENCIES = $(top_builddir)/VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 vbit_test_LDADD        = $(top_builddir)/VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a
 vbit_test_LDFLAGS      = $(AM_CFLAGS_PRI) @LIB_UBSAN@
 # If there is no secondary platform, and the platforms include x86-darwin,
@@ -67,9 +67,10 @@ vbit_test_sec_CPPFLAGS     = $(AM_CPPFLAGS_SEC) \
                              -I$(top_srcdir)/include  \
                              -I$(top_srcdir)/memcheck \
                              -I$(top_srcdir)/VEX/pub
-vbit_test_sec_CFLAGS       = $(AM_CFLAGS_SEC) \
+vbit_test_sec_CFLAGS       = $(AM_CFLAGS_SEC) -fhosted \
                              $(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@)
-vbit_test_sec_DEPENDENCIES = 
+vbit_test_sec_DEPENDENCIES = $(top_builddir)/VEX/libvex-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a \
+                             $(TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@)
 vbit_test_sec_LDADD        = $(top_builddir)/VEX/libvex-@VGCONF_ARCH_SEC@-@VGCONF_OS@.a \
                               $(TOOL_LDADD_@VGCONF_PLATFORM_SEC_CAPS@)
 vbit_test_sec_LDFLAGS      = $(AM_CFLAGS_SEC) @LIB_UBSAN@ \

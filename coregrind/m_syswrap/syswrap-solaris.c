@@ -1775,6 +1775,8 @@ PRE(sys_open)
 
 POST(sys_open)
 {
+   POST_newFd_RES;
+
    if (!ML_(fd_allowed)(RES, "open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure(VKI_EMFILE);
@@ -2490,6 +2492,7 @@ PRE(sys_pipe)
 POST(sys_pipe)
 {
    Int p0, p1;
+   // @todo PJF this needs something like POST_newFd_RES for the two fds?
 
 #if defined(SOLARIS_NEW_PIPE_SYSCALL)
    int *fds = (int*)ARG1;
@@ -4072,8 +4075,11 @@ PRE(sys_fcntl)
 
 POST(sys_fcntl)
 {
+   // @todo PJF we're missing
+   // F_DUP2FD_CLOEXEC F_DUP2FD_CLOFORK F_DUPFD_CLOFORK F_DUP3FD
    switch (ARG2 /*cmd*/) {
    case VKI_F_DUPFD:
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl(F_DUPFD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure(VKI_EMFILE);
@@ -4082,6 +4088,7 @@ POST(sys_fcntl)
       break;
 
    case VKI_F_DUPFD_CLOEXEC:
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl(F_DUPFD_CLOEXEC)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure(VKI_EMFILE);
@@ -4090,6 +4097,7 @@ POST(sys_fcntl)
       break;
 
    case VKI_F_DUP2FD:
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "fcntl(F_DUP2FD)", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure(VKI_EMFILE);
@@ -4256,6 +4264,7 @@ PRE(sys_openat)
 
 POST(sys_openat)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "openat", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure(VKI_EMFILE);
@@ -9553,7 +9562,13 @@ POST(sys_door)
 
    switch (ARG6 /*subcode*/) {
    case VKI_DOOR_CREATE:
-      door_record_server(tid, ARG1, RES);
+      POST_newFd_RES;
+      if (!ML_(fd_allowed)(RES, "door_create", tid, True)) {
+         VG_(close)(RES);
+         SET_STATUS_Failure( VKI_EMFILE );
+      } else {
+         door_record_server(tid, ARG1, RES);
+      }
       break;
    case VKI_DOOR_REVOKE:
       door_record_revoke(tid, ARG1);

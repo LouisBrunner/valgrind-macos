@@ -1,0 +1,246 @@
+====================================================================
+
+11 May 2025
+
+Protocol 6 is now always used (unlike protocol 5 which was only
+used with--track-fds). The main difference is that the xml output
+now contains error summaries.
+
+====================================================================
+
+
+Global error summary
+--------------------
+
+Previously, the non-xml output contained a summary of errors and
+suppressions used, like this:
+
+==3166== ERROR SUMMARY: 1 errors from 1 contexts (suppressed: 3 from 3)
+
+This was not included in the xml output. Starting with protocol 6 it will
+be included. The above example would produce
+
+<error_summary>
+ <errors>1</errors>
+ <error_contexts>1</error_contexts>
+ <suppressed>3</suppressed>
+ <suppressed_contexts>3</suppressed_contexts>
+</error_summary>
+
+Memcheck heap and leak summaries
+--------------------------------
+
+Memcheck produces two summaries that were not generated for XML.
+These are the heap summary, such as
+
+==80874== HEAP SUMMARY:
+==80874==     in use at exit: 720 bytes in 5 blocks
+==80874==   total heap usage: 5 allocs, 0 frees, 720 bytes allocated
+
+This now generates with --xml=yes
+
+<heap_summary>
+  <memory_in_use_at_exit>
+    <bytes>720</bytes>
+    <blocks>5</blocks>
+  </memory_in_use_at_exit>
+  <total_heap_usage>
+    <allocs>5</allocs>
+    <frees>0</frees>
+    <bytes_allocated>720</bytes_allocated>
+  </total_heap_usage>
+</heap_summary>
+
+<all_heap_blocks_freed>false</all_heap_blocks_freed>
+
+The final summary is the leak summary. An example of the non-xml output
+is as follows:
+
+==24152== LEAK SUMMARY:
+==24152==    definitely lost: 48 bytes in 3 blocks
+==24152==    indirectly lost: 32 bytes in 2 blocks
+==24152==      possibly lost: 96 bytes in 6 blocks
+==24152==    still reachable: 64 bytes in 4 blocks
+==24152==         suppressed: 0 bytes in 0 blocks
+
+The example above now produces with xml output
+
+<leak_summary>
+  <definitely_lost>
+    <bytes>48</bytes>
+    <in_blocks>3</in_blocks>
+  </definitely_lost>
+  <indirectly_lost>
+    <bytes>32</bytes>
+    <in_blocks>2</in_blocks>
+  </indirectly_lost>
+  <possibly_lost>
+    <bytes>96</bytes>
+    <in_blocks>6</in_blocks>
+  </possibly_lost>
+  <still_reachable>
+    <bytes>64</bytes>
+    <in_blocks>4</in_blocks>
+  </still_reachable>
+  <suppressed>
+    <bytes>0</bytes>
+    <in_blocks>0</in_blocks>
+  </suppressed>
+</leak_summary>
+
+
+COMMON ELEMENTS
+---------------
+BYTES and BLOCKS elements are common to the HEAP and LEAK summaries.
+
+The BYTES element is
+
+* <bytes>INT</bytes>
+
+This field indicates the number of bytes of memory that are not deallocated
+at exit or user leak check.
+
+The BLOCKS element is
+
+* <blocks>INT</blocks>
+
+The block fields contains the number of blocks that have not been deallocated
+at exit or user leak check.
+
+
+HEAP SUMMARY
+------------
+
+The heap summary is contained in a heap_summary element. It contains the
+following sub-elements:
+
+* <memory_in_use_at_exit>BYTES AND BLOCKS ELEMENTS</memory_in_use_at_exit>
+
+The second sub-element of heap_summary indicates the total heap usage.
+
+* <total_heap_usage>ALLOCS FREES AND BYTES ELEMENTS</total_heap_usage>
+
+The ALLOCS element is
+
+* <allocs>INT</allocs>
+
+This indicates the total number of allocations during the program run.
+
+The FREES element is
+
+* <frees>INT</frees>
+
+This indicates the total number of deallocation during the program run.
+
+The BYTES element is
+
+* <bytes_allocated>INT</bytes_allocated>
+
+This indicates the total number of bytes allocated during the program run.
+
+
+ERROR SUMMARY
+-------------
+
+The error summary is contained in an error_summary element. It contains the
+following sub-elements:
+
+* <errors>INT</errors>
+
+This field indicates the number of unsuppressed errors that were encountered.
+
+* <error_contexts>INT</error_contexts>
+
+This field indicated the number of unique unsuppressed error contexts.
+
+*  <suppressed>INT</suppressed>
+
+This is the number of errors that were suppressed.
+
+* <suppressed_contexts>INT</suppressed_contexts>
+
+This is the number of unique error contexts used by the suppressions.
+
+LEAK SUMMARY
+------------
+
+The leak summary is contained in a leak_summary element.
+
+The leak summary sub-elements are:
+
+* <definitely_lost>BYTES AND BLOCKS ELEMENTS</definitely_lost>
+
+Memory that was definitely lost.
+
+* <indirectly_lost>BYTES AND BLOCKS ELEMENTS</indirectly_lost>
+
+Memory that was indirectly lost.
+
+* <possibly_lost>BYTES AND BLOCKS ELEMENTS</possibly_lost>
+
+Memory that was lost but memcheck cannot determine if it is
+definitely lost or still reachable.
+
+* <still_reachable> BYTES BLOCKS AND (optional) REACHABLE_HEURISTIC ELEMENTS</still_reachable>
+
+Memory that was still reachable at exit or the user leak check.
+
+If the  --leak-check-heuristics= option was used then the still_reachable element
+may contain further details on the memory and kind of heuristic that the block(s).
+correspond to.
+
+The REACHABLE_HEURISTIC format is
+    <reachable_heuristic>
+      <kind>KIND</kind>
+      <bytes>INT</bytes>
+      <blocks>INT</blocks>
+    </reachable_heuristic>
+
+KIND is one of:
+   none, stdstring, length64, newarray, multipleinheritance
+
+*  <suppressed>BYTES AND BLOCK ELEMENTS</suppressed>
+
+Information concerning the amount leaked that was suppressed.
+
+
+Addendum
+--------
+
+Unfortunately the xml-output-protocol documents were not updated
+to reflect some of the memcheck error conditions that were added.
+This omission is being rectified here.
+
+* memcheck error element kind
+
+  Added on 2023-03-10
+
+  ReallocSizeZero
+
+    realloc() called with a size of zero.
+
+  Added on 2023-09-02
+
+  InvalidSizeAndAlignment
+
+    an aligned allocation was requested with an invalid size such
+    as a non-multiple of the alignment
+
+  InvalidAlignment
+
+    an alignment was used that is not allowed such as a non-power
+    of two
+
+  InvalidSize
+
+    a size of zero was used with an aligned allocation
+
+  MismatchedAllocateDeallocateSize
+
+    the size used for a sized deallocation does not match the
+    size of the allocated block
+
+  MismatchedAllocateDeallocateAlignment
+
+    the alignment used for a deallocation does not match the
+    alignment requested when the block was allocated

@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>helgrind</protocoltool>
 
 <preamble>
@@ -245,7 +245,6 @@
   <xauxwhat><text>declared at tc06_two_races.c:9</text> <file>tc06_two_races.c</file> <line>9</line> </xauxwhat>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -255,5 +254,11 @@
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>
+  <errors>4</errors>
+  <error_contexts>4</error_contexts>
+  <suppressed>...</suppressed>
+  <suppressed_contexts>...</suppressed_contexts>
+</error_summary>
 
+</valgrindoutput>

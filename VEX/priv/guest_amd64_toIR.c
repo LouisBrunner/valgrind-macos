@@ -5075,14 +5075,14 @@ static IRTemp gen_LZCNT ( IRType ty, IRTemp src )
           binop(Iop_Shl64, mkexpr(src64),
                            mkU8(64 - 8 * sizeofIRType(ty))));
 
-   // Clz64 has undefined semantics when its input is zero, so
-   // special-case around that.
+   /* Guard against 0 input value. Use ClzNat64 operator for all other
+      values */
    IRTemp res64 = newTemp(Ity_I64);
    assign(res64,
           IRExpr_ITE(
              binop(Iop_CmpEQ64, mkexpr(src64x), mkU64(0)),
              mkU64(8 * sizeofIRType(ty)),
-             unop(Iop_Clz64, mkexpr(src64x))
+             unop(Iop_ClzNat64, mkexpr(src64x))
    ));
 
    IRTemp res = newTemp(ty);
@@ -5103,14 +5103,14 @@ static IRTemp gen_TZCNT ( IRType ty, IRTemp src )
    IRTemp src64 = newTemp(Ity_I64);
    assign(src64, widenUto64( mkexpr(src) ));
 
-   // Ctz64 has undefined semantics when its input is zero, so
-   // special-case around that.
+   /* Guard against 0 input value. Use CtzNat64 operator for all other
+      values */
    IRTemp res64 = newTemp(Ity_I64);
    assign(res64,
           IRExpr_ITE(
              binop(Iop_CmpEQ64, mkexpr(src64), mkU64(0)),
              mkU64(8 * sizeofIRType(ty)),
-             unop(Iop_Ctz64, mkexpr(src64))
+             unop(Iop_CtzNat64, mkexpr(src64))
    ));
 
    IRTemp res = newTemp(ty);
@@ -8421,30 +8421,28 @@ ULong dis_bs_E_G ( const VexAbiInfo* vbi,
       elimination of previous stores to this field work better. */
    stmt( IRStmt_Put( OFFB_CC_NDEP, mkU64(0) ));
 
-   /* Result: iff source value is zero, we can't use
-      Iop_Clz64/Iop_Ctz64 as they have no defined result in that case.
-      But anyway, amd64 semantics say the result is undefined in
-      such situations.  Hence handle the zero case specially. */
+   /* amd64 semantics say the result is undefined iff source value is
+      zero. Hence handle the zero case specially. */
 
    /* Bleh.  What we compute:
 
           bsf64:  if src == 0 then {dst is unchanged} 
-                              else Ctz64(src)
+                              else CtzNat64(src)
 
           bsr64:  if src == 0 then {dst is unchanged} 
-                              else 63 - Clz64(src)
+                              else 63 - ClzNat64(src)
 
           bsf32:  if src == 0 then {dst is unchanged} 
-                              else Ctz64(32Uto64(src))
+                              else CtzNat64(32Uto64(src))
 
           bsr32:  if src == 0 then {dst is unchanged}
-                              else 63 - Clz64(32Uto64(src))
+                              else 63 - ClzNat64(32Uto64(src))
 
           bsf16:  if src == 0 then {dst is unchanged} 
-                              else Ctz64(32Uto64(16Uto32(src)))
+                              else CtzNat64(32Uto64(16Uto32(src)))
 
           bsr16:  if src == 0 then {dst is unchanged} 
-                              else 63 - Clz64(32Uto64(16Uto32(src)))
+                              else 63 - ClzNat64(32Uto64(16Uto32(src)))
    */
 
    /* The main computation, guarding against zero. */
@@ -8452,10 +8450,10 @@ ULong dis_bs_E_G ( const VexAbiInfo* vbi,
            IRExpr_ITE( 
               mkexpr(srcB),
               /* src != 0 */
-              fwds ? unop(Iop_Ctz64, mkexpr(src64))
+              fwds ? unop(Iop_CtzNat64, mkexpr(src64))
                    : binop(Iop_Sub64, 
                            mkU64(63), 
-                           unop(Iop_Clz64, mkexpr(src64))),
+                           unop(Iop_ClzNat64, mkexpr(src64))),
               /* src == 0 -- leave dst unchanged */
               widenUto64( getIRegG( sz, pfx, modrm ) )
            )
@@ -18606,8 +18604,9 @@ static Long dis_PEXTRQ ( const VexAbiInfo* vbi, Prefix pfx,
 
 static IRExpr* math_CTZ32(IRExpr *exp)
 {
-   /* Iop_Ctz32 isn't implemented by the amd64 back end, so use Iop_Ctz64. */
-   return unop(Iop_64to32, unop(Iop_Ctz64, unop(Iop_32Uto64, exp)));
+   /* Iop_CtzNat32 isn't implemented by the amd64 back end, so use
+      Iop_CtzNat64. */
+   return unop(Iop_64to32, unop(Iop_CtzNat64, unop(Iop_32Uto64, exp)));
 }
 
 static Long dis_PCMPISTRI_3A ( UChar modrm, UInt regNoL, UInt regNoR,

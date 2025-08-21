@@ -1,0 +1,3 @@
+prereq: ! ../../tests/arch_test mips64
+prog: bug290061
+vgopts: -q

@@ -108,6 +108,7 @@
    20480 WCSNCPY
    20490 MEMCCPY
    20500 WCPNCPY
+   20510 WCSCAT
 */
 
 #if defined(VGO_solaris)
@@ -2542,9 +2543,9 @@ static inline void my_exit ( int x )
 
  /*---------------------- wcpncpy ----------------------*/
 
-        // This is a wchar_t equivalent to strncpy.  We don't
-        // have wchar_t available here, but in the GNU C Library
-        // wchar_t is always 32 bits wide.
+ // This is a wchar_t equivalent to strncpy.  We don't
+ // have wchar_t available here, but in the GNU C Library
+ // wchar_t is always 32 bits wide.
 
 #define WCPNCPY(soname, fnname) \
  Int* VG_REPLACE_FUNCTION_EZU(20500,soname,fnname) \
@@ -2576,13 +2577,41 @@ static inline void my_exit ( int x )
          *dst++ = 0; \
      } \
      \
- return dst_orig + (src - src_orig); \
+     return dst_orig + (src - src_orig); \
   }
 
 #if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  WCPNCPY(VG_Z_LIBC_SONAME, wcpncpy)
 #endif
 
+/*----------------------- wcscat ----------------------*/
+
+#define WCSCAT(soname, fnname) \
+ Int* VG_REPLACE_FUNCTION_EZU(20510,soname,fnname) \
+    ( Int *restrict dest, const Int *restrict src ); \
+    Int* VG_REPLACE_FUNCTION_EZU(20510,soname,fnname) \
+    ( Int *restrict dest, const Int *restrict src ) \
+ { \
+    const Int* src_orig = src; \
+    Int* dest_orig = dest; \
+    while (*dest) dest++; \
+    while (*src) *dest++ = *src++; \
+    *dest = 0; \
+      \
+    /* This is a bit redundant, I think;  any overlap and the wcscat will */ \
+    /* go forever... or until a seg fault occurs. */ \
+    if (is_overlap(dest_orig,  \
+                   src_orig,  \
+                  (Addr)dest-(Addr)dest_orig+1,  \
+                  (Addr)src-(Addr)src_orig+1)) \
+    RECORD_OVERLAP_ERROR("wcscat", dest_orig, src_orig, 0); \
+      \
+    return dest_orig; \
+ }
+
+#if defined(VGO_linux)
+ WCSCAT(VG_Z_LIBC_SONAME, __wcscat_avx2)
+#endif
 
 /*------------------------------------------------------------*/
 /*--- Improve definedness checking of process environment  ---*/

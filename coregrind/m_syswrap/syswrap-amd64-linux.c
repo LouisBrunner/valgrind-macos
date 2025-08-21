@@ -633,10 +633,10 @@ static SyscallTableEntry syscall_table[] = {
    //   (__NR_uselib,            sys_uselib),         // 134 
 
    LINX_(__NR_personality,       sys_personality),    // 135 
-   //   (__NR_ustat,             sys_ustat),          // 136 
+   LINXY(__NR_ustat,             sys_ustat),          // 136
    GENXY(__NR_statfs,            sys_statfs),         // 137 
    GENXY(__NR_fstatfs,           sys_fstatfs),        // 138 
-   //   (__NR_sysfs,             sys_sysfs),          // 139 
+   LINXY(__NR_sysfs,             sys_sysfs),          // 139
 
    GENX_(__NR_getpriority,             sys_getpriority),             // 140 
    GENX_(__NR_setpriority,             sys_setpriority),             // 141 
@@ -875,6 +875,8 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pkey_alloc,        sys_pkey_alloc),        // 330
    LINX_(__NR_pkey_free,         sys_pkey_free),         // 331
 
+   LINX_(__NR_io_pgetevents,     sys_io_pgetevents),     // 333
+
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
@@ -900,7 +902,11 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_memfd_secret,      sys_memfd_secret),      // 447
 
+   LINXY(__NR_cachestat,         sys_cachestat),         // 451
    LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
+   LINXY(__NR_statmount,         sys_statmount),         // 457
+   LINXY(__NR_listmount,         sys_listmount),         // 458
+   LINX_(__NR_mseal,             sys_mseal),             // 462
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

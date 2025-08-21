@@ -2665,6 +2665,7 @@ void amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* gst )
 {
    Int i;
    gst->guest_FTOP = 0;
+   gst->pad1 = 0;
    for (i = 0; i < 8; i++) {
       gst->guest_FPTAG[i] = 0; /* empty */
       gst->guest_FPREG[i] = 0; /* IEEE754 64-bit zero */
@@ -4831,7 +4832,7 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_GS_CONST = 0;
 
    vex_state->guest_IP_AT_SYSCALL = 0;
-   vex_state->pad1 = 0;
+   vex_state->guest_TLSBASE = 0;
 }
 
 

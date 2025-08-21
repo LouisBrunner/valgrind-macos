@@ -864,23 +864,17 @@ static void nano_pool32Axf_4(DisResult *dres, UInt cins)
 {
    UChar rs = (cins >> 16) & 0x1F;
    UChar rt = (cins >> 21) & 0x1F;
-   IRTemp t1;
 
    switch ((cins >> 9) & 0x7F) {
       case nano_POOL32Axf4_CLO: {  /* clo */
          DIP("clo r%u, r%u", rt, rs);
-         t1 = newTemp(Ity_I1);
-         assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0xffffffff)));
-         putIReg(rt, IRExpr_ITE(mkexpr(t1),
-                                mkU32(0x00000020),
-                                unop(Iop_Clz32,
-                                     unop(Iop_Not32, getIReg(rs)))));
+         putIReg(rt, unop(Iop_ClzNat32, unop(Iop_Not32, getIReg(rs))));
          break;
       }
 
       case nano_POOL32Axf4_CLZ: {  /* clz */
          DIP("clz r%u, r%u", rt, rs);
-         putIReg(rt, unop(Iop_Clz32, getIReg(rs)));
+         putIReg(rt, unop(Iop_ClzNat32, getIReg(rs)));
          break;
       }
    }

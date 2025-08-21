@@ -17100,11 +17100,7 @@ DisResult disInstr_ARM_WRK (
       IRTemp arg = newTemp(Ity_I32);
       IRTemp res = newTemp(Ity_I32);
       assign(arg, getIRegA(rM));
-      assign(res, IRExpr_ITE(
-                     binop(Iop_CmpEQ32, mkexpr(arg), mkU32(0)),
-                     mkU32(32),
-                     unop(Iop_Clz32, mkexpr(arg))
-            ));
+      assign(res, unop(Iop_ClzNat32, mkexpr(arg)));
       putIRegA(rD, mkexpr(res), condT, Ijk_Boring);
       DIP("clz%s r%u, r%u\n", nCC(INSN_COND), rD, rM);
       goto decode_success;
@@ -22730,11 +22726,7 @@ DisResult disInstr_THUMB_WRK (
          IRTemp arg = newTemp(Ity_I32);
          IRTemp res = newTemp(Ity_I32);
          assign(arg, getIRegT(rM1));
-         assign(res, IRExpr_ITE(
-                        binop(Iop_CmpEQ32, mkexpr(arg), mkU32(0)),
-                        mkU32(32),
-                        unop(Iop_Clz32, mkexpr(arg))
-         ));
+         assign(res, unop(Iop_ClzNat32, mkexpr(arg)));
          putIRegT(rD, mkexpr(res), condT);
          DIP("clz r%u, r%u\n", rD, rM1);
          goto decode_success;

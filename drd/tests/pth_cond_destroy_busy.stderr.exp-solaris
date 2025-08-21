@@ -23,7 +23,7 @@ condition variable has been destroyed while being waited upon: cond 0x........, 
    at 0x........: pthread_cond_wait (drd_pthread_intercepts.c:?)
    by 0x........: thread_func (pth_cond_destroy_busy.c:?)
    by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-   by 0x........: (within libpthread-?.?.so)
+   by 0x........: start_thread
 
 Thread 1:
 not a condition variable: cond 0x........

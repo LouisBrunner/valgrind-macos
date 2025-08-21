@@ -33,6 +33,7 @@
 #include "main_util.h"
 
 /* Convenience macros for readibility */
+#define mkU1(v)   IRExpr_Const(IRConst_U1(v))
 #define mkU8(v)   IRExpr_Const(IRConst_U8(v))
 #define mkU16(v)  IRExpr_Const(IRConst_U16(v))
 #define mkU32(v)  IRExpr_Const(IRConst_U32(v))
@@ -46,13 +47,12 @@
 
 /* The IR Injection Control Block. vex_inject_ir will query its contents
    to construct IR statements for testing purposes. */
-static IRICB iricb;
-
+static IRICB the_iricb;
 
 void
 LibVEX_InitIRI(const IRICB *iricb_in)
 {
-   iricb = *iricb_in;  // copy in
+   the_iricb = *iricb_in;  // copy in
 }
 
 
@@ -67,7 +67,8 @@ load_aux(IREndness endian, IRType type, IRExpr *addr)
                   IRExpr_Load(endian, Ity_I64, addr));
    }
    if (type == Ity_I1) {
-      /* A Boolean value is stored as a 32-bit entity (see store_aux). */
+      /* A Boolean value is stored as a 32-bit entity. For an explanation
+         see comment in vbit-test/vbits.h */
       return unop(Iop_32to1, IRExpr_Load(endian, Ity_I32, addr));
    }
 
@@ -131,8 +132,8 @@ store_aux(IRSB *irsb, IREndness endian, IRExpr *addr, IRExpr *data)
       data = unop(Iop_ReinterpD64asI64, data);
    }
    if (typeOfIRExpr(irsb->tyenv, data) == Ity_I1) {
-      /* We cannot store a single bit. So we store it in a 32-bit container.
-         See also load_aux. */
+      /* A Boolean value is stored as a 32-bit entity. For an explanation
+         see comment in vbit-test/vbits.h */
       data = unop(Iop_1Uto32, data);
    }
    stmt(irsb, IRStmt_Store(endian, addr, data));
@@ -189,9 +190,10 @@ store(IRSB *irsb, IREndness endian, HWord haddr, IRExpr *data)
 
 /* Inject IR stmts depending on the data provided in the control
    block iricb. */
-void
-vex_inject_ir(IRSB *irsb, IREndness endian)
+static void
+vex_inject_ir_vbit(IRSB *irsb, IREndness endian)
 {
+   IRICB_vbit_payload iricb = the_iricb.vbit;
    IRExpr *data, *rounding_mode, *opnd1, *opnd2, *opnd3, *opnd4;
 
    rounding_mode = NULL;
@@ -317,6 +319,93 @@ vex_inject_ir(IRSB *irsb, IREndness endian)
          ppIRStmt(irsb->stmts[irsb->stmts_used - 1]);
       }
       vex_printf("\nEND inject\n");
+   }
+}
+
+
+static void
+vex_inject_ir_iropt(IRSB *irsb, IREndness endian)
+{
+   IRICB_iropt_payload iricb = the_iricb.iropt;
+   IRExpr *opnd1, *opnd2, *expr;
+   ULong val1, val2;
+
+   val1 = *(ULong *)iricb.opnd1;
+   switch (iricb.t_opnd1) {
+   case Ity_I1:  opnd1 = mkU1(val1);  break;
+   case Ity_I8:  opnd1 = mkU8(val1);  break;
+   case Ity_I16: opnd1 = mkU16(val1); break;
+   case Ity_I32: opnd1 = mkU32(val1); break;
+   case Ity_I64: opnd1 = mkU64(val1); break;
+   default:
+      vpanic("unsupported type");
+   }
+
+   switch (iricb.num_operands) {
+   case 1:
+      expr = unop(iricb.op, opnd1);
+      break;
+
+   case 2:
+      val2 = *(ULong *)iricb.opnd2;
+      switch (iricb.t_opnd2) {
+      case Ity_I1:  opnd2 = mkU1(val2);  break;
+      case Ity_I8:  opnd2 = mkU8(val2);  break;
+      case Ity_I16: opnd2 = mkU16(val2); break;
+      case Ity_I32: opnd2 = mkU32(val2); break;
+      case Ity_I64: opnd2 = mkU64(val2); break;
+      default:
+         vpanic("unsupported type");
+      }
+      expr = binop(iricb.op, opnd1, opnd2);
+      break;
+
+   default:
+      vpanic("unsupported operator");
+   }
+
+   /* Make sure the expression gets folded ! */
+   IRExpr *env[1] = { 0 };
+   IRExpr *res = foldIRExpr(env, expr);
+
+   if (res->tag != Iex_Const) {
+      vex_printf("*** ");
+      ppIROp(iricb.op);
+      vex_printf(": not folded: result = ");
+      ppIRExpr(res);
+      vex_printf("\n");
+      *(ULong *)iricb.result = 0;     // whatever
+      return;
+   }
+
+   /* Store the folded result in the IRICB. We're only handling integers
+      up to 64-bit wide. */
+   switch (iricb.t_result) {
+   case Ity_I1:  *(ULong *)iricb.result = res->Iex.Const.con->Ico.U1;  break;
+   case Ity_I8:  *(ULong *)iricb.result = res->Iex.Const.con->Ico.U8;  break;
+   case Ity_I16: *(ULong *)iricb.result = res->Iex.Const.con->Ico.U16; break;
+   case Ity_I32: *(ULong *)iricb.result = res->Iex.Const.con->Ico.U32; break;
+   case Ity_I64: *(ULong *)iricb.result = res->Iex.Const.con->Ico.U64; break;
+   default:
+      vpanic("unsupported type");
+   }
+}
+
+
+void
+vex_inject_ir(IRSB *irsb, IREndness endian)
+{
+   switch (the_iricb.kind) {
+   case IRICB_vbit:
+      vex_inject_ir_vbit(irsb, endian);
+      break;
+
+   case IRICB_iropt:
+      vex_inject_ir_iropt(irsb, endian);
+      break;
+
+   default:
+      vpanic("unknown IRICB kind");
    }
 }
 

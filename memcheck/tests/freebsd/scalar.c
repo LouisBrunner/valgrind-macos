@@ -1272,7 +1272,11 @@ int main(void)
 
    /* SYS_sigwaitinfo             346 */
    GO(SYS_sigwaitinfo, "2s 2m");
-   SY(SYS_sigwaitinfo, x0+1, x0+2, x0+3); FAIL;
+   SY(SYS_sigwaitinfo, x0+1, x0+2); FAIL;
+
+   GO(SYS_sigwaitinfo, "(NULL info) 2s 1m");
+   SY(SYS_sigwaitinfo, x0, x0); FAIL;
+
 
    /* SYS___acl_get_file          347 */
    GO(SYS___acl_get_file, "3s 2m");
@@ -1405,9 +1409,6 @@ int main(void)
 
    GO(SYS_kenv, "(KENV_DUMP) 4s 0m");
    SY(SYS_kenv, x0+3, x0+2, x0+3, x0+4); FAIL;
-
-   GO(SYS_kenv, "(bogus) 4s 0m");
-   SY(SYS_kenv, x0+20, x0+2, x0+3, x0+4); FAIL;
 
    /* SYS_lchflags                391 */
    GO(SYS_lchflags, "2s 1m");
@@ -1551,6 +1552,10 @@ int main(void)
    /* SYS_sigwait                 429 */
    GO(SYS_sigwait, "2s 2m");
    SY(SYS_sigwait, x0+1, x0+2); SUCC;
+   assert(res == EFAULT);
+
+   GO(SYS_sigwait, "(NULL ags) 2s 2m");
+   SY(SYS_sigwait, x0, x0); SUCC;
    assert(res == EFAULT);
 
    // thr_create                  430
@@ -2450,6 +2455,89 @@ int main(void)
    FAKE_SY("Syscall param getrlimitusage(res) points to unaddressable byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_fchroot)
+   GO(SYS_fchroot, "1s, 0m");
+   SY(SYS_fchroot, x0+1000);
+#else
+   FAKE_GO("590:             SYS_fchroot 1s, 0m");
+   FAKE_SY("Syscall param fchroot(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_setcred)
+   GO(SYS_setcred, "3s, 1m");
+   SY(SYS_setcred, x0+100, x0+3, x0+50);
+#else
+   FAKE_GO("591:             SYS_setcred 3s, 1m");
+   FAKE_SY("Syscall param setcred(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param setcred(wcred) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param setcred(size) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param setcred(wcred) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_exterrctl)
+   GO(SYS_exterrctl, "3s, 1m");
+   SY(SYS_exterrctl, x0, x0+1, x0+1);
+#else
+   FAKE_GO("592:           SYS_exterrctl 3s, 1m");
+   FAKE_SY("Syscall param exterrctl(op) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param exterrctl(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param exterrctl(ptr) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param exterrctl(ptr) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_inotify_add_watch_at)
+   GO(SYS_inotify_add_watch_at, "3s, 1m");
+   SY(SYS_inotify_add_watch_at, x0, x0+1, x0+1);
+#else
+   FAKE_GO("593:SYS_inotify_add_watch_at 3s, 1m");
+   FAKE_SY("Syscall param inotify_add_watch_at(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param inotify_add_watch_at(dfd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param inotify_add_watch_at(path) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param inotify_add_watch_at(path) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+#if defined(SYS_inotify_rm_watch)
+   GO(SYS_inotify_rm_watch, "2s, 0m");
+   SY(SYS_inotify_rm_watch, x0+1000, x0+1000);
+#else
+   FAKE_GO("594:    SYS_inotify_rm_watch 2s, 0m");
+   FAKE_SY("Syscall param sys_inotify_rm_watch(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param sys_inotify_rm_watch(wd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
    FAKE_SY("\n");
 #endif
 

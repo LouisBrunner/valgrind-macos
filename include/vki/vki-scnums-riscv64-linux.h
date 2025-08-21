@@ -299,6 +299,7 @@
 #define __NR_pwritev2 287
 #define __NR_pkey_free 290
 #define __NR_statx 291
+#define __NR_io_pgetevents 292
 #define __NR_rseq 293
 #define __NR_io_uring_setup 425
 #define __NR_io_uring_enter 426
@@ -320,6 +321,7 @@
 #define __NR_mmap __NR3264_mmap
 #define __NR_fadvise64 __NR3264_fadvise64
 
+#define __NR_riscv_hwprobe (__NR_arch_specific_syscall + 14)
 #define __NR_riscv_flush_icache (__NR_arch_specific_syscall + 15)
 
 #endif /* __VKI_SCNUMS_RISCV64_LINUX_H */

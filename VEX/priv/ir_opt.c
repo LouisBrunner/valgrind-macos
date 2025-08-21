@@ -1262,7 +1262,6 @@ static Bool notBool ( Bool b )
 static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 {
    switch (op) {
-      case Iop_CmpNE32: return IRExpr_Const(IRConst_U1(toBool(0)));
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
       case Iop_Sub32:
@@ -1278,14 +1277,23 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
    }
 }
 
+/* Make a Boolean False value */
+static inline IRExpr* mkFalse(void)
+{
+   return IRExpr_Const(IRConst_U1(toBool(0)));
+}
+
+/* Make a Boolean True value */
+static inline IRExpr* mkTrue(void)
+{
+   return IRExpr_Const(IRConst_U1(toBool(1)));
+}
+
 /* Make a value containing all 1-bits, which has the same type as the
    result of the given primop. */
 static IRExpr* mkOnesOfPrimopResultType ( IROp op )
 {
    switch (op) {
-      case Iop_CmpEQ32:
-      case Iop_CmpEQ64:
-         return IRExpr_Const(IRConst_U1(toBool(1)));
       case Iop_Or8:
          return IRExpr_Const(IRConst_U8(0xFF));
       case Iop_Or16:
@@ -1338,6 +1346,74 @@ static UInt fold_Clz32 ( UInt value )
    return 0;
 }
 
+/* Helpers for folding ClzNat32/64. */
+static UInt fold_ClzNat64 ( ULong value )
+{
+   UInt i;
+   for (i = 0; i < 64; ++i) {
+      if (0ULL != (value & (((ULong)1) << (63 - i)))) return i;
+   }
+   return 64;
+}
+
+static UInt fold_ClzNat32 ( UInt value )
+{
+   UInt i;
+   for (i = 0; i < 32; ++i) {
+      if (0 != (value & (((UInt)1) << (31 - i)))) return i;
+   }
+   return 32;
+}
+
+/* Helpers for folding CtzNat32/64. */
+static UInt fold_CtzNat_WRK ( ULong value, UInt num_bits )
+{
+  UInt count = 0;
+
+  for (UInt i = 1; i <= num_bits; ++i) {
+    if (value & 0x1)
+      return count;
+    value >>= 1;
+    ++count;
+  }
+  return count;
+}
+
+static UInt fold_CtzNat64 ( ULong value )
+{
+   return fold_CtzNat_WRK(value, 64);
+}
+
+static UInt fold_CtzNat32 ( UInt value )
+{
+   return fold_CtzNat_WRK(value, 32);
+}
+
+/* Helpers for folding PopCount32/64.
+   https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetKernighan
+   As many iterations as 1-bits present.
+*/
+static UInt fold_PopCount64 ( ULong value )
+{
+   UInt count;
+
+   for (count = 0; value != 0; ++count) {
+      value &= value - 1;      // clear the least significant 1-bit
+   }
+   return count;
+}
+
+static UInt fold_PopCount32 ( UInt value )
+{
+   UInt count;
+
+   for (count = 0; value != 0; ++count) {
+      value &= value - 1;      // clear the least significant 1-bit
+   }
+   return count;
+}
+
+
 /* V64 holds 8 summary-constant bits in V128/V256 style.  Convert to
    the corresponding real constant. */
 //XXX re-check this before use
@@ -1386,6 +1462,8 @@ static IRExpr* chase1 ( IRExpr** env, IRExpr* e )
 __attribute__((noinline))
 static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
 {
+   if (UNLIKELY(vex_control.iropt_fold_expr == False)) return e;
+
    Int     shift;
    IRExpr* e2 = e; /* e2 is the result of folding e, if possible */
 
@@ -1440,6 +1518,13 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(u32));
             break;
          }
+         case Iop_8Sto64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            u64 <<= 56;
+            u64 = (Long)u64 >> 56;   /* signed shift */
+            e2 = IRExpr_Const(IRConst_U64(u64));
+            break;
+         }
          case Iop_16Sto32: {
             UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
             u32 <<= 16;
@@ -1474,6 +1559,12 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             e2 = IRExpr_Const(IRConst_U32(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16));
             break;
+         case Iop_32HIto16: {
+            UInt w32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            w32 >>= 16;
+            e2 = IRExpr_Const(IRConst_U16(toUShort(w32)));
+            break;
+         }
          case Iop_32to16:
             e2 = IRExpr_Const(IRConst_U16(toUShort(
                     0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U32)));
@@ -1583,6 +1674,12 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                     (0xFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U8)
                  )));
             break;
+         case Iop_CmpNEZ16:
+            e2 = IRExpr_Const(IRConst_U1(toBool(
+                    0 !=
+                    (0xFFFF & e->Iex.Unop.arg->Iex.Const.con->Ico.U16)
+                 )));
+            break;
          case Iop_CmpNEZ32:
             e2 = IRExpr_Const(IRConst_U1(toBool(
                     0 != 
@@ -1612,6 +1709,22 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             break;
          }
 
+         case Iop_Left8: {
+            UChar u8 = e->Iex.Unop.arg->Iex.Const.con->Ico.U8;
+            Char  s8 = (Char)(u8 & 0xFF);
+            s8 = (s8 | (-s8));
+            e2 = IRExpr_Const( IRConst_U8( (UChar)s8 ));
+            break;
+         }
+
+         case Iop_Left16: {
+            UShort u16 = e->Iex.Unop.arg->Iex.Const.con->Ico.U16;
+            Short  s16 = (Short)(u16 & 0xFFFF);
+            s16 = (s16 | (-s16));
+            e2 = IRExpr_Const( IRConst_U16( (UShort)s16 ));
+            break;
+         }
+
          case Iop_Left32: {
             UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
             Int  s32 = (Int)(u32 & 0xFFFFFFFF);
@@ -1638,6 +1751,39 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
             if (u64 != 0ULL)
                e2 = IRExpr_Const(IRConst_U64(fold_Clz64(u64)));
+            break;
+         }
+
+         case Iop_ClzNat32: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            e2 = IRExpr_Const(IRConst_U32(fold_ClzNat32(u32)));
+            break;
+         }
+         case Iop_ClzNat64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            e2 = IRExpr_Const(IRConst_U64(fold_ClzNat64(u64)));
+            break;
+         }
+
+         case Iop_CtzNat32: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            e2 = IRExpr_Const(IRConst_U32(fold_CtzNat32(u32)));
+            break;
+         }
+         case Iop_CtzNat64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            e2 = IRExpr_Const(IRConst_U64(fold_CtzNat64(u64)));
+            break;
+         }
+
+         case Iop_PopCount32: {
+            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
+            e2 = IRExpr_Const(IRConst_U32(fold_PopCount32(u32)));
+            break;
+         }
+         case Iop_PopCount64: {
+            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
+            e2 = IRExpr_Const(IRConst_U64(fold_PopCount64(u64)));
             break;
          }
 
@@ -1779,6 +1925,11 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
          switch (e->Iex.Binop.op) {
 
             /* -- Or -- */
+            case Iop_Or1:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U1
+                        | e->Iex.Binop.arg2->Iex.Const.con->Ico.U1))));
+               break;
             case Iop_Or8:
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
@@ -1870,6 +2021,11 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         + e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
                break;
+            case Iop_Add16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        + e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
+               break;
             case Iop_Add32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
@@ -1886,6 +2042,11 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                e2 = IRExpr_Const(IRConst_U8(toUChar( 
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
                         - e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+            case Iop_Sub16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        - e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
                break;
             case Iop_Sub32:
                e2 = IRExpr_Const(IRConst_U32(
@@ -1908,6 +2069,16 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- Mul -- */
+            case Iop_Mul8:
+               e2 = IRExpr_Const(IRConst_U8(toUChar(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        * e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+            case Iop_Mul16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        * e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
+               break;
             case Iop_Mul32:
                e2 = IRExpr_Const(IRConst_U32(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
@@ -1919,6 +2090,53 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                         * e->Iex.Binop.arg2->Iex.Const.con->Ico.U64)));
                break;
 
+            case Iop_MullU8: {
+               UChar  u8a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U8;
+               UChar  u8b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               Int    res = u8a * u8b;  /* Compiler will promote to int */
+               e2 = IRExpr_Const(IRConst_U16(toUShort(res)));
+               break;
+            }
+            case Iop_MullU16: {
+               UShort u16a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U16;
+               UShort u16b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U16;
+               Int    res = u16a * u16b;  /* Compiler will promote to int */
+               e2 = IRExpr_Const(IRConst_U32(res));
+               break;
+            }
+            case Iop_MullU32: {
+               UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt  u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               ULong res = (ULong)u32a * (ULong)u32b;
+               e2 = IRExpr_Const(IRConst_U64(res));
+               break;
+            }
+            case Iop_MullS8: {
+               /* very paranoid */
+               UChar  u8a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U8;
+               UChar  u8b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               Char   s8a = (Char)u8a;
+               Char   s8b = (Char)u8b;
+               Short  s16a = (Short)s8a;
+               Short  s16b = (Short)s8b;
+               Int    sres = s16a * s16b;
+               UShort ures = toUShort(sres);
+               e2 = IRExpr_Const(IRConst_U16(ures));
+               break;
+            }
+            case Iop_MullS16: {
+               /* very paranoid */
+               UShort u16a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U16;
+               UShort u16b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U16;
+               Short  s16a = (Short)u16a;
+               Short  s16b = (Short)u16b;
+               Int    s32a = (Int)s16a;
+               Int    s32b = (Int)s16b;
+               Int    sres = s32a * s32b;
+               UInt   ures = (UInt)sres;
+               e2 = IRExpr_Const(IRConst_U32(ures));
+               break;
+            }
             case Iop_MullS32: {
                /* very paranoid */
                UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
@@ -1933,7 +2151,71 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                break;
             }
 
+            /* -- Div -- */
+            case Iop_DivS32: {
+               Int s32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               Int s32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (s32b != 0)
+                  e2 = IRExpr_Const(IRConst_U32(s32a / s32b));
+               break;
+            }
+            case Iop_DivS64: {
+               Long s64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               Long s64b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               if (s64b != 0)
+                  e2 = IRExpr_Const(IRConst_U64(s64a / s64b));
+               break;
+            }
+            case Iop_DivU32: {
+               UInt u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (u32b != 0)
+                  e2 = IRExpr_Const(IRConst_U32(u32a / u32b));
+               break;
+            }
+            case Iop_DivU64: {
+               ULong u64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               ULong u64b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               if (u64b != 0)
+                  e2 = IRExpr_Const(IRConst_U64(u64a / u64b));
+               break;
+            }
+            case Iop_DivS32E: {
+               Int s32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               Int s32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (s32b != 0) {
+                  Long s64a = (Long)s32a << 32;
+                  e2 = IRExpr_Const(IRConst_U32(toUInt(s64a / s32b)));
+               }
+               break;
+            }
+            case Iop_DivU32E: {
+               UInt u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (u32b != 0) {
+                  ULong u64a = (ULong)u32a << 32;
+                  e2 = IRExpr_Const(IRConst_U32(toUInt(u64a / u32b)));
+               }
+               break;
+            }
+
             /* -- Shl -- */
+            case Iop_Shl8:
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 7)
+                  e2 = IRExpr_Const(IRConst_U8(toUChar(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                           << shift))));
+               break;
+            case Iop_Shl16:
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 15)
+                  e2 = IRExpr_Const(IRConst_U16(toUShort(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                           << shift))));
+               break;
             case Iop_Shl32:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
                shift = (Int)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8);
@@ -1952,6 +2234,28 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                break;
 
             /* -- Sar -- */
+            case Iop_Sar8: {
+               Int s8;
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               s8    = (Char)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 7) {
+                  s8 >>=/*signed*/ shift;
+                  e2 = IRExpr_Const(IRConst_U8(toUChar(s8)));
+               }
+               break;
+            }
+            case Iop_Sar16: {
+               Int s16;
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               s16   = (Short)(e->Iex.Binop.arg1->Iex.Const.con->Ico.U16);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 15) {
+                  s16 >>=/*signed*/ shift;
+                  e2 = IRExpr_Const(IRConst_U16(toUShort(s16)));
+               }
+               break;
+            }
             case Iop_Sar32: {
                /* paranoid ... */
                /*signed*/ Int s32;
@@ -1978,6 +2282,24 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- Shr -- */
+            case Iop_Shr8: {
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 7)
+                  e2 = IRExpr_Const(IRConst_U8(toUChar(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                           >> shift))));
+               break;
+            }
+            case Iop_Shr16: {
+               vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);
+               shift = e->Iex.Binop.arg2->Iex.Const.con->Ico.U8;
+               if (shift >= 0 && shift <= 15)
+                  e2 = IRExpr_Const(IRConst_U16(toUShort(
+                          (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                           >> shift))));
+               break;
+            }
             case Iop_Shr32: {
                /* paranoid ... */
                /*unsigned*/ UInt u32;
@@ -2004,12 +2326,26 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             }
 
             /* -- CmpEQ -- */
+            case Iop_CmpEQ8:
+            case Iop_CasCmpEQ8:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U8
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U8))));
+               break;
+            case Iop_CmpEQ16:
+            case Iop_CasCmpEQ16:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        == e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
+               break;
             case Iop_CmpEQ32:
+            case Iop_CasCmpEQ32:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U32))));
                break;
             case Iop_CmpEQ64:
+            case Iop_CasCmpEQ64:
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64
                         == e->Iex.Binop.arg2->Iex.Const.con->Ico.U64))));
@@ -2022,6 +2358,13 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                e2 = IRExpr_Const(IRConst_U1(toBool(
                        ((0xFF & e->Iex.Binop.arg1->Iex.Const.con->Ico.U8)
                         != (0xFF & e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))));
+               break;
+            case Iop_CmpNE16:
+            case Iop_CasCmpNE16:
+            case Iop_ExpCmpNE16:
+               e2 = IRExpr_Const(IRConst_U1(toBool(
+                       (e->Iex.Binop.arg1->Iex.Const.con->Ico.U16
+                        != e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))));
                break;
             case Iop_CmpNE32:
             case Iop_CasCmpNE32:
@@ -2103,8 +2446,64 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                e2 = IRExpr_Const(IRConst_U32(r));
                break;
             }
+            case Iop_CmpORD64S: {
+               /* very paranoid */
+               ULong u64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               ULong u64b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               Long  s64a = (Long)u64a;
+               Long  s64b = (Long)u64b;
+               Int   r = 0x2; /* EQ */
+               if (s64a < s64b) {
+                  r = 0x8; /* LT */
+               }
+               else if (s64a > s64b) {
+                  r = 0x4; /* GT */
+               }
+               e2 = IRExpr_Const(IRConst_U64(r));
+               break;
+            }
+            case Iop_CmpORD32U: {
+               UInt  u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt  u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               Int   r = 0x2; /* EQ */
+               if (u32a < u32b) {
+                  r = 0x8; /* LT */
+               }
+               else if (u32a > u32b) {
+                  r = 0x4; /* GT */
+               }
+               e2 = IRExpr_Const(IRConst_U32(r));
+               break;
+            }
+            case Iop_CmpORD64U: {
+               ULong u64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               ULong u64b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U64;
+               Int   r = 0x2; /* EQ */
+               if (u64a < u64b) {
+                  r = 0x8; /* LT */
+               }
+               else if (u64a > u64b) {
+                  r = 0x4; /* GT */
+               }
+               e2 = IRExpr_Const(IRConst_U64(r));
+               break;
+            }
 
             /* -- nHLto2n -- */
+            case Iop_8HLto16:
+               e2 = IRExpr_Const(IRConst_U16(toUShort(
+                       (((UInt)(e->Iex.Binop.arg1
+                                 ->Iex.Const.con->Ico.U8)) << 8)
+                       | ((UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U8)))
+                    ));
+               break;
+            case Iop_16HLto32:
+               e2 = IRExpr_Const(IRConst_U32(
+                       (((UInt)(e->Iex.Binop.arg1
+                                 ->Iex.Const.con->Ico.U16)) << 16)
+                       | ((UInt)(e->Iex.Binop.arg2->Iex.Const.con->Ico.U16))
+                    ));
+               break;
             case Iop_32HLto64:
                e2 = IRExpr_Const(IRConst_U64(
                        (((ULong)(e->Iex.Binop.arg1
@@ -2432,14 +2831,27 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_ExpCmpNE8:
+            case Iop_ExpCmpNE16:
+            case Iop_ExpCmpNE32:
+            case Iop_ExpCmpNE64:
+            case Iop_CmpLT32S:
+            case Iop_CmpLT64S:
+            case Iop_CmpLT32U:
+            case Iop_CmpLT64U:
+            case Iop_CmpNE8:
+            case Iop_CmpNE16:
             case Iop_CmpNE32:
-               /* CmpNE32(t,t) ==> 0, for some IRTemp t */
+            case Iop_CmpNE64:
+               /* Integer comparisons for some kind of inequality yield
+                  'False' when both operands are identical. */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  e2 = mkFalse();
                   break;
                }
                /* CmpNE32(1Uto32(b), 0) ==> b */
-               if (isZeroU32(e->Iex.Binop.arg2)) {
+               if (e->Iex.Binop.op == Iop_CmpNE32 &&
+                   isZeroU32(e->Iex.Binop.arg2)) {
                   IRExpr* a1 = chase(env, e->Iex.Binop.arg1);
                   if (a1 && a1->tag == Iex_Unop 
                          && a1->Iex.Unop.op == Iop_1Uto32) {
@@ -2449,10 +2861,22 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
-            // in total 32 bits
+            case Iop_CmpLE32U:
+            case Iop_CmpLE64U:
+            case Iop_CmpLE32S:
+            case Iop_CmpLE64S:
+            case Iop_CmpEQ8:
+            case Iop_CmpEQ16:
             case Iop_CmpEQ32:
-            // in total 64 bits
             case Iop_CmpEQ64:
+               /* CmpEQ8/16/32/64(t,t) ==> 1, for some IRTemp t */
+               /* CmpLE32U/64U/32S/64S(t,t) ==> 1, for some IRTemp t */
+               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                  e2 = mkTrue();
+               }
+               break;
+
+            // in total 64 bits
             case Iop_CmpEQ8x8:
             case Iop_CmpEQ16x4:
             case Iop_CmpEQ32x2:
@@ -2557,6 +2981,11 @@ inline
 static IRExpr* fold_Expr ( IRExpr** env, IRExpr* e )
 {
    return env == NULL ? e : fold_Expr_WRK(env, e);
+}
+
+IRExpr* foldIRExpr ( IRExpr** env, IRExpr* e )
+{
+   return fold_Expr(env, e);
 }
 
 /* Apply the subst to a simple 1-level expression -- guaranteed to be

@@ -38,8 +38,6 @@ verify_disassembly(const char *file)
 {
    verify_stats stats = { 0, 0, 0 };  // return value
 
-   vex_reset();
-
    objdump_file *ofile = read_objdump(file);
    if (ofile == NULL)
       return stats;
@@ -123,27 +121,63 @@ disasm_same(const char *from_objdump, const char *from_vex,
    const char *p2 = from_vex;
 
    while (42) {
-      if (*p1 == '\0' && *p2 == '\0')
-         return 1;
-      if (*p1 == '\0' || *p2 == '\0')
-         return 0;
       while (isspace(*p1))
          ++p1;
       while (isspace(*p2))
          ++p2;
-      if (*p1 != *p2) {
-         long long offset_in_bytes;
-         unsigned long long target_address;
+      if (*p1 == '\0' && *p2 == '\0')
+         return 1;
+      if (*p1 == '\0' || *p2 == '\0')
+         return 0;
 
-         /* Consider the case where the VEX disassembly has ".+integer"
-            or ".-integer" and the objdump disassembly has an
-            address. */
-         if (*p2++ != '.') return 0;
-         if (sscanf(p2, "%lld", &offset_in_bytes) != 1) return 0;
-         if (sscanf(p1, "%llx", &target_address)  != 1) return 0;
-         return address + offset_in_bytes == target_address;
+      if (*p1 == *p2) {
+         ++p1;
+         ++p2;
+         continue;
       }
-      ++p1;
-      ++p2;
+
+      /* Consider the case where the VEX disassembly has ".+integer"
+         or ".-integer" and the objdump disassembly has an hex address
+         possibly followed by a symbolic address, e.g. <main+0xe>. */
+      if (*p2++ != '.') return 0;
+
+      long long offset_in_bytes = 0;
+      unsigned long long target_address = 0;
+
+      while (isxdigit(*p1)) {
+         target_address *= 16;
+         if (isdigit(*p1))
+            target_address += *p1 - '0';
+         else {
+            int c = tolower(*p1);
+            if (c >= 'a' && c <= 'f')
+               target_address += 10 + c - 'a';
+            else
+               return 0;  // error
+         }
+         ++p1;
+      }
+      while (isspace(*p1))
+         ++p1;
+      if (*p1 == '<') {
+         while (*p1++ != '>')
+            ;
+      }
+
+      int is_negative = 0;
+      if (*p2 == '-') {
+         is_negative = 1;
+         ++p2;
+      } else if (*p2 == '+')
+         ++p2;
+      while (isdigit(*p2)) {
+         offset_in_bytes *= 10;
+         offset_in_bytes += *p2 - '0';
+         ++p2;
+      }
+      if (is_negative)
+         offset_in_bytes *= -1;
+
+      if (address + offset_in_bytes != target_address) return 0;
    }
 }

@@ -1,0 +1,3 @@
+prog: /bin/cat
+vgopts: -q --track-fds=yes
+args: /dev/null

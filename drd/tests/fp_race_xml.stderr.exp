@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>drd</protocoltool>
 
 <preamble>
@@ -81,7 +81,6 @@
 
   <trace><text>drd_post_thread_join joiner = 1, joinee = 2, new vc: [ ... ]</text></trace>
   <trace><text>drd_thread_finished tid = 1</text></trace>
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -100,5 +99,6 @@
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>...</error_summary>
 
+</valgrindoutput>

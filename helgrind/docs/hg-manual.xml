@@ -141,6 +141,15 @@ are:</para>
 <para>Checks pertaining to the validity of mutexes are generally also
 performed for reader-writer locks.</para>
 
+<para>Signalling or broadcasting a condition variable when the
+associated mutex is unlocked is not strictly an error. The resulting
+thread scheduling may be unpredictable if the mutex is not held.
+The option  <computeroutput>--check-cond-signal-mutex=yes|no</computeroutput>
+turns on checking for this situation. This kind of error is
+categorised as 'dubious'. The check is not turned on by default
+because some standard C and C++ libraries use condition
+signals/broadcasts with the associated mutex unlocked.</para>
+
 <para>Various kinds of this-can't-possibly-happen events are also
 reported.  These usually indicate bugs in the system threading
 library.</para>

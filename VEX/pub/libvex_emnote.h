@@ -89,9 +89,6 @@ typedef
          facility is not available on this host */
       EmWarn_S390X_fpext_rounding,
 
-      /* insn (e.g. srnmb) specifies an invalid rounding mode */
-      EmWarn_S390X_invalid_rounding,
-
       /* stfle insn is not supported on this host */
       EmFail_S390X_stfle,
 
@@ -121,8 +118,8 @@ typedef
       /* some insn needs vector facility which is not available on this host */
       EmFail_S390X_vx,
 
-      /* ppno insn is not supported on this host */
-      EmFail_S390X_ppno,
+      /* prno insn is not supported on this host */
+      EmFail_S390X_prno,
 
       /* insn needs vector-enhancements facility 1 which is not available on
          this host */

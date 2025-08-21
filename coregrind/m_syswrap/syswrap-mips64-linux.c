@@ -215,9 +215,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
    file, but that requires even more macro magic. */
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
-DECL_TEMPLATE (mips_linux, sys_vmsplice);
-DECL_TEMPLATE (mips_linux, sys_ustat);
-DECL_TEMPLATE (mips_linux, sys_sysfs);
 DECL_TEMPLATE (mips_linux, sys_swapon);
 DECL_TEMPLATE (mips_linux, sys_swapoff);
 DECL_TEMPLATE (mips_linux, sys_setdomainname);
@@ -232,26 +229,12 @@ DECL_TEMPLATE (mips_linux, sys_rt_sigreturn);
 DECL_TEMPLATE (mips_linux, sys_pipe);
 DECL_TEMPLATE (mips_linux, sys_fadvise64);
 
-PRE(sys_vmsplice)
-{
-   PRINT("sys_vmsplice ( %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %ld )",
-         SARG1, ARG2, ARG3, SARG4);
-   PRE_REG_READ4(long, "sys_vmsplice", int, fdin, struct vki_iovec *, v,
-                 vki_size_t, len, int, flags);
-}
-
 PRE(sys_sched_rr_get_interval)
 {
    PRINT("sys_sched_rr_get_interval ( %ld, %#" FMT_REGWORD "x)", SARG1, ARG2);
    PRE_REG_READ2(long, "sched_rr_get_interval", vki_pid_t, pid,
                  struct timespec *, timer);
    *flags |= SfMayBlock;
-}
-
-PRE(sys_ustat)
-{
-   PRINT("sys_ustat ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x)", ARG1, ARG2);
-   PRE_REG_READ2(long, "ustat", int, flags, const void *, path);
 }
 
 PRE(sys_swapon)
@@ -264,13 +247,6 @@ PRE(sys_swapoff)
 {
    PRINT("sys_swapoff ( %#" FMT_REGWORD "x )", ARG1);
    PRE_REG_READ1(long, "swapoff", const void *, path);
-}
-
-PRE(sys_sysfs)
-{
-   PRINT("sys_sysfs ( %ld, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
-         SARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "sysfs", int, flags, int, desc, const void *, path);
 }
 
 /* Very much MIPS specific */
@@ -649,10 +625,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_utime, sys_utime),
    GENX_ (__NR_mknod, sys_mknod),
    LINX_ (__NR_personality, sys_personality),
-   PLAX_ (__NR_ustat, sys_ustat),
+   LINXY (__NR_ustat, sys_ustat),
    GENXY (__NR_statfs, sys_statfs),
    GENXY (__NR_fstatfs, sys_fstatfs),
-   PLAX_ (__NR_sysfs, sys_sysfs),
+   LINXY (__NR_sysfs, sys_sysfs),
    GENX_ (__NR_getpriority, sys_getpriority),
    GENX_ (__NR_setpriority, sys_setpriority),
    LINXY (__NR_sched_setparam, sys_sched_setparam),
@@ -780,7 +756,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_splice, sys_splice),
    LINX_ (__NR_sync_file_range, sys_sync_file_range),
    LINX_ (__NR_tee, sys_tee),
-   PLAX_ (__NR_vmsplice, sys_vmsplice),
+   LINXY (__NR_vmsplice, sys_vmsplice),
    LINX_ (__NR_set_robust_list, sys_set_robust_list),
    LINXY (__NR_get_robust_list, sys_get_robust_list),
    LINXY (__NR_epoll_pwait, sys_epoll_pwait),
@@ -814,6 +790,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_syncfs, sys_syncfs),
    LINXY (__NR_statx, sys_statx),
    GENX_ (__NR_rseq, sys_ni_syscall),
+   LINX_ (__NR_io_pgetevents, sys_io_pgetevents),
    LINX_ (__NR_setns, sys_setns),
    LINXY (__NR_io_uring_setup, sys_io_uring_setup),
    LINXY (__NR_io_uring_enter, sys_io_uring_enter),
@@ -834,8 +811,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_landlock_create_ruleset, sys_landlock_create_ruleset),
    LINX_ (__NR_landlock_add_rule, sys_landlock_add_rule),
    LINX_ (__NR_landlock_restrict_self, sys_landlock_restrict_self),
+   LINXY (__NR_cachestat, sys_cachestat),
    LINX_ (__NR_fchmodat2, sys_fchmodat2),
    LINXY (__NR_userfaultfd, sys_userfaultfd),
+   LINXY (__NR_statmount, sys_statmount),
+   LINXY (__NR_listmount, sys_listmount),
+   LINX_ (__NR_mseal, sys_mseal),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

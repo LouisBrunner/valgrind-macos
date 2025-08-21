@@ -788,8 +788,9 @@ asm(
 
 #elif defined(VGP_amd64_freebsd)
 /* Convert function calling convention --> SYSCALL_STD calling
-   convention
-   PJF - not sure why we don't use SYSCALL0 convention like x86
+   convention.
+   Last stack arguments need to be pushed first, hence
+   a8 is pushed before a7.
  */
 extern UWord do_syscall_WRK (
           UWord syscall_no,    /* %rdi */
@@ -815,10 +816,10 @@ asm(
 "      movq    %rcx, %rdx\n"    /* a3 */
 "      movq    %r8,  %r10\n"    /* a4 */
 "      movq    %r9,  %r8\n"     /* a5 */
-"      movq    16(%rbp), %r9\n" /* a6 last arg from stack, account for %rbp */
-"      movq    24(%rbp), %r11\n" /* a7 from stack */
-"      pushq  %r11\n"
+"      movq    16(%rbp), %r9\n" /* a6 last register arg from stack, account for %rbp */
 "      movq    32(%rbp), %r11\n" /* a8 from stack */
+"      pushq  %r11\n"
+"      movq    24(%rbp), %r11\n" /* a7 from stack */
 "      pushq  %r11\n"
 "      subq    $8,%rsp\n"       /* fake return addr */
 "      syscall\n"

@@ -253,7 +253,7 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,
-                   "sigframe_destroy (thread %d): "
+                   "sigframe_destroy (thread %u): "
                    "valid magic; next PC=%#llx\n",
                    tid, tst->arch.vex.guest_PC);
 

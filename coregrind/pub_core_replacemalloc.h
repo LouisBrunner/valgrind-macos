@@ -53,7 +53,12 @@ struct vg_mallocfunc_info {
    void  (*tl___builtin_vec_delete_aligned)(ThreadId tid, void* p, SizeT n);
    void* (*tl_realloc)             (ThreadId tid, void* p, SizeT size);
    SizeT (*tl_malloc_usable_size)  (ThreadId tid, void* payload);
+#if defined(VGO_linux) || defined(VGO_solaris)
    void  (*mallinfo)               (ThreadId tid, struct vg_mallinfo* mi);
+#endif
+#if defined(VGO_linux)
+   void  (*mallinfo2)              (ThreadId tid, struct vg_mallinfo2* mi);
+#endif
    Bool	clo_trace_malloc;
    Bool  clo_realloc_zero_bytes_frees;
 };

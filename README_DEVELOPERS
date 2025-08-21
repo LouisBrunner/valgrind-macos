@@ -70,6 +70,44 @@ are also created, for emulating automake-style testsuites, as expected
 by tools such as bunsen.)
 
 
+Platform-specific setup for regression tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On some platforms some setup is required otherwise some of the tests
+will fail.
+
+Inherited inotifier file descriptors
+------------------------------------
+Seen on openSUSE amd64 KDE, all processes seem to inherit an inotify
+file descriptor which interferes with some of the fdleak tests in the
+none directory. Here is an example
+
+lsof | grep inotify | grep bash
+bash      13128                      paulf   31r  a_inode               0,14         0         46 inotify
+
+I don't know how to turn this off completely. You can close the
+file descriptor for the current shell by using
+
+MY_INOTIFIER=$(lsof 2>&1 | grep $$ | grep inotify | awk '{print $4}' | sed 's/r//')
+
+if [ -n ${MY_INOTIFIER} ] ; then
+   exec {MY_INOTIFIER}<&-
+fi
+
+FreeBSD kernel modules and stack guard page
+-------------------------------------------
+The sctp and mqueuefs kernel modules need to be loaded. As root
+
+kldload sctp mqueuefs
+
+Additionally FreeBSD has strange belt and braces thread stack protection
+with both the kernel and the allocated thread stack providing guard pages.
+This interferes with the memcheck descr_belowsp test. The extra kernel
+guard page can be turned off with the following command run as root
+
+sysctl security.bsd.stack_guard_page=0
+
+
 Running the performance tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To build and run all the performance tests, run "make [--quiet] perf".
@@ -158,7 +196,32 @@ Make sure that the test runs and passes.
 The last file to change is .gitignore in the top directory. Add a new entry,
 for example "/tool/tests/newtest".
 
-Check for mistakes in Makefile.am. In the top directory run
+The 'scalar' tests are something of a special case. Scalar in this sense
+refers to the registers (or stack slots) used to pass in arguments. These tests
+directly use the 'syscall' syscall via a macro, SY. They make little effort
+to use the sysall in a realistic manner. Rather, the objective is to
+exhaustively test all of the arguemnts and referenced memory of syscalls.
+The variable 'x0' is a long integer, containing the value of 0 but
+also uninitialised. It can be used on its own or with some other value
+to ensure that all of the syscall arguemts are uninitialised.
+A second macro, GO, is used precede the syscall (and subsequent errors)
+with a header. The GO string includes the name of the syscall, a count of
+expected scalar errors and a count of memory errors. The tests are usually
+followed by the FAIL macro, which ensures that the syscall failed.
+An example scalar test is
+
+   /* SYS_link                    9 */
+   GO(SYS_link, "2s 2m");
+   SY(SYS_link, x0, x0); FAIL;
+
+
+This syscall takes two strings so the expected errors are
+2 scalar (for the pointer arguments) and 2 memory (for
+the strings themselves).
+
+When your test is done check for mistakes in Makefile.am.
+In the top directory run
+
     make post-regtest-checks
 
 You should only see
@@ -208,12 +271,12 @@ without too much problem by following these steps:
       export VALGRIND_LIB=$DIR/.in_place
 
     VALGRIND_LIB is where the default.supp and vgpreload_ libraries
-    are found (which is under /usr/libexec/valgrind for an installed
+    are found (which is under /usr/local/libexec/valgrind for an installed
     version).
 
 (2) Run gdb on the tool executable.  Eg:
 
-      gdb /usr/local/lib/valgrind/lackey-ppc32-linux
+      gdb /usr/local/libexec/valgrind/lackey-ppc32-linux
 
     or
 

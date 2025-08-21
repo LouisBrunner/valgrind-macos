@@ -403,7 +403,7 @@ static void show_block_diff(unsigned char* block1,
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\";"                                     \
          "sd " #rs1 ", 48(%[w]);"      /* Spill rs1. */                        \
-         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         "lla " #rs1 ", " rs1_val ";"   /* Load the first input. */            \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\";"                                     \
          "sd " #rs2 ", 56(%[w]);"      /* Spill rs2. */                        \
@@ -494,24 +494,27 @@ static void show_block_diff(unsigned char* block1,
 
 #define JMP_COND(length, instruction, rs1_val, rs2_val, rs1, rs2)              \
    {                                                                           \
-      unsigned long w[3 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0, 0};              \
+      unsigned long w[3 /*out*/ + 2 /*in*/ + 2 /*spill*/] = {                  \
+         0, 0, 0, (unsigned long)rs1_val, (unsigned long)rs2_val, 0, 0};       \
       /* w[0] = flag that the branch was taken                                 \
          w[1] = flag that rs1 is valid                                         \
          w[2] = flag that rs2 is valid                                         \
-         w[3] = spill slot for rs1                                             \
-         w[4] = spill slot for rs2                                             \
+         w[3] = input rs1 value                                                \
+         w[4] = input rs2 value                                                \
+         w[5] = spill slot for rs1                                             \
+         w[6] = spill slot for rs2                                             \
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          "li t2, 1;"                                                           \
          "sd t2, 0(%[w]);"             /* Set result to "taken". */            \
          ".if \"" #rs1 "\" != \"unused\";"                                     \
-         "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
-         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         "sd " #rs1 ", 40(%[w]);"      /* Spill rs1. */                        \
+         "ld " #rs1 ", 24(%[w]);"      /* Load the first input. */             \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\";"                                     \
-         "sd " #rs2 ", 32(%[w]);"      /* Spill rs2. */                        \
-         "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
+         "sd " #rs2 ", 48(%[w]);"      /* Spill rs2. */                        \
+         "ld " #rs2 ", 32(%[w]);"      /* Load the second input. */            \
          ".endif;"                                                             \
          ASMINST_##length(instruction) ";"                                     \
          "li t2, 0;"                                                           \
@@ -526,29 +529,29 @@ static void show_block_diff(unsigned char* block1,
          "sd t2, 16(%[w]);"            /* Flag that rs2 is valid. */           \
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\";"                                     \
-         "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
+         "ld " #rs1 ", 40(%[w]);"      /* Reload rs1. */                       \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\";"                                     \
-         "ld " #rs2 ", 32(%[w]);"      /* Reload rs2. */                       \
+         "ld " #rs2 ", 48(%[w]);"      /* Reload rs2. */                       \
          ".endif;"                                                             \
          :                                                                     \
          : [w] "r"(t1)                                                         \
          : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
       if (w[1] != 0) { /* If rs1 is valid. */                                  \
-         printf("  inputs: %s=%s", #rs1, rs1_val);                             \
+         printf("  inputs: %s=%d", #rs1, rs1_val);                             \
          if (w[2] != 0) /* If rs2 is valid. */                                 \
-            printf(", %s=%s", #rs2, rs2_val);                                  \
+            printf(", %s=%d", #rs2, rs2_val);                                  \
          printf("\n");                                                         \
       }                                                                        \
       printf("  branch: %s\n", w[0] ? "taken" : "not taken");                  \
    }
 
 #define TESTINST_0_1_BxxZ_COND(length, instruction, rs1_val, rs1)              \
-   JMP_COND(length, instruction, #rs1_val, "0", rs1, unused)
+   JMP_COND(length, instruction, rs1_val, 0, rs1, unused)
 
 #define TESTINST_0_2_Bxx_COND(length, instruction, rs1_val, rs2_val, rs1, rs2) \
-   JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
+   JMP_COND(length, instruction, rs1_val, rs2_val, rs1, rs2)
 
 #define TYPED_X_X(length, instruction, rs1_val, fcsr_val, rd, rs1, dpre, spre) \
    {                                                                           \

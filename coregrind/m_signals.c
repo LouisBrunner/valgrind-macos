@@ -178,7 +178,7 @@
 
        else
        if    thread is blocked in a syscall marked SfMayBlock
-       then  signals may be delivered to async_sighandler, since we
+       then  signals may be delivered to async_signalhandler, since we
              temporarily unblocked them for the duration of the syscall,
              by using the real (SCSS) mask for this thread
 
@@ -912,7 +912,7 @@ void calculate_SKSS_from_SCSS ( SKSS* dst )
       case VKI_SIGFPE:
       case VKI_SIGILL:
       case VKI_SIGTRAP:
-#if defined(VGO_freebsd)
+#if defined(VKI_SIGSYS)
       case VKI_SIGSYS:
 #endif
 	 /* For these, we always want to catch them and report, even
@@ -1381,10 +1381,8 @@ SysRes VG_(do_sys_sigaction) ( Int signo,
              || new_act->ksa_handler == VKI_SIG_IGN) )
       goto bad_signo_reserved;
 
-   /* Reject attempts to set a handler (or set ignore) for SIGKILL. */
-   if ( (signo == VKI_SIGKILL || signo == VKI_SIGSTOP)
-       && new_act
-       && new_act->ksa_handler != VKI_SIG_DFL)
+   /* Reject any attempt to set the handler for SIGKILL/STOP. */
+   if ( (signo == VKI_SIGKILL || signo == VKI_SIGSTOP) && new_act )
       goto bad_sigkill_or_sigstop;
 
    /* If the client supplied non-NULL old_act, copy the relevant SCSS
@@ -1900,6 +1898,9 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
       case VKI_SIGPIPE:	/* term */
       case VKI_SIGALRM:	/* term */
       case VKI_SIGTERM:	/* term */
+#     if defined(VKI_SIGSTKFLT)
+      case VKI_SIGSTKFLT:	/* term */
+#     endif
       case VKI_SIGUSR1:	/* term */
       case VKI_SIGUSR2:	/* term */
       case VKI_SIGIO:	/* term */
@@ -2807,6 +2808,7 @@ Bool VG_(extend_stack)(ThreadId tid, Addr addr)
       else
          VG_(umsg)("Cannot map memory to grow the stack for thread #%u "
                    "to %#lx\n", tid, new_stack_base);
+      VG_(message_flush)();
       return False;
    }
 
@@ -3062,8 +3064,8 @@ void sync_signalhandler ( Int sigNo,
    ThreadId tid = VG_(lwpid_to_vgtid)(VG_(gettid)());
    Bool from_user;
 
-   if (0)
-      VG_(printf)("sync_sighandler(%d, %p, %p)\n", sigNo, info, uc);
+   if (0) 
+      VG_(printf)("sync_signalhandler(%d, %p, %p)\n", sigNo, info, uc);
 
    vg_assert(info != NULL);
    vg_assert(info->si_signo == sigNo);
@@ -3071,6 +3073,9 @@ void sync_signalhandler ( Int sigNo,
 	     || sigNo == VKI_SIGBUS
 	     || sigNo == VKI_SIGFPE
 	     || sigNo == VKI_SIGILL
+#if defined(VKI_SIGSYS)
+	     || sigNo == VKI_SIGSYS
+#endif
 	     || sigNo == VKI_SIGTRAP);
 
    info->si_code = sanitize_si_code(info->si_code);

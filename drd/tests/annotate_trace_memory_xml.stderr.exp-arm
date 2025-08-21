@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>drd</protocoltool>
 
 <preamble>
@@ -299,7 +299,6 @@ uint64_t
   </stack>
   </trace>
 Done.
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -310,5 +309,6 @@ Done.
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>...</error_summary>
 
+</valgrindoutput>

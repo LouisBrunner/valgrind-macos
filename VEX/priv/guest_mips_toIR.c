@@ -17086,14 +17086,10 @@ static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
                   IRTemp tmpRs32 = newTemp(Ity_I32);
 
                   assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
-                  assign(tmpClz32, unop(Iop_Clz32, mkexpr(tmpRs32)));
+                  assign(tmpClz32, unop(Iop_ClzNat32, mkexpr(tmpRs32)));
                   putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpClz32), True));
                } else {
-                  t1 = newTemp(Ity_I1);
-                  assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0)));
-                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                         mkU32(0x00000020),
-                                         unop(Iop_Clz32, getIReg(rs))));
+                  putIReg(rd, unop(Iop_ClzNat32, getIReg(rs)));
                }
             } else {
                ILLEGAL_INSTRUCTON;
@@ -17126,21 +17122,14 @@ static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
                   IRTemp tmpRs32 = newTemp(Ity_I32);
                   assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
 
-                  t1 = newTemp(Ity_I1);
-                  assign(t1, binop(Iop_CmpEQ32, mkexpr(tmpRs32), mkU32(0xffffffff)));
-                  assign(tmpClo32, IRExpr_ITE(mkexpr(t1),
-                                              mkU32(0x00000020),
-                                              unop(Iop_Clz32, unop(Iop_Not32, mkexpr(tmpRs32)))));
+                  assign(tmpClo32, unop(Iop_ClzNat32,
+                                        unop(Iop_Not32, mkexpr(tmpRs32))));
 
                   putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpClo32), True));
                   break;
                } else {
-                  t1 = newTemp(Ity_I1);
-                  assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0xffffffff)));
-                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                         mkU32(0x00000020),
-                                         unop(Iop_Clz32,
-                                              unop(Iop_Not32, getIReg(rs)))));
+                  putIReg(rd, unop(Iop_ClzNat32,
+                                   unop(Iop_Not32, getIReg(rs))));
                }
             } else {
                ILLEGAL_INSTRUCTON;
@@ -17188,11 +17177,7 @@ static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
 
                case 1:
                   DIP("dclz r%u, r%u", rd, rs);
-                  t1 = newTemp(Ity_I1);
-                  assign(t1, binop(Iop_CmpEQ64, getIReg(rs), mkU64(0)));
-                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                         mkU64(0x00000040),
-                                         unop(Iop_Clz64, getIReg(rs))));
+                  putIReg(rd, unop(Iop_ClzNat64, getIReg(rs)));
                   break;
             }
 
@@ -17225,13 +17210,8 @@ static UInt disInstr_MIPS_WRK_Special(UInt cins, const VexArchInfo* archinfo,
 
                case 1:
                   DIP("dclo r%u, r%u", rd, rs);
-                  t1 = newTemp(Ity_I1);
-                  assign(t1, binop(Iop_CmpEQ64, getIReg(rs),
-                                   mkU64(0xffffffffffffffffULL)));
-                  putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                         mkU64(0x40),
-                                         unop(Iop_Clz64, unop(Iop_Not64,
-                                               getIReg(rs)))));
+                  putIReg(rd, unop(Iop_ClzNat64,
+                                   unop(Iop_Not64, getIReg(rs))));
                   break;
             }
 
@@ -18772,14 +18752,10 @@ static UInt disInstr_MIPS_WRK_Special2(UInt cins, const VexArchInfo* archinfo,
             IRTemp tmpRs32 = newTemp(Ity_I32);
 
             assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
-            assign(tmpClz32, unop(Iop_Clz32, mkexpr(tmpRs32)));
+            assign(tmpClz32, unop(Iop_ClzNat32, mkexpr(tmpRs32)));
             putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpClz32), True));
          } else {
-            t1 = newTemp(Ity_I1);
-            assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0)));
-            putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                   mkU32(0x00000020),
-                                   unop(Iop_Clz32, getIReg(rs))));
+            putIReg(rd, unop(Iop_ClzNat32, getIReg(rs)));
          }
 
          break;
@@ -18793,43 +18769,25 @@ static UInt disInstr_MIPS_WRK_Special2(UInt cins, const VexArchInfo* archinfo,
             IRTemp tmpRs32 = newTemp(Ity_I32);
             assign(tmpRs32, mkNarrowTo32(ty, getIReg(rs)));
 
-            t1 = newTemp(Ity_I1);
-            assign(t1, binop(Iop_CmpEQ32, mkexpr(tmpRs32), mkU32(0xffffffff)));
-            assign(tmpClo32, IRExpr_ITE(mkexpr(t1),
-                                        mkU32(0x00000020),
-                                        unop(Iop_Clz32, unop(Iop_Not32, mkexpr(tmpRs32)))));
+            assign(tmpClo32, unop(Iop_ClzNat32,
+                                  unop(Iop_Not32, mkexpr(tmpRs32))));
 
             putIReg(rd, mkWidenFrom32(ty, mkexpr(tmpClo32), True));
             break;
          } else {
-            t1 = newTemp(Ity_I1);
-            assign(t1, binop(Iop_CmpEQ32, getIReg(rs), mkU32(0xffffffff)));
-            putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                   mkU32(0x00000020),
-                                   unop(Iop_Clz32,
-                                        unop(Iop_Not32, getIReg(rs)))));
+            putIReg(rd, unop(Iop_ClzNat32, unop(Iop_Not32, getIReg(rs))));
             break;
          }
       }
 
       case 0x24:  /* Count Leading Zeros in Doubleword - DCLZ; MIPS64 */
          DIP("dclz r%u, r%u", rd, rs);
-         t1 = newTemp(Ity_I1);
-         assign(t1, binop(Iop_CmpEQ64, getIReg(rs), mkU64(0)));
-         putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                mkU64(0x00000040),
-                                unop(Iop_Clz64, getIReg(rs))));
+         putIReg(rd, unop(Iop_ClzNat64, getIReg(rs)));
          break;
 
       case 0x25:  /* Count Leading Ones in Doubleword - DCLO; MIPS64 */
          DIP("dclo r%u, r%u", rd, rs);
-         t1 = newTemp(Ity_I1);
-         assign(t1, binop(Iop_CmpEQ64, getIReg(rs),
-                          mkU64(0xffffffffffffffffULL)));
-         putIReg(rd, IRExpr_ITE(mkexpr(t1),
-                                mkU64(0x40),
-                                unop(Iop_Clz64, unop(Iop_Not64,
-                                      getIReg(rs)))));
+         putIReg(rd, unop(Iop_ClzNat64, unop(Iop_Not64, getIReg(rs))));
          break;
 
       default:

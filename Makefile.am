@@ -34,6 +34,7 @@ SUBDIRS = \
 	gdbserver_tests \
 	memcheck/tests/vbit-test \
 	none/tests/s390x/disasm-test \
+	none/tests/iropt-test \
 	auxprogs \
 	mpi \
 	solaris \
@@ -104,6 +105,9 @@ perf: check
 # Auxiliary test suites run under valgrind
 auxchecks: all
 	$(MAKE) -C auxprogs auxchecks
+
+ltpchecks: all
+	$(MAKE) -C auxprogs ltpchecks
 
 # Nb: no need to include any Makefile.am files here, or files included from
 # them, as automake includes them automatically.  Also not COPYING, README

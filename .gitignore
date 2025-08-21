@@ -179,6 +179,7 @@ configure~
 /coregrind/valgrind
 /coregrind/vgdb
 /coregrind/vgpreload_core-x86-darwin.so.dSYM
+/coregrind/vgstack
 /coregrind/vg_intercept.c
 /coregrind/vg_replace_malloc.c
 /coregrind/vg_toolint.c
@@ -943,6 +944,7 @@ configure~
 /memcheck/tests/Makefile
 /memcheck/tests/Makefile.in
 /memcheck/tests/mallinfo
+/memcheck/tests/mallinfo2
 /memcheck/tests/malloc1
 /memcheck/tests/malloc2
 /memcheck/tests/malloc3
@@ -1046,6 +1048,7 @@ configure~
 /memcheck/tests/vcpu_fnfns
 /memcheck/tests/vgtest_ume
 /memcheck/tests/wcs
+/memcheck/tests/wcscat
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
 /memcheck/tests/wcpncpy
@@ -1104,7 +1107,7 @@ configure~
 /memcheck/tests/amd64-linux/Makefile.in
 
 # /memcheck/tests/amd64-solaris/
-/memcheck/tests/amd64-solaris/*.stderr.diff
+/memcheck/tests/amd64-solaris/*.stderr.diff*
 /memcheck/tests/amd64-solaris/*.stderr.out
 /memcheck/tests/amd64-solaris/*.stdout.diff
 /memcheck/tests/amd64-solaris/*.stdout.out
@@ -1181,6 +1184,8 @@ configure~
 /memcheck/tests/linux/.deps
 /memcheck/tests/linux/aligned_alloc
 /memcheck/tests/linux/brk
+/memcheck/tests/linux/bug420682_1
+/memcheck/tests/linux/bug420682_2
 /memcheck/tests/linux/bug480706
 /memcheck/tests/linux/capget
 /memcheck/tests/linux/check_preadv2_pwritev2
@@ -1264,13 +1269,14 @@ configure~
 /memcheck/tests/s390x/cu21
 /memcheck/tests/s390x/cu42
 /memcheck/tests/s390x/ltgjhe
+/memcheck/tests/s390x/tmxx
 /memcheck/tests/s390x/vstrc
 /memcheck/tests/s390x/vfae
 /memcheck/tests/s390x/vistr
 /memcheck/tests/s390x/vstrs
 
 # /memcheck/tests/solaris/
-/memcheck/tests/solaris/*.stderr.diff
+/memcheck/tests/solaris/*.stderr.diff*
 /memcheck/tests/solaris/*.stderr.out
 /memcheck/tests/solaris/*.stdout.diff
 /memcheck/tests/solaris/*.stdout.out
@@ -1385,9 +1391,10 @@ configure~
 /memcheck/tests/x86-linux/scalar_fork
 /memcheck/tests/x86-linux/scalar_supp
 /memcheck/tests/x86-linux/scalar_vfork
+/memcheck/tests/x86-linux/shm
 
 # /memcheck/tests/x86-solaris/
-/memcheck/tests/x86-solaris/*.stderr.diff
+/memcheck/tests/x86-solaris/*.stderr.diff*
 /memcheck/tests/x86-solaris/*.stderr.out
 /memcheck/tests/x86-solaris/*.stdout.diff
 /memcheck/tests/x86-solaris/*.stdout.out
@@ -1429,7 +1436,9 @@ configure~
 /memcheck/tests/freebsd/eventfd1
 /memcheck/tests/freebsd/eventfd2
 /memcheck/tests/freebsd/extattr
+/memcheck/tests/freebsd/exterrctl
 /memcheck/tests/freebsd/fbsd278566
+/memcheck/tests/freebsd/fchroot
 /memcheck/tests/freebsd/fexecve
 /memcheck/tests/freebsd/file_locking_wait6
 /memcheck/tests/freebsd/get_set_context
@@ -1439,6 +1448,7 @@ configure~
 /memcheck/tests/freebsd/getrlimitusage
 /memcheck/tests/freebsd/inlinfo
 /memcheck/tests/freebsd/inlinfo_nested.so
+/memcheck/tests/freebsd/kenv
 /memcheck/tests/freebsd/kqueue
 /memcheck/tests/freebsd/kqueuex
 /memcheck/tests/freebsd/linkat
@@ -1456,6 +1466,7 @@ configure~
 /memcheck/tests/freebsd/scalar_vfork
 /memcheck/tests/freebsd/sctp
 /memcheck/tests/freebsd/sctp2
+/memcheck/tests/freebsd/setcred
 /memcheck/tests/freebsd/setproctitle
 /memcheck/tests/freebsd/sigwait
 /memcheck/tests/freebsd/stat
@@ -1548,6 +1559,7 @@ configure~
 /none/tests/blockfault
 /none/tests/bug129866
 /none/tests/bug234814
+/none/tests/bug290061
 /none/tests/bug491394
 /none/tests/bug492678
 /none/tests/closeall
@@ -1562,6 +1574,7 @@ configure~
 /none/tests/fdbaduse
 /none/tests/fdleak_cmsg
 /none/tests/fdleak_creat
+/none/tests/fdleak_doubleclose0
 /none/tests/fdleak_dup
 /none/tests/fdleak_dup2
 /none/tests/fdleak_fcntl
@@ -1665,6 +1678,9 @@ configure~
 /none/tests/timestamp
 /none/tests/tls
 /none/tests/track-fds-exec-children
+/none/tests/track_new
+/none/tests/track_std
+/none/tests/track_bad
 /none/tests/unit_debuglog
 /none/tests/use_after_close
 /none/tests/valgrind_cpp_test
@@ -1780,11 +1796,11 @@ configure~
 /none/tests/amd64-linux/map_32bits
 
 # /none/tests/amd64-solaris/
-/none/tests/amd64-solaris/*.stderr.diff
+/none/tests/amd64-solaris/*.stderr.diff*
 /none/tests/amd64-solaris/*.stderr.out
 /none/tests/amd64-solaris/*.stdout.diff
 /none/tests/amd64-solaris/*.stdout.out
-/none/tests/amd64-solaris/*.post.diff
+/none/tests/amd64-solaris/*.post.diff*
 /none/tests/amd64-solaris/*.post.out
 /none/tests/amd64-solaris/.deps
 /none/tests/amd64-solaris/Makefile
@@ -1873,6 +1889,7 @@ configure~
 /none/tests/linux/brk-overflow1
 /none/tests/linux/brk-overflow2
 /none/tests/linux/bug498317
+/none/tests/linux/bug506910
 /none/tests/linux/clonev
 /none/tests/linux/Makefile
 /none/tests/linux/Makefile.in
@@ -1883,6 +1900,7 @@ configure~
 /none/tests/linux/mremap4
 /none/tests/linux/mremap5
 /none/tests/linux/mremap6
+/none/tests/linux/open_client
 /none/tests/linux/pthread-stack
 /none/tests/linux/stack-overflow
 
@@ -2233,6 +2251,18 @@ configure~
 /none/tests/riscv64/integer
 /none/tests/riscv64/muldiv
 
+# /none/tests/iropt-test/
+/none/tests/iropt-test/*.dSYM
+/none/tests/iropt-test/*.stderr.diff*
+/none/tests/iropt-test/*.stderr.out
+/none/tests/iropt-test/*.stdout.diff*
+/none/tests/iropt-test/*.stdout.out
+/none/tests/iropt-test/.deps
+/none/tests/iropt-test/Makefile
+/none/tests/iropt-test/Makefile.in
+/none/tests/iropt-test/iropt-test
+/none/tests/iropt-test/iropt-test-sec
+
 # /none/tests/s390x/disasm-test/
 /none/tests/s390x/disasm-test/*.dSYM
 /none/tests/s390x/disasm-test/*.stderr.diff*
@@ -2304,6 +2334,7 @@ none/tests/freebsd/bug499212
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
+/none/tests/freebsd/open_client
 /none/tests/freebsd/proc_pid_file
 /none/tests/freebsd/sanity_level_thread
 /none/tests/freebsd/usrstack
@@ -2410,11 +2441,11 @@ none/tests/freebsd/bug499212
 /none/tests/x86-linux/sigcontext
 
 # /none/tests/x86-solaris/
-/none/tests/x86-solaris/*.stderr.diff
+/none/tests/x86-solaris/*.stderr.diff*
 /none/tests/x86-solaris/*.stderr.out
 /none/tests/x86-solaris/*.stdout.diff
 /none/tests/x86-solaris/*.stdout.out
-/none/tests/x86-solaris/*.post.diff
+/none/tests/x86-solaris/*.post.diff*
 /none/tests/x86-solaris/*.post.out
 /none/tests/x86-solaris/.deps
 /none/tests/x86-solaris/Makefile
@@ -2500,6 +2531,9 @@ none/tests/freebsd/bug499212
 
 # /VEX/switchback/
 /VEX/switchback/switchback
+
+# /VEX/useful/
+/VEX/useful/vex
 
 *.vgtest*.trs
 *.vgtest*.log

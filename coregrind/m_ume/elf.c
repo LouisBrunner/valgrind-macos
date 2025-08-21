@@ -513,8 +513,8 @@ Bool VG_(match_ELF)(const void *hdr, SizeT len)
      required.  mapelf() returns the address just beyond the end of
      the furthest-along mapping it creates.  The executable is mapped
      starting at EBASE, which is usually read from it (eg, 0x8048000
-     etc) except if it's a PIE, in which case I'm not sure what
-     happens.
+     etc) except if it's a PIE, in which case aspacem is queried for
+     the first adequately sized segment.
 
      The returned address is recorded in info->brkbase as the start
      point of the brk (data) segment, as it is traditional to place
@@ -566,10 +566,8 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       return VKI_ENOEXEC;
 
    /* The kernel maps position-independent executables at TASK_SIZE*2/3;
-      duplicate this behavior as close as we can. */
+      for us it's good enough to just load it somewhere with enough free space. */
    if (e->e.e_type == ET_DYN && ebase == 0) {
-      ebase = VG_PGROUNDDN(info->exe_base 
-                           + (info->exe_end - info->exe_base) * 2 / 3);
       /* We really don't want to load PIEs at zero or too close.  It
          works, but it's unrobust (NULL pointer reads and writes
          become legit, which is really bad) and causes problems for
@@ -582,13 +580,19 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
       /* Later .. on mips64 we can't use 0x108000, because mapelf will
          fail. */
 #     if defined(VGP_mips64_linux)
+      ebase = VG_PGROUNDDN(info->exe_base
+                           + (info->exe_end - info->exe_base) * 2 / 3);
       if (ebase < 0x100000)
          ebase = 0x100000;
 #     else
-      vg_assert(VKI_PAGE_SIZE >= 4096); /* stay sane */
-      ESZ(Addr) hacky_load_address = 0x100000 + 8 * VKI_PAGE_SIZE;
-      if (ebase < hacky_load_address)
-         ebase = hacky_load_address;
+      Bool ok = False;
+      ebase = VG_(am_get_advisory_client_simple)( 0, e->p->p_filesz, &ok );
+
+      if (!ok) {
+         VG_(printf)( "Cannot find segment large enough to contain %llx bytes\n", (ULong)e->p->p_filesz );
+         return VKI_ENOMEM;
+      }
+
 #     endif
 
 #     if defined(VGO_solaris)

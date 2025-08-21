@@ -29,6 +29,8 @@
 typedef enum {
    OPND_GPR,
    OPND_VR,
+   OPND_AR,
+   OPND_FPR,
    OPND_D12LB,
    OPND_D12XB,
    OPND_D12VB,
@@ -89,10 +91,6 @@ extern int verbose;
 extern int debug;
 extern int show_spec_exc;
 extern int show_miscompares;
-extern int d12_val, d20_val;
-extern long long sint_val, uint_val;
-extern int d12_val_specified, d20_val_specified;
-extern int uint_val_specified, sint_val_specified;
 extern unsigned num_opcodes;
 extern const char *gcc;
 extern const char *gcc_flags;

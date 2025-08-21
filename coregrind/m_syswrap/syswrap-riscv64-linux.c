@@ -383,7 +383,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_pselect6, sys_pselect6),                             /* 72 */
    LINXY(__NR_ppoll, sys_ppoll),                                   /* 73 */
    LINXY(__NR_signalfd4, sys_signalfd4),                           /* 74 */
-   LINX_(__NR_vmsplice, sys_vmsplice),                             /* 75 */
+   LINXY(__NR_vmsplice, sys_vmsplice),                             /* 75 */
    LINX_(__NR_splice, sys_splice),                                 /* 76 */
    LINX_(__NR_tee, sys_tee),                                       /* 77 */
    LINXY(__NR_readlinkat, sys_readlinkat),                         /* 78 */
@@ -545,6 +545,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_perf_event_open, sys_perf_event_open),               /* 241 */
    LINXY(__NR_accept4, sys_accept4),                               /* 242 */
    LINXY(__NR_recvmmsg, sys_recvmmsg),                             /* 243 */
+   GENX_(__NR_riscv_hwprobe, sys_ni_syscall),                      /* 258 */
    PLAX_(__NR_riscv_flush_icache, sys_riscv_flush_icache),         /* 259 */
    GENXY(__NR_wait4, sys_wait4),                                   /* 260 */
    LINXY(__NR_prlimit64, sys_prlimit64),                           /* 261 */
@@ -574,6 +575,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_preadv2, sys_preadv2),                               /* 286 */
    LINX_(__NR_pwritev2, sys_pwritev2),                             /* 287 */
    LINXY(__NR_statx, sys_statx),                                   /* 291 */
+   LINX_(__NR_io_pgetevents, sys_io_pgetevents),                   /* 292 */
    GENX_(__NR_rseq, sys_ni_syscall),                               /* 293 */
    LINXY(__NR_io_uring_setup, sys_io_uring_setup),                 /* 425 */
    LINXY(__NR_io_uring_enter, sys_io_uring_enter),                 /* 426 */
@@ -595,7 +597,11 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_landlock_add_rule, sys_landlock_add_rule),           /* 445 */
    LINX_(__NR_landlock_restrict_self, sys_landlock_restrict_self), /* 446 */
    LINXY(__NR_memfd_secret, sys_memfd_secret),                     /* 447 */
+   LINXY(__NR_cachestat, sys_cachestat),                           /* 451 */
    LINX_(__NR_fchmodat2, sys_fchmodat2),                           /* 452 */
+   LINXY(__NR_statmount, sys_statmount),                           /* 457 */
+   LINXY(__NR_listmount, sys_listmount),                           /* 458 */
+   LINX_(__NR_mseal, sys_mseal),                                   /* 462 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)

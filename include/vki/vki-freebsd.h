@@ -1526,6 +1526,7 @@ typedef enum vki_idtype {
 #define VKI_MAP_STACK  0x400
 #define VKI_MAP_ANON 0x1000   /* don't use a file */
 #define VKI_MAP_ANONYMOUS VKI_MAP_ANON
+#define VKI_MAP_GUARD 0x00002000
 
 #define VKI_MAP_ALIGNED(n)   ((n) << VKI_MAP_ALIGNMENT_SHIFT)
 #define VKI_MAP_ALIGNMENT_SHIFT     24
@@ -1857,12 +1858,19 @@ struct vki_ptrace_vm_entry {
 #define VKI_I386_GET_GSBASE     9
 #define VKI_I386_SET_GSBASE     10
 #define VKI_I386_GET_XFPUSTATE  11
+#define VKI_I386_SET_PKRU       12
+#define VKI_I386_CLEAR_PKRU     13
 
 #define VKI_AMD64_GET_FSBASE    128
 #define VKI_AMD64_SET_FSBASE    129
 #define VKI_AMD64_GET_GSBASE    130
 #define VKI_AMD64_SET_GSBASE    131
-#define VKI_AMD64_GET_XFPUSTATE  132
+#define VKI_AMD64_GET_XFPUSTATE 132
+#define VKI_AMD64_SET_PKRU      133
+#define VKI_AMD64_CLEAR_PKRU    134
+#define VKI_AMD64_GET_TLSBASE   135
+#define VKI_AMD64_SET_TLSBASE   136
+
 
 //----------------------------------------------------------------------
 // From sys/module.h
@@ -2221,10 +2229,12 @@ struct vki_kinfo_file {
 //----------------------------------------------------------------------
 // From sys/kenv.h
 //----------------------------------------------------------------------
-#define VKI_KENV_GET    0
-#define VKI_KENV_SET    1
-#define VKI_KENV_UNSET     2
-#define VKI_KENV_DUMP      3
+#define VKI_KENV_GET         0
+#define VKI_KENV_SET         1
+#define VKI_KENV_UNSET       2
+#define VKI_KENV_DUMP        3
+#define VKI_KENV_DUMP_LOADER 4
+#define VKI_KENV_DUMP_STATIC 5
 
 //----------------------------------------------------------------------
 // From sys/sysctl.h (and related)
@@ -3256,6 +3266,23 @@ union vki_ccb {
 };
 
 #define VKI_CAMIOCOMMAND _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
+
+//----------------------------------------------------------------------
+// From cam/scsi/scsi_all.h
+//----------------------------------------------------------------------
+struct vki_setcred {
+   vki_uid_t    sc_uid;                /* effective user id */
+   vki_uid_t    sc_ruid;               /* real user id */
+   vki_uid_t    sc_svuid;              /* saved user id */
+   vki_gid_t    sc_gid;                /* effective group id */
+   vki_gid_t    sc_rgid;               /* real group id */
+   vki_gid_t    sc_svgid;              /* saved group id */
+   vki_u_int    sc_pad;                /* see 32-bit compat structure */
+   vki_u_int    sc_supp_groups_nb;     /* number of supplementary groups */
+   vki_gid_t   *sc_supp_groups;        /* supplementary groups */
+   struct vki_mac *sc_label;           /* MAC label */
+};
+
 
 
 /*--------------------------------------------------------------------*/

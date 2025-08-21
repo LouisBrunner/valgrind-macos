@@ -971,6 +971,7 @@ PRE(sys_open64)
 
 POST(sys_open64)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "open64", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure(VKI_EMFILE);

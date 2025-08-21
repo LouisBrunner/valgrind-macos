@@ -1,27 +1,26 @@
-Release 3.25.0 (?? Apr 2025)
+Release 3.26.0 (?? Oct 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
-MIPS64/Linux, ARM/Android, ARM64/Android, MIPS32/Android, X86/Android,
-X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD, AMD64/FreeBSD
-and ARM64/FreeBSD  There is also preliminary support for X86/macOS 10.13,
-AMD64/macOS 10.13 and nanoMIPS/Linux.
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
+AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
+X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
-* The valgrind gdbserver now supports the GDB remote protocol packet
-  'x addr,len' (available in GDB release >= 16).
-  The x packet can reduce the time taken by GDB to read memory from valgrind.
+* New VEX API function LibVEX_set_VexControl
 
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ===================
 
-* The --track-fds=yes and --track-fds=all options now treat all
-  inherited file descriptors the same as 0, 1, 2 (stdin/out/err).
-  And when the stdin/out/err descriptors are reassigned they are
-  now treated as normal (non-inherited) file descriptors.
+* There is a new utility script, "vgstack". It has two
+  option, -h for minimal help, and -v for the version information.
+  In normal use pass it the PID of a running Valgrind process
+  and it will perform a vgdb attach and print the backtrace(s)
+  of the guest executable.
 
 * ==================== FIXED BUGS ====================
 
@@ -32,16 +31,149 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+338803  Handling of dwz debug alt files or cross-CU is broken
+418756  MAP_FIXED_NOREPLACE mmap flag unsupported
+493430  Review all syscalls that use or return (new) file descriptors
+493434  Add --track-fds=bad mode (no "leak" tracking)
+501741  syscall cachestat not wrapped
+502359  Add --modify-fds=yes option
+502968  Wrap linux specific syscalls 457 (listmount) and 458 (statmount)
+503098  Incorrect NAN-boxing for float registers in RISC-V
+503241  s390x: Support z17 changes to the NNPA instruction
+503641  close_range syscalls started failing with 3.25.0
+503677  duplicated-cond compiler warning in dis_RV64M
+503817  s390x: fix 'ordered comparison of pointer with integer zero' compiler warnings
+503914  mount syscall param filesystemtype may be NULL
+503969  Make test results of make ltpchecks compatible with bunsen
+504101  Add a "vgstack" script
+504177  FILE DESCRIPTORS banner shows when closing some inherited fds
+504265  FreeBSD: missing syscall wrappers for fchroot and setcred
+504341  Valgrind killed by LTP syscall testcase setrlimit05
+504466  Double close causes SEGV
+504904  Hide "bad act handler address" warnings when -q (quiet) flag is set
+504909  Hide "Bad oldset address" warnings when -q (quiet) flag is set
+504919  Hide "client tried to modify addresses" warnings when -q (quiet) set
+504936  Add FreeBSD amd64 sysarch subcommands AMD64_SET_TLSBASE and
+        AMD64_GET_TLSBASE
+505228  Wrap linux specific mseal syscall
+505673  Valgrind crashes with an internal error and SIGBUS when
+        the guest tries to open its own file with O_WRONLY|O_CREAT|O_TRUNC
+506076  unimplemented fcntl command: 1028 (F_CREATED_QUERY)
+506499  Unhandled syscall 592 (exterrctl - FreeBSD
+506795  Better report which clone flags are problematic
+506806  Fix execveat() with AT_FDCWD and relative path
+506813  The execveat wrapper needs to do more checking
+506910  openat2 with RESOLVE_NO_MAGICLINKS succeeds on /proc/self/exe
+506928  Wrap (deprecated) linux specific ustat syscall
+506929  Wrap (deprecated) linux sysfs syscall
+506930  valgrind allows SIGKILL being reset to SIG_DFL
+506967  Implement and override mallinfo2
+506970  mmap needs an EBADF fd_allowed check
+507173  s390x: Crash when constant folding is disabled
+507721  Wire up illumos and Solaris mallinfo
+507853  faccessat and faccessat2 should handle AT_FDCWD and absolute paths
+507868  futimesat doesn't handle AT_FDCWD
+507873  Make fchmodat and fchmodat2 syscall wrappers accept AT_FDCWD
+507897  Allow for patching LTP sources
+507970  -Wcalloc-transposed-args warnings in valgrind-di-server.c
+508027  Fix mips32 FTBFS
+508029  Review the vmsplice syscall wrapper
+508030  Add several missing syscall hooks to ppc64-linux
+508093  VALGRIND_CLO_CHANGE does not update vex_control
+508154  PRE(sys_fchownat) not handling VKI_AT_FDCWD
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed above.
+
+Release 3.25.0 (25 Apr 2025)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
+AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
+X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* The valgrind gdbserver now supports the GDB remote protocol packet
+  'x addr,len' (available in GDB release >= 16).
+  The x packet can reduce the time taken by GDB to read memory from valgrind.
+
+* Valgrind now supports zstd compressed debug sections.
+
+* The Linux Test Project (ltp) is integrated in the testsuite try
+  'make ltpchecks' (this will take a while and will point out various
+  missing syscalls and valgrind crashes!)
+
+* ================== PLATFORM CHANGES =================
+
+* Added RISCV64 support for Linux. Specifically for the RV64GC
+  instruction set.
+
+* Numerous bug fixes for Illumos, in particular fixed a Valgrind crash
+  whenever a signal handler was called.
+
+* On FreeBSD, a change to the libc code that runs atexit handlers was
+  causing Helgrind to produce an extra error about exiting threads
+  still holding locks for. This applied to every multithreaded application.
+  The extra error is now filtered out. A syscall wrapper had been added
+  for getrlimitusage.
+
+* On Linux various new syscalls are supported (landlock*, io_pgetevents,
+  open_tree, move_mount, fsopen, fsconfig, fsmount, fspick, userfaultfd).
+
+* s390x has support for various new instructions (BPP, BPRP, PPA and NIAI).
+
+* ==================== TOOL CHANGES ===================
+
+* The --track-fds=yes and --track-fds=all options now treat all
+  inherited file descriptors the same as 0, 1, 2 (stdin/out/err).
+  And when the stdin/out/err descriptors are reassigned they are
+  now treated as normal (non-inherited) file descriptors.
+
+* A new option --modify-fds=high can be used together with
+  --track-fds=yes to create new file descriptors with the highest
+  possible number (and then decreasing) instead of always using the
+  lowest possible number (which is required by POSIX). This will help
+  catch issues where a file descriptor number might normally be reused
+  between a close and another open call.
+
+* Helgrind:
+  There is a change to warnings about calls to pthread_cond_signal and
+  pthread_cond_broadcast when the associated mutex is unlocked. Previously
+  Helgrind would always warn about this. Now this error is controlled by
+  a command line option, --check-cond-signal-mutex=yes|no. The default is
+  no. This change has been made because some C and C++ standard libraries
+  use pthread_cond_signal/pthread_cond_broadcast in this way. Users are
+  obliged to use suppressions if they wish to avoid this noise.
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+290061  pie elf always loaded at 0x108000
 396415  Valgrind is not looking up $ORIGIN rpath of shebang programs
+420682  io_pgetevents is not supported
+468575  Add support for RISC-V
 469782  Valgrind does not support zstd-compressed debug sections
 487296  --track-fds=yes and --track-fds=all report erroneous information
         when fds 0, 1, or 2 are used as non-std
 489913  WARNING: unhandled amd64-linux syscall: 444 (landlock_create_ruleset)
+493433  Add --modify-fds=[no|high] option
 494246  syscall fsopen not wrapped
 494327  Crash when running Helgrind built with #define TRACE_PTH_FNS 1
 494337  All threaded applications cause still holding lock errors
 495488  Add FreeBSD getrlimitusage syscall wrapper
 495816  s390x: Fix disassembler segfault for C[G]RT and CL[G]RT
+495817  s390x: Disassembly to match objdump -d output
 496370  Illumos: signal handling is broken
 496571  False positive for null key passed to bpf_map_get_next_key syscall.
 496950  s390x: Fix hardware capabilities and EmFail codes
@@ -53,22 +185,36 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 498143  False positive on EVIOCGRAB ioctl
 498317  FdBadUse is not a valid CoreError type in a suppression
         even though it's generated by --gen-suppressions=yes
+498421  s390x: support BPP, BPRP and NIAI insns
 498422  s390x: Fix VLRL and VSTRL insns
 498492  none/tests/amd64/lzcnt64 crashes on FreeBSD compiled with clang
+498629  s390x: Fix S[L]HHHR and S[L]HHLR insns
+498632  s390x: Fix LNGFR insn
 498942  s390x: Rework s390_disasm interface
 499183  FreeBSD: differences in avx-vmovq output
 499212  mmap() with MAP_ALIGNED() returns unaligned pointer
 501119  memcheck/tests/pointer-trace fails when run on NFS filesystem
-501194  Fix ML_(check_macho_and_get_rw_loads) so that it is correct for any number of segment commands
+501194  Fix ML_(check_macho_and_get_rw_loads) so that it is correct for
+        any number of segment commands
 501348  glibc built with -march=x86-64-v3 does not work due to ld.so memcmp
 501479  Illumos DRD pthread_mutex_init wrapper errors
 501365  syscall userfaultfd not wrapped
-
+501846  Add x86 Linux shm wrappers
+501850  FreeBSD syscall arguments 7 and 8 incorrect.
+501893  Missing suppression for __wcscat_avx2 (strcat-strlen-avx2.h.S:68)?
+502126  glibc 2.41 extra syscall_cancel frames
+502288  s390x: Memcheck false positives with NNPA last tensor dimension
+502324  s390x: Memcheck false positives with TMxx and TM/TMY
+502679  Use LTP for testing valgrind
+502871  Make Helgrind "pthread_cond_{signal,broadcast}: dubious: associated
+        lock is not held by any thread" optional
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
+(3.25.0.RC1: 18 Apr 2025)
+(3.25.0.RC2: 23 Apr 2025)
 
 Release 3.24.0 (31 Oct 2024)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

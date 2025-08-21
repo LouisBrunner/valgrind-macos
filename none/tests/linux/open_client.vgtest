@@ -1,0 +1,3 @@
+prereq: test -x open_client
+prog: open_client
+vgopts: -q

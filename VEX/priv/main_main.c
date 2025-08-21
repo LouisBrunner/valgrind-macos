@@ -204,6 +204,12 @@ void LibVEX_default_VexControl ( /*OUT*/ VexControl* vcon )
    vcon->guest_max_insns                = 60;
    vcon->guest_chase                    = True;
    vcon->regalloc_version               = 3;
+   vcon->iropt_fold_expr                = True;
+}
+
+void LibVEX_set_VexControl ( VexControl vcon )
+{
+   __builtin_memcpy(&vex_control, &vcon, sizeof vex_control);
 }
 
 
@@ -1535,9 +1541,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
                "  feature requires the floating point extension facility\n"
                "  which is not available on this host. Continuing using\n"
                "  the rounding mode from FPC. Results may differ!";
-     case EmWarn_S390X_invalid_rounding:
-        return "The specified rounding mode is invalid.\n"
-               "  Continuing using 'round to nearest'. Results may differ!";
      case EmFail_S390X_stfle:
         return "Instruction stfle is not supported on this host";
      case EmFail_S390X_stckf:
@@ -1561,8 +1564,8 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
      case EmFail_S390X_vx:
         return "Encountered an instruction that requires the vector facility.\n"
                "  That facility is not available on this host";
-     case EmFail_S390X_ppno:
-        return "Instruction ppno is not supported on this host.";
+     case EmFail_S390X_prno:
+        return "Instruction prno is not supported on this host.";
      case EmFail_S390X_vxe:
         return "Encountered an instruction that requires the vector-extensions"
                " facility 1.\n"

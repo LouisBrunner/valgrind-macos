@@ -1,0 +1,12 @@
+File descriptor ...: ... is already closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+ Previously closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+File descriptor ...: ... is already closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main
+ Previously closed
+   at 0x........: close (in /...libc...)
+   by 0x........: main

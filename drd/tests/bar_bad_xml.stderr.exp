@@ -2,7 +2,7 @@
 
 <valgrindoutput>
 
-<protocolversion>4</protocolversion>
+<protocolversion>6</protocolversion>
 <protocoltool>drd</protocoltool>
 
 <preamble>
@@ -204,7 +204,6 @@ destroy a barrier that has waiting threads
 
 
 destroy a barrier that was never initialised
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -231,5 +230,6 @@ destroy a barrier that was never initialised
 
 <suppcounts>...</suppcounts>
 
-</valgrindoutput>
+<error_summary>...</error_summary>
 
+</valgrindoutput>

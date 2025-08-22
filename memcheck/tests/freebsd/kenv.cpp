@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include <exception>
+#include <memory>
 #include <cerrno>
 #include <kenv.h>
 #include <unistd.h>
@@ -26,7 +27,7 @@ int main(int argc, char** argv)
 
       if (argc > 1)
       {
-         std::cout << buf << '\n';
+         std::cout << buf.get() << '\n';
       }
 
       res = kenv(42*42, name.c_str(), buf.get(), bufSize);
@@ -69,7 +70,7 @@ int main(int argc, char** argv)
       if (argc > 1)
       {
          // the buffer contains nul separated eleements, this will just print the first
-         std::cout << dump_buf << '\n';
+         std::cout << dump_buf.get() << '\n';
       }
 
       if (0 == geteuid())

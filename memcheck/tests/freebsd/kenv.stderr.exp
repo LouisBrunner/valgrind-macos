@@ -2,46 +2,46 @@
 Warning: bad or unimplemented kenv action: 1764
 Syscall param kenv(action) contains uninitialised byte(s)
    at 0x........: kenv (in /...libc...)
-   by 0x........: main (kenv.cpp:110)
+   by 0x........: main (kenv.cpp:111)
 
 Syscall param kenv(name) contains uninitialised byte(s)
    at 0x........: kenv (in /...libc...)
-   by 0x........: main (kenv.cpp:110)
+   by 0x........: main (kenv.cpp:111)
 
 Syscall param kenv(value) contains uninitialised byte(s)
    at 0x........: kenv (in /...libc...)
-   by 0x........: main (kenv.cpp:110)
+   by 0x........: main (kenv.cpp:111)
 
 Syscall param kenv(len) contains uninitialised byte(s)
    at 0x........: kenv (in /...libc...)
-   by 0x........: main (kenv.cpp:110)
+   by 0x........: main (kenv.cpp:111)
 
 Syscall param kenv(name) points to unaddressable byte(s)
    at 0x........: kenv (in /...libc...)
-   by 0x........: main (kenv.cpp:116)
- Address 0x........ is 0 bytes inside a block of size 32 free'd
-   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
-   by 0x........: main (kenv.cpp:115)
- Block was alloc'd at
-   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
-   by 0x........: main (kenv.cpp:113)
-
-Syscall param kenv(value) points to unaddressable byte(s)
-   at 0x........: kenv (in /...libc...)
-   by 0x........: main (kenv.cpp:119)
- Address 0x........ is 0 bytes inside a block of size 32 free'd
-   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
-   by 0x........: main (kenv.cpp:118)
- Block was alloc'd at
-   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
    by 0x........: main (kenv.cpp:117)
+ Address 0x........ is 0 bytes inside a block of size 32 free'd
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (kenv.cpp:116)
+ Block was alloc'd at
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (kenv.cpp:114)
 
 Syscall param kenv(value) points to unaddressable byte(s)
    at 0x........: kenv (in /...libc...)
    by 0x........: main (kenv.cpp:120)
+ Address 0x........ is 0 bytes inside a block of size 32 free'd
+   at 0x........: ...operator delete[]... (vg_replace_malloc.c:...)
+   by 0x........: main (kenv.cpp:119)
+ Block was alloc'd at
+   at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
+   by 0x........: main (kenv.cpp:118)
+
+Syscall param kenv(value) points to unaddressable byte(s)
+   at 0x........: kenv (in /...libc...)
+   by 0x........: main (kenv.cpp:121)
  Address 0x........ is 0 bytes after a block of size 1,024 alloc'd
    at 0x........: ...operator new[]... (vg_replace_malloc.c:...)
-   by 0x........: main (kenv.cpp:18)
+   by 0x........: main (kenv.cpp:19)
 
 
 HEAP SUMMARY:

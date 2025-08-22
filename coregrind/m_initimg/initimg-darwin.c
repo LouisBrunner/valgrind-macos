@@ -677,6 +677,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
        setup_client_stack( iicii.argv - 1, env, &info,
                            iicii.clstack_end, iifii.clstack_max_size,
                            vex_archinfo );
+   iifii.dynamic = info.dynamic;
 
    VG_(free)(env);
 

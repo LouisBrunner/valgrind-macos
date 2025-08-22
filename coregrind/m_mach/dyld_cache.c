@@ -209,7 +209,7 @@ Addr VG_(dyld_cache_get_slide)(void) {
   return dyld_cache.slide;
 }
 
-void VG_(dyld_cache_init)(Bool is_dynamic) {
+void VG_(dyld_cache_init)(void) {
   if (!try_to_init()) {
     VG_(dmsg)(
       "WARNING: could not read from dyld shared cache (DSC)\n"
@@ -217,14 +217,12 @@ void VG_(dyld_cache_init)(Bool is_dynamic) {
     );
     return;
   }
-  if (is_dynamic) {
-    // We currently detect if dyld is loading/using a library by checking if stat64 fails.
-    // However, dyld doesn't seem to call stat64 for all of them anymore.
-    // All arm64 binaries are executables but some x86 ones might not be so let's avoid them just to be safe.
-    VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
-    VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
-    VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
-  }
+  // We currently detect if dyld is loading/using a library by checking if stat64 fails.
+  // However, dyld doesn't seem to call stat64 for all of them anymore.
+  // All arm64 binaries are executables but some x86 ones might not be so let's avoid them just to be safe.
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
+  VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
 }
 
 int VG_(dyld_cache_might_be_in)(const HChar* path) {

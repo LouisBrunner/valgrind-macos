@@ -48,7 +48,7 @@ typedef  struct _IIFinaliseImageInfo  IIFinaliseImageInfo;
    To do this it takes a bundle of information in an IICreateImageInfo
    structure, which is gathered in an OS-specific way at startup.
    This returns an IIFinaliseImageInfo structure: */
-extern 
+extern
 IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo,
                                           const VexArchInfo* vex_archinfo );
 
@@ -57,7 +57,7 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo,
    guest state for thread 1 (the root thread) and copy in essential
    starting values.  This is handed the IIFinaliseImageInfo created by
    VG_(ii_create_image). */
-extern 
+extern
 void VG_(ii_finalise_image)( IIFinaliseImageInfo );
 
 /* Note that both IICreateImageInfo and IIFinaliseImageInfo are
@@ -107,7 +107,6 @@ struct _IICreateImageInfo {
    Addr    stack_start;      /* stack segment hot */
    Addr    stack_end;        /* stack segment cold */
    Addr    text;             /* executable's Mach header */
-   Bool    dynamic;          /* False iff executable is static */
    HChar*  executable_path;  /* path passed to execve() */
 };
 
@@ -117,6 +116,7 @@ struct _IIFinaliseImageInfo {
    Addr  initial_client_SP;
    /* ------ Per-OS fields ------ */
    Addr  initial_client_IP;
+   Bool  dynamic;  /* False iff executable is static */
 };
 
 /* ------------------------- Solaris ------------------------- */

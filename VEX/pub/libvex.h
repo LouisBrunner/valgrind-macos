@@ -1001,7 +1001,8 @@ typedef
 typedef
    struct {
       IROp   op;            // the operation to perform
-      HWord  result;        // address of the result
+      HWord  result_fold;   // address of the result (with folding)
+      HWord  result_nofold; // address of the result (without folding)
       HWord  opnd1;         // address of 1st operand
       HWord  opnd2;         // address of 2nd operand
       IRType t_result;      // type of result

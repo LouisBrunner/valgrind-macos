@@ -1989,13 +1989,13 @@ int main(void)
     SY(SYS_posix_fallocate, x0+99999, x0+10, x0+20); SUCC;
 #else
     GO(SYS_posix_fallocate, "5s 0m");
-    SY(SYS_posix_fallocate, x0+99999, x0, x0+10, x0, x0+20); SUCC;
+    SY(SYS_posix_fallocate, x0+9999, x0, x0+10, x0, x0+20); SUCC;
 #endif
     assert(res == EBADF);
 
     /* SYS_posix_fadvise          531 */
     GO(SYS_posix_fadvise, "4s 0m");
-    SY(SYS_posix_fadvise, x0+99999, x0+10, x0+20, x0); SUCC;
+    SY(SYS_posix_fadvise, x0+9999, x0+10, x0+20, x0); SUCC;
     assert(res == EBADF);
 
     /* SYS_wait6                  532 */

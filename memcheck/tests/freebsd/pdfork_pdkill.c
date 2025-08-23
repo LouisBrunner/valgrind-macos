@@ -94,6 +94,9 @@ int main(int argc, char *argv[]) {
        fprintf(stderr, "parent after 1st bad pdfork\n");
        int anotherfd;
        int badflag;
+       // without this the last pdfork succeeds on arm64
+       badflag = -1 + anotherfd;
+       badflag -=anotherfd;
        pid_t* pbadpid = malloc(sizeof(pid_t));
        free(pbadpid);
        pdgetpid(anotherfd, pbadpid);

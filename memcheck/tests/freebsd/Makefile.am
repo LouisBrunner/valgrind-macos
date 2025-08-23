@@ -91,6 +91,7 @@ EXTRA_DIST = \
 	openpty.stderr.exp \
 	pdfork_pdkill.vgtest \
 	pdfork_pdkill.stderr.exp \
+	pdfork_pdkill.supp \
 	realpathat.vgtest \
 	realpathat.stderr.exp \
 	revoke.vgtest \

@@ -2,14 +2,12 @@
    arm64 suppression 1
    Memcheck:Cond
    fun:pdkill
-   fun:main
 }
 
 {
    arm64 suppression 2
    Memcheck:Cond
    fun:__sys_pdfork
-   fun:main
 }
 
 
@@ -17,6 +15,11 @@
    arm64 suppression 3
    Memcheck:Cond
    fun:_close
-   fun:main
+}
+
+{
+   arm64 suppression 4
+   Memcheck:Cond
+   fun:pdgetpid
 }
 

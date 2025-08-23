@@ -2307,17 +2307,15 @@ PRE(sys_prlimit64)
                  struct rlimit64 *, old_rlim);
    if (ARG3) {
       PRE_MEM_READ( "rlimit64(new_rlim)", ARG3, sizeof(struct vki_rlimit64) );
-      if (!ML_(safe_to_deref)((void*)(Addr)ARG3, sizeof(struct vki_rlimit64))) {
-         SET_STATUS_Failure(VKI_EFAULT);
-         return;
-      }
    }
    if (ARG4) {
       PRE_MEM_WRITE( "rlimit64(old_rlim)", ARG4, sizeof(struct vki_rlimit64) );
-      if (!ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(struct vki_rlimit64))) {
-         SET_STATUS_Failure(VKI_EFAULT);
-         return;
-      }
+   }
+
+   if ((ARG3 && !ML_(safe_to_deref)((void*)(Addr)ARG3, sizeof(struct vki_rlimit64)))
+       || (ARG4 && !ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(struct vki_rlimit64)))) {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
    }
 
    if (ARG3 &&

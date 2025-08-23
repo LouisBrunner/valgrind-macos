@@ -46,6 +46,38 @@ Syscall param write(buf) points to unaddressable byte(s)
  60:           __NR_exit below
 -----------------------------------------------------
 -----------------------------------------------------
+ 97:      __NR_getrlimit 2s 1m
+-----------------------------------------------------
+Syscall param getrlimit(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param getrlimit(rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param getrlimit(rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+160:      __NR_setrlimit 2s 1m
+-----------------------------------------------------
+Syscall param setrlimit(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param setrlimit(rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param setrlimit(rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 247:         __NR_waitid 5s 0m
 -----------------------------------------------------
 Syscall param sys_waitid(which) contains uninitialised byte(s)
@@ -97,6 +129,102 @@ Syscall param waitid(infop) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param waitid(ru) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+302:      __NR_prlimit64 (nop) 4s 0m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+-----------------------------------------------------
+302:      __NR_prlimit64 (set) 4s 1m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param rlimit64(new_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+302:      __NR_prlimit64 (get) 4s 1m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param rlimit64(old_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+302:      __NR_prlimit64 (get+set) 4s 2m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param rlimit64(new_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param rlimit64(old_rlim) points to unaddressable byte(s)
    ...
    by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd

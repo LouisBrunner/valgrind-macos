@@ -3,6 +3,7 @@
 #include "../../memcheck.h"
 #include "scalar.h"
 #include <unistd.h>
+#include <sys/resource.h>
 
 // Here we are trying to trigger every syscall error (scalar errors and
 // memory errors) for every syscall.  We do this by passing a lot of bogus
@@ -45,12 +46,33 @@ int main(void)
    GO(__NR_exit, "below");
    // (see below)
 
+   // __NR_getrlimit 97
+   GO(__NR_getrlimit, "2s 1m");
+   SY(__NR_getrlimit, x0, x0); FAIL;
+
+   // __NR_setrlimit 160
+   GO(__NR_setrlimit, "2s 1m");
+   SY(__NR_setrlimit, x0, x0); FAILx(EFAULT);
+
   // __NR_waitid 247
    GO(__NR_waitid, "5s 0m");
    SY(__NR_waitid, x0, x0, x0, x0, x0); FAIL;
 
    GO(__NR_waitid, "(infop,ru) 5s 2m");
    SY(__NR_waitid, x0, x0, x0 + 1, x0, x0 + 1); FAIL;
+
+   // __NR_prlimit64 302
+   GO(__NR_prlimit64, "(nop) 4s 0m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0, x0); SUCC;
+
+   GO(__NR_prlimit64, "(set) 4s 1m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0 + 1, x0); FAILx(EFAULT);
+
+   GO(__NR_prlimit64, "(get) 4s 1m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0, x0 + 1); FAILx(EFAULT);
+
+   GO(__NR_prlimit64, "(get+set) 4s 2m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0 + 1, x0 + 1); FAILx(EFAULT);
 
     // no such syscall...
    GO(9999, "1e");

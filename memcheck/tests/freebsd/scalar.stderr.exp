@@ -2065,6 +2065,10 @@ Syscall param preadv(iovcnt) contains uninitialised byte(s)
 Syscall param preadv(offset) contains uninitialised byte(s)
    ...
 
+Syscall param preadv(iov) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 ---------------------------------------------------------
 290:             SYS_pwritev 4s 0m
 ---------------------------------------------------------
@@ -2079,6 +2083,10 @@ Syscall param pwritev(iovcnt) contains uninitialised byte(s)
 
 Syscall param pwritev(offset) contains uninitialised byte(s)
    ...
+
+Syscall param pwritev(vector) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 298:              SYS_fhopen 2s 1m

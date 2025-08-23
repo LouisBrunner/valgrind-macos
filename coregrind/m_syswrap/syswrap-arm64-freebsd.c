@@ -204,7 +204,6 @@ PRE(sys_preadv)
                  iovcnt, vki_off_t, offset);
    if (!ML_(fd_allowed)(ARG1, "preadv", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
-   }
    if ((Int)ARG3 > 0) {
       PRE_MEM_READ("preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec));
    }

@@ -4087,13 +4087,15 @@ PRE(sys_waitid)
    PRE_REG_READ5(int32_t, "sys_waitid",
                  int, which, vki_pid_t, pid, struct vki_siginfo *, infop,
                  int, options, struct vki_rusage *, ru);
-   PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
    if (ARG5 != 0)
       PRE_MEM_WRITE( "waitid(ru)", ARG5, sizeof(struct vki_rusage) );
 }
 POST(sys_waitid)
 {
-   POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
+   if (ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
    if (ARG5 != 0)
       POST_MEM_WRITE( ARG5, sizeof(struct vki_rusage) );
 }

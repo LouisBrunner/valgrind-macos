@@ -4146,6 +4146,62 @@ Syscall param mq_getsetattr(omqstat) points to unaddressable byte(s)
 283: __NR_sys_kexec_load ni
 -----------------------------------------------------
 -----------------------------------------------------
+284:         __NR_waitid 5s 0m
+-----------------------------------------------------
+Syscall param sys_waitid(which) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(infop) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(options) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(ru) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+-----------------------------------------------------
+284:         __NR_waitid (infop,ru) 5s 2m
+-----------------------------------------------------
+Syscall param sys_waitid(which) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(infop) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(options) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(ru) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param waitid(infop) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param waitid(ru) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 329:  __NR_epoll_create1 1s 0m
 -----------------------------------------------------
 Syscall param epoll_create1(flags) contains uninitialised byte(s)

@@ -88,6 +88,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508154  PRE(sys_fchownat) not handling VKI_AT_FDCWD
 508638  Self-hosting not working on FreeBSD
 508777  amd64-linux: add minimal scalar test
+508778  syscall-wrapper waitid warns about infop=null
 508869  x86-linux: simplify scalar test output
 
 To see details of a given bug, visit

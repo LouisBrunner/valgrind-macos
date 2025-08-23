@@ -46,6 +46,62 @@ Syscall param write(buf) points to unaddressable byte(s)
  60:           __NR_exit below
 -----------------------------------------------------
 -----------------------------------------------------
+247:         __NR_waitid 5s 0m
+-----------------------------------------------------
+Syscall param sys_waitid(which) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(infop) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(options) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(ru) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+-----------------------------------------------------
+247:         __NR_waitid (infop,ru) 5s 2m
+-----------------------------------------------------
+Syscall param sys_waitid(which) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(infop) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(options) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(ru) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param waitid(infop) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param waitid(ru) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 9999:                9999 1e
 -----------------------------------------------------
 WARNING: unhandled amd64-linux syscall: 9999

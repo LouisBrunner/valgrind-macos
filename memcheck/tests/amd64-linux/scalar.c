@@ -45,6 +45,13 @@ int main(void)
    GO(__NR_exit, "below");
    // (see below)
 
+  // __NR_waitid 247
+   GO(__NR_waitid, "5s 0m");
+   SY(__NR_waitid, x0, x0, x0, x0, x0); FAIL;
+
+   GO(__NR_waitid, "(infop,ru) 5s 2m");
+   SY(__NR_waitid, x0, x0, x0 + 1, x0, x0 + 1); FAIL;
+
     // no such syscall...
    GO(9999, "1e");
    SY(9999); FAIL;

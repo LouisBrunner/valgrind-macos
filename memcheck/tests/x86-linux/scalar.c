@@ -1272,6 +1272,13 @@ int main(void)
    GO(__NR_sys_kexec_load, "ni");
    SY(__NR_sys_kexec_load); FAIL;
 
+   // __NR_waitid 284
+   GO(__NR_waitid, "5s 0m");
+   SY(__NR_waitid, x0, x0, x0, x0, x0); FAIL;
+
+   GO(__NR_waitid, "(infop,ru) 5s 2m");
+   SY(__NR_waitid, x0, x0, x0 + 1, x0, x0 + 2); FAIL;
+
    // __NR_epoll_create1 329
    GO(__NR_epoll_create1, "1s 0m");
    SY(__NR_epoll_create1, x0); SUCC_OR_FAIL;

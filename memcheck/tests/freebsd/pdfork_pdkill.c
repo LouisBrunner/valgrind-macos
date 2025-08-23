@@ -94,6 +94,8 @@ int main(int argc, char *argv[]) {
        fprintf(stderr, "parent after 1st bad pdfork\n");
        int anotherfd;
        int badflag;
+       anotherfd = 2 + badflag;
+       anotherfd -= badflag;
        // without this the last pdfork succeeds on arm64
        badflag = -1 + anotherfd;
        badflag -=anotherfd;

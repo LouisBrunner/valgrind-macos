@@ -4189,11 +4189,11 @@ Syscall param fstatat(buf) contains uninitialised byte(s)
 Syscall param fstatat(flag) contains uninitialised byte(s)
    ...
 
-Syscall param fstatat(path) points to unaddressable byte(s)
+Syscall param freebsd11_fstatat(path) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param fstatat(sb) points to unaddressable byte(s)
+Syscall param freebsd11_fstatat(sb) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -4278,19 +4278,19 @@ Syscall param mkfifoat(path) points to unaddressable byte(s)
 ---------------------------------------------------------
 498:   SYS_freebsd11_mknodat 4s 1m
 ---------------------------------------------------------
-Syscall param mknodat(dfd) contains uninitialised byte(s)
+Syscall param freebsd11_mknodat(dfd) contains uninitialised byte(s)
    ...
 
-Syscall param mknodat(pathname) contains uninitialised byte(s)
+Syscall param freebsd11_mknodat(pathname) contains uninitialised byte(s)
    ...
 
-Syscall param mknodat(mode) contains uninitialised byte(s)
+Syscall param freebsd11_mknodat(mode) contains uninitialised byte(s)
    ...
 
-Syscall param mknodat(dev) contains uninitialised byte(s)
+Syscall param freebsd11_mknodat(dev) contains uninitialised byte(s)
    ...
 
-Syscall param mknodat(pathname) points to unaddressable byte(s)
+Syscall param freebsd11_mknodat(pathname) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
              pid_t pid;
              pdgetpid(fd, &pid);
              pdkill(fd, 9);
+             int res_close = close(fd);
+             if (-1 == res_close) {
+                 perror("close");
+            }
         } else {
             fprintf(stderr, "parent: child exited\n");
         }
@@ -94,6 +98,8 @@ int main(int argc, char *argv[]) {
        free(pbadpid);
        pdgetpid(anotherfd, pbadpid);
        pdfork(&anotherfd, badflag);
+       pdkill(*badfd, 9);
+       close(*badfd);
     }
 
     return EXIT_SUCCESS;

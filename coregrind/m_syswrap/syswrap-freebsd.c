@@ -899,6 +899,8 @@ PRE(sys_fchflags)
 {
    PRINT("sys_fchflags ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1,ARG2);
    PRE_REG_READ2(int, "fchflags", int, fd, unsigned long, flags);
+   if (!ML_(fd_allowed)(ARG1, "fchflags", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_sync 36
@@ -988,6 +990,8 @@ PRE(sys_ioctl)
    PRINT("sys_ioctl ( %" FMT_REGWORD "u, 0x%" FMT_REGWORD "x, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "ioctl",
                  int, fd, unsigned long, request, unsigned long, arg);
+   if (!ML_(fd_allowed)(ARG1, "ioctl", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 
    switch (ARG2 /* request */) {
    /* Handle specific ioctls which pass structures which may have pointers to other
@@ -1401,9 +1405,8 @@ PRE(sys_fcntl)
       I_die_here;
    }
 
-   if (!ML_(fd_allowed)(ARG1, "fcntl", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "fcntl", tid, False))
      SET_STATUS_Failure (VKI_EBADF);
-   }
 }
 
 POST(sys_fcntl)
@@ -1811,6 +1814,8 @@ PRE(sys_freebsd11_fstat)
 {
    PRINT("sys_freebsd11_fstat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",SARG1,ARG2);
    PRE_REG_READ2(int, "fstat", int, fd, struct stat *, sb);
+   if (!ML_(fd_allowed)(ARG1, "freebsd11_fstat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "fstat(sb)", ARG2, sizeof(struct vki_freebsd11_stat) );
 }
 
@@ -1852,6 +1857,8 @@ PRE(sys_fpathconf)
 {
    PRINT("sys_fpathconf ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2);
    PRE_REG_READ2(long, "fpathconf", int, fd, int, name);
+   if (!ML_(fd_allowed)(ARG1, "fpathconf", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_getrlimit  194
@@ -1871,6 +1878,8 @@ PRE(sys_freebsd11_getdirentries)
                  int, fd, char *, buf,
                  int, nbytes,
                  long *, basep);
+   if (!ML_(fd_allowed)(ARG1, "getdirentries", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "getdirentries(buf)", ARG2, ARG3 );
    if (ARG4) {
       PRE_MEM_WRITE( "getdirentries(basep)", ARG4, sizeof(long) );
@@ -2142,8 +2151,10 @@ PRE(sys_undelete)
 // int futimes(int fd, const struct timeval *times);
 PRE(sys_futimes)
 {
-   PRINT("sys_lutimes ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2);
+   PRINT("sys_futimes ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2);
    PRE_REG_READ2(long, "futimes", int, fd, struct timeval *, times);
+   if (!ML_(fd_allowed)(ARG1, "futimes", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    if (ARG2 != 0) {
       PRE_MEM_READ( "futimes(times)", ARG2, sizeof(struct vki_timeval) );
    }
@@ -2962,23 +2973,21 @@ PRE(sys_aio_cancel)
    if (ARG2) {
       PRE_MEM_READ("aio_cancel(iocb)", ARG2, sizeof(struct vki_aiocb));
    }
-   if (!ML_(fd_allowed)(ARG1, "aio_cancel", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "aio_cancel", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
-   } else {
-      if (ARG2) {
-         if (ML_(safe_to_deref)((struct vki_aiocb *)ARG2, sizeof(struct vki_aiocb))) {
-            // struct vki_aiocb *iocb = (struct vki_aiocb *)ARG2;
-            // @todo PJF cancel only requests associated with
-            // fildes and iocb
-            // Do I need to remove pending reads from iocb(v)_table
-            // or should the user always call aio_return even after
-            // aio_cancel?
-         } else {
-            SET_STATUS_Failure(VKI_EINVAL);
-         }
+   if (ARG2) {
+      if (ML_(safe_to_deref)((struct vki_aiocb *)ARG2, sizeof(struct vki_aiocb))) {
+         // struct vki_aiocb *iocb = (struct vki_aiocb *)ARG2;
+         // @todo PJF cancel only requests associated with
+         // fildes and iocb
+         // Do I need to remove pending reads from iocb(v)_table
+         // or should the user always call aio_return even after
+         // aio_cancel?
       } else {
-         // @todo PJF cancel all requests associated with fildes, see above
+         SET_STATUS_Failure(VKI_EINVAL);
       }
+   } else {
+      // @todo PJF cancel all requests associated with fildes, see above
    }
 }
 
@@ -3367,6 +3376,8 @@ PRE(sys___acl_get_fd)
    PRINT("sys___acl_get_fd ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "acl_get_fd",
                  int, fd, int, type, struct vki_acl *, aclp);
+   if (!ML_(fd_allowed)(ARG1, "__acl_get_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "acl_get_file(aclp)", ARG3, sizeof(struct vki_acl) );
 }
 
@@ -3385,6 +3396,8 @@ PRE(sys___acl_set_fd)
    PRINT("sys___acl_set_fd ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "acl_set_fd",
                  int, filedes, int, type, struct vki_acl *, aclp);
+   if (!ML_(fd_allowed)(ARG1, "__acl_set_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ( "acl_get_file(aclp)", ARG3, sizeof(struct vki_acl) );
 }
 
@@ -3404,6 +3417,8 @@ PRE(sys___acl_delete_fd)
    PRINT("sys___acl_delete_fd ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1,ARG2);
    PRE_REG_READ2(int, "acl_delete_fd",
                  int, filedes, int, acltype);
+   if (!ML_(fd_allowed)(ARG1, "__acl_delete_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS___acl_aclcheck_file 353
@@ -3424,6 +3439,8 @@ PRE(sys___acl_aclcheck_fd)
    PRINT("sys___acl_aclcheck_fd ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )", ARG1,ARG2,ARG3);
    PRE_REG_READ3(int, "acl_aclcheck_fd",
                  int, fd, int, type, struct vki_acl *, aclp);
+   if (!ML_(fd_allowed)(ARG1, "__acl_aclcheck_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ( "acl_aclcheck_fd(aclp)", ARG3, sizeof(struct vki_acl) );
 }
 
@@ -3581,6 +3598,8 @@ PRE(sys_freebsd11_kevent)
                  int, fd, const struct vki_kevent_freebsd11 *, changelist, int, nchanges,
                  struct vki_kevent_freebsd11 *, eventlist, int, nevents,
                  struct timespec *, timeout);
+   if (!ML_(fd_allowed)(ARG1, "freebsd11_kevent", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    if (ARG2 != 0 && ARG3 != 0) {
       PRE_MEM_READ( "kevent(changelist)", ARG2, sizeof(struct vki_kevent_freebsd11)*ARG3 );
    }
@@ -3613,6 +3632,8 @@ PRE(sys_extattr_set_fd)
 {
    PRINT("sys_extattr_set_fd ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", SARG1,SARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(int, "extattr_set_fd", int, fd, int, attrnamespace, const char *,attrname, const void *,data, size_t, nbytes);
+   if (!ML_(fd_allowed)(ARG1, "extattr_set_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "extattr_set_fd(attrname)", ARG3 );
    PRE_MEM_READ("extattr_set_fd(data)", ARG4, ARG5);
 }
@@ -3624,6 +3645,8 @@ PRE(sys_extattr_get_fd)
 {
    PRINT("sys_extattr_get_fd ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", SARG1,SARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(int, "extattr_get_fd", int, fd, int, attrnamespace, const char *,attrname, const void *,data, size_t, nbytes);
+   if (!ML_(fd_allowed)(ARG1, "extattr_get_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "extattr_get_fd(attrname)", ARG3 );
    PRE_MEM_WRITE("extattr_get_fd(data)", ARG4, ARG5);
 }
@@ -3639,6 +3662,8 @@ PRE(sys_extattr_delete_fd)
 {
    PRINT("sys_extattr_delete_fd ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1,SARG2,ARG3);
    PRE_REG_READ3(int, "extattr_delete_fd", int, fd, int, attrnamespace, const char *,attrname);
+   if (!ML_(fd_allowed)(ARG1, "extattr_delete_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "extattr_delete_fd(attrname)", ARG3 );
 }
 
@@ -4228,6 +4253,8 @@ PRE(sys_extattr_list_fd)
 {
    PRINT("extattr_list_fd ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(ssize_t, "extattr_list_fd", int, id, int, attrnamespace, void *,data, size_t, nbytes);
+   if (!ML_(fd_allowed)(ARG1, "extattr_list_fd", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE("extattr_list_fd(data)", ARG3, ARG4);
 }
 
@@ -5157,9 +5184,14 @@ POST(sys_cpuset)
 // int faccessat(int fd, const char *path, int mode, int flag);
 PRE(sys_faccessat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_faccessat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "faccessat",
                  int, fd, const char *, path, int, flag);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "faccessat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "faccessat(path)", ARG2 );
 }
 
@@ -5167,9 +5199,14 @@ PRE(sys_faccessat)
 // int fchmodat(int fd, const char *path, mode_t mode, int flag);
 PRE(sys_fchmodat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_fchmodat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ4(int, "fchmodat",
                  int, fd, const char *, path, vki_mode_t, mode, int, flag);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fchmodat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
 }
 
@@ -5177,8 +5214,13 @@ PRE(sys_fchmodat)
 // int fchownat(int fd, const char *path, uid_t owner, gid_t group, int flag);
 PRE(sys_fchownat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_fchownat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%" FMT_REGWORD "x, %" FMT_REGWORD "d )",
          ARG1,ARG2,(char*)ARG2,ARG3,ARG4, SARG5);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fchownat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_REG_READ5(int, "fchownat",
                  int, fd, const char *, path,
                  vki_uid_t, owner, vki_gid_t, group, int, flag);
@@ -5267,11 +5309,16 @@ PRE(sys_fexecve)
 // int fstatat(int fd, const char *path, struct stat *sb, int flag);
 PRE(sys_freebsd11_fstatat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_freebsd11_fstatat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ4(int, "fstatat",
                  int, fd, const char *, path, struct freebsd11_stat *, buf, int, flag);
-   PRE_MEM_RASCIIZ( "fstatat(path)", ARG2 );
-   PRE_MEM_WRITE( "fstatat(sb)", ARG3, sizeof(struct vki_freebsd11_stat) );
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "freebsd11_fstatat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
+   PRE_MEM_RASCIIZ( "freebsd11_fstatat(path)", ARG2 );
+   PRE_MEM_WRITE( "freebsd11_fstatat(sb)", ARG3, sizeof(struct vki_freebsd11_stat) );
 }
 
 POST(sys_freebsd11_fstatat)
@@ -5286,6 +5333,8 @@ PRE(sys_futimesat)
    PRINT("sys_futimesat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "futimesat",
                  int, fd, const char *, path, struct timeval *, times);
+   if (!ML_(fd_allowed)(ARG1, "futimesat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    if (ARG2 != 0) {
       PRE_MEM_RASCIIZ( "futimesat(path)", ARG2 );
    }
@@ -5298,12 +5347,17 @@ PRE(sys_futimesat)
 // int linkat(int fd1, const char *name1, int fd2, const char *name2, int flag);
 PRE(sys_linkat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    *flags |= SfMayBlock;
    PRINT("sys_linkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )",ARG1,ARG2,(char*)ARG2,ARG3,ARG4,(char*)ARG4,ARG5);
    PRE_REG_READ5(int, "linkat",
                  int, fd1, const char *, name1,
                  int, fd2, const char *, name2,
                  int, flag);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "linkat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "linkat(name1)", ARG2);
    PRE_MEM_RASCIIZ( "linkat(name2)", ARG4);
 }
@@ -5312,10 +5366,15 @@ PRE(sys_linkat)
 // int mkdirat(int fd, const char *path, mode_t mode);
 PRE(sys_mkdirat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    *flags |= SfMayBlock;
    PRINT("sys_mkdirat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "mkdirat",
                  int, fd, const char *, path, unsigned int, mode);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "mkdirat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);;
    PRE_MEM_RASCIIZ( "mkdirat(path)", ARG2 );
 }
 
@@ -5323,8 +5382,13 @@ PRE(sys_mkdirat)
 // int mkfifoat(int fd, const char *path, mode_t mode);
 PRE(sys_mkfifoat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_mkfifoat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x )",
          SARG1,ARG2,(HChar*)ARG2,ARG3 );
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "mkfifoat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_REG_READ3(int, "mkfifoat",
                  int, fd, const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "mkfifoat(path)", ARG2 );
@@ -5334,10 +5398,15 @@ PRE(sys_mkfifoat)
 // int mknodat(int fd, const char *path, mode_t mode, dev_t dev);
 PRE(sys_freebsd11_mknodat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_freebsd11_mknodat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1,ARG2,(char*)ARG2,ARG3,ARG4 );
-   PRE_REG_READ4(long, "mknodat",
+   PRE_REG_READ4(long, "freebsd11_mknodat",
                  int, dfd, const char *, pathname, int, mode, unsigned, dev);
-   PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "freebsd11_mknodat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
+   PRE_MEM_RASCIIZ( "freebsd11_mknodat(pathname)", ARG2 );
 }
 
 // SYS_openat  499
@@ -5388,12 +5457,21 @@ no_client_write:
       PRE_REG_READ3(int, "openat",
                     int, fd, const char *, path, int, flags);
    }
+   Int arg_1 = (Int) ARG1;
+   const HChar *path = (const HChar*)ARG2;
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "openat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
 
-   if (ARG1 != (unsigned)VKI_AT_FDCWD && !ML_(fd_allowed)(ARG1, "openat", tid, False)) {
-      SET_STATUS_Failure( VKI_EBADF );
-   } else {
-      PRE_MEM_RASCIIZ( "openat(path)", ARG2 );
-   }
+   /* For absolute filenames, dirfd is ignored.  If dirfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dirfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)((void*)(Addr)ARG2, 1)
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+   PRE_MEM_RASCIIZ("openat(path)", ARG2);
 
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
@@ -5413,53 +5491,54 @@ POST(sys_openat)
    }
 }
 
+// @todo PJF make this generic?
 // SYS_readlinkat 500
 // ssize_t readlinkat(int fd, const char *restrict path, char *restrict buf,
 //                    size_t bufsize);
 PRE(sys_readlinkat)
 {
-   Word  saved = SYSNO;
    Bool curproc_file = False;
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
 
    PRINT("sys_readlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )", ARG1,ARG2,(char*)ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(ssize_t, "readlinkat",
                  int, fd, const char *, path, char *, buf, int, bufsize);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "readlinkat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
-   PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
+   PRE_MEM_WRITE("readlinkat(buf)", ARG3, ARG4);
 
-   if (VG_(have_slash_proc) == True && (Int)ARG1 == VKI_AT_FDCWD) {
+   if (VG_(have_slash_proc) == True) {
       /*
        * Handle the case where readlinkat is looking at /proc/curproc/file or
        * /proc/<pid>/file.
        */
+      // @todo PJF there is still the case where fd refers to / or /proc or /proc/pid
+      // or /proc/curproc and path is relative pid/file, curproc/file or just file
       do_readlink((const HChar *)ARG2, (HChar *)ARG3, (SizeT)ARG4, status, &curproc_file);
-   }
-
-   // @todo PJF there is still the case where fd refers to /proc or /proc/pid
-   // or /proc/curproc and path is relative pid/file, curptoc/file or just file
-
-   if (!curproc_file) {
-      /* Normal case */
-      SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
-   }
-   if (SUCCESS && RES > 0) {
-      POST_MEM_WRITE( ARG3, RES );
    }
 }
 
 POST(sys_readlinkat)
 {
-   POST_MEM_WRITE( ARG3, RES );
+   POST_MEM_WRITE(ARG3, RES);
 }
 
 // SYS_renameat   501
 // int renameat(int fromfd, const char *from, int tofd, const char *to);
 PRE(sys_renameat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_renameat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s) )", ARG1,ARG2,(char*)ARG2,ARG3,ARG4,(char*)ARG4);
    PRE_REG_READ4(int, "renameat",
                  int, fromfd, const char *, from,
                  int, tofd, const char *, to);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "renameat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "renameat(oldpath)", ARG2 );
    PRE_MEM_RASCIIZ( "renameat(newpath)", ARG4 );
 }
@@ -5468,10 +5547,15 @@ PRE(sys_renameat)
 // int symlinkat(const char *name1, int fd, const char *name2);
 PRE(sys_symlinkat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    *flags |= SfMayBlock;
    PRINT("sys_symlinkat ( %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s) )",ARG1,(char*)ARG1,ARG2,ARG3,(char*)ARG3);
    PRE_REG_READ3(int, "symlinkat",
                  const char *, name1, int, fd, const char *, name2);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "symlinkat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "symlinkat(name1)", ARG1 );
    PRE_MEM_RASCIIZ( "symlinkat(name2)", ARG3 );
 }
@@ -5481,8 +5565,11 @@ PRE(sys_symlinkat)
 PRE(sys_unlinkat)
 {
    *flags |= SfMayBlock;
+   Int arg_1 = (Int)ARG1;
    PRINT("sys_unlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u ",
          ARG1, ARG2, (char*)ARG2, ARG3);
+   if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "unlinkat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_REG_READ3(int, "unlinkat", int, fd, const char *, path, int, flag);
    PRE_MEM_RASCIIZ( "unlinkat(path)", ARG2 );
 }
@@ -5678,6 +5765,8 @@ PRE(sys_cap_rights_get)
 {
    PRINT("sys_cap_rights_get ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3);
    PRE_REG_READ3(long, "cap_rights_get", int, version, int, fd, vki_cap_rights_t*, rights);
+   if (!ML_(fd_allowed)(ARG1, "cap_rights_get", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE("cap_rights_get(rights)", ARG3, sizeof(vki_cap_rights_t));
 }
 
@@ -5771,7 +5860,21 @@ PRE(sys_pdfork)
 POST(sys_pdfork)
 {
    if (ARG1) {
-      POST_MEM_WRITE( ARG1, sizeof(int) );
+      POST_MEM_WRITE(ARG1, sizeof(int));
+      Int* fdp = (Int*)ARG1;
+      if ((VG_(clo_modify_fds) == VG_MODIFY_FD_YES && *fdp > 2)
+          || (VG_(clo_modify_fds) == VG_MODIFY_FD_HIGH)) {
+         int newFd = ML_(get_next_new_fd)(*fdp);
+         if (newFd == *fdp) {
+            // PJF ugh the pdfork syscall succeeded
+            // but our fdup failed
+            // how can I clean up the mess? I presume that the child will still run
+            SET_STATUS_Failure(-1);
+         }
+      }
+      if (VG_(clo_track_fds)) {
+         ML_(record_fd_open_nameless)(tid, *fdp);
+      }
    }
 }
 
@@ -5781,13 +5884,15 @@ PRE(sys_pdkill)
 {
    PRINT("sys_pdkill ( %" FMT_REGWORD "u, %" FMT_REGWORD "d )", ARG1, SARG2);
    PRE_REG_READ2(int, "pdkill", int, fd, int, signum);
+   if (!ML_(fd_allowed)(ARG1, "pdkill", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 
    if (!ML_(client_signal_OK)(ARG2)) {
       SET_STATUS_Failure( VKI_EINVAL );
       return;
    }
 
-   /* Ther was some code here to check if the kill is to this process
+   /* There was some code here to check if the kill is to this process
     *
     * But it was totally wrong
     *
@@ -5806,7 +5911,7 @@ PRE(sys_pdkill)
     * The kill functions operate on pids, not tids.
     *
     * One last thing, I don't see how pdkill could do a self
-    * kill 9. It neads an fd which implied pdfork whichimplies
+    * kill 9. It needs an fd which implies pdfork which implies
     * that the fd/pid are for a child process
     */
 
@@ -5820,7 +5925,6 @@ PRE(sys_pdkill)
    /* This kill might have given us a pending signal.  Ask for a check once
       the syscall is done. */
    *flags |= SfPollAfter;
-
 }
 
 // SYS_pdgetpid   520
@@ -5830,6 +5934,8 @@ PRE(sys_pdgetpid)
    PRINT("pdgetpid ( %" FMT_REGWORD "d, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(int, "pdgetpid",
                  int, fd, pid_t*, pidp);
+   if (!ML_(fd_allowed)(ARG1, "pdgetpid", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "pdgetpid(pidp))", ARG2, sizeof(vki_pid_t) );
 }
 
@@ -6009,6 +6115,8 @@ PRE(sys_cap_rights_limit)
    PRINT("sys_cap_rights_limit ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, ARG2);
    PRE_REG_READ2(int, "cap_rights_limit",
                  int, fd, const cap_rights_t *, rights);
+   if (!ML_(fd_allowed)(ARG1, "cap_rights_limit", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ( "cap_rights_limit(rights)", ARG2, sizeof(struct vki_cap_rights) );
 }
 
@@ -6019,6 +6127,8 @@ PRE(sys_cap_ioctls_limit)
    PRINT("cap_ioctls_limit ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "cap_ioctls_limit",
                  int, fd, unsigned long*, rights, vki_size_t, ncmds);
+   if (!ML_(fd_allowed)(ARG1, "cap_ioctls_limit", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    // "can be up to 256" taking that to not be inclusive
    if (ARG3 < 256 ) {
       PRE_MEM_READ( "cap_ioctls_limit(cmds))", ARG2, ARG3*sizeof(unsigned long) );
@@ -6032,6 +6142,8 @@ PRE(sys_cap_ioctls_get)
 {
    PRINT("sys_cap_ioctls_get ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )", SARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "cap_ioctls_get", int, fd, unsigned long *, cmds, size_t, maxcmds);
+   if (!ML_(fd_allowed)(ARG1, "cap_ioctls_get", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    if (ARG3 < 256) {
       PRE_MEM_WRITE("cap_ioctls_get(cmds)", ARG2, ARG3*sizeof(unsigned long));
    }
@@ -6044,7 +6156,6 @@ POST(sys_cap_ioctls_get)
    }
 }
 
-
 // SYS_cap_fcntls_limit 536
 //int cap_fcntls_limit(int fd, uint32_t fcntlrights);
 PRE(sys_cap_fcntls_limit)
@@ -6052,6 +6163,8 @@ PRE(sys_cap_fcntls_limit)
    PRINT("cap_fcntls_limit ( %" FMT_REGWORD "d, %" FMT_REGWORD "u )", SARG1, ARG2);
    PRE_REG_READ2(long, "cap_fcntls_limit",
                  int, fd, vki_uint32_t, fcntlrights);
+   if (!ML_(fd_allowed)(ARG1, "cap_fcntls_limit", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_cap_fcntls_get   537
@@ -6060,6 +6173,8 @@ PRE(sys_cap_fcntls_get)
 {
    PRINT("sys_cap_fcntls_get ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, ARG2);
    PRE_REG_READ2(int, "cap_fcntls_get", int, fd, uint32_t *, fcntlrightsp);
+   if (!ML_(fd_allowed)(ARG1, "cap_fcntls_get", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE("cap_fcntls_get(fcntlrightsp)", ARG2, sizeof(uint32_t));
 }
 
@@ -6075,6 +6190,8 @@ PRE(sys_bindat)
    PRINT("sys_bindat ( %" FMT_REGWORD "d, %" FMT_REGWORD "dx, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
          SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "bindat", int, fd, int, s, const struct vki_sockaddr *, name, vki_socklen_t, namelen);
+   if (!ML_(fd_allowed)(ARG1, "bindat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ("bindat(name)", ARG3, ARG4);
 }
 
@@ -6085,6 +6202,8 @@ PRE(sys_connectat)
    PRINT("sys_connectat ( %" FMT_REGWORD "d, %" FMT_REGWORD "dx, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
          SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "connectat", int, fd, int, s, const struct vki_sockaddr *, name, vki_socklen_t, namelen);
+   if (!ML_(fd_allowed)(ARG1, "connectat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ("connectat(name)", ARG3, ARG4);
 }
 
@@ -6095,6 +6214,8 @@ PRE(sys_chflagsat)
    PRINT("sys_chglagsat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "d )",
          SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(int, "chflagsat", int, fd, const char *, path, unsigned long, flags, int, atflag);
+   if (!ML_(fd_allowed)(ARG1, "chflagsat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ("chflagsat(path)", ARG2);
 }
 
@@ -6221,6 +6342,8 @@ PRE(sys_futimens)
 {
    PRINT("sys_futimens ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, ARG2);
    PRE_REG_READ2(int, "futimens", int, fd, const struct timespec *, times);
+   if (!ML_(fd_allowed)(ARG1, "futimens", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ("futimens(times)", ARG2, 2*sizeof(struct vki_timespec));
 }
 
@@ -6233,6 +6356,8 @@ PRE(sys_utimensat)
          SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(int, "utimensat", int, fd, const char *,path, const struct timespec *, times,
                  int, flag);
+   if (!ML_(fd_allowed)(ARG1, "utimensat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ("utimensat(path)", ARG2);
    PRE_MEM_READ("utimensat(times)", ARG3, 2*sizeof(struct vki_timespec));
 }
@@ -6243,6 +6368,8 @@ PRE(sys_fdatasync)
 {
    PRINT("sys_fdatasync ( %" FMT_REGWORD "d )",SARG1);
    PRE_REG_READ1(int, "fdatasync", int, fd);
+   if (!ML_(fd_allowed)(ARG1, "fdatasync", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_fstat   551
@@ -6263,9 +6390,14 @@ POST(sys_fstat)
 // int fstatat(int fd, const char *path, struct stat *sb, int flag);
 PRE(sys_fstatat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_fstatat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %" FMT_REGWORD "d )", SARG1,ARG2,(char*)ARG2,ARG3,SARG4);
    PRE_REG_READ4(int, "fstatat",
                  int, fd, const char *, path, struct stat *, sb, int, flag);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fstatat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "fstatat(path)", ARG2 );
    PRE_MEM_WRITE( "fstatat(sb)", ARG3, sizeof(struct vki_stat) );
 }
@@ -6299,6 +6431,8 @@ PRE(sys_getdirentries)
                  int, fd, char *, buf,
                  size_t, nbytes,
                  off_t *, basep);
+   if (!ML_(fd_allowed)(ARG1, "getdirentries", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "getdirentries(buf)", ARG2, ARG3 );
    if (ARG4) {
       PRE_MEM_WRITE("getdirentries(basep)", ARG4, sizeof (vki_off_t));
@@ -6338,6 +6472,8 @@ PRE(sys_fstatfs)
    PRINT("sys_fstatfs ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",SARG1,ARG2);
    PRE_REG_READ2(int, "fstatfs",
                  int, fd, struct vki_statfs *, buf);
+   if (!ML_(fd_allowed)(ARG1, "fstatfs", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "fstatfs(buf)", ARG2, sizeof(struct vki_statfs) );
 }
 
@@ -6446,8 +6582,13 @@ POST(sys_getrandom)
 // int getfhat(int fd, const char *path, fhandle_t *fhp, int flag);
 PRE(sys_getfhat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_getfhat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "x, %" FMT_REGWORD "d ", SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(int, "getfhat", int, fd, const char*, path, vki_fhandle_t*, fhp, int, flag);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "getfhat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);;
    PRE_MEM_RASCIIZ( "getfhat(path)", ARG2 );
    PRE_MEM_WRITE("getfhat(fhp)", ARG3, sizeof(vki_fhandle_t));
 }
@@ -6496,10 +6637,15 @@ POST(sys_fhreadlink)
 // int funlinkat(int dfd, const char *path, int fd, int flag);
 PRE(sys_funlinkat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    *flags |= SfMayBlock;
    PRINT("sys_funlinkat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD"u )",
          SARG1, ARG2, (char*)ARG2, ARG4, ARG5);
    PRE_REG_READ4(int, "funlinkat", int, dfd, const char *, path, int, fd, int, flag);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "funlinkat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "funlinkat(path)", ARG2 );
 }
 
@@ -6523,17 +6669,16 @@ PRE(sys_copy_file_range)
       valgrind itself uses some, so make sure someone didn't
       put in one of our own...  */
    if (!ML_(fd_allowed)(ARG1, "copy_file_range(infd)", tid, False) ||
-       !ML_(fd_allowed)(ARG3, "copy_file_range(infd)", tid, False)) {
+       !ML_(fd_allowed)(ARG3, "copy_file_range(infd)", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
-   } else {
-      /* Now see if the offsets are defined. PRE_MEM_READ will
-         double check it can dereference them. */
-      if (ARG2 != 0) {
-         PRE_MEM_READ( "copy_file_range(inoffp)", ARG2, sizeof(vki_off_t));
-      }
-      if (ARG4 != 0) {
-         PRE_MEM_READ( "copy_file_range(outoffp)", ARG4, sizeof(vki_off_t));
-      }
+
+   /* Now see if the offsets are defined. PRE_MEM_READ will
+      double check it can dereference them. */
+   if (ARG2 != 0) {
+      PRE_MEM_READ( "copy_file_range(inoffp)", ARG2, sizeof(vki_off_t));
+   }
+   if (ARG4 != 0) {
+      PRE_MEM_READ( "copy_file_range(outoffp)", ARG4, sizeof(vki_off_t));
    }
 }
 
@@ -6677,10 +6822,15 @@ PRE(sys_sigfastblock)
 //         int flags)
 PRE(sys___realpathat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys___realpathat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %" FMT_REGWORD "u %" FMT_REGWORD "d )",
          SARG1,ARG2,(const char*)ARG2,ARG3,ARG4,SARG5 );
    PRE_REG_READ5(int, "__realpathat", int, fd, const char *, path,
                  char *, buf, vki_size_t, size, int, flags);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "__realpathat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ("__realpathat(path)", (Addr)ARG2);
    PRE_MEM_WRITE("__realpathat(buf)", (Addr)ARG3, ARG4);
 }
@@ -6879,6 +7029,8 @@ PRE(sys_fspacectl)
 {
    PRINT("fspacectl ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3, SARG4, ARG5);
    PRE_REG_READ5(int, "fspacectl", int, fd, int, cmd, const struct spacectl_range *, rqsr, int, flags, struct spacectl_range *, rmsr);
+   if (!ML_(fd_allowed)(ARG1, "fspacectl", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ("fspacectl(rqsr)", (Addr)ARG3, sizeof(struct vki_spacectl_range));
    if (ARG5) {
       PRE_MEM_WRITE("fspacectl(rmsr)", (Addr)ARG5, sizeof(struct vki_spacectl_range));
@@ -6964,9 +7116,8 @@ PRE(sys_timerfd_gettime)
                  struct vki_itimerspec*, curr_value);
    if (!ML_(fd_allowed)(ARG1, "timerfd_gettime", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
-   else
-      PRE_MEM_WRITE("timerfd_gettime(curr_value)",
-                    ARG2, sizeof(struct vki_itimerspec));
+   PRE_MEM_WRITE("timerfd_gettime(curr_value)",
+                 ARG2, sizeof(struct vki_itimerspec));
 }
 
 POST(sys_timerfd_gettime)
@@ -6989,15 +7140,12 @@ PRE(sys_timerfd_settime)
                  struct vki_itimerspec*, old_value);
    if (!ML_(fd_allowed)(ARG1, "timerfd_settime", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
-   else
+   PRE_MEM_READ("timerfd_settime(new_value)",
+                ARG3, sizeof(struct vki_itimerspec));
+   if (ARG4)
    {
-      PRE_MEM_READ("timerfd_settime(new_value)",
-                   ARG3, sizeof(struct vki_itimerspec));
-      if (ARG4)
-      {
-         PRE_MEM_WRITE("timerfd_settime(old_value)",
-                       ARG4, sizeof(struct vki_itimerspec));
-      }
+      PRE_MEM_WRITE("timerfd_settime(old_value)",
+                    ARG4, sizeof(struct vki_itimerspec));
    }
 }
 
@@ -7118,17 +7266,17 @@ PRE(sys_exterrctl)
 // int inotify_add_watch_at(int fd, int dfd, _In_z_ const char *path, uint32_t mask);
 PRE(sys_inotify_add_watch_at)
 {
+   Int arg_2 = (Int)ARG2;
+   const HChar *path = (const HChar*)ARG3;
    PRINT("sys_inotify_add_watch_at(%" FMT_REGWORD "d, %" FMT_REGWORD "d, %" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x)", SARG1, SARG2, ARG3, (HChar*)ARG3, ARG4);
    PRE_REG_READ4(int, "inotify_add_watch_at", int, fd, int, dfd, const char*, path, uint32_t, mask);
    PRE_MEM_RASCIIZ("inotify_add_watch_at(path)", ARG3);
    if (!ML_(fd_allowed)(ARG1, "inotify_add_watch_at", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    }
-   if (ARG2 != VKI_AT_FDCWD) {
-      if (!ML_(fd_allowed)(ARG2, "inotify_add_watch_at", tid, False)) {
-         SET_STATUS_Failure( VKI_EBADF );
-      }
-   }
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_2 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_2, "inotify_add_watch_at", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_inotify_rm_watch

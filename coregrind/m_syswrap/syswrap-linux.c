@@ -6398,6 +6398,7 @@ POST(sys_readlinkat)
    HChar name[30];       // large enough
    Word  saved = SYSNO;
 
+   // @todo PJF why is this done in POST and not in PRE?
    /*
     * Handle the case where readlinkat is looking at /proc/self/exe or
     * /proc/<pid>/exe.

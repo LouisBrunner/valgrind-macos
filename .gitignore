@@ -1102,6 +1102,7 @@
 /memcheck/tests/amd64-linux/defcfaexpr
 /memcheck/tests/amd64-linux/int3-amd64
 /memcheck/tests/amd64-linux/reallocarray
+/memcheck/tests/amd64-linux/scalar
 /memcheck/tests/amd64-linux/Makefile
 /memcheck/tests/amd64-linux/Makefile.in
 

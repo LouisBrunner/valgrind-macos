@@ -1054,22 +1054,26 @@ static inline void my_exit ( int x )
 # if defined(VGP_arm64_darwin)
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
 # else
-# if DARWIN_VERS == DARWIN_10_9
+#  if DARWIN_VERS == DARWIN_10_9
   MEMCHR(VG_Z_DYLD,                   memchr)
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr)
-# endif
-# if DARWIN_VERS >= DARWIN_10_10
+#  endif
+#  if DARWIN_VERS >= DARWIN_10_10
   MEMCHR(VG_Z_DYLD,                   memchr)
   /* _platform_memchr$VARIANT$Generic */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Generic)
   /* _platform_memchr$VARIANT$Haswell */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Haswell)
-# endif
-# if DARWIN_VERS >= DARWIN_10_12
+#  endif
+#  if DARWIN_VERS >= DARWIN_10_12
   /* _platform_memchr$VARIANT$Base */
   MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$Base)
-#endif
-#endif
+#  endif
+// FIXME: unsure of the exact version
+#  if DARWIN_VERS >= DARWIN_13_00
+  MEMCHR(libsystemZuplatformZddylib, _platform_memchr$VARIANT$NoOverread)
+#  endif
+# endif
 
 #elif defined(VGO_solaris)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)
@@ -1305,7 +1309,11 @@ static inline void my_exit ( int x )
  MEMCMP(VG_Z_LIBC_SONAME,  timingsafe_bcmp)
 
 #elif defined(VGO_darwin)
-# if DARWIN_VERS >= DARWIN_10_9
+// FIXME: unsure of the exact version
+# if DARWIN_VERS >= DARWIN_13_00 && defined(VGA_amd64)
+  MEMCMP(libsystemZuplatformZddylib, _platform_memcmp$VARIANT$Base)
+  MEMCMP(libsystemZuplatformZddylib, _platform_memcmp$VARIANT$NoOverread)
+# elif DARWIN_VERS >= DARWIN_10_9
   MEMCMP(libsystemZuplatformZddylib, _platform_memcmp)
 # endif
 
@@ -1475,6 +1483,13 @@ static inline void my_exit ( int x )
   MEMSET(libsystemZucZddylib, __memset_chk)
   MEMSET(libsystemZuplatformZddylib, memset)
   MEMSET(libsystemZuplatformZddylib, _platform_memset)
+# else
+// FIXME: unsure of the exact version
+#  if DARWIN_VERS >= DARWIN_13_00
+  MEMSET(libsystemZuplatformZddylib, _platform_memset$VARIANT$Base)
+  MEMSET(libsystemZuplatformZddylib, _platform_memset$VARIANT$Haswell)
+  MEMSET(libsystemZuplatformZddylib, _platform_memset$VARIANT$Ivybridge)
+#  endif
 # endif
 
 #elif defined(VGO_solaris)
@@ -1505,15 +1520,21 @@ static inline void my_exit ( int x )
 # if defined(VGP_arm64_darwin)
   MEMMOVE(libsystemZuplatformZddylib, _platform_memmove)
 # else
-# if DARWIN_VERS <= DARWIN_10_6
+#  if DARWIN_VERS <= DARWIN_10_6
   MEMMOVE(VG_Z_LIBC_SONAME, memmove)
-# endif
+#  endif
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
-# if DARWIN_VERS >= DARWIN_10_9
+#  if DARWIN_VERS >= DARWIN_10_9
   /* _platform_memmove$VARIANT$Ivybridge */
   MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDIvybridge)
-# endif
+#  endif
+// FIXME: unsure of the exact version
+#  if DARWIN_VERS >= DARWIN_13_00
+  MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDBase)
+  MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDHaswell)
+  MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDNehalem)
+#  endif
 # endif
 
 #elif defined(VGO_solaris)

@@ -1976,7 +1976,9 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    //   p: none
    //--------------------------------------------------------------
 #  if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
-   VG_(dyld_cache_init)();
+   if (the_iifii.dynamic) {
+     VG_(dyld_cache_init)();
+   }
 #  endif
 
    //--------------------------------------------------------------

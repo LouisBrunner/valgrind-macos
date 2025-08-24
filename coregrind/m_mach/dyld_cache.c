@@ -149,6 +149,7 @@ static int try_to_init(void) {
     dyld_cache.header = (const dyld_cache_header *) cache_address;
     const dyld_cache_mapping_info* mappings = (const dyld_cache_mapping_info*)(calculate_relative(dyld_cache.header, dyld_cache.header->mappingOffset));
     dyld_cache.slide = cache_address - mappings[0].address;
+    VG_(debugLog)(2, "dyld_cache", "dyld cache slide: %#lx\n", dyld_cache.slide);
 
     if (!try_to_init_header(cache_address)) {
       return 0;
@@ -216,15 +217,12 @@ void VG_(dyld_cache_init)(void) {
     );
     return;
   }
-#if defined(VGP_arm64_darwin)
   // We currently detect if dyld is loading/using a library by checking if stat64 fails.
   // However, dyld doesn't seem to call stat64 for all of them anymore.
-  // Because dynamic binaries on arm64 are mandatory, they will necessarily include those,
-  // so we request them to be loaded right away to ensure we have their symbols.
+  // All arm64 binaries are executables but some x86 ones might not be so let's avoid them just to be safe.
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
-#endif
 }
 
 int VG_(dyld_cache_might_be_in)(const HChar* path) {

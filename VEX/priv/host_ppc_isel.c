@@ -2069,14 +2069,14 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
          }
          break;
 
-      case Iop_Clz32: case Iop_ClzNat32:
-      case Iop_Clz64: case Iop_ClzNat64: {
+      case Iop_ClzNat32:
+      case Iop_ClzNat64: {
          // cntlz is available even in the most basic (earliest) ppc
          // variants, so it's safe to generate it unconditionally.
          HReg r_src, r_dst;
-         PPCUnaryOp op_clz = (op_unop == Iop_Clz32 || op_unop == Iop_ClzNat32)
+         PPCUnaryOp op_clz = (op_unop == Iop_ClzNat32)
                                 ? Pun_CLZ32 : Pun_CLZ64;
-         if ((op_unop == Iop_Clz64 || op_unop == Iop_ClzNat64) && !mode64)
+         if ((op_unop == Iop_ClzNat64) && !mode64)
             goto irreducible;
          /* Count leading zeroes. */
          r_dst = newVRegI(env);
@@ -2085,9 +2085,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
          return r_dst;
       }
 
-      //case Iop_Ctz32:
       case Iop_CtzNat32:
-      //case Iop_Ctz64:
       case Iop_CtzNat64:
       {
          // Generate code using Clz, because we can't assume the host has
@@ -2095,7 +2093,7 @@ static HReg iselWordExpr_R_wrk ( ISelEnv* env, const IRExpr* e,
          // creating a Ctz in ir_opt.c from smaller fragments.
          PPCUnaryOp op_clz = Pun_CLZ64;
          Int WS = 64;
-         if (op_unop == Iop_Ctz32 || op_unop == Iop_CtzNat32) {
+         if (op_unop == Iop_CtzNat32) {
             op_clz = Pun_CLZ32;
             WS = 32;
          }

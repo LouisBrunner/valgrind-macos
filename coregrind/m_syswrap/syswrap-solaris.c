@@ -2326,10 +2326,8 @@ PRE(sys_readlinkat)
    if (dfd != VKI_AT_FDCWD
        && ML_(safe_to_deref)((void *) ARG2, 1)
        && ((HChar *) ARG2)[0] != '/'
-       && !ML_(fd_allowed)(dfd, "readlinkat", tid, False)) {
+       && !ML_(fd_allowed)(dfd, "readlinkat", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
-      return;
-   }
 
    /* Handle the case where readlinkat is looking at /proc/self/path/a.out or
       /proc/<pid>/path/a.out. */
@@ -2564,6 +2562,7 @@ PRE(sys_mknodat)
 
 POST(sys_mknodat)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "mknodat", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure(VKI_EMFILE);
@@ -7786,6 +7785,7 @@ POST(sys_port)
    Int opcode = ARG1 & VKI_PORT_CODE_MASK;
    switch (opcode) {
    case VKI_PORT_CREATE:
+      POST_newFd_RES;
       if (!ML_(fd_allowed)(RES, "port", tid, True)) {
          VG_(close)(RES);
          SET_STATUS_Failure(VKI_EMFILE);

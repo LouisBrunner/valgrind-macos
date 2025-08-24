@@ -190,11 +190,6 @@ void ppIROp ( IROp op )
       case Iop_MullU32:  vex_printf("MullU32"); return;
       case Iop_MullU64:  vex_printf("MullU64"); return;
 
-      case Iop_Clz64:    vex_printf("Clz64"); return;
-      case Iop_Clz32:    vex_printf("Clz32"); return;
-      case Iop_Ctz64:    vex_printf("Ctz64"); return;
-      case Iop_Ctz32:    vex_printf("Ctz32"); return;
-
       case Iop_ClzNat64: vex_printf("ClzNat64"); return;
       case Iop_ClzNat32: vex_printf("ClzNat32"); return;
       case Iop_CtzNat64: vex_printf("CtzNat64"); return;
@@ -1416,7 +1411,6 @@ Bool primopMightTrap ( IROp op )
    case Iop_ExpCmpNE16: case Iop_ExpCmpNE32: case Iop_ExpCmpNE64:
    case Iop_MullS8: case Iop_MullS16: case Iop_MullS32: case Iop_MullS64:
    case Iop_MullU8: case Iop_MullU16: case Iop_MullU32: case Iop_MullU64:
-   case Iop_Clz64: case Iop_Clz32: case Iop_Ctz64: case Iop_Ctz32:
    case Iop_ClzNat64: case Iop_ClzNat32: case Iop_CtzNat64: case Iop_CtzNat32:
    case Iop_PopCount64: case Iop_PopCount32:
    case Iop_CmpLT32S: case Iop_CmpLT64S: case Iop_CmpLE32S: case Iop_CmpLE64S:
@@ -3292,12 +3286,10 @@ void typeOfPrimop ( IROp op,
       case Iop_MullU64: case Iop_MullS64:
          BINARY(Ity_I64,Ity_I64, Ity_I128);
 
-      case Iop_Clz32: case Iop_Ctz32:
       case Iop_ClzNat32: case Iop_CtzNat32:
       case Iop_PopCount32:
          UNARY(Ity_I32, Ity_I32);
 
-      case Iop_Clz64: case Iop_Ctz64:
       case Iop_ClzNat64: case Iop_CtzNat64:
       case Iop_PopCount64:
          UNARY(Ity_I64, Ity_I64);

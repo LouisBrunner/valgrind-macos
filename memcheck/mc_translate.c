@@ -2424,14 +2424,14 @@ IRAtom* expensiveCountTrailingZeroes ( MCEnv* mce, IROp czop,
    tl_assert(sameKindedAtoms(atom,vatom));
 
    switch (czop) {
-      case Iop_Ctz32: case Iop_CtzNat32:
+      case Iop_CtzNat32:
          ty = Ity_I32;
          xorOp = Iop_Xor32;
          subOp = Iop_Sub32;
          andOp = Iop_And32;
          one = mkU32(1);
          break;
-      case Iop_Ctz64: case Iop_CtzNat64:
+      case Iop_CtzNat64:
          ty = Ity_I64;
          xorOp = Iop_Xor64;
          subOp = Iop_Sub64;
@@ -2499,14 +2499,14 @@ IRAtom* expensiveCountLeadingZeroes ( MCEnv* mce, IROp czop,
    tl_assert(sameKindedAtoms(atom,vatom));
 
    switch (czop) {
-      case Iop_Clz32: case Iop_ClzNat32:
+      case Iop_ClzNat32:
          ty = Ity_I32;
          shrOp = Iop_Shr32;
          notOp = Iop_Not32;
          andOp = Iop_And32;
          mkRight = mkRight32;
          break;
-      case Iop_Clz64: case Iop_ClzNat64:
+      case Iop_ClzNat64:
          ty = Ity_I64;
          shrOp = Iop_Shr64;
          notOp = Iop_Not64;
@@ -5316,12 +5316,12 @@ IRExpr* expr2vbits_Unop ( MCEnv* mce, IROp op, IRAtom* atom )
       case Iop_NegF16:
          return mkPCastTo(mce, Ity_I16, vatom);
 
-      case Iop_Ctz32: case Iop_CtzNat32:
-      case Iop_Ctz64: case Iop_CtzNat64:
+      case Iop_CtzNat32:
+      case Iop_CtzNat64:
          return expensiveCountTrailingZeroes(mce, op, atom, vatom);
 
-      case Iop_Clz32: case Iop_ClzNat32:
-      case Iop_Clz64: case Iop_ClzNat64:
+      case Iop_ClzNat32:
+      case Iop_ClzNat64:
          return expensiveCountLeadingZeroes(mce, op, atom, vatom);
 
       // PopCount32: this is slightly pessimistic.  It is true that the

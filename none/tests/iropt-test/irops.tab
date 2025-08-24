@@ -124,12 +124,6 @@
    { OPNAME(Left32), Ity_I32,  1, Ity_I32 },
    { OPNAME(Left64), Ity_I64,  1, Ity_I64 },
 
-// { OPNAME(Clz32),  Ity_I32,  1, Ity_I32 }, // deprecated, undefined behaviour
-// { OPNAME(Clz64),  Ity_I64,  1, Ity_I64 }, // deprecated, undefined behaviour
-
-// { OPNAME(Ctz32),  Ity_I32,  1, Ity_I32 }, // deprecated, undefined behaviour
-// { OPNAME(Ctz64),  Ity_I64,  1, Ity_I64 }, // deprecated, undefined behaviour
-
    { OPNAME(ClzNat32), Ity_I32, 1, Ity_I32, ONLY2(ppc, x86) },
    { OPNAME(ClzNat64), Ity_I64, 1, Ity_I64, EXCEPT2(ppc32, x86) },
 

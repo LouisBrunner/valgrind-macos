@@ -1321,31 +1321,6 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
    }
 }
 
-/* Helpers for folding Clz32/64. */
-static UInt fold_Clz64 ( ULong value )
-{
-   UInt i;
-   vassert(value != 0ULL); /* no defined semantics for arg==0 */
-   for (i = 0; i < 64; ++i) {
-      if (0ULL != (value & (((ULong)1) << (63 - i)))) return i;
-   }
-   vassert(0);
-   /*NOTREACHED*/
-   return 0;
-}
-
-static UInt fold_Clz32 ( UInt value )
-{
-   UInt i;
-   vassert(value != 0); /* no defined semantics for arg==0 */
-   for (i = 0; i < 32; ++i) {
-      if (0 != (value & (((UInt)1) << (31 - i)))) return i;
-   }
-   vassert(0);
-   /*NOTREACHED*/
-   return 0;
-}
-
 /* Helpers for folding ClzNat32/64. */
 static UInt fold_ClzNat64 ( ULong value )
 {
@@ -1738,19 +1713,6 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
             Long  s64 = (Long)u64;
             s64 = (s64 | (-s64));
             e2 = IRExpr_Const( IRConst_U64( (ULong)s64 ));
-            break;
-         }
-
-         case Iop_Clz32: {
-            UInt u32 = e->Iex.Unop.arg->Iex.Const.con->Ico.U32;
-            if (u32 != 0)
-               e2 = IRExpr_Const(IRConst_U32(fold_Clz32(u32)));
-            break;
-         }
-         case Iop_Clz64: {
-            ULong u64 = e->Iex.Unop.arg->Iex.Const.con->Ico.U64;
-            if (u64 != 0ULL)
-               e2 = IRExpr_Const(IRConst_U64(fold_Clz64(u64)));
             break;
          }
 

@@ -12,6 +12,8 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * New VEX API function LibVEX_set_VexControl
 
+* The deprecated IROps: Iop_Clz32/64 and Iop_Ctz32/64 have been removed
+
 * ================== PLATFORM CHANGES =================
 
 * ==================== TOOL CHANGES ===================
@@ -69,6 +71,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506930  valgrind allows SIGKILL being reset to SIG_DFL
 506967  Implement and override mallinfo2
 506970  mmap needs an EBADF fd_allowed check
+507033  Remove deprecated Iop_Clz32/64 and Iop_Ctz32/64
 507173  s390x: Crash when constant folding is disabled
 507720  Review syscalls returning file descriptors (other platforms)
 507721  Wire up illumos and Solaris mallinfo

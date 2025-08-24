@@ -462,13 +462,6 @@ typedef
       Iop_MullU8, Iop_MullU16, Iop_MullU32, Iop_MullU64,
 
       /* Counting bits */
-      /* Ctz64/Ctz32/Clz64/Clz32 are UNDEFINED when given arguments of zero.
-         You must ensure they are never given a zero argument.  As of
-         2018-Nov-14 they are deprecated.  Try to use the Nat variants
-         immediately below, if you can.
-      */
-      Iop_Clz64, Iop_Clz32,   /* count leading zeroes */
-      Iop_Ctz64, Iop_Ctz32,   /* count trailing zeros */
       /* Count leading/trailing zeroes, with "natural" semantics for the
          case where the input is zero: then the result is the number of bits
          in the word. */

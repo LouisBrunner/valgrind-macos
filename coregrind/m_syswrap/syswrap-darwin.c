@@ -9891,7 +9891,6 @@ POST(fstatat64)
 
 PRE(readlinkat)
 {
-    Word  saved = SYSNO;
     Int arg_1 = (Int)ARG1;
     const HChar *path = (const HChar*)ARG2;
     PRINT("readlinkat ( %ld, %#lx(%s), %#lx, %ld )",

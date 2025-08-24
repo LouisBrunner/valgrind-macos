@@ -70,6 +70,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506967  Implement and override mallinfo2
 506970  mmap needs an EBADF fd_allowed check
 507173  s390x: Crash when constant folding is disabled
+507720  Review syscalls returning file descriptors (other platforms)
 507721  Wire up illumos and Solaris mallinfo
 507853  faccessat and faccessat2 should handle AT_FDCWD and absolute paths
 507868  futimesat doesn't handle AT_FDCWD

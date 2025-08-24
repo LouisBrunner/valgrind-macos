@@ -1940,6 +1940,7 @@ PRE(kqueue)
 
 POST(kqueue)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "kqueue", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -1970,6 +1971,7 @@ PRE(guarded_kqueue_np)
 
 POST(guarded_kqueue_np)
 {
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "guarded_kqueue_np", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -2410,6 +2412,8 @@ PRE(__pthread_fchdir)
 {
     PRINT("__pthread_fchdir ( %lu )", ARG1);
     PRE_REG_READ1(long, "__pthread_fchdir", unsigned int, fd);
+    if (!ML_(fd_allowed)(ARG1, "__pthread_chdir", tid, False))
+       SET_STATUS_Failure(VKI_EBADF);
 }
 
 
@@ -2525,6 +2529,8 @@ PRE(fgetxattr)
    PRE_REG_READ6(vki_ssize_t, "fgetxattr",
                  int, fd, char *, name, void *, value,
                  vki_size_t, size, uint32_t, position, int, options);
+   if (!ML_(fd_allowed)(ARG1, "fgetxattr", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ("getxattr(name)", ARG2);
    PRE_MEM_WRITE( "getxattr(value)", ARG3, ARG4);
 }
@@ -2556,7 +2562,8 @@ PRE(fsetxattr)
    PRE_REG_READ6(int, "fsetxattr", 
                  int,"fd", char *,"name", void *,"value", 
                  vki_size_t,"size", uint32_t,"position", int,"options" );
-   
+   if (!ML_(fd_allowed)(ARG1, "fsetxattr", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "fsetxattr(name)", ARG2 );
    PRE_MEM_READ( "fsetxattr(value)", ARG3, ARG4 );
 }
@@ -2579,6 +2586,8 @@ PRE(fremovexattr)
           SARG1, ARG2, (HChar*)ARG2, SARG3 );
    PRE_REG_READ3(int, "fremovexattr",
                  int, "fd", char*, "attrname", int, "options");
+   if (!ML_(fd_allowed)(ARG1, "fremovextattr", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "removexattr(attrname)", ARG2 );
 }
 
@@ -2610,6 +2619,8 @@ PRE(flistxattr)
    PRE_REG_READ4 (long, "flistxattr", 
                   int, "fd", char *,"namebuf", 
                  vki_size_t,"size", int,"options" );
+   if (!ML_(fd_allowed)(ARG1, "flistxtattr", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE( "flistxattr(namebuf)", ARG2, ARG3 );
    *flags |= SfMayBlock;
 }
@@ -2681,6 +2692,7 @@ PRE(shm_open)
 POST(shm_open)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "shm_open", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -9846,7 +9858,7 @@ POST(getattrlistbulk)
 
 PRE(faccessat)
 {
-    uint32_t fd = ARG1;
+    Int fd = ARG1;
     PRINT("faccessat(fd:%d, path:%#lx(%s), amode:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "faccessat",
@@ -9860,7 +9872,7 @@ PRE(faccessat)
 
 PRE(fstatat64)
 {
-    uint32_t fd = ARG1;
+    Int fd = ARG1;
     PRINT("fstatat64(fd:%d, path:%#lx(%s), ub:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "fstatat64",
@@ -9880,24 +9892,28 @@ POST(fstatat64)
 PRE(readlinkat)
 {
     Word  saved = SYSNO;
-    
+    Int arg_1 = (Int)ARG1;
+    const HChar *path = (const HChar*)ARG2;
     PRINT("readlinkat ( %ld, %#lx(%s), %#lx, %ld )",
           SARG1, ARG2, (HChar*)ARG2, ARG3, SARG4);
     PRE_REG_READ4(long, "readlinkat",
                   int, dfd, const char *, path, char *, buf, int, bufsiz);
+    if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+       if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "readlinkat", tid, False))
+          SET_STATUS_Failure(VKI_EBADF);
     PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
     PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
     
     /*
-     * Refer to coregrind/m_syswrap/syswrap-linux.c
+     * Linux needs to jump through hoops to check for accesses to things liks
+     * /proc/PID/self
+     * Darwin does not have proc so no need here
      */
-    {
-        /* Normal case */
-        SET_STATUS_from_SysRes( VG_(do_syscall4)(saved, ARG1, ARG2, ARG3, ARG4));
-    }
-    
-    if (SUCCESS && RES > 0)
-        POST_MEM_WRITE( ARG3, RES );
+}
+
+POST(readlinkat)
+{
+   POST_MEM_WRITE( ARG3, RES );
 }
 
 PRE(bsdthread_ctl)
@@ -10008,6 +10024,7 @@ PRE(openat)
 POST(openat)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "openat", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -10019,9 +10036,14 @@ POST(openat)
 
 PRE(mkdirat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("mkdirat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "mkdirat",
                  int, fd, const char *, path, unsigned int, mode);
+   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
+      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "symlinkat", tid, False))
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_RASCIIZ( "mkdirat(path)", ARG2 );
    *flags |= SfMayBlock;
 }
@@ -10491,6 +10513,7 @@ PRE(openat_nocancel)
 POST(openat_nocancel)
 {
    vg_assert(SUCCESS);
+   POST_newFd_RES;
    if (!ML_(fd_allowed)(RES, "openat_nocancel", tid, True)) {
       VG_(close)(RES);
       SET_STATUS_Failure( VKI_EMFILE );
@@ -11100,7 +11123,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
    MACX_(__NR_faccessat,           faccessat),          // 466
    MACXY(__NR_fstatat64,           fstatat64),          // 470
-   MACX_(__NR_readlinkat,          readlinkat),         // 473
+   MACXY(__NR_readlinkat,          readlinkat),         // 473
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
    MACXY(__NR_csrctl,              csrctl),             // 483
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484

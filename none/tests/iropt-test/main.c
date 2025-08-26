@@ -45,8 +45,8 @@ unsigned num_random_tests;
 int
 main(int argc, char *argv[])
 {
-// FIXME: temporarily until ppc,amd64,x86 have been fixed
-#if !defined(__s390x__)
+// FIXME: temporarily until ppc has been fixed
+#if !defined(__s390x__) && !defined(__i386__) && !defined(__x86_64__)
    return 0;
 #endif
    assert(sizeof(long long) == 8);

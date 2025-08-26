@@ -1735,17 +1735,29 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
    suggested_clstack_end = aspacem_maxAddr - 64*1024*1024UL
                                            + VKI_PAGE_SIZE;
 #else
-   //suggested_clstack_end = aspacem_maxAddr;
-   // this block implements what is described above
-   // note this needs
-   // #include "pub_core_libcproc.h"
+
    SizeT kern_maxssiz;
-   SizeT kern_sgrowsiz;
+   //SizeT kern_sgrowsiz;
    SizeT sysctl_size = sizeof(SizeT);
    VG_(sysctlbyname)("kern.maxssiz", &kern_maxssiz, &sysctl_size, NULL, 0);
-   VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
-   //VG_(printf)("maxssiz %lx\n", kern_maxssiz);
-   suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE;
+   if (kern_maxssiz < 64*1024*1024UL) {
+      kern_maxssiz = 64*1024*1024UL;
+      VG_(debugLog)(2, "aspacem",
+                    "        max stack size (maxssiz) set to lower limit, 64Mb\n");
+   }
+   //VG_(sysctlbyname)("kern.sgrowsiz", &kern_sgrowsiz, &sysctl_size, NULL, 0);
+   // initially this was aspacem_maxAddr - (kern_maxssiz - kern_sgrowsiz) + VKI_PAGE_SIZE
+   // but we're not using / respecting the stack grow size (yet)
+   suggested_clstack_end = aspacem_maxAddr - (kern_maxssiz) + VKI_PAGE_SIZE;
+   VG_(debugLog)(2, "aspacem",
+                 "        max stack size (maxssiz) = 0x%lx\n",
+                 kern_maxssiz);
+   //VG_(debugLog)(2, "aspacem",
+   //              "        stack grow size (sgrowsiz) = 0x%lx\n",
+   //              kern_sgrowsiz);
+   VG_(debugLog)(2, "aspacem",
+                 "        suggested client stack end (aspacem_maxAddr - (kern_maxssiz) + VKI_PAGE_SIZE) = 0x%lx\n",
+                 suggested_clstack_end);
 
 #endif
 

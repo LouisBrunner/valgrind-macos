@@ -14175,7 +14175,7 @@ PRE(sys_openat2)
    if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
        && *(Char *)(Addr)ARG2 != '/'
        && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
+       && !ML_(fd_allowed)(ARG1, "openat2", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the

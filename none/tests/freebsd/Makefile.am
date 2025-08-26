@@ -88,6 +88,7 @@ hello_world_SOURCES = hello_world.cpp
 open_client_SOURCES = open_client.cpp
 proc_pid_file_SOURCES = proc_pid_file.cpp
 readlinkat_SOURCES = readlinkat.cpp
+readlinkat_CXXFLAGS = ${AM_CXXFLAGS} @FLAG_W_NO_UNINITIALIZED@
 
 sanity_level_thread_SOURCES = sanity_level_thread.cpp
 sanity_level_thread_LDFLAGS = ${AM_LDFLAGS} -pthread

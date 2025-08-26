@@ -1633,6 +1633,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, AMD64Instr_Bsfr64(True,src,dst));
+            /* Patch the result in case there was a 0 operand. */
+            IRExpr *cond = unop(Iop_CmpNEZ64, e->Iex.Unop.arg);
+            AMD64CondCode cc = iselCondCode_C(env, cond);
+            HReg ifz = iselIntExpr_R(env, IRExpr_Const(IRConst_U64(64)));
+            addInstr(env, AMD64Instr_CMov64(cc ^ 1, ifz, dst));
             return dst;
          }
          case Iop_ClzNat64: {
@@ -1647,6 +1652,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
                                             AMD64RMI_Imm(63), dst));
             addInstr(env, AMD64Instr_Alu64R(Aalu_SUB,
                                             AMD64RMI_Reg(tmp), dst));
+            /* Patch the result in case there was a 0 operand. */
+            IRExpr *cond = unop(Iop_CmpNEZ64, e->Iex.Unop.arg);
+            AMD64CondCode cc = iselCondCode_C(env, cond);
+            HReg ifz = iselIntExpr_R(env, IRExpr_Const(IRConst_U64(64)));
+            addInstr(env, AMD64Instr_CMov64(cc ^ 1, ifz, dst));
             return dst;
          }
 

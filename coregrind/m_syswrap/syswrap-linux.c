@@ -115,7 +115,7 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
 }
 
 /*
- * Used by *at() functions that take a firectory fd as a root for relative paths
+ * Used by *at() functions that take a directory fd as a root for relative paths
  * I did want to put this in pub_core_syswrap.h but that's difficult as
  * it pulls in several dependent headers resulting in one that can't
  * be accessed every place that uses this pub_core_syswrap.h

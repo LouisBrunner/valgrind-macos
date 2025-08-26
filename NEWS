@@ -85,6 +85,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508030  Add several missing syscall hooks to ppc64-linux
 508093  VALGRIND_CLO_CHANGE does not update vex_control
 508154  PRE(sys_fchownat) not handling VKI_AT_FDCWD
+508638  Self-hosting not working on FreeBSD
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

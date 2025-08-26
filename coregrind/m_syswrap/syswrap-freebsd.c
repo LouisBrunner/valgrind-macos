@@ -5332,11 +5332,14 @@ POST(sys_freebsd11_fstatat)
 // int futimesat(int fd, const char *path, const struct timeval times[2]);
 PRE(sys_futimesat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_futimesat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "futimesat",
                  int, fd, const char *, path, struct timeval *, times);
-   if (!ML_(fd_allowed)(ARG1, "futimesat", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ((arg_1 != VKI_AT_FDCWD) && !ML_(fd_allowed)(arg_1, "futimesat", tid, False) )
+         SET_STATUS_Failure(VKI_EBADF);
    if (ARG2 != 0) {
       PRE_MEM_RASCIIZ( "futimesat(path)", ARG2 );
    }
@@ -6189,11 +6192,15 @@ POST(sys_cap_fcntls_get)
 // int bindat(int fd, int s, const struct sockaddr *addr, socklen_t addrlen);
 PRE(sys_bindat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_bindat ( %" FMT_REGWORD "d, %" FMT_REGWORD "dx, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
          SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "bindat", int, fd, int, s, const struct vki_sockaddr *, name, vki_socklen_t, namelen);
-   if (!ML_(fd_allowed)(ARG1, "bindat", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ((arg_1 != VKI_AT_FDCWD) && !ML_(fd_allowed)(arg_1, "bindat", tid, False) )
+         SET_STATUS_Failure(VKI_EBADF);
+
    PRE_MEM_READ("bindat(name)", ARG3, ARG4);
 }
 
@@ -6201,11 +6208,14 @@ PRE(sys_bindat)
 // int connectat(int fd, int s, const struct sockaddr *name, socklen_t namelen);
 PRE(sys_connectat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_connectat ( %" FMT_REGWORD "d, %" FMT_REGWORD "dx, %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",
          SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "connectat", int, fd, int, s, const struct vki_sockaddr *, name, vki_socklen_t, namelen);
-   if (!ML_(fd_allowed)(ARG1, "connectat", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ((arg_1 != VKI_AT_FDCWD) && !ML_(fd_allowed)(arg_1, "connectat", tid, False) )
+         SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_READ("connectat(name)", ARG3, ARG4);
 }
 
@@ -6213,11 +6223,15 @@ PRE(sys_connectat)
 // int chflagsat(int fd, const char *path, unsigned long flags, int atflag);
 PRE(sys_chflagsat)
 {
+   Int arg_1 = (Int)ARG1;
+   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_chglagsat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "d )",
          SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(int, "chflagsat", int, fd, const char *, path, unsigned long, flags, int, atflag);
-   if (!ML_(fd_allowed)(ARG1, "chflagsat", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ((arg_1 != VKI_AT_FDCWD) && !ML_(fd_allowed)(arg_1, "chflagsat", tid, False) )
+         SET_STATUS_Failure(VKI_EBADF);
+
    PRE_MEM_RASCIIZ("chflagsat(path)", ARG2);
 }
 

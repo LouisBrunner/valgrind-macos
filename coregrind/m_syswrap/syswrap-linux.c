@@ -114,6 +114,18 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    return ret;
 }
 
+/*
+ * Used by *at() functions that take a firectory fd as a root for relative paths
+ * I did want to put this in pub_core_syswrap.h but that's difficult as
+ * it pulls in several dependent headers resulting in one that can't
+ * be accessed every place that uses this pub_core_syswrap.h
+ */
+static inline void fd_at_check_allowed(Int fd, const HChar* path, const HChar* function_name, ThreadId tid, SyscallStatus* status)
+{
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ((fd != VKI_AT_FDCWD) && !ML_(fd_allowed)(fd, function_name, tid, False) )
+         SET_STATUS_Failure( VKI_EBADF );
+}
 
 /* ---------------------------------------------------------------------
    clone-related stuff
@@ -6182,6 +6194,7 @@ PRE(sys_mkdirat)
    *flags |= SfMayBlock;
    PRINT("sys_mkdirat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "mkdirat", tid, status);
    PRE_REG_READ3(long, "mkdirat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "mkdirat(pathname)", ARG2 );
@@ -6192,6 +6205,7 @@ PRE(sys_mknodat)
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_mknodat ( %ld, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
          FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4 );
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "mknodat", tid, status);
    PRE_REG_READ4(long, "mknodat",
                  int, dfd, const char *, pathname, int, mode, unsigned, dev);
    PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
@@ -6243,6 +6257,7 @@ PRE(sys_utimensat)
           FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "utimensat",
                  int, dfd, char *, filename, struct timespec *, utimes, int, flags);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "utimensat", tid, status);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
    if (ARG3 != 0) {
@@ -6274,6 +6289,7 @@ PRE(sys_utimensat_time64)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "utimensat_time64",
                  int, dfd, char *, filename, struct timespec *, utimes, int, flags);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "utimensat_time64", tid, status);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "utimensat_time64(filename)", ARG2 );
    if (ARG3 != 0) {
@@ -6305,6 +6321,7 @@ PRE(sys_newfstatat)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "fstatat",
                  int, dfd, char *, file_name, struct stat *, buf);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "newfstatat", tid, status);
    // See the comment about Rust in PRE(sys_statx). When glibc does support
    // statx rust uses that instead of the system call, but glibc's statx is
    // implemented in terms of fstatat, so the filename being NULL is
@@ -6327,6 +6344,7 @@ PRE(sys_unlinkat)
    PRINT("sys_unlinkat ( %ld, %#" FMT_REGWORD "x(%s) )", SARG1, ARG2,
          (HChar*)(Addr)ARG2);
    PRE_REG_READ2(long, "unlinkat", int, dfd, const char *, pathname);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "unlinkat", tid, status);
    PRE_MEM_RASCIIZ( "unlinkat(pathname)", ARG2 );
 }
 
@@ -6339,6 +6357,7 @@ PRE(sys_renameat)
    PRE_REG_READ4(long, "renameat",
                  int, olddfd, const char *, oldpath,
                  int, newdfd, const char *, newpath);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "renameat", tid, status);
    PRE_MEM_RASCIIZ( "renameat(oldpath)", ARG2 );
    PRE_MEM_RASCIIZ( "renameat(newpath)", ARG4 );
 }
@@ -6367,6 +6386,7 @@ PRE(sys_linkat)
                  int, olddfd, const char *, oldpath,
                  int, newdfd, const char *, newpath,
                  int, flags);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "linkat", tid, status);
    PRE_MEM_RASCIIZ( "linkat(oldpath)", ARG2);
    PRE_MEM_RASCIIZ( "linkat(newpath)", ARG4);
 }
@@ -6378,6 +6398,7 @@ PRE(sys_symlinkat)
          "x(%s) )", ARG1, (HChar*)(Addr)ARG1, SARG2, ARG3, (HChar*)(Addr)ARG3);
    PRE_REG_READ3(long, "symlinkat",
                  const char *, oldpath, int, newdfd, const char *, newpath);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "symlinkat", tid, status);
    PRE_MEM_RASCIIZ( "symlinkat(oldpath)", ARG1 );
    PRE_MEM_RASCIIZ( "symlinkat(newpath)", ARG3 );
 }
@@ -6389,6 +6410,7 @@ PRE(sys_readlinkat)
           FMT_REGWORD "u )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "readlinkat",
                  int, dfd, const char *, path, char *, buf, vki_size_t, bufsiz);
+   fd_at_check_allowed(SARG1, (const HChar*)ARG2, "readlinkat", tid, status);
    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
    PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
 }
@@ -13915,7 +13937,7 @@ POST(sys_io_uring_register)
 
 PRE(sys_execveat)
 {
-     PRINT("sys_execveat ( %lu, %#lx(%s), %#lx, %#lx, %lu", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
+   PRINT("sys_execveat ( %lu, %#lx(%s), %#lx, %#lx, %lu", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(vki_off_t, "execveat",
                 int, fd, char *, filename, char **, argv, char **, envp, int, flags);
    PRE_MEM_RASCIIZ( "execveat(filename)", ARG2);

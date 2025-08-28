@@ -1,0 +1,7 @@
+#! /bin/sh
+
+# remove line numbers as they just cause larger patches
+sed "s/\(scalar.c\):[0-9]*)/\1)/" |
+
+../filter_stderr "$@"
+

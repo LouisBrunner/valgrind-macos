@@ -2,4 +2,5 @@ prog: scalar
 # Do not run under root
 prereq: [ `id -u` -ne 0 ]
 vgopts: -q --error-limit=no
+stderr_filter: filter_scalar
 args: < scalar.c

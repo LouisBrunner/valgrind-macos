@@ -176,12 +176,12 @@
 // { OPNAME(DivS128E), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
 // { OPNAME(DivModU32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
-// { OPNAME(DivModU64to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
+   { OPNAME(DivModU64to32),  Ity_I64,  2, Ity_I64, Ity_I32, EXCEPT(ppc) },
 // { OPNAME(DivModU64to64),  Ity_I64,  2, Ity_I64, Ity_I128 }, // 128 bit
 // { OPNAME(DivModU128to64), Ity_I128, 2, Ity_I64, Ity_I128 }, // 128 bit
 
 // { OPNAME(DivModS32to32),  Ity_I64,  2, Ity_I32, Ity_I32  }, // no folding yet
-// { OPNAME(DivModS32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
+   { OPNAME(DivModS64to32),  Ity_I64,  2, Ity_I64, Ity_I32, EXCEPT(ppc) },
 // { OPNAME(DivModS64to64),  Ity_I64,  2, Ity_I64, Ity_I128 }, // 128 bit
 // { OPNAME(DivModU128to64), Ity_I128, 2, Ity_I64, Ity_I128 }, // 128 bit
 

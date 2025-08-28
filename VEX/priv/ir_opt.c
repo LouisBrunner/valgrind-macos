@@ -2161,6 +2161,39 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                break;
             }
 
+            /* -- DivMod -- */
+            case Iop_DivModU64to32: {
+               ULong u64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               UInt  u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (u32b != 0) {
+                  ULong q = u64a / u32b;
+                  /* Can q be represented in 32 bit? */
+                  if (q <= 0xFFFFFFFF) {
+                     UInt r = u64a % u32b;
+                     e2 = IRExpr_Const(IRConst_U64(((ULong)r << 32) | (UInt)q));
+                  }
+               }
+               break;
+            }
+            case Iop_DivModS64to32: {
+               Long s64a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U64;
+               Int  s32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (s32b != 0) {
+                  /* Division may trap when result overflows i.e. when
+                     attempting: INT64_MAX / -1 */
+                  if (e->Iex.Binop.arg1->Iex.Const.con->Ico.U64 == (1ULL << 63)
+                      && s32b == -1)
+                     break;
+                  Long q = s64a / s32b;
+                  /* Can q be represented in 32 bit? */
+                  if (q >= (-2147483647-1) && q <= 2147483647) {
+                     Int r = s64a % s32b;
+                     e2 = IRExpr_Const(IRConst_U64(((ULong)r << 32) | (UInt)q));
+                  }
+               }
+               break;
+            }
+
             /* -- Shl -- */
             case Iop_Shl8:
                vassert(e->Iex.Binop.arg2->Iex.Const.con->tag == Ico_U8);

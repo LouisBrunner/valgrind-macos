@@ -125,7 +125,7 @@ check_irops_table(void)
       if (op->result_type != t_res   ||
           op->opnd1_type  != t_opnd1 ||
           (op->num_opnds == 2 && op->opnd2_type  != t_opnd2))
-         fprintf(stderr, "%s: type mismatch\n", op->name);
+         panic("%s: type mismatch\n", op->name);
    }
 }
 

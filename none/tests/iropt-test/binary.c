@@ -30,7 +30,7 @@ static uint64_t get_expected_value(const irop_t *, const test_data_t *);
 static void run_tests(const irop_t *, test_data_t *);
 static void run_shift_tests(const irop_t *, test_data_t *);
 static int  is_shift_op(IROp);
-static int  is_division_op(IROp);
+static int  ok_to_run(IROp op, uint64_t, uint64_t);
 
 
 void
@@ -57,9 +57,8 @@ run_selected_tests(const irop_t *op, test_data_t *data)
       for (unsigned j = 0; j < num_val_r; ++j) {
          opnd_r->value = values_r[j];
 
-         if (is_division_op(op->op) && opnd_r->value == 0) continue;
-
-         valgrind_execute_test(op, data, get_expected_value(op, data));
+         if (ok_to_run(op->op, opnd_l->value, opnd_r->value))
+            valgrind_execute_test(op, data, get_expected_value(op, data));
       }
    }
 }
@@ -75,13 +74,15 @@ run_random_tests(const irop_t *op, test_data_t *data)
    /* 1-bit wide operands are tested exhaustively. Skip random tests. */
    if (opnd_l->type == Ity_I1 && opnd_r->type == Ity_I1) return;
 
-   for (unsigned i = 0; i < num_random_tests; ++i) {
+   unsigned num_tests = 0;
+   while (num_tests < num_random_tests) {
       opnd_l->value = get_random_value(opnd_l->type);
       opnd_r->value = get_random_value(opnd_r->type);
 
-      if (is_division_op(op->op) && opnd_r->value == 0) continue;
-
-      valgrind_execute_test(op, data, get_expected_value(op, data));
+      if (ok_to_run(op->op, opnd_l->value, opnd_r->value)) {
+         valgrind_execute_test(op, data, get_expected_value(op, data));
+         ++num_tests;
+      }
    }
 }
 
@@ -213,6 +214,20 @@ get_expected_value(const irop_t *op, const test_data_t *data)
    case Iop_DivS32E:
       expected = (int64_t)(opnd_l << 32) / (int32_t)opnd_r;
       break;
+
+   case Iop_DivModU64to32: {
+      uint64_t q = opnd_l / opnd_r;
+      uint64_t r = opnd_l % opnd_r;
+      expected = (r << 32) | q;
+      break;
+   }
+
+   case Iop_DivModS64to32: {
+      int64_t q = (int64_t)opnd_l / (int32_t)opnd_r;
+      int32_t r = (int64_t)opnd_l % (int32_t)opnd_r;
+      expected = ((uint64_t)r << 32) | (uint32_t)q;
+      break;
+   }
 
    case Iop_Shl8:
    case Iop_Shl16:
@@ -401,15 +416,39 @@ is_shift_op(IROp op)
 
 
 static int
-is_division_op(IROp op)
+ok_to_run(IROp op, uint64_t o1, uint64_t o2)
 {
    switch (op) {
+      /* Division by zero -- not good */
    case Iop_DivU32: case Iop_DivU64:
    case Iop_DivS32: case Iop_DivS64:
    case Iop_DivU32E:
    case Iop_DivS32E:
-      return 1;
+      return o2 != 0;
+
+   /* Check that result can be represented */
+   case Iop_DivModU64to32: {
+      uint64_t dividend = o1;
+      uint32_t divisor  = o2;
+
+      if (divisor == 0) return 0;
+      uint64_t q = dividend / divisor;  // always safe
+      return q <= UINT32_MAX;
+   }
+
+   case Iop_DivModS64to32: {
+      int64_t dividend = o1;
+      int32_t divisor  = o2;
+
+      if (divisor == 0) return 0;
+      /* Division may trap on overflow */
+      if (divisor == -1 && o1 == (0x1ULL << 63))  // INT64_MIN
+         return 0;
+      int64_t q = dividend / divisor;
+      return q <= INT32_MAX && q >= INT32_MIN;
+   }
+
    default:
-      return 0;
+      return 1;
    }
 }

@@ -6372,6 +6372,17 @@ PRE(sys_renameat2)
                  int, olddfd, const char *, oldpath,
                  int, newdfd, const char *, newpath,
                  unsigned int, flags);
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "renameat2(olddfd)", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG4, 1 )
+       && *(Char *)(Addr)ARG4 != '/'
+       && ((Int)ARG3) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG3, "renameat2(newsfd)", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+
    PRE_MEM_RASCIIZ( "renameat2(oldpath)", ARG2 );
    PRE_MEM_RASCIIZ( "renameat2(newpath)", ARG4 );
 }

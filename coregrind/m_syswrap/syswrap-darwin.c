@@ -9858,29 +9858,21 @@ POST(getattrlistbulk)
 
 PRE(faccessat)
 {
-    Int fd = ARG1;
     PRINT("faccessat(fd:%d, path:%#lx(%s), amode:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "faccessat",
                   int, fd, user_addr_t, path, int, amode, int, flag);
-
-    if (fd != VKI_AT_FDCWD && !ML_(fd_allowed)(fd, "faccessat", tid, False)) {
-      SET_STATUS_Failure( VKI_EBADF );
-    }
+    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "faccessat", tid, status);
     PRE_MEM_RASCIIZ( "faccessat(path)", ARG2 );
 }
 
 PRE(fstatat64)
 {
-    Int fd = ARG1;
     PRINT("fstatat64(fd:%d, path:%#lx(%s), ub:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "fstatat64",
                   int, fd, user_addr_t, path, user_addr_t, ub, int, flag);
-
-    if (fd != VKI_AT_FDCWD && !ML_(fd_allowed)(fd, "fstatat64", tid, False)) {
-      SET_STATUS_Failure( VKI_EBADF );
-    }
+    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "fstatat64", tid, status);
     PRE_MEM_RASCIIZ( "fstatat64(path)", ARG2 );
     PRE_MEM_WRITE( "fstatat64(ub)", ARG3, sizeof(struct vki_stat64) );
 }
@@ -9891,15 +9883,11 @@ POST(fstatat64)
 
 PRE(readlinkat)
 {
-    Int arg_1 = (Int)ARG1;
-    const HChar *path = (const HChar*)ARG2;
     PRINT("readlinkat ( %ld, %#lx(%s), %#lx, %ld )",
           SARG1, ARG2, (HChar*)ARG2, ARG3, SARG4);
     PRE_REG_READ4(long, "readlinkat",
                   int, dfd, const char *, path, char *, buf, int, bufsiz);
-    if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
-       if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "readlinkat", tid, False))
-          SET_STATUS_Failure(VKI_EBADF);
+    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "readlinkat", tid, status);
     PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
     PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
     
@@ -10010,11 +9998,7 @@ PRE(openat)
    /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
       filename is relative to cwd.  When comparing dfd against AT_FDCWD,
       be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "openat", tid, status);
 
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
@@ -10035,14 +10019,10 @@ POST(openat)
 
 PRE(mkdirat)
 {
-   Int arg_1 = (Int)ARG1;
-   const HChar *path = (const HChar*)ARG2;
    PRINT("mkdirat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
    PRE_REG_READ3(int, "mkdirat",
                  int, fd, const char *, path, unsigned int, mode);
-   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
-      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "symlinkat", tid, False))
-         SET_STATUS_Failure(VKI_EBADF);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mkdirat", tid, status);
    PRE_MEM_RASCIIZ( "mkdirat(path)", ARG2 );
    *flags |= SfMayBlock;
 }
@@ -10500,11 +10480,7 @@ PRE(openat_nocancel)
    /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
       filename is relative to cwd.  When comparing dfd against AT_FDCWD,
       be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat_nocancel", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "openat_nocancel", tid, status);
 
    /* Otherwise handle normally */
    *flags |= SfMayBlock;

@@ -949,17 +949,13 @@ POST(sys_procctl)
 // int mknodat(int fd, const char *path, mode_t mode, dev_t dev);
 PRE(sys_mknodat)
 {
-   Int arg_1 = (Int)ARG1;
-   const HChar *path = (const HChar*)ARG2;
    PRINT("sys_mknodat ( %" FMT_REGWORD "u, %#" FMT_REGWORD
          "x(%s), 0x%" FMT_REGWORD "x, 0x%" FMT_REGWORD "x )",
          ARG1, ARG2, (char*)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "mknodat", int, fd, const char*, path, vki_mode_t, mode,
                  vki_dev_t, dev);
    PRE_MEM_RASCIIZ("mknodat(pathname)", ARG2);
-   if ((ML_(safe_to_deref)(path, 1)) && (path[0] != '/'))
-      if (arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "mknodat", tid, False))
-         SET_STATUS_Failure(VKI_EBADF);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mknodat", tid, status);
 }
 
 // SYS_cpuset_getdomain 561

@@ -59,6 +59,17 @@ extern
 Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
                      Bool isNewFD);
 
+// used bye "*at" syscalls that take a directory fd for use
+// with relative paths. Need to check that
+// 1. the path is relative
+// 2. the directory is not the specail value VKI_AT_FDCWD
+// 3. the directory fd is allowd (as above)
+extern
+void ML_(fd_at_check_allowed)(Int fd, const HChar* path,
+                              const HChar* function_name, ThreadId tid,
+                              SyscallStatus* status);
+
+
 extern void ML_(record_fd_close)               (ThreadId tid, Int fd);
 extern Int  ML_(get_fd_count)                  (void);
 extern void ML_(record_fd_close_range)         (ThreadId tid, Int fd);

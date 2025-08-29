@@ -1794,6 +1794,12 @@ Bool ML_(fd_allowed)(Int fd, const HChar *syscallname, ThreadId tid,
    return allowed;
 }
 
+void ML_(fd_at_check_allowed)(Int fd, const HChar* path, const HChar* function_name, ThreadId tid, SyscallStatus* status)
+{
+   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
+      if ((fd != VKI_AT_FDCWD) && !ML_(fd_allowed)(fd, function_name, tid, False))
+           SET_STATUS_Failure(VKI_EBADF);
+}
 
 /* ---------------------------------------------------------------------
    Deal with a bunch of socket-related syscalls

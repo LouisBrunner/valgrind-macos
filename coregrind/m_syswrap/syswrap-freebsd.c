@@ -5453,7 +5453,7 @@ POST(sys_openat)
 //                    size_t bufsize);
 PRE(sys_readlinkat)
 {
-   const HChar *path = (const HChar*)ARG2;
+   Bool curproc_file = False;
 
    PRINT("sys_readlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )", ARG1,ARG2,(char*)ARG2,ARG3,(ULong)ARG4);
    PRE_REG_READ4(ssize_t, "readlinkat",

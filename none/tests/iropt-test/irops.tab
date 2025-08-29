@@ -34,14 +34,14 @@
 #define ARCH_amd64    0x0008
 #define ARCH_x86      0x0010
 #define ARCH_s390     0x0020
-#define ARCH_ALL      0x003F    // OR of all above
-
-/* FIXME: Add support for mips, arm, and riscv.
-   When doing so ARCH_ALL needs to be adjusted */
-#if 0
 #define ARCH_mips32   0x0040
 #define ARCH_mips64   0x0080
-#define ARCH_mips     (mips32 | mips64)
+#define ARCH_mipsx    (ARCH_mips32 | ARCH_mips64)    // ARCH_mips does not work
+#define ARCH_ALL      0x00FF    // OR of all above
+
+/* FIXME: Add support for nanomips, arm, and riscv.
+   When doing so ARCH_ALL needs to be adjusted */
+#if 0
 #define ARCH_nanomips 0x0100
 #define ARCH_arm      0x0200
 #define ARCH_arm64    0x0400
@@ -52,6 +52,7 @@
 #define ONLY2(x1,x2)   .enabled_arch = A(x1) | A(x2)
 #define EXCEPT(x)      .enabled_arch = ARCH_ALL & ~A(x)
 #define EXCEPT2(x1,x2) .enabled_arch = ARCH_ALL & ~(A(x1) | A(x2))
+#define EXCEPT3(x1,x2,x3) .enabled_arch = ARCH_ALL & ~(A(x1) | A(x2) | A(x3))
 
 /* Definition of IROps:
    - no IROps having floating point operands or result
@@ -68,7 +69,7 @@
    { OPNAME(1Uto8),  Ity_I8,  1, Ity_I1,  },
 // { OPNAME(1Uto16), Ity_I16, 1, Ity_I1,  }, // missing in libvex_ir.h
    { OPNAME(1Uto32), Ity_I32, 1, Ity_I1,  },
-   { OPNAME(1Uto64), Ity_I64, 1, Ity_I1,  EXCEPT2(ppc32,x86) },
+   { OPNAME(1Uto64), Ity_I64, 1, Ity_I1,  EXCEPT3(ppc32,x86,mips32) },
 
    { OPNAME(1Sto8),  Ity_I8,  1, Ity_I1,  },
    { OPNAME(1Sto16), Ity_I16, 1, Ity_I1,  },
@@ -92,6 +93,7 @@
    { OPNAME(32Sto64), Ity_I64, 1, Ity_I32, },
 
 // { OPNAME(8to1),    Ity_I1, 1, Ity_I8,  }, // missing in libvex_ir.h
+
 // { OPNAME(16to1),   Ity_I1, 1, Ity_I16, }, // missing in libvex_ir.h
    { OPNAME(16to8),   Ity_I8, 1, Ity_I16, },
    { OPNAME(16HIto8), Ity_I8, 1, Ity_I16, },
@@ -103,8 +105,7 @@
 
    { OPNAME(64to1),    Ity_I1,  1, Ity_I64, EXCEPT2(ppc32, x86) },
    { OPNAME(64to8),    Ity_I8,  1, Ity_I64, EXCEPT2(ppc32, x86) },
-   { OPNAME(64to16),   Ity_I16, 1, Ity_I64, EXCEPT2(ppc32, x86) },
-
+   { OPNAME(64to16),   Ity_I16, 1, Ity_I64, EXCEPT3(ppc32, x86, mips32) },
    { OPNAME(64to32),   Ity_I32, 1, Ity_I64, },
    { OPNAME(64HIto32), Ity_I32, 1, Ity_I64, },
 
@@ -124,8 +125,8 @@
    { OPNAME(Left32), Ity_I32,  1, Ity_I32 },
    { OPNAME(Left64), Ity_I64,  1, Ity_I64 },
 
-   { OPNAME(ClzNat32), Ity_I32, 1, Ity_I32, ONLY2(ppc, x86) },
-   { OPNAME(ClzNat64), Ity_I64, 1, Ity_I64, EXCEPT2(ppc32, x86) },
+   { OPNAME(ClzNat32), Ity_I32, 1, Ity_I32, EXCEPT2(amd64, s390) },
+   { OPNAME(ClzNat64), Ity_I64, 1, Ity_I64, EXCEPT3(ppc32, x86, mips32) },
 
    { OPNAME(CtzNat32), Ity_I32, 1, Ity_I32, ONLY2(ppc, x86) },
    { OPNAME(CtzNat64), Ity_I64, 1, Ity_I64, ONLY2(ppc64, amd64) },
@@ -145,7 +146,7 @@
    { OPNAME(Sub64),   Ity_I64, 2, Ity_I64, Ity_I64, EXCEPT(ppc32) },
 
    { OPNAME(Mul8),    Ity_I8,  2, Ity_I8,  Ity_I8,  ONLY(s390) },
-   { OPNAME(Mul16),   Ity_I16, 2, Ity_I16, Ity_I16, EXCEPT(ppc) },
+   { OPNAME(Mul16),   Ity_I16, 2, Ity_I16, Ity_I16, EXCEPT2(ppc, mipsx) },
    { OPNAME(Mul32),   Ity_I32, 2, Ity_I32, Ity_I32, },
    { OPNAME(Mul64),   Ity_I64, 2, Ity_I64, Ity_I64, EXCEPT2(ppc32, x86) },
 
@@ -159,12 +160,12 @@
    { OPNAME(MullS32), Ity_I64,  2, Ity_I32, Ity_I32, },
 // { OPNAME(MullS64), Ity_I128, 2, Ity_I64, Ity_I64, }, // 128 bit
 
-   { OPNAME(DivU32),  Ity_I32,  2, Ity_I32,  Ity_I32, ONLY(ppc)   },
-   { OPNAME(DivU64),  Ity_I64,  2, Ity_I64,  Ity_I64, ONLY(ppc64) },
+   { OPNAME(DivU32),  Ity_I32,  2, Ity_I32,  Ity_I32, ONLY2(ppc, mipsx)   },
+   { OPNAME(DivU64),  Ity_I64,  2, Ity_I64,  Ity_I64, ONLY2(ppc64, mips64) },
 // { OPNAME(DivU128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-   { OPNAME(DivS32),  Ity_I32,  2, Ity_I32,  Ity_I32, ONLY(ppc)   },
-   { OPNAME(DivS64),  Ity_I64,  2, Ity_I64,  Ity_I64, ONLY(ppc64) },
+   { OPNAME(DivS32),  Ity_I32,  2, Ity_I32,  Ity_I32, ONLY2(ppc, mipsx)   },
+   { OPNAME(DivS64),  Ity_I64,  2, Ity_I64,  Ity_I64, ONLY2(ppc64, mips64) },
 // { OPNAME(DivS128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
    { OPNAME(DivU32E),  Ity_I32,  2, Ity_I32,  Ity_I32, ONLY(ppc) },
@@ -175,30 +176,30 @@
 // { OPNAME(DivS64E),  Ity_I32,  2, Ity_I32,  Ity_I32, }, // 128 bit
 // { OPNAME(DivS128E), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-// { OPNAME(DivModU32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // no folding yet
-   { OPNAME(DivModU64to32),  Ity_I64,  2, Ity_I64, Ity_I32, EXCEPT(ppc) },
+// { OPNAME(DivModU32to32),  Ity_I64,  2, Ity_I32, Ity_I64  }, // mips no folding yet
+   { OPNAME(DivModU64to32),  Ity_I64,  2, Ity_I64, Ity_I32, EXCEPT2(ppc, mipsx) },
 // { OPNAME(DivModU64to64),  Ity_I64,  2, Ity_I64, Ity_I128 }, // 128 bit
 // { OPNAME(DivModU128to64), Ity_I128, 2, Ity_I64, Ity_I128 }, // 128 bit
 
-// { OPNAME(DivModS32to32),  Ity_I64,  2, Ity_I32, Ity_I32  }, // no folding yet
-   { OPNAME(DivModS64to32),  Ity_I64,  2, Ity_I64, Ity_I32, EXCEPT(ppc) },
+// { OPNAME(DivModS32to32),  Ity_I64,  2, Ity_I32, Ity_I32  }, // mips no folding yet
+   { OPNAME(DivModS64to32),  Ity_I64,  2, Ity_I64, Ity_I32, EXCEPT2(ppc, mipsx) },
 // { OPNAME(DivModS64to64),  Ity_I64,  2, Ity_I64, Ity_I128 }, // 128 bit
 // { OPNAME(DivModU128to64), Ity_I128, 2, Ity_I64, Ity_I128 }, // 128 bit
 
 // { OPNAME(ModU128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 // { OPNAME(ModS128), Ity_I128, 2, Ity_I128, Ity_I128 }, // 128 bit
 
-   { OPNAME(Shl8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
-   { OPNAME(Shl16), Ity_I16, 2, Ity_I16, Ity_I8 },
+   { OPNAME(Shl8),  Ity_I8,  2, Ity_I8,  Ity_I8, EXCEPT(mipsx) },
+   { OPNAME(Shl16), Ity_I16, 2, Ity_I16, Ity_I8, EXCEPT(mipsx) },
    { OPNAME(Shl32), Ity_I32, 2, Ity_I32, Ity_I8 },
    { OPNAME(Shl64), Ity_I64, 2, Ity_I64, Ity_I8, EXCEPT(ppc32) },
 
-   { OPNAME(Shr8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Shr8),  Ity_I8,  2, Ity_I8,  Ity_I8, EXCEPT(mipsx) },
    { OPNAME(Shr16), Ity_I16, 2, Ity_I16, Ity_I8 },
    { OPNAME(Shr32), Ity_I32, 2, Ity_I32, Ity_I8 },
    { OPNAME(Shr64), Ity_I64, 2, Ity_I64, Ity_I8, EXCEPT(ppc32) },
 
-   { OPNAME(Sar8),  Ity_I8,  2, Ity_I8,  Ity_I8 },
+   { OPNAME(Sar8),  Ity_I8,  2, Ity_I8,  Ity_I8, EXCEPT(mipsx) },
    { OPNAME(Sar16), Ity_I16, 2, Ity_I16, Ity_I8 },
    { OPNAME(Sar32), Ity_I32, 2, Ity_I32, Ity_I8 },
    { OPNAME(Sar64), Ity_I64, 2, Ity_I64, Ity_I8, EXCEPT(ppc32) },
@@ -226,36 +227,36 @@
    { OPNAME(CmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32, },
    { OPNAME(CmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT(ppc32) },
 
-   { OPNAME(CmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8,  EXCEPT(ppc) },
-   { OPNAME(CmpNE16), Ity_I1,  2, Ity_I16, Ity_I16, EXCEPT(ppc) },
+   { OPNAME(CmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8,  EXCEPT2(ppc, mipsx) },
+   { OPNAME(CmpNE16), Ity_I1,  2, Ity_I16, Ity_I16, EXCEPT2(ppc, mipsx) },
    { OPNAME(CmpNE32), Ity_I1,  2, Ity_I32, Ity_I32, },
-   { OPNAME(CmpNE64), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT(ppc32) },
+   { OPNAME(CmpNE64), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT2(ppc32, mips32) },
 
    { OPNAME(CmpLT32U), Ity_I1,  2, Ity_I32, Ity_I32, },
-   { OPNAME(CmpLT64U), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT2(ppc32, x86) },
+   { OPNAME(CmpLT64U), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT3(ppc32, x86, mips32) },
 
    { OPNAME(CmpLT32S), Ity_I1,  2, Ity_I32, Ity_I32, },
-   { OPNAME(CmpLT64S), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT2(ppc32, x86) },
+   { OPNAME(CmpLT64S), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT3(ppc32, x86, mips32) },
 
    { OPNAME(CmpLE32U), Ity_I1,  2, Ity_I32, Ity_I32, },
-   { OPNAME(CmpLE64U), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT2(ppc32, x86) },
+   { OPNAME(CmpLE64U), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT3(ppc32, x86, mipsx) },
 
    { OPNAME(CmpLE32S), Ity_I1,  2, Ity_I32, Ity_I32, },
-   { OPNAME(CmpLE64S), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT2(ppc32, x86) },
+   { OPNAME(CmpLE64S), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT3(ppc32, x86, mips32) },
 
-   { OPNAME(CasCmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8,  EXCEPT(ppc) },
-   { OPNAME(CasCmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16, EXCEPT(ppc) },
+   { OPNAME(CasCmpEQ8),  Ity_I1,  2, Ity_I8,  Ity_I8,  EXCEPT2(ppc, mipsx) },
+   { OPNAME(CasCmpEQ16), Ity_I1,  2, Ity_I16, Ity_I16, EXCEPT2(ppc, mipsx) },
    { OPNAME(CasCmpEQ32), Ity_I1,  2, Ity_I32, Ity_I32, EXCEPT(ppc) },
-   { OPNAME(CasCmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64, ONLY2(s390, amd64) },
+   { OPNAME(CasCmpEQ64), Ity_I1,  2, Ity_I64, Ity_I64, EXCEPT2(ppc, x86) },
 
-   { OPNAME(CasCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8,  EXCEPT(ppc) },
-   { OPNAME(CasCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16, EXCEPT(ppc) },
-   { OPNAME(CasCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32, EXCEPT(ppc) },
+   { OPNAME(CasCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8,  EXCEPT2(ppc, mipsx) },
+   { OPNAME(CasCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16, EXCEPT2(ppc, mipsx) },
+   { OPNAME(CasCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32, EXCEPT2(ppc, mipsx) },
    { OPNAME(CasCmpNE64), Ity_I1,  2, Ity_I64, Ity_I64, ONLY2(s390, amd64) },
 
    { OPNAME(ExpCmpNE8),  Ity_I1,  2, Ity_I8,  Ity_I8,  ONLY(s390) },
    { OPNAME(ExpCmpNE16), Ity_I1,  2, Ity_I16, Ity_I16, ONLY2(s390, x86) },
-   { OPNAME(ExpCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32, EXCEPT(ppc) },
+   { OPNAME(ExpCmpNE32), Ity_I1,  2, Ity_I32, Ity_I32, EXCEPT2(ppc, mipsx) },
    { OPNAME(ExpCmpNE64), Ity_I1,  2, Ity_I64, Ity_I64, ONLY2(s390, amd64) },
 
    { OPNAME(CmpORD32U), Ity_I32,  2, Ity_I32, Ity_I32, ONLY(ppc) },

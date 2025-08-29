@@ -1,0 +1,5 @@
+prog: duplicate_align_size_errors
+prereq: test -e ./duplicate_align_size_errors
+vgopts: --show-mismatched-frees=yes -q
+#stderr_filter: filter_size_t
+

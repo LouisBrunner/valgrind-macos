@@ -492,7 +492,13 @@ typedef
       Iop_CmpORD32S, Iop_CmpORD64S,
 
       /* Division */
-      /* TODO: clarify semantics wrt rounding, negative values, whatever */
+      /* Semantics of division as per C standard:
+         If the value of the divisor is zero, the behaviour is undefined.
+         When integers are divided, the result of division is the algebraic
+         quotient with any fractional part discarded. In other words:
+         truncation towards zero. If the quotient a/b is representable,
+         the expression (a/b)*b + a%b shall equal a; otherwise, the behaviour
+         of division and modulo operation is undefined. */
       Iop_DivU32,   // :: I32,I32 -> I32 (simple div, no mod)
       Iop_DivS32,   // ditto, signed
       Iop_DivU64,   // :: I64,I64 -> I64 (simple div, no mod)

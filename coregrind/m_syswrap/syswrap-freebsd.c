@@ -1183,7 +1183,8 @@ PRE(sys_revoke)
 // SYS_symlink 57
 // generic
 
-static void do_readlink(const HChar* path, HChar *buf, SizeT bufsize, SyscallStatus* status, Bool* curproc_file)
+// returns whether caller needs to set SfMayBlock in flags
+static Bool do_readlink(const HChar* path, HChar *buf, SizeT bufsize, SyscallStatus* status)
 {
    HChar name[30];
    VG_(sprintf)(name, "/proc/%d/file", VG_(getpid)());
@@ -1191,43 +1192,32 @@ static void do_readlink(const HChar* path, HChar *buf, SizeT bufsize, SyscallSta
          && (VG_(strcmp)(path, name) == 0
              || VG_(strcmp)(path, "/proc/curproc/file") == 0)) {
       vg_assert(VG_(resolved_exename));
-      Int len = VG_(snprintf)(buf, bufsize, "%s",  VG_(resolved_exename));
+      Int len = VG_(snprintf)(buf, bufsize, "%s",  VG_(resolved_exename)) + 1;
       SET_STATUS_Success(len);
-      *curproc_file = True;
+      return False;
    }
+   return True;
 }
 
 // SYS_readlink   58
 // ssize_t  readlink(const char *restrict path, char *restrict buf, size_t bufsiz);
 PRE(sys_readlink)
 {
-   FUSE_COMPATIBLE_MAY_BLOCK();
-   Word saved = SYSNO;
-   Bool curproc_file = False;
-
    PRINT("sys_readlink ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )",
          ARG1, (char*)(Addr)ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
-   PRE_MEM_RASCIIZ( "readlink(path)", ARG1 );
-   PRE_MEM_WRITE( "readlink(buf)", ARG2,ARG3 );
+   PRE_MEM_RASCIIZ("readlink(path)", ARG1);
+   PRE_MEM_WRITE("readlink(buf)", ARG2, ARG3);
 
-   if (VG_(have_slash_proc) == True)
-   {
-      /*
-       * Handle the case where readlink is looking at /proc/curproc/file or
-       * /proc/<pid>/file
-       */
-      do_readlink((const HChar *)ARG1, (HChar *)ARG2, (SizeT)ARG3, status, &curproc_file);
+   if (VG_(have_slash_proc) == False || do_readlink((const HChar *)ARG1, (HChar *)ARG2, (SizeT)ARG3, status)) {
+      *flags |= SfMayBlock;
    }
+}
 
-   if (!curproc_file) {
-      /* Normal case */
-      SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, ARG1, ARG2, ARG3));
-   }
-   if (SUCCESS && RES > 0) {
-      POST_MEM_WRITE( ARG2, RES );
-   }
+POST(sys_readlink)
+{
+   POST_MEM_WRITE(ARG2, RES);
 }
 
 // SYS_execve  59
@@ -5447,29 +5437,23 @@ POST(sys_openat)
    }
 }
 
-// @todo PJF make this generic?
 // SYS_readlinkat 500
 // ssize_t readlinkat(int fd, const char *restrict path, char *restrict buf,
 //                    size_t bufsize);
 PRE(sys_readlinkat)
 {
-   Bool curproc_file = False;
-
-   PRINT("sys_readlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )", ARG1,ARG2,(char*)ARG2,ARG3,(ULong)ARG4);
+   PRINT("sys_readlinkat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )",
+         ARG1, ARG2, (char*)ARG2, ARG3, (ULong)ARG4);
    PRE_REG_READ4(ssize_t, "readlinkat",
                  int, fd, const char *, path, char *, buf, int, bufsize);
    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "readlinkat", tid, status);
    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
    PRE_MEM_WRITE("readlinkat(buf)", ARG3, ARG4);
 
-   if (VG_(have_slash_proc) == True) {
-      /*
-       * Handle the case where readlinkat is looking at /proc/curproc/file or
-       * /proc/<pid>/file.
-       */
+   if (VG_(have_slash_proc) == False || do_readlink((const HChar *)ARG2, (HChar *)ARG3, (SizeT)ARG4, status)) {
       // @todo PJF there is still the case where fd refers to / or /proc or /proc/pid
       // or /proc/curproc and path is relative pid/file, curproc/file or just file
-      do_readlink((const HChar *)ARG2, (HChar *)ARG3, (SizeT)ARG4, status, &curproc_file);
+      *flags |= SfMayBlock;
    }
 }
 
@@ -7294,7 +7278,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    BSDX_(__NR_revoke,           sys_revoke),            // 56
    GENX_(__NR_symlink,          sys_symlink),           // 57
-   BSDX_(__NR_readlink,         sys_readlink),          // 58
+   BSDXY(__NR_readlink,         sys_readlink),          // 58
    GENX_(__NR_execve,           sys_execve),            // 59
 
    GENX_(__NR_umask,            sys_umask),             // 60

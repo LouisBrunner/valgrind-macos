@@ -2331,6 +2331,7 @@
 none/tests/freebsd/bug499212
 /none/tests/freebsd/osrel
 /none/tests/freebsd/readlinkat
+/none/tests/freebsd/readlinkat2
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world

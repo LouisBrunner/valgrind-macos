@@ -215,6 +215,20 @@ get_expected_value(const irop_t *op, const test_data_t *data)
       expected = (int64_t)(opnd_l << 32) / (int32_t)opnd_r;
       break;
 
+   case Iop_DivModU32to32: {
+      uint32_t q = opnd_l / opnd_r;
+      uint32_t r = opnd_l % opnd_r;
+      expected = ((uint64_t)r << 32) | q;
+      break;
+   }
+
+   case Iop_DivModS32to32: {
+      int32_t q = (int32_t)opnd_l / (int32_t)opnd_r;
+      int32_t r = (int32_t)opnd_l % (int32_t)opnd_r;
+      expected  = ((uint64_t)r << 32) | (uint32_t)q;
+      break;
+   }
+
    case Iop_DivModU64to32: {
       uint64_t q = opnd_l / opnd_r;
       uint64_t r = opnd_l % opnd_r;
@@ -424,6 +438,7 @@ ok_to_run(IROp op, uint64_t o1, uint64_t o2)
    case Iop_DivS32: case Iop_DivS64:
    case Iop_DivU32E:
    case Iop_DivS32E:
+   case Iop_DivModU32to32:
       return o2 != 0;
 
    /* Check that result can be represented */
@@ -446,6 +461,16 @@ ok_to_run(IROp op, uint64_t o1, uint64_t o2)
          return 0;
       int64_t q = dividend / divisor;
       return q <= INT32_MAX && q >= INT32_MIN;
+   }
+
+   case Iop_DivModS32to32: {
+      int32_t divisor  = o2;
+
+      if (divisor == 0) return 0;
+      /* Division may trap on overflow */
+      if (divisor == -1 && o1 == (0x1UL << 31))  // INT32_MIN
+         return 0;
+      return 1;
    }
 
    default:

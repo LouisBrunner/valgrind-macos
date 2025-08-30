@@ -2193,6 +2193,31 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
             }
+            case Iop_DivModU32to32: {
+               UInt u32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               UInt u32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (u32b != 0) {
+                  UInt q = u32a / u32b;
+                  UInt r = u32a % u32b;
+                  e2 = IRExpr_Const(IRConst_U64(((ULong)r << 32) | q));
+               }
+               break;
+            }
+            case Iop_DivModS32to32: {
+               Int s32a = e->Iex.Binop.arg1->Iex.Const.con->Ico.U32;
+               Int s32b = e->Iex.Binop.arg2->Iex.Const.con->Ico.U32;
+               if (s32b != 0) {
+                  /* Division may trap when result overflows i.e. when
+                     attempting: INT32_MAX / -1 */
+                  if (e->Iex.Binop.arg1->Iex.Const.con->Ico.U32 == (1UL << 31)
+                      && s32b == -1)
+                     break;
+                  Int q = s32a / s32b;
+                  Int r = s32a % s32b;
+                  e2 = IRExpr_Const(IRConst_U64(((ULong)(UInt)r << 32) | (UInt)q));
+               }
+               break;
+            }
 
             /* -- Shl -- */
             case Iop_Shl8:

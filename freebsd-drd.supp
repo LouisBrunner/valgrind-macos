@@ -223,3 +223,9 @@
    drd:ConflictingAccess
    fun:thr_new
 }
+
+{
+   DRD-FREEBSD15-EXTERRCTL
+   drd:ConflictingAccess
+   fun:exterrctl
+}

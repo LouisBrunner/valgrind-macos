@@ -5898,6 +5898,32 @@ Syscall param sys_inotify_rm_watch(wd) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
+595:           SYS_getgroups 2s 1m
+---------------------------------------------------------
+Syscall param getgroups(size) contains uninitialised byte(s)
+   ...
+
+Syscall param getgroups(list) contains uninitialised byte(s)
+   ...
+
+Syscall param getgroups(list) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+596:           SYS_setgroups 2s 1m
+---------------------------------------------------------
+Syscall param setgroups(size) contains uninitialised byte(s)
+   ...
+
+Syscall param setgroups(list) contains uninitialised byte(s)
+   ...
+
+Syscall param setgroups(list) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
   1:                SYS_exit 1s 0m
 ---------------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)

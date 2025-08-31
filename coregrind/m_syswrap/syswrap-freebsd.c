@@ -7304,9 +7304,17 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    // obsol vhangup                                        76
    // obsol vlimit                                         77
    GENXY(__NR_mincore,          sys_mincore),           // 78
-   GENXY(__NR_getgroups,        sys_getgroups),         // 79
+   #if defined(__NR_freebsd14_getgroups)
+   GENXY(__NR_freebsd14_getgroups, sys_getgroups),      // 79
+   #else
+   GENXY(__NR_getgroups, sys_getgroups),                // 79
+   #endif
 
-   GENX_(__NR_setgroups,        sys_setgroups),         // 80
+   #if defined(__NR_freebsd14_setgroups)
+   GENX_(__NR_freebsd14_setgroups, sys_setgroups),      // 80
+   #else
+   GENX_(__NR_setgroups, sys_setgroups),                // 80
+   #endif
    GENX_(__NR_getpgrp,          sys_getpgrp),           // 81
    GENX_(__NR_setpgid,          sys_setpgid),           // 82
    GENXY(__NR_setitimer,        sys_setitimer),         // 83
@@ -7891,7 +7899,14 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 
    BSDX_(__NR_exterrctl,        sys_exterrctl),         // 592
    BSDX_(__NR_inotify_add_watch_at, sys_inotify_add_watch_at), // 593
-   BSDX_(__NR_inotify_rm_watch, sys_inotify_rm_watch),  // 593
+   BSDX_(__NR_inotify_rm_watch, sys_inotify_rm_watch),  // 594
+
+#if defined(__NR_freebsd14_setgroups)
+   GENX_(__NR_setgroups,        sys_setgroups),         // 595
+#endif
+#if defined(__NR_freebsd14_getgroups)
+   GENXY(__NR_getgroups,        sys_getgroups),         // 596
+#endif
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
 

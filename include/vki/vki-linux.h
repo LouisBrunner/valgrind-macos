@@ -3223,6 +3223,8 @@ struct vki_perf_event_attr {
 #define VKI_PERF_EVENT_IOC_ID           _VKI_IOR('$', 7, __vki_u64 *)
 #define VKI_PERF_EVENT_IOC_SET_BPF      _VKI_IOW('$', 8, __vki_u32)
 
+#define VKI_PERF_FLAG_FD_NO_GROUP       (1UL << 0)
+
 /*--------------------------------------------------------------------*/
 // From linux-2.6.32.4/include/linux/getcpu.h
 /*--------------------------------------------------------------------*/

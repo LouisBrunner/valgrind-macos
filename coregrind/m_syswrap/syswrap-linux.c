@@ -4155,6 +4155,8 @@ PRE(sys_stime)
 
 PRE(sys_perf_event_open)
 {
+   // int syscall(SYS_perf_event_open, struct perf_event_attr *attr,
+   //             pid_t pid, int cpu, int group_fd, unsigned long flags);
    struct vki_perf_event_attr *attr;
    PRINT("sys_perf_event_open ( %#" FMT_REGWORD "x, %ld, %ld, %ld, %#"
          FMT_REGWORD "x )", ARG1, SARG2, SARG3, SARG4, ARG5);
@@ -4167,6 +4169,13 @@ PRE(sys_perf_event_open)
                  (Addr)&attr->size, sizeof(attr->size) );
    PRE_MEM_READ( "perf_event_open(attr)",
                  (Addr)attr, attr->size );
+   if ((ARG5 & VKI_PERF_FLAG_FD_NO_GROUP) != VKI_PERF_FLAG_FD_NO_GROUP) {
+       if ((Int)SARG4 != -1) {
+          if (!ML_(fd_allowed)(SARG4, "perf_event_open", tid, False)) {
+             SET_STATUS_Failure(VKI_EBADF);
+          }
+       }
+   }
 }
 
 POST(sys_perf_event_open)

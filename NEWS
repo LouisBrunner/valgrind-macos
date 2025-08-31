@@ -76,6 +76,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 507720  Review syscalls returning file descriptors (other platforms)
 507721  Wire up illumos and Solaris mallinfo
 507853  faccessat and faccessat2 should handle AT_FDCWD and absolute paths
+507866  fanotify_mark dirfd isn't checked
 507868  futimesat doesn't handle AT_FDCWD
 507869  Various at syscalls don't check dirfd argument
 507873  Make fchmodat and fchmodat2 syscall wrappers accept AT_FDCWD

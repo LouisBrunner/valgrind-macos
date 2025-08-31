@@ -2862,11 +2862,12 @@ PRE(sys_fanotify_mark)
                  int, dfd, const char *, pathname);
    if (ARG5)
       PRE_MEM_RASCIIZ( "fanotify_mark(path)", ARG5);
-   if ( !ML_(fd_allowed)(SARG1, "fanotify_mark", tid, False) )
-      SET_STATUS_Failure( VKI_EBADF );
 #else
 #  error Unexpected word size
 #endif
+    if ( !ML_(fd_allowed)(SARG1, "fanotify_mark[fanotify_fd]", tid, False) )
+       SET_STATUS_Failure( VKI_EBADF );
+    ML_(fd_at_check_allowed)(SARG4, (const HChar*)ARG5, "mkdirat[firfd]", tid, status);
 }
 
 /* ---------------------------------------------------------------------

@@ -359,8 +359,8 @@ int main(void)
 
    /* SYS_freebsd14_setgroups     80 */
 #if defined(SYS_freebsd14_getgroups)
-   GO(SYS_freebsd14_getgroups, "2s 1m");
-   SY(SYS_freebsd14_getgroups, x0+1, x0+1); FAIL;
+   GO(SYS_freebsd14_setgroups, "2s 1m");
+   SY(SYS_freebsd14_setgroups, x0+1, x0+1); FAIL;
 #else
    GO(SYS_setgroups, "2s 1m");
    SY(SYS_setgroups, x0+1, x0+1); FAIL;
@@ -2575,8 +2575,8 @@ int main(void)
 
    /* SYS_setgroups               596 */
 #if defined(SYS_freebsd14_getgroups)
-   GO(SYS_getgroups, "2s 1m");
-   SY(SYS_getgroups, x0+1, x0+1); FAIL;
+   GO(SYS_setgroups, "2s 1m");
+   SY(SYS_setgroups, x0+1, x0+1); FAIL;
 #else
    FAKE_GO("596:           SYS_setgroups 2s 1m");
    FAKE_SY("Syscall param setgroups(size) contains uninitialised byte(s)\n");

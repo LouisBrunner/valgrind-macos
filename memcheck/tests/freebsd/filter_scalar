@@ -15,6 +15,7 @@ sed '/at 0x........: syscall (in \/...libc...)/d' |
 
 sed 's/SYS_freebsd12/          SYS/' |
 sed 's/SYS_freebsd13/          SYS/' |
+sed 's/SYS_freebsd14/          SYS/' |
 
 # get rid of error limit message
 

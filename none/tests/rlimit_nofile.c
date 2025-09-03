@@ -14,7 +14,7 @@ int main(int argc, char **argv)
    struct rlimit newrlim;
    int fd;
 
-   CLOSE_INHERITED_FDS;
+
 
    if (getrlimit(RLIMIT_NOFILE, &oldrlim) < 0)
    {

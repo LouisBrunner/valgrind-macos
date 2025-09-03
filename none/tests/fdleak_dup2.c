@@ -7,7 +7,7 @@ int main (int argc, char **argv)
    int s1;
    int s2;
 
-   CLOSE_INHERITED_FDS;
+
 
    s1 = DO( open("/dev/null", O_RDONLY) );
    s2 = DO( open("/dev/null", O_RDONLY) );

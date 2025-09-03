@@ -7,7 +7,7 @@ int main (int argc, char **argv)
 {
    char filename[24];
 
-   CLOSE_INHERITED_FDS;
+
 
    sprintf(filename, "/tmp/file.%ld", (long) getpid());
    (void) DO( creat(filename, 0) );

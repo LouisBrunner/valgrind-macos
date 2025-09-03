@@ -159,7 +159,7 @@ int main (int argc, char **argv)
 {
    int pid, status;
 
-   CLOSE_INHERITED_FDS;
+
 
    pid = getpid();
    sprintf(filea, "/tmp/data1.%d", pid);

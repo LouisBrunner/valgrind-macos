@@ -20,7 +20,7 @@ closefile (const char *f, int fd)
 
 int main ()
 {
-   CLOSE_INHERITED_FDS;
+
 
    const char *TMPFILE = "file_dclose.tmp";
    int fd;

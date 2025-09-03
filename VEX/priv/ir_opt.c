@@ -2571,26 +2571,29 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
          /* other cases (identities, etc) */
          switch (e->Iex.Binop.op) {
 
+            case Iop_Shl8:
+            case Iop_Shl16:
             case Iop_Shl32:
             case Iop_Shl64:
-            case Iop_Shr64:
-            case Iop_Sar64:
-               /* Shl32/Shl64/Shr64/Sar64(x,0) ==> x */
-               if (isZeroU(e->Iex.Binop.arg2)) {
-                  e2 = e->Iex.Binop.arg1;
-                  break;
-               }
-               /* Shl32/Shl64/Shr64(0,x) ==> 0 */
-               if (isZeroU(e->Iex.Binop.arg1)) {
-                  e2 = e->Iex.Binop.arg1;
-                  break;
-               }
-               break;
-
-            case Iop_Sar32:
+            case Iop_Shr8:
+            case Iop_Shr16:
             case Iop_Shr32:
-               /* Shr32/Sar32(x,0) ==> x */
+            case Iop_Shr64:
+            case Iop_Sar8:
+            case Iop_Sar16:
+            case Iop_Sar32:
+            case Iop_Sar64:
+               /* Shl8/Shl16/Shl32/Shl64(x,0) ==> x
+                  Shr8/Shr16/Shr32/Shr64(x,0) ==> x
+                  Sar8/Sar16/Sar32/Sar64(x,0) ==> x */
                if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Shl8/Shl16/Shl32/Shl64(0,x) ==> 0
+                  Shr8/Shr16/Shr32/Shr64(0,x) ==> 0
+                  Sar8/Sar16/Sar32/Sar64(0,x) ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg1)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }

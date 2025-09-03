@@ -1275,6 +1275,8 @@ static inline IRExpr* mkTrue(void)
 static IRExpr* mkOnesOfPrimopResultType ( IROp op )
 {
    switch (op) {
+      case Iop_Or1:
+         return IRExpr_Const(IRConst_U1(0x1));
       case Iop_Or8:
          return IRExpr_Const(IRConst_U8(0xFF));
       case Iop_Or16:
@@ -2599,23 +2601,24 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_Or1:
             case Iop_Or8:
             case Iop_Or16:
             case Iop_Or32:
             case Iop_Or64:
             case Iop_Max32U:
-               /* Or8/Or16/Or32/Or64/Max32U(x,0) ==> x */
+               /* Or1/Or8/Or16/Or32/Or64/Max32U(x,0) ==> x */
                if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* Or8/Or16/Or32/Or64/Max32U(0,x) ==> x */
+               /* Or1/Or8/Or16/Or32/Or64/Max32U(0,x) ==> x */
                if (isZeroU(e->Iex.Binop.arg1)) {
                   e2 = e->Iex.Binop.arg2;
                   break;
                }
-               /* Or8/Or16/Or32/Or64/Max32U(x,1---1b) ==> 1---1b */
-               /* Or8/Or16/Or32/Or64/Max32U(1---1b,x) ==> 1---1b */
+               /* Or1/Or8/Or16/Or32/Or64/Max32U(x,1---1b) ==> 1---1b */
+               /* Or1/Or8/Or16/Or32/Or64/Max32U(1---1b,x) ==> 1---1b */
                if (isOnesU(e->Iex.Binop.arg1) || isOnesU(e->Iex.Binop.arg2)) {
                   e2 = mkOnesOfPrimopResultType(e->Iex.Binop.op);
                   break;

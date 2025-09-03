@@ -1176,25 +1176,6 @@ Bool debug_only_hack_sameIRExprs_might_assert ( IRExpr* e1, IRExpr* e2 )
 }
 
 
-/* Is this literally IRExpr_Const(IRConst_U32(0)) ? */
-static Bool isZeroU32 ( IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const 
-                  && e->Iex.Const.con->tag == Ico_U32
-                  && e->Iex.Const.con->Ico.U32 == 0);
-}
-
-/* Is this literally IRExpr_Const(IRConst_U64(0)) ?
-   Currently unused; commented out to avoid compiler warning */
-#if 0
-static Bool isZeroU64 ( IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const 
-                  && e->Iex.Const.con->tag == Ico_U64
-                  && e->Iex.Const.con->Ico.U64 == 0);
-}
-#endif
-
 /* Is this literally IRExpr_Const(IRConst_V128(0)) ? */
 static Bool isZeroV128 ( IRExpr* e )
 {
@@ -2871,7 +2852,7 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                /* CmpNE32(1Uto32(b), 0) ==> b */
                if (e->Iex.Binop.op == Iop_CmpNE32 &&
-                   isZeroU32(e->Iex.Binop.arg2)) {
+                   isZeroU(e->Iex.Binop.arg2)) {
                   IRExpr* a1 = chase(env, e->Iex.Binop.arg1);
                   if (a1 && a1->tag == Iex_Unop 
                          && a1->Iex.Unop.op == Iop_1Uto32) {
@@ -5867,7 +5848,7 @@ static IRExpr* fold_IRExpr_Binop ( IROp op, IRExpr* a1, IRExpr* a2 )
    case Iop_CmpNE32:
       /* Since X has type Ity_I1 we can simplify:
          CmpNE32(1Uto32(X),0)) ==> X */
-      if (is_Unop(a1, Iop_1Uto32) && isZeroU32(a2))
+      if (is_Unop(a1, Iop_1Uto32) && isZeroU(a2))
          return a1->Iex.Unop.arg;
       break;
 

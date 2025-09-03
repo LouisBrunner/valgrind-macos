@@ -261,6 +261,7 @@
 #define __NR_munlockall 231
 #define __NR_mincore 232
 #define __NR_madvise 233
+#define __NR_remap_file_pages 234
 #define __NR_mbind 235
 #define __NR_get_mempolicy 236
 #define __NR_set_mempolicy 237

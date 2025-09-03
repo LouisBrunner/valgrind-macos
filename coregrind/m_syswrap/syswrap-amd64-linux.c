@@ -729,7 +729,7 @@ static SyscallTableEntry syscall_table[] = {
    //   (__NR_epoll_ctl_old,     sys_ni_syscall),     // 214 
 
    //   (__NR_epoll_wait_old,    sys_ni_syscall),     // 215 
-   //   (__NR_remap_file_pages,  sys_remap_file_pages)// 216 
+   LINX_(__NR_remap_file_pages,  sys_remap_file_pages), // 216
    GENXY(__NR_getdents64,        sys_getdents64),     // 217 
    LINX_(__NR_set_tid_address,   sys_set_tid_address),// 218 
    //   (__NR_restart_syscall,   sys_restart_syscall),// 219 

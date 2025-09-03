@@ -110,6 +110,7 @@ DECL_TEMPLATE(linux, sys_epoll_ctl);
 DECL_TEMPLATE(linux, sys_epoll_wait);
 DECL_TEMPLATE(linux, sys_epoll_pwait);
 DECL_TEMPLATE(linux, sys_epoll_pwait2);
+DECL_TEMPLATE(linux, sys_remap_file_pages);
 DECL_TEMPLATE(linux, sys_eventfd);
 DECL_TEMPLATE(linux, sys_eventfd2);
 

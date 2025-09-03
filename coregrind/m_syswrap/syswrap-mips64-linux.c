@@ -701,6 +701,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_epoll_create1, sys_epoll_create1),
    LINX_ (__NR_epoll_ctl, sys_epoll_ctl),
    LINXY (__NR_epoll_wait, sys_epoll_wait),
+   LINX_ (__NR_remap_file_pages, sys_remap_file_pages),
    PLAX_(__NR_rt_sigreturn,sys_rt_sigreturn),
 #if defined(VGABI_N32)
    LINXY(__NR_fcntl64, sys_fcntl64),

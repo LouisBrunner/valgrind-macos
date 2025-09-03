@@ -731,7 +731,7 @@ static SyscallTableEntry syscall_table[] = {
 
    GENXY(__NR_statfs64, sys_statfs64),                                // 265
    GENXY(__NR_fstatfs64, sys_fstatfs64),                              // 266
-// ?????(__NR_remap_file_pages, ),
+   LINX_(__NR_remap_file_pages, sys_remap_file_pages),                // 267
    GENX_(268, sys_ni_syscall), /* unimplemented (by the kernel) */    // 268
    GENX_(269, sys_ni_syscall), /* unimplemented (by the kernel) */    // 269
 

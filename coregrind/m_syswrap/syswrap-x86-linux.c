@@ -1468,7 +1468,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 255
    LINXY(__NR_epoll_wait,        sys_epoll_wait),        // 256
-//zz    //   (__NR_remap_file_pages,  sys_remap_file_pages),  // 257 */Linux
+   LINX_(__NR_remap_file_pages,  sys_remap_file_pages),  // 257 */Linux
    LINX_(__NR_set_tid_address,   sys_set_tid_address),   // 258
    LINXY(__NR_timer_create,      sys_timer_create),      // 259
 

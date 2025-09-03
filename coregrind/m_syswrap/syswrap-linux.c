@@ -2241,6 +2241,19 @@ POST(sys_epoll_pwait2)
    epoll_post_helper (tid, arrghs, status);
 }
 
+PRE(sys_remap_file_pages)
+{
+   /* int remap_file_pages(void addr[.size], size_t size,
+                           int prot, size_t pgoff, int flags); */
+   Int arg_3 = (Int) ARG3;
+   Int arg_5 = (Int) ARG5;
+   PRINT("sys_remap_file_pages ( %#" FMT_REGWORD "x, %lu, %d, %lu, %d",
+         ARG1, ARG2, arg_3, ARG4, arg_5);
+   PRE_REG_READ5(int, "remap_file_pages", void *, addr, vki_size_t,
+                 size_t, int, prot, vki_size_t, pgoff, int, flags);
+   PRE_MEM_READ("sys_remap_file_pages(addr)", ARG1, ARG2);
+}
+
 PRE(sys_eventfd)
 {
    PRINT("sys_eventfd ( %" FMT_REGWORD "u )", ARG1);

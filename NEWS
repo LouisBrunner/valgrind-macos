@@ -33,6 +33,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+309554  Wrap syscall remap_file_pages (216)
 338803  Handling of dwz debug alt files or cross-CU is broken
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
 493430  Review all syscalls that use or return (new) file descriptors

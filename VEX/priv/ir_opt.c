@@ -2625,37 +2625,31 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                break;
 
             case Iop_Add8:
-               /* Add8(t,t) ==> t << 1.
+            case Iop_Add16:
+            case Iop_Add32:
+            case Iop_Add64:
+               /* Add8/Add16/Add32/Add64(x,0) ==> x */
+               if (isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Add8/Add16/Add32/Add64(0,x) ==> x */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = e->Iex.Binop.arg2;
+                  break;
+               }
+               /* Add8/Add16/Add32/Add64(t,t) ==> t << 1.
                   Memcheck doesn't understand that
                   x+x produces a defined least significant bit, and it seems
                   simplest just to get rid of the problem by rewriting it
                   out, since the opportunity to do so exists. */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-                  e2 = IRExpr_Binop(Iop_Shl8, e->Iex.Binop.arg1,
+                  IROp add_op = e->Iex.Binop.op;
+                  IROp shift_op = (add_op == Iop_Add64) ? Iop_Shl64 :
+                                  (add_op == Iop_Add32) ? Iop_Shl32 :
+                                  (add_op == Iop_Add16) ? Iop_Shl16 : Iop_Shl8;
+                  e2 = IRExpr_Binop(shift_op, e->Iex.Binop.arg1,
                                     IRExpr_Const(IRConst_U8(1)));
-                  break;
-               }
-               break;
-
-               /* NB no Add16(t,t) case yet as no known test case exists */
-
-            case Iop_Add32:
-            case Iop_Add64:
-               /* Add32/Add64(x,0) ==> x */
-               if (isZeroU(e->Iex.Binop.arg2)) {
-                  e2 = e->Iex.Binop.arg1;
-                  break;
-               }
-               /* Add32/Add64(0,x) ==> x */
-               if (isZeroU(e->Iex.Binop.arg1)) {
-                  e2 = e->Iex.Binop.arg2;
-                  break;
-               }
-               /* Add32/Add64(t,t) ==> t << 1. Same rationale as for Add8. */
-               if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-                  e2 = IRExpr_Binop(
-                          e->Iex.Binop.op == Iop_Add32 ? Iop_Shl32 : Iop_Shl64,
-                          e->Iex.Binop.arg1, IRExpr_Const(IRConst_U8(1)));
                   break;
                }
                break;

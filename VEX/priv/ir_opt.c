@@ -1280,6 +1280,7 @@ static IRExpr* mkOnesOfPrimopResultType ( IROp op )
       case Iop_Or16:
          return IRExpr_Const(IRConst_U16(0xFFFF));
       case Iop_Or32:
+      case Iop_Max32U:
          return IRExpr_Const(IRConst_U32(0xFFFFFFFF));
       case Iop_CmpEQ8x8:
       case Iop_CmpEQ16x4:

@@ -2654,19 +2654,22 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                }
                break;
 
+            case Iop_Sub8:
+            case Iop_Sub16:
             case Iop_Sub32:
             case Iop_Sub64:
-               /* Sub32/Sub64(x,0) ==> x */
+               /* Sub8/Sub16/Sub32/Sub64(x,0) ==> x */
                if (isZeroU(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* Sub32/Sub64(t,t) ==> 0, for some IRTemp t */
+               /* Sub8/Sub16/Sub32/Sub64(t,t) ==> 0, for some IRTemp t */
                if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
                break;
+
             case Iop_Sub8x16:
                /* Sub8x16(x,0) ==> x */
                if (isZeroV128(e->Iex.Binop.arg2)) {

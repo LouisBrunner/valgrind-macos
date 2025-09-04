@@ -81,7 +81,7 @@ DECL_TEMPLATE(freebsd, sys_fchflags) // 35
 // generic kill 37
 // generic getppid 39
 // generic dup 41
-DECL_TEMPLATE(freebsd, sys_pipe) // 42
+DECL_TEMPLATE(freebsd, sys_freebsd10_pipe) // 42
 // generic getegid 43
 // generic profil redirect to ni_syscall 44
 // sys_ktrace refirect to ni_syscall 45

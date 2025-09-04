@@ -1317,47 +1317,47 @@ Syscall param seteuid(uid) contains uninitialised byte(s)
 ---------------------------------------------------------
 188:      SYS_freebsd11_stat 2s 2m
 ---------------------------------------------------------
-Syscall param stat(path) contains uninitialised byte(s)
+Syscall param freebsd11_stat(path) contains uninitialised byte(s)
    ...
 
-Syscall param stat(sb) contains uninitialised byte(s)
+Syscall param freebsd11_stat(sb) contains uninitialised byte(s)
    ...
 
-Syscall param stat(path) points to unaddressable byte(s)
+Syscall param freebsd11_stat(path) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param stat(sb) points to unaddressable byte(s)
+Syscall param freebsd11_stat(sb) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 189:     SYS_freebsd11_fstat 2s 1m
 ---------------------------------------------------------
-Syscall param fstat(fd) contains uninitialised byte(s)
+Syscall param freebsd11_fstat(fd) contains uninitialised byte(s)
    ...
 
-Syscall param fstat(sb) contains uninitialised byte(s)
+Syscall param freebsd11_fstat(sb) contains uninitialised byte(s)
    ...
 
-Syscall param fstat(sb) points to unaddressable byte(s)
+Syscall param freebsd11_fstat(sb) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 190:     SYS_freebsd11_lstat 2s 2m
 ---------------------------------------------------------
-Syscall param lstat(path) contains uninitialised byte(s)
+Syscall param freebsd11_lstat(path) contains uninitialised byte(s)
    ...
 
-Syscall param lstat(sb) contains uninitialised byte(s)
+Syscall param freebsd11_lstat(sb) contains uninitialised byte(s)
    ...
 
-Syscall param lstat(path) points to unaddressable byte(s)
+Syscall param freebsd11_lstat(path) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param lstat(sb) points to unaddressable byte(s)
+Syscall param freebsd11_lstat(sb) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -1412,23 +1412,23 @@ Syscall param setrlimit(rlim) points to unaddressable byte(s)
 ---------------------------------------------------------
 196:SYS_freebsd11_getdirentries 4s 2m
 ---------------------------------------------------------
-Syscall param getdirentries(fd) contains uninitialised byte(s)
+Syscall param freebsd11_getdirentries(fd) contains uninitialised byte(s)
    ...
 
-Syscall param getdirentries(buf) contains uninitialised byte(s)
+Syscall param freebsd11_getdirentries(buf) contains uninitialised byte(s)
    ...
 
-Syscall param getdirentries(nbytes) contains uninitialised byte(s)
+Syscall param freebsd11_getdirentries(nbytes) contains uninitialised byte(s)
    ...
 
-Syscall param getdirentries(basep) contains uninitialised byte(s)
+Syscall param freebsd11_getdirentries(basep) contains uninitialised byte(s)
    ...
 
-Syscall param getdirentries(buf) points to unaddressable byte(s)
+Syscall param freebsd11_getdirentries(buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param getdirentries(basep) points to unaddressable byte(s)
+Syscall param freebsd11_getdirentries(basep) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -1593,7 +1593,7 @@ Syscall param semctl(cmd) contains uninitialised byte(s)
 Syscall param semctl(arg) contains uninitialised byte(s)
    ...
 
-Syscall param sys_freebsd7___semctl(arg) points to unaddressable byte(s)
+Syscall param freebsd7___semctl(arg) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -1636,32 +1636,32 @@ Syscall param semop(nops) contains uninitialised byte(s)
 ---------------------------------------------------------
 224:     SYS_freebsd7_msgctl (set) 3s 1m
 ---------------------------------------------------------
-Syscall param msgctl(msqid) contains uninitialised byte(s)
+Syscall param freebsd7_msgctl(msqid) contains uninitialised byte(s)
    ...
 
-Syscall param msgctl(cmd) contains uninitialised byte(s)
+Syscall param freebsd7_msgctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param msgctl(buf) contains uninitialised byte(s)
+Syscall param freebsd7_msgctl(buf) contains uninitialised byte(s)
    ...
 
-Syscall param msgctl(IPC_SET, buf) points to unaddressable byte(s)
+Syscall param freebsd7_msgctl(IPC_SET, buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 224:     SYS_freebsd7_msgctl (stat) 3s 1m
 ---------------------------------------------------------
-Syscall param msgctl(msqid) contains uninitialised byte(s)
+Syscall param freebsd7_msgctl(msqid) contains uninitialised byte(s)
    ...
 
-Syscall param msgctl(cmd) contains uninitialised byte(s)
+Syscall param freebsd7_msgctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param msgctl(buf) contains uninitialised byte(s)
+Syscall param freebsd7_msgctl(buf) contains uninitialised byte(s)
    ...
 
-Syscall param msgctl(IPC_STAT, buf) points to unaddressable byte(s)
+Syscall param freebsd7_msgctl(IPC_STAT, buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -1734,25 +1734,25 @@ Syscall param shmat(flag) contains uninitialised byte(s)
 ---------------------------------------------------------
 229:     SYS_freebsd7_shmctl 3s 0m
 ---------------------------------------------------------
-Syscall param shmctl(shmid) contains uninitialised byte(s)
+Syscall param freebsd7_shmctl(shmid) contains uninitialised byte(s)
    ...
 
-Syscall param shmctl(cmd) contains uninitialised byte(s)
+Syscall param freebsd7_shmctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param shmctl(buf) contains uninitialised byte(s)
+Syscall param freebsd7_shmctl(buf) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
 229:     SYS_freebsd7_shmctl (bogus cmd) 3s 0m
 ---------------------------------------------------------
-Syscall param shmctl(shmid) contains uninitialised byte(s)
+Syscall param freebsd7_shmctl(shmid) contains uninitialised byte(s)
    ...
 
-Syscall param shmctl(cmd) contains uninitialised byte(s)
+Syscall param freebsd7_shmctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param shmctl(buf) contains uninitialised byte(s)
+Syscall param freebsd7_shmctl(buf) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
@@ -2837,33 +2837,33 @@ Syscall param getresgid(sgid) points to unaddressable byte(s)
 ---------------------------------------------------------
 363:    SYS_freebsd11_kevent 6s 3m
 ---------------------------------------------------------
-Syscall param kevent(fd) contains uninitialised byte(s)
+Syscall param freebsd11_kevent(fd) contains uninitialised byte(s)
    ...
 
-Syscall param kevent(changelist) contains uninitialised byte(s)
+Syscall param freebsd11_kevent(changelist) contains uninitialised byte(s)
    ...
 
-Syscall param kevent(nchanges) contains uninitialised byte(s)
+Syscall param freebsd11_kevent(nchanges) contains uninitialised byte(s)
    ...
 
-Syscall param kevent(eventlist) contains uninitialised byte(s)
+Syscall param freebsd11_kevent(eventlist) contains uninitialised byte(s)
    ...
 
-Syscall param kevent(nevents) contains uninitialised byte(s)
+Syscall param freebsd11_kevent(nevents) contains uninitialised byte(s)
    ...
 
-Syscall param kevent(timeout) contains uninitialised byte(s)
+Syscall param freebsd11_kevent(timeout) contains uninitialised byte(s)
    ...
 
-Syscall param kevent(changelist) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
-Syscall param kevent(eventlist) points to unaddressable byte(s)
+Syscall param freebsd11_kevent(changelist) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Syscall param kevent(timeout) points to unaddressable byte(s)
+Syscall param freebsd11_kevent(eventlist) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param freebsd11_kevent(timeout) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -3070,16 +3070,16 @@ Syscall param sendfile(sbytes) points to unaddressable byte(s)
 ---------------------------------------------------------
 395: SYS_freebsd11_getfsstat 3s 1m
 ---------------------------------------------------------
-Syscall param getfsstat(buf) contains uninitialised byte(s)
+Syscall param freebsd11_getfsstat(buf) contains uninitialised byte(s)
    ...
 
-Syscall param getfsstat(bufsize) contains uninitialised byte(s)
+Syscall param freebsd11_getfsstat(bufsize) contains uninitialised byte(s)
    ...
 
-Syscall param getfsstat(mode) contains uninitialised byte(s)
+Syscall param freebsd11_getfsstat(mode) contains uninitialised byte(s)
    ...
 
-Syscall param getfsstat(buf) points to unaddressable byte(s)
+Syscall param freebsd11_getfsstat(buf) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -3284,10 +3284,10 @@ Syscall param swapcontext(oucp) points to unaddressable byte(s)
 ---------------------------------------------------------
 424:             SYS_swapoff 1s 1m
 ---------------------------------------------------------
-Syscall param swapoff(special) contains uninitialised byte(s)
+Syscall param freebsd13_swapoff(special) contains uninitialised byte(s)
    ...
 
-Syscall param swapoff(special) points to unaddressable byte(s)
+Syscall param freebsd13_swapoff(special) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

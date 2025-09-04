@@ -94,6 +94,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508779  PRE(sys_prlimit64): reorder check for memory validity
 508869  x86-linux: simplify scalar test output
 508958  FreeBSD: add getgroups and setgroups wrappers
+509103  Fix tests/arm64/bug484935.c build with "-O2 -flto -ffat-lto-objects"
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

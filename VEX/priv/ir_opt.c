@@ -1243,7 +1243,9 @@ static Bool notBool ( Bool b )
 static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 {
    switch (op) {
+      case Iop_Sub8:
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
+      case Iop_Sub16:
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
       case Iop_Sub32:
       case Iop_Xor32: return IRExpr_Const(IRConst_U32(0));

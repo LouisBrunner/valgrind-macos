@@ -2169,7 +2169,7 @@ PRE(sys_freebsd7___semctl)
    case VKI_GETALL:
    case VKI_SETALL:
       PRINT("sys_freebsd7___semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4);
-      PRE_REG_READ4(int, "semctl",
+      PRE_REG_READ4(int, "freebsd7___semctl",
                     int, semid, int, semnum, int, cmd, union vki_semun *, arg);
       PRE_MEM_READ("freebsd7___semctl(arg)", ARG4, sizeof(union vki_semun));
       semun = (union vki_semun*)ARG4;
@@ -2180,7 +2180,7 @@ PRE(sys_freebsd7___semctl)
       break;
    default:
       PRINT("sys_freebsd7___semctl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,ARG3);
-      PRE_REG_READ3(long, "semctl",
+      PRE_REG_READ3(long, "freebsd7___semctl",
                     int, semid, int, semnum, int, cmd);
       break;
    }

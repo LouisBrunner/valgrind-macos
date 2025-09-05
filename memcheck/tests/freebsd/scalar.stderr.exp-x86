@@ -1581,16 +1581,16 @@ Syscall param poll(ufds.events) points to uninitialised byte(s)
 ---------------------------------------------------------
 220:   SYS_freebsd7___semctl (IPC_STAT) 4s 1m
 ---------------------------------------------------------
-Syscall param semctl(semid) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(semid) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(semnum) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(semnum) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(cmd) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(cmd) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(arg) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(arg) contains uninitialised byte(s)
    ...
 
 Syscall param freebsd7___semctl(arg) points to unaddressable byte(s)
@@ -1600,13 +1600,13 @@ Syscall param freebsd7___semctl(arg) points to unaddressable byte(s)
 ---------------------------------------------------------
 220:   SYS_freebsd7___semctl (bogus cmd) 3s 0m
 ---------------------------------------------------------
-Syscall param semctl(semid) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(semid) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(semnum) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(semnum) contains uninitialised byte(s)
    ...
 
-Syscall param semctl(cmd) contains uninitialised byte(s)
+Syscall param freebsd7___semctl(cmd) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------

@@ -163,6 +163,7 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stderr.exp_32 \
 		cxx17_aligned_new.stdout.exp \
 	duplicate_align_size_errors.stderr.exp \
+		duplicate_align_size_errors.stderr.exp-memalign \
 		duplicate_align_size_errors.vgtest \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \

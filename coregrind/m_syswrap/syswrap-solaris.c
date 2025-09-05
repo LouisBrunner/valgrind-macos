@@ -2344,6 +2344,8 @@ PRE(sys_fstat)
    PRINT("sys_fstat ( %ld, %#lx )", SARG1, ARG2);
    PRE_REG_READ2(long, "fstat", int, fildes, struct stat *, buf);
    PRE_MEM_WRITE("fstat(buf)", ARG2, sizeof(struct vki_stat));
+   if (!ML_(fd_allowed)(ARG1, "fstat", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 POST(sys_fstat)

@@ -5691,7 +5691,7 @@ PRE(sys_cap_rights_get)
 {
    PRINT("sys_cap_rights_get ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3);
    PRE_REG_READ3(long, "cap_rights_get", int, version, int, fd, vki_cap_rights_t*, rights);
-   if (!ML_(fd_allowed)(ARG1, "cap_rights_get", tid, False))
+   if (!ML_(fd_allowed)(ARG2, "cap_rights_get", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
    PRE_MEM_WRITE("cap_rights_get(rights)", ARG3, sizeof(vki_cap_rights_t));
 }
@@ -6301,6 +6301,8 @@ PRE(sys_fstat)
    PRINT("sys_fstat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x )",SARG1,ARG2);
    PRE_REG_READ2(int, "fstat", int, fd, struct stat *, sb);
    PRE_MEM_WRITE( "fstat(sb)", ARG2, sizeof(struct vki_stat) );
+   if ( !ML_(fd_allowed)(ARG1, "fstat", tid, False) )
+      SET_STATUS_Failure( VKI_EBADF );
 }
 
 POST(sys_fstat)

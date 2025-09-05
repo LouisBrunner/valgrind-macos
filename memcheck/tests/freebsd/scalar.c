@@ -832,16 +832,16 @@ int main(void)
 #endif
 #else
    FAKE_GO("220:   SYS_freebsd7___semctl (IPC_STAT) 4s 1m");
-   FAKE_SY("Syscall param semctl(semid) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_semctl(semid) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param semctl(semnum) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_semctl(semnum) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param semctl(cmd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_semctl(cmd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param semctl(arg) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_semctl(arg) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
    FAKE_SY("Syscall param sys_freebsd7___semctl(arg) points to unaddressable byte(s)\n");
@@ -849,10 +849,10 @@ int main(void)
    FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
    FAKE_SY("\n");
    FAKE_GO("220:   SYS_freebsd7___semctl (bogus cmd) 3s 0m");
-   FAKE_SY("Syscall param semctl(semid) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_semctl(semid) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param semctl(semnum) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_semctl(semnum) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
    FAKE_SY("Syscall param semctl(cmd) contains uninitialised byte(s)\n");
@@ -881,31 +881,31 @@ int main(void)
 #endif
 #else
    FAKE_GO("224:     SYS_freebsd7_msgctl (set) 3s 1m");
-   FAKE_SY("Syscall param msgctl(msqid) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(msqid) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param msgctl(cmd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(cmd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param msgctl(buf) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(buf) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param msgctl(IPC_SET, buf) points to unaddressable byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(IPC_SET, buf) points to unaddressable byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
    FAKE_SY("\n");
 
    FAKE_GO("224:     SYS_freebsd7_msgctl (stat) 3s 1m");
-   FAKE_SY("Syscall param msgctl(msqid) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(msqid) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param msgctl(cmd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(cmd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param msgctl(buf) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(buf) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param msgctl(IPC_STAT, buf) points to unaddressable byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_msgctl(IPC_STAT, buf) points to unaddressable byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
    FAKE_SY("\n");
@@ -938,24 +938,24 @@ int main(void)
 #endif
 #else
    FAKE_GO("229:     SYS_freebsd7_shmctl 3s 0m");
-   FAKE_SY("Syscall param shmctl(shmid) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_shmctl(shmid) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param shmctl(cmd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_shmctl(cmd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param shmctl(buf) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_shmctl(buf) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
 
    FAKE_GO("229:     SYS_freebsd7_shmctl (bogus cmd) 3s 0m");
-   FAKE_SY("Syscall param shmctl(shmid) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_shmctl(shmid) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param shmctl(cmd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_shmctl(cmd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param shmctl(buf) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param freebsd7_shmctl(buf) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
 

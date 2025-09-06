@@ -2188,7 +2188,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE("posix_memalign(al %llu, size %llu)\n", \
+      MALLOC_TRACE("posix_memalign(al %llu, size %llu)", \
             (ULong)alignment, (ULong)size ); \
       /* Test whether the alignment argument is valid.  It must be \
          a power of two multiple of sizeof (void *).  */ \

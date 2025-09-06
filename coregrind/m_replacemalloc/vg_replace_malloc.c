@@ -2299,7 +2299,13 @@ extern int * __error(void) __attribute__((weak));
 #define VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR 0
 #endif
 
-#if defined(MUSL_LIBC)
+#if defined(VGO_freebsd) || defined(VGO_solaris)
+#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 1
+#else
+#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 0
+#endif
+
+#if defined(VGO_freebsd) || defined(MUSL_LIBC)
 #define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 0
 #else
 #define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
@@ -2364,8 +2370,9 @@ extern int * __error(void) __attribute__((weak));
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
-       if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (alignment == 0)) \
-           || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && (size % alignment != 0)) \
+       if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (size == 0)) \
+           || (VG_ALIGNED_ALLOC_NO_ALIGN_ZERO && (alignment == 0)) \
+           || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && alignment && (size % alignment != 0)) \
            || (VG_ALIGNED_ALLOC_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
            || (VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \
           SET_ERRNO_EINVAL; \

@@ -1840,7 +1840,10 @@ extern int * __error(void) __attribute__((weak));
   *
   * FreeBSD, undocumented,  just calls aligned_alloc
   * with size rounded up to a multiple
-  * of aligment
+  * of aligment (unless the alignment is 0 in which case
+  * it just calls malloc [prior to Feb 2023 this wasn't
+  * handled correctly resulting in a division-by-zero crash
+  * in the size roundup code])
   *
   * jemalloc mininum alignment is 1, must be a power of 2
   * it looks like excessively large alignment causes ENOMEM
@@ -1924,7 +1927,7 @@ extern int * __error(void) __attribute__((weak));
 #define VG_MEMALIGN_NO_ALIGN_ZERO 0
 #endif
 
-#if defined(MUSL_LIBC)
+#if defined(MUSL_LIBC) || defined(VGO_freebsd)
 #define VG_MEMALIGN_NO_SIZE_ZERO 0
 #else
 #define VG_MEMALIGN_NO_SIZE_ZERO 1

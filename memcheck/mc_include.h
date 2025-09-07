@@ -559,7 +559,7 @@ void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a );
 void MC_(record_freemismatch_error)    ( ThreadId tid, MC_Chunk* mc );
 void MC_(record_realloc_size_zero)     ( ThreadId tid, Addr a );
 void MC_(record_bad_alignment)         ( ThreadId tid, SizeT align, SizeT size, const HChar *msg);
-void MC_(record_bad_size)              ( ThreadId tid, SizeT align, const HChar *function);
+void MC_(record_unsafe_zero_size)      ( ThreadId tid);
 
 void MC_(record_overlap_error)  ( ThreadId tid, const HChar* function,
                                   Addr src, Addr dst, SizeT szB );

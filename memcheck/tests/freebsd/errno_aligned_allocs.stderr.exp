@@ -11,7 +11,7 @@ Invalid alignment value: 40 (should be non-zero, a power of 2 and a multiple of 
    at 0x........: posix_memalign (vg_replace_malloc.c:...)
    by 0x........: main (errno_aligned_allocs.c:20)
 
-aligned_alloc() invalid size value: 0
+Unsafe allocation with size of zero is implementation-defined
    at 0x........: aligned_alloc (vg_replace_malloc.c:...)
    by 0x........: main (errno_aligned_allocs.c:60)
 

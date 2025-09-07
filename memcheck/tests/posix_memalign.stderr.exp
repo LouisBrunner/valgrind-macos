@@ -1,4 +1,4 @@
-posix_memalign() invalid size value: 0
+Unsafe allocation with size of zero is implementation-defined
    at 0x........: posix_memalign (vg_replace_malloc.c:...)
    by 0x........: main (posix_memalign.c:32)
 

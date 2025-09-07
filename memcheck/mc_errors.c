@@ -77,7 +77,7 @@ typedef
       Err_FishyValue,
       Err_ReallocSizeZero,
       Err_BadAlign,
-      Err_BadSize,
+      Err_UnsafeZeroSize,
       Err_SizeMismatch,
       Err_AlignMismatch,
    }
@@ -177,9 +177,7 @@ struct _MC_Error {
 
       struct {
          AddrInfo ai;
-         SizeT size;
-         const HChar *func;
-      } BadSize;
+      } UnsafeZeroSize;
 
       // Call to strcpy, memcpy, etc, with overlapping blocks.
       struct {
@@ -799,15 +797,13 @@ void MC_(pp_Error) ( const Error* err )
          }
          break;
 
-   case Err_BadSize:
+   case Err_UnsafeZeroSize:
       if (xml) {
          emit( "  <kind>InvalidSize</kind>\n" );
-         emit( "  <what>%s invalid size value: %lu</what>\n",
-               extra->Err.BadSize.func, extra->Err.BadSize.size );
+         emit( "  <what>Unsafe allocation with size of zero is implementation-defined</what>\n");
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       } else {
-         emit( "%s invalid size value: %lu\n",
-               extra->Err.BadSize.func, extra->Err.BadSize.size  );
+         emit( "Unsafe allocation with size of zero is implementation-defined\n");
          VG_(pp_ExeContext)( VG_(get_error_where)(err) );
       }
       break;
@@ -1028,13 +1024,10 @@ void MC_(record_bad_alignment) ( ThreadId tid, SizeT align, SizeT size, const HC
    VG_(maybe_record_error)( tid, Err_BadAlign, /*addr*/0, /*s*/NULL, &extra );
 }
 
-void MC_(record_bad_size) ( ThreadId tid, SizeT size, const HChar *function )
+void MC_(record_unsafe_zero_size) ( ThreadId tid )
 {
-   MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
-   extra.Err.BadSize.size= size;
-   extra.Err.BadSize.func = function;
-   VG_(maybe_record_error)( tid, Err_BadSize, /*addr*/0, /*s*/NULL, &extra );
+   VG_(maybe_record_error)( tid, Err_UnsafeZeroSize, /*addr*/0, /*s*/NULL, /*extra*/NULL );
 }
 
 void MC_(record_illegal_mempool_error) ( ThreadId tid, Addr a ) 
@@ -1222,6 +1215,7 @@ Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
       case Err_Overlap:
       case Err_Cond:
       case Err_ReallocSizeZero:
+      case Err_UnsafeZeroSize:
          return True;
 
       case Err_FishyValue:
@@ -1252,11 +1246,6 @@ Bool MC_(eq_Error) ( VgRes res, const Error* e1, const Error* e2 )
             return extra1->Err.BadAlign.dealloc_align ==
                   extra2->Err.BadAlign.dealloc_align;
          }
-
-      case Err_BadSize:
-         // sized delete mismatch
-         return extra1->Err.BadSize.size ==
-               extra2->Err.BadSize.size;
 
       case Err_SizeMismatch:
          return extra1->Err.SizeMismatch.size ==
@@ -1418,7 +1407,7 @@ UInt MC_(update_Error_extra)( const Error* err )
    // we make it consistent with the others.
    case Err_Leak:
    case Err_BadAlign:
-   case Err_BadSize:
+   case Err_UnsafeZeroSize:
    case Err_SizeMismatch:
    case Err_AlignMismatch:
       return sizeof(MC_Error);
@@ -1578,10 +1567,10 @@ typedef
       MempoolSupp,          // Memory pool suppression.
       FishyValueSupp,       // Fishy value suppression.
       ReallocSizeZeroSupp,  // realloc size 0 suppression
-      BadAlignSupp,     // Alignment not 2
-      BadSizeSupp,     // aligned alloc with size 0
-      SizeMismatch,  // Sized deallocation did not match allocation size
-      AlignMismatch, // Aligned deallocation did not match aligned allocation
+      BadAlignSupp,         // Alignment not 2
+      UnsafeZeroSizeSupp,   // aligned alloc with size 0
+      SizeMismatch,         // Sized deallocation did not match allocation size
+      AlignMismatch,        // Aligned deallocation did not match aligned allocation
    } 
    MC_SuppKind;
 
@@ -1614,7 +1603,7 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
    else if (VG_STREQ(name, "ReallocZero")) skind = ReallocSizeZeroSupp;
    else if (VG_STREQ(name, "BadAlign")) skind = BadAlignSupp;
-   else if (VG_STREQ(name, "BadSize")) skind = BadSizeSupp;
+   else if (VG_STREQ(name, "UnsafeZeroSize")) skind = UnsafeZeroSizeSupp;
    else if (VG_STREQ(name, "SizeMismatch")) skind = SizeMismatch;
    else if (VG_STREQ(name, "AlignMismatch")) skind = AlignMismatch;
    else 
@@ -1800,8 +1789,8 @@ Bool MC_(error_matches_suppression) ( const Error* err, const Supp* su )
       case BadAlignSupp:
          return (ekind == Err_BadAlign);
 
-      case BadSizeSupp:
-         return (ekind == Err_BadSize);
+      case UnsafeZeroSizeSupp:
+         return (ekind == Err_UnsafeZeroSize);
 
       case SizeMismatch:
          return (ekind == Err_SizeMismatch);
@@ -1835,7 +1824,7 @@ const HChar* MC_(get_error_name) ( const Error* err )
    case Err_FishyValue:      return "FishyValue";
    case Err_ReallocSizeZero: return "ReallocZero";
    case Err_BadAlign:        return "BadAlign";
-   case Err_BadSize:         return "BadSize";
+   case Err_UnsafeZeroSize:  return "UnsafeZeroSize";
    case Err_SizeMismatch:    return "SizeMismatch";
    case Err_AlignMismatch:   return "AlignMismatch";
    case Err_Addr: {

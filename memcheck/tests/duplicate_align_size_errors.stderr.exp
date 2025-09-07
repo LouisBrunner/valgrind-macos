@@ -10,7 +10,7 @@ Invalid size value: 100 alignment value: 64 (size should be a multiple of alignm
    at 0x........: aligned_alloc (vg_replace_malloc.c:...)
    by 0x........: main (duplicate_align_size_errors.cpp:25)
 
-aligned_alloc() invalid size value: 0
+Unsafe allocation with size of zero is implementation-defined
    at 0x........: aligned_alloc (vg_replace_malloc.c:...)
    by 0x........: main (duplicate_align_size_errors.cpp:33)
 

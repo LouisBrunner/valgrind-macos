@@ -29,7 +29,7 @@ int main()
           mem = nullptr;
        }
 
-       // Err.BadSize
+       // Err.UnsafeZeroSize
        mem  = aligned_alloc(64U, 0U);
        if (mem)
        {

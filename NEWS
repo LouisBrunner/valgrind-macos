@@ -96,6 +96,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508958  FreeBSD: add getgroups and setgroups wrappers
 509103  Fix tests/arm64/bug484935.c build with "-O2 -flto -ffat-lto-objects"
 509107  memcheck/tests/duplicate_align_size_errors.cpp fails
+509139  Update BadSize error messages
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -1073,6 +1073,8 @@ extern int * __error(void) __attribute__((weak));
 
 
 #if defined(VGO_linux)
+ FREE_ALIGNED_SIZED(VG_Z_LIBC_SONAME,       free_aligned_sized,                 free, FreeAlignedSized );
+ FREE_ALIGNED_SIZED(SO_SYN_MALLOC,          free_aligned_sized,                 free, FreeAlignedSized );
 
 #elif defined(VGO_freebsd)
  FREE_ALIGNED_SIZED(VG_Z_LIBC_SONAME,       free_aligned_sized,                 free, FreeAlignedSized );

@@ -2299,16 +2299,16 @@ extern int * __error(void) __attribute__((weak));
 #define VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR 0
 #endif
 
-#if defined(VGO_freebsd) || defined(VGO_solaris)
-#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 1
+#if defined(VGO_solaris)
+#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
 #else
-#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 0
+#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 0
 #endif
 
-#if defined(VGO_freebsd) || defined(MUSL_LIBC)
-#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 0
+#if defined(MUSL_LIBC)
+#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 0
 #else
-#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
+#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 1
 #endif
 
 #if defined (VGO_linux) && !defined(MUSL_LIBC) && !defined(HAVE_GNU_LIBC_C17_ALIGNED_ALLOC)

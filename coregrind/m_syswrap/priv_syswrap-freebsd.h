@@ -550,6 +550,9 @@ DECL_TEMPLATE(freebsd, sys_inotify_rm_watch) // 594
 // generic getgroups 595
 // generic setgroups 596
 
+DECL_TEMPLATE(freebsd, sys_jail_attach_jd) // 597
+DECL_TEMPLATE(freebsd, sys_jail_remove_jd) // 598
+
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)
 
 #endif   // PRIV_SYSWRAP_FREEBSD_H

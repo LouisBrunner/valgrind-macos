@@ -7148,7 +7148,7 @@ PRE(sys_fchroot)
       SET_STATUS_Failure(VKI_EBADF);
 }
 
-// SYS_setcred
+// SYS_setcred 591
 // int setcred(u_int flags, const struct setcred *wcred, size_t size);
 PRE(sys_setcred)
 {
@@ -7157,7 +7157,7 @@ PRE(sys_setcred)
    PRE_MEM_READ("setcred(wcred)", ARG2, sizeof(struct vki_setcred));
 }
 
-// SYS_exterrctl
+// SYS_exterrctl 592
 // int exterrctl(u_int op, u_int flags, _In_reads_bytes_(4) void *ptr
 PRE(sys_exterrctl)
 {
@@ -7170,7 +7170,7 @@ PRE(sys_exterrctl)
    PRE_MEM_READ("exterrctl(ptr)", ARG3, 4);
 }
 
-// SYS_inotify_add_watch_at
+// SYS_inotify_add_watch_at 593
 // int inotify_add_watch_at(int fd, int dfd, _In_z_ const char *path, uint32_t mask);
 PRE(sys_inotify_add_watch_at)
 {
@@ -7180,12 +7180,12 @@ PRE(sys_inotify_add_watch_at)
    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "inotify_add_watch_at", tid, status);
 }
 
-// SYS_inotify_rm_watch
+// SYS_inotify_rm_watch 594
 // int inotify_rm_watch(int fd, int wd);
 PRE(sys_inotify_rm_watch)
 {
    PRINT("sys_inotify_rm_watch(%" FMT_REGWORD "d, %" FMT_REGWORD "d)", SARG1, SARG2);
-   PRE_REG_READ2(int, "sys_inotify_rm_watch", int, fd, int, wd);
+   PRE_REG_READ2(int, "inotify_rm_watch", int, fd, int, wd);
    if (!ML_(fd_allowed)(ARG1, "inotify_rm_watch", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    }
@@ -7193,6 +7193,34 @@ PRE(sys_inotify_rm_watch)
    if (!ML_(fd_allowed)(ARG2, "inotify_rm_watch", tid, False)) {
       SET_STATUS_Failure( VKI_EBADF );
    }
+}
+
+// __NR_setgroups 595
+// generic
+
+// __NR_getgroups 596
+// generic
+
+// __NR_jail_attach_jd 597
+// int jail_attach_jd(int fd);
+PRE(sys_jail_attach_jd)
+{
+    PRINT("sys_jail_attach_jd(%" FMT_REGWORD"d)", SARG1);
+    PRE_REG_READ1(int, "jail_attach_jd", int, fd);
+
+    if (!ML_(fd_allowed)(ARG1, "jail_attach_id", tid, False))
+       SET_STATUS_Failure(VKI_EBADF);
+}
+
+// __NR_jail_remove_jd 598
+// int jail_remove_jd(int fd);
+PRE(sys_jail_remove_jd)
+{
+    PRINT("sys_jail_remove_jd(%" FMT_REGWORD"d)", SARG1);
+    PRE_REG_READ1(int, "jail_remove_jd", int, fd);
+
+    if (!ML_(fd_allowed)(ARG1, "jail_remove_id", tid, False))
+       SET_STATUS_Failure(VKI_EBADF);
 }
 
 #undef PRE
@@ -7909,6 +7937,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #if defined(__NR_freebsd14_getgroups)
    GENXY(__NR_getgroups,        sys_getgroups),         // 596
 #endif
+
+    BSDX_(__NR_jail_attach_jd,  sys_jail_attach_jd),    // 597
+    BSDX_(__NR_jail_remove_jd,  sys_jail_remove_jd),    // 598
 
    BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
 

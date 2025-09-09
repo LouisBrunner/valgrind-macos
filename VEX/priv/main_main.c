@@ -1681,7 +1681,8 @@ void LibVEX_default_VexAbiInfo ( /*OUT*/VexAbiInfo* vbi )
 }
 
 
-static IRType arch_word_size (VexArch arch) {
+static IRType arch_word_size (VexArch arch)
+{
    switch (arch) {
       case VexArchX86:
       case VexArchARM:

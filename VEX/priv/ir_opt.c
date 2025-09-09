@@ -3601,7 +3601,8 @@ static IRSB* cprop_BB_WRK ( IRSB* in, Bool mustRetainNoOps, Bool doFolding )
 }
 
 
-IRSB* cprop_BB ( IRSB* in ) {
+IRSB* cprop_BB ( IRSB* in )
+{
    return cprop_BB_WRK(in, /*mustRetainNoOps=*/False, /*doFolding=*/True);
 }
 
@@ -5935,10 +5936,12 @@ static IRExpr* atbSubst_Temp ( ATmpInfo* env, IRTemp tmp )
    'single-shot', so once a binding is used, it is marked as no longer
    available, by setting its .bindee field to NULL. */
 
-static inline Bool is_Unop ( IRExpr* e, IROp op ) {
+static inline Bool is_Unop ( IRExpr* e, IROp op )
+{
    return e->tag == Iex_Unop && e->Iex.Unop.op == op;
 }
-static inline Bool is_Binop ( IRExpr* e, IROp op ) {
+static inline Bool is_Binop ( IRExpr* e, IROp op )
+{
    return e->tag == Iex_Binop && e->Iex.Binop.op == op;
 }
 
@@ -7382,7 +7385,8 @@ IRSB* do_iropt_BB(
    return bb;
 }
 
-IRSB* do_minimal_initial_iropt_BB(IRSB* bb0) {
+IRSB* do_minimal_initial_iropt_BB(IRSB* bb0)
+{
    /* First flatten the block out, since all other phases assume flat code. */
    IRSB* bb = flatten_BB ( bb0 );
 

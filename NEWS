@@ -35,6 +35,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 
 309554  Wrap syscall remap_file_pages (216)
 338803  Handling of dwz debug alt files or cross-CU is broken
+388526  Inconsistent severity in message text: "WARNING: Serious error"
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
 493430  Review all syscalls that use or return (new) file descriptors
 493434  Add --track-fds=bad mode (no "leak" tracking)

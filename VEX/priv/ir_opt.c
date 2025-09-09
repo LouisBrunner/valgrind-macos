@@ -1215,6 +1215,20 @@ static Bool isZeroU ( IRExpr* e )
    }
 }
 
+/* Is this an integer constant with value 1 ? */
+static Bool isOneU ( const IRExpr* e )
+{
+   if (e->tag != Iex_Const) return False;
+   switch (e->Iex.Const.con->tag) {
+      case Ico_U1:    return toBool( e->Iex.Const.con->Ico.U1  == 1);
+      case Ico_U8:    return toBool( e->Iex.Const.con->Ico.U8  == 1);
+      case Ico_U16:   return toBool( e->Iex.Const.con->Ico.U16 == 1);
+      case Ico_U32:   return toBool( e->Iex.Const.con->Ico.U32 == 1);
+      case Ico_U64:   return toBool( e->Iex.Const.con->Ico.U64 == 1);
+      default: vpanic("isOneU");
+   }
+}
+
 /* Is this an integer constant with value 1---1b ? */
 static Bool isOnesU ( IRExpr* e )
 {
@@ -1244,11 +1258,25 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
 {
    switch (op) {
       case Iop_Sub8:
+      case Iop_Mul8:
       case Iop_Xor8:  return IRExpr_Const(IRConst_U8(0));
       case Iop_Sub16:
+      case Iop_Mul16:
+      case Iop_MullU8:
+      case Iop_MullS8:
       case Iop_Xor16: return IRExpr_Const(IRConst_U16(0));
+      case Iop_MullU16:
+      case Iop_MullS16:
+      case Iop_Mul32:
+      case Iop_DivU32:
+      case Iop_DivS32:
       case Iop_Sub32:
       case Iop_Xor32: return IRExpr_Const(IRConst_U32(0));
+      case Iop_MullU32:
+      case Iop_MullS32:
+      case Iop_Mul64:
+      case Iop_DivU64:
+      case Iop_DivS64:
       case Iop_And64:
       case Iop_Sub64:
       case Iop_Xor64: return IRExpr_Const(IRConst_U64(0));
@@ -1256,7 +1284,24 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
       case Iop_AndV128: return IRExpr_Const(IRConst_V128(0));
       case Iop_XorV256:
       case Iop_AndV256: return IRExpr_Const(IRConst_V256(0));
-      default: vpanic("mkZeroOfPrimopResultType: bad primop");
+      default: ppIROp(op); vpanic("mkZeroOfPrimopResultType: bad primop");
+   }
+}
+
+/* Make an integer value of 1, which has the same type as the
+   result of the given primop. */
+static IRExpr* mkOneOfPrimopResultType ( IROp op )
+{
+   switch (op) {
+      case Iop_DivU32:
+      case Iop_DivS32:
+         return IRExpr_Const(IRConst_U32(1));
+      case Iop_DivU64:
+      case Iop_DivS64:
+         return IRExpr_Const(IRConst_U64(1));
+      default:
+         ppIROp(op);
+         vpanic("mkOneOfPrimopResultType: bad primop");
    }
 }
 
@@ -2571,6 +2616,7 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
          }
 
       } else {
+         IROp widen_op = Iop_INVALID;
 
          /* other cases (identities, etc) */
          switch (e->Iex.Binop.op) {
@@ -2682,6 +2728,62 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                /* Sub8x16(x,0) ==> x */
                if (isZeroV128(e->Iex.Binop.arg2)) {
                   e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               break;
+
+            case Iop_Mul8:
+            case Iop_Mul16:
+            case Iop_Mul32:
+            case Iop_Mul64:
+               widen_op = Iop_INVALID;
+               goto common_mulopt;
+
+            case Iop_MullU8:  widen_op = Iop_8Uto16;  goto common_mulopt;
+            case Iop_MullS8:  widen_op = Iop_8Sto16;  goto common_mulopt;
+            case Iop_MullU16: widen_op = Iop_16Uto32; goto common_mulopt;
+            case Iop_MullS16: widen_op = Iop_16Sto32; goto common_mulopt;
+            case Iop_MullU32: widen_op = Iop_32Uto64; goto common_mulopt;
+            case Iop_MullS32: widen_op = Iop_32Sto64; goto common_mulopt;
+
+         common_mulopt:
+               /* Multiplying x with 0 ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg1) || isZeroU(e->Iex.Binop.arg2)) {
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
+                  break;
+               }
+               /* Multiplying x with 1 ==> x */
+               if (isOneU(e->Iex.Binop.arg1)) {
+                  e2 = (widen_op == Iop_INVALID) ? e->Iex.Binop.arg2
+                     : IRExpr_Unop(widen_op, e->Iex.Binop.arg2);
+                  break;
+               }
+               if (isOneU(e->Iex.Binop.arg2)) {
+                  e2 = (widen_op == Iop_INVALID) ? e->Iex.Binop.arg1
+                     : IRExpr_Unop(widen_op, e->Iex.Binop.arg1);
+                  break;
+               }
+               break;
+
+            case Iop_DivU32:
+            case Iop_DivS32:
+            case Iop_DivU64:
+            case Iop_DivS64:
+               /* Dividing x by 1 ==> x */
+               if (isOneU(e->Iex.Binop.arg2)) {
+                  e2 = e->Iex.Binop.arg1;
+                  break;
+               }
+               /* Dividing x by x ==> 1 */
+               if (! isZeroU(e->Iex.Binop.arg2)) {
+                  if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
+                     e2 = mkOneOfPrimopResultType(e->Iex.Binop.op);
+                     break;
+                  }
+               }
+               /* Dividing 0 by x ==> 0 */
+               if (isZeroU(e->Iex.Binop.arg1)) {
+                  e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);
                   break;
                }
                break;

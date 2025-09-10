@@ -16,7 +16,7 @@ bool processed = false;
 void worker_thread()
 {
     // Wait until main() sends data
-    std::unique_lock lk(m);
+    std::unique_lock<std::mutex> lk(m);
     cv.wait(lk, []{return ready;});
  
     // after the wait, we own the lock.
@@ -40,7 +40,7 @@ int main()
     data = "Example data";
     // send data to the worker thread
     {
-        std::lock_guard lk(m);
+        std::lock_guard<std::mutex> lk(m);
         ready = true;
         std::cout << "main() signals data ready for processing\n";
     }
@@ -48,7 +48,7 @@ int main()
  
     // wait for the worker
     {
-        std::unique_lock lk(m);
+        std::unique_lock<std::mutex> lk(m);
         cv.wait(lk, []{return processed;});
     }
     std::cout << "Back in main(), data = " << data << '\n';

@@ -1288,23 +1288,6 @@ static IRExpr* mkZeroOfPrimopResultType ( IROp op )
    }
 }
 
-/* Make an integer value of 1, which has the same type as the
-   result of the given primop. */
-static IRExpr* mkOneOfPrimopResultType ( IROp op )
-{
-   switch (op) {
-      case Iop_DivU32:
-      case Iop_DivS32:
-         return IRExpr_Const(IRConst_U32(1));
-      case Iop_DivU64:
-      case Iop_DivS64:
-         return IRExpr_Const(IRConst_U64(1));
-      default:
-         ppIROp(op);
-         vpanic("mkOneOfPrimopResultType: bad primop");
-   }
-}
-
 /* Make a Boolean False value */
 static inline IRExpr* mkFalse(void)
 {
@@ -2774,13 +2757,13 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* Dividing x by x ==> 1 */
-               if (! isZeroU(e->Iex.Binop.arg2)) {
-                  if (sameIRExprs(env, e->Iex.Binop.arg1, e->Iex.Binop.arg2)) {
-                     e2 = mkOneOfPrimopResultType(e->Iex.Binop.op);
-                     break;
-                  }
-               }
+
+               /* Dividing x by x ==> 1
+                  DON'T. The reason is that we cannot decide at JIT time whether
+                  e->Iex.Binop.arg2 might evaluate to zero. Suppose it does.
+                  Then we would be rewriting 0 / 0 ==> 1  and that is clearly
+                  wrong. */
+
                /* Dividing 0 by x ==> 0 */
                if (isZeroU(e->Iex.Binop.arg1)) {
                   e2 = mkZeroOfPrimopResultType(e->Iex.Binop.op);

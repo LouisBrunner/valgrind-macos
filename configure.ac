@@ -1993,6 +1993,8 @@ AC_LANG(C)
 
 AM_CONDITIONAL(HAVE_CXX17, test x$ac_have_cxx_17 = xyes)
 
+# Compiler may announce C++17 support as above but may lack
+# some features
 AC_MSG_CHECKING([that C++ compiler supports constexpr if])
 AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
@@ -2016,6 +2018,27 @@ CXXFLAGS=$safe_CXXFLAGS
 AC_LANG(C)
 
 AM_CONDITIONAL(HAVE_CONSTEXPR_IF, test x$ac_have_constexpr_if = xyes)
+
+AC_MSG_CHECKING([that C++ compiler supports std::align_val_t])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS=-std=c++17
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+#include <new>
+std::align_val_t a;
+])],
+[
+ac_have_align_val_t=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_align_val_t=no
+AC_MSG_RESULT([no])
+			])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(HAVE_ALIGN_VAL_T, test x$ac_have_align_val_t = xyes)
 
 
 AC_MSG_CHECKING([that C++ compiler can include <thread> header file])

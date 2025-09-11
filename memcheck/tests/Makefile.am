@@ -635,8 +635,13 @@ check_PROGRAMS += reach_thread_register
 endif
 
 if HAVE_FSIZED_DEALLOCATION
-check_PROGRAMS += sized_delete new_delete_mismatch_size
+check_PROGRAMS += sized_delete
 endif
+
+if HAVE_ALIGN_VAL_T
+check_PROGRAMS += new_delete_mismatch_size
+endif
+
 
 if HAVE_GNU_STPNCPY
 check_PROGRAMS += stpncpy

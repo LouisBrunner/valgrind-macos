@@ -1993,6 +1993,31 @@ AC_LANG(C)
 
 AM_CONDITIONAL(HAVE_CXX17, test x$ac_have_cxx_17 = xyes)
 
+AC_MSG_CHECKING([that C++ compiler supports constexpr if])
+AC_LANG(C++)
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS=-std=c++17
+
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([
+void f()
+{
+   if constexpr (true)
+      ;
+}
+])],
+[
+ac_have_constexpr_if=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_constexpr_if=no
+AC_MSG_RESULT([no])
+			])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL(HAVE_CONSTEXPR_IF, test x$ac_have_constexpr_if = xyes)
+
+
 AC_MSG_CHECKING([that C++ compiler can include <thread> header file])
 AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS

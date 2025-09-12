@@ -24,6 +24,40 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   and it will perform a vgdb attach and print the backtrace(s)
   of the guest executable.
 
+* Memcheck handling of aligned allocation functions with a
+  size of zero has changed.
+
+  Firstly, 'free_aligned_sized' with a size of
+  zero is no longer considered an error. This was intended so
+  that deallocation had the same behaviour as allocation. In
+  practice, platforms that allow aligned allocation with a
+  size of zero will already generate an error at allocation.
+  Other platforms will get an 'Invalid free' error. The case
+  where the allocation and deallocation sizes are different
+  with the deallocation size being zero is already covered by
+  "Mismatched [alloc/dealloc] size" errors.
+
+  Secondly, the three C aligned allocation functions memalign,
+  aligned_alloc and posix_memalign have a different error
+  message if used with a size of zero. Previously the error
+  was "[function] invalid size value: [number]". This was an
+  overstatement of the issue. The problem is that such usage
+  is not portable across platforms. memalign and aligned_alloc
+  are poorly documented, saying things like "Behavior is undefined
+  if size is not an integral multiple of alignment.". Clearly
+  this does not include negative integers though it does not say
+  so explicitly. Does that include zero?  posix_memalign is well documented
+  but says that using a size of 0 is implementation-defined. These
+  functions now produce an error
+  "Unsafe allocation with size of zero is implementation-defined".
+
+  The associated suppression name has also changed from "BadSize" to
+  "UnsafeZeroSize".
+
+  Checks for C23 free_sized and free_aligned_sized have been added to
+  Linux. Almost no libraries support these functions yes, with
+  the exception being Google tcmalloc.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

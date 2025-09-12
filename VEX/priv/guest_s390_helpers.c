@@ -1700,9 +1700,9 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
 
 #  if 0
    vex_printf("spec request:\n");
-   vex_printf("   %s  ", function_name);
+   vex_printf("   %s", function_name);
    for (i = 0; i < arity; i++) {
-      vex_printf("  ");
+      vex_printf("   [%u]: ", i);
       ppIRExpr(args[i]);
    }
    vex_printf("\n");
@@ -2048,6 +2048,22 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          }
          if (cond == 14 || cond == 14 - 2) { /* not all bits set */
             return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, cc_dep2));
+         }
+         if (cond == 4 || cond == 4 + 2) { /* not all zero and not all one */
+            return unop(Iop_1Uto32, binop(Iop_And1,
+                        binop(Iop_CmpNE64, cc_dep1, cc_dep2),
+                        binop(Iop_CmpNE64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 9 || cond == 9 + 2) { /* selected bits all 1 or all 0 */
+            return unop(Iop_1Uto32, binop(Iop_Or1,
+                                          binop(Iop_CmpEQ64, cc_dep1, cc_dep2),
+                                          binop(Iop_CmpEQ64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 0 || cond == 0 + 2) {
+            return mkU32(0);
+         }
+         if (cond == 15 || cond == 15 - 2) {
+            return mkU32(1);
          }
          goto missed;
       }

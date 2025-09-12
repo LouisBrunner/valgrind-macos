@@ -1603,7 +1603,8 @@ Bool MC_(is_recognised_suppression) ( const HChar* name, Supp* su )
    else if (VG_STREQ(name, "FishyValue")) skind = FishyValueSupp;
    else if (VG_STREQ(name, "ReallocZero")) skind = ReallocSizeZeroSupp;
    else if (VG_STREQ(name, "BadAlign")) skind = BadAlignSupp;
-   else if (VG_STREQ(name, "UnsafeZeroSize")) skind = UnsafeZeroSizeSupp;
+   else if (VG_STREQ(name, "BadSize") || // old name for error before it got downgraded
+            VG_STREQ(name, "UnsafeZeroSize")) skind = UnsafeZeroSizeSupp;
    else if (VG_STREQ(name, "SizeMismatch")) skind = SizeMismatch;
    else if (VG_STREQ(name, "AlignMismatch")) skind = AlignMismatch;
    else 

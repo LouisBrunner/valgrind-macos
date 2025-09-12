@@ -2025,13 +2025,13 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          cc_dep1 = the value to be tested, ANDed with the mask
          cc_dep2 = an 8-bit mask; expected to be a constant here */
       if (cc_op == S390_CC_OP_TEST_UNDER_MASK_8) {
-         ULong mask16;
+         ULong mask8;
 
          if (! isC64(cc_dep2)) goto missed;
 
-         mask16 = cc_dep2->Iex.Const.con->Ico.U64;
+         mask8 = cc_dep2->Iex.Const.con->Ico.U64;
 
-         if (mask16 == 0) {   /* cc == 0 */
+         if (mask8 == 0) {   /* cc == 0 */
             if (cond & 0x8) return mkU32(1);
             return mkU32(0);
          }

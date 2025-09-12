@@ -4,6 +4,8 @@
 /*---                                     vki-scnums-ppc32-linux.h ---*/
 /*--------------------------------------------------------------------*/
 
+
+
 /*
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
@@ -416,6 +418,7 @@
 #define __NR_pkey_free		385
 #define __NR_pkey_mprotect	386
 #define __NR_rseq		387
+#define __NR_futex_waitv	449
 
 #endif /* __VKI_SCNUMS_PPC32_LINUX_H */
 

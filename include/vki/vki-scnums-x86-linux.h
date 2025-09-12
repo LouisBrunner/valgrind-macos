@@ -429,6 +429,7 @@
 #define __NR_msgsnd		400
 #define __NR_msgrcv		401
 #define __NR_msgctl		402
+#define __NR_futex_waitv	449
 
 #endif /* __VKI_SCNUMS_X86_LINUX_H */
 

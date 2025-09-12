@@ -1854,6 +1854,18 @@ POST(sys_futex_time64)
   futex_post_helper (tid, arrghs, status);
 }
 
+PRE(sys_futex_waitv)
+{
+    /* asmlinkage long sys_futex_waitv(struct futex_waitv __user *waiters,
+     *                                 unsigned int nr_futexes, unsigned int flags,
+     *                                 struct __kernel_timespec __user *timeout, clockid_t clockid); */
+    *flags |= SfMayBlock;
+    PRINT("sys_futex_waitv ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD "x, %d )",
+          ARG1, SARG2, SARG3, ARG4, ARG5);
+    PRE_MEM_READ("sys_futex_waitv(waiters)", ARG1, sizeof(struct vki_futex_waitv) * ARG2);
+    PRE_MEM_READ("sys_futex_waitv(timeout)", ARG4, sizeof(struct vki__kernel_timespec));
+}
+
 PRE(sys_set_robust_list)
 {
    PRINT("sys_set_robust_list ( %#" FMT_REGWORD "x, %"

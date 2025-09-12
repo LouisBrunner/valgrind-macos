@@ -309,6 +309,7 @@
 #define __NR_close_range 436
 #define __NR_faccessat2 439
 #define __NR_memfd_secret 447
+#define __NR_futex_waitv 449
 
 #define __NR_fcntl __NR3264_fcntl
 #define __NR_statfs __NR3264_statfs

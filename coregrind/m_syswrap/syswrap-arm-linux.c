@@ -1070,6 +1070,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_faccessat2,    sys_faccessat2),           // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+   LINX_(__NR_futex_waitv,       sys_futex_waitv),       // 449
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445

@@ -346,6 +346,7 @@
 #define __NR_kexec_file_load		381
 #define __NR_io_pgetevents		382
 #define __NR_rseq			383
+#define __NR_futex_waitv		449
 
 #define NR_syscalls 384
 

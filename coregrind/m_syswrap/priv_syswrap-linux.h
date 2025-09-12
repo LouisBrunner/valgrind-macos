@@ -465,6 +465,7 @@ DECL_TEMPLATE(linux, sys_mq_timedreceive_time64);
 DECL_TEMPLATE(linux, sys_semtimedop_time64);
 DECL_TEMPLATE(linux, sys_rt_sigtimedwait_time64);
 DECL_TEMPLATE(linux, sys_futex_time64);
+DECL_TEMPLATE(linux, sys_futex_waitv);
 DECL_TEMPLATE(linux, sys_sched_rr_get_interval_time64);
 
 // Some arch specific functions called from syswrap-linux.c

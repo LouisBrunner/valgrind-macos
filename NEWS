@@ -67,6 +67,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506795  Better report which clone flags are problematic
 506806  Fix execveat() with AT_FDCWD and relative path
 506813  The execveat wrapper needs to do more checking
+506816  futex2, futex_waitv WARNING: unhandled amd64-linux syscall: 449
 506910  openat2 with RESOLVE_NO_MAGICLINKS succeeds on /proc/self/exe
 506928  Wrap (deprecated) linux specific ustat syscall
 506929  Wrap (deprecated) linux sysfs syscall

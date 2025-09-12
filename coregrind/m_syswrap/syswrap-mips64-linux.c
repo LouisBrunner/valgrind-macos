@@ -818,6 +818,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_statmount, sys_statmount),
    LINXY (__NR_listmount, sys_listmount),
    LINX_ (__NR_mseal, sys_mseal),
+   LINX_ (__NR_futex_waitv, sys_futex_waitv),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

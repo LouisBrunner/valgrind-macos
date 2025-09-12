@@ -325,6 +325,7 @@
 #define __NR_statx 291
 #define __NR_io_pgetevents 292
 #define __NR_rseq 293
+#define __NR_futex_waitv 449
 
 #undef __NR_syscalls
 #define __NR_syscalls 294

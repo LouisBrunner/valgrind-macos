@@ -46,10 +46,12 @@ EXTRA_DIST = \
 	internals/arm_thumb_notes_gdbserver.txt \
 	internals/avx-notes.txt \
 	internals/BIG_APP_NOTES.txt \
+	internals/c23-functions-HOWTO.txt \
 	internals/Darwin-debug.txt \
 	internals/Darwin-notes.txt \
 	internals/SPEC-notes.txt \
 	internals/directory-structure.txt \
+	internals/git-HOWTO.txt \
 	internals/howto_BUILD_KDE42.txt \
 	internals/howto_oprofile.txt \
 	internals/m_replacemalloc.txt \
@@ -66,6 +68,7 @@ EXTRA_DIST = \
 	internals/qemu-riscv64-linux-HOWTO.txt \
 	internals/register-uses.txt \
 	internals/s390-opcodes.csv \
+	internals/svn-HOWTO.txt \
 	internals/release-HOWTO.txt \
 	internals/segments-seginfos.txt \
 	internals/t-chaining-notes.txt \

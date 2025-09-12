@@ -5891,10 +5891,10 @@ Syscall param inotify_add_watch_at(path) points to unaddressable byte(s)
 ---------------------------------------------------------
 594:    SYS_inotify_rm_watch 2s, 0m
 ---------------------------------------------------------
-Syscall param sys_inotify_rm_watch(fd) contains uninitialised byte(s)
+Syscall param inotify_rm_watch(fd) contains uninitialised byte(s)
    ...
 
-Syscall param sys_inotify_rm_watch(wd) contains uninitialised byte(s)
+Syscall param inotify_rm_watch(wd) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------

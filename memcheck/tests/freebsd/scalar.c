@@ -2547,10 +2547,10 @@ int main(void)
    SY(SYS_inotify_rm_watch, x0+1000, x0+1000);
 #else
    FAKE_GO("594:    SYS_inotify_rm_watch 2s, 0m");
-   FAKE_SY("Syscall param sys_inotify_rm_watch(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param inotify_rm_watch(fd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
-   FAKE_SY("Syscall param sys_inotify_rm_watch(wd) contains uninitialised byte(s)\n");
+   FAKE_SY("Syscall param inotify_rm_watch(wd) contains uninitialised byte(s)\n");
    FAKE_SY("   ...\n");
    FAKE_SY("\n");
 #endif

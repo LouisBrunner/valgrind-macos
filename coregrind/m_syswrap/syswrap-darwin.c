@@ -2085,18 +2085,18 @@ PRE(bsdthread_register)
    pthread_starter = ARG1;
    wqthread_starter = ARG2;
    pthread_structsize = ARG3;
-   #if DARWIN_VERS >= DARWIN_10_12
-     typedef struct {
+#if DARWIN_VERS >= DARWIN_10_12
+    typedef struct {
        uint64_t version;
        uint64_t dispatch_queue_offset;
        uint64_t main_qos;
        uint32_t tsd_offset;
        uint32_t return_to_kernel_offset;
        uint32_t mach_thread_self_offset;
-     } __attribute__ ((packed)) _pthread_registration_data;
+    } __attribute__ ((packed)) _pthread_registration_data;
 
-     pthread_tsd_offset = ((_pthread_registration_data*) ARG4)->tsd_offset;
-   #endif
+    pthread_tsd_offset = ((_pthread_registration_data*) ARG4)->tsd_offset;
+#endif
    ARG1 = (Word)&pthread_hijack_asm;
    ARG2 = (Word)&wqthread_hijack_asm;
 }
@@ -2142,6 +2142,7 @@ PRE(workq_ops)
       // GrP fixme need anything here?
       // GrP fixme may block?
       break;
+   case VKI_WQOPS_THREAD_KEVENT_RETURN:
    case VKI_WQOPS_THREAD_RETURN: {
       // The interesting case. The kernel will do one of two things:
       // 1. Return normally. We continue; libc proceeds to stop the thread.
@@ -2170,10 +2171,6 @@ PRE(workq_ops)
    case VKI_WQOPS_QUEUE_REQTHREADS2:
       // JRS uh, looks like it queues up a bunch of threads, or some such?
       *flags |= SfMayBlock; // the kernel sources take a spinlock, so play safe
-      break;
-   case VKI_WQOPS_THREAD_KEVENT_RETURN:
-      // RK fixme need anything here?
-      // perhaps similar to VKI_WQOPS_THREAD_RETURN above?
       break;
    case VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY:
       // RK fixme this just sets scheduling priorities - don't think we need
@@ -10487,6 +10484,7 @@ PRE(openat_nocancel)
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
 }
+
 POST(openat_nocancel)
 {
    vg_assert(SUCCESS);

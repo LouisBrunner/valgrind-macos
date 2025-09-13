@@ -9858,6 +9858,7 @@ POST(getattrlistbulk)
 
 PRE(faccessat)
 {
+    Int fd = ARG1;
     PRINT("faccessat(fd:%d, path:%#lx(%s), amode:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "faccessat",
@@ -9868,6 +9869,7 @@ PRE(faccessat)
 
 PRE(fstatat64)
 {
+    Int fd = ARG1;
     PRINT("fstatat64(fd:%d, path:%#lx(%s), ub:%#lx, flag:%#lx)",
           fd, ARG2, ARG2 ? (HChar*)ARG2 : "null", ARG3, ARG4);
     PRE_REG_READ4(int, "fstatat64",

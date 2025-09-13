@@ -714,7 +714,7 @@ if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
 duplicate_align_size_errors_SOURCES = duplicate_align_size_errors.cpp
-duplicate_align_size_errors_CXXFLAFGS = ${AM_CXXFLAGS} -std=c++17
+duplicate_align_size_errors_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
 new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp

@@ -2114,6 +2114,17 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          if (cond == 14) { /* not all bits set */
             return unop(Iop_1Uto32, binop(Iop_CmpNE64, val, mkU64(mask)));
          }
+         if (cond == 9) { /* selected bits all 1 or all 0 */
+            return unop(Iop_1Uto32, binop(Iop_Or1,
+                                          binop(Iop_CmpEQ64, cc_dep1, cc_dep2),
+                                          binop(Iop_CmpEQ64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 6) { /* not all zero and not all one */
+            return unop(Iop_1Uto32, binop(Iop_And1,
+                        binop(Iop_CmpNE64, cc_dep1, cc_dep2),
+                        binop(Iop_CmpNE64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 0) return mkU32(0);
 
          IRExpr *masked_msb = binop(Iop_And64, val, mkU64(msb));
 
@@ -2158,8 +2169,22 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
                               binop(Iop_CmpEQ64, masked_msb, mkU64(0)),
                               binop(Iop_CmpEQ64, val, mkU64(mask))));
          }
-         // fixs390: handle cond = 5,6,9,10 (the missing cases)
-         // vex_printf("TUM mask = 0x%llx\n", mask16);
+         if (cond == 5) { /* cc == 1 || cc == 3 */
+            /* mixed and leftmost bit zero or all bits set */
+            IRExpr *cc1 = binop(Iop_And1,
+                                binop(Iop_CmpEQ64, masked_msb, mkU64(0)),
+                                binop(Iop_CmpNE64, val, mkU64(0)));
+            IRExpr *cc3 = binop(Iop_CmpEQ64, val, mkU64(mask));
+            return unop(Iop_1Uto32, binop(Iop_Or1, cc1, cc3));
+         }
+         if (cond == 10) { /* cc == 0 || cc == 2 */
+            /* all bits zero or mixed and leftmost bit one */
+            IRExpr *cc0 = binop(Iop_CmpEQ64, val, mkU64(0));
+            IRExpr *cc2 = binop(Iop_And1,
+                                binop(Iop_CmpNE64, masked_msb, mkU64(0)),
+                                binop(Iop_CmpNE64, val, mkU64(mask)));
+            return unop(Iop_1Uto32, binop(Iop_Or1, cc0, cc2));
+         }
          goto missed;
       }
 

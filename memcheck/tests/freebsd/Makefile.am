@@ -139,6 +139,7 @@ EXTRA_DIST = \
 	supponlyobj.supp \
 	timerfd.vgtest \
 	timerfd.stderr.exp \
+	timerfd.stderr.exp-x86 \
 	timerfd.stdout.exp \
 	timing_safe.vgtest \
 	timing_safe.stderr.exp \

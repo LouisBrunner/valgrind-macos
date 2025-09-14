@@ -3268,7 +3268,7 @@ union vki_ccb {
 #define VKI_CAMIOCOMMAND _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
 
 //----------------------------------------------------------------------
-// From cam/scsi/scsi_all.h
+// From sys/ucred,h
 //----------------------------------------------------------------------
 struct vki_setcred {
    vki_uid_t    sc_uid;                /* effective user id */

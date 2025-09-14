@@ -1860,8 +1860,8 @@ PRE(sys_futex_waitv)
      *                                 unsigned int nr_futexes, unsigned int flags,
      *                                 struct __kernel_timespec __user *timeout, clockid_t clockid); */
     *flags |= SfMayBlock;
-    PRINT("sys_futex_waitv ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD "x, %d )",
-          ARG1, SARG2, SARG3, ARG4, ARG5);
+    PRINT("sys_futex_waitv ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "d )",
+          ARG1, SARG2, SARG3, ARG4, SARG5);
     PRE_MEM_READ("sys_futex_waitv(waiters)", ARG1, sizeof(struct vki_futex_waitv) * ARG2);
     PRE_MEM_READ("sys_futex_waitv(timeout)", ARG4, sizeof(struct vki__kernel_timespec));
 }

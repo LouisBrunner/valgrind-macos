@@ -223,9 +223,17 @@
    drd:ConflictingAccess
    fun:thr_new
 }
-
 {
    DRD-FREEBSD15-EXTERRCTL
    drd:ConflictingAccess
    fun:exterrctl
 }
+{
+   DRD-FREEBSD15-_MALLOC_POSTFORK
+   drd:ConflictingAccess
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   obj:*/lib*/libc.so.7
+   fun:_malloc_postfork
+}
+

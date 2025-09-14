@@ -2522,8 +2522,8 @@ int main(void)
 
    /* SYS_inotify_add_watch_at    593 */
 #if defined(SYS_inotify_add_watch_at)
-   GO(SYS_inotify_add_watch_at, "3s, 1m");
-   SY(SYS_inotify_add_watch_at, x0, x0+1, x0+1);
+   GO(SYS_inotify_add_watch_at, "4s, 1m");
+   SY(SYS_inotify_add_watch_at, x0+99, x0+100, x0+1, x0+999999);
 #else
    FAKE_GO("593:SYS_inotify_add_watch_at 3s, 1m");
    FAKE_SY("Syscall param inotify_add_watch_at(fd) contains uninitialised byte(s)\n");

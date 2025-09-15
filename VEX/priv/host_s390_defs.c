@@ -6083,21 +6083,21 @@ s390_emit_VML(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
 }
 
 static UChar *
-s390_emit_VME(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+s390_emit_VMO(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      S390_DISASM(XMNM("vme", va_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4));
+      S390_DISASM(XMNM("vmo", va_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4));
 
-   return emit_VRR_VVVM(p, 0xE700000000a6ULL, v1, v2, v3, m4);
+   return emit_VRR_VVVM(p, 0xE700000000a7ULL, v1, v2, v3, m4);
 }
 
 static UChar *
-s390_emit_VMLE(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
+s390_emit_VMLO(UChar *p, UChar v1, UChar v2, UChar v3, UChar m4)
 {
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
-      S390_DISASM(XMNM("vmle", va_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4));
+      S390_DISASM(XMNM("vmlo", va_like_disasm), VR(v1), VR(v2), VR(v3), MASK(m4));
 
-   return emit_VRR_VVVM(p, 0xE700000000a4ULL, v1, v2, v3, m4);
+   return emit_VRR_VVVM(p, 0xE700000000a5ULL, v1, v2, v3, m4);
 }
 
 static UChar *
@@ -8208,8 +8208,8 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_INT_MUL_HIGHS:    op = "v-vintmulhis"; break;
       case S390_VEC_INT_MUL_HIGHU:    op = "v-vintmulhiu"; break;
       case S390_VEC_INT_MUL_LOW:      op = "v-vintmullo"; break;
-      case S390_VEC_INT_MUL_EVENS:    op = "v-vintmulevens"; break;
-      case S390_VEC_INT_MUL_EVENU:    op = "v-vintmulevenu"; break;
+      case S390_VEC_INT_MUL_ODDS:     op = "v-vintmulodds"; break;
+      case S390_VEC_INT_MUL_ODDU:     op = "v-vintmuloddu"; break;
       case S390_VEC_ELEM_SHL_V:       op = "v-velemshl"; break;
       case S390_VEC_ELEM_SHRA_V:      op = "v-vshrav"; break;
       case S390_VEC_ELEM_SHRL_V:      op = "v-vshrlv"; break;
@@ -11523,10 +11523,10 @@ s390_insn_vec_binop_emit(UChar *buf, const s390_insn *insn)
          return s390_emit_VMLH(buf, v1, v2, v3, s390_getM_from_size(size));
       case S390_VEC_INT_MUL_LOW:
          return s390_emit_VML(buf, v1, v2, v3, s390_getM_from_size(size));
-      case S390_VEC_INT_MUL_EVENS:
-         return s390_emit_VME(buf, v1, v2, v3, s390_getM_from_size(size));
-      case S390_VEC_INT_MUL_EVENU:
-         return s390_emit_VMLE(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_ODDS:
+         return s390_emit_VMO(buf, v1, v2, v3, s390_getM_from_size(size));
+      case S390_VEC_INT_MUL_ODDU:
+         return s390_emit_VMLO(buf, v1, v2, v3, s390_getM_from_size(size));
       case S390_VEC_ELEM_SHL_V:
          return s390_emit_VESLV(buf, v1, v2, v3, s390_getM_from_size(size));
       case S390_VEC_ELEM_SHRA_V:

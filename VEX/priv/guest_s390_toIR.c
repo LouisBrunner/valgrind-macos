@@ -18431,25 +18431,25 @@ s390_irgen_VMH(UChar v1, UChar v2, UChar v3, UChar m4)
 }
 
 static const HChar *
-s390_irgen_VME(UChar v1, UChar v2, UChar v3, UChar m4)
+s390_irgen_VMO(UChar v1, UChar v2, UChar v3, UChar m4)
 {
-   s390_insn_assert("vme", m4 <= 2);
+   s390_insn_assert("vmo", m4 <= 2);
 
    const IROp ops[] = { Iop_MullEven8Sx16, Iop_MullEven16Sx8, Iop_MullEven32Sx4 };
    put_vr_qw(v1, binop(ops[m4], get_vr_qw(v2), get_vr_qw(v3)));
 
-   return "vme";
+   return "vmo";
 }
 
 static const HChar *
-s390_irgen_VMLE(UChar v1, UChar v2, UChar v3, UChar m4)
+s390_irgen_VMLO(UChar v1, UChar v2, UChar v3, UChar m4)
 {
-   s390_insn_assert("vmle", m4 <= 2);
+   s390_insn_assert("vmlo", m4 <= 2);
 
    const IROp ops[] = { Iop_MullEven8Ux16, Iop_MullEven16Ux8, Iop_MullEven32Ux4 };
    put_vr_qw(v1, binop(ops[m4], get_vr_qw(v2), get_vr_qw(v3)));
 
-   return "vmle";
+   return "vmlo";
 }
 
 static const HChar *
@@ -18853,69 +18853,37 @@ s390_irgen_VSRD(UChar v1, UChar v2, UChar v3, UChar i4)
 }
 
 static const HChar *
-s390_irgen_VMO(UChar v1, UChar v2, UChar v3, UChar m4)
+s390_irgen_VME(UChar v1, UChar v2, UChar v3, UChar m4)
 {
-   s390_insn_assert("vmo", m4 <= 2);
+   s390_insn_assert("vme", m4 <= 2);
 
    const IROp ops[] = { Iop_MullEven8Sx16, Iop_MullEven16Sx8,
                         Iop_MullEven32Sx4 };
    UChar shifts[] = { 8, 16, 32 };
    IRExpr* result = binop(ops[m4],
-                          binop(Iop_ShlV128, get_vr_qw(v2), mkU8(shifts[m4])),
-                          binop(Iop_ShlV128, get_vr_qw(v3), mkU8(shifts[m4]))
+                          binop(Iop_ShrV128, get_vr_qw(v2), mkU8(shifts[m4])),
+                          binop(Iop_ShrV128, get_vr_qw(v3), mkU8(shifts[m4]))
                          );
    put_vr_qw(v1, result);
 
-   return "vmo";
+   return "vme";
 }
 
 static const HChar *
-s390_irgen_VMLO(UChar v1, UChar v2, UChar v3, UChar m4)
+s390_irgen_VMLE(UChar v1, UChar v2, UChar v3, UChar m4)
 {
-   s390_insn_assert("vmlo", m4 <= 2);
+   s390_insn_assert("vmle", m4 <= 2);
 
    const IROp ops[] = { Iop_MullEven8Ux16, Iop_MullEven16Ux8,
                         Iop_MullEven32Ux4 };
    UChar shifts[] = { 8, 16, 32 };
    IRExpr* result = binop(ops[m4],
-                          binop(Iop_ShlV128, get_vr_qw(v2), mkU8(shifts[m4])),
-                          binop(Iop_ShlV128, get_vr_qw(v3), mkU8(shifts[m4]))
+                          binop(Iop_ShrV128, get_vr_qw(v2), mkU8(shifts[m4])),
+                          binop(Iop_ShrV128, get_vr_qw(v3), mkU8(shifts[m4]))
                          );
    put_vr_qw(v1, result);
 
-   return "vmlo";
-}
-
-static const HChar *
-s390_irgen_VMAE(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5)
-{
-   s390_insn_assert("vmae", m5 <= 2);
-
-   const IROp mul_ops[] = { Iop_MullEven8Sx16, Iop_MullEven16Sx8,
-                            Iop_MullEven32Sx4 };
-   const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2};
-
-   IRExpr* mul_result = binop(mul_ops[m5], get_vr_qw(v2), get_vr_qw(v3));
-   IRExpr* result = binop(add_ops[m5], mul_result, get_vr_qw(v4));
-   put_vr_qw(v1, result);
-
-   return "vmae";
-}
-
-static const HChar *
-s390_irgen_VMALE(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5)
-{
-   s390_insn_assert("vmale", m5 <= 2);
-
-   const IROp mul_ops[] = { Iop_MullEven8Ux16, Iop_MullEven16Ux8,
-                            Iop_MullEven32Ux4 };
-   const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
-
-   IRExpr* mul_result = binop(mul_ops[m5], get_vr_qw(v2), get_vr_qw(v3));
-   IRExpr* result = binop(add_ops[m5], mul_result, get_vr_qw(v4));
-   put_vr_qw(v1, result);
-
-   return "vmale";
+   return "vmle";
 }
 
 static const HChar *
@@ -18925,13 +18893,9 @@ s390_irgen_VMAO(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5)
 
    const IROp mul_ops[] = { Iop_MullEven8Sx16, Iop_MullEven16Sx8,
                             Iop_MullEven32Sx4 };
-   const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
-   UChar shifts[] = { 8, 16, 32 };
+   const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2};
 
-   IRExpr* mul_result =
-      binop(mul_ops[m5],
-            binop(Iop_ShlV128, get_vr_qw(v2), mkU8(shifts[m5])),
-            binop(Iop_ShlV128, get_vr_qw(v3), mkU8(shifts[m5])));
+   IRExpr* mul_result = binop(mul_ops[m5], get_vr_qw(v2), get_vr_qw(v3));
    IRExpr* result = binop(add_ops[m5], mul_result, get_vr_qw(v4));
    put_vr_qw(v1, result);
 
@@ -18946,19 +18910,55 @@ s390_irgen_VMALO(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5)
    const IROp mul_ops[] = { Iop_MullEven8Ux16, Iop_MullEven16Ux8,
                             Iop_MullEven32Ux4 };
    const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
+
+   IRExpr* mul_result = binop(mul_ops[m5], get_vr_qw(v2), get_vr_qw(v3));
+   IRExpr* result = binop(add_ops[m5], mul_result, get_vr_qw(v4));
+   put_vr_qw(v1, result);
+
+   return "vmalo";
+}
+
+static const HChar *
+s390_irgen_VMAE(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5)
+{
+   s390_insn_assert("vmae", m5 <= 2);
+
+   const IROp mul_ops[] = { Iop_MullEven8Sx16, Iop_MullEven16Sx8,
+                            Iop_MullEven32Sx4 };
+   const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
+   UChar shifts[] = { 8, 16, 32 };
+
+   IRExpr* mul_result =
+      binop(mul_ops[m5],
+            binop(Iop_ShrV128, get_vr_qw(v2), mkU8(shifts[m5])),
+            binop(Iop_ShrV128, get_vr_qw(v3), mkU8(shifts[m5])));
+   IRExpr* result = binop(add_ops[m5], mul_result, get_vr_qw(v4));
+   put_vr_qw(v1, result);
+
+   return "vmae";
+}
+
+static const HChar *
+s390_irgen_VMALE(UChar v1, UChar v2, UChar v3, UChar v4, UChar m5)
+{
+   s390_insn_assert("vmale", m5 <= 2);
+
+   const IROp mul_ops[] = { Iop_MullEven8Ux16, Iop_MullEven16Ux8,
+                            Iop_MullEven32Ux4 };
+   const IROp add_ops[] = { Iop_Add16x8, Iop_Add32x4, Iop_Add64x2 };
    UChar shifts[] = { 8, 16, 32 };
 
    IRExpr* mul_result = binop(mul_ops[m5],
-                              binop(Iop_ShlV128,
+                              binop(Iop_ShrV128,
                                     get_vr_qw(v2), mkU8(shifts[m5])),
-                              binop(Iop_ShlV128,
+                              binop(Iop_ShrV128,
                                     get_vr_qw(v3), mkU8(shifts[m5]))
    );
 
    IRExpr* result = binop(add_ops[m5], mul_result, get_vr_qw(v4));
    put_vr_qw(v1, result);
 
-   return "vmalo";
+   return "vmale";
 }
 
 static const HChar *

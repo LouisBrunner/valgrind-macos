@@ -5873,7 +5873,7 @@ Syscall param exterrctl(ptr) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
-593:SYS_inotify_add_watch_at 3s, 1m
+593:SYS_inotify_add_watch_at 4s, 1m
 ---------------------------------------------------------
 Syscall param inotify_add_watch_at(fd) contains uninitialised byte(s)
    ...
@@ -5882,6 +5882,9 @@ Syscall param inotify_add_watch_at(dfd) contains uninitialised byte(s)
    ...
 
 Syscall param inotify_add_watch_at(path) contains uninitialised byte(s)
+   ...
+
+Syscall param inotify_add_watch_at(mask) contains uninitialised byte(s)
    ...
 
 Syscall param inotify_add_watch_at(path) points to unaddressable byte(s)

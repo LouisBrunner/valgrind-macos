@@ -727,6 +727,7 @@ sized_aligned_new_delete_misaligned3_SOURCES = sized_aligned_new_delete_misalign
 sized_aligned_new_delete_misaligned3_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_UNUSED_VARIABLE@
 if COMPILER_IS_CLANG
 cxx17_aligned_new_CXXFLAGS += -fsized-deallocation
+duplicate_align_size_errors_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_args_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_misaligned1_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_misaligned2_CXXFLAGS += -fsized-deallocation

@@ -143,6 +143,8 @@ dlclose_leak_LDFLAGS          = $(AM_FLAG_M3264_PRI) \
                                 -Wl,-rpath,$(top_builddir)/memcheck/tests/linux
 
 enomem_CFLAGS                 = $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
+memalign_CFLAGS               = ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+
 if HAVE_STRLCAT
 strlcat_strlcpy_CFLAGS        = $(AM_CFLAGS) @FLAG_W_NO_STRINGOP_OVERFLOW@
 endif

@@ -48,6 +48,7 @@
 
 #define __NR_epoll_pwait2		441
 
+#define __NR_quotactl_fd                443
 #define __NR_landlock_create_ruleset	444
 #define __NR_landlock_add_rule		445
 #define __NR_landlock_restrict_self	446

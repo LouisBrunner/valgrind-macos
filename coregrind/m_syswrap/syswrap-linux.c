@@ -4103,6 +4103,22 @@ PRE(sys_quotactl)
    PRE_MEM_RASCIIZ( "quotactl(special)", ARG2 );
 }
 
+PRE(sys_quotactl_fd)
+{
+   // SYSCALL_DEFINE4(quotactl_fd,
+   //     unsigned int, fd,
+   //     unsigned int, cmd,
+   //     qid_t, id,
+   //     void __user *, addr)
+   PRINT("sys_quotactl (0x%" FMT_REGWORD "x, 0x%#" FMT_REGWORD "x, 0x%"
+         FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "quotactl_fd",
+                 unsigned int, fd, unsigned int, cmd, vki_qid_t, id,
+                 void *, addr);
+   if (!ML_(fd_allowed)(ARG1, "quotactl_fd", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
 PRE(sys_waitid)
 {
    *flags |= SfMayBlock;

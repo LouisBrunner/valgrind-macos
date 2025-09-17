@@ -254,6 +254,7 @@ DECL_TEMPLATE(linux, sys_munlockall);
 DECL_TEMPLATE(linux, sys_pipe);
 DECL_TEMPLATE(linux, sys_pipe2);
 DECL_TEMPLATE(linux, sys_quotactl);
+DECL_TEMPLATE(linux, sys_quotactl_fd);
 DECL_TEMPLATE(linux, sys_waitid);
 
 // Posix, but in Darwin utime is a libc function that calls syscall utimes.

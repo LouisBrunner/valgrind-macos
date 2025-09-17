@@ -762,6 +762,7 @@ static Addr setup_client_stack(const void*  init_sp,
 #if defined(VGP_arm64_freebsd)
       // FreeBSD 11+ also have HWCAP and HWCAP2
       // but they aren't used on amd64
+      // FreeBSD 15 adds HWCAP3 and HWCAP4
       case VKI_AT_HWCAP:
 #define ARM64_SUPPORTED_HWCAP (VKI_HWCAP_ATOMICS        \
                                | VKI_HWCAP_AES          \

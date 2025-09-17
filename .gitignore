@@ -1177,7 +1177,7 @@
 /memcheck/tests/darwin/scalar_vfork
 
 # /memcheck/tests/linux/
-/memcheck/tests/linux/*.stderr.diff
+/memcheck/tests/linux/*.stderr.diff*
 /memcheck/tests/linux/*.stderr.out
 /memcheck/tests/linux/*.stdout.diff
 /memcheck/tests/linux/*.stdout.out

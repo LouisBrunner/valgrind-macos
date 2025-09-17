@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# filters all auxv values that are not supported by Valgrind
+
+./filter_auxv |
+
+awk '/AT_TIMEKEEP/{$2="AT_IGNORE";$4="01"}{print}' |
+awk '/AT_HWCAP2/{$2="AT_IGNORE";$4="01"}{print}' |
+awk '/AT_HWCAP3/{$2="AT_IGNORE";$4="01"}{print}' |
+awk '/AT_HWCAP4/{$2="AT_IGNORE";$4="01"}{print}' |
+awk '/AT_BSDFLAGS/{$2="AT_IGNORE";$4="01"}{print}' |
+awk '/AT_KPRELOAD/{$2="AT_IGNORE";$4="01"}{print}'

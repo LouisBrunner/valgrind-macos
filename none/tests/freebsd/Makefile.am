@@ -1,19 +1,12 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr test.sh filter_452274 filter_auxv filter_fdleak auxv_script
+dist_noinst_SCRIPTS = filter_stderr test.sh filter_452274 filter_auxv \
+                      filter_pre_auxv filter_fdleak auxv_script
 
 EXTRA_DIST = \
 	auxv.vgtest \
-	auxv.stderr.exp \
-	auxv.stderr.exp-32on64 \
-	auxv.stderr.exp-freebsd13 \
-	auxv.stderr.exp-freebsd131 \
-	auxv.stderr.exp-freebsd14 \
-	auxv.stderr.exp-arm64 \
 	auxv_script.vgtest \
-	auxv_script.stderr.exp \
-	auxv_script.stderr.exp-arm64 \
 	bug452274.vgtest \
 	bug452274.stderr.exp \
 	bug498317.vgtest bug498317.stderr.exp \

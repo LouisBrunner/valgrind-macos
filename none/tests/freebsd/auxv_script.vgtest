@@ -1,4 +1,6 @@
+prereq: ./auxv_script 2>&1 | ./filter_pre_auxv > auxv_script.stderr.exp
 prog: auxv_script
 vgopts: -q
 stderr_filter: filter_auxv
+post: rm auxv_script.stderr.exp
 

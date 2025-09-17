@@ -21,7 +21,8 @@ LTP_FILTERS = \
 	filters/select03
 
 LTP_PATCHES = \
-	ltp-patches/0001-Make-sure-32-bit-powerpc-syscall-defs-don-t-leak-to-.patch
+	ltp-patches/0001-Make-sure-32-bit-powerpc-syscall-defs-don-t-leak-to-.patch \
+	ltp-patches/0002-Introduce-LTP_QUIET-env-var.patch
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
@@ -211,14 +212,15 @@ $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
 	 autoreconf -f -i -Wnone)
 	touch $@
 
-$(LTP_SRC_DIR): $(LTP_TAR)
+$(LTP_SRC_DIR): $(LTP_TAR) ltp-apply-patches.sh $(LTP_PATCHES)
 	echo "$(LTP_SHA256_SUM)  $(LTP_TAR)" | @SHA256SUM@ --check -
 	(cd $(AUX_CHECK_DIR) && \
 	 tar Jxf $(LTP_TAR_NAME) && \
 	 $(abs_top_srcdir)/auxprogs/ltp-apply-patches.sh $(LTP_SRC_DIR) && \
 	 cd $(LTP_SRC_DIR) && \
 	 ./configure CC="${CC}" CXX="${CXX}" CFLAGS="$(LTP_CFLAGS)" && \
-	 ${MAKE} -j $(nproc) -C testcases/kernel/syscalls)
+	 ${MAKE} clean && \
+	 ${MAKE} -C testcases/kernel/syscalls)
 	touch $@
 
 # We need make check -k because
@@ -228,7 +230,7 @@ $(GSL_BUILD_DIR)/gsl-build: $(GSL_SRC_DIR)/gsl-patched
 	mkdir -p $(GSL_BUILD_DIR)
 	(cd $(GSL_BUILD_DIR) && \
 	 $(GSL_SRC_DIR)/configure CC="${CC}" CXX="${CXX}" CFLAGS="$(GSL_CFLAGS)" && \
-	 ${MAKE} -j $(nproc) && \
+	 ${MAKE} && \
 	 ${MAKE} check -k || true)
 	touch $@
 

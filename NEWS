@@ -137,6 +137,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509139  Update BadSize error messages
 509258  FreeBSD: add jail_attach_jd and jail_remove_jd syscall wrappers
 509517  s390x: Even/odd lane confusion in various vector insns
+509590  Run the LTP tests with LTP_QUIET
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

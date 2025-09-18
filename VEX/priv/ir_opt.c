@@ -198,7 +198,7 @@ static HashHW* newHHW ( void )
 
 /* Look up key in the map. */
 
-static Bool lookupHHW ( HashHW* h, /*OUT*/HWord* val, HWord key )
+static Bool lookupHHW ( const HashHW* h, /*OUT*/HWord* val, HWord key )
 {
    Int i;
    /* vex_printf("lookupHHW(%llx)\n", key ); */
@@ -264,7 +264,7 @@ static void addToHHW ( HashHW* h, HWord key, HWord val )
 /* Non-critical helper, heuristic for reducing the number of tmp-tmp
    copies made by flattening.  If in doubt return False. */
 
-static Bool isFlat ( IRExpr* e )
+static Bool isFlat ( const IRExpr* e )
 {
    if (e->tag == Iex_Get) 
       return True;
@@ -550,7 +550,7 @@ static IRSB* flatten_BB ( IRSB* in )
 /* Extract the min/max offsets from a guest state array descriptor. */
 
 inline
-static void getArrayBounds ( IRRegArray* descr, 
+static void getArrayBounds ( const IRRegArray* descr,
                              UInt* minoff, UInt* maxoff )
 {
    *minoff = descr->base;
@@ -572,7 +572,7 @@ static UInt mk_key_GetPut ( Int offset, IRType ty )
    return (minoff << 16) | maxoff;
 }
 
-static UInt mk_key_GetIPutI ( IRRegArray* descr )
+static UInt mk_key_GetIPutI ( const IRRegArray* descr )
 {
    UInt minoff, maxoff;
    getArrayBounds( descr, &minoff, &maxoff );
@@ -1041,17 +1041,17 @@ static UInt num_nodes_visited;
    slower out of line general case.  Saves a few insns. */
 
 __attribute__((noinline))
-static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 );
+static Bool sameIRExprs_aux2 ( IRExpr** env, const IRExpr* e1, const IRExpr* e2 );
 
 inline
-static Bool sameIRExprs_aux ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
+static Bool sameIRExprs_aux ( IRExpr** env, const IRExpr* e1, const IRExpr* e2 )
 {
    if (e1->tag != e2->tag) return False;
    return sameIRExprs_aux2(env, e1, e2);
 }
 
 __attribute__((noinline))
-static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
+static Bool sameIRExprs_aux2 ( IRExpr** env, const IRExpr* e1, const IRExpr* e2 )
 {
    if (num_nodes_visited++ > NODE_LIMIT) return False;
 
@@ -1129,7 +1129,7 @@ static Bool sameIRExprs_aux2 ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
 }
 
 inline
-static Bool sameIRExprs ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
+static Bool sameIRExprs ( IRExpr** env, const IRExpr* e1, const IRExpr* e2 )
 {
    Bool same;
 
@@ -1158,8 +1158,8 @@ static Bool sameIRExprs ( IRExpr** env, IRExpr* e1, IRExpr* e2 )
    --vex-iropt-level > 0, that is, vex_control.iropt_verbosity > 0.
    Bad because it duplicates functionality from typeOfIRExpr.  See
    comment on the single use point below for rationale. */
-static
-Bool debug_only_hack_sameIRExprs_might_assert ( IRExpr* e1, IRExpr* e2 )
+static Bool
+debug_only_hack_sameIRExprs_might_assert ( const IRExpr* e1, const IRExpr* e2 )
 {
    if (e1->tag != e2->tag) return False;
    switch (e1->tag) {
@@ -1177,7 +1177,7 @@ Bool debug_only_hack_sameIRExprs_might_assert ( IRExpr* e1, IRExpr* e2 )
 
 
 /* Is this literally IRExpr_Const(IRConst_V128(0)) ? */
-static Bool isZeroV128 ( IRExpr* e )
+static Bool isZeroV128 ( const IRExpr* e )
 {
    return toBool( e->tag == Iex_Const 
                   && e->Iex.Const.con->tag == Ico_V128
@@ -1185,7 +1185,7 @@ static Bool isZeroV128 ( IRExpr* e )
 }
 
 /* Is this literally IRExpr_Const(IRConst_V128(1...1)) ? */
-static Bool isOnesV128 ( IRExpr* e )
+static Bool isOnesV128 ( const IRExpr* e )
 {
    return toBool( e->tag == Iex_Const
                   && e->Iex.Const.con->tag == Ico_V128
@@ -1193,7 +1193,7 @@ static Bool isOnesV128 ( IRExpr* e )
 }
 
 /* Is this literally IRExpr_Const(IRConst_V256(0)) ? */
-static Bool isZeroV256 ( IRExpr* e )
+static Bool isZeroV256 ( const IRExpr* e )
 {
    return toBool( e->tag == Iex_Const 
                   && e->Iex.Const.con->tag == Ico_V256
@@ -1201,7 +1201,7 @@ static Bool isZeroV256 ( IRExpr* e )
 }
 
 /* Is this an integer constant with value 0 ? */
-static Bool isZeroU ( IRExpr* e )
+static Bool isZeroU ( const IRExpr* e )
 {
    if (e->tag != Iex_Const) return False;
    switch (e->Iex.Const.con->tag) {
@@ -1230,7 +1230,7 @@ static Bool isOneU ( const IRExpr* e )
 }
 
 /* Is this an integer constant with value 1---1b ? */
-static Bool isOnesU ( IRExpr* e )
+static Bool isOnesU ( const IRExpr* e )
 {
    if (e->tag != Iex_Const) return False;
    switch (e->Iex.Const.con->tag) {
@@ -3199,7 +3199,7 @@ static IRExpr* subst_Expr ( IRExpr** env, IRExpr* ex )
    As a result of this, the stmt may wind up being turned into a no-op.
 */
 static IRStmt* subst_and_maybe_fold_Stmt ( Bool doFolding,
-                                           IRExpr** env, IRStmt* st )
+                                           IRExpr** env, const IRStmt* st )
 {
 #  if 0
    vex_printf("\nsubst and maybe fold stmt\n");
@@ -3607,7 +3607,7 @@ static void addUses_Temp ( Bool* set, IRTemp tmp )
    set[(Int)tmp] = True;
 }
 
-static void addUses_Expr ( Bool* set, IRExpr* e )
+static void addUses_Expr ( Bool* set, const IRExpr* e )
 {
    Int i;
    switch (e->tag) {
@@ -3657,7 +3657,7 @@ static void addUses_Expr ( Bool* set, IRExpr* e )
    }
 }
 
-static void addUses_Stmt ( Bool* set, IRStmt* st )
+static void addUses_Stmt ( Bool* set, const IRStmt* st )
 {
    Int      i;
    IRDirty* d;
@@ -3737,7 +3737,7 @@ static void addUses_Stmt ( Bool* set, IRStmt* st )
 
 
 /* Is this literally IRExpr_Const(IRConst_U1(False)) ? */
-static Bool isZeroU1 ( IRExpr* e )
+static Bool isZeroU1 ( const IRExpr* e )
 {
    return toBool( e->tag == Iex_Const
                   && e->Iex.Const.con->tag == Ico_U1
@@ -3745,7 +3745,7 @@ static Bool isZeroU1 ( IRExpr* e )
 }
 
 /* Is this literally IRExpr_Const(IRConst_U1(True)) ? */
-static Bool isOneU1 ( IRExpr* e )
+static Bool isOneU1 ( const IRExpr* e )
 {
    return toBool( e->tag == Iex_Const
                   && e->Iex.Const.con->tag == Ico_U1
@@ -3937,8 +3937,8 @@ GSAliasing getAliasingRelation_IC ( IRRegArray* descr1, IRExpr* ix1,
 
 static
 GSAliasing getAliasingRelation_II ( 
-              IRRegArray* descr1, IRExpr* ix1, Int bias1,
-              IRRegArray* descr2, IRExpr* ix2, Int bias2
+              IRRegArray* descr1, const IRExpr* ix1, Int bias1,
+              IRRegArray* descr2, const IRExpr* ix2, Int bias2
            )
 {
    UInt minoff1, maxoff1, minoff2, maxoff2;

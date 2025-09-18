@@ -3736,23 +3736,6 @@ static void addUses_Stmt ( Bool* set, const IRStmt* st )
 }
 
 
-/* Is this literally IRExpr_Const(IRConst_U1(False)) ? */
-static Bool isZeroU1 ( const IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const
-                  && e->Iex.Const.con->tag == Ico_U1
-                  && e->Iex.Const.con->Ico.U1 == False );
-}
-
-/* Is this literally IRExpr_Const(IRConst_U1(True)) ? */
-static Bool isOneU1 ( const IRExpr* e )
-{
-   return toBool( e->tag == Iex_Const
-                  && e->Iex.Const.con->tag == Ico_U1
-                  && e->Iex.Const.con->Ico.U1 == True );
-}
-
-
 /* Note, this destructively modifies the given IRSB. */
 
 /* Scan backwards through statements, carrying a set of IRTemps which
@@ -3790,7 +3773,7 @@ static Bool isOneU1 ( const IRExpr* e )
          continue;
       /* take note of any unconditional exits */
       if (st->tag == Ist_Exit
-          && isOneU1(st->Ist.Exit.guard))
+          && isOneU(st->Ist.Exit.guard))
          i_unconditional_exit = i;
       if (st->tag == Ist_WrTmp
           && set[(Int)(st->Ist.WrTmp.tmp)] == False) {
@@ -3805,7 +3788,7 @@ static Bool isOneU1 ( const IRExpr* e )
       else
       if (st->tag == Ist_Dirty
           && st->Ist.Dirty.details->guard
-          && isZeroU1(st->Ist.Dirty.details->guard)) {
+          && isZeroU(st->Ist.Dirty.details->guard)) {
          /* This is a dirty helper which will never get called.
             Delete it. */
          bb->stmts[i] = IRStmt_NoOp();

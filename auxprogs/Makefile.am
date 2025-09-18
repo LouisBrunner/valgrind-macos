@@ -22,7 +22,8 @@ LTP_FILTERS = \
 
 LTP_PATCHES = \
 	ltp-patches/0001-Make-sure-32-bit-powerpc-syscall-defs-don-t-leak-to-.patch \
-	ltp-patches/0002-Introduce-LTP_QUIET-env-var.patch
+	ltp-patches/0002-Introduce-LTP_QUIET-env-var.patch \
+	ltp-patches/0003-mmap04-Make-sure-the-scanf-address-format-is-at-leas.patch
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \

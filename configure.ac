@@ -35,7 +35,7 @@ AC_SUBST(VG_DATE, v_rel_date)
 
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE([foreign dist-bzip2 tar-ustar subdir-objects])
+AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip tar-ustar subdir-objects])
 
 AM_MAINTAINER_MODE
 

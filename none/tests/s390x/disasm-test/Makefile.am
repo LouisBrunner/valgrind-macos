@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.all.am
 
-EXTRA_DIST = disasm-test.vgtest disasm-test.stderr.exp disasm-test.stdout.exp \
+EXTRA_DIST = disasm-test.vgtest disasm-test.stderr.exp \
              disasm-test.post.exp
 dist_noinst_SCRIPTS = filter_stderr
 

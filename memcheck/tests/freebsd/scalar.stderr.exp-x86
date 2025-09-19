@@ -5927,6 +5927,14 @@ Syscall param setgroups(list) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+9999:                    9999 1e
+---------------------------------------------------------
+WARNING: unhandled x86-freebsd syscall: 9999
+You may be able to write your own handler.
+Read the file README_MISSING_SYSCALL_OR_IOCTL.
+Nevertheless we consider this a bug.  Please report
+it at http://valgrind.org/support/bug_reports.html.
+---------------------------------------------------------
   1:                SYS_exit 1s 0m
 ---------------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)

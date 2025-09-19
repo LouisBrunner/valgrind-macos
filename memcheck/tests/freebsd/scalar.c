@@ -2594,6 +2594,11 @@ int main(void)
    FAKE_SY("\n");
 #endif
 
+   // no such syscall...
+   GO(9999, "1e");
+   SY(9999); FAIL;
+
+
    /* SYS_exit                    1 */
    GO(SYS_exit, "1s 0m");
    SY(SYS_exit, x0); FAIL;

@@ -34,3 +34,7 @@ kcmp03
 # don't have a separate mmap allocator so set hblks & hblkhd to 0.
 mallinfo02
 mallinfo2_01
+# The shmctl05 testcase is a long running one. It does pass with
+# LTP_TIMEOUT_MUL set to some relatively high value.  Let's just
+# skip it here.
+shmctl05

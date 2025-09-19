@@ -498,8 +498,8 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(70, sys_ni_syscall), /* unimplemented (by the kernel) */     // 70
    GENX_(71, sys_ni_syscall), /* unimplemented (by the kernel) */     // 71
 // ?????(__NR_sigsuspend, ),                                          // 72
-// ?????(__NR_sigpending, ),                                          // 73
-// ?????(__NR_sethostname, ),                                         // 74
+   LINXY(__NR_sigpending,  sys_sigpending),                           // 73
+   GENX_(__NR_sethostname,  sys_sethostname),                         // 74
 
    GENX_(__NR_setrlimit,  sys_setrlimit),                             // 75
    GENXY(76,  sys_getrlimit), /* see also 191 */                      // 76
@@ -832,6 +832,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_getrandom, sys_getrandom),                              // 349
 
    LINXY(__NR_memfd_create, sys_memfd_create),                        // 350
+   LINXY(__NR_bpf, sys_bpf),                                          // 351
 
    LINX_(__NR_execveat, sys_execveat),                                // 354
 
@@ -864,6 +865,10 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_rseq, sys_ni_syscall),                                  // 381
    LINX_(__NR_io_pgetevents, sys_io_pgetevents),                      // 382
 
+   LINX_(__NR_semtimedop, sys_semtimedop),                            // 392
+   LINXY(__NR_semctl, sys_semctl),                                    // 394
+   LINXY(__NR_shmctl, sys_shmctl),                                    // 396
+   LINXY(__NR_msgctl, sys_msgctl),                                    // 402
    LINXY(__NR_io_uring_setup, sys_io_uring_setup),                    // 425
    LINXY(__NR_io_uring_enter, sys_io_uring_enter),                    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register),              // 427

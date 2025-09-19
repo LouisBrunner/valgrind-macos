@@ -314,6 +314,7 @@
 #define __NR_seccomp		348
 #define __NR_getrandom		349
 #define __NR_memfd_create	350
+#define __NR_bpf		351
 
 #define __NR_execveat		354
 
@@ -346,6 +347,10 @@
 #define __NR_kexec_file_load		381
 #define __NR_io_pgetevents		382
 #define __NR_rseq			383
+#define __NR_semtimedop			392
+#define __NR_semctl			394
+#define __NR_shmctl			396
+#define __NR_msgctl			402
 #define __NR_futex_waitv		449
 
 #define NR_syscalls 384

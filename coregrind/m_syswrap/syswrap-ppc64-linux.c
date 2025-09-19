@@ -630,7 +630,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_setuid,            sys_setuid),             //  23
    GENX_(__NR_getuid,            sys_getuid),             //  24
 
-// _____(__NR_stime,             sys_stime),              //  25
+   LINX_(__NR_stime,             sys_stime),              //  25
    PLAXY(__NR_ptrace,            sys_ptrace),             //  26
    GENX_(__NR_alarm,             sys_alarm),              //  27
 // _____(__NR_oldfstat,          sys_oldfstat),           //  28
@@ -687,14 +687,14 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_setreuid,          sys_setreuid),           //  70
    GENX_(__NR_setregid,          sys_setregid),           //  71
 // _____(__NR_sigsuspend,        sys_sigsuspend),         //  72
-// _____(__NR_sigpending,        sys_sigpending),         //  73
-// _____(__NR_sethostname,       sys_sethostname),        //  74
+   LINXY(__NR_sigpending,        sys_sigpending),         //  73
+   GENX_(__NR_sethostname,       sys_sethostname),        //  74
 
    GENX_(__NR_setrlimit,         sys_setrlimit),          //  75
    GENXY(__NR_getrlimit,         sys_getrlimit),          //  76
    GENXY(__NR_getrusage,         sys_getrusage),          //  77
    GENXY(__NR_gettimeofday,      sys_gettimeofday),       //  78
-// _____(__NR_settimeofday,      sys_settimeofday),       //  79
+   GENX_(__NR_settimeofday,      sys_settimeofday),       //  79
 
    GENXY(__NR_getgroups,         sys_getgroups),          //  80
    GENX_(__NR_setgroups,         sys_setgroups),          //  81
@@ -1005,6 +1005,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_syncfs,            sys_syncfs),           // 348
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 349
 
+   LINX_(__NR_setns,             sys_setns),            // 350
    LINXY(__NR_process_vm_readv,  sys_process_vm_readv), // 351
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),// 352
    LINX_(__NR_kcmp,              sys_kcmp),             // 354
@@ -1031,7 +1032,10 @@ static SyscallTableEntry syscall_table[] = {
 
    GENX_(__NR_rseq,              sys_ni_syscall),       // 387
    LINX_(__NR_io_pgetevents,     sys_io_pgetevents),    // 388
-
+   LINX_(__NR_semtimedop,        sys_semtimedop),        // 392
+   LINXY(__NR_semctl,            sys_semctl),            // 394
+   LINXY(__NR_shmctl,            sys_shmctl),            // 396
+   LINXY(__NR_msgctl,            sys_msgctl),            // 402
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427

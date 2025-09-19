@@ -346,6 +346,9 @@ DECL_TEMPLATE(linux, sys_pidfd_open);
 DECL_TEMPLATE(linux, sys_close_range);
 DECL_TEMPLATE(linux, sys_openat2);
 
+// Linux-specific (new in Linux 5.12)
+DECL_TEMPLATE(linux, sys_mount_setattr)
+
 // Linux-specific (new in Linux 5.13)
 DECL_TEMPLATE(linux, sys_landlock_create_ruleset)
 DECL_TEMPLATE(linux, sys_landlock_add_rule)

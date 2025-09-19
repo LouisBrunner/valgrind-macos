@@ -1025,6 +1025,18 @@ PRE(sys_mount)
       PRE_MEM_RASCIIZ( "mount(type)", ARG3);
 }
 
+PRE(sys_mount_setattr)
+{
+   // int syscall(SYS_mount_setattr, int dirfd, const char *pathname,
+   //             unsigned int flags, struct mount_attr *attr, size_t size);
+   *flags |= SfMayBlock;
+   PRINT("sys_mount_setattr ( %d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#"
+         FMT_REGWORD "x, %" FMT_REGWORD "u )", (Int)ARG1, ARG2,
+         ARG3, ARG4, ARG5);
+   PRE_MEM_READ("mount(attr)", ARG5, ARG6);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mount_setattr(dirfd)", tid, status);
+}
+
 PRE(sys_oldumount)
 {
    PRINT("sys_oldumount( %#" FMT_REGWORD "x )", ARG1);
@@ -2897,9 +2909,9 @@ PRE(sys_fanotify_mark)
 #else
 #  error Unexpected word size
 #endif
-    if ( !ML_(fd_allowed)(SARG1, "fanotify_mark[fanotify_fd]", tid, False) )
+    if ( !ML_(fd_allowed)(SARG1, "fanotify_mark(fanotify_fd)", tid, False) )
        SET_STATUS_Failure( VKI_EBADF );
-    ML_(fd_at_check_allowed)(SARG4, (const HChar*)ARG5, "mkdirat[firfd]", tid, status);
+    ML_(fd_at_check_allowed)(SARG4, (const HChar*)ARG5, "fanotify_mark(dirfd)", tid, status);
 }
 
 /* ---------------------------------------------------------------------
@@ -14340,27 +14352,19 @@ PRE(sys_move_mount)
          "%ld, %#" FMT_REGWORD "x(%s), %ld",
          SARG1, ARG2, (HChar*)(Addr)ARG2,
          SARG3, ARG4, (HChar*)(Addr)ARG4, SARG5);
-   PRE_REG_READ5(long, "mount_move",
+   PRE_REG_READ5(long, "move_mount",
                  int, from_dfd, const char *, from_pathname,
                  int, to_dfd, const char*, to_pathname, int, flags);
-   PRE_MEM_RASCIIZ( "mount_move(from_pathname)", ARG2);
+   PRE_MEM_RASCIIZ( "move_mount(from_pathname)", ARG2);
    /* For absolute filenames, from_dfd is ignored.  If from_dfd is AT_FDCWD,
       from_pathname is relative to cwd.  When comparing from_dfd against
       AT_FDCWD, be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "mount_move", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
-   PRE_MEM_RASCIIZ( "mount_move(from_pathname)", ARG4);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "move_mount(from_dfd)", tid, status);
+   PRE_MEM_RASCIIZ( "move_mount(to_pathname)", ARG4);
    /* For absolute filenames, to_dfd is ignored.  If to_dfd is AT_FDCWD,
       to_pathname is relative to cwd.  When comparing to_dfd against
       AT_FDCWD, be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG4, 1 )
-       && *(Char *)(Addr)ARG4 != '/'
-       && ((Int)ARG4) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG3, "mount_move", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG3, (const HChar*)ARG4, "move_mount(to_dfd)", tid, status);
 }
 
 /* int fsopen (const char *fs_name, unsigned int flags)  */

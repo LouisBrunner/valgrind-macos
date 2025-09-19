@@ -646,6 +646,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_acct, sys_acct),
    GENX_ (__NR_settimeofday, sys_settimeofday),
    LINX_ (__NR_mount, sys_mount),
+   LINX_ (__NR_mount_setattr, sys_mount_setattr),
    LINX_ (__NR_umount2, sys_umount),
    PLAX_ (__NR_swapon, sys_swapon),
    PLAX_ (__NR_swapoff, sys_swapoff),

@@ -1668,6 +1668,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat2,	 sys_faccessat2),       // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),     // 441
+   LINX_(__NR_mount_setattr,     sys_mount_setattr),    // 442
    LINX_(__NR_quotactl_fd,       sys_quotactl_fd),      // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444

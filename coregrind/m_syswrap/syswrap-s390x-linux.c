@@ -556,7 +556,7 @@ static SyscallTableEntry syscall_table[] = {
    PLAX_(__NR_sigreturn, sys_sigreturn),                              // 119
 
    LINX_(__NR_clone,  sys_clone),                                     // 120
-// ?????(__NR_setdomainname, ),                                       // 121
+   LINX_(__NR_setdomainname, sys_setdomainname),                      // 121
    GENXY(__NR_uname, sys_newuname),                                   // 122
    GENX_(123, sys_ni_syscall), /* unimplemented (by the kernel) */    // 123
 // ?????(__NR_adjtimex, ),                                            // 124

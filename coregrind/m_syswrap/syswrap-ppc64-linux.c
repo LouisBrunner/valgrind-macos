@@ -745,7 +745,7 @@ static SyscallTableEntry syscall_table[] = {
 // _____(__NR_sigreturn,         sys_sigreturn),          // 119
 
    LINX_(__NR_clone,             sys_clone),              // 120
-// _____(__NR_setdomainname,     sys_setdomainname),      // 121
+   LINX_(__NR_setdomainname,     sys_setdomainname),      // 121
    GENXY(__NR_uname,             sys_newuname),           // 122
 // _____(__NR_modify_ldt,        sys_modify_ldt),         // 123
    LINXY(__NR_adjtimex,          sys_adjtimex),           // 124

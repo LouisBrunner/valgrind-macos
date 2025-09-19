@@ -382,7 +382,6 @@ DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_ptrace);
 DECL_TEMPLATE (mips_linux, sys_unshare);
 DECL_TEMPLATE (mips_linux, sys_reboot);
-DECL_TEMPLATE (mips_linux, sys_setdomainname);
 DECL_TEMPLATE (mips_linux, sys_sethostname);
 DECL_TEMPLATE (mips_linux, sys_swapon);
 DECL_TEMPLATE (mips_linux, sys_swapoff);
@@ -512,12 +511,6 @@ PRE(sys_reboot)
                  void *, arg);
 
    *flags |= SfMayBlock;
-}
-
-PRE(sys_setdomainname)
-{
-   PRINT ("sys_setdomainname ( %#lx, %ld )", ARG1, SARG2);
-   PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
 }
 
 PRE(sys_sethostname)
@@ -712,7 +705,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_setgroups,              sys_setgroups),
    GENXY (__NR_uname,                  sys_newuname),
    PLAX_ (__NR_sethostname,            sys_sethostname),
-   PLAX_ (__NR_setdomainname,          sys_setdomainname),
+   LINX_ (__NR_setdomainname,          sys_setdomainname),
    GENXY (__NR_getrusage,              sys_getrusage),
    GENX_ (__NR_umask,                  sys_umask),
    LINXY (__NR_prctl,                  sys_prctl),

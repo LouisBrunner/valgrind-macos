@@ -1653,6 +1653,13 @@ POST(sys_sendfile64)
    }
 }
 
+PRE(sys_setdomainname)
+{
+   PRINT ("sys_setdomainname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
+   PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
+   PRE_MEM_READ("setdomainname(name)", ARG1, ARG2);
+}
+
 static void pre_read_timespec64 (ThreadId tid, const char *msg, UWord arg)
 {
    struct vki_timespec64 *ts64 = (void *)(Addr)arg;

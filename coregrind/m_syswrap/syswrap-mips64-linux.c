@@ -217,7 +217,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
 DECL_TEMPLATE (mips_linux, sys_swapon);
 DECL_TEMPLATE (mips_linux, sys_swapoff);
-DECL_TEMPLATE (mips_linux, sys_setdomainname);
 DECL_TEMPLATE (mips_linux, sys_sethostname);
 DECL_TEMPLATE (mips_linux, sys_reboot);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
@@ -271,12 +270,6 @@ PRE(sys_reboot)
                  void *, arg);
    
    *flags |= SfMayBlock;
-}
-
-PRE(sys_setdomainname)
-{
-   PRINT ("sys_setdomainname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
-   PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
 }
 
 PRE(sys_sethostname)
@@ -658,7 +651,7 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_ (__NR_swapoff, sys_swapoff),
    PLAX_ (__NR_reboot, sys_reboot),
    PLAX_ (__NR_sethostname, sys_sethostname),
-   PLAX_ (__NR_setdomainname, sys_setdomainname),
+   LINX_ (__NR_setdomainname, sys_setdomainname),
    GENX_ (__NR_create_module, sys_ni_syscall),
    LINX_ (__NR_init_module, sys_init_module),
    LINX_ (__NR_delete_module, sys_delete_module),

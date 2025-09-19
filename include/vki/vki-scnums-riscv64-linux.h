@@ -192,6 +192,7 @@
 #define __NR_setgroups 159
 #define __NR_uname 160
 #define __NR_sethostname 161
+#define __NR_setdomainname 162
 #define __NR_getrlimit 163
 #define __NR_setrlimit 164
 #define __NR_getrusage 165

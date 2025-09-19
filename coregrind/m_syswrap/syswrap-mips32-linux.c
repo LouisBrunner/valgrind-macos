@@ -886,7 +886,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_fsync,                  sys_fsync),                   // 118
    PLAX_ (__NR_sigreturn,              sys_sigreturn),               // 119
    LINX_ (__NR_clone,                  sys_clone),                   // 120
-   //..    //   (__NR_setdomainname,     sys_setdomainname),     // 121
+   LINX_ (__NR_setdomainname,          sys_setdomainname),           // 121
    GENXY (__NR_uname,                  sys_newuname),                // 122
    //..    PLAX_(__NR_modify_ldt,        sys_modify_ldt),        // 123
    LINXY (__NR_adjtimex,               sys_adjtimex),                // 124

@@ -805,32 +805,31 @@ asm(
 #elif defined(VGP_arm64_freebsd)
 
 /*
- * Arguments a1 to a8 are in registers x0 to x7.
+ * Arguments a1 to a7 are in registers x0 to x6.
  * Which is just what we want for a syscall.
  *
- * The syscall number is on the top of the stack
- * pointed to by sp. The flags are at sp+8 and
- * second return value at sp+16.
+ * The syscall number is in x9
+ * The flags are at the top of the stack, sp and
+ * second return value at sp+8.
  */
 
 extern UWord do_syscall_WRK (
    UWord a1, UWord a2, UWord a3,
    UWord a4, UWord a5, UWord a6,
-   UWord a7, UWord a8,
-   UWord syscall_no,
+   UWord a7, UWord syscall_no,
    UInt *flags,  UWord *rv2
    );
 asm(
    ".text\n"
    ".globl do_syscall_WRK\n"
    "do_syscall_WRK:\n"
-   "        ldr  x8, [sp]\n"          // retrieve syscall_no, put it in x8
+   "        mov x8, x9\n"             // get the syscall number from x9
    "        svc  0x0\n"               // do the syscall
    "        mov  x9, 1\n"             // flags for error will be 1 or 0
    "        csel x9, x9, xzr, cs\n"   // conditionally select 1 or 0 into x9
-   "        ldr  x10, [sp, #8]\n"     // load the address of flags
+   "        ldr  x10, [sp]\n"         // load the address of flags
    "        str  w9, [x10]\n"         // store flags result
-   "        ldr  x10, [sp, #16]\n"    // load the addres of rv2
+   "        ldr  x10, [sp, #8]\n"     // load the addres of rv2
    "        str  x1, [x10]\n"         // store rv2 result
    "        ret\n"
    ".previous\n"
@@ -1236,7 +1235,7 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    UWord val2 = 0;
    UInt err = 0;
    val = do_syscall_WRK(a1, a2, a3, a4, a5,
-                        a6, a7, a8, sysno, &err, &val2);
+                        a6, a7, sysno, &err, &val2);
    return VG_(mk_SysRes_arm64_freebsd)( val, val2, (err & 1) != 0 ? True : False);
 
 #  elif defined(VGP_ppc32_linux)

@@ -768,7 +768,6 @@ extern UWord do_syscall_WRK (
           UWord a5,            /* %r9 */
           UWord a6,            /* 8(%rsp) */
           UWord a7,            /* 16(%rsp) */
-          UWord a8,            /* 24(%rsp) */
           UInt *flags,         /* 32(%rsp) */
           UWord *rv2           /* 40(%rsp) */
        );
@@ -784,20 +783,18 @@ asm(
 "      movq    %r8,  %r10\n"    /* a4 */
 "      movq    %r9,  %r8\n"     /* a5 */
 "      movq    16(%rbp), %r9\n" /* a6 last register arg from stack, account for %rbp */
-"      movq    32(%rbp), %r11\n" /* a8 from stack */
-"      pushq  %r11\n"
 "      movq    24(%rbp), %r11\n" /* a7 from stack */
-"      pushq  %r11\n"
+"      pushq   %r11\n"
 "      subq    $8,%rsp\n"       /* fake return addr */
 "      syscall\n"
 "      jb      1f\n"
-"      movq    48(%rbp),%rsi\n" /* success */
+"      movq    40(%rbp),%rsi\n" /* success */
 "      movq    %rdx, (%rsi)\n"  /* second return value */
 "      movq    %rbp, %rsp\n"
 "      popq    %rbp\n"
 "      ret\n"
 "1:\n"                          /* error path */
-"      movq    40(%rbp), %rsi\n" /* flags */
+"      movq    32(%rbp), %rsi\n" /* flags */
 "      movl    $1,(%rsi)\n"
 "      movq    %rbp, %rsp\n"
 "      popq    %rbp\n"
@@ -1231,7 +1228,7 @@ SysRes VG_(do_syscall) ( UWord sysno, RegWord a1, RegWord a2, RegWord a3,
    UWord val2 = 0;
    UInt err = 0;
    val = do_syscall_WRK(sysno, a1, a2, a3, a4, a5,
-                        a6, a7, a8, &err, &val2);
+                        a6, a7, &err, &val2);
    return VG_(mk_SysRes_amd64_freebsd)( val, val2, (err & 1) != 0 ? True : False);
 
 #  elif defined(VGP_arm64_freebsd)

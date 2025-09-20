@@ -68,6 +68,9 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD
 SUBDIRS += amd64-freebsd
 endif
+if VGCONF_PLATFORMS_INCLUDE_ARM64_FREEBSD
+SUBDIRS += arm64-freebsd
+endif
 
 DIST_SUBDIRS = x86 amd64 arm64 ppc32 ppc64 s390x linux \
 		darwin solaris x86-linux amd64-linux arm64-linux riscv64-linux \

@@ -1506,6 +1506,16 @@
 /memcheck/tests/x86-freebsd/posix_fallocate
 /memcheck/tests/x86-freebsd/reallocarray
 
+# /memcheck/tests/arm64-freebsd
+/memcheck/tests/arm64-freebsd/*.stderr.diff
+/memcheck/tests/arm64-freebsd/*.stderr.out
+/memcheck/tests/arm64-freebsd/*.stdout.diff
+/memcheck/tests/arm64-freebsd/*.stdout.out
+/memcheck/tests/arm64-freebsd/.deps
+/memcheck/tests/arm64-freebsd/Makefile
+/memcheck/tests/arm64-freebsd/Makefile.in
+/memcheck/tests/arm64-freebsd/scalar_arg_check
+
 # /mpi/
 /mpi/*.dSYM
 /mpi/*.so

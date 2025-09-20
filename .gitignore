@@ -1492,6 +1492,7 @@
 /memcheck/tests/amd64-freebsd/posix_fallocate
 /memcheck/tests/amd64-freebsd/reallocarray
 /memcheck/tests/amd64-freebsd/reallocf
+/memcheck/tests/amd64-freebsd/scalar_arg_check
 
 # /memcheck/tests/x86-freebsd
 /memcheck/tests/x86-freebsd/*.stderr.diff

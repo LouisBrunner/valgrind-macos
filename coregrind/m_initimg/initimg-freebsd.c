@@ -337,52 +337,6 @@ static const struct auxv *find_auxv(const UWord* sp)
 /*
  * @todo PJF Make this multi-platform
  */
-static Bool try_get_interp(const HChar* args_exe, HChar* interp_out)
-{
-   HChar  hdr[4096];
-   Int    len = sizeof hdr;
-   SysRes res;
-   Int fd;
-   HChar* end;
-   HChar* cp;
-   HChar* interp;
-
-   res = VG_(open)(args_exe, VKI_O_RDONLY, 0);
-   if (sr_isError(res)) {
-      return False;
-   } else {
-      fd = sr_Res(res);
-   }
-
-   res = VG_(pread)(fd, hdr, len, 0);
-
-   if (sr_isError(res)) {
-      VG_(close)(fd);
-      return False;
-   } else {
-      len = sr_Res(res);
-   }
-
-   if (0 != VG_(memcmp)(hdr, "#!", 2)) {
-       VG_(close)(fd);
-      return False;
-   }
-
-   end    = hdr + len;
-   interp = hdr + 2;
-   while (interp < end && (*interp == ' ' || *interp == '\t'))
-      interp++;
-
-   for (cp = interp; cp < end && !VG_(isspace)(*cp); cp++)
-      ;
-
-   *cp = '\0';
-
-   VG_(sprintf)(interp_out, "%s", interp);
-
-   VG_(close)(fd);
-   return True;
-}
 
 /* ----------------------------------------------------------------
 
@@ -468,7 +422,7 @@ static Addr setup_client_stack(const void*  init_sp,
 
    const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
    HChar interp_name[VKI_PATH_MAX];
-   if (try_get_interp(exe_name, interp_name)) {
+   if (VG_(try_get_interp)(exe_name, interp_name, VKI_PATH_MAX)) {
       exe_name = interp_name;
    }
    HChar resolved_name[VKI_PATH_MAX];

@@ -34,4 +34,6 @@
 
 extern const HChar* VG_(find_executable) ( const HChar* exec );
 
-#endif // ndef __PUB_CORE_PATHSCAN_H
+extern Bool VG_(try_get_interp)(const HChar* args_exe, HChar* interp_out, SizeT max_interp_len);
+
+#endif //  __PUB_CORE_PATHSCAN_H

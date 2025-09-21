@@ -555,7 +555,8 @@ int main(void)
         <listitem>Do not use tcmalloc in the builds that you test with Valgrind.</listitem>
         <listitem>Use an older version of tcmalloc. This problem started on 2024-03-24.
           If you use gperftools 2.15 or older you should not have this problem.</listitem>
-      </para>
+      </itemizedlist>
+    </para>
 
   </answer>
 </qandaentry>

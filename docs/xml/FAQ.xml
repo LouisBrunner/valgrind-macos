@@ -541,6 +541,26 @@ int main(void)
   </answer>
 </qandaentry>
 
+<qandaentry id="faq.hangs">
+  <question id="q-hangs">
+    <para>Why does Valgrind hang when using tcmalloc?</para>
+  </question>
+  <answer id="a-hangss">
+    <para>This is because tcmalloc makes a recursive call in its initialisation code.
+      Under Valgrind that becomes either an infinite loop with optimised builds of tcmalloc
+      or a stack overflow crash with debug builds of it.</para>
+
+    <para>Your options are:
+      <itemizedlist>
+        <listitem>Do not use tcmalloc in the builds that you test with Valgrind.</listitem>
+        <listitem>Use an older version of tcmalloc. This problem started on 2024-03-24.
+          If you use gperftools 2.15 or older you should not have this problem.</listitem>
+      </para>
+
+  </answer>
+</qandaentry>
+
+
 </qandadiv>
 
 <!-- Miscellaneous -->

@@ -18,6 +18,7 @@ all_platforms="$all_platforms riscv64-linux"
 all_platforms="$all_platforms x86-darwin amd64-darwin"
 all_platforms="$all_platforms x86-solaris amd64-solaris"
 all_platforms="$all_platforms x86-freebsd amd64-freebsd"
+all_platforms="$all_platforms arm64-freebsd"
 
 if [ $# -ne 2 ] ; then
     echo "usage: platform_test <arch-type> <OS-type>"

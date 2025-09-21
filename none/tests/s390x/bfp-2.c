@@ -71,26 +71,6 @@ void lcdbr(double in)
    printf("lcdbr  %f  -> %f\n", in, out);
 }
 
-void lder(double prev, float in)
-{
-   unsigned long out;
-
-   __asm__ volatile("lder %[prev],%[in]\n\t"
-                    "std %[prev],%[out]" :
-                    [out]"=R"(out) : [prev]"f"(prev), [in]"f"(in));
-   printf("lder  %f  -> %lx\n", in, out);
-}
-
-void lde(double prev, float in)
-{
-   unsigned long out;
-
-   __asm__ volatile("lde %[prev],%[in]\n\t"
-                    "std %[prev],%[out]" :
-                    [out]"=R"(out) : [prev]"f"(prev), [in]"R"(in));
-   printf("lde  %f  -> %lx\n", in, out);
-}
-
 int main(void)
 {
    // square root
@@ -117,12 +97,6 @@ int main(void)
 
    lcdbr(-17.5);   // 8 byte values
    lcdbr(234.5);   // 8 byte values
-
-   // load lengthened
-   lder(0.2, 321.5f);
-   lder(0.9, -8388607.f);
-   lde(0.2, -321.5f);
-   lde(0.9, 8388607.f);
 
    return 0;
 }

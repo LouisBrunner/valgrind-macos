@@ -22,7 +22,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
 	     vector_float add-z14 sub-z14 mul-z14 bic \
 	     misc3 vec2 vec2_float \
 	     dfp-1 dfp-2 dfp-3 dfp-4 dfpconv dfpext dfptest pfpo srnmt \
-	     fpext fixbr
+	     fpext fixbr hfp
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \

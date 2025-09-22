@@ -2,14 +2,14 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr bfp-emit.pl
 
-INSN_TESTS = clc clcle cvb cvd icm lpr tcxb lam_stam xc mvst add sub mul \
+INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
              op_exception fgx stck stckf stcke stfle cksm mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
              ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext_warn \
-             rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
+             bfp-tdc rounding-1 rounding-2 rounding-3 rounding-4 rounding-5 bfp-1 \
              bfp-2 bfp-3 bfp-4 srnm srnmb comp-1 comp-2 exrl tmll tm stmg \
 	     ex clst mvc test_fork test_sig rounding-6 rxsbg popcnt \
 	     high-word traps \

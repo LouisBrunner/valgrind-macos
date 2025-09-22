@@ -2189,7 +2189,7 @@
 /none/tests/s390x/rounding-2
 /none/tests/s390x/rounding-3
 /none/tests/s390x/bfp-arith
-/none/tests/s390x/bfp-2
+/none/tests/s390x/bfp-load
 /none/tests/s390x/bfp-3
 /none/tests/s390x/bfp-compare
 /none/tests/s390x/srnm

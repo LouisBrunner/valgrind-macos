@@ -2136,7 +2136,8 @@
 /none/tests/s390x/sub
 /none/tests/s390x/sub-z14
 /none/tests/s390x/sub_EI
-/none/tests/s390x/tcxb
+/none/tests/s390x/bfp-tdc
+/none/tests/s390x/hfp
 /none/tests/s390x/xc
 /none/tests/s390x/xor
 /none/tests/s390x/xor_EI
@@ -2144,7 +2145,6 @@
 /none/tests/s390x/stcke
 /none/tests/s390x/stckf
 /none/tests/s390x/op_exception
-/none/tests/s390x/fgx
 /none/tests/s390x/condloadstore
 /none/tests/s390x/fold_And16
 /none/tests/s390x/stfle
@@ -2187,8 +2187,6 @@
 /none/tests/s390x/rounding-1
 /none/tests/s390x/rounding-2
 /none/tests/s390x/rounding-3
-/none/tests/s390x/rounding-4
-/none/tests/s390x/rounding-5
 /none/tests/s390x/bfp-1
 /none/tests/s390x/bfp-2
 /none/tests/s390x/bfp-3
@@ -2231,7 +2229,6 @@
 /none/tests/s390x/srnmt
 /none/tests/s390x/pfpo
 /none/tests/s390x/rxsbg
-/none/tests/s390x/fixbr
 /none/tests/s390x/popcnt
 /none/tests/s390x/vector
 /none/tests/s390x/lsc2

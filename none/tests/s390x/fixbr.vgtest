@@ -1,2 +1,0 @@
-prog: fixbr
-prereq: test -e fixbr && ../../../tests/s390x_features s390x-fpext

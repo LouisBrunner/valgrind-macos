@@ -1505,6 +1505,7 @@
 /memcheck/tests/x86-freebsd/posix_fadvise
 /memcheck/tests/x86-freebsd/posix_fallocate
 /memcheck/tests/x86-freebsd/reallocarray
+/memcheck/tests/x86-freebsd/scalar_arg_check
 
 # /memcheck/tests/arm64-freebsd
 /memcheck/tests/arm64-freebsd/*.stderr.diff

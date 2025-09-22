@@ -2191,7 +2191,7 @@
 /none/tests/s390x/bfp-arith
 /none/tests/s390x/bfp-2
 /none/tests/s390x/bfp-3
-/none/tests/s390x/bfp-4
+/none/tests/s390x/bfp-compare
 /none/tests/s390x/srnm
 /none/tests/s390x/srnmb
 /none/tests/s390x/comp-1

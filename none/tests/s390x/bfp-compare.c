@@ -1,4 +1,8 @@
+// FIXME rename bfp-compare.c
+
 #include <stdio.h>
+#include <math.h>
+#include <assert.h>
 
 static const char *const cmp_result_str[] = {
    "==", "<", ">", "??"
@@ -86,16 +90,31 @@ static void do_compare(float a, float b)
 
 int main(void)
 {
-   float inf = 1.f / 0.;
-   float neg_inf = -1.f / 0.;
+   assert(sizeof(long double) == 16);
 
    do_compare(3.14f, 3.14f);
    do_compare(-2.78f, 2.78f);
-   do_compare(inf, inf);
-   do_compare(inf, neg_inf);
-   do_compare(neg_inf, neg_inf);
-   do_compare(inf, 1.f);
-   do_compare(neg_inf, -1.f);
-   do_compare(1.f / inf, -1.f / inf);
+   do_compare( INFINITY,  INFINITY);
+   do_compare( INFINITY, -INFINITY);
+   do_compare(-INFINITY, -INFINITY);
+   do_compare(-INFINITY,  INFINITY);
+   do_compare( INFINITY,  1.f);
+   do_compare(-INFINITY, -1.f);
+   do_compare( 1.f,  INFINITY);
+   do_compare(-1.f, -INFINITY);
+
+   do_compare( NAN,  NAN);
+   do_compare( NAN, -NAN);
+   do_compare(-NAN,  NAN);
+   do_compare(-NAN, -NAN);
+   do_compare( NAN,  INFINITY);
+   do_compare( NAN, -INFINITY);
+   do_compare(-NAN,  INFINITY);
+   do_compare(-NAN, -INFINITY);
+   do_compare( NAN,  1.5);
+   do_compare(-NAN, -1.5);
+   do_compare( 1.5,  NAN);
+   do_compare(-1.5, -NAN);
+   do_compare(1.f / INFINITY, -1.f / INFINITY);
    return 0;
 }

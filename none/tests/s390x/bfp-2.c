@@ -1,27 +1,10 @@
 #include <stdio.h>
 
 /* Test various BFP ops:
-   - square root
    - load negative
    - load positive
    - load complement
 */
-
-void sqebr(float in)
-{
-   float out;
-
-   __asm__ volatile("sqebr %[out],%[in]" : [out]"=f"(out) : [in]"f"(in));
-   printf("sqebr  %f  -> %f\n", in, out);
-}
-
-void sqdbr(double in)
-{
-   double out;
-
-   __asm__ volatile("sqdbr %[out],%[in]" : [out]"=f"(out) : [in]"f"(in));
-   printf("sqdbr  %f  -> %f\n", in, out);
-}
 
 void lnebr(float in)
 {
@@ -73,10 +56,6 @@ void lcdbr(double in)
 
 int main(void)
 {
-   // square root
-   sqebr(121.0f);  // 4 byte values
-   sqdbr(144.0);   // 8 bytes values
-
    // load negative
    lnebr(-2.5f);   // 4 byte values
    lnebr(12.5f);   // 4 byte values

@@ -84,8 +84,11 @@ static void *sleeper_or_burner(void *v)
          t[s->t].tv_usec = (sleepms % 1000) * 1000;
          ret = select (0, NULL, NULL, NULL, &t[s->t]);
          /* We only expect a timeout result or EINTR from the above. */
-         if (ret != 0 && errno != EINTR)
-            perror("unexpected result from select");
+         if (ret != 0 && errno != EINTR) {
+            char buf[64];
+            snprintf(buf, 64, "unexpected result (%d) from select", ret);
+            perror(buf);
+         }
       }
       if (burn > 0 && s->burn)
          do_burn();

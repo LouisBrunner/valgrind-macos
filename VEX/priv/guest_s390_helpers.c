@@ -628,7 +628,7 @@ s390_do_cu12_cu14_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
       UInt ij     = (byte3 >> 4) & 0x3;
       UInt klmn   = byte3 & 0xf;
       UInt opqrst = byte4 & 0x3f;
-      
+
       if (is_cu12) {
          UInt abcd = (uvwxy - 1) & 0xf;
          UInt high_surrogate = (0xd8 << 8) | (abcd << 6) | (efgh << 2) | ij;
@@ -782,6 +782,8 @@ decode_bfp_rounding_mode(UInt irrm)
    case Irrm_NegINF:  return S390_BFP_ROUND_NEGINF;
    case Irrm_PosINF:  return S390_BFP_ROUND_POSINF;
    case Irrm_ZERO:    return S390_BFP_ROUND_ZERO;
+   case Irrm_NEAREST_TIE_AWAY_0: return S390_BFP_ROUND_NEAREST_AWAY;
+   case Irrm_PREPARE_SHORTER:    return S390_BFP_ROUND_PREPARE_SHORT;
    }
    vpanic("decode_bfp_rounding_mode");
 }
@@ -880,6 +882,12 @@ decode_bfp_rounding_mode(UInt irrm)
 ({                                                        \
    UInt cc;                                               \
    switch (decode_bfp_rounding_mode(cc_dep2)) {           \
+   case S390_BFP_ROUND_NEAREST_AWAY:                      \
+      cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,1); \
+      break;                                              \
+   case S390_BFP_ROUND_PREPARE_SHORT:                     \
+      cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,3); \
+      break;                                              \
    case S390_BFP_ROUND_NEAREST_EVEN:                      \
       cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,4); \
       break;                                              \
@@ -914,6 +922,12 @@ decode_bfp_rounding_mode(UInt irrm)
 ({                                                         \
    UInt cc;                                                \
    switch (decode_bfp_rounding_mode(cc_dep2)) {            \
+   case S390_BFP_ROUND_NEAREST_AWAY:                       \
+      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,1); \
+      break;                                               \
+   case S390_BFP_ROUND_PREPARE_SHORT:                      \
+      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,3); \
+      break;                                               \
    case S390_BFP_ROUND_NEAREST_EVEN:                       \
       cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,4); \
       break;                                               \
@@ -951,6 +965,12 @@ decode_bfp_rounding_mode(UInt irrm)
       s390_cc_thunk_put3 for rationale. */                           \
    cc_dep2 = cc_dep2 ^ cc_ndep;                                      \
    switch (decode_bfp_rounding_mode(cc_ndep)) {                      \
+   case S390_BFP_ROUND_NEAREST_AWAY:                                 \
+      cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,1); \
+      break;                                                         \
+   case S390_BFP_ROUND_PREPARE_SHORT:                                \
+      cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,3); \
+      break;                                                         \
    case S390_BFP_ROUND_NEAREST_EVEN:                                 \
       cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
       break;                                                         \
@@ -988,6 +1008,13 @@ decode_bfp_rounding_mode(UInt irrm)
       s390_cc_thunk_put3 for rationale. */                            \
    cc_dep2 = cc_dep2 ^ cc_ndep;                                       \
    switch (decode_bfp_rounding_mode(cc_ndep)) {                       \
+   case S390_BFP_ROUND_NEAREST_AWAY:                                  \
+      cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,1); \
+      break;                                                          \
+   case S390_BFP_ROUND_PREPARE_SHORT:                                 \
+      cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,3); \
+      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,3);            \
+      break;                                                          \
    case S390_BFP_ROUND_NEAREST_EVEN:                                  \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
       break;                                                          \

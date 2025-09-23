@@ -2137,7 +2137,6 @@
 /none/tests/s390x/sub
 /none/tests/s390x/sub-z14
 /none/tests/s390x/sub_EI
-/none/tests/s390x/bfp-tdc
 /none/tests/s390x/hfp
 /none/tests/s390x/xc
 /none/tests/s390x/xor
@@ -2190,10 +2189,10 @@
 /none/tests/s390x/rounding-3
 /none/tests/s390x/bfp-arith
 /none/tests/s390x/bfp-load
+/none/tests/s390x/bfp-fpc
+/none/tests/s390x/bfp-tdc
 /none/tests/s390x/bfp-3
 /none/tests/s390x/bfp-compare
-/none/tests/s390x/srnm
-/none/tests/s390x/srnmb
 /none/tests/s390x/comp-1
 /none/tests/s390x/comp-2
 /none/tests/s390x/ex

@@ -37,7 +37,6 @@
 // 4,5,6 are not allowed
 
 // Needs floating point extension facility
-// Cannot be mapped to IRRoundingMode
 #define FPC_BFP_ROUND_PREPARE_SHORT 7
 
 

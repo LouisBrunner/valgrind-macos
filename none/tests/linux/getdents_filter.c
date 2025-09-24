@@ -13,10 +13,11 @@
 #include <sys/syscall.h>
 #include <sys/types.h>
 
-struct linux_dirent {
-    unsigned long  d_ino;
-    off_t          d_off;
+struct linux_dirent64 {
+    ino64_t  d_ino;
+    off64_t  d_off;
     unsigned short d_reclen;
+    unsigned char  d_type;
     char           d_name[];
 };
 
@@ -67,7 +68,7 @@ static void test_retry_logic_with_small_buffer(void)
     int fd;
     char buf[SMALL_BUF_SIZE];
     long nread;
-    struct linux_dirent *d;
+    struct linux_dirent64 *d;
 
     printf("retry_test_start\n");
 
@@ -83,7 +84,9 @@ static void test_retry_logic_with_small_buffer(void)
      * may return only Valgrind FDs, which will trigger the retry mechanism.
      */
     for (;;) {
-        nread = syscall(SYS_getdents, fd, buf, SMALL_BUF_SIZE);
+        /* Note, using getdents64 since some linux arches don't implement
+           the 32bit getdents. */
+        nread = syscall(SYS_getdents64, fd, buf, SMALL_BUF_SIZE);
 
         if (nread == -1) {
             printf("retry_test_error\n");
@@ -97,7 +100,7 @@ static void test_retry_logic_with_small_buffer(void)
 
         /* Print client FD entries found in this buffer (excluding . and ..) */
         for (size_t bpos = 0; bpos < nread;) {
-            d = (struct linux_dirent *)(buf + bpos);
+            d = (struct linux_dirent64 *)(buf + bpos);
             if (strcmp(d->d_name, ".") != 0 && strcmp(d->d_name, "..") != 0) {
                 char *endptr;
                 long fd_num = strtol(d->d_name, &endptr, 10);

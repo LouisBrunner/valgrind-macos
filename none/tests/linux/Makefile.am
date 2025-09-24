@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	bug498317.stderr.exp bug498317.supp bug498317.vgtest \
 	bug506910.stderr.exp bug506910.vgtest \
 	clonev.stdout.exp clonev.stderr.exp clonev.vgtest \
+	getdents_filter.stderr.exp getdents_filter.stdout.exp getdents_filter.vgtest \
         membarrier.stderr.exp membarrier.vgtest \
 	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
 	    mremap.vgtest \
@@ -28,6 +29,7 @@ check_PROGRAMS = \
 	brk-overflow2 \
 	bug498317 \
 	clonev \
+	getdents_filter \
 	mremap \
 	mremap2 \
 	mremap3 \

@@ -172,7 +172,6 @@ EXTRA_DIST = \
 	floored.stderr.exp floored.stdout.exp floored.vgtest \
 	fork.stderr.exp fork.stdout.exp fork.vgtest \
 	fucomip.stderr.exp fucomip.vgtest \
-	getdents_filter.stderr.exp getdents_filter.stdout.exp getdents_filter.vgtest \
 	gxx304.stderr.exp gxx304.vgtest \
 	ifunc.stderr.exp ifunc.stdout.exp ifunc.vgtest \
 	ioctl_moans.stderr.exp ioctl_moans.vgtest \
@@ -292,7 +291,6 @@ check_PROGRAMS = \
 	fdleak_fcntl fdleak_ipv4 fdleak_open fdleak_pipe \
 	fdleak_socketpair \
 	floored fork fucomip \
-	getdents_filter \
 	ioctl_moans \
 	libvex_test \
 	libvexmultiarch_test \

@@ -8,8 +8,8 @@ INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
              op_exception stck stckf stcke stfle cksm mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
-             ex_sig ex_clone cu14 cu14_1 cu41 fpconv ecag fpext_warn \
-             bfp-tdc bfp-load bfp-fpc rounding-1 rounding-3 bfp-arith \
+             ex_sig ex_clone cu14 cu14_1 cu41 ecag fpext_warn fpext_fail \
+             bfp-tdc bfp-load bfp-fpc bfp-convert rounding-1 bfp-arith \
              bfp-3 bfp-compare comp-1 comp-2 exrl tmll tm stmg \
 	     ex clst mvc test_fork test_sig rounding-6 rxsbg popcnt \
 	     high-word traps \
@@ -22,7 +22,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
 	     vector_float add-z14 sub-z14 mul-z14 bic \
 	     misc3 vec2 vec2_float \
 	     dfp-1 dfp-2 dfp-3 dfp-4 dfpconv dfpext dfptest pfpo srnmt \
-	     fpext hfp
+	     hfp
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
@@ -39,8 +39,6 @@ EXTRA_DIST = \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 \
 	op00.stderr.exp op00.vgtest \
-	fpext.vgtest fpext.stderr.exp fpext.stdout.exp \
-	fpext_fail.vgtest fpext_fail.stderr.exp fpext_fail.stdout.exp \
 	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \
 	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
 	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest \

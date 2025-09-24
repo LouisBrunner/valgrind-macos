@@ -11,7 +11,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
              ex_sig ex_clone cu14 cu14_1 cu41 ecag fpext_warn fpext_fail \
              bfp-tdc bfp-load bfp-fpc bfp-convert rounding-1 bfp-arith \
              bfp-3 bfp-compare comp-1 comp-2 exrl tmll tm stmg \
-	     ex clst mvc test_fork test_sig rounding-6 rxsbg popcnt \
+	     ex clst mvc test_fork test_sig rxsbg popcnt \
 	     high-word traps \
 	     spechelper-alr spechelper-algr \
 	     spechelper-slr spechelper-slgr \

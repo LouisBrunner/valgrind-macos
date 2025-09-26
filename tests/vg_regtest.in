@@ -692,7 +692,7 @@ sub test_one_dir($$)
     if (256 == system("$tests_dir/tests/arch_test $dir"))  { return; }
     if (256 == system("$tests_dir/tests/os_test   $dir"))  { return; }
     if ($dir =~ /(\w+)-(\w+)/ &&
-        256 == system("sh $tests_dir/tests/platform_test $1 $2")) { return; }
+        256 == system("$tests_dir/tests/platform_test $1 $2")) { return; }
     if ($dir =~ "dSYM") { return; }
 
     chdir($dir) or die "Could not change into $dir\n";

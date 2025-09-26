@@ -53,15 +53,15 @@ To build and run all the regression tests, run "make [--quiet] regtest".
 
 To run a subset of the regression tests, execute:
 
-  perl tests/vg_regtest <name>
+  tests/vg_regtest <name>
 
 where <name> is a directory (all tests within will be run) or a single
 .vgtest test file, or the name of a program which has a like-named .vgtest
 file.  Eg:
 
-  perl tests/vg_regtest memcheck
-  perl tests/vg_regtest memcheck/tests/badfree.vgtest
-  perl tests/vg_regtest memcheck/tests/badfree
+  tests/vg_regtest memcheck
+  tests/vg_regtest memcheck/tests/badfree.vgtest
+  tests/vg_regtest memcheck/tests/badfree
 
 The details of each vgtest run are logged to individual "vgtest.log"
 files.  These are listed, and non-passing tests detailed, in the
@@ -114,22 +114,22 @@ To build and run all the performance tests, run "make [--quiet] perf".
 
 To run a subset of the performance suite, execute:
 
-  perl perf/vg_perf <name>
+  perf/vg_perf <name>
 
 where <name> is a directory (all tests within will be run) or a single
 .vgperf test file, or the name of a program which has a like-named .vgperf
 file.  Eg:
 
-  perl perf/vg_perf perf/
-  perl perf/vg_perf perf/bz2.vgperf
-  perl perf/vg_perf perf/bz2
+  perf/vg_perf perf/
+  perf/vg_perf perf/bz2.vgperf
+  perf/vg_perf perf/bz2
 
 To compare multiple versions of Valgrind, use the --vg= option multiple
 times.  For example, if you have two Valgrinds next to each other, one in
 trunk1/ and one in trunk2/, from within either trunk1/ or trunk2/ do this to
 compare them on all the performance tests:
 
-  perl perf/vg_perf --vg=../trunk1 --vg=../trunk2 perf/
+  perf/vg_perf --vg=../trunk1 --vg=../trunk2 perf/
 
 Writing regression tests
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -183,7 +183,7 @@ See tests/vg_regtest for a full description of all possible vgtest directives.
 
 The easiest way to generate the expected files is to run the test. Create empty
 files with touch (otherwise the test won't run) then run the test from the
-top directory using perl and vg_regtest script (as in the "Running the
+top directory using vg_regtest script (as in the "Running the
 regression tests" section. Then copy "tool/tests/newtest.stderr.out" to
 "tool/tests/newtest.stderr.exp". It is better to generate the .stdout.exp
 file directly from the testcase. You can do that by redirecting stdout to
@@ -402,16 +402,16 @@ When using self-hosting with an outer Callgrind tool, use '--pop-on-jump'
 (B) Regression tests in an outer/inner setup:
 
  To run all the regression tests with an outer memcheck, do :
-   perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
-                         --all
+   tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                    --all
 
  To run a specific regression tests with an outer memcheck, do:
-   perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
-                         none/tests/args.vgtest
+   tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                    none/tests/args.vgtest
 
  To run regression tests with another outer tool:
-   perl tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
-                         --outer-tool=helgrind --all
+   tests/vg_regtest --outer-valgrind=../outer/.../bin/valgrind \
+                    --outer-tool=helgrind --all
 
  --outer-args allows to give specific arguments to the outer tool,
  replacing the default one provided by vg_regtest.
@@ -470,20 +470,20 @@ the guest stacktrace that did the allocation.
 (C) Performance tests in an outer/inner setup:
 
  To run all the performance tests with an outer cachegrind, do :
-    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind perf
+    perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind perf
 
  To run a specific perf test (e.g. bz2) in this setup, do :
-    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind perf/bz2
+    perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind perf/bz2
 
  To run all the performance tests with an outer callgrind, do :
-    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
-                      --outer-tool=callgrind perf
+    perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
+                 --outer-tool=callgrind perf
 
 Note: --outer-valgrind must be a "make install"-ed valgrind.
 Do *not* use vg-in-place.
 
  To compare the performance of multiple Valgrind versions, do :
-    perl perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
+    perf/vg_perf --outer-valgrind=../outer/.../bin/valgrind \
       --outer-tool=callgrind \
       --vg=../inner_xxxx --vg=../inner_yyyy perf
   (where inner_xxxx and inner_yyyy are the toplevel directories of
@@ -498,7 +498,7 @@ output files will be created for each test:
  (where tt is the two letters abbreviation for the inner tool(s) run).
 
 For example, the command
-    perl perf/vg_perf \
+    perf/vg_perf \
       --outer-valgrind=../outer_trunk/install/bin/valgrind \
       --outer-tool=callgrind \
       --vg=../inner_tchain --vg=../inner_trunk perf/many-loss-records

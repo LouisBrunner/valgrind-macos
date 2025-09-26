@@ -5752,9 +5752,7 @@ AC_CONFIG_FILES([
    docs/Makefile 
    docs/xml/vg-entities.xml
    tests/Makefile 
-   tests/vg_regtest 
    perf/Makefile 
-   perf/vg_perf
    gdbserver_tests/Makefile
    gdbserver_tests/solaris/Makefile
    include/Makefile 
@@ -5860,6 +5858,10 @@ AC_CONFIG_FILES([tests/filter_stderr_basic],
                 [chmod +x tests/filter_stderr_basic])
 AC_CONFIG_FILES([tests/filter_discards],
                 [chmod +x tests/filter_discards])
+AC_CONFIG_FILES([tests/vg_regtest],
+                [chmod +x tests/vg_regtest])
+AC_CONFIG_FILES([perf/vg_perf],
+                [chmod +x perf/vg_perf])
 AC_CONFIG_FILES([memcheck/tests/filter_stderr],
                 [chmod +x memcheck/tests/filter_stderr])
 AC_CONFIG_FILES([memcheck/tests/filter_dw4],

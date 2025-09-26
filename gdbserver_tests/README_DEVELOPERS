@@ -15,7 +15,7 @@ or (to just run the gdbserver tests with another gdb):
   make check
   cd ..
   gdbserver_tests/make_local_links /path/to/another/gdb
-  perl tests/vg_regtest gdbserver_tests
+  tests/vg_regtest gdbserver_tests
 
 The minimum version to run the tests is gdb >= 6.5.
     Previous versions do not have the 'target remote |' command.  It
@@ -45,7 +45,7 @@ You are welcome to fix such bugs by enhancing filter_gdb.
 
 Alternatively, to report such problems, the best is to re-run
 the gdbserver tests the following way:
-   perl tests/vg_regtest --keep-unfiltered gdbserver_tests
+   tests/vg_regtest --keep-unfiltered gdbserver_tests
 
 Then file a bug in bugzilla, giving the following information:
   output of

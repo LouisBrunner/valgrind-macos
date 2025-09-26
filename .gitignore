@@ -2184,12 +2184,12 @@
 /none/tests/s390x/ecag
 /none/tests/s390x/fpext_warn
 /none/tests/s390x/fpext_fail
-/none/tests/s390x/rounding-1
+/none/tests/s390x/bfp-306054
 /none/tests/s390x/bfp-arith
 /none/tests/s390x/bfp-load
 /none/tests/s390x/bfp-fpc
 /none/tests/s390x/bfp-tdc
-/none/tests/s390x/bfp-3
+/none/tests/s390x/bfp-muldiv
 /none/tests/s390x/bfp-compare
 /none/tests/s390x/bfp-convert
 /none/tests/s390x/comp-1

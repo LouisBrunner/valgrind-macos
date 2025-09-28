@@ -561,6 +561,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
       reg_mod.r_rip = shared64->invoke_gdbserver;
 #elif defined(VGA_arm64)
       reg_mod.x[0] = check;
+      sp &= ~0xf; // keep the stack aligned on 16 bytes ...
       reg_mod.sp = sp;
       reg_mod.elr = shared64->invoke_gdbserver;
       /* put NULL return address in Link Register */

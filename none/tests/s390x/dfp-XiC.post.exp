@@ -1,0 +1,36 @@
+
+============================================================
+DFP LOAD LENGTHENED
+============================================================
+Testing:  ldetr 0,0,8
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-invalid-operation-exception
+  control (XiC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-invalid-operation exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  lxdtr 0,0,8
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-invalid-operation-exception
+  control (XiC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-invalid-operation exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+DFP LOAD ROUNDED
+============================================================
+Testing:  ledtr 0,0,0,8
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-invalid-operation-exception
+  control (XiC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-invalid-operation exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  ldxtr 0,0,0,8
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-invalid-operation-exception
+  control (XiC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-invalid-operation exceptions will not be suppressed.
+   at 0x........: (below main)
+

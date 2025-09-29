@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr bfp-emit.pl
+dist_noinst_SCRIPTS = filter_stderr bfp-emit.pl emwarn-gen.pl
 
 INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
              and or xor insert div srst fold_And16 flogr sub_EI add_EI \
@@ -44,6 +44,7 @@ EXTRA_DIST = \
 	bfp-load.vgtest bfp-load.stdout.exp bfp-load.stderr.exp \
 	bfp-tdc.vgtest bfp-tdc.stdout.exp bfp-tdc.stderr.exp \
 	bfp-emit.vgtest bfp-emit.stderr.exp bfp-emit.post.exp \
+	bfp-XxC.vgtest bfp-XxC.stderr.exp bfp-XxC.post.exp \
 	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 \
@@ -57,6 +58,8 @@ EXTRA_DIST = \
 	dfptest.stderr.exp dfptest.stdout.exp dfptest.vgtest \
 	dfpext.stderr.exp dfpext.stdout.exp dfpext.vgtest \
 	dfpconv.stderr.exp dfpconv.stdout.exp dfpconv.vgtest \
+	dfp-XxC.vgtest dfp-XxC.stderr.exp dfp-XxC.post.exp \
+	dfp-XiC.vgtest dfp-XiC.stderr.exp dfp-XiC.post.exp \
 	srnmt.stderr.exp srnmt.stdout.exp srnmt.vgtest \
 	stfle.stdout.exp-z16 \
 	pfpo.stderr.exp pfpo.stdout.exp pfpo.vgtest

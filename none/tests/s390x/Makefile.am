@@ -32,7 +32,8 @@ check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
 		 op00
 
-noinst_HEADERS = vector.h
+noinst_HEADERS = add.h and.h div.h dfp_utils.h insert.h mul.h opcodes.h \
+	or.h rounding.h sub.h svc.h table.h test.h vector.h xor.h
 
 EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
@@ -49,20 +50,9 @@ EXTRA_DIST = \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 \
 	op00.stderr.exp op00.vgtest \
-	test.h opcodes.h add.h  and.h  div.h  insert.h dfp_utils.h \
-	mul.h  or.h  sub.h  xor.h table.h svc.h rounding.h \
-	dfp-1.stderr.exp dfp-1.stdout.exp dfp-1.vgtest \
-	dfp-2.stderr.exp dfp-2.stdout.exp dfp-2.vgtest \
-	dfp-3.stderr.exp dfp-3.stdout.exp dfp-3.vgtest \
-	dfp-4.stderr.exp dfp-4.stdout.exp dfp-4.vgtest \
-	dfptest.stderr.exp dfptest.stdout.exp dfptest.vgtest \
-	dfpext.stderr.exp dfpext.stdout.exp dfpext.vgtest \
-	dfpconv.stderr.exp dfpconv.stdout.exp dfpconv.vgtest \
 	dfp-XxC.vgtest dfp-XxC.stderr.exp dfp-XxC.post.exp \
 	dfp-XiC.vgtest dfp-XiC.stderr.exp dfp-XiC.post.exp \
-	srnmt.stderr.exp srnmt.stdout.exp srnmt.vgtest \
-	stfle.stdout.exp-z16 \
-	pfpo.stderr.exp pfpo.stdout.exp pfpo.vgtest
+	stfle.stdout.exp-z16
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

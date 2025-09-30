@@ -434,6 +434,18 @@ typedef
       Iop_Or8,   Iop_Or16,   Iop_Or32,   Iop_Or64,
       Iop_And8,  Iop_And16,  Iop_And32,  Iop_And64,
       Iop_Xor8,  Iop_Xor16,  Iop_Xor32,  Iop_Xor64,
+      /* Bitwise shift ops
+         Semantics as per C standard:
+         If the value of the right operand is negative or is greater
+         than or equal to the width of the left operand, the behaviour is
+         undefined.
+         For Shl: The result of E1 << E2 is E1 left-shifted E2 bit positions.
+         Vacated bits are filled with zeroes.
+         For Shr: The result of E1 >> E2 is E1 right-shifted E2 bit positions.
+         Vacated bits are filled with zeroes.
+         For Sar: The result of E1 >> E2 is E1 right-shifted E2 bit positions.
+         Vacated bits are filled with the most significant bit of E1 prior
+         to shifting. */
       Iop_Shl8,  Iop_Shl16,  Iop_Shl32,  Iop_Shl64,
       Iop_Shr8,  Iop_Shr16,  Iop_Shr32,  Iop_Shr64,
       Iop_Sar8,  Iop_Sar16,  Iop_Sar32,  Iop_Sar64,

@@ -92,7 +92,8 @@ dist_noinst_SCRIPTS = \
 	filter_stderr \
 	filter_timestamp \
 	filter_xml \
-	allexec_prepare_prereq
+	allexec_prepare_prereq \
+	filter_sort
 
 noinst_HEADERS = fdleak.h
 

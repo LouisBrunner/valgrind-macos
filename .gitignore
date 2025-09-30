@@ -1916,6 +1916,7 @@
 /none/tests/linux/open_client
 /none/tests/linux/pthread-stack
 /none/tests/linux/stack-overflow
+/none/tests/linux/getdents_filter
 
 # /none/tests/mips32/
 /none/tests/mips32/Makefile

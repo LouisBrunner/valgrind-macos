@@ -1,2 +1,3 @@
 prog: getdents_filter
 vgopts: -q
+stdout_filter: ../filter_sort

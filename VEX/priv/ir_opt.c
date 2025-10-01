@@ -2623,13 +2623,6 @@ static IRExpr* fold_Expr_WRK ( IRExpr** env, IRExpr* e )
                   e2 = e->Iex.Binop.arg1;
                   break;
                }
-               /* Shl8/Shl16/Shl32/Shl64(0,x) ==> 0
-                  Shr8/Shr16/Shr32/Shr64(0,x) ==> 0
-                  Sar8/Sar16/Sar32/Sar64(0,x) ==> 0 */
-               if (isZeroU(e->Iex.Binop.arg1)) {
-                  e2 = e->Iex.Binop.arg1;
-                  break;
-               }
                break;
 
             case Iop_Or1:

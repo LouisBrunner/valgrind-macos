@@ -1,4 +1,4 @@
-include $(top_srcdir)/Makefile.all.am
+include $(top_srcdir)/Makefile.tool-tests.am
 
 EXTRA_DIST = disasm-test.vgtest disasm-test.stderr.exp \
              disasm-test.post.exp

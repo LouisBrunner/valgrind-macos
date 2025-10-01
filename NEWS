@@ -985,6 +985,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 451626  Syscall param bpf(attr->raw_tracepoint.name) points to unaddressable byte(s)
 451827  [ppc64le] VEX temporary storage exhausted with several vbpermq instructions
 451843  valgrind fails to start on a FreeBSD system which enforces W^X
+506211  Constant folding improvements
 509157  riscv64: Shift instructions can behave wrong
 
 To see details of a given bug, visit

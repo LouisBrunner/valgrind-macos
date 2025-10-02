@@ -20,10 +20,7 @@ LTP_FILTERS = \
 	filters/prctl10 \
 	filters/select03
 
-LTP_PATCHES = \
-	ltp-patches/0001-Make-sure-32-bit-powerpc-syscall-defs-don-t-leak-to-.patch \
-	ltp-patches/0002-Introduce-LTP_QUIET-env-var.patch \
-	ltp-patches/0003-mmap04-Make-sure-the-scanf-address-format-is-at-leas.patch
+LTP_PATCHES =
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
@@ -173,8 +170,8 @@ endif
 endif
 
 # Linux Test Project
-LTP_VERSION=20250530
-LTP_SHA256_SUM=27586ba78eac1e40cd422add2842f1ad70f09fea55da3bd6a25e10feb786d4f2
+LTP_VERSION=20250930
+LTP_SHA256_SUM=048fa4d69ddbe8a94aa15da9bdc85713ab07a0abbc3de2b8bdd9757644aef1e4
 LTP_TAR_NAME=ltp-full-$(LTP_VERSION).tar.xz
 LTP_URL=https://github.com/linux-test-project/ltp/releases/download/$(LTP_VERSION)/$(LTP_TAR_NAME)
 LTP_TAR=$(AUX_CHECK_DIR)/$(LTP_TAR_NAME)

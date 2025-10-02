@@ -147,6 +147,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509567  unhandled amd64-linux syscall: 443 (quotactl_fd)
 509642  Add missing ppc64-linux syswraps
 509643  Add missing s390x-linux syswraps
+510169  Update the LTP version in valgrind testsuite to 20250930
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

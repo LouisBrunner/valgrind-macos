@@ -3994,6 +3994,8 @@ PRE(sys_getdents)
    PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
 }
 
+#if !defined(VGO_freebsd) // Darwin as well?
+
 /* Check if the given file descriptor points to a /proc/PID/fd or /proc/PID/fdinfo directory.
    Returns True if it's a directory we should filter Valgrind FDs from. */
 static Bool is_proc_fd_directory(Int fd)
@@ -4096,6 +4098,8 @@ static SizeT filter_dirent64_entries(struct vki_dirent64 *dirp, SizeT orig_size)
    return new_size;
 }
 
+#endif
+
 /* Make sure we really need the proc filtering using (32bit) getdents,
    which not every linux arch implements.  */
 #if defined(VGO_linux) && defined(__NR_getdents)
@@ -4130,6 +4134,8 @@ static SizeT filter_valgrind_fds_from_getdents_with_refill(Int fd, struct vki_di
 }
 #endif /* defined(VGO_linux) && defined(__NR_getdents) */
 
+#if !defined(VGO_freebsd) // Darwin as well?
+
 /* Filter out Valgrind's internal file descriptors from getdents64 results with refill capability.
    Same logic as getdents version but for 64-bit dirent structures.
    Returns filtered size on success, or -1 if retry syscall failed. */
@@ -4159,6 +4165,8 @@ static SizeT filter_valgrind_fds_from_getdents64_with_refill(Int fd, struct vki_
    return new_size;
 }
 
+#endif
+
 POST(sys_getdents)
 {
    vg_assert(SUCCESS);
@@ -4185,6 +4193,8 @@ POST(sys_getdents)
       POST_MEM_WRITE( ARG2, result_size );
    }
 }
+
+#if !defined(VGO_freebsd)
 
 PRE(sys_getdents64)
 {
@@ -4218,6 +4228,8 @@ POST(sys_getdents64)
       POST_MEM_WRITE( ARG2, result_size );
    }
 }
+
+#endif
 
 PRE(sys_getgroups)
 {

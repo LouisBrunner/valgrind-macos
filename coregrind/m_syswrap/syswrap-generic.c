@@ -3994,7 +3994,7 @@ PRE(sys_getdents)
    PRE_MEM_WRITE( "getdents(dirp)", ARG2, ARG3 );
 }
 
-#if !defined(VGO_freebsd) // Darwin as well?
+#if defined(VGO_linux) || defined(VGO_solaris)
 
 /* Check if the given file descriptor points to a /proc/PID/fd or /proc/PID/fdinfo directory.
    Returns True if it's a directory we should filter Valgrind FDs from. */
@@ -4049,7 +4049,7 @@ static Bool should_keep_fd_entry(const HChar *name)
 
 /* Make sure we really need the proc filtering using (32bit) getdents,
    which not every linux arch implements.  */
-#if defined(VGO_linux) && defined(__NR_getdents)
+#if defined(__NR_getdents)
 
 /* Filter and compact dirent entries */
 static SizeT filter_dirent_entries(struct vki_dirent *dirp, SizeT orig_size)
@@ -4073,7 +4073,7 @@ static SizeT filter_dirent_entries(struct vki_dirent *dirp, SizeT orig_size)
 
    return new_size;
 }
-#endif /* defined(VGO_linux) && defined(__NR_getdents) */
+#endif /* defined(__NR_getdents) */
 
 /* Filter and compact dirent64 entries */
 static SizeT filter_dirent64_entries(struct vki_dirent64 *dirp, SizeT orig_size)
@@ -4098,11 +4098,9 @@ static SizeT filter_dirent64_entries(struct vki_dirent64 *dirp, SizeT orig_size)
    return new_size;
 }
 
-#endif
-
 /* Make sure we really need the proc filtering using (32bit) getdents,
    which not every linux arch implements.  */
-#if defined(VGO_linux) && defined(__NR_getdents)
+#if defined(__NR_getdents)
 
 /* Filter out Valgrind's internal file descriptors from getdents results with refill capability.
    When entries are filtered out, attempts to read more entries to avoid empty results.
@@ -4132,9 +4130,7 @@ static SizeT filter_valgrind_fds_from_getdents_with_refill(Int fd, struct vki_di
 
    return new_size;
 }
-#endif /* defined(VGO_linux) && defined(__NR_getdents) */
-
-#if !defined(VGO_freebsd) // Darwin as well?
+#endif /* defined(__NR_getdents) */
 
 /* Filter out Valgrind's internal file descriptors from getdents64 results with refill capability.
    Same logic as getdents version but for 64-bit dirent structures.
@@ -4165,7 +4161,7 @@ static SizeT filter_valgrind_fds_from_getdents64_with_refill(Int fd, struct vki_
    return new_size;
 }
 
-#endif
+#endif /* defined(VGO_linux) || defined(VGO_solaris) */
 
 POST(sys_getdents)
 {
@@ -4175,7 +4171,7 @@ POST(sys_getdents)
       
       /* Make sure we really need the proc filtering using (32bit) getdents,
          which not every linux arch implements.  */
-#if defined(VGO_linux) && defined(__NR_getdents)
+#if (defined(VGO_linux) || defined(VGO_solaris)) && defined(__NR_getdents)
 
       /* Only filter Valgrind FDs when listing /proc/PID/fd or /proc/PID/fdinfo directories */
       if (is_proc_fd_directory(ARG1)) {
@@ -4188,13 +4184,13 @@ POST(sys_getdents)
          if (result_size != RES)
             SET_STATUS_Success(result_size);
       }
-#endif /* defined(VGO_linux) && defined(__NR_getdents) */
+#endif /* (defined(VGO_linux) || defined(VGO_solaris)) && defined(__NR_getdents) */
       
       POST_MEM_WRITE( ARG2, result_size );
    }
 }
 
-#if !defined(VGO_freebsd)
+#if defined(__NR_getdents64)
 
 PRE(sys_getdents64)
 {
@@ -4229,7 +4225,7 @@ POST(sys_getdents64)
    }
 }
 
-#endif
+#endif /* defined(__NR_getdents64) */
 
 PRE(sys_getgroups)
 {

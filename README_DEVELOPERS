@@ -37,7 +37,7 @@ will also attempt to build the documentation.
 If you only want to test whether the generated tarball is complete and runs
 regression tests successfully, building documentation is not needed.
 
-  make dist BUILD_ALL_DOCS=no
+  make dist BUILD_DOCS=none
 
 If you insist on building documentation some embarrassing instructions
 can be found in docs/README.

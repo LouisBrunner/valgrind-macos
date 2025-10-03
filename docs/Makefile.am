@@ -4,10 +4,26 @@
 ## tools to do so is impractical / too difficult
 ##-------------------------------------------------------------
 
-# Comment out the next line to skip building print docs.  The default
-# is not to skip building print docs.  Note, after changing it
-# you need to re-run autogen.sh and configure to make it take effect.
-BUILD_ALL_DOCS=yes
+# Building documentation is a pain. It takes longish and requires certain
+# tools you may not have installed.
+# The variable BUILD_DOCS allows you to control what documentation gets
+# built:
+#
+#  BUILD_DOCS=all     builds all documentation
+#  BUILD_DOCS=html    builds HTML docs but skips building PDFs
+#  BUILD_DOCS=none    does not build any documentation
+#
+# Use it on the command line. E.g.:  make dist BUILD_DOCS=none
+#
+ifndef BUILD_ALL_DOCS
+   BUILD_DOCS ?= all
+ else
+   ifeq "$(BUILD_ALL_DOCS)" "yes"
+     BUILD_DOCS ?= all
+   else
+     BUILD_DOCS ?= html
+   endif
+ endif
 
 # Whether to run xmlto pdf --with-fop
 # This is de fault, set to empty to use the default fo to pdf
@@ -281,7 +297,7 @@ install-data-hook:
 			cp $$f $(DESTDIR)$(mandir)/man1; \
 		fi \
 	done
- ifeq ($(BUILD_ALL_DOCS),yes)
+ ifeq ($(BUILD_DOCS),all)
 	set -e; \
 	if test -r index.pdf ; then \
 		mkdir -p $(DESTDIR)$(datadir)/doc/valgrind; \
@@ -297,18 +313,23 @@ install-data-hook:
 # This is done at 'make dist' time.  It builds the html docs, print
 # docs and man pages and copies them into the docs/ directory in the
 # tarball.
- ifeq ($(BUILD_ALL_DOCS),yes)
+ ifeq ($(BUILD_DOCS),none)
+dist-hook:
+
+ else
+   ifeq ($(BUILD_DOCS),all)
 dist-hook: FAQ.txt html-docs man-pages print-docs
 	cp -r html $(distdir)
 	cp FAQ.txt $(distdir)/..
 	cp *.1 $(distdir)
 	cp print/index.pdf $(distdir)
 	cp print/index.ps $(distdir)
- else
+   else
 dist-hook: FAQ.txt html-docs man-pages
 	cp -r html $(distdir)
 	cp FAQ.txt $(distdir)/..
 	cp *.1 $(distdir)
+   endif
  endif
 
 distclean-local:

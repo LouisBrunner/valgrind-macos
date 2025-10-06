@@ -7154,7 +7154,7 @@ PRE(sys_setcred)
 {
    PRINT("sys_setcred(%" FMT_REGWORD "u, %#" FMT_REGWORD "x, %" FMT_REGWORD "u)", ARG1, ARG2, ARG3);
    PRE_REG_READ3(int, "setcred", u_int, flags, const struct setcred*, wcred, size_t, size);
-   PRE_MEM_READ("setcred(wcred)", ARG2, sizeof(struct vki_setcred));
+   PRE_MEM_READ("setcred(wcred)", ARG2, ARG3);
 }
 
 // SYS_exterrctl 592

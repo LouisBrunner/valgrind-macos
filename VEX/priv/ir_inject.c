@@ -27,6 +27,10 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* !!! When running valgrind on applications that use IR injection
+   !!! --vex-guest-chase=no should be given on the command line. This
+   !!! avoids that vex_inject_ir is called speculatively.
+*/
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"

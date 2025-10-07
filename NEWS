@@ -987,6 +987,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 451843  valgrind fails to start on a FreeBSD system which enforces W^X
 495483  Control building documentation via BUILD_DOCS
 506211  Constant folding improvements
+506453  Unexpected behaviour with IR injection and vex-guest-chase=yes
 509157  riscv64: Shift instructions can behave wrong
 
 To see details of a given bug, visit

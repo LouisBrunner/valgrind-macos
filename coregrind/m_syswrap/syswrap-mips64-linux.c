@@ -215,8 +215,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
    file, but that requires even more macro magic. */
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
-DECL_TEMPLATE (mips_linux, sys_swapon);
-DECL_TEMPLATE (mips_linux, sys_swapoff);
 DECL_TEMPLATE (mips_linux, sys_sethostname);
 DECL_TEMPLATE (mips_linux, sys_reboot);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
@@ -234,18 +232,6 @@ PRE(sys_sched_rr_get_interval)
    PRE_REG_READ2(long, "sched_rr_get_interval", vki_pid_t, pid,
                  struct timespec *, timer);
    *flags |= SfMayBlock;
-}
-
-PRE(sys_swapon)
-{
-   PRINT("sys_swapon ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )", ARG1, ARG2);
-   PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
-}
-
-PRE(sys_swapoff)
-{
-   PRINT("sys_swapoff ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ1(long, "swapoff", const void *, path);
 }
 
 /* Very much MIPS specific */
@@ -648,8 +634,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_mount, sys_mount),
    LINX_ (__NR_mount_setattr, sys_mount_setattr),
    LINX_ (__NR_umount2, sys_umount),
-   PLAX_ (__NR_swapon, sys_swapon),
-   PLAX_ (__NR_swapoff, sys_swapoff),
+   LINX_ (__NR_swapon, sys_swapon),
+   LINX_ (__NR_swapoff, sys_swapoff),
    PLAX_ (__NR_reboot, sys_reboot),
    PLAX_ (__NR_sethostname, sys_sethostname),
    LINX_ (__NR_setdomainname, sys_setdomainname),

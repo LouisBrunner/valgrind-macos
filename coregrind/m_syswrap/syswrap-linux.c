@@ -2133,6 +2133,19 @@ POST(sys_ppoll_time64)
    ppoll_post_helper (tid, arrghs, status);
 }
 
+PRE(sys_swapon)
+{
+   PRINT("sys_swapon ( %#lx, %#lx )", ARG1, ARG2);
+   PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
+   PRE_MEM_RASCIIZ( "swapon(path)", ARG1);
+}
+
+PRE(sys_swapoff)
+{
+   PRINT("sys_swapoff ( %#lx )", ARG1);
+   PRE_REG_READ1(long, "swapoff", const void *, path);
+   PRE_MEM_RASCIIZ( "swapoff(path)", ARG1);
+}
 
 /* ---------------------------------------------------------------------
    epoll_* wrappers

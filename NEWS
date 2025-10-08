@@ -72,6 +72,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 309554  Wrap syscall remap_file_pages (216)
 331311  Valgrind shows open files in /proc/self/fd that don't work for the process
 338803  Handling of dwz debug alt files or cross-CU is broken
+368791  Handle swapon and swapoff syscalls as linux generic
 369030  Wrap linux syscall: 171 (setdomainname)
 388526  Inconsistent severity in message text: "WARNING: Serious error"
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported

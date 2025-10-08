@@ -383,8 +383,6 @@ DECL_TEMPLATE (mips_linux, sys_ptrace);
 DECL_TEMPLATE (mips_linux, sys_unshare);
 DECL_TEMPLATE (mips_linux, sys_reboot);
 DECL_TEMPLATE (mips_linux, sys_sethostname);
-DECL_TEMPLATE (mips_linux, sys_swapon);
-DECL_TEMPLATE (mips_linux, sys_swapoff);
 
 PRE(sys_mmap2)
 {
@@ -517,18 +515,6 @@ PRE(sys_sethostname)
 {
    PRINT ("sys_sethostname ( %#lx, %ld )", ARG1, SARG2);
    PRE_REG_READ2 (long, "sethostname", const void *, name, int, len);
-}
-
-PRE(sys_swapon)
-{
-   PRINT("sys_swapon ( %#lx, %#lx )", ARG1, ARG2);
-   PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
-}
-
-PRE(sys_swapoff)
-{
-   PRINT("sys_swapoff ( %#lx )", ARG1);
-   PRE_REG_READ1(long, "swapoff", const void *, path);
 }
 
 #undef PRE
@@ -765,8 +751,8 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_execve,                 sys_execve),
    PLAX_ (__NR_mmap2,                  sys_mmap2),
    LINX_ (__NR_fadvise64_64,           sys_fadvise64_64),
-   PLAX_ (__NR_swapon,                 sys_swapon),
-   PLAX_ (__NR_swapoff,                sys_swapoff),
+   LINX_ (__NR_swapon,                 sys_swapon),
+   LINX_ (__NR_swapoff,                sys_swapoff),
    GENXY (__NR_mprotect,               sys_mprotect),
    GENX_ (__NR_msync,                  sys_msync),
    GENX_ (__NR_mlock,                  sys_mlock),

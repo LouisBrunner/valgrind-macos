@@ -288,6 +288,9 @@ DECL_TEMPLATE(linux, sys_init_module);
 DECL_TEMPLATE(linux, sys_finit_module);
 DECL_TEMPLATE(linux, sys_delete_module);
 
+DECL_TEMPLATE(linux, sys_swapon);
+DECL_TEMPLATE(linux, sys_swapoff);
+
 // Linux-specific (oprofile-related)
 DECL_TEMPLATE(linux, sys_lookup_dcookie);        // (*/32/64) L
 

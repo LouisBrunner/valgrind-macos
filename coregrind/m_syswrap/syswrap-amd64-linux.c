@@ -670,8 +670,8 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_mount,             sys_mount),          // 165
    LINX_(__NR_umount2,           sys_umount),         // 166 
-   //   (__NR_swapon,            sys_swapon),         // 167 
-   //   (__NR_swapoff,           sys_swapoff),        // 168 
+   LINX_(__NR_swapon,            sys_swapon),         // 167 
+   LINX_(__NR_swapoff,           sys_swapoff),        // 168 
    //   (__NR_reboot,            sys_reboot),         // 169 
 
    GENX_(__NR_sethostname,       sys_sethostname),    // 170 

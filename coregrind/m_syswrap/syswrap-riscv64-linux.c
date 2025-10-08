@@ -530,6 +530,8 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_execve, sys_execve),                                 /* 221 */
    PLAX_(__NR_mmap, sys_mmap),                                     /* 222 */
    GENX_(__NR_fadvise64, sys_ni_syscall),                          /* 223 */
+   LINX_(__NR_swapon, sys_swapon),                                 /* 224 */
+   LINX_(__NR_swapoff, sys_swapoff),                               /* 225 */
    GENXY(__NR_mprotect, sys_mprotect),                             /* 226 */
    GENX_(__NR_msync, sys_msync),                                   /* 227 */
    GENX_(__NR_mlock, sys_mlock),                                   /* 228 */

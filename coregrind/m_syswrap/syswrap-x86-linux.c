@@ -1261,7 +1261,7 @@ static SyscallTableEntry syscall_table[] = {
 //zz 
    GENXY(__NR_readlink,          sys_readlink),       // 85
 //zz    //   (__NR_uselib,            sys_uselib),         // 86 */Linux
-//zz    //   (__NR_swapon,            sys_swapon),         // 87 */Linux
+   LINX_(__NR_swapon,            sys_swapon),         // 87 */Linux
 //zz    //   (__NR_reboot,            sys_reboot),         // 88 */Linux
 //zz    //   (__NR_readdir,           old_readdir),        // 89 -- superseded
 //zz 
@@ -1295,7 +1295,7 @@ static SyscallTableEntry syscall_table[] = {
    PLAXY(__NR_vm86old,           sys_vm86old),        // 113 x86/Linux-only
    GENXY(__NR_wait4,             sys_wait4),          // 114
 //zz 
-//zz    //   (__NR_swapoff,           sys_swapoff),        // 115 */Linux 
+   LINX_(__NR_swapoff,           sys_swapoff),        // 115 */Linux 
    LINXY(__NR_sysinfo,           sys_sysinfo),        // 116
    LINXY(__NR_ipc,               sys_ipc),            // 117
    GENX_(__NR_fsync,             sys_fsync),          // 118

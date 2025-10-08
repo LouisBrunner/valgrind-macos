@@ -852,7 +852,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..    //   (__NR_oldlstat,          sys_lstat),             // 84
    GENXY (__NR_readlink,               sys_readlink),                // 85
    //..    //   (__NR_uselib,            sys_uselib),            // 86
-   //..    //   (__NR_swapon,            sys_swapon),            // 87
+   LINX_ (__NR_swapon,                 sys_swapon),                  // 87
    //..    //   (__NR_reboot,            sys_reboot),            // 88
    //..    //   (__NR_readdir,           old_readdir),           // 89
    PLAX_ (__NR_mmap,                   sys_mmap),                    // 90
@@ -880,7 +880,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //..    GENX_(__NR_idle,              sys_ni_syscall),        // 112
    //..    //   (__NR_vm86old,           sys_vm86old),           // 113
    GENXY (__NR_wait4,                  sys_wait4),                   // 114
-   //..    //   (__NR_swapoff,           sys_swapoff),           // 115
+   LINX_ (__NR_swapoff,                sys_swapoff),                 // 115
    LINXY (__NR_sysinfo,                sys_sysinfo),                 // 116
    LINXY (__NR_ipc,                    sys_ipc),                     // 117
    GENX_ (__NR_fsync,                  sys_fsync),                   // 118

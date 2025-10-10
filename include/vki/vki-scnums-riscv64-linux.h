@@ -254,6 +254,8 @@
 #define __NR_execve 221
 #define __NR3264_mmap 222
 #define __NR3264_fadvise64 223
+#define __NR_swapon 224
+#define __NR_swapoff 225
 #define __NR_mprotect 226
 #define __NR_msync 227
 #define __NR_mlock 228

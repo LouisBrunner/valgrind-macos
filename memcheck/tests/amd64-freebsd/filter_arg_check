@@ -18,5 +18,5 @@
 grep "SYSCALL.*sendfile" |
 sed 's/==.*//' |
 awk '{l=length($9);$9="0x"substr($9, l-2, l);print}' |
-sed -E 's/\[[0-9]{5}/[xxxxx/'
+sed -E 's/\[[0-9]+/[xxxxx/'
 

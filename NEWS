@@ -16,6 +16,21 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+FreeBSD 15 (which is expected to ship in December 2025, after
+Valgrind 3.26 is released) contains a change to ptrace that affects
+use of Valgrind with vgdb. This impacts the mechanism that vgdb
+uses to interrupt Valgrind if all threads are blocked and you want
+to get back to the gdb prompt by hitting ctrl-c. This mechanism
+is no longer reliable. On arm64 Valgrind will crash with an assert.
+On amd64 syscalls may give spurious and incorrect return codes.
+
+There is a workaround. Run the following command (as root).
+
+ sysctl debug.ptrace_attach_transparent=0
+
+ See also
+ https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=290008
+
 * ==================== TOOL CHANGES ===================
 
 * There is a new utility script, "vgstack". It has two

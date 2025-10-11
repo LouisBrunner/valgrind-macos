@@ -334,10 +334,6 @@ static const struct auxv *find_auxv(const UWord* sp)
    return (const struct auxv *)sp;
 }
 
-/*
- * @todo PJF Make this multi-platform
- */
-
 /* ----------------------------------------------------------------
 
    This sets up the client's initial stack, containing the args,

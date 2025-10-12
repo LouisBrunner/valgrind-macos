@@ -2,6 +2,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = \
+	filter_scalar \
 	filter_scalar_exit_group \
 	filter_stderr
 

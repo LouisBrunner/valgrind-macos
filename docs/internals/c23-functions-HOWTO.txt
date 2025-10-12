@@ -1,0 +1,63 @@
+How to test new C23 functions
+-----------------------------
+
+C23 adds some new 'free' functions, 'free_sized' which offers the possibility
+of faster deallocation by providing the size of the allocation and
+'free_aligned_sized', the same with the allocation alignment thrown in.
+Here is roughly the draft that corresponds to the final standard
+https://open-std.org/JTC1/SC22/WG14/www/docs/n3220.pdf.
+
+Memcheck does have support for these functions (and detects errors
+when there is a mismatch between the size or alignment at allocation
+and at deallocation). It seems as though library implementers are
+being rather slow in providing implementations of these functions.
+At the time of writing (Sept 2025) only tcmalloc seems to have done so.
+snmalloc (not tested) does refer to free_sized in its source.
+
+Building tcmalloc
+-----------------
+There are 2 versions of tcmalloc (not counting the one used internally
+by Google). One is part of Google perftools (pperf package on Fedora,
+google-perftools package on FreeBSD). That's not the one that we want
+(it's more oriented to some performance with options for performance
+profiling of CPU and heap). The one that we want is just tcmalloc.
+https://github.com/google/tcmalloc
+
+You will need to clone the above repo. tcmalloc uses bazel as its
+build failure system. Helpfully you can't even build a usable
+tcmalloc library out of the box. I had to apply this patch
+
+diff --git a/tcmalloc/BUILD b/tcmalloc/BUILD
+index 6698b88c..69b2f531 100644
+--- a/tcmalloc/BUILD
++++ b/tcmalloc/BUILD
+@@ -1578,3 +1578,11 @@ cc_library(
+     ],
+     deps = ["@com_google_absl//absl/base:core_headers"],
+ )
++
++cc_binary(
++    name = "libtcmalloc.so",
++    deps = [":tcmalloc"],
++    linkshared = 1,
++    copts = TCMALLOC_DEFAULT_COPTS,
++)
++
+
+(found in the GH issues) and then run
+
+bazel build //tcmalloc:libtcmalloc.so
+
+Building a test executable
+--------------------------
+
+Assuming that you cloned tcmalloc in your home directory and that
+you have a test harness called test.cpp you should be able to build
+it with tcmalloc using
+
+ g++ -g -o test  test.cpp -I ${HOME}/tcmalloc/tcmalloc \
+    -I ${HOME}/tcmalloc/bazel-tcmalloc/external/abseil-cpp+/ \
+    -I tcmalloc/ -L ${HOME}/tcmalloc/bazel-bin/tcmalloc/ \
+    -ltcmalloc -Wl,-rpath,${HOME}/tcmalloc/bazel-bin/tcmalloc
+
+ I haven't tried to use LD_PRELOAD to simply replace libc.so for allocation.

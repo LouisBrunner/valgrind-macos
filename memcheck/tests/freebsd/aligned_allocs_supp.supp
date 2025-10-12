@@ -14,7 +14,7 @@
 
 {
    aligned_alloc bad size
-   Memcheck:BadSize
+   Memcheck:UnsafeZeroSize
    fun:aligned_alloc
    fun:main
 }

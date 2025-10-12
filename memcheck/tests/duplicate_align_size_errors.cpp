@@ -6,9 +6,7 @@
 
 int main()
 {
-    std::align_val_t misalign(static_cast<std::align_val_t>(63U));
     std::align_val_t zeroalign(static_cast<std::align_val_t>(0U));
-    std::align_val_t onealign(static_cast<std::align_val_t>(1U));
     std::align_val_t align(static_cast<std::align_val_t>(64U));
     std::align_val_t alignx2(static_cast<std::align_val_t>(128U));
     std::size_t size(32);
@@ -31,7 +29,7 @@ int main()
           mem = nullptr;
        }
 
-       // Err.BadSize
+       // Err.UnsafeZeroSize
        mem  = aligned_alloc(64U, 0U);
        if (mem)
        {

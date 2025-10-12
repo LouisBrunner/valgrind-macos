@@ -55,7 +55,7 @@ if HAVE_SHA3
   check_PROGRAMS += sha512_v82
 endif
 
-if HAVE_CXX17
+if HAVE_CONSTEXPR_IF
   check_PROGRAMS += fcvta_s_u frinta_frintn
 endif
 

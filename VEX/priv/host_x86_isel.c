@@ -1311,6 +1311,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
             HReg dst = newVRegI(env);
             HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
             addInstr(env, X86Instr_Bsfr32(True,src,dst));
+            /* Patch the result in case there was a 0 operand. */
+            IRExpr *cond = unop(Iop_CmpNEZ32, e->Iex.Unop.arg);
+            X86CondCode cc = iselCondCode(env, cond);
+            X86RM *ifz = iselIntExpr_RM(env, IRExpr_Const(IRConst_U32(32)));
+            addInstr(env, X86Instr_CMov32(cc ^ 1, ifz, dst));
             return dst;
          }
          case Iop_ClzNat32: {
@@ -1325,6 +1330,11 @@ static HReg iselIntExpr_R_wrk ( ISelEnv* env, const IRExpr* e )
                                           X86RMI_Imm(31), dst));
             addInstr(env, X86Instr_Alu32R(Xalu_SUB,
                                           X86RMI_Reg(tmp), dst));
+            /* Patch the result in case there was a 0 operand. */
+            IRExpr *cond = unop(Iop_CmpNEZ32, e->Iex.Unop.arg);
+            X86CondCode cc = iselCondCode(env, cond);
+            X86RM *ifz = iselIntExpr_RM(env, IRExpr_Const(IRConst_U32(32)));
+            addInstr(env, X86Instr_CMov32(cc ^ 1, ifz, dst));
             return dst;
          }
 

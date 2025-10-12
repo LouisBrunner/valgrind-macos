@@ -192,6 +192,7 @@
 #define __NR_setgroups 159
 #define __NR_uname 160
 #define __NR_sethostname 161
+#define __NR_setdomainname 162
 #define __NR_getrlimit 163
 #define __NR_setrlimit 164
 #define __NR_getrusage 165
@@ -253,6 +254,8 @@
 #define __NR_execve 221
 #define __NR3264_mmap 222
 #define __NR3264_fadvise64 223
+#define __NR_swapon 224
+#define __NR_swapoff 225
 #define __NR_mprotect 226
 #define __NR_msync 227
 #define __NR_mlock 228
@@ -261,6 +264,7 @@
 #define __NR_munlockall 231
 #define __NR_mincore 232
 #define __NR_madvise 233
+#define __NR_remap_file_pages 234
 #define __NR_mbind 235
 #define __NR_get_mempolicy 236
 #define __NR_set_mempolicy 237
@@ -308,6 +312,7 @@
 #define __NR_close_range 436
 #define __NR_faccessat2 439
 #define __NR_memfd_secret 447
+#define __NR_futex_waitv 449
 
 #define __NR_fcntl __NR3264_fcntl
 #define __NR_statfs __NR3264_statfs

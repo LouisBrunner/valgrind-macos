@@ -12,23 +12,23 @@
 -----------------------------------------------------
 Syscall param (syscallno) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:52)
+   by 0x........: main (scalar.c)
 
 Syscall param read(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:52)
+   by 0x........: main (scalar.c)
 
 Syscall param read(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:52)
+   by 0x........: main (scalar.c)
 
 Syscall param read(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:52)
+   by 0x........: main (scalar.c)
 
 Syscall param read(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:52)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -36,19 +36,19 @@ Syscall param read(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param write(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:56)
+   by 0x........: main (scalar.c)
 
 Syscall param write(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:56)
+   by 0x........: main (scalar.c)
 
 Syscall param write(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:56)
+   by 0x........: main (scalar.c)
 
 Syscall param write(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:56)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -56,15 +56,15 @@ Syscall param write(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param open(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:60)
+   by 0x........: main (scalar.c)
 
 Syscall param open(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:60)
+   by 0x........: main (scalar.c)
 
 Syscall param open(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:60)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -72,33 +72,33 @@ Syscall param open(filename) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param open(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:66)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
   6:          __NR_close 1s 0m
 -----------------------------------------------------
 Syscall param close(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:70)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
   7:        __NR_waitpid 3s 1m
 -----------------------------------------------------
 Syscall param waitpid(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:74)
+   by 0x........: main (scalar.c)
 
 Syscall param waitpid(status) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:74)
+   by 0x........: main (scalar.c)
 
 Syscall param waitpid(options) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:74)
+   by 0x........: main (scalar.c)
 
 Syscall param waitpid(status) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:74)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -106,15 +106,15 @@ Syscall param waitpid(status) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param creat(pathname) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:78)
+   by 0x........: main (scalar.c)
 
 Syscall param creat(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:78)
+   by 0x........: main (scalar.c)
 
 Syscall param creat(pathname) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:78)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -122,20 +122,20 @@ Syscall param creat(pathname) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param link(oldpath) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:82)
+   by 0x........: main (scalar.c)
 
 Syscall param link(newpath) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:82)
+   by 0x........: main (scalar.c)
 
 Syscall param link(oldpath) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:82)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param link(newpath) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:82)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -143,11 +143,11 @@ Syscall param link(newpath) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param unlink(pathname) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:86)
+   by 0x........: main (scalar.c)
 
 Syscall param unlink(pathname) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:86)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -155,24 +155,24 @@ Syscall param unlink(pathname) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param execve(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:90)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(argv) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:90)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(envp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:90)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:90)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param execve(argv) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:90)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -180,24 +180,24 @@ Syscall param execve(argv) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param execve(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:93)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(argv) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:93)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(envp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:93)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:93)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param execve(argv) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:93)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -205,30 +205,30 @@ Syscall param execve(argv) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param execve(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:97)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(argv) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:97)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(envp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:97)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:97)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param execve(argv) points to uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:97)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 Syscall param execve(argv[0]) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:97)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -236,30 +236,30 @@ Syscall param execve(argv[0]) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param execve(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:100)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(argv) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:100)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(envp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:100)
+   by 0x........: main (scalar.c)
 
 Syscall param execve(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:100)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param execve(envp) points to uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:100)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 Syscall param execve(envp[i]) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:100)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -267,11 +267,11 @@ Syscall param execve(envp[i]) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param chdir(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:104)
+   by 0x........: main (scalar.c)
 
 Syscall param chdir(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:104)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -279,11 +279,11 @@ Syscall param chdir(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param time(t) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:108)
+   by 0x........: main (scalar.c)
 
 Syscall param time(t) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:108)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -291,19 +291,19 @@ Syscall param time(t) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mknod(pathname) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:112)
+   by 0x........: main (scalar.c)
 
 Syscall param mknod(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:112)
+   by 0x........: main (scalar.c)
 
 Syscall param mknod(dev) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:112)
+   by 0x........: main (scalar.c)
 
 Syscall param mknod(pathname) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:112)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -311,15 +311,15 @@ Syscall param mknod(pathname) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param chmod(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:116)
+   by 0x........: main (scalar.c)
 
 Syscall param chmod(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:116)
+   by 0x........: main (scalar.c)
 
 Syscall param chmod(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:116)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -336,15 +336,15 @@ Syscall param chmod(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lseek(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:132)
+   by 0x........: main (scalar.c)
 
 Syscall param lseek(offset) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:132)
+   by 0x........: main (scalar.c)
 
 Syscall param lseek(whence) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:132)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  20:         __NR_getpid 0s 0m
@@ -354,32 +354,32 @@ Syscall param lseek(whence) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param mount(source) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
 
 Syscall param mount(target) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
 
 Syscall param mount(type) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
 
 Syscall param mount(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
 
 Syscall param mount(data) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
 
 Syscall param mount(target) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mount(type) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:140)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -387,11 +387,11 @@ Syscall param mount(type) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param umount(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:144)
+   by 0x........: main (scalar.c)
 
 Syscall param umount(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:144)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -399,7 +399,7 @@ Syscall param umount(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setuid16(uid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:148)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  24:         __NR_getuid 0s 0m
@@ -412,23 +412,23 @@ Syscall param setuid16(uid) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param ptrace(request) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:161)
+   by 0x........: main (scalar.c)
 
 Syscall param ptrace(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:161)
+   by 0x........: main (scalar.c)
 
 Syscall param ptrace(addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:161)
+   by 0x........: main (scalar.c)
 
 Syscall param ptrace(data) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:161)
+   by 0x........: main (scalar.c)
 
 Syscall param ptrace(getregs) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:161)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -436,7 +436,7 @@ Syscall param ptrace(getregs) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param alarm(seconds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:165)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  28:       __NR_oldfstat n/a
@@ -449,20 +449,20 @@ Syscall param alarm(seconds) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param utime(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:177)
+   by 0x........: main (scalar.c)
 
 Syscall param utime(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:177)
+   by 0x........: main (scalar.c)
 
 Syscall param utime(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:177)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param utime(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:177)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -476,15 +476,15 @@ Syscall param utime(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param access(pathname) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:189)
+   by 0x........: main (scalar.c)
 
 Syscall param access(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:189)
+   by 0x........: main (scalar.c)
 
 Syscall param access(pathname) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:189)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -492,7 +492,7 @@ Syscall param access(pathname) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param nice(inc) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:193)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  35:          __NR_ftime ni
@@ -505,31 +505,31 @@ Syscall param nice(inc) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param kill(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:205)
+   by 0x........: main (scalar.c)
 
 Syscall param kill(signal) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:205)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  38:         __NR_rename 2s 2m
 -----------------------------------------------------
 Syscall param rename(oldpath) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:209)
+   by 0x........: main (scalar.c)
 
 Syscall param rename(newpath) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:209)
+   by 0x........: main (scalar.c)
 
 Syscall param rename(oldpath) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:209)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param rename(newpath) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:209)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -537,15 +537,15 @@ Syscall param rename(newpath) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mkdir(pathname) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:213)
+   by 0x........: main (scalar.c)
 
 Syscall param mkdir(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:213)
+   by 0x........: main (scalar.c)
 
 Syscall param mkdir(pathname) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:213)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -553,11 +553,11 @@ Syscall param mkdir(pathname) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param rmdir(pathname) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:217)
+   by 0x........: main (scalar.c)
 
 Syscall param rmdir(pathname) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:217)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -565,21 +565,21 @@ Syscall param rmdir(pathname) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param dup(oldfd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:221)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  42:           __NR_pipe 1s 1m
 -----------------------------------------------------
 Syscall param pipe(filedes) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:225)
+   by 0x........: main (scalar.c)
 
 
 More than 100 errors detected.  Subsequent errors
 will still be recorded, but in less detail than before.
 Syscall param pipe(filedes) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:225)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -587,11 +587,11 @@ Syscall param pipe(filedes) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param times(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:229)
+   by 0x........: main (scalar.c)
 
 Syscall param times(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:229)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -602,14 +602,14 @@ Syscall param times(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param brk(end_data_segment) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:237)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  46:         __NR_setgid 1s 0m
 -----------------------------------------------------
 Syscall param setgid16(gid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:241)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  47:         __NR_getgid 0s 0m
@@ -628,11 +628,11 @@ Syscall param setgid16(gid) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param acct(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:261)
+   by 0x........: main (scalar.c)
 
 Syscall param acct(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:261)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -640,15 +640,15 @@ Syscall param acct(filename) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param umount2(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:265)
+   by 0x........: main (scalar.c)
 
 Syscall param umount2(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:265)
+   by 0x........: main (scalar.c)
 
 Syscall param umount2(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:265)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -659,19 +659,19 @@ Syscall param umount2(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param ioctl(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:274)
+   by 0x........: main (scalar.c)
 
 Syscall param ioctl(request) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:274)
+   by 0x........: main (scalar.c)
 
 Syscall param ioctl(arg) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:274)
+   by 0x........: main (scalar.c)
 
 Syscall param ioctl(TCSET{S,SW,SF}) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:274)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -679,49 +679,49 @@ Syscall param ioctl(TCSET{S,SW,SF}) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fcntl(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:280)
+   by 0x........: main (scalar.c)
 
 Syscall param fcntl(cmd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:280)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  55:          __NR_fcntl (DUPFD) 1s 0m
 -----------------------------------------------------
 Syscall param fcntl(arg) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:286)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  55:          __NR_fcntl (GETLK) 1s 5m
 -----------------------------------------------------
 Syscall param fcntl(lock) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:292)
+   by 0x........: main (scalar.c)
 
 Syscall param fcntl(lock->l_type) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:292)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param fcntl(lock->l_whence) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:292)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param fcntl(lock->l_start) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:292)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param fcntl(lock->l_len) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:292)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param fcntl(lock->l_pid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:292)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -732,11 +732,11 @@ Syscall param fcntl(lock->l_pid) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setpgid(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:300)
+   by 0x........: main (scalar.c)
 
 Syscall param setpgid(pgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:300)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  58:         __NR_ulimit ni
@@ -749,18 +749,18 @@ Syscall param setpgid(pgid) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param umask(mask) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:312)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  61:         __NR_chroot 1s 1m
 -----------------------------------------------------
 Syscall param chroot(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:316)
+   by 0x........: main (scalar.c)
 
 Syscall param chroot(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:316)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -771,11 +771,11 @@ Syscall param chroot(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param dup2(oldfd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:324)
+   by 0x........: main (scalar.c)
 
 Syscall param dup2(newfd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:324)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  64:        __NR_getppid 0s 0m
@@ -791,43 +791,43 @@ Syscall param dup2(newfd) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param sigaction(signum) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaction(act) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaction(oldact) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaction(act->sa_handler) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaction(act->sa_mask) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
  Address 0x........ is 4 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaction(act->sa_flags) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
  Address 0x........ is 8 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaction(oldact) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:340)
+   by 0x........: main (scalar.c)
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  68:       __NR_sgetmask n/a
@@ -840,22 +840,22 @@ Syscall param sigaction(oldact) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setreuid16(ruid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:352)
+   by 0x........: main (scalar.c)
 
 Syscall param setreuid16(euid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:352)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  71:       __NR_setregid 2s 0m
 -----------------------------------------------------
 Syscall param setregid16(rgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:356)
+   by 0x........: main (scalar.c)
 
 Syscall param setregid16(egid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:356)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  72:     __NR_sigsuspend ignore
@@ -865,11 +865,11 @@ Syscall param setregid16(egid) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param sigpending(set) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:365)
+   by 0x........: main (scalar.c)
 
 Syscall param sigpending(set) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:365)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -880,15 +880,15 @@ Syscall param sigpending(set) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setrlimit(resource) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:373)
+   by 0x........: main (scalar.c)
 
 Syscall param setrlimit(rlim) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:373)
+   by 0x........: main (scalar.c)
 
 Syscall param setrlimit(rlim) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:373)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -896,15 +896,15 @@ Syscall param setrlimit(rlim) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param old_getrlimit(resource) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:377)
+   by 0x........: main (scalar.c)
 
 Syscall param old_getrlimit(rlim) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:377)
+   by 0x........: main (scalar.c)
 
 Syscall param old_getrlimit(rlim) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:377)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -912,15 +912,15 @@ Syscall param old_getrlimit(rlim) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getrusage(who) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:381)
+   by 0x........: main (scalar.c)
 
 Syscall param getrusage(usage) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:381)
+   by 0x........: main (scalar.c)
 
 Syscall param getrusage(usage) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:381)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -928,20 +928,20 @@ Syscall param getrusage(usage) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param gettimeofday(tv) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:385)
+   by 0x........: main (scalar.c)
 
 Syscall param gettimeofday(tz) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:385)
+   by 0x........: main (scalar.c)
 
 Syscall param gettimeofday(tv) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:385)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param gettimeofday(tz) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:385)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -949,20 +949,20 @@ Syscall param gettimeofday(tz) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param settimeofday(tv) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:389)
+   by 0x........: main (scalar.c)
 
 Syscall param settimeofday(tz) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:389)
+   by 0x........: main (scalar.c)
 
 Syscall param settimeofday(tv) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:389)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param settimeofday(tz) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:389)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -970,15 +970,15 @@ Syscall param settimeofday(tz) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getgroups16(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:393)
+   by 0x........: main (scalar.c)
 
 Syscall param getgroups16(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:393)
+   by 0x........: main (scalar.c)
 
 Syscall param getgroups16(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:393)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -986,15 +986,15 @@ Syscall param getgroups16(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setgroups16(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:397)
+   by 0x........: main (scalar.c)
 
 Syscall param setgroups16(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:397)
+   by 0x........: main (scalar.c)
 
 Syscall param setgroups16(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:397)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1002,32 +1002,32 @@ Syscall param setgroups16(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param old_select(args) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:403)
+   by 0x........: main (scalar.c)
 
 Syscall param old_select(args) points to uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:403)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 Syscall param old_select(readfds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:403)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param old_select(writefds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:403)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param old_select(exceptfds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:403)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param old_select(timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:403)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1035,20 +1035,20 @@ Syscall param old_select(timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param symlink(oldpath) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:408)
+   by 0x........: main (scalar.c)
 
 Syscall param symlink(newpath) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:408)
+   by 0x........: main (scalar.c)
 
 Syscall param symlink(oldpath) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:408)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param symlink(newpath) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:408)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1059,24 +1059,24 @@ Syscall param symlink(newpath) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param readlink(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:416)
+   by 0x........: main (scalar.c)
 
 Syscall param readlink(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:416)
+   by 0x........: main (scalar.c)
 
 Syscall param readlink(bufsiz) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:416)
+   by 0x........: main (scalar.c)
 
 Syscall param readlink(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:416)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param readlink(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:416)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1096,39 +1096,39 @@ Syscall param readlink(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param old_mmap(args) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:438)
+   by 0x........: main (scalar.c)
 
 Syscall param old_mmap(args) points to uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:438)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 -----------------------------------------------------
  91:         __NR_munmap 2s 0m
 -----------------------------------------------------
 Syscall param munmap(start) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:443)
+   by 0x........: main (scalar.c)
 
 Syscall param munmap(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:443)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  92:       __NR_truncate 2s 1m
 -----------------------------------------------------
 Syscall param truncate(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:447)
+   by 0x........: main (scalar.c)
 
 Syscall param truncate(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:447)
+   by 0x........: main (scalar.c)
 
 Syscall param truncate(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:447)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1136,63 +1136,63 @@ Syscall param truncate(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param ftruncate(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:451)
+   by 0x........: main (scalar.c)
 
 Syscall param ftruncate(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:451)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  94:         __NR_fchmod 2s 0m
 -----------------------------------------------------
 Syscall param fchmod(fildes) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:455)
+   by 0x........: main (scalar.c)
 
 Syscall param fchmod(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:455)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  95:         __NR_fchown 3s 0m
 -----------------------------------------------------
 Syscall param fchown16(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:459)
+   by 0x........: main (scalar.c)
 
 Syscall param fchown16(owner) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:459)
+   by 0x........: main (scalar.c)
 
 Syscall param fchown16(group) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:459)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  96:    __NR_getpriority 2s 0m
 -----------------------------------------------------
 Syscall param getpriority(which) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:463)
+   by 0x........: main (scalar.c)
 
 Syscall param getpriority(who) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:463)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  97:    __NR_setpriority 3s 0m
 -----------------------------------------------------
 Syscall param setpriority(which) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:467)
+   by 0x........: main (scalar.c)
 
 Syscall param setpriority(who) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:467)
+   by 0x........: main (scalar.c)
 
 Syscall param setpriority(prio) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:467)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
  98:         __NR_profil ni
@@ -1202,20 +1202,20 @@ Syscall param setpriority(prio) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param statfs(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:475)
+   by 0x........: main (scalar.c)
 
 Syscall param statfs(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:475)
+   by 0x........: main (scalar.c)
 
 Syscall param statfs(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:475)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param statfs(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:475)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1223,15 +1223,15 @@ Syscall param statfs(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fstatfs(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:479)
+   by 0x........: main (scalar.c)
 
 Syscall param fstatfs(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:479)
+   by 0x........: main (scalar.c)
 
 Syscall param fstatfs(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:479)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1239,15 +1239,15 @@ Syscall param fstatfs(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param ioperm(from) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:483)
+   by 0x........: main (scalar.c)
 
 Syscall param ioperm(num) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:483)
+   by 0x........: main (scalar.c)
 
 Syscall param ioperm(turn_on) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:483)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 102:     __NR_socketcall XXX
@@ -1257,19 +1257,19 @@ Syscall param ioperm(turn_on) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param syslog(type) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:491)
+   by 0x........: main (scalar.c)
 
 Syscall param syslog(bufp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:491)
+   by 0x........: main (scalar.c)
 
 Syscall param syslog(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:491)
+   by 0x........: main (scalar.c)
 
 Syscall param syslog(bufp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:491)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1277,34 +1277,34 @@ Syscall param syslog(bufp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setitimer(which) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
 
 Syscall param setitimer(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
 
 Syscall param setitimer(ovalue) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
 
 Syscall param setitimer(&value->it_interval) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param setitimer(&value->it_value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param setitimer(&ovalue->it_interval) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param setitimer(&ovalue->it_value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:495)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1312,20 +1312,20 @@ Syscall param setitimer(&ovalue->it_value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getitimer(which) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:499)
+   by 0x........: main (scalar.c)
 
 Syscall param getitimer(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:499)
+   by 0x........: main (scalar.c)
 
 Syscall param getitimer(&value->it_interval) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:499)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getitimer(&value->it_value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:499)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1333,20 +1333,20 @@ Syscall param getitimer(&value->it_value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param stat(file_name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:503)
+   by 0x........: main (scalar.c)
 
 Syscall param stat(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:503)
+   by 0x........: main (scalar.c)
 
 Syscall param stat(file_name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:503)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param stat(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:503)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1354,20 +1354,20 @@ Syscall param stat(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lstat(file_name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:507)
+   by 0x........: main (scalar.c)
 
 Syscall param lstat(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:507)
+   by 0x........: main (scalar.c)
 
 Syscall param lstat(file_name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:507)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lstat(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:507)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1375,15 +1375,15 @@ Syscall param lstat(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fstat(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:511)
+   by 0x........: main (scalar.c)
 
 Syscall param fstat(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:511)
+   by 0x........: main (scalar.c)
 
 Syscall param fstat(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:511)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1394,7 +1394,7 @@ Syscall param fstat(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param iopl(level) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:519)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 111:        __NR_vhangup 0s 0m
@@ -1410,28 +1410,28 @@ Syscall param iopl(level) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param wait4(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:535)
+   by 0x........: main (scalar.c)
 
 Syscall param wait4(status) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:535)
+   by 0x........: main (scalar.c)
 
 Syscall param wait4(options) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:535)
+   by 0x........: main (scalar.c)
 
 Syscall param wait4(rusage) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:535)
+   by 0x........: main (scalar.c)
 
 Syscall param wait4(status) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:535)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param wait4(rusage) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:535)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1442,11 +1442,11 @@ Syscall param wait4(rusage) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sysinfo(info) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:543)
+   by 0x........: main (scalar.c)
 
 Syscall param sysinfo(info) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:543)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1454,34 +1454,34 @@ Syscall param sysinfo(info) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param ipc(call) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:550)
+   by 0x........: main (scalar.c)
 
 Syscall param ipc(first) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:550)
+   by 0x........: main (scalar.c)
 
 Syscall param ipc(second) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:550)
+   by 0x........: main (scalar.c)
 
 Syscall param ipc(third) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:550)
+   by 0x........: main (scalar.c)
 
 Syscall param ipc(ptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:550)
+   by 0x........: main (scalar.c)
 
 Syscall param ipc(fifth) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:550)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 118:          __NR_fsync 1s 0m
 -----------------------------------------------------
 Syscall param fsync(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:554)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 119:      __NR_sigreturn n/a
@@ -1491,37 +1491,37 @@ Syscall param fsync(fd) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param clone(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
 
 Syscall param clone(child_stack) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
 
 Syscall param clone(parent_tidptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
 
 Syscall param clone(parent_tidptr) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param clone(tlsinfo) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
 
 Syscall param clone(tlsinfo) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param clone(child_tidptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
 
 Syscall param clone(child_tidptr) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:565)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1532,11 +1532,11 @@ Syscall param clone(child_tidptr) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param uname(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:576)
+   by 0x........: main (scalar.c)
 
 Syscall param uname(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:576)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1544,19 +1544,19 @@ Syscall param uname(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param modify_ldt(func) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:580)
+   by 0x........: main (scalar.c)
 
 Syscall param modify_ldt(ptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:580)
+   by 0x........: main (scalar.c)
 
 Syscall param modify_ldt(bytecount) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:580)
+   by 0x........: main (scalar.c)
 
 Syscall param modify_ldt(ptr) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:580)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1567,44 +1567,44 @@ Syscall param modify_ldt(ptr) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mprotect(addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:589)
+   by 0x........: main (scalar.c)
 
 Syscall param mprotect(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:589)
+   by 0x........: main (scalar.c)
 
 Syscall param mprotect(prot) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:589)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 126:    __NR_sigprocmask 3s 2m
 -----------------------------------------------------
 Syscall param sigprocmask(how) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:593)
+   by 0x........: main (scalar.c)
 
 Syscall param sigprocmask(set) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:593)
+   by 0x........: main (scalar.c)
 
 Syscall param sigprocmask(oldset) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:593)
+   by 0x........: main (scalar.c)
 
 Syscall param sigprocmask(set) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:593)
+   by 0x........: main (scalar.c)
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param sigprocmask(oldset) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:593)
+   by 0x........: main (scalar.c)
  Address 0x........ is 0 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 127:  __NR_create_module ni
@@ -1614,24 +1614,24 @@ Syscall param sigprocmask(oldset) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param init_module(umod) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:601)
+   by 0x........: main (scalar.c)
 
 Syscall param init_module(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:601)
+   by 0x........: main (scalar.c)
 
 Syscall param init_module(uargs) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:601)
+   by 0x........: main (scalar.c)
 
 Syscall param init_module(umod) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:601)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param init_module(uargs) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:601)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1645,23 +1645,23 @@ Syscall param init_module(uargs) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param quotactl(cmd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:613)
+   by 0x........: main (scalar.c)
 
 Syscall param quotactl(special) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:613)
+   by 0x........: main (scalar.c)
 
 Syscall param quotactl(id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:613)
+   by 0x........: main (scalar.c)
 
 Syscall param quotactl(addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:613)
+   by 0x........: main (scalar.c)
 
 Syscall param quotactl(special) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:613)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1669,14 +1669,14 @@ Syscall param quotactl(special) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getpgid(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:617)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 133:         __NR_fchdir 1s 0m
 -----------------------------------------------------
 Syscall param fchdir(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:621)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 134:        __NR_bdflush n/a
@@ -1689,7 +1689,7 @@ Syscall param fchdir(fd) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param personality(persona) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:633)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 137:    __NR_afs_syscall ni
@@ -1699,41 +1699,41 @@ Syscall param personality(persona) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param setfsuid16(uid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:641)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 139:       __NR_setfsgid 1s 0m
 -----------------------------------------------------
 Syscall param setfsgid16(gid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:645)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 140:        __NR__llseek 5s 1m
 -----------------------------------------------------
 Syscall param llseek(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:649)
+   by 0x........: main (scalar.c)
 
 Syscall param llseek(offset_high) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:649)
+   by 0x........: main (scalar.c)
 
 Syscall param llseek(offset_low) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:649)
+   by 0x........: main (scalar.c)
 
 Syscall param llseek(result) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:649)
+   by 0x........: main (scalar.c)
 
 Syscall param llseek(whence) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:649)
+   by 0x........: main (scalar.c)
 
 Syscall param llseek(result) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:649)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1741,19 +1741,19 @@ Syscall param llseek(result) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getdents(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:653)
+   by 0x........: main (scalar.c)
 
 Syscall param getdents(dirp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:653)
+   by 0x........: main (scalar.c)
 
 Syscall param getdents(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:653)
+   by 0x........: main (scalar.c)
 
 Syscall param getdents(dirp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:653)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1761,42 +1761,42 @@ Syscall param getdents(dirp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param select(n) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
 
 Syscall param select(readfds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
 
 Syscall param select(writefds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
 
 Syscall param select(exceptfds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
 
 Syscall param select(timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
 
 Syscall param select(readfds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param select(writefds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param select(exceptfds) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param select(timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:657)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1804,30 +1804,30 @@ Syscall param select(timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param flock(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:661)
+   by 0x........: main (scalar.c)
 
 Syscall param flock(operation) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:661)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 144:          __NR_msync 3s 1m
 -----------------------------------------------------
 Syscall param msync(start) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:665)
+   by 0x........: main (scalar.c)
 
 Syscall param msync(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:665)
+   by 0x........: main (scalar.c)
 
 Syscall param msync(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:665)
+   by 0x........: main (scalar.c)
 
 Syscall param msync(start) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:665)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1835,19 +1835,19 @@ Syscall param msync(start) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param readv(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:669)
+   by 0x........: main (scalar.c)
 
 Syscall param readv(vector) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:669)
+   by 0x........: main (scalar.c)
 
 Syscall param readv(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:669)
+   by 0x........: main (scalar.c)
 
 Syscall param readv(vector) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:669)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1855,19 +1855,19 @@ Syscall param readv(vector) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param writev(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:673)
+   by 0x........: main (scalar.c)
 
 Syscall param writev(vector) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:673)
+   by 0x........: main (scalar.c)
 
 Syscall param writev(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:673)
+   by 0x........: main (scalar.c)
 
 Syscall param writev(vector) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:673)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1875,25 +1875,25 @@ Syscall param writev(vector) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getsid(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:677)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 148:      __NR_fdatasync 1s 0m
 -----------------------------------------------------
 Syscall param fdatasync(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:681)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 149:        __NR__sysctl 1s 1m
 -----------------------------------------------------
 Syscall param sysctl(args) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:685)
+   by 0x........: main (scalar.c)
 
 Syscall param sysctl(args) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:685)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1901,29 +1901,29 @@ Syscall param sysctl(args) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mlock(addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:689)
+   by 0x........: main (scalar.c)
 
 Syscall param mlock(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:689)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 151:        __NR_munlock 2s 0m
 -----------------------------------------------------
 Syscall param munlock(addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:693)
+   by 0x........: main (scalar.c)
 
 Syscall param munlock(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:693)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 152:       __NR_mlockall 1s 0m
 -----------------------------------------------------
 Syscall param mlockall(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:697)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 153:     __NR_munlockall 0s 0m
@@ -1933,15 +1933,15 @@ Syscall param mlockall(flags) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param sched_setparam(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:705)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setparam(p) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:705)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setparam(p) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:705)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1949,15 +1949,15 @@ Syscall param sched_setparam(p) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sched_getparam(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:709)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_getparam(p) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:709)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_getparam(p) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:709)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1965,19 +1965,19 @@ Syscall param sched_getparam(p) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sched_setscheduler(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:713)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setscheduler(policy) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:713)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setscheduler(p) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:713)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setscheduler(p) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:713)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -1985,7 +1985,7 @@ Syscall param sched_setscheduler(p) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sched_getscheduler(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:717)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 158:    __NR_sched_yield 0s 0m
@@ -1995,14 +1995,14 @@ Syscall param sched_getscheduler(pid) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param sched_get_priority_max(policy) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:725)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 160:__NR_sched_get_priority_min 1s 0m
 -----------------------------------------------------
 Syscall param sched_get_priority_min(policy) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:729)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 161:__NR_sched_rr_get_interval n/a
@@ -2012,20 +2012,20 @@ Syscall param sched_get_priority_min(policy) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param nanosleep(req) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:737)
+   by 0x........: main (scalar.c)
 
 Syscall param nanosleep(rem) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:737)
+   by 0x........: main (scalar.c)
 
 Syscall param nanosleep(req) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:737)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param nanosleep(rem) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:737)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2033,67 +2033,67 @@ Syscall param nanosleep(rem) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mremap(old_addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:741)
+   by 0x........: main (scalar.c)
 
 Syscall param mremap(old_size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:741)
+   by 0x........: main (scalar.c)
 
 Syscall param mremap(new_size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:741)
+   by 0x........: main (scalar.c)
 
 Syscall param mremap(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:741)
+   by 0x........: main (scalar.c)
 
 Syscall param mremap(new_addr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:741)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 164:      __NR_setresuid 3s 0m
 -----------------------------------------------------
 Syscall param setresuid16(ruid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:745)
+   by 0x........: main (scalar.c)
 
 Syscall param setresuid16(euid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:745)
+   by 0x........: main (scalar.c)
 
 Syscall param setresuid16(suid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:745)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 165:      __NR_getresuid 3s 3m
 -----------------------------------------------------
 Syscall param getresuid16(ruid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:749)
+   by 0x........: main (scalar.c)
 
 Syscall param getresuid16(euid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:749)
+   by 0x........: main (scalar.c)
 
 Syscall param getresuid16(suid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:749)
+   by 0x........: main (scalar.c)
 
 Syscall param getresuid16(ruid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:749)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresuid16(euid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:749)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresuid16(suid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:749)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2107,24 +2107,24 @@ Syscall param getresuid16(suid) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param poll(ufds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:761)
+   by 0x........: main (scalar.c)
 
 Syscall param poll(nfds) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:761)
+   by 0x........: main (scalar.c)
 
 Syscall param poll(timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:761)
+   by 0x........: main (scalar.c)
 
 Syscall param poll(ufds.fd) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:761)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param poll(ufds.revents) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:761)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2135,44 +2135,44 @@ Syscall param poll(ufds.revents) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setresgid16(rgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:769)
+   by 0x........: main (scalar.c)
 
 Syscall param setresgid16(egid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:769)
+   by 0x........: main (scalar.c)
 
 Syscall param setresgid16(sgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:769)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 171:      __NR_getresgid 3s 3m
 -----------------------------------------------------
 Syscall param getresgid16(rgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:773)
+   by 0x........: main (scalar.c)
 
 Syscall param getresgid16(egid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:773)
+   by 0x........: main (scalar.c)
 
 Syscall param getresgid16(sgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:773)
+   by 0x........: main (scalar.c)
 
 Syscall param getresgid16(rgid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:773)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresgid16(egid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:773)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresgid16(sgid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:773)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2180,43 +2180,43 @@ Syscall param getresgid16(sgid) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param prctl(option) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:777)
+   by 0x........: main (scalar.c)
 
 Syscall param prctl(arg2) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:777)
+   by 0x........: main (scalar.c)
 
 Syscall param prctl(arg3) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:777)
+   by 0x........: main (scalar.c)
 
 Syscall param prctl(arg4) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:777)
+   by 0x........: main (scalar.c)
 
 Syscall param prctl(arg5) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:777)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 172:          __NR_prctl 2s 0m
 -----------------------------------------------------
 Syscall param prctl(option) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:782)
+   by 0x........: main (scalar.c)
 
 Syscall param prctl(set-name) points to uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:782)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 -----------------------------------------------------
 172:          __NR_prctl 1s 0m
 -----------------------------------------------------
 Syscall param prctl(option) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:787)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 173:   __NR_rt_sigreturn n/a
@@ -2226,75 +2226,75 @@ Syscall param prctl(option) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param rt_sigaction(signum) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(act) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(oldact) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(sigsetsize) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(act->sa_handler) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
  Address 0x........ is 4 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(act->sa_mask) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
  Address 0x........ is 16 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(act->sa_flags) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
  Address 0x........ is 8 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigaction(oldact) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:795)
+   by 0x........: main (scalar.c)
  Address 0x........ is 4 bytes after a block of size 4 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (scalar.c:31)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 175: __NR_rt_sigprocmask 4s 2m
 -----------------------------------------------------
 Syscall param rt_sigprocmask(how) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:799)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigprocmask(set) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:799)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigprocmask(oldset) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:799)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigprocmask(sigsetsize) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:799)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigprocmask(set) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:799)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param rt_sigprocmask(oldset) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:799)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2302,15 +2302,15 @@ Syscall param rt_sigprocmask(oldset) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param rt_sigpending(set) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:803)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigpending(sigsetsize) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:803)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigpending(set) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:803)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2318,33 +2318,33 @@ Syscall param rt_sigpending(set) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param rt_sigtimedwait(set) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigtimedwait(info) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigtimedwait(timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigtimedwait(sigsetsize) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigtimedwait(set) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param rt_sigtimedwait(info) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param rt_sigtimedwait(timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:807)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2352,19 +2352,19 @@ Syscall param rt_sigtimedwait(timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param rt_sigqueueinfo(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:811)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigqueueinfo(sig) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:811)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigqueueinfo(uinfo) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:811)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigqueueinfo(uinfo) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:811)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2372,15 +2372,15 @@ Syscall param rt_sigqueueinfo(uinfo) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param rt_sigsuspend(mask) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:815)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigsuspend(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:815)
+   by 0x........: main (scalar.c)
 
 Syscall param rt_sigsuspend(mask) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:815)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2388,27 +2388,27 @@ Syscall param rt_sigsuspend(mask) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param pread64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:819)
+   by 0x........: main (scalar.c)
 
 Syscall param pread64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:819)
+   by 0x........: main (scalar.c)
 
 Syscall param pread64(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:819)
+   by 0x........: main (scalar.c)
 
 Syscall param pread64(offset_low) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:819)
+   by 0x........: main (scalar.c)
 
 Syscall param pread64(offset_high) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:819)
+   by 0x........: main (scalar.c)
 
 Syscall param pread64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:819)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2416,27 +2416,27 @@ Syscall param pread64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param pwrite64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:823)
+   by 0x........: main (scalar.c)
 
 Syscall param pwrite64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:823)
+   by 0x........: main (scalar.c)
 
 Syscall param pwrite64(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:823)
+   by 0x........: main (scalar.c)
 
 Syscall param pwrite64(offset_low) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:823)
+   by 0x........: main (scalar.c)
 
 Syscall param pwrite64(offset_high) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:823)
+   by 0x........: main (scalar.c)
 
 Syscall param pwrite64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:823)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2444,19 +2444,19 @@ Syscall param pwrite64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param chown16(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:827)
+   by 0x........: main (scalar.c)
 
 Syscall param chown16(owner) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:827)
+   by 0x........: main (scalar.c)
 
 Syscall param chown16(group) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:827)
+   by 0x........: main (scalar.c)
 
 Syscall param chown16(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:827)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2464,15 +2464,15 @@ Syscall param chown16(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getcwd(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:831)
+   by 0x........: main (scalar.c)
 
 Syscall param getcwd(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:831)
+   by 0x........: main (scalar.c)
 
 Syscall param getcwd(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:831)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2480,20 +2480,20 @@ Syscall param getcwd(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param capget(header) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:835)
+   by 0x........: main (scalar.c)
 
 Syscall param capget(data) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:835)
+   by 0x........: main (scalar.c)
 
 Syscall param capget(header) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:835)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param capget(data) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:835)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2501,20 +2501,20 @@ Syscall param capget(data) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param capset(header) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:839)
+   by 0x........: main (scalar.c)
 
 Syscall param capset(data) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:839)
+   by 0x........: main (scalar.c)
 
 Syscall param capset(header) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:839)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param capset(data) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:839)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2522,58 +2522,58 @@ Syscall param capset(data) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sigaltstack(ss) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:853)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaltstack(oss) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:853)
+   by 0x........: main (scalar.c)
 
 Syscall param sigaltstack(ss->ss_sp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:853)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 Syscall param sigaltstack(ss->ss_size) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:853)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 Syscall param sigaltstack(ss->ss_flags) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:853)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 Syscall param sigaltstack(oss) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:853)
+   by 0x........: main (scalar.c)
  Address 0x........ is on thread 1's stack
- in frame #1, created by main (scalar.c:29)
+ in frame #1, created by main (scalar.c)
 
 -----------------------------------------------------
 187:       __NR_sendfile 4s 1m
 -----------------------------------------------------
 Syscall param sendfile(out_fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:858)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile(in_fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:858)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile(offset) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:858)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:858)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile(offset) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:858)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2581,46 +2581,46 @@ Syscall param sendfile(offset) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getpmsg(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:864)
+   by 0x........: main (scalar.c)
 
 Syscall param getpmsg(ctrl) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:864)
+   by 0x........: main (scalar.c)
 
 Syscall param getpmsg(data) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:864)
+   by 0x........: main (scalar.c)
 
 Syscall param getpmsg(bandp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:864)
+   by 0x........: main (scalar.c)
 
 Syscall param getpmsg(flagsp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:864)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 189:        __NR_putpmsg 5s 0m
 -----------------------------------------------------
 Syscall param putpmsg(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:870)
+   by 0x........: main (scalar.c)
 
 Syscall param putpmsg(ctrl) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:870)
+   by 0x........: main (scalar.c)
 
 Syscall param putpmsg(data) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:870)
+   by 0x........: main (scalar.c)
 
 Syscall param putpmsg(band) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:870)
+   by 0x........: main (scalar.c)
 
 Syscall param putpmsg(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:870)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 190:          __NR_vfork other
@@ -2630,15 +2630,15 @@ Syscall param putpmsg(flags) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param getrlimit(resource) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:878)
+   by 0x........: main (scalar.c)
 
 Syscall param getrlimit(rlim) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:878)
+   by 0x........: main (scalar.c)
 
 Syscall param getrlimit(rlim) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:878)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2646,46 +2646,46 @@ Syscall param getrlimit(rlim) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mmap2(start) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:882)
+   by 0x........: main (scalar.c)
 
 Syscall param mmap2(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:882)
+   by 0x........: main (scalar.c)
 
 Syscall param mmap2(prot) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:882)
+   by 0x........: main (scalar.c)
 
 Syscall param mmap2(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:882)
+   by 0x........: main (scalar.c)
 
 Syscall param mmap2(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:882)
+   by 0x........: main (scalar.c)
 
 Syscall param mmap2(offset) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:882)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 193:     __NR_truncate64 3s 1m
 -----------------------------------------------------
 Syscall param truncate64(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:886)
+   by 0x........: main (scalar.c)
 
 Syscall param truncate64(length_low) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:886)
+   by 0x........: main (scalar.c)
 
 Syscall param truncate64(length_high) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:886)
+   by 0x........: main (scalar.c)
 
 Syscall param truncate64(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:886)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2693,35 +2693,35 @@ Syscall param truncate64(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param ftruncate64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:890)
+   by 0x........: main (scalar.c)
 
 Syscall param ftruncate64(length_low) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:890)
+   by 0x........: main (scalar.c)
 
 Syscall param ftruncate64(length_high) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:890)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 195:         __NR_stat64 2s 2m
 -----------------------------------------------------
 Syscall param stat64(file_name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:894)
+   by 0x........: main (scalar.c)
 
 Syscall param stat64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:894)
+   by 0x........: main (scalar.c)
 
 Syscall param stat64(file_name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:894)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param stat64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:894)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2729,20 +2729,20 @@ Syscall param stat64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lstat64(file_name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:898)
+   by 0x........: main (scalar.c)
 
 Syscall param lstat64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:898)
+   by 0x........: main (scalar.c)
 
 Syscall param lstat64(file_name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:898)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lstat64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:898)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2750,15 +2750,15 @@ Syscall param lstat64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fstat64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:902)
+   by 0x........: main (scalar.c)
 
 Syscall param fstat64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:902)
+   by 0x........: main (scalar.c)
 
 Syscall param fstat64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:902)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2766,19 +2766,19 @@ Syscall param fstat64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lchown(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:906)
+   by 0x........: main (scalar.c)
 
 Syscall param lchown(owner) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:906)
+   by 0x........: main (scalar.c)
 
 Syscall param lchown(group) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:906)
+   by 0x........: main (scalar.c)
 
 Syscall param lchown(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:906)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2798,37 +2798,37 @@ Syscall param lchown(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setreuid(ruid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:926)
+   by 0x........: main (scalar.c)
 
 Syscall param setreuid(euid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:926)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 204:     __NR_setregid32 2s 0m
 -----------------------------------------------------
 Syscall param setregid(rgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:930)
+   by 0x........: main (scalar.c)
 
 Syscall param setregid(egid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:930)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 205:    __NR_getgroups32 2s 1m
 -----------------------------------------------------
 Syscall param getgroups(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:934)
+   by 0x........: main (scalar.c)
 
 Syscall param getgroups(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:934)
+   by 0x........: main (scalar.c)
 
 Syscall param getgroups(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:934)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2836,15 +2836,15 @@ Syscall param getgroups(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setgroups(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:938)
+   by 0x........: main (scalar.c)
 
 Syscall param setgroups(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:938)
+   by 0x........: main (scalar.c)
 
 Syscall param setgroups(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:938)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2852,59 +2852,59 @@ Syscall param setgroups(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fchown(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:942)
+   by 0x........: main (scalar.c)
 
 Syscall param fchown(owner) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:942)
+   by 0x........: main (scalar.c)
 
 Syscall param fchown(group) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:942)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 208:    __NR_setresuid32 3s 0m
 -----------------------------------------------------
 Syscall param setresuid(ruid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:946)
+   by 0x........: main (scalar.c)
 
 Syscall param setresuid(euid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:946)
+   by 0x........: main (scalar.c)
 
 Syscall param setresuid(suid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:946)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 209:    __NR_getresuid32 3s 3m
 -----------------------------------------------------
 Syscall param getresuid(ruid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:950)
+   by 0x........: main (scalar.c)
 
 Syscall param getresuid(euid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:950)
+   by 0x........: main (scalar.c)
 
 Syscall param getresuid(suid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:950)
+   by 0x........: main (scalar.c)
 
 Syscall param getresuid(ruid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:950)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresuid(euid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:950)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresuid(suid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:950)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2912,44 +2912,44 @@ Syscall param getresuid(suid) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setresgid(rgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:954)
+   by 0x........: main (scalar.c)
 
 Syscall param setresgid(egid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:954)
+   by 0x........: main (scalar.c)
 
 Syscall param setresgid(sgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:954)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 211:    __NR_getresgid32 3s 3m
 -----------------------------------------------------
 Syscall param getresgid(rgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:958)
+   by 0x........: main (scalar.c)
 
 Syscall param getresgid(egid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:958)
+   by 0x........: main (scalar.c)
 
 Syscall param getresgid(sgid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:958)
+   by 0x........: main (scalar.c)
 
 Syscall param getresgid(rgid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:958)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresgid(egid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:958)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getresgid(sgid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:958)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2957,19 +2957,19 @@ Syscall param getresgid(sgid) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param chown(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:962)
+   by 0x........: main (scalar.c)
 
 Syscall param chown(owner) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:962)
+   by 0x........: main (scalar.c)
 
 Syscall param chown(group) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:962)
+   by 0x........: main (scalar.c)
 
 Syscall param chown(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:962)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -2977,28 +2977,28 @@ Syscall param chown(path) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param setuid(uid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:966)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 214:       __NR_setgid32 1s 0m
 -----------------------------------------------------
 Syscall param setgid(gid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:970)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 215:     __NR_setfsuid32 1s 0m
 -----------------------------------------------------
 Syscall param setfsuid(uid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:974)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 216:     __NR_setfsgid32 1s 0m
 -----------------------------------------------------
 Syscall param setfsgid(gid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:978)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 217:     __NR_pivot_root n/a
@@ -3008,19 +3008,19 @@ Syscall param setfsgid(gid) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param mincore(start) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:986)
+   by 0x........: main (scalar.c)
 
 Syscall param mincore(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:986)
+   by 0x........: main (scalar.c)
 
 Syscall param mincore(vec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:986)
+   by 0x........: main (scalar.c)
 
 Syscall param mincore(vec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:986)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3028,34 +3028,34 @@ Syscall param mincore(vec) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param madvise(start) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:990)
+   by 0x........: main (scalar.c)
 
 Syscall param madvise(length) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:990)
+   by 0x........: main (scalar.c)
 
 Syscall param madvise(advice) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:990)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 220:     __NR_getdents64 3s 1m
 -----------------------------------------------------
 Syscall param getdents64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:994)
+   by 0x........: main (scalar.c)
 
 Syscall param getdents64(dirp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:994)
+   by 0x........: main (scalar.c)
 
 Syscall param getdents64(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:994)
+   by 0x........: main (scalar.c)
 
 Syscall param getdents64(dirp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:994)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3063,25 +3063,25 @@ Syscall param getdents64(dirp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fcntl64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1001)
+   by 0x........: main (scalar.c)
 
 Syscall param fcntl64(cmd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1001)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 221:        __NR_fcntl64 (DUPFD) 1s 0m
 -----------------------------------------------------
 Syscall param fcntl64(arg) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1005)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 221:        __NR_fcntl64 (GETLK) 1s 0m
 -----------------------------------------------------
 Syscall param fcntl64(lock) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1011)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 222:                 222 ni
@@ -3100,37 +3100,37 @@ Syscall param fcntl64(lock) contains uninitialised byte(s)
 -----------------------------------------------------
 Syscall param setxattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
 
 Syscall param setxattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
 
 Syscall param setxattr(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
 
 Syscall param setxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
 
 Syscall param setxattr(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
 
 Syscall param setxattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param setxattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param setxattr(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1031)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3138,37 +3138,37 @@ Syscall param setxattr(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lsetxattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
 
 Syscall param lsetxattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
 
 Syscall param lsetxattr(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
 
 Syscall param lsetxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
 
 Syscall param lsetxattr(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
 
 Syscall param lsetxattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lsetxattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lsetxattr(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1035)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3176,32 +3176,32 @@ Syscall param lsetxattr(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fsetxattr(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
 
 Syscall param fsetxattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
 
 Syscall param fsetxattr(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
 
 Syscall param fsetxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
 
 Syscall param fsetxattr(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
 
 Syscall param fsetxattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param fsetxattr(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1039)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3209,33 +3209,33 @@ Syscall param fsetxattr(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param getxattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
 
 Syscall param getxattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
 
 Syscall param getxattr(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
 
 Syscall param getxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
 
 Syscall param getxattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getxattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param getxattr(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1043)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3243,33 +3243,33 @@ Syscall param getxattr(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lgetxattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
 
 Syscall param lgetxattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
 
 Syscall param lgetxattr(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
 
 Syscall param lgetxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
 
 Syscall param lgetxattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lgetxattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lgetxattr(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1047)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3277,28 +3277,28 @@ Syscall param lgetxattr(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fgetxattr(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1051)
+   by 0x........: main (scalar.c)
 
 Syscall param fgetxattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1051)
+   by 0x........: main (scalar.c)
 
 Syscall param fgetxattr(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1051)
+   by 0x........: main (scalar.c)
 
 Syscall param fgetxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1051)
+   by 0x........: main (scalar.c)
 
 Syscall param fgetxattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1051)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param fgetxattr(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1051)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3306,24 +3306,24 @@ Syscall param fgetxattr(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param listxattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1055)
+   by 0x........: main (scalar.c)
 
 Syscall param listxattr(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1055)
+   by 0x........: main (scalar.c)
 
 Syscall param listxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1055)
+   by 0x........: main (scalar.c)
 
 Syscall param listxattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1055)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param listxattr(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1055)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3331,24 +3331,24 @@ Syscall param listxattr(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param llistxattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1059)
+   by 0x........: main (scalar.c)
 
 Syscall param llistxattr(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1059)
+   by 0x........: main (scalar.c)
 
 Syscall param llistxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1059)
+   by 0x........: main (scalar.c)
 
 Syscall param llistxattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1059)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param llistxattr(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1059)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3356,19 +3356,19 @@ Syscall param llistxattr(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param flistxattr(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1063)
+   by 0x........: main (scalar.c)
 
 Syscall param flistxattr(list) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1063)
+   by 0x........: main (scalar.c)
 
 Syscall param flistxattr(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1063)
+   by 0x........: main (scalar.c)
 
 Syscall param flistxattr(list) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1063)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3376,20 +3376,20 @@ Syscall param flistxattr(list) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param removexattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1067)
+   by 0x........: main (scalar.c)
 
 Syscall param removexattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1067)
+   by 0x........: main (scalar.c)
 
 Syscall param removexattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1067)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param removexattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1067)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3397,20 +3397,20 @@ Syscall param removexattr(name) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lremovexattr(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1071)
+   by 0x........: main (scalar.c)
 
 Syscall param lremovexattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1071)
+   by 0x........: main (scalar.c)
 
 Syscall param lremovexattr(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1071)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param lremovexattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1071)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3418,15 +3418,15 @@ Syscall param lremovexattr(name) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fremovexattr(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1075)
+   by 0x........: main (scalar.c)
 
 Syscall param fremovexattr(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1075)
+   by 0x........: main (scalar.c)
 
 Syscall param fremovexattr(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1075)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3437,23 +3437,23 @@ Syscall param fremovexattr(name) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sendfile64(out_fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1083)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile64(in_fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1083)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile64(offset) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1083)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile64(count) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1083)
+   by 0x........: main (scalar.c)
 
 Syscall param sendfile64(offset) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1083)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3461,28 +3461,28 @@ Syscall param sendfile64(offset) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param futex(futex) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1091)
+   by 0x........: main (scalar.c)
 
 Syscall param futex(op) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1091)
+   by 0x........: main (scalar.c)
 
 Syscall param futex(val) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1091)
+   by 0x........: main (scalar.c)
 
 Syscall param futex(utime) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1091)
+   by 0x........: main (scalar.c)
 
 Syscall param futex(futex) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1091)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param futex(timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1091)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3490,19 +3490,19 @@ Syscall param futex(timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sched_setaffinity(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1095)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setaffinity(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1095)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setaffinity(mask) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1095)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_setaffinity(mask) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1095)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3510,19 +3510,19 @@ Syscall param sched_setaffinity(mask) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param sched_getaffinity(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1099)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_getaffinity(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1099)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_getaffinity(mask) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1099)
+   by 0x........: main (scalar.c)
 
 Syscall param sched_getaffinity(mask) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1099)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3530,11 +3530,11 @@ Syscall param sched_getaffinity(mask) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param set_thread_area(u_info) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1103)
+   by 0x........: main (scalar.c)
 
 Syscall param set_thread_area(u_info) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1103)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Warning: bad u_info address 0x........ in set_thread_area
@@ -3543,11 +3543,11 @@ Warning: bad u_info address 0x........ in set_thread_area
 -----------------------------------------------------
 Syscall param get_thread_area(u_info) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1107)
+   by 0x........: main (scalar.c)
 
 Syscall param get_thread_area(u_info) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1107)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Warning: bad u_info address 0x........ in get_thread_area
@@ -3556,15 +3556,15 @@ Warning: bad u_info address 0x........ in get_thread_area
 -----------------------------------------------------
 Syscall param io_setup(nr_events) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1111)
+   by 0x........: main (scalar.c)
 
 Syscall param io_setup(ctxp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1111)
+   by 0x........: main (scalar.c)
 
 Syscall param io_setup(ctxp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1111)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3572,39 +3572,39 @@ Syscall param io_setup(ctxp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param io_destroy(ctx) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1124)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 247:   __NR_io_getevents 5s 2m
 -----------------------------------------------------
 Syscall param io_getevents(ctx_id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
 
 Syscall param io_getevents(min_nr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
 
 Syscall param io_getevents(nr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
 
 Syscall param io_getevents(events) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
 
 Syscall param io_getevents(timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
 
 Syscall param io_getevents(events) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param io_getevents(timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1129)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3612,19 +3612,19 @@ Syscall param io_getevents(timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param io_submit(ctx_id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1133)
+   by 0x........: main (scalar.c)
 
 Syscall param io_submit(nr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1133)
+   by 0x........: main (scalar.c)
 
 Syscall param io_submit(iocbpp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1133)
+   by 0x........: main (scalar.c)
 
 Syscall param io_submit(iocbpp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1133)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3632,24 +3632,24 @@ Syscall param io_submit(iocbpp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param io_cancel(ctx_id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1137)
+   by 0x........: main (scalar.c)
 
 Syscall param io_cancel(iocb) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1137)
+   by 0x........: main (scalar.c)
 
 Syscall param io_cancel(result) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1137)
+   by 0x........: main (scalar.c)
 
 Syscall param io_cancel(iocb) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1137)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param io_cancel(result) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1137)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3666,23 +3666,23 @@ Syscall param io_cancel(result) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param lookup_dcookie(cookie_low) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1153)
+   by 0x........: main (scalar.c)
 
 Syscall param lookup_dcookie(cookie_high) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1153)
+   by 0x........: main (scalar.c)
 
 Syscall param lookup_dcookie(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1153)
+   by 0x........: main (scalar.c)
 
 Syscall param lookup_dcookie(len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1153)
+   by 0x........: main (scalar.c)
 
 Syscall param lookup_dcookie(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1153)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3690,30 +3690,30 @@ Syscall param lookup_dcookie(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param epoll_create(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1157)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 255:      __NR_epoll_ctl 4s 1m
 -----------------------------------------------------
 Syscall param epoll_ctl(epfd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1161)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_ctl(op) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1161)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_ctl(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1161)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_ctl(event) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1161)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_ctl(event) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1161)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3721,23 +3721,23 @@ Syscall param epoll_ctl(event) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param epoll_wait(epfd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1165)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_wait(events) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1165)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_wait(maxevents) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1165)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_wait(timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1165)
+   by 0x........: main (scalar.c)
 
 Syscall param epoll_wait(events) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1165)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3748,41 +3748,41 @@ Syscall param epoll_wait(events) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param set_tid_address(tidptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1173)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 259:   __NR_timer_create 3s 2m
 -----------------------------------------------------
 Syscall param timer_create(clockid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_create(evp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_create(timerid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_create(evp.sigev_value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param timer_create(evp.sigev_signo) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param timer_create(evp.sigev_notify) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param timer_create(timerid) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1177)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3790,28 +3790,28 @@ Syscall param timer_create(timerid) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param timer_settime(timerid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1181)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_settime(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1181)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_settime(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1181)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_settime(ovalue) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1181)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_settime(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1181)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param timer_settime(ovalue) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1181)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3819,15 +3819,15 @@ Syscall param timer_settime(ovalue) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param timer_gettime(timerid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1185)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_gettime(value) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1185)
+   by 0x........: main (scalar.c)
 
 Syscall param timer_gettime(value) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1185)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3835,29 +3835,29 @@ Syscall param timer_gettime(value) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param timer_getoverrun(timerid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1189)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 263:   __NR_timer_delete 1s 0m
 -----------------------------------------------------
 Syscall param timer_delete(timerid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1193)
+   by 0x........: main (scalar.c)
 
 -----------------------------------------------------
 264:  __NR_clock_settime 2s 1m
 -----------------------------------------------------
 Syscall param clock_settime(clk_id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1197)
+   by 0x........: main (scalar.c)
 
 Syscall param clock_settime(tp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1197)
+   by 0x........: main (scalar.c)
 
 Syscall param clock_settime(tp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1197)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3865,15 +3865,15 @@ Syscall param clock_settime(tp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param clock_gettime(clk_id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1201)
+   by 0x........: main (scalar.c)
 
 Syscall param clock_gettime(tp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1201)
+   by 0x........: main (scalar.c)
 
 Syscall param clock_gettime(tp) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1201)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3881,15 +3881,15 @@ Syscall param clock_gettime(tp) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param clock_getres(clk_id) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1205)
+   by 0x........: main (scalar.c)
 
 Syscall param clock_getres(res) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1205)
+   by 0x........: main (scalar.c)
 
 Syscall param clock_getres(res) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1205)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3900,24 +3900,24 @@ Syscall param clock_getres(res) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param statfs64(path) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1213)
+   by 0x........: main (scalar.c)
 
 Syscall param statfs64(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1213)
+   by 0x........: main (scalar.c)
 
 Syscall param statfs64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1213)
+   by 0x........: main (scalar.c)
 
 Syscall param statfs64(path) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1213)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param statfs64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1213)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3925,19 +3925,19 @@ Syscall param statfs64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param fstatfs64(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1217)
+   by 0x........: main (scalar.c)
 
 Syscall param fstatfs64(size) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1217)
+   by 0x........: main (scalar.c)
 
 Syscall param fstatfs64(buf) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1217)
+   by 0x........: main (scalar.c)
 
 Syscall param fstatfs64(buf) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1217)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3948,25 +3948,25 @@ Syscall param fstatfs64(buf) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param utimes(filename) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1225)
+   by 0x........: main (scalar.c)
 
 Syscall param utimes(tvp) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1225)
+   by 0x........: main (scalar.c)
 
 Syscall param utimes(filename) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1225)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param utimes(tvp[0]) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1225)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param utimes(tvp[1]) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1225)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -3989,33 +3989,33 @@ Syscall param utimes(tvp[1]) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mq_open(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_open(oflag) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_open(mode) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_open(attr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_open(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_open(attr->mq_maxmsg) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_open(attr->mq_msgsize) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1249)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4023,11 +4023,11 @@ Syscall param mq_open(attr->mq_msgsize) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mq_unlink(name) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1253)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_unlink(name) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1253)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4035,32 +4035,32 @@ Syscall param mq_unlink(name) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mq_timedsend(mqdes) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedsend(msg_ptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedsend(msg_len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedsend(msg_prio) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedsend(abs_timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedsend(msg_ptr) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_timedsend(abs_timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1257)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4068,37 +4068,37 @@ Syscall param mq_timedsend(abs_timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mq_timedreceive(mqdes) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedreceive(msg_ptr) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedreceive(msg_len) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedreceive(msg_prio) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedreceive(abs_timeout) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_timedreceive(msg_ptr) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_timedreceive(msg_prio) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_timedreceive(abs_timeout) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1261)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4106,15 +4106,15 @@ Syscall param mq_timedreceive(abs_timeout) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mq_notify(mqdes) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1265)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_notify(notification) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1265)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_notify(notification) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1265)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4122,71 +4122,223 @@ Syscall param mq_notify(notification) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param mq_getsetattr(mqdes) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1269)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_getsetattr(mqstat) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1269)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_getsetattr(omqstat) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1269)
+   by 0x........: main (scalar.c)
 
 Syscall param mq_getsetattr(mqstat->mq_flags) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1269)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param mq_getsetattr(omqstat) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1269)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
 283: __NR_sys_kexec_load ni
 -----------------------------------------------------
 -----------------------------------------------------
+284:         __NR_waitid 5s 0m
+-----------------------------------------------------
+Syscall param sys_waitid(which) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(infop) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(options) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(ru) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+-----------------------------------------------------
+284:         __NR_waitid (infop,ru) 5s 2m
+-----------------------------------------------------
+Syscall param sys_waitid(which) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(infop) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(options) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param sys_waitid(ru) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param waitid(infop) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param waitid(ru) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
 329:  __NR_epoll_create1 1s 0m
 -----------------------------------------------------
 Syscall param epoll_create1(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1277)
+   by 0x........: main (scalar.c)
+
+-----------------------------------------------------
+340:      __NR_prlimit64 (nop) 4s 0m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+-----------------------------------------------------
+340:      __NR_prlimit64 (set) 4s 1m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param rlimit64(new_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+340:      __NR_prlimit64 (get) 4s 1m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param rlimit64(old_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+-----------------------------------------------------
+340:      __NR_prlimit64 (get+set) 4s 2m
+-----------------------------------------------------
+Syscall param prlimit64(pid) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(resource) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(new_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param prlimit64(old_rlim) contains uninitialised byte(s)
+   ...
+   by 0x........: main (scalar.c)
+
+Syscall param rlimit64(new_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param rlimit64(old_rlim) points to unaddressable byte(s)
+   ...
+   by 0x........: main (scalar.c)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
 347:__NR_process_vm_readv 6s 2m
 -----------------------------------------------------
 Syscall param process_vm_readv(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_readv(lvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_readv(liovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_readv(rvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_readv(riovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_readv(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_readv(lvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param process_vm_readv(rvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1281)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4194,36 +4346,36 @@ Syscall param process_vm_readv(rvec) points to unaddressable byte(s)
 -----------------------------------------------------
 Syscall param process_vm_writev(pid) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_writev(lvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_writev(liovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_writev(rvec) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_writev(riovcnt) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_writev(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
 
 Syscall param process_vm_writev(lvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 Syscall param process_vm_writev(rvec) points to unaddressable byte(s)
    ...
-   by 0x........: main (scalar.c:1285)
+   by 0x........: main (scalar.c)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 -----------------------------------------------------
@@ -4239,5 +4391,5 @@ it at http://valgrind.org/support/bug_reports.html.
 -----------------------------------------------------
 Syscall param exit(status) contains uninitialised byte(s)
    ...
-   by 0x........: main (scalar.c:1293)
+   by 0x........: main (scalar.c)
 

@@ -315,6 +315,7 @@ PRE(sys_fstatat64)
          ARG3);
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "fstatat64", tid, status);
    PRE_MEM_RASCIIZ( "fstatat64(file_name)", ARG2 );
    PRE_MEM_WRITE( "fstatat64(buf)", ARG3, sizeof(struct vki_stat64) );
 }
@@ -715,7 +716,7 @@ static SyscallTableEntry syscall_table[] = {
 //..
    GENXY(__NR_readlink,          sys_readlink),          // 85
 //..    //   (__NR_uselib,            sys_uselib),            // 86 */Linux
-//..    //   (__NR_swapon,            sys_swapon),            // 87 */Linux
+   LINX_(__NR_swapon,            sys_swapon),            // 87 */Linux
 //..    //   (__NR_reboot,            sys_reboot),            // 88 */Linux
 //..    //   (__NR_readdir,           old_readdir),           // 89 -- superseded
 
@@ -748,15 +749,15 @@ static SyscallTableEntry syscall_table[] = {
 //..    GENX_(__NR_idle,              sys_ni_syscall),        // 112
 //..    //   (__NR_vm86old,           sys_vm86old),           // 113 x86/Linux-only
    GENXY(__NR_wait4,             sys_wait4),             // 114
-//..
-//..    //   (__NR_swapoff,           sys_swapoff),           // 115 */Linux
+//.. 
+   LINX_(__NR_swapoff,           sys_swapoff),           // 115 */Linux 
    LINXY(__NR_sysinfo,           sys_sysinfo),           // 116
    LINXY(__NR_ipc,               sys_ipc),               // 117
    GENX_(__NR_fsync,             sys_fsync),             // 118
    PLAX_(__NR_sigreturn,         sys_sigreturn),         // 119 ?/Linux
 //..
    LINX_(__NR_clone,             sys_clone),             // 120
-//..    //   (__NR_setdomainname,     sys_setdomainname),     // 121 */*(?)
+   LINX_(__NR_setdomainname,     sys_setdomainname),     // 121
    GENXY(__NR_uname,             sys_newuname),          // 122
 //..    PLAX_(__NR_modify_ldt,        sys_modify_ldt),        // 123
    LINXY(__NR_adjtimex,          sys_adjtimex),          // 124
@@ -901,7 +902,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_epoll_ctl,         sys_epoll_ctl),         // 237
    LINXY(__NR_epoll_wait,        sys_epoll_wait),        // 238
 
-//..    //   (__NR_remap_file_pages,  sys_remap_file_pages),  // 239 */Linux
+   LINX_(__NR_remap_file_pages,  sys_remap_file_pages),  // 239 */Linux
    LINXY(__NR_timer_create,      sys_timer_create),      // 240
    LINXY(__NR_timer_settime,     sys_timer_settime),     // 241
    LINXY(__NR_timer_gettime,     sys_timer_gettime),     // 242
@@ -1074,11 +1075,14 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat2,        sys_faccessat2),       // 439
 
    LINXY (__NR_epoll_pwait2,     sys_epoll_pwait2),      // 441
+   LINX_ (__NR_mount_setattr,    sys_mount_setattr),     // 442
+   LINX_ (__NR_quotactl_fd,      sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
    LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
+   LINX_(__NR_futex_waitv,       sys_futex_waitv),       // 449
    LINXY(__NR_cachestat,         sys_cachestat),         // 451
    LINX_ (__NR_fchmodat2,        sys_fchmodat2),         // 452
    LINXY (__NR_statmount,        sys_statmount),         // 457

@@ -158,7 +158,8 @@ typedef
 #define VEX_S390X_MODEL_Z14_ZR1  15
 #define VEX_S390X_MODEL_Z15      16
 #define VEX_S390X_MODEL_Z16      17
-#define VEX_S390X_MODEL_UNKNOWN  18     /* always last in list */
+#define VEX_S390X_MODEL_Z17      18
+#define VEX_S390X_MODEL_UNKNOWN  19     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
 #define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
@@ -1005,7 +1006,8 @@ typedef
 typedef
    struct {
       IROp   op;            // the operation to perform
-      HWord  result;        // address of the result
+      HWord  result_fold;   // address of the result (with folding)
+      HWord  result_nofold; // address of the result (without folding)
       HWord  opnd1;         // address of 1st operand
       HWord  opnd2;         // address of 2nd operand
       IRType t_result;      // type of result

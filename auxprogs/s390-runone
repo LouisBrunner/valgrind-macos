@@ -1,5 +1,9 @@
-#!/bin/sh
-#
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+
 #-----------------------------------------------------------------------
 # Compile a small C program containing a sequence of assembler
 # instructions into an executable that does not need a dynamic linker.
@@ -7,79 +11,207 @@
 # through the multi-pass process of figuring out which SB contains the
 # code we're interested in.
 #
-# Here is a template:
+# Step #1: s390-runone -t bla.c
+#
+# Creates a template which looks like so:
 #
 #    int main(void)
 #    {
+#      asm volatile ("csch");          // begin mark: do not remove
 #      //FIXME: insert test code here:
 #      asm volatile ("lghi %r1,1");    // __NR_exit
 #      asm volatile ("lghi %r2,0");    // return code = 0
-#      asm volatile ("svc 0");
-#      return 0;                       // shuts up GCC
+#      asm volatile ("svc 0");         // terminate process
+#      asm volatile ("csch");          // end mark: do not remove
+#      return 0;
 #    }
 #
-# When running the executable created by this script under valgrind
-# there will be only a single super block! Which is exactly what we want
-# for debugging.
+# Step #2: Replace the FIXME line with one or more asm statements.
+#          Skip this step if you used --insn=... in step #1.
+#
+# Step #3: s390-runone --build bla.c
+#
+# Compiles and links "bla.c" into an executable "bla" which does not
+# require the dynamic loader and which contains only those insns between
+# the two marker insns (csch).
 #
 # objdump -d:
 #
 # 00000000010000b0 <_start>:
-# 10000b0:	b3 c1 00 0b       	ldgr	%f0,%r11
-# 10000b4:	b9 04 00 bf       	lgr	%r11,%r15
-# 10000b8:	a7 19 00 01       	lghi	%r1,1       <---
-# 10000bc:	a7 29 00 09       	lghi	%r2,9       <---
-# 10000c0:	0a 00             	svc	0           <---
-# 10000c2:	a7 18 00 00       	lhi	%r1,0
-# 10000c6:	b9 14 00 11       	lgfr	%r1,%r1
-# 10000ca:	b9 04 00 21       	lgr	%r2,%r1
-# 10000ce:	b3 cd 00 b0       	lgdr	%r11,%f0
-# 10000d2:	07 fe             	br	%r14
-# 10000d4:	07 07             	nopr	%r7
-# 10000d6:	07 07             	nopr	%r7
+# 10000b0:	a7 19 00 01       	lghi	%r1,1
+# 10000b4:	a7 29 00 00       	lghi	%r2,0
+# 10000b8:	0a 00             	svc	0
 #
-# There are only 2 extra insns ahead of our asm code sequence.
-# Everything after the svc insn is not reachable.
 #-----------------------------------------------------------------------
 #
 
-if [ "x$1" = "x" ]; then
-  echo "Usage:  s390-runone  C-file" 1>&2
-  echo "   or:  s390-runone  -t"     1>&2
-  exit 1
-fi
+&main;
 
-if [ "x$1" = "x-t" ]; then
-  echo 'int main(void)'
-  echo '{'
-  echo '  //FIXME: insert test code here:'
-  echo '  asm volatile ("lghi %r1,1");    // __NR_exit'
-  echo '  asm volatile ("lghi %r2,0");    // return code = 0'
-  echo '  asm volatile ("svc 0");'
-  echo '  return 0;                       // shuts up GCC'
-  echo '}'
-  exit 0
-fi
+sub usage {
+    my $text =<<END
 
-file="$1"
-base=`basename "$file" .c`
-asm="$base.s"
-exe="$base"
+Usage:  s390-runone [options] FILE
 
-if [ "$base" = "$file" ]; then
-  echo "$file is not a C file" 1>&2
-  exit 1
-fi
+   Options:
+     --template   Write template
+     --build      Build executable from C file
+     --insn INSN  Add INSN to template
+     --arch ARCH  Passed as -march=ARCH to GCC
+     --help       Write this text
+
+   FILE  is mandatory with --build
+
+END
+    ;
+    print $text;
+    exit 0;
+}
+
+sub main {
+    my $template = 0;
+    my $build    = 0;
+    my $help     = 0;
+    my $insn     = "";
+    my $arch     = "arch14";
+
+    GetOptions("template|t" => sub { $template = 1; $build = 0; },
+               "build|b"    => sub { $template = 0; $build = 1; },
+               "help|h"     => \$help,
+               "insn|i=s"   => \$insn,
+               "arch|a=s"   => \$arch
+        ) or usage();
+
+    usage() if ($help);
+
+    my $num_arg = $#ARGV + 1;
+    my $file = "";
+
+    if ($num_arg != 1) {
+        fatal("Missing file name") if ($build);
+    } else {
+        $file = $ARGV[0];
+    }
+
+    my $rc = 0;
+    if ($template) {
+        write_template($file, $insn);
+    } elsif ($build) {
+        $rc = build_exe($file, $arch);
+    } else {
+        print "Nothing happens\n";
+    }
+    exit $rc;
+}
+
+sub write_template
+{
+    my ($file, $insn) = @_;
+    my $asm;
+
+    if ($insn eq "") {
+        $asm = "//FIXME: insert test code here:";
+    } else {
+        $asm = "asm volatile (\"$insn\");";
+    }
+
+    my $template = <<END2
+int main(void)
+{
+  asm volatile ("csch");          // begin mark: do not remove
+  $asm
+  asm volatile ("lghi %r1,1");    // __NR_exit
+  asm volatile ("lghi %r2,0");    // return code = 0
+  asm volatile ("svc 0");         // terminate process
+  asm volatile ("csch");          // end mark: do not remove
+  return 0;
+}
+END2
+    ;
+    if ($file ne "") {
+        open(OUT, ">$file") || fatal("Cannot open '$file': $!\n");
+        print OUT $template;
+        close(OUT);
+    } else {
+        print $template;
+    }
+}
+
+sub build_exe
+{
+    my ($file, $arch) = @_;
+
+    my $base = `basename "$file" .c`;
+    chomp($base);
+    my $asm  = "$base.s";
+    my $exe  = "$base";
 
 # Compile the testprogram to assembler
-gcc -S -fno-ident -march=arch14  $file
-mv "$asm" "$asm.orig"     # save the result
+    my $stderr = `gcc -S -fno-ident -march=$arch  $file 2>&1`;
+    if ($? != 0) {
+        error("GCC: Compilation failed\n    $stderr");
+        return 1;
+    }
+    `mv "$asm" "$asm.orig"`;     # save before massaging
 
-# Rename main with _start, remove cfi stuff and comment lines
-sed 's/main/_start/g' "$asm.orig" | grep -v \.cfi_ | grep -v ^# > "$asm"
+# Massage assembler file:
+# - rename main ---> _start
+# - remove cfi stuff
+# - remove comment lines
+# - remove insns preceeding 1st mark (csch)
+# - remove insns succeeding 2nd mark (csch)
 
-# Link to executable
-gcc -static -Wl,--build-id=none -nodefaultlibs -nostartfiles "$asm" -o "$exe"
+    my $in_main = 0;
+    my $mark_seen = 0;
+    my $output = "";
+    open(IN, "$asm.orig") || fatal("Cannot open '$file': $!\n");
+    while (my $line = <IN>) {
+        chomp($line);
+        next if ($line =~ /^#/);     # comment
+        next if ($line =~ /\.cfi_/); # cfi stuff
+        if ($in_main == 0) {
+            $in_main = 1 if ($line =~ /^main:/);
+        } else {
+            if ($mark_seen == 0) {
+                if ($line =~ /csch/) {
+                    $mark_seen = 1;
+                    next;
+                }
+                next if ($line =~ /^\t[a-z]/);  # skip insn
+            } else {
+                if ($line =~ /csch/) {
+                    $mark_seen = 0;
+                    next;
+                }
+            }
+        }
+        $line =~ s/main/_start/g;
+        $output .= "$line\n";
+    }
+    open(OUT, ">$asm") || fatal("Cannot open '$asm': $!\n");
+    print OUT $output;
+    close(OUT);
 
-echo "$exe created"
-exit 0
+    # Assemble file and link to executable
+    my $gcc = "gcc -static -Wa,--fatal-warnings -Wl,--build-id=none"
+            . " -nodefaultlibs -nostartfiles";
+    $stderr = `$gcc "$asm" -o "$exe" 2>&1`;
+
+    if ($? != 0) {
+        error("GCC: Linking executable failed");
+        for my $line (split /\n/,$stderr) {
+            print STDERR "$line\n" if ($line !~ /treating warnings as errors/);
+        }
+        return 1;
+    }
+}
+
+sub error
+{
+    print STDERR "*** $_[0]\n";
+}
+
+sub fatal
+{
+    error($_[0]);
+    exit 1;
+}

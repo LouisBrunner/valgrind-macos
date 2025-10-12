@@ -1,0 +1,70 @@
+initial rounding mode: 0
+Setting FPC rounding mode via SFPC
+setting rounding mode to 1
+...checking: 1
+setting rounding mode to 2
+...checking: 2
+setting rounding mode to 3
+...checking: 3
+setting rounding mode to 7
+...checking: 7
+setting rounding mode to 0
+...checking: 0
+
+Setting FPC rounding mode via SRNM
+.... using base register
+setting rounding mode to 0
+...checking: 0
+setting rounding mode to 1
+...checking: 1
+setting rounding mode to 2
+...checking: 2
+setting rounding mode to 3
+...checking: 3
+.... using displacement
+setting rounding mode to 0
+...checking: 0
+setting rounding mode to 1
+...checking: 1
+setting rounding mode to 2
+...checking: 2
+setting rounding mode to 3
+...checking: 3
+
+Setting FPC rounding mode via SRNMB
+.... using base register
+setting rounding mode to 0
+...checking: 0
+setting rounding mode to 1
+...checking: 1
+setting rounding mode to 2
+...checking: 2
+setting rounding mode to 3
+...checking: 3
+setting rounding mode to 7
+...checking: 7
+.... using displacement
+setting rounding mode to 0
+...checking: 0
+setting rounding mode to 1
+...checking: 1
+setting rounding mode to 2
+...checking: 2
+setting rounding mode to 3
+...checking: 3
+setting rounding mode to 7
+...checking: 7
+
+SRNM specific checks
+rounding mode = 3
+rounding mode = 3
+rounding mode = 3
+rounding mode = 2
+rounding mode = 2
+
+SRNMB specific checks
+rounding mode = 7
+
+LFPC
+rounding mode = 3
+rounding mode = 2

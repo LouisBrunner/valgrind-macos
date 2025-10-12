@@ -670,12 +670,12 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_mount,             sys_mount),          // 165
    LINX_(__NR_umount2,           sys_umount),         // 166 
-   //   (__NR_swapon,            sys_swapon),         // 167 
-   //   (__NR_swapoff,           sys_swapoff),        // 168 
+   LINX_(__NR_swapon,            sys_swapon),         // 167 
+   LINX_(__NR_swapoff,           sys_swapoff),        // 168 
    //   (__NR_reboot,            sys_reboot),         // 169 
 
    GENX_(__NR_sethostname,       sys_sethostname),    // 170 
-   //   (__NR_setdomainname,     sys_setdomainname),  // 171 
+   LINX_(__NR_setdomainname,     sys_setdomainname),  // 171
    GENX_(__NR_iopl,              sys_iopl),           // 172 
    LINX_(__NR_ioperm,            sys_ioperm),         // 173 
    GENX_(__NR_create_module,     sys_ni_syscall),     // 174 
@@ -729,7 +729,7 @@ static SyscallTableEntry syscall_table[] = {
    //   (__NR_epoll_ctl_old,     sys_ni_syscall),     // 214 
 
    //   (__NR_epoll_wait_old,    sys_ni_syscall),     // 215 
-   //   (__NR_remap_file_pages,  sys_remap_file_pages)// 216 
+   LINX_(__NR_remap_file_pages,  sys_remap_file_pages), // 216
    GENXY(__NR_getdents64,        sys_getdents64),     // 217 
    LINX_(__NR_set_tid_address,   sys_set_tid_address),// 218 
    //   (__NR_restart_syscall,   sys_restart_syscall),// 219 
@@ -895,12 +895,15 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_faccessat2,	 sys_faccessat2),        // 439
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
+   LINX_(__NR_mount_setattr,     sys_mount_setattr),     // 442
+   LINX_(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
    LINX_(__NR_landlock_restrict_self,  sys_landlock_restrict_self),  // 446
 
    LINXY(__NR_memfd_secret,      sys_memfd_secret),      // 447
+   LINX_(__NR_futex_waitv,       sys_futex_waitv),       // 449
 
    LINXY(__NR_cachestat,         sys_cachestat),         // 451
    LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452

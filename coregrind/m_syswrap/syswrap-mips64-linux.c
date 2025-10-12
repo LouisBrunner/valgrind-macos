@@ -215,9 +215,6 @@ SysRes sys_set_tls ( ThreadId tid, Addr tlsptr )
    file, but that requires even more macro magic. */
 
 DECL_TEMPLATE (mips_linux, sys_set_thread_area);
-DECL_TEMPLATE (mips_linux, sys_swapon);
-DECL_TEMPLATE (mips_linux, sys_swapoff);
-DECL_TEMPLATE (mips_linux, sys_setdomainname);
 DECL_TEMPLATE (mips_linux, sys_sethostname);
 DECL_TEMPLATE (mips_linux, sys_reboot);
 DECL_TEMPLATE (mips_linux, sys_cacheflush);
@@ -235,18 +232,6 @@ PRE(sys_sched_rr_get_interval)
    PRE_REG_READ2(long, "sched_rr_get_interval", vki_pid_t, pid,
                  struct timespec *, timer);
    *flags |= SfMayBlock;
-}
-
-PRE(sys_swapon)
-{
-   PRINT("sys_swapon ( %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )", ARG1, ARG2);
-   PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
-}
-
-PRE(sys_swapoff)
-{
-   PRINT("sys_swapoff ( %#" FMT_REGWORD "x )", ARG1);
-   PRE_REG_READ1(long, "swapoff", const void *, path);
 }
 
 /* Very much MIPS specific */
@@ -271,12 +256,6 @@ PRE(sys_reboot)
                  void *, arg);
 
    *flags |= SfMayBlock;
-}
-
-PRE(sys_setdomainname)
-{
-   PRINT ("sys_setdomainname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
-   PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
 }
 
 PRE(sys_sethostname)
@@ -653,12 +632,13 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_ (__NR_acct, sys_acct),
    GENX_ (__NR_settimeofday, sys_settimeofday),
    LINX_ (__NR_mount, sys_mount),
+   LINX_ (__NR_mount_setattr, sys_mount_setattr),
    LINX_ (__NR_umount2, sys_umount),
-   PLAX_ (__NR_swapon, sys_swapon),
-   PLAX_ (__NR_swapoff, sys_swapoff),
+   LINX_ (__NR_swapon, sys_swapon),
+   LINX_ (__NR_swapoff, sys_swapoff),
    PLAX_ (__NR_reboot, sys_reboot),
    PLAX_ (__NR_sethostname, sys_sethostname),
-   PLAX_ (__NR_setdomainname, sys_setdomainname),
+   LINX_ (__NR_setdomainname, sys_setdomainname),
    GENX_ (__NR_create_module, sys_ni_syscall),
    LINX_ (__NR_init_module, sys_init_module),
    LINX_ (__NR_delete_module, sys_delete_module),
@@ -701,6 +681,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_epoll_create1, sys_epoll_create1),
    LINX_ (__NR_epoll_ctl, sys_epoll_ctl),
    LINXY (__NR_epoll_wait, sys_epoll_wait),
+   LINX_ (__NR_remap_file_pages, sys_remap_file_pages),
    PLAX_(__NR_rt_sigreturn,sys_rt_sigreturn),
 #if defined(VGABI_N32)
    LINXY(__NR_fcntl64, sys_fcntl64),
@@ -817,6 +798,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_statmount, sys_statmount),
    LINXY (__NR_listmount, sys_listmount),
    LINX_ (__NR_mseal, sys_mseal),
+   LINX_ (__NR_futex_waitv, sys_futex_waitv),
+   LINX_ (__NR_quotactl_fd, sys_quotactl_fd),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

@@ -1,0 +1,30 @@
+Use of uninitialised value of size 8
+   at 0x........: depend_on (vme.c:13)
+   by 0x........: test_vme_0 (vme.c:59)
+   by 0x........: do_invalid (vme.c:87)
+   by 0x........: main (vme.c:99)
+
+Use of uninitialised value of size 8
+   at 0x........: depend_on (vme.c:13)
+   by 0x........: test_vme_1 (vme.c:60)
+   by 0x........: do_invalid (vme.c:88)
+   by 0x........: main (vme.c:99)
+
+Use of uninitialised value of size 8
+   at 0x........: depend_on (vme.c:13)
+   by 0x........: test_vme_2 (vme.c:61)
+   by 0x........: do_invalid (vme.c:89)
+   by 0x........: main (vme.c:99)
+
+Use of uninitialised value of size 8
+   at 0x........: depend_on (vme.c:13)
+   by 0x........: test_vmo_2 (vme.c:62)
+   by 0x........: do_invalid (vme.c:90)
+   by 0x........: main (vme.c:99)
+
+Use of uninitialised value of size 8
+   at 0x........: depend_on (vme.c:13)
+   by 0x........: test_vmale_1 (vme.c:67)
+   by 0x........: do_invalid (vme.c:91)
+   by 0x........: main (vme.c:99)
+

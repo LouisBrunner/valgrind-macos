@@ -632,9 +632,9 @@ UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
 /*--- Misaligned memory access support                  ---*/
 /*---------------------------------------------------------*/
 
-UInt read_misaligned_UInt_LE ( void* addr )
+UInt read_misaligned_UInt_LE ( const void* addr )
 {
-   UChar* p = (UChar*)addr;
+   const UChar* p = addr;
    UInt   w = 0;
    w = (w << 8) | p[3];
    w = (w << 8) | p[2];
@@ -643,9 +643,9 @@ UInt read_misaligned_UInt_LE ( void* addr )
    return w;
 }
 
-ULong read_misaligned_ULong_LE ( void* addr )
+ULong read_misaligned_ULong_LE ( const void* addr )
 {
-   UChar* p = (UChar*)addr;
+   const UChar* p = addr;
    ULong  w = 0;
    w = (w << 8) | p[7];
    w = (w << 8) | p[6];

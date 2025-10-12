@@ -1,0 +1,2 @@
+prog: vme
+vgopts: -q

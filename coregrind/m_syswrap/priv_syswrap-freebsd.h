@@ -81,7 +81,7 @@ DECL_TEMPLATE(freebsd, sys_fchflags) // 35
 // generic kill 37
 // generic getppid 39
 // generic dup 41
-DECL_TEMPLATE(freebsd, sys_pipe) // 42
+DECL_TEMPLATE(freebsd, sys_freebsd10_pipe) // 42
 // generic getegid 43
 // generic profil redirect to ni_syscall 44
 // sys_ktrace refirect to ni_syscall 45
@@ -107,8 +107,8 @@ DECL_TEMPLATE(freebsd, sys_sbrk) // 69
 // generic mprotect 74
 // generic madvise 75
 // generic mincore 78
-// generic getgroups 79
-// generic setgroups 80
+// generic freebsd14_getgroups 79
+// generic freebsd14_setgroups 80
 // generic getpgrp 81
 // generic setpgid 82
 // generic setitimer 83
@@ -546,6 +546,12 @@ DECL_TEMPLATE(freebsd, sys_setcred) // 591
 DECL_TEMPLATE(freebsd, sys_exterrctl) // 592
 DECL_TEMPLATE(freebsd, sys_inotify_add_watch_at) // 593
 DECL_TEMPLATE(freebsd, sys_inotify_rm_watch) // 594
+
+// generic getgroups 595
+// generic setgroups 596
+
+DECL_TEMPLATE(freebsd, sys_jail_attach_jd) // 597
+DECL_TEMPLATE(freebsd, sys_jail_remove_jd) // 598
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)
 

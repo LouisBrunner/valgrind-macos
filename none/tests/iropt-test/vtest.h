@@ -39,6 +39,7 @@ typedef struct {
    unsigned num_opnds;
    IRType opnd1_type;
    IRType opnd2_type;
+   unsigned enabled_arch;
 } irop_t;
 
 
@@ -55,7 +56,8 @@ typedef struct {
 /* Carries the data needed to execute and evaluate a test. I.e.
    inputs and result. */
 typedef struct {
-   opnd_t result;
+   opnd_t result_fold;
+   opnd_t result_nofold;
    opnd_t opnds[MAX_OPERANDS];
 } test_data_t;
 

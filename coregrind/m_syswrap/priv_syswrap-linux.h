@@ -62,6 +62,7 @@ DECL_TEMPLATE(linux, sys_readahead);
 DECL_TEMPLATE(linux, sys_move_pages);
 DECL_TEMPLATE(linux, sys_cachestat);
 DECL_TEMPLATE(linux, sys_sysfs);
+DECL_TEMPLATE(linux, sys_setdomainname);
 
 // clone is similar enough between linux variants to have a generic
 // version, but which will call an extern defined in syswrap-<platform>-linux.c
@@ -110,6 +111,7 @@ DECL_TEMPLATE(linux, sys_epoll_ctl);
 DECL_TEMPLATE(linux, sys_epoll_wait);
 DECL_TEMPLATE(linux, sys_epoll_pwait);
 DECL_TEMPLATE(linux, sys_epoll_pwait2);
+DECL_TEMPLATE(linux, sys_remap_file_pages);
 DECL_TEMPLATE(linux, sys_eventfd);
 DECL_TEMPLATE(linux, sys_eventfd2);
 
@@ -253,6 +255,7 @@ DECL_TEMPLATE(linux, sys_munlockall);
 DECL_TEMPLATE(linux, sys_pipe);
 DECL_TEMPLATE(linux, sys_pipe2);
 DECL_TEMPLATE(linux, sys_quotactl);
+DECL_TEMPLATE(linux, sys_quotactl_fd);
 DECL_TEMPLATE(linux, sys_waitid);
 
 // Posix, but in Darwin utime is a libc function that calls syscall utimes.
@@ -284,6 +287,9 @@ DECL_TEMPLATE(linux, sys_stime);  /* maybe generic?  I'm not sure */
 DECL_TEMPLATE(linux, sys_init_module);
 DECL_TEMPLATE(linux, sys_finit_module);
 DECL_TEMPLATE(linux, sys_delete_module);
+
+DECL_TEMPLATE(linux, sys_swapon);
+DECL_TEMPLATE(linux, sys_swapoff);
 
 // Linux-specific (oprofile-related)
 DECL_TEMPLATE(linux, sys_lookup_dcookie);        // (*/32/64) L
@@ -342,6 +348,9 @@ DECL_TEMPLATE(linux, sys_pidfd_open);
 // Linux-specific (new in Linux 5.9)
 DECL_TEMPLATE(linux, sys_close_range);
 DECL_TEMPLATE(linux, sys_openat2);
+
+// Linux-specific (new in Linux 5.12)
+DECL_TEMPLATE(linux, sys_mount_setattr)
 
 // Linux-specific (new in Linux 5.13)
 DECL_TEMPLATE(linux, sys_landlock_create_ruleset)
@@ -464,6 +473,7 @@ DECL_TEMPLATE(linux, sys_mq_timedreceive_time64);
 DECL_TEMPLATE(linux, sys_semtimedop_time64);
 DECL_TEMPLATE(linux, sys_rt_sigtimedwait_time64);
 DECL_TEMPLATE(linux, sys_futex_time64);
+DECL_TEMPLATE(linux, sys_futex_waitv);
 DECL_TEMPLATE(linux, sys_sched_rr_get_interval_time64);
 
 // Some arch specific functions called from syswrap-linux.c

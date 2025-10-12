@@ -1,0 +1,740 @@
+============ Convert to int =============
+Rounding as 'per FPC'
+...setting FPC rounding mode to [-> near]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting FPC rounding mode to [-> zero]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting FPC rounding mode to [-> +inf]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting FPC rounding mode to [-> -inf]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting FPC rounding mode to [-> prepare-short]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+Rounding as 'per M3'
+...setting M3 rounding mode to [-> near away]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting M3 rounding mode to [-> prepare-short]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting M3 rounding mode to [-> near away]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting M3 rounding mode to [-> zero]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting M3 rounding mode to [-> +inf]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3
+...setting M3 rounding mode to [-> -inf]
+......f32 -> i32
+cfebr 0.000000	cc = 0
+cfebra 0.000000	cc = 0
+cfebr -1.000000	cc = 1
+cfebra -1.000000	cc = 1
+cfebr 2.000000	cc = 2
+cfebra 2.000000	cc = 2
+cfebr nan	cc = 3
+cfebra nan	cc = 3
+cfebr inf	cc = 3
+cfebra inf	cc = 3
+......f32 -> i64
+cgebr 0.000000	cc = 0
+cgebra 0.000000	cc = 0
+cgebr -1.000000	cc = 1
+cgebra -1.000000	cc = 1
+cgebr 2.000000	cc = 2
+cgebra 2.000000	cc = 2
+cgebr nan	cc = 3
+cgebra nan	cc = 3
+cgebr inf	cc = 3
+cgebra inf	cc = 3
+......f64 -> i32
+cfdbr 0.000000	cc = 0
+cfdbra 0.000000	cc = 0
+cfdbr -1.000000	cc = 1
+cfdbra -1.000000	cc = 1
+cfdbr 2.000000	cc = 2
+cfdbra 2.000000	cc = 2
+cfdbr nan	cc = 3
+cfdbra nan	cc = 3
+cfdbr inf	cc = 3
+cfdbra inf	cc = 3
+......f64 -> i64
+cgdbr 0.000000	cc = 0
+cgdbra 0.000000	cc = 0
+cgdbr -1.000000	cc = 1
+cgdbra -1.000000	cc = 1
+cgdbr 2.000000	cc = 2
+cgdbra 2.000000	cc = 2
+cgdbr nan	cc = 3
+cgdbra nan	cc = 3
+cgdbr inf	cc = 3
+cgdbra inf	cc = 3
+......f128 -> i32
+cfxbr 0.000000	cc = 0
+cfxbra 0.000000	cc = 0
+cfxbr -1.000000	cc = 1
+cfxbra -1.000000	cc = 1
+cfxbr 2.000000	cc = 2
+cfxbra 2.000000	cc = 2
+cfxbr nan	cc = 3
+cfxbra nan	cc = 3
+cfxbr inf	cc = 3
+cfxbra inf	cc = 3
+......f128 -> i64
+cgxbr 0.000000	cc = 0
+cgxbra 0.000000	cc = 0
+cgxbr -1.000000	cc = 1
+cgxbra -1.000000	cc = 1
+cgxbr 2.000000	cc = 2
+cgxbra 2.000000	cc = 2
+cgxbr nan	cc = 3
+cgxbra nan	cc = 3
+cgxbr inf	cc = 3
+cgxbra inf	cc = 3

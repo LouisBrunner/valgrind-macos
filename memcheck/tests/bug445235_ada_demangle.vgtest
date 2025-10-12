@@ -1,2 +1,5 @@
+# on macOS the C compiler adds more manging which fouls up
+# this test which relies on faking ada mangling in a C binary
+prereq: ! ../../tests/os_test darwin
 prog: bug445235_ada_demangle
 vgopts: -q

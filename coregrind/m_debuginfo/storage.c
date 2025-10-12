@@ -69,19 +69,12 @@ void ML_(symerr) ( const DebugInfo* di, Bool serious, const HChar* msg )
       return;
 
    if (serious) {
-
-      VG_(message)(Vg_DebugMsg, "WARNING: Serious error when "
-                                "reading debug info\n");
-      if (True || VG_(clo_verbosity) < 2) {
-         /* Need to show what the file name is, at verbosity levels 2
-            or below, since that won't already have been shown */
-         VG_(message)(Vg_DebugMsg, 
-                      "When reading debug info from %s:\n",
-                      (di && di->fsm.filename) ? di->fsm.filename
-                                               : "???");
-      }
+      VG_(message)(Vg_DebugMsg,
+                   "WARNING: Serious problem when reading debug info from %s:\n",
+                   (di && di->fsm.filename) ? di->fsm.filename : "???");
+      VG_(message)(Vg_DebugMsg,
+                   "WARNING: Valgrind will continue to execute but error messages may be degraded.\n");
       VG_(message)(Vg_DebugMsg, "%s\n", msg);
-
    } else { /* !serious */
 
       if (VG_(clo_verbosity) >= 2)

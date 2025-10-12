@@ -48,7 +48,10 @@ Elf_AuxStr aux_map[] = {
         {"AT_KPRELOAD", 34},
         {"AT_USRSTACKBASE", 35},
         {"AT_USRSTACKLIM", 36},
-//      {"AT_COUNT", 37},
+        {"AT_CHERI_STATS", 37},
+        {"AT_HWCAP3", 38},
+        {"AT_HWCAP4", 39},
+//      {"AT_COUNT", 40},
 };
 
 int main(int argc, char* argv[], char* envp[])

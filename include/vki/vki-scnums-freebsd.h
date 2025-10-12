@@ -28,6 +28,7 @@
 #define VKI_UNISTD_FREEBSD_H
 
 #include "config.h"
+#include <sys/syscall.h>
 
 // this is the syscall format used by e.g., libc functions like 'write'
 // this is the one used 99.999% of the time
@@ -129,8 +130,16 @@
 /* obs vhangup                   76 */
 /* obs vlimit                    77 */
 #define __NR_mincore             78
+#if defined(SYS_freebsd14_getgroups)
+#define __NR_freebsd14_getgroups 79
+#else
 #define __NR_getgroups           79
+#endif
+#if defined(SYS_freebsd14_setgroups)
+#define __NR_freebsd14_setgroups 80
+#else
 #define __NR_setgroups           80
+#endif
 #define __NR_getpgrp             81
 #define __NR_setpgid             82
 #define __NR_setitimer           83
@@ -634,6 +643,16 @@
 #define __NR_exterrctl           592
 #define __NR_inotify_add_watch_at 593
 #define __NR_inotify_rm_watch    594
+
+#if defined(SYS_freebsd14_getgroups)
+#define __NR_getgroups           595
+#endif
+#if defined(SYS_freebsd14_setgroups)
+#define __NR_setgroups           596
+#endif
+
+#define __NR_jail_attach_jd      597
+#define __NR_jail_remove_jd      598
 
 #define __NR_fake_sigreturn      1000
 

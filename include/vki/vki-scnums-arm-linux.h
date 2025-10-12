@@ -433,6 +433,7 @@
 #define __NR_pkey_free                  396
 #define __NR_statx                      397
 #define __NR_rseq                       398
+#define __NR_futex_waitv                449
 
 
 

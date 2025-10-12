@@ -1,0 +1,2 @@
+prog: bfp-convert
+prereq: ../../../tests/s390x_features s390x-fpext

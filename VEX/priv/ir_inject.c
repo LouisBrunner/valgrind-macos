@@ -27,10 +27,15 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+/* !!! When running valgrind on applications that use IR injection
+   !!! --vex-guest-chase=no should be given on the command line. This
+   !!! avoids that vex_inject_ir is called speculatively.
+*/
 #include "libvex_basictypes.h"
 #include "libvex_ir.h"
 #include "libvex.h"
 #include "main_util.h"
+#include "main_globals.h"           // vex_control
 
 /* Convenience macros for readibility */
 #define mkU1(v)   IRExpr_Const(IRConst_U1(v))
@@ -364,9 +369,16 @@ vex_inject_ir_iropt(IRSB *irsb, IREndness endian)
       vpanic("unsupported operator");
    }
 
+   if (! vex_control.iropt_fold_expr) {
+      store(irsb, endian, iricb.result_nofold, expr);
+      return;
+   }
+
    /* Make sure the expression gets folded ! */
    IRExpr *env[1] = { 0 };
    IRExpr *res = foldIRExpr(env, expr);
+
+// vex_printf("FOLDED RESULT "); ppIRExpr(res); vex_printf("\n");
 
    if (res->tag != Iex_Const) {
       vex_printf("*** ");
@@ -374,21 +386,11 @@ vex_inject_ir_iropt(IRSB *irsb, IREndness endian)
       vex_printf(": not folded: result = ");
       ppIRExpr(res);
       vex_printf("\n");
-      *(ULong *)iricb.result = 0;     // whatever
-      return;
+//      *(ULong *)iricb.result_fold = 0;     // whatever
+//      return;
+      res = mkU32(0);        // whatever
    }
-
-   /* Store the folded result in the IRICB. We're only handling integers
-      up to 64-bit wide. */
-   switch (iricb.t_result) {
-   case Ity_I1:  *(ULong *)iricb.result = res->Iex.Const.con->Ico.U1;  break;
-   case Ity_I8:  *(ULong *)iricb.result = res->Iex.Const.con->Ico.U8;  break;
-   case Ity_I16: *(ULong *)iricb.result = res->Iex.Const.con->Ico.U16; break;
-   case Ity_I32: *(ULong *)iricb.result = res->Iex.Const.con->Ico.U32; break;
-   case Ity_I64: *(ULong *)iricb.result = res->Iex.Const.con->Ico.U64; break;
-   default:
-      vpanic("unsupported type");
-   }
+   store(irsb, endian, iricb.result_fold, res);
 }
 
 

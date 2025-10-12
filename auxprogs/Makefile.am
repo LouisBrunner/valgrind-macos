@@ -20,8 +20,7 @@ LTP_FILTERS = \
 	filters/prctl10 \
 	filters/select03
 
-LTP_PATCHES = \
-	ltp-patches/0001-Make-sure-32-bit-powerpc-syscall-defs-don-t-leak-to-.patch
+LTP_PATCHES =
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
@@ -171,8 +170,8 @@ endif
 endif
 
 # Linux Test Project
-LTP_VERSION=20250530
-LTP_SHA256_SUM=27586ba78eac1e40cd422add2842f1ad70f09fea55da3bd6a25e10feb786d4f2
+LTP_VERSION=20250930
+LTP_SHA256_SUM=048fa4d69ddbe8a94aa15da9bdc85713ab07a0abbc3de2b8bdd9757644aef1e4
 LTP_TAR_NAME=ltp-full-$(LTP_VERSION).tar.xz
 LTP_URL=https://github.com/linux-test-project/ltp/releases/download/$(LTP_VERSION)/$(LTP_TAR_NAME)
 LTP_TAR=$(AUX_CHECK_DIR)/$(LTP_TAR_NAME)
@@ -211,14 +210,15 @@ $(GSL_SRC_DIR)/gsl-patched: $(GSL_TAR)
 	 autoreconf -f -i -Wnone)
 	touch $@
 
-$(LTP_SRC_DIR): $(LTP_TAR)
+$(LTP_SRC_DIR): $(LTP_TAR) ltp-apply-patches.sh $(LTP_PATCHES)
 	echo "$(LTP_SHA256_SUM)  $(LTP_TAR)" | @SHA256SUM@ --check -
 	(cd $(AUX_CHECK_DIR) && \
 	 tar Jxf $(LTP_TAR_NAME) && \
 	 $(abs_top_srcdir)/auxprogs/ltp-apply-patches.sh $(LTP_SRC_DIR) && \
 	 cd $(LTP_SRC_DIR) && \
 	 ./configure CC="${CC}" CXX="${CXX}" CFLAGS="$(LTP_CFLAGS)" && \
-	 ${MAKE} -j $(nproc) -C testcases/kernel/syscalls)
+	 ${MAKE} clean && \
+	 ${MAKE} -C testcases/kernel/syscalls)
 	touch $@
 
 # We need make check -k because
@@ -228,7 +228,7 @@ $(GSL_BUILD_DIR)/gsl-build: $(GSL_SRC_DIR)/gsl-patched
 	mkdir -p $(GSL_BUILD_DIR)
 	(cd $(GSL_BUILD_DIR) && \
 	 $(GSL_SRC_DIR)/configure CC="${CC}" CXX="${CXX}" CFLAGS="$(GSL_CFLAGS)" && \
-	 ${MAKE} -j $(nproc) && \
+	 ${MAKE} && \
 	 ${MAKE} check -k || true)
 	touch $@
 

@@ -8,14 +8,11 @@
 /* instructions (e.g. CFEBR)                                        */
 /* ---------------------------------------------------------------- */
 #define M3_BFP_ROUND_PER_FPC        0
-
-// Cannot be mapped to IRRoundingMode
 #define M3_BFP_ROUND_NEAREST_AWAY   1
 
 // 2 is not allowed
 
 // Needs floating point extension facility
-// Cannot be mapped to IRRoundingMode
 #define M3_BFP_ROUND_PREPARE_SHORT  3
 
 #define M3_BFP_ROUND_NEAREST_EVEN   4
@@ -37,7 +34,6 @@
 // 4,5,6 are not allowed
 
 // Needs floating point extension facility
-// Cannot be mapped to IRRoundingMode
 #define FPC_BFP_ROUND_PREPARE_SHORT 7
 
 

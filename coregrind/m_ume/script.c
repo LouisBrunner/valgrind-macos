@@ -124,7 +124,15 @@ Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
    if (info->argv && info->argv[0] != NULL)
      info->argv[0] = name;
 
-   VG_(args_the_exename) = name;
+   vg_assert(VG_(args_the_exename));
+   if (name) {
+      if (name != VG_(args_the_exename)) {
+         VG_(free)((void*)VG_(args_the_exename));
+      VG_(args_the_exename) = VG_(strdup)("ume.ls.3", name);
+      }
+   } else {
+      VG_(args_the_exename) = name;
+   }
 
    if (0)
       VG_(printf)("#! script: interp_name=\"%s\" interp_args=\"%s\"\n",

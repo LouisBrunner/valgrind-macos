@@ -341,7 +341,7 @@ extern Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
 #else
 # define VG_STACK_GUARD_SZB  8192   // 2 pages
 #endif
-# define VG_DEFAULT_STACK_ACTIVE_SZB 1048576 // (4096 * 256) = 1Mb 
+# define VG_DEFAULT_STACK_ACTIVE_SZB 1048576 // (4096 * 256) = 1Mb
 
 typedef struct _VgStack VgStack;
 

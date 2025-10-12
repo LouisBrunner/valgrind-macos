@@ -1415,6 +1415,19 @@ struct vki_robust_list_head {
 	struct vki_robust_list __user *list_op_pending;
 };
 
+/* Introduced in linux commit bf69bad38cf63d980e8a603f8d1bd1f85b5ed3d9 */
+struct vki_futex_waitv {
+	__vki_u64 val;
+	__vki_u64 uaddr;
+	__vki_u32 flags;
+	__vki_u32 __reserved;
+};
+
+struct vki__kernel_timespec {
+	long long tv_sec;
+	long long tv_nsec;
+};
+
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/linux/errno.h
 //----------------------------------------------------------------------
@@ -3222,6 +3235,8 @@ struct vki_perf_event_attr {
 #define VKI_PERF_EVENT_IOC_SET_FILTER   _VKI_IOW('$', 6, char *)
 #define VKI_PERF_EVENT_IOC_ID           _VKI_IOR('$', 7, __vki_u64 *)
 #define VKI_PERF_EVENT_IOC_SET_BPF      _VKI_IOW('$', 8, __vki_u32)
+
+#define VKI_PERF_FLAG_FD_NO_GROUP       (1UL << 0)
 
 /*--------------------------------------------------------------------*/
 // From linux-2.6.32.4/include/linux/getcpu.h

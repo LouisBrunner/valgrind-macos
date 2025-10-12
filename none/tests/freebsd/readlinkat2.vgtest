@@ -1,0 +1,4 @@
+# FreeBSD doesn't always have a /proc filesystem
+prereq: test -d /proc
+prog: readlinkat2
+vgopts: -q

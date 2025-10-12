@@ -202,20 +202,18 @@ PRE(sys_preadv)
          SARG1, ARG2, SARG3, SARG4);
    PRE_REG_READ4(ssize_t, "preadv", int, fd, const struct iovec*, iov, int,
                  iovcnt, vki_off_t, offset);
-   if (!ML_(fd_allowed)(ARG1, "preadv", tid, False)) {
+   if (!ML_(fd_allowed)(ARG1, "preadv", tid, False))
       SET_STATUS_Failure(VKI_EBADF);
-   } else {
-      if ((Int)ARG3 > 0) {
-         PRE_MEM_READ("preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec));
-      }
+   if ((Int)ARG3 > 0) {
+      PRE_MEM_READ("preadv(iov)", ARG2, ARG3 * sizeof(struct vki_iovec));
+   }
 
-      if (ML_(safe_to_deref)((struct vki_iovec*)ARG2,
-                             ARG3 * sizeof(struct vki_iovec))) {
-         vec = (struct vki_iovec*)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++) {
-            VG_(sprintf)(buf, "preadv(iov[%d])", i);
-            PRE_MEM_WRITE(buf, (Addr)vec[i].iov_base, vec[i].iov_len);
-         }
+   if (ML_(safe_to_deref)((struct vki_iovec*)ARG2,
+                          ARG3 * sizeof(struct vki_iovec))) {
+      vec = (struct vki_iovec*)(Addr)ARG2;
+      for (i = 0; i < (Int)ARG3; i++) {
+         VG_(sprintf)(buf, "preadv(iov[%d])", i);
+         PRE_MEM_WRITE(buf, (Addr)vec[i].iov_base, vec[i].iov_len);
       }
    }
 }
@@ -259,17 +257,16 @@ PRE(sys_pwritev)
                  iovcnt, vki_off_t, offset);
    if (!ML_(fd_allowed)(ARG1, "pwritev", tid, False)) {
       SET_STATUS_Failure(VKI_EBADF);
-   } else {
-      if ((Int)ARG3 >= 0) {
-         PRE_MEM_READ("pwritev(vector)", ARG2, ARG3 * sizeof(struct vki_iovec));
-      }
-      if (ML_(safe_to_deref)((struct vki_iovec*)ARG2,
-                             ARG3 * sizeof(struct vki_iovec))) {
-         vec = (struct vki_iovec*)(Addr)ARG2;
-         for (i = 0; i < (Int)ARG3; i++) {
-            VG_(sprintf)(buf, "pwritev(iov[%d])", i);
-            PRE_MEM_READ(buf, (Addr)vec[i].iov_base, vec[i].iov_len);
-         }
+   }
+   if ((Int)ARG3 >= 0) {
+      PRE_MEM_READ("pwritev(vector)", ARG2, ARG3 * sizeof(struct vki_iovec));
+   }
+   if (ML_(safe_to_deref)((struct vki_iovec*)ARG2,
+                          ARG3 * sizeof(struct vki_iovec))) {
+      vec = (struct vki_iovec*)(Addr)ARG2;
+      for (i = 0; i < (Int)ARG3; i++) {
+         VG_(sprintf)(buf, "pwritev(iov[%d])", i);
+         PRE_MEM_READ(buf, (Addr)vec[i].iov_base, vec[i].iov_len);
       }
    }
 }
@@ -287,7 +284,8 @@ PRE(sys_sendfile)
          SARG1, SARG2, ARG3, ARG4, ARG5, ARG6, SARG7);
    PRE_REG_READ7(int, "sendfile", int, fd, int, s, vki_off_t, offset, size_t,
                  nbytes, void*, hdtr, vki_off_t*, sbytes, int, flags);
-
+   if (!ML_(fd_allowed)(ARG1, "sendfile", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
    if (ARG5 != 0) {
       PRE_MEM_READ("sendfile(hdtr)", ARG5, sizeof(struct vki_sf_hdtr));
    }
@@ -659,9 +657,8 @@ PRE(sys_pread)
 
    if (!ML_(fd_allowed)(ARG1, "read", tid, False)) {
       SET_STATUS_Failure(VKI_EBADF);
-   } else {
-      PRE_MEM_WRITE("pread(buf)", ARG2, ARG3);
    }
+   PRE_MEM_WRITE("pread(buf)", ARG2, ARG3);
 }
 
 POST(sys_pread)
@@ -721,6 +718,8 @@ PRE(sys_lseek)
          ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "lseek", unsigned int, fd, unsigned long, offset,
                  unsigned int, whence);
+   if (!ML_(fd_allowed)(ARG1, "lseek", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_truncate   479
@@ -741,6 +740,8 @@ PRE(sys_ftruncate)
    *flags |= SfMayBlock;
    PRINT("sys_ftruncate ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
    PRE_REG_READ2(long, "ftruncate", unsigned int, fd, unsigned long, length);
+   if (!ML_(fd_allowed)(ARG1, "ftruncate", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_cpuset_setid  485
@@ -814,6 +815,8 @@ PRE(sys_posix_fallocate)
          SARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "posix_fallocate", int, fd, vki_off_t, offset, vki_off_t,
                  len);
+   if (!ML_(fd_allowed)(ARG1, "posix_fallocate", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_posix_fadvise 531
@@ -825,7 +828,8 @@ PRE(sys_posix_fadvise)
          SARG1, ARG2, ARG3, SARG4);
    PRE_REG_READ4(long, "posix_fadvise", int, fd, off_t, offset, off_t, len, int,
                  advice);
-   // @todo PJF advice can be 0 to 5 inclusive
+   if (!ML_(fd_allowed)(ARG1, "posix_faadvise", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
 }
 
 // SYS_wait6   532
@@ -951,6 +955,7 @@ PRE(sys_mknodat)
    PRE_REG_READ4(long, "mknodat", int, fd, const char*, path, vki_mode_t, mode,
                  vki_dev_t, dev);
    PRE_MEM_RASCIIZ("mknodat(pathname)", ARG2);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mknodat", tid, status);
 }
 
 // SYS_cpuset_getdomain 561

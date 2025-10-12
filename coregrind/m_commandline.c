@@ -213,7 +213,7 @@ void VG_(split_up_argv)( Int argc, HChar** argv )
    /* Should now be looking at the exe name. */
    if (i < argc) {
       vg_assert(argv[i]);
-      VG_(args_the_exename) = argv[i];
+      VG_(args_the_exename) = VG_(strdup)("commandline.sua.4", argv[i]);
       i++;
    }
 

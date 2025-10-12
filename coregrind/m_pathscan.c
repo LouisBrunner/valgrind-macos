@@ -139,6 +139,46 @@ const HChar* VG_(find_executable) ( const HChar* exec )
    return executable_name_out;
 }
 
+Bool VG_(try_get_interp)(const HChar* args_exe, HChar* interp_out, SizeT max_interp_len)
+{
+   HChar hdr[4096];
+   SysRes res;
+   Int fd;
+   HChar* end;
+   HChar* cp;
+   HChar* interp;
+
+   res = VG_(open)(args_exe, VKI_O_RDONLY, 0);
+   if (sr_isError(res))
+      return False;
+   fd = sr_Res(res);
+
+   res = VG_(pread)(fd, hdr, sizeof(hdr), 0);
+   VG_(close)(fd);
+   if (sr_isError(res))
+      return False;
+
+   Int len = sr_Res(res);
+   if (len < 2 || VG_(memcmp)(hdr, "#!", 2) != 0)
+      return False;
+
+   end = hdr + len;
+   interp = hdr + 2;
+   while (interp < end && (*interp == ' ' || *interp == '\t'))
+      interp++;
+   for (cp = interp; cp < end && !VG_(isspace)(*cp); cp++)
+      ;
+
+   SizeT interp_len = cp - interp;
+   if (interp_len >= max_interp_len)
+      return False;
+
+   VG_(memcpy)(interp_out, interp, interp_len);
+   interp_out[interp_len] = '\0';
+
+   return True;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

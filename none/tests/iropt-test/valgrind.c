@@ -26,6 +26,8 @@
 #include "valgrind.h"  // VALGRIND_VEX_INJECT_IR
 #include "vtest.h"
 
+#define host_is_big_endian() ((*(short *)(&(int){ 0x11223344 })) == 0x1122)
+
 static IRICB iricb;
 
 /* Return a completely initialised control block */
@@ -37,10 +39,11 @@ new_iricb(const irop_t *op, test_data_t *data)
    memset(&cb, 0x0, sizeof cb);
 
    cb.op = op->op;
-   cb.result = (HWord)&data->result.value;
+   cb.result_fold   = (HWord)&data->result_fold.value;
+   cb.result_nofold = (HWord)&data->result_nofold.value;
    cb.opnd1  = (HWord)&data->opnds[0].value;
    cb.opnd2  = (HWord)&data->opnds[1].value;
-   cb.t_result = data->result.type;
+   cb.t_result = data->result_fold.type;
    cb.t_opnd1  = data->opnds[0].type;
    cb.t_opnd2  = data->opnds[1].type;
 
@@ -80,39 +83,74 @@ valgrind_execute_test(const irop_t *op, test_data_t *data, uint64_t expected)
 
       for (unsigned i = 0; i < op->num_opnds; ++i) {
          const opnd_t *opnd = data->opnds + i;
-         printf("opnd %u:    value = ", i);
+         printf("opnd %u:         value = ", i);
          print_value(stdout, opnd->value, bitsof_irtype(opnd->type));
          printf("\n");
       }
    }
 
+   VALGRIND_CLO_CHANGE("--vex-iropt-fold-expr=yes");
    valgrind_vex_inject_ir();
-   uint64_t result = data->result.value;
+   VALGRIND_CLO_CHANGE("--vex-iropt-fold-expr=no");
+   valgrind_vex_inject_ir();
 
-   unsigned num_result_bits = bitsof_irtype(data->result.type);
+   uint64_t result_fold   = data->result_fold.value;
+   uint64_t result_nofold = data->result_nofold.value;
+   unsigned num_result_bits = bitsof_irtype(data->result_fold.type);
+
+//   printf("NOFOLD RESULT = %016lx\n", result_nofold);
+
+   if (host_is_big_endian()) {
+      switch (num_result_bits) {
+      case 8:
+         result_fold   >>= 56;
+         result_nofold >>= 56;
+         break;
+      case 16:
+         result_fold   >>= 48;
+         result_nofold >>= 48;
+         break;
+      case  1:   /* See comment in vbit-test/vbits.h */
+      case 32:
+         result_fold   >>= 32;
+         result_nofold >>= 32;
+         break;
+      case 64:
+         break;
+      default:
+         panic("%s: #bits = %u not handled\n", __func__, num_result_bits);
+      }
+   }
+
    if (verbose > 1) {
-      printf("result:    value = ");
-      print_value(stdout, result, num_result_bits);
+      printf("result fold:    value = ");
+      print_value(stdout, result_fold, num_result_bits);
       printf("\n");
-      printf("expected:  value = ");
+      printf("result nofold:  value = ");
+      print_value(stdout, result_nofold, num_result_bits);
+      printf("\n");
+      printf("expected:       value = ");
       print_value(stdout, expected, num_result_bits);
       printf("\n");
    }
 
    /* Check result */
-   if (result != expected) {
+   if (result_fold != result_nofold || result_fold != expected) {
       fprintf(stderr, "*** Incorrect result for operator %s\n", op->name);
 
       for (unsigned i = 0; i < op->num_opnds; ++i) {
          const opnd_t *opnd = data->opnds + i;
-         fprintf(stderr, "    opnd %u:  ", i);
+         fprintf(stderr, "    opnd %u:          ", i);
          print_value(stderr, opnd->value, bitsof_irtype(opnd->type));
          fprintf(stderr, "\n");
       }
-      fprintf(stderr, "    result:  ");
-      print_value(stderr, result, num_result_bits);
+      fprintf(stderr, "    result fold:     ");
+      print_value(stderr, result_fold, num_result_bits);
       fprintf(stderr, "\n");
-      fprintf(stderr, "    expect:  ");
+      fprintf(stderr, "    result nofold:   ");
+      print_value(stderr, result_nofold, num_result_bits);
+      fprintf(stderr, "\n");
+      fprintf(stderr, "    result expected: ");
       print_value(stderr, expected, num_result_bits);
       fprintf(stderr, "\n");
    }

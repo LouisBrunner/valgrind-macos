@@ -24,7 +24,7 @@ if VGCONF_ARCHS_INCLUDE_ARM64
 SUBDIRS += arm64
 endif
 if VGCONF_ARCHS_INCLUDE_S390X
-SUBDIRS += s390x
+SUBDIRS += s390x s390x/disasm-test
 endif
 if VGCONF_ARCHS_INCLUDE_MIPS32
 SUBDIRS += mips32
@@ -77,7 +77,8 @@ if VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD
 SUBDIRS += x86-freebsd
 endif
 
-DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
+DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x s390x/disasm-test \
+               mips32 mips64 nanomips \
                riscv64 linux darwin solaris freebsd amd64-linux x86-linux \
                amd64-darwin x86-darwin amd64-solaris x86-solaris x86-freebsd \
                scripts .
@@ -91,7 +92,8 @@ dist_noinst_SCRIPTS = \
 	filter_stderr \
 	filter_timestamp \
 	filter_xml \
-	allexec_prepare_prereq
+	allexec_prepare_prereq \
+	filter_sort
 
 noinst_HEADERS = fdleak.h
 

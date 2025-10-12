@@ -12,7 +12,24 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * New VEX API function LibVEX_set_VexControl
 
+* The deprecated IROps: Iop_Clz32/64 and Iop_Ctz32/64 have been removed
+
 * ================== PLATFORM CHANGES =================
+
+FreeBSD 15 (which is expected to ship in December 2025, after
+Valgrind 3.26 is released) contains a change to ptrace that affects
+use of Valgrind with vgdb. This impacts the mechanism that vgdb
+uses to interrupt Valgrind if all threads are blocked and you want
+to get back to the gdb prompt by hitting ctrl-c. This mechanism
+is no longer reliable. On arm64 Valgrind will crash with an assert.
+On amd64 syscalls may give spurious and incorrect return codes.
+
+There is a workaround. Run the following command (as root).
+
+ sysctl debug.ptrace_attach_transparent=0
+
+ See also
+ https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=290008
 
 * ==================== TOOL CHANGES ===================
 
@@ -21,6 +38,40 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   In normal use pass it the PID of a running Valgrind process
   and it will perform a vgdb attach and print the backtrace(s)
   of the guest executable.
+
+* Memcheck handling of aligned allocation functions with a
+  size of zero has changed.
+
+  Firstly, 'free_aligned_sized' with a size of
+  zero is no longer considered an error. This was intended so
+  that deallocation had the same behaviour as allocation. In
+  practice, platforms that allow aligned allocation with a
+  size of zero will already generate an error at allocation.
+  Other platforms will get an 'Invalid free' error. The case
+  where the allocation and deallocation sizes are different
+  with the deallocation size being zero is already covered by
+  "Mismatched [alloc/dealloc] size" errors.
+
+  Secondly, the three C aligned allocation functions memalign,
+  aligned_alloc and posix_memalign have a different error
+  message if used with a size of zero. Previously the error
+  was "[function] invalid size value: [number]". This was an
+  overstatement of the issue. The problem is that such usage
+  is not portable across platforms. memalign and aligned_alloc
+  are poorly documented, saying things like "Behavior is undefined
+  if size is not an integral multiple of alignment.". Clearly
+  this does not include negative integers though it does not say
+  so explicitly. Does that include zero?  posix_memalign is well documented
+  but says that using a size of 0 is implementation-defined. These
+  functions now produce an error
+  "Unsafe allocation with size of zero is implementation-defined".
+
+  The associated suppression name has also changed from "BadSize" to
+  "UnsafeZeroSize".
+
+  Checks for C23 free_sized and free_aligned_sized have been added to
+  Linux. Almost no libraries support these functions yes, with
+  the exception being Google tcmalloc.
 
 * ==================== FIXED BUGS ====================
 
@@ -31,7 +82,14 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+306098  s390x: Alternate opcode form for convert to/from fixed and friends
+309100  s390x: Testcases for extended BFP
+309554  Wrap syscall remap_file_pages (216)
+331311  Valgrind shows open files in /proc/self/fd that don't work for the process
 338803  Handling of dwz debug alt files or cross-CU is broken
+368791  Handle swapon and swapoff syscalls as linux generic
+369030  Wrap linux syscall: 171 (setdomainname)
+388526  Inconsistent severity in message text: "WARNING: Serious error"
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
 493430  Review all syscalls that use or return (new) file descriptors
 493434  Add --track-fds=bad mode (no "leak" tracking)
@@ -63,16 +121,22 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506795  Better report which clone flags are problematic
 506806  Fix execveat() with AT_FDCWD and relative path
 506813  The execveat wrapper needs to do more checking
+506816  futex2, futex_waitv WARNING: unhandled amd64-linux syscall: 449
 506910  openat2 with RESOLVE_NO_MAGICLINKS succeeds on /proc/self/exe
 506928  Wrap (deprecated) linux specific ustat syscall
 506929  Wrap (deprecated) linux sysfs syscall
 506930  valgrind allows SIGKILL being reset to SIG_DFL
 506967  Implement and override mallinfo2
 506970  mmap needs an EBADF fd_allowed check
+507033  Remove deprecated Iop_Clz32/64 and Iop_Ctz32/64
 507173  s390x: Crash when constant folding is disabled
+507720  Review syscalls returning file descriptors (other platforms)
 507721  Wire up illumos and Solaris mallinfo
 507853  faccessat and faccessat2 should handle AT_FDCWD and absolute paths
+507866  fanotify_mark dirfd isn't checked
+507867  perf_event_open group_fd isn't checked
 507868  futimesat doesn't handle AT_FDCWD
+507869  Various at syscalls don't check dirfd argument
 507873  Make fchmodat and fchmodat2 syscall wrappers accept AT_FDCWD
 507897  Allow for patching LTP sources
 507970  -Wcalloc-transposed-args warnings in valgrind-di-server.c
@@ -80,7 +144,26 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508029  Review the vmsplice syscall wrapper
 508030  Add several missing syscall hooks to ppc64-linux
 508093  VALGRIND_CLO_CHANGE does not update vex_control
+508145  ppc64le needs ld.so hardwire for strcmp
 508154  PRE(sys_fchownat) not handling VKI_AT_FDCWD
+508638  Self-hosting not working on FreeBSD
+508777  amd64-linux: add minimal scalar test
+508778  syscall-wrapper waitid warns about infop=null
+508779  PRE(sys_prlimit64): reorder check for memory validity
+508869  x86-linux: simplify scalar test output
+508958  FreeBSD: add getgroups and setgroups wrappers
+509103  Fix tests/arm64/bug484935.c build with "-O2 -flto -ffat-lto-objects"
+509107  memcheck/tests/duplicate_align_size_errors.cpp fails
+509139  Update BadSize error messages
+509258  FreeBSD: add jail_attach_jd and jail_remove_jd syscall wrappers
+509517  s390x: Even/odd lane confusion in various vector insns
+509566  Wrap amd64-linux syscall: 442 (mount_setattr)
+509572  s390x: Overhaul BFP testsuite
+509590  Run the LTP tests with LTP_QUIET
+509567  unhandled amd64-linux syscall: 443 (quotactl_fd)
+509642  Add missing ppc64-linux syswraps
+509643  Add missing s390x-linux syswraps
+510169  Update the LTP version in valgrind testsuite to 20250930
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
@@ -994,6 +1077,10 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 451626  Syscall param bpf(attr->raw_tracepoint.name) points to unaddressable byte(s)
 451827  [ppc64le] VEX temporary storage exhausted with several vbpermq instructions
 451843  valgrind fails to start on a FreeBSD system which enforces W^X
+495483  Control building documentation via BUILD_DOCS
+506211  Constant folding improvements
+506453  Unexpected behaviour with IR injection and vex-guest-chase=yes
+509157  riscv64: Shift instructions can behave wrong
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -414,6 +414,7 @@
 #define __NR_statx              332
 #define __NR_io_pgetevents	333
 #define __NR_rseq		334
+#define __NR_futex_waitv	449
 
 #endif /* __VKI_SCNUMS_AMD64_LINUX_H */
 

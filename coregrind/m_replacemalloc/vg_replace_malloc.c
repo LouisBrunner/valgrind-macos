@@ -1127,6 +1127,8 @@ extern int * __error(void) __attribute__((weak));
 
 
 #if defined(VGO_linux)
+ FREE_ALIGNED_SIZED(VG_Z_LIBC_SONAME,       free_aligned_sized,                 free, FreeAlignedSized );
+ FREE_ALIGNED_SIZED(SO_SYN_MALLOC,          free_aligned_sized,                 free, FreeAlignedSized );
 
 #elif defined(VGO_freebsd)
  FREE_ALIGNED_SIZED(VG_Z_LIBC_SONAME,       free_aligned_sized,                 free, FreeAlignedSized );
@@ -1902,7 +1904,10 @@ extern int * __error(void) __attribute__((weak));
   *
   * FreeBSD, undocumented,  just calls aligned_alloc
   * with size rounded up to a multiple
-  * of aligment
+  * of aligment (unless the alignment is 0 in which case
+  * it just calls malloc [prior to Feb 2023 this wasn't
+  * handled correctly resulting in a division-by-zero crash
+  * in the size roundup code])
   *
   * jemalloc mininum alignment is 1, must be a power of 2
   * it looks like excessively large alignment causes ENOMEM
@@ -1986,7 +1991,7 @@ extern int * __error(void) __attribute__((weak));
 #define VG_MEMALIGN_NO_ALIGN_ZERO 0
 #endif
 
-#if defined(MUSL_LIBC)
+#if defined(MUSL_LIBC) || defined(VGO_freebsd)
 #define VG_MEMALIGN_NO_SIZE_ZERO 0
 #else
 #define VG_MEMALIGN_NO_SIZE_ZERO 1
@@ -2258,7 +2263,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE("posix_memalign(al %llu, size %llu)\n", \
+      MALLOC_TRACE("posix_memalign(al %llu, size %llu)", \
             (ULong)alignment, (ULong)size ); \
       /* Test whether the alignment argument is valid.  It must be \
          a power of two multiple of sizeof (void *).  */ \
@@ -2369,10 +2374,16 @@ extern int * __error(void) __attribute__((weak));
 #define VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR 0
 #endif
 
-#if defined(MUSL_LIBC)
-#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 0
-#else
+#if defined(VGO_solaris)
 #define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 1
+#else
+#define VG_ALIGNED_ALLOC_NO_SIZE_ZERO 0
+#endif
+
+#if defined(MUSL_LIBC)
+#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 0
+#else
+#define VG_ALIGNED_ALLOC_NO_ALIGN_ZERO 1
 #endif
 
 #if defined (VGO_linux) && !defined(MUSL_LIBC) && !defined(HAVE_GNU_LIBC_C17_ALIGNED_ALLOC)
@@ -2434,8 +2445,9 @@ extern int * __error(void) __attribute__((weak));
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
        MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
                 (ULong)alignment, (ULong)size ); \
-       if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (alignment == 0)) \
-           || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && (size % alignment != 0)) \
+       if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (size == 0)) \
+           || (VG_ALIGNED_ALLOC_NO_ALIGN_ZERO && (alignment == 0)) \
+           || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && alignment && (size % alignment != 0)) \
            || (VG_ALIGNED_ALLOC_ALIGN_POWER_TWO && (alignment & (alignment - 1)) != 0) \
            || (VG_ALIGNED_ALLOC_ALIGN_FACTOR_FOUR && (alignment % 4 != 0))) { \
           SET_ERRNO_EINVAL; \

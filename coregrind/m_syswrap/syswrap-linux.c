@@ -114,7 +114,6 @@ static VgSchedReturnCode thread_wrapper(Word /*ThreadId*/ tidW)
    return ret;
 }
 
-
 /* ---------------------------------------------------------------------
    clone-related stuff
    ------------------------------------------------------------------ */
@@ -1026,6 +1025,18 @@ PRE(sys_mount)
       PRE_MEM_RASCIIZ( "mount(type)", ARG3);
 }
 
+PRE(sys_mount_setattr)
+{
+   // int syscall(SYS_mount_setattr, int dirfd, const char *pathname,
+   //             unsigned int flags, struct mount_attr *attr, size_t size);
+   *flags |= SfMayBlock;
+   PRINT("sys_mount_setattr ( %d, %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#"
+         FMT_REGWORD "x, %" FMT_REGWORD "u )", (Int)ARG1, ARG2,
+         ARG3, ARG4, ARG5);
+   PRE_MEM_READ("mount(attr)", ARG5, ARG6);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mount_setattr(dirfd)", tid, status);
+}
+
 PRE(sys_oldumount)
 {
    PRINT("sys_oldumount( %#" FMT_REGWORD "x )", ARG1);
@@ -1654,6 +1665,13 @@ POST(sys_sendfile64)
    }
 }
 
+PRE(sys_setdomainname)
+{
+   PRINT ("sys_setdomainname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
+   PRE_REG_READ2 (long, "setdomainname", const void *, name, int, len);
+   PRE_MEM_READ("setdomainname(name)", ARG1, ARG2);
+}
+
 static void pre_read_timespec64 (ThreadId tid, const char *msg, UWord arg)
 {
    struct vki_timespec64 *ts64 = (void *)(Addr)arg;
@@ -1853,6 +1871,18 @@ PRE(sys_futex_time64)
 POST(sys_futex_time64)
 {
   futex_post_helper (tid, arrghs, status);
+}
+
+PRE(sys_futex_waitv)
+{
+    /* asmlinkage long sys_futex_waitv(struct futex_waitv __user *waiters,
+     *                                 unsigned int nr_futexes, unsigned int flags,
+     *                                 struct __kernel_timespec __user *timeout, clockid_t clockid); */
+    *flags |= SfMayBlock;
+    PRINT("sys_futex_waitv ( %#" FMT_REGWORD "x, %ld, %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "d )",
+          ARG1, SARG2, SARG3, ARG4, SARG5);
+    PRE_MEM_READ("sys_futex_waitv(waiters)", ARG1, sizeof(struct vki_futex_waitv) * ARG2);
+    PRE_MEM_READ("sys_futex_waitv(timeout)", ARG4, sizeof(struct vki__kernel_timespec));
 }
 
 PRE(sys_set_robust_list)
@@ -2103,6 +2133,19 @@ POST(sys_ppoll_time64)
    ppoll_post_helper (tid, arrghs, status);
 }
 
+PRE(sys_swapon)
+{
+   PRINT("sys_swapon ( %#lx, %#lx )", ARG1, ARG2);
+   PRE_REG_READ2(long, "swapon", const void *, path, int, flags);
+   PRE_MEM_RASCIIZ( "swapon(path)", ARG1);
+}
+
+PRE(sys_swapoff)
+{
+   PRINT("sys_swapoff ( %#lx )", ARG1);
+   PRE_REG_READ1(long, "swapoff", const void *, path);
+   PRE_MEM_RASCIIZ( "swapoff(path)", ARG1);
+}
 
 /* ---------------------------------------------------------------------
    epoll_* wrappers
@@ -2242,6 +2285,19 @@ POST(sys_epoll_pwait2)
    epoll_post_helper (tid, arrghs, status);
 }
 
+PRE(sys_remap_file_pages)
+{
+   /* int remap_file_pages(void addr[.size], size_t size,
+                           int prot, size_t pgoff, int flags); */
+   Int arg_3 = (Int) ARG3;
+   Int arg_5 = (Int) ARG5;
+   PRINT("sys_remap_file_pages ( %#" FMT_REGWORD "x, %lu, %d, %lu, %d",
+         ARG1, ARG2, arg_3, ARG4, arg_5);
+   PRE_REG_READ5(int, "remap_file_pages", void *, addr, vki_size_t,
+                 size_t, int, prot, vki_size_t, pgoff, int, flags);
+   PRE_MEM_READ("sys_remap_file_pages(addr)", ARG1, ARG2);
+}
+
 PRE(sys_eventfd)
 {
    PRINT("sys_eventfd ( %" FMT_REGWORD "u )", ARG1);
@@ -2308,17 +2364,15 @@ PRE(sys_prlimit64)
                  struct rlimit64 *, old_rlim);
    if (ARG3) {
       PRE_MEM_READ( "rlimit64(new_rlim)", ARG3, sizeof(struct vki_rlimit64) );
-      if (!ML_(safe_to_deref)((void*)(Addr)ARG3, sizeof(struct vki_rlimit64))) {
-         SET_STATUS_Failure(VKI_EFAULT);
-         return;
-      }
    }
    if (ARG4) {
       PRE_MEM_WRITE( "rlimit64(old_rlim)", ARG4, sizeof(struct vki_rlimit64) );
-      if (!ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(struct vki_rlimit64))) {
-         SET_STATUS_Failure(VKI_EFAULT);
-         return;
-      }
+   }
+
+   if ((ARG3 && !ML_(safe_to_deref)((void*)(Addr)ARG3, sizeof(struct vki_rlimit64)))
+       || (ARG4 && !ML_(safe_to_deref)((void*)(Addr)ARG4, sizeof(struct vki_rlimit64)))) {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
    }
 
    if (ARG3 &&
@@ -2865,11 +2919,12 @@ PRE(sys_fanotify_mark)
                  int, dfd, const char *, pathname);
    if (ARG5)
       PRE_MEM_RASCIIZ( "fanotify_mark(path)", ARG5);
-   if ( !ML_(fd_allowed)(SARG1, "fanotify_mark", tid, False) )
-      SET_STATUS_Failure( VKI_EBADF );
 #else
 #  error Unexpected word size
 #endif
+    if ( !ML_(fd_allowed)(SARG1, "fanotify_mark(fanotify_fd)", tid, False) )
+       SET_STATUS_Failure( VKI_EBADF );
+    ML_(fd_at_check_allowed)(SARG4, (const HChar*)ARG5, "fanotify_mark(dirfd)", tid, status);
 }
 
 /* ---------------------------------------------------------------------
@@ -4080,6 +4135,22 @@ PRE(sys_quotactl)
    PRE_MEM_RASCIIZ( "quotactl(special)", ARG2 );
 }
 
+PRE(sys_quotactl_fd)
+{
+   // SYSCALL_DEFINE4(quotactl_fd,
+   //     unsigned int, fd,
+   //     unsigned int, cmd,
+   //     qid_t, id,
+   //     void __user *, addr)
+   PRINT("sys_quotactl (0x%" FMT_REGWORD "x, 0x%#" FMT_REGWORD "x, 0x%"
+         FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "quotactl_fd",
+                 unsigned int, fd, unsigned int, cmd, vki_qid_t, id,
+                 void *, addr);
+   if (!ML_(fd_allowed)(ARG1, "quotactl_fd", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+}
+
 PRE(sys_waitid)
 {
    *flags |= SfMayBlock;
@@ -4088,13 +4159,15 @@ PRE(sys_waitid)
    PRE_REG_READ5(int32_t, "sys_waitid",
                  int, which, vki_pid_t, pid, struct vki_siginfo *, infop,
                  int, options, struct vki_rusage *, ru);
-   PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
+   if (ARG3 != 0)
+      PRE_MEM_WRITE( "waitid(infop)", ARG3, sizeof(struct vki_siginfo) );
    if (ARG5 != 0)
       PRE_MEM_WRITE( "waitid(ru)", ARG5, sizeof(struct vki_rusage) );
 }
 POST(sys_waitid)
 {
-   POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
+   if (ARG3 != 0)
+      POST_MEM_WRITE( ARG3, sizeof(struct vki_siginfo) );
    if (ARG5 != 0)
       POST_MEM_WRITE( ARG5, sizeof(struct vki_rusage) );
 }
@@ -4155,6 +4228,8 @@ PRE(sys_stime)
 
 PRE(sys_perf_event_open)
 {
+   // int syscall(SYS_perf_event_open, struct perf_event_attr *attr,
+   //             pid_t pid, int cpu, int group_fd, unsigned long flags);
    struct vki_perf_event_attr *attr;
    PRINT("sys_perf_event_open ( %#" FMT_REGWORD "x, %ld, %ld, %ld, %#"
          FMT_REGWORD "x )", ARG1, SARG2, SARG3, SARG4, ARG5);
@@ -4167,6 +4242,13 @@ PRE(sys_perf_event_open)
                  (Addr)&attr->size, sizeof(attr->size) );
    PRE_MEM_READ( "perf_event_open(attr)",
                  (Addr)attr, attr->size );
+   if ((ARG5 & VKI_PERF_FLAG_FD_NO_GROUP) != VKI_PERF_FLAG_FD_NO_GROUP) {
+       if ((Int)SARG4 != -1) {
+          if (!ML_(fd_allowed)(SARG4, "perf_event_open", tid, False)) {
+             SET_STATUS_Failure(VKI_EBADF);
+          }
+       }
+   }
 }
 
 POST(sys_perf_event_open)
@@ -6113,11 +6195,7 @@ no_client_write:
    /* For absolute filenames, dirfd is ignored.  If dirfd is AT_FDCWD,
       filename is relative to cwd.  When comparing dirfd against AT_FDCWD,
       be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "openat", tid, status);
 
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the
@@ -6182,6 +6260,7 @@ PRE(sys_mkdirat)
    *flags |= SfMayBlock;
    PRINT("sys_mkdirat ( %ld, %#" FMT_REGWORD "x(%s), %ld )",
          SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mkdirat", tid, status);
    PRE_REG_READ3(long, "mkdirat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "mkdirat(pathname)", ARG2 );
@@ -6192,6 +6271,7 @@ PRE(sys_mknodat)
    FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_mknodat ( %ld, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
          FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4 );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "mknodat", tid, status);
    PRE_REG_READ4(long, "mknodat",
                  int, dfd, const char *, pathname, int, mode, unsigned, dev);
    PRE_MEM_RASCIIZ( "mknodat(pathname)", ARG2 );
@@ -6199,41 +6279,28 @@ PRE(sys_mknodat)
 
 PRE(sys_fchownat)
 {
-   Int arg_1 = (Int)ARG1;
-   const HChar *path = (const HChar*) ARG2;
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_fchownat ( %d, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
-          FMT_REGWORD "x )", arg_1, ARG2, path, ARG3, ARG4);
+   PRINT("sys_fchownat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), 0x%" FMT_REGWORD "x, 0x%"
+          FMT_REGWORD "x )", SARG1, ARG2, (HChar*)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "fchownat",
                  int, dfd, const char *, path,
                  vki_uid_t, owner, vki_gid_t, group);
    PRE_MEM_RASCIIZ( "fchownat(path)", ARG2 );
-   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
-      if ( (arg_1 != VKI_AT_FDCWD) && !ML_(fd_allowed)(arg_1, "fchownat", tid, False) )
-        SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "fchownat", tid, status);
 }
 
 PRE(sys_futimesat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
-   Int arg_1 = (Int)ARG1;
-   const HChar *path = (const HChar*) ARG2;
-   PRINT("sys_futimesat ( %d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",
-         arg_1, ARG2, path, ARG3);
+   PRINT("sys_futimesat ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )",
+         SARG1, ARG2, (HChar*)ARG2, ARG3);
    PRE_REG_READ3(long, "futimesat",
                  int, dfd, char *, filename, struct timeval *, tvp);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "futimesat(filename)", ARG2 );
    if (ARG3 != 0)
       PRE_MEM_READ( "futimesat(tvp)", ARG3, 2 * sizeof(struct vki_timeval) );
-   if (ML_(safe_to_deref) (path, 1)) {
-      /* If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted ... */
-      if (path[0] != '/')
-         if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "futimesat", tid, False) )
-            SET_STATUS_Failure( VKI_EBADF );
-      /* If pathname is absolute, then dirfd is ignored. */
-   }
-
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "futimesat", tid, status);
 }
 
 PRE(sys_utimensat)
@@ -6243,6 +6310,7 @@ PRE(sys_utimensat)
           FMT_REGWORD "x )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "utimensat",
                  int, dfd, char *, filename, struct timespec *, utimes, int, flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "utimensat", tid, status);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "utimensat(filename)", ARG2 );
    if (ARG3 != 0) {
@@ -6274,6 +6342,7 @@ PRE(sys_utimensat_time64)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "utimensat_time64",
                  int, dfd, char *, filename, struct timespec *, utimes, int, flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "utimensat_time64", tid, status);
    if (ARG2 != 0)
       PRE_MEM_RASCIIZ( "utimensat_time64(filename)", ARG2 );
    if (ARG3 != 0) {
@@ -6305,6 +6374,7 @@ PRE(sys_newfstatat)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "fstatat",
                  int, dfd, char *, file_name, struct stat *, buf);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "newfstatat", tid, status);
    // See the comment about Rust in PRE(sys_statx). When glibc does support
    // statx rust uses that instead of the system call, but glibc's statx is
    // implemented in terms of fstatat, so the filename being NULL is
@@ -6327,6 +6397,7 @@ PRE(sys_unlinkat)
    PRINT("sys_unlinkat ( %ld, %#" FMT_REGWORD "x(%s) )", SARG1, ARG2,
          (HChar*)(Addr)ARG2);
    PRE_REG_READ2(long, "unlinkat", int, dfd, const char *, pathname);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "unlinkat", tid, status);
    PRE_MEM_RASCIIZ( "unlinkat(pathname)", ARG2 );
 }
 
@@ -6339,6 +6410,7 @@ PRE(sys_renameat)
    PRE_REG_READ4(long, "renameat",
                  int, olddfd, const char *, oldpath,
                  int, newdfd, const char *, newpath);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "renameat", tid, status);
    PRE_MEM_RASCIIZ( "renameat(oldpath)", ARG2 );
    PRE_MEM_RASCIIZ( "renameat(newpath)", ARG4 );
 }
@@ -6353,6 +6425,8 @@ PRE(sys_renameat2)
                  int, olddfd, const char *, oldpath,
                  int, newdfd, const char *, newpath,
                  unsigned int, flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "renameat2(olddirfd)", tid, status);
+   ML_(fd_at_check_allowed)(SARG3, (const HChar*)ARG4, "renameat2(newdirfd)", tid, status);
    PRE_MEM_RASCIIZ( "renameat2(oldpath)", ARG2 );
    PRE_MEM_RASCIIZ( "renameat2(newpath)", ARG4 );
 }
@@ -6367,6 +6441,7 @@ PRE(sys_linkat)
                  int, olddfd, const char *, oldpath,
                  int, newdfd, const char *, newpath,
                  int, flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "linkat", tid, status);
    PRE_MEM_RASCIIZ( "linkat(oldpath)", ARG2);
    PRE_MEM_RASCIIZ( "linkat(newpath)", ARG4);
 }
@@ -6378,6 +6453,7 @@ PRE(sys_symlinkat)
          "x(%s) )", ARG1, (HChar*)(Addr)ARG1, SARG2, ARG3, (HChar*)(Addr)ARG3);
    PRE_REG_READ3(long, "symlinkat",
                  const char *, oldpath, int, newdfd, const char *, newpath);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "symlinkat", tid, status);
    PRE_MEM_RASCIIZ( "symlinkat(oldpath)", ARG1 );
    PRE_MEM_RASCIIZ( "symlinkat(newpath)", ARG3 );
 }
@@ -6389,6 +6465,7 @@ PRE(sys_readlinkat)
           FMT_REGWORD "u )", SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "readlinkat",
                  int, dfd, const char *, path, char *, buf, vki_size_t, bufsiz);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "readlinkat", tid, status);
    PRE_MEM_RASCIIZ( "readlinkat(path)", ARG2 );
    PRE_MEM_WRITE( "readlinkat(buf)", ARG3,ARG4 );
 }
@@ -6398,6 +6475,7 @@ POST(sys_readlinkat)
    HChar name[30];       // large enough
    Word  saved = SYSNO;
 
+   // @todo PJF why is this done in POST and not in PRE?
    /*
     * Handle the case where readlinkat is looking at /proc/self/exe or
     * /proc/<pid>/exe.
@@ -6425,13 +6503,7 @@ PRE(sys_fchmodat)
    PRE_REG_READ3(long, "fchmodat",
                  int, dfd, const char *, path, vki_mode_t, mode);
    PRE_MEM_RASCIIZ( "fchmodat(path)", ARG2 );
-   if (ML_(safe_to_deref) (path, 1)) {
-      // If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted ...
-      if (path[0] != '/')
-         if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fchmodat", tid, False) )
-            SET_STATUS_Failure( VKI_EBADF );
-      // If pathname is absolute, then dirfd is ignored
-   }
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "fchmodat", tid, status);
 }
 
 PRE(sys_cachestat)
@@ -6456,23 +6528,15 @@ POST(sys_cachestat)
 
 PRE(sys_fchmodat2)
 {
-   Int arg_1 = (Int) ARG1;
-   const HChar *path = (const HChar*) ARG2;
    FUSE_COMPATIBLE_MAY_BLOCK();
-   PRINT("sys_fchmodat2 ( %d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
+   PRINT("sys_fchmodat2 ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %"
 	  FMT_REGWORD "u )",
-         arg_1, ARG2, path, ARG3, ARG4);
+         SARG1, ARG2, (const HChar*)ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "fchmodat2",
                  int, dfd, const char *, path, vki_mode_t, mode,
                  unsigned int, flags);
    PRE_MEM_RASCIIZ( "fchmodat2(pathname)", ARG2 );
-   if (ML_(safe_to_deref) (path, 1)) {
-      // If pathname is relative and dirfd is the special value AT_FDCWD, then pathname is interpreted ...
-      if (path[0] != '/')
-          if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "fchmodat2", tid, False) )
-             SET_STATUS_Failure( VKI_EBADF );
-      // If pathname is absolute, then dirfd is ignored
-   }
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "fchmodat2", tid, status);
 }
 
 PRE(sys_faccessat)
@@ -6486,9 +6550,7 @@ PRE(sys_faccessat)
    PRE_REG_READ3(long, "faccessat",
                  int, dfd, const char *, pathname, int, mode);
    PRE_MEM_RASCIIZ( "faccessat(pathname)", ARG2 );
-   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
-      if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "faccessat", tid, False) )
-         SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "faccessat", tid, status);
 }
 
 PRE(sys_faccessat2)
@@ -6503,9 +6565,7 @@ PRE(sys_faccessat2)
    PRE_REG_READ4(long, "faccessat2",
                  int, dfd, const char *, pathname, int, mode, int, flags);
    PRE_MEM_RASCIIZ( "faccessat2(pathname)", ARG2 );
-   if ((ML_(safe_to_deref) (path, 1)) && (path[0] != '/'))
-      if ( arg_1 != VKI_AT_FDCWD && !ML_(fd_allowed)(arg_1, "faccessat2", tid, False) )
-         SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "faccessat2", tid, status);
 }
 
 PRE(sys_name_to_handle_at)
@@ -13914,7 +13974,7 @@ POST(sys_io_uring_register)
 
 PRE(sys_execveat)
 {
-     PRINT("sys_execveat ( %lu, %#lx(%s), %#lx, %#lx, %lu", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
+   PRINT("sys_execveat ( %lu, %#lx(%s), %#lx, %#lx, %lu", ARG1, ARG2, (char*)ARG2, ARG3, ARG4, ARG5);
    PRE_REG_READ5(vki_off_t, "execveat",
                 int, fd, char *, filename, char **, argv, char **, envp, int, flags);
    PRE_MEM_RASCIIZ( "execveat(filename)", ARG2);
@@ -14171,11 +14231,8 @@ PRE(sys_openat2)
    /* For absolute filenames, dirfd is ignored.  If dirfd is AT_FDCWD,
       filename is relative to cwd.  When comparing dirfd against AT_FDCWD,
       be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "openat", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "openat2", tid, status);
+
    /* Handle the case where the open is of /proc/self/cmdline or
       /proc/<pid>/cmdline, and just give it a copy of the fd for the
       fake file we cooked up at startup (in m_main).  Also, seek the
@@ -14308,27 +14365,19 @@ PRE(sys_move_mount)
          "%ld, %#" FMT_REGWORD "x(%s), %ld",
          SARG1, ARG2, (HChar*)(Addr)ARG2,
          SARG3, ARG4, (HChar*)(Addr)ARG4, SARG5);
-   PRE_REG_READ5(long, "mount_move",
+   PRE_REG_READ5(long, "move_mount",
                  int, from_dfd, const char *, from_pathname,
                  int, to_dfd, const char*, to_pathname, int, flags);
-   PRE_MEM_RASCIIZ( "mount_move(from_pathname)", ARG2);
+   PRE_MEM_RASCIIZ( "move_mount(from_pathname)", ARG2);
    /* For absolute filenames, from_dfd is ignored.  If from_dfd is AT_FDCWD,
       from_pathname is relative to cwd.  When comparing from_dfd against
       AT_FDCWD, be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
-       && *(Char *)(Addr)ARG2 != '/'
-       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG1, "mount_move", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
-   PRE_MEM_RASCIIZ( "mount_move(from_pathname)", ARG4);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "move_mount(from_dfd)", tid, status);
+   PRE_MEM_RASCIIZ( "move_mount(to_pathname)", ARG4);
    /* For absolute filenames, to_dfd is ignored.  If to_dfd is AT_FDCWD,
       to_pathname is relative to cwd.  When comparing to_dfd against
       AT_FDCWD, be sure only to compare the bottom 32 bits. */
-   if (ML_(safe_to_deref)( (void*)(Addr)ARG4, 1 )
-       && *(Char *)(Addr)ARG4 != '/'
-       && ((Int)ARG4) != ((Int)VKI_AT_FDCWD)
-       && !ML_(fd_allowed)(ARG3, "mount_move", tid, False))
-      SET_STATUS_Failure( VKI_EBADF );
+   ML_(fd_at_check_allowed)(SARG3, (const HChar*)ARG4, "move_mount(to_dfd)", tid, status);
 }
 
 /* int fsopen (const char *fs_name, unsigned int flags)  */

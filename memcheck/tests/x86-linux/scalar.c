@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <sys/mman.h> // MREMAP_FIXED
 #include <sys/prctl.h>
+#include <sys/resource.h>
 
 // Here we are trying to trigger every syscall error (scalar errors and
 // memory errors) for every syscall.  We do this by passing a lot of bogus
@@ -1272,9 +1273,29 @@ int main(void)
    GO(__NR_sys_kexec_load, "ni");
    SY(__NR_sys_kexec_load); FAIL;
 
+   // __NR_waitid 284
+   GO(__NR_waitid, "5s 0m");
+   SY(__NR_waitid, x0, x0, x0, x0, x0); FAIL;
+
+   GO(__NR_waitid, "(infop,ru) 5s 2m");
+   SY(__NR_waitid, x0, x0, x0 + 1, x0, x0 + 2); FAIL;
+
    // __NR_epoll_create1 329
    GO(__NR_epoll_create1, "1s 0m");
    SY(__NR_epoll_create1, x0); SUCC_OR_FAIL;
+
+   // __NR_prlimit64 340
+   GO(__NR_prlimit64, "(nop) 4s 0m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0, x0); SUCC;
+
+   GO(__NR_prlimit64, "(set) 4s 1m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0 + 1, x0); FAILx(EFAULT);
+
+   GO(__NR_prlimit64, "(get) 4s 1m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0, x0 + 1); FAILx(EFAULT);
+
+   GO(__NR_prlimit64, "(get+set) 4s 2m");
+   SY(__NR_prlimit64, x0, x0 + RLIMIT_NOFILE, x0 + 1, x0 + 1); FAILx(EFAULT);
 
    // __NR_process_vm_readv 347
    GO(__NR_process_vm_readv, "6s 2m");

@@ -7257,7 +7257,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          }
          // size zero not allowed on all platforms (e.g. Illumos)
          if (aligned_alloc_info->size == 0) {
-            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "memalign()" );
+            MC_(record_unsafe_zero_size) ( tid );
          }
          break;
       case AllocKindPosixMemalign:
@@ -7269,7 +7269,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be non-zero, a power of 2 and a multiple of sizeof(void*))" );
          }
          if (aligned_alloc_info->size == 0) {
-            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "posix_memalign()" );
+            MC_(record_unsafe_zero_size) ( tid);
          }
          break;
       case AllocKindAlignedAlloc:
@@ -7283,7 +7283,7 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
             MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , aligned_alloc_info->size, " (size should be a multiple of alignment)" );
          }
          if (aligned_alloc_info->size == 0) {
-            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "aligned_alloc()" );
+            MC_(record_unsafe_zero_size) ( tid );
          }
          break;
       case AllocKindDeleteSized:
@@ -7305,16 +7305,13 @@ static Bool mc_handle_client_request ( ThreadId tid, UWord* arg, UWord* ret )
          }
          break;
       case AllocKindFreeAlignedSized:
-         // same alignment checks as aligned_alloc
+         // same alignment checks as aligned_alloc, but allow a size of 0
          if ((aligned_alloc_info->orig_alignment & (aligned_alloc_info->orig_alignment - 1)) != 0) {
             MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , 0U, " (should be a power of 2)" );
          }
          if (aligned_alloc_info->orig_alignment &&
              aligned_alloc_info->size % aligned_alloc_info->orig_alignment != 0U) {
             MC_(record_bad_alignment) ( tid, aligned_alloc_info->orig_alignment , aligned_alloc_info->size, " (size should be a multiple of alignment)" );
-         }
-         if (aligned_alloc_info->size == 0) {
-            MC_(record_bad_size) ( tid, aligned_alloc_info->size, "free_aligned_sized()" );
          }
          mc = VG_(HT_lookup) ( MC_(malloc_list), (UWord)aligned_alloc_info->mem );
          if (mc && aligned_alloc_info->orig_alignment != mc->alignB) {

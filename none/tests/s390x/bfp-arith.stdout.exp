@@ -1,0 +1,30 @@
+32-bit ADD
+aebr  r1 = 2.5  r2 = -2.5  -->  cc = 0
+aebr  r1 = 4.75  r2 = -6.25  -->  cc = 1
+aebr  r1 = -2.5  r2 = 8.5  -->  cc = 2
+aebr  r1 = nan  r2 = 0  -->  cc = 3
+64-bit ADD
+adbr  r1 = 2.5  r2 = -2.5  -->  cc = 0
+adbr  r1 = 4.75  r2 = -6.25  -->  cc = 1
+adbr  r1 = -2.5  r2 = 8.5  -->  cc = 2
+adbr  r1 = nan  r2 = 0  -->  cc = 3
+128-bit ADD
+axbr  r1 = 2.5  r2 = -2.5  -->  cc = 0
+axbr  r1 = 4.75  r2 = -6.25  -->  cc = 1
+axbr  r1 = -2.5  r2 = 8.5  -->  cc = 2
+axbr  r1 = nan  r2 = 0  -->  cc = 3
+32-bit SUBTRACT
+sebr  r1 = 2.5  r2 = 2.5  -->  cc = 0
+sebr  r1 = 4.75  r2 = 6.25  -->  cc = 1
+sebr  r1 = 8.5  r2 = 2.5  -->  cc = 2
+sebr  r1 = nan  r2 = 0  -->  cc = 3
+64-bit SUBTRACT
+sdbr  r1 = 2.5  r2 = 2.5  -->  cc = 0
+sdbr  r1 = 4.75  r2 = 6.25  -->  cc = 1
+sdbr  r1 = 8.5  r2 = 2.5  -->  cc = 2
+sdbr  r1 = nan  r2 = 0  -->  cc = 3
+128-bit SUBTRACT
+sxbr  r1 = 2.5  r2 = 2.5  -->  cc = 0
+sxbr  r1 = 4.75  r2 = 6.25  -->  cc = 1
+sxbr  r1 = 8.5  r2 = 2.5  -->  cc = 2
+sxbr  r1 = nan  r2 = 0  -->  cc = 3

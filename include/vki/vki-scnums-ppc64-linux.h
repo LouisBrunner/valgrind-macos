@@ -409,6 +409,11 @@
 #define __NR_pkey_mprotect	386
 #define __NR_rseq		387
 #define __NR_io_pgetevents	388
+#define __NR_semtimedop		392
+#define __NR_semctl		394
+#define __NR_shmctl		396
+#define __NR_msgctl		402
+#define __NR_futex_waitv	449
 
 #endif /* __VKI_SCNUMS_PPC64_LINUX_H */
 

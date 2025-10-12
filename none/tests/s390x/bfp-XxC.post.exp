@@ -1,0 +1,234 @@
+
+============================================================
+BFP CONVERT FROM FIXED
+============================================================
+Testing:  cefbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cdfbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxfbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cegbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cdgbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxgbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+BFP CONVERT FROM LOGICAL
+============================================================
+Testing:  celfbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cdlfbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxlfbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  celgbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cdlgbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxlgbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+BFP CONVERT TO FIXED
+============================================================
+Testing:  cfebra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cfdbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cfxbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cgebra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cgdbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cgxbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+BFP CONVERT TO LOGICAL
+============================================================
+Testing:  clfebr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clfdbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clfxbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clgebr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clgdbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clgxbr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+BFP LOAD FP INTEGER
+============================================================
+Testing:  fiebra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  fidbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  fixbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+BFP LOAD ROUNDED
+============================================================
+Testing:  ledbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  ldxbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  lexbra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+

@@ -902,6 +902,20 @@ static UWord do_extension_DFLTCC(ThreadState* tst, ULong variant)
 /*--- STFLE (store facility list extended)                    ---*/
 /*---------------------------------------------------------------*/
 
+static int do_STFLE_insn(void* addr, ULong nwords, ULong* gpr0)
+{
+   register ULong reg0 asm("0") = *gpr0;
+   Int            cc;
+
+   asm(".insn s,0xb2b00000,%[out]\n" /* stfle */
+       "ipm %[cc]\n"
+       : [out] "=Q"(*(ULong(*)[nwords])addr), [r0] "+d"(reg0), [cc] "=d"(cc)
+       :
+       : "cc");
+   *gpr0 = reg0;
+   return cc >> 28;
+}
+
 static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
 {
    Int    cc      = 0;
@@ -972,15 +986,8 @@ static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
        /* 195: unassigned */
        | S390_SETBITS(196, 197)),
    };
-   asm("lgr 0,%[r0]\n"
-       ".insn s,0xb2b00000,%[out]\n" /* stfle */
-       "lgr %[r0],0\n"
-       "ipm %[cc]\n"
-       "srl %[cc],28\n"
-       : [out] "=Q"(*(ULong(*)[last_dw + 1])(void*)addr), [r0] "+d"(gpr0),
-         [cc] "=d"(cc)
-       :
-       : "cc");
+
+   cc = do_STFLE_insn((void*)addr, last_dw + 1, &gpr0);
 
    WRITE_GPR(tst, 0, gpr0);
    if (last_dw > (gpr0 & 0xff))

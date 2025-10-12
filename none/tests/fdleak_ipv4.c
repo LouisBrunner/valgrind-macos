@@ -80,7 +80,7 @@ int main (int argc, char **argv)
 {
    int pid, status;
 
-   CLOSE_INHERITED_FDS;
+
 
    if ((pid = fork()) == 0) {
       server();

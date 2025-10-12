@@ -2468,6 +2468,10 @@ struct vki_ps_strings {
 /* added in FreeBSD 14 */
 #define VKI_AT_USRSTACKBASE 35
 #define VKI_AT_USRSTACKLIM 36
+/* added in FreeBSD 15 */
+#define AT_CHERI_STATS 37
+#define AT_HWCAP3 38
+#define AT_HWCAP4 39
 
 /* AT_COUNT depends on the FreeBSD version, not currently used */
 
@@ -3268,7 +3272,7 @@ union vki_ccb {
 #define VKI_CAMIOCOMMAND _VKI_IOWR(VKI_CAM_VERSION, 2, union vki_ccb)
 
 //----------------------------------------------------------------------
-// From cam/scsi/scsi_all.h
+// From sys/ucred,h
 //----------------------------------------------------------------------
 struct vki_setcred {
    vki_uid_t    sc_uid;                /* effective user id */

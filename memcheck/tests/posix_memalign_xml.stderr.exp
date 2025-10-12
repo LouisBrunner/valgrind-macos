@@ -32,7 +32,7 @@
   <unique>0x........</unique>
   <tid>...</tid>
   <kind>InvalidSize</kind>
-  <what>posix_memalign() invalid size value: 0</what>
+  <what>Unsafe allocation with size of zero is implementation-defined</what>
   <stack>
     <frame>
       <ip>0x........</ip>

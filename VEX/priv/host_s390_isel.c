@@ -4503,27 +4503,27 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       case Iop_MullEven8Sx16:
          size = 1;
-         vec_binop = S390_VEC_INT_MUL_EVENS;
+         vec_binop = S390_VEC_INT_MUL_ODDS;
          goto Iop_VV_wrk;
       case Iop_MullEven8Ux16:
          size = 1;
-         vec_binop = S390_VEC_INT_MUL_EVENU;
+         vec_binop = S390_VEC_INT_MUL_ODDU;
          goto Iop_VV_wrk;
       case Iop_MullEven16Sx8:
          size = 2;
-         vec_binop = S390_VEC_INT_MUL_EVENS;
+         vec_binop = S390_VEC_INT_MUL_ODDS;
          goto Iop_VV_wrk;
       case Iop_MullEven16Ux8:
          size = 2;
-         vec_binop = S390_VEC_INT_MUL_EVENU;
+         vec_binop = S390_VEC_INT_MUL_ODDU;
          goto Iop_VV_wrk;
       case Iop_MullEven32Sx4:
          size = 4;
-         vec_binop = S390_VEC_INT_MUL_EVENS;
+         vec_binop = S390_VEC_INT_MUL_ODDS;
          goto Iop_VV_wrk;
       case Iop_MullEven32Ux4:
          size = 4;
-         vec_binop = S390_VEC_INT_MUL_EVENU;
+         vec_binop = S390_VEC_INT_MUL_ODDU;
          goto Iop_VV_wrk;
 
       case Iop_Shl8x16:

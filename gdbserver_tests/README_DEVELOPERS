@@ -15,7 +15,7 @@ or (to just run the gdbserver tests with another gdb):
   make check
   cd ..
   gdbserver_tests/make_local_links /path/to/another/gdb
-  perl tests/vg_regtest gdbserver_tests
+  tests/vg_regtest gdbserver_tests
 
 The minimum version to run the tests is gdb >= 6.5.
     Previous versions do not have the 'target remote |' command.  It
@@ -30,10 +30,26 @@ if testing with a lower version).
 Test behaviour with gdb < 7.0 is unknown: some might fail,
 some might block or loop for a very long time.
 
-Some tests implies to have a vgdb "ptrace invoker" capable.
+Some tests imply having the vgdb "ptrace invoker" capability.
 
 The prerequisite are established during make regtest (using marker files).
 Each test verifies the prerequisite using the prereq: line.
+
+The invoker is implemented as follows on the currently supported OSes.
+
+------------------------------------------------------------
+|  Linux  |        ptrace         | vgdb-invoker-ptrace.c  |
+| FreeBSD |        ptrace         | vgdb-invoker-freebsd.c |
+| Solaris | process control files | vgdb-invoker-solaris.c |
+| Darwin  |    not implemented    | vgdb-invoker-none.c    |
+------------------------------------------------------------
+
+The source files are all in coregrind/. ptrace is not part of any
+standardised interface like POSIX. That means that the Linux and
+FreeBSD implementations are very similar but there are some
+differences. Darwin not having an invoker means that it is not possible
+to interrupt Valgrind attached to GDB if it hangs. You will need to
+kill Valgrind and start again if that happens.
 
 In case of failing tests
 ------------------------
@@ -45,7 +61,7 @@ You are welcome to fix such bugs by enhancing filter_gdb.
 
 Alternatively, to report such problems, the best is to re-run
 the gdbserver tests the following way:
-   perl tests/vg_regtest --keep-unfiltered gdbserver_tests
+   tests/vg_regtest --keep-unfiltered gdbserver_tests
 
 Then file a bug in bugzilla, giving the following information:
   output of

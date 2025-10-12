@@ -1,0 +1,39 @@
+32-bit tests
+value = 0.000000		cc = 1   Zero with sign bit positive
+value = -0.000000		cc = 1   Zero with sign bit negative
+value = 3.000000		cc = 1   Normal number with sign bit positive
+value = -3.000000		cc = 1   Normal number with sign bit negative
+value = nan		cc = 1   Quiet Nan with sign bit posative
+value = -nan		cc = 1   Quiet Nan with sign bit negative
+value = inf		cc = 1   Infinity with sign bit positive
+value = -inf		cc = 1   Infinity with sign bit negative
+value = nan		cc = 1   Signaling Nan with sign bit posative
+value = -nan		cc = 1   Signaling Nan with sign bit negative
+value = -0.000000		cc = 1   Subnormal number with sign bit negative
+value = -0.000000		cc = 1   Subnormal number with sign bit positive
+
+64-bit tests
+value = 0.000000		cc = 1   Zero with sign bit positive
+value = -0.000000		cc = 1   Zero with sign bit negative
+value = 3.000000		cc = 1   Normal number with sign bit positive
+value = -3.000000		cc = 1   Normal number with sign bit negative
+value = nan		cc = 1   Quiet Nan with sign bit posative
+value = -nan		cc = 1   Quiet Nan with sign bit negative
+value = inf		cc = 1   Infinity with sign bit positive
+value = -inf		cc = 1   Infinity with sign bit negative
+value = nan		cc = 1   Signaling Nan with sign bit posative
+value = -nan		cc = 1   Signaling Nan with sign bit negative
+value = -0.000000		cc = 1   Subnormal number with sign bit negative
+value = -0.000000		cc = 1   Subnormal number with sign bit positive
+
+128-bit tests
+value = 0.000000		cc = 1   Zero with sign bit positive
+value = -0.000000		cc = 1   Zero with sign bit negative
+value = 3.000000		cc = 1   Normal number with sign bit positive
+value = -3.000000		cc = 1   Normal number with sign bit negative
+value = nan		cc = 1   Quiet Nan with sign bit posative
+value = -nan		cc = 1   Quiet Nan with sign bit negative
+value = inf		cc = 1   Infinity with sign bit positive
+value = -inf		cc = 1   Infinity with sign bit negative
+value = nan		cc = 1   Signaling Nan with sign bit posative
+value = -nan		cc = 1   Signaling Nan with sign bit negative

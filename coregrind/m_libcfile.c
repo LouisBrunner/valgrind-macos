@@ -700,9 +700,20 @@ struct vki_stat buf;
    res = VG_(do_syscall4)(__NR_fstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, VKI_AT_SYMLINK_NOFOLLOW);
 #endif
 
+#elif defined(VGO_solaris)
+
+   struct vki_stat buf;
+#if defined(SOLARIS_OLD_SYSCALLS)
+   // illumos
+   res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
+#else
+   // Solaris 11+
+   res = VG_(do_syscall4)(__NR_fstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, VKI_AT_SYMLINK_NOFOLLOW);
+#endif
+
 #else
 
-   /* check this on illumos and Darwin */
+   /* check this on Darwin */
    struct vki_stat buf;
    res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
 

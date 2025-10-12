@@ -1,32 +1,32 @@
 parent: kill fd 3
 Syscall param pdfork(fdp) points to unaddressable byte(s)
    ...
-   by 0x........: main (pdfork_pdkill.c:88)
+   by 0x........: main (pdfork_pdkill.c:92)
  Address 0x........ is 0 bytes inside a block of size 4 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (pdfork_pdkill.c:87)
+   by 0x........: main (pdfork_pdkill.c:91)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (pdfork_pdkill.c:86)
+   by 0x........: main (pdfork_pdkill.c:90)
 
 parent after 1st bad pdfork
 Syscall param pdgetpid(fd) contains uninitialised byte(s)
    ...
-   by 0x........: main (pdfork_pdkill.c:95)
+   by 0x........: main (pdfork_pdkill.c:104)
 
 Syscall param pdgetpid(pidp)) points to unaddressable byte(s)
    ...
-   by 0x........: main (pdfork_pdkill.c:95)
+   by 0x........: main (pdfork_pdkill.c:104)
  Address 0x........ is 0 bytes inside a block of size 4 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (pdfork_pdkill.c:94)
+   by 0x........: main (pdfork_pdkill.c:103)
  Block was alloc'd at
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (pdfork_pdkill.c:93)
+   by 0x........: main (pdfork_pdkill.c:102)
 
 Syscall param pdfork(flags) contains uninitialised byte(s)
    ...
-   by 0x........: main (pdfork_pdkill.c:96)
+   by 0x........: main (pdfork_pdkill.c:105)
 
 FILE DESCRIPTORS: 3 open (3 inherited) at exit.
 Open file descriptor ...

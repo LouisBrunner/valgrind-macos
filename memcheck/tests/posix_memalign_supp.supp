@@ -1,7 +1,7 @@
 
 {
    posix_memalign size
-   Memcheck:BadSize
+   Memcheck:UnsafeZeroSize
    fun:posix_memalign
    fun:main
 }
@@ -15,8 +15,8 @@
 
 # Darwin uses zones
 {
-   posix_memalign size
-   Memcheck:BadSize
+   posix_memalign zero size
+   Memcheck:UnsafeZeroSize
    fun:malloc_zone_memalign
    fun:posix_memalign
    fun:main

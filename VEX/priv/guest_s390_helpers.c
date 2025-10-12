@@ -628,7 +628,7 @@ s390_do_cu12_cu14_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
       UInt ij     = (byte3 >> 4) & 0x3;
       UInt klmn   = byte3 & 0xf;
       UInt opqrst = byte4 & 0x3f;
-      
+
       if (is_cu12) {
          UInt abcd = (uvwxy - 1) & 0xf;
          UInt high_surrogate = (0xd8 << 8) | (abcd << 6) | (efgh << 2) | ij;
@@ -782,6 +782,8 @@ decode_bfp_rounding_mode(UInt irrm)
    case Irrm_NegINF:  return S390_BFP_ROUND_NEGINF;
    case Irrm_PosINF:  return S390_BFP_ROUND_POSINF;
    case Irrm_ZERO:    return S390_BFP_ROUND_ZERO;
+   case Irrm_NEAREST_TIE_AWAY_0: return S390_BFP_ROUND_NEAREST_AWAY;
+   case Irrm_PREPARE_SHORTER:    return S390_BFP_ROUND_PREPARE_SHORT;
    }
    vpanic("decode_bfp_rounding_mode");
 }
@@ -880,6 +882,12 @@ decode_bfp_rounding_mode(UInt irrm)
 ({                                                        \
    UInt cc;                                               \
    switch (decode_bfp_rounding_mode(cc_dep2)) {           \
+   case S390_BFP_ROUND_NEAREST_AWAY:                      \
+      cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,1); \
+      break;                                              \
+   case S390_BFP_ROUND_PREPARE_SHORT:                     \
+      cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,3); \
+      break;                                              \
    case S390_BFP_ROUND_NEAREST_EVEN:                      \
       cc = S390_CC_FOR_BFP_CONVERT_AUX(opcode,cc_dep1,4); \
       break;                                              \
@@ -914,6 +922,12 @@ decode_bfp_rounding_mode(UInt irrm)
 ({                                                         \
    UInt cc;                                                \
    switch (decode_bfp_rounding_mode(cc_dep2)) {            \
+   case S390_BFP_ROUND_NEAREST_AWAY:                       \
+      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,1); \
+      break;                                               \
+   case S390_BFP_ROUND_PREPARE_SHORT:                      \
+      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,3); \
+      break;                                               \
    case S390_BFP_ROUND_NEAREST_EVEN:                       \
       cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,4); \
       break;                                               \
@@ -951,6 +965,12 @@ decode_bfp_rounding_mode(UInt irrm)
       s390_cc_thunk_put3 for rationale. */                           \
    cc_dep2 = cc_dep2 ^ cc_ndep;                                      \
    switch (decode_bfp_rounding_mode(cc_ndep)) {                      \
+   case S390_BFP_ROUND_NEAREST_AWAY:                                 \
+      cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,1); \
+      break;                                                         \
+   case S390_BFP_ROUND_PREPARE_SHORT:                                \
+      cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,3); \
+      break;                                                         \
    case S390_BFP_ROUND_NEAREST_EVEN:                                 \
       cc = S390_CC_FOR_BFP128_CONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
       break;                                                         \
@@ -988,6 +1008,13 @@ decode_bfp_rounding_mode(UInt irrm)
       s390_cc_thunk_put3 for rationale. */                            \
    cc_dep2 = cc_dep2 ^ cc_ndep;                                       \
    switch (decode_bfp_rounding_mode(cc_ndep)) {                       \
+   case S390_BFP_ROUND_NEAREST_AWAY:                                  \
+      cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,1); \
+      break;                                                          \
+   case S390_BFP_ROUND_PREPARE_SHORT:                                 \
+      cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,3); \
+      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,3);            \
+      break;                                                          \
    case S390_BFP_ROUND_NEAREST_EVEN:                                  \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
       break;                                                          \
@@ -1700,9 +1727,9 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
 
 #  if 0
    vex_printf("spec request:\n");
-   vex_printf("   %s  ", function_name);
+   vex_printf("   %s", function_name);
    for (i = 0; i < arity; i++) {
-      vex_printf("  ");
+      vex_printf("   [%u]: ", i);
       ppIRExpr(args[i]);
    }
    vex_printf("\n");
@@ -2025,13 +2052,13 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          cc_dep1 = the value to be tested, ANDed with the mask
          cc_dep2 = an 8-bit mask; expected to be a constant here */
       if (cc_op == S390_CC_OP_TEST_UNDER_MASK_8) {
-         ULong mask16;
+         ULong mask8;
 
          if (! isC64(cc_dep2)) goto missed;
 
-         mask16 = cc_dep2->Iex.Const.con->Ico.U64;
+         mask8 = cc_dep2->Iex.Const.con->Ico.U64;
 
-         if (mask16 == 0) {   /* cc == 0 */
+         if (mask8 == 0) {   /* cc == 0 */
             if (cond & 0x8) return mkU32(1);
             return mkU32(0);
          }
@@ -2048,6 +2075,22 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          }
          if (cond == 14 || cond == 14 - 2) { /* not all bits set */
             return unop(Iop_1Uto32, binop(Iop_CmpNE64, cc_dep1, cc_dep2));
+         }
+         if (cond == 4 || cond == 4 + 2) { /* not all zero and not all one */
+            return unop(Iop_1Uto32, binop(Iop_And1,
+                        binop(Iop_CmpNE64, cc_dep1, cc_dep2),
+                        binop(Iop_CmpNE64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 9 || cond == 9 + 2) { /* selected bits all 1 or all 0 */
+            return unop(Iop_1Uto32, binop(Iop_Or1,
+                                          binop(Iop_CmpEQ64, cc_dep1, cc_dep2),
+                                          binop(Iop_CmpEQ64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 0 || cond == 0 + 2) {
+            return mkU32(0);
+         }
+         if (cond == 15 || cond == 15 - 2) {
+            return mkU32(1);
          }
          goto missed;
       }
@@ -2098,6 +2141,17 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
          if (cond == 14) { /* not all bits set */
             return unop(Iop_1Uto32, binop(Iop_CmpNE64, val, mkU64(mask)));
          }
+         if (cond == 9) { /* selected bits all 1 or all 0 */
+            return unop(Iop_1Uto32, binop(Iop_Or1,
+                                          binop(Iop_CmpEQ64, cc_dep1, cc_dep2),
+                                          binop(Iop_CmpEQ64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 6) { /* not all zero and not all one */
+            return unop(Iop_1Uto32, binop(Iop_And1,
+                        binop(Iop_CmpNE64, cc_dep1, cc_dep2),
+                        binop(Iop_CmpNE64, cc_dep1, mkU64(0))));
+         }
+         if (cond == 0) return mkU32(0);
 
          IRExpr *masked_msb = binop(Iop_And64, val, mkU64(msb));
 
@@ -2142,8 +2196,22 @@ guest_s390x_spechelper(const HChar *function_name, IRExpr **args,
                               binop(Iop_CmpEQ64, masked_msb, mkU64(0)),
                               binop(Iop_CmpEQ64, val, mkU64(mask))));
          }
-         // fixs390: handle cond = 5,6,9,10 (the missing cases)
-         // vex_printf("TUM mask = 0x%llx\n", mask16);
+         if (cond == 5) { /* cc == 1 || cc == 3 */
+            /* mixed and leftmost bit zero or all bits set */
+            IRExpr *cc1 = binop(Iop_And1,
+                                binop(Iop_CmpEQ64, masked_msb, mkU64(0)),
+                                binop(Iop_CmpNE64, val, mkU64(0)));
+            IRExpr *cc3 = binop(Iop_CmpEQ64, val, mkU64(mask));
+            return unop(Iop_1Uto32, binop(Iop_Or1, cc1, cc3));
+         }
+         if (cond == 10) { /* cc == 0 || cc == 2 */
+            /* all bits zero or mixed and leftmost bit one */
+            IRExpr *cc0 = binop(Iop_CmpEQ64, val, mkU64(0));
+            IRExpr *cc2 = binop(Iop_And1,
+                                binop(Iop_CmpNE64, masked_msb, mkU64(0)),
+                                binop(Iop_CmpNE64, val, mkU64(mask)));
+            return unop(Iop_1Uto32, binop(Iop_Or1, cc0, cc2));
+         }
          goto missed;
       }
 

@@ -28,9 +28,9 @@ void* load_memory_content(void** ptr)
       "LDR x2, [%1, #16]\n"
       "mov %0, x0\n"
       "mov x3, #2000\n"
-      "loop:"
+      "1:\n"
       " subs x3, x3, #1\n"
-      " b.ne loop\n"
+      " b.ne 1b\n"
       : "=r"(result)
       : "r"(ptr)
       : "x0", "x1", "x2", "x3");

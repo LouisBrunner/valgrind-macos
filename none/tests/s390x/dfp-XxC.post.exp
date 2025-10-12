@@ -1,0 +1,146 @@
+
+============================================================
+DFP CONVERT FROM FIXED
+============================================================
+Testing:  cdgtra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxgtra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cdftr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxftr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+DFP CONVERT FROM LOGICAL
+============================================================
+Testing:  cdlgtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxlgtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cdlftr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cxlftr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+DFP CONVERT TO FIXED
+============================================================
+Testing:  cgdtra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cgxtra 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cfdtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  cfxtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+DFP CONVERT TO LOGICAL
+============================================================
+Testing:  clgdtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clgxtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clfdtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  clfxtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+
+============================================================
+DFP LOAD ROUNDED
+============================================================
+Testing:  ledtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+
+Testing:  ldxtr 0,0,0,4
+Emulation warning: unsupported action:
+  Encountered an insn with the IEEE-inexact-exception control
+  (XxC) bit set to 1. This is not supported. Continuing anyway.
+  IEEE-inexact exceptions will not be suppressed.
+   at 0x........: (below main)
+

@@ -1,2 +1,2 @@
 prog: vbit-test
-vgopts: -q --expensive-definedness-checks=yes
+vgopts: -q --expensive-definedness-checks=yes --vex-guest-chase=no

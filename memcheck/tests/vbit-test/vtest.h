@@ -250,6 +250,10 @@ static __inline__ unsigned bitsof_irtype(IRType type)
    return type == Ity_I1 ? 1 : sizeof_irtype(type) * 8;
 }
 
+static __inline__ int host_is_big_endian(void)
+{
+   return ((*(UShort *)(&(UInt){ 0x11223344 })) == 0x1122);
+}
 
 /* Exported variables */
 extern int verbose;

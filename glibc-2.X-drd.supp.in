@@ -40,7 +40,7 @@
 {
    drd-glibc-io-xsputn-mempcpy
    drd:ConflictingAccess
-   fun:__GI_mempcpy
+   fun:*mem*cpy
    fun:_IO_*xsputn*
    obj:@GLIBC_LIBC_PATH@ 
 }

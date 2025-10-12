@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr filter_arg_check
 
 EXTRA_DIST = \
 	posix_fadvise.vgtest \
@@ -9,10 +9,12 @@ EXTRA_DIST = \
 	posix_fadvise.stderr.exp \
 	posix_fallocate.stderr.exp \
 	reallocarray.vgtest \
-	reallocarray.stderr.exp
+	reallocarray.stderr.exp \
+	scalar_arg_check.vgtest \
+	scalar_arg_check.stderr.exp
 
 check_PROGRAMS = \
-	posix_fadvise posix_fallocate reallocarray
+	posix_fadvise posix_fallocate reallocarray scalar_arg_check
 
 # Linux also adds  $(FLAG_MMMX) $(FLAG_MSSE) to the first two
 AM_CFLAGS    += @FLAG_M32@

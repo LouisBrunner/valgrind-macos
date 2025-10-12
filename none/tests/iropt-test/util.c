@@ -103,18 +103,28 @@ get_selected_values(IRType type, unsigned *num_val)
 {
    static const uint64_t values_1bit[]  = { 0, 1 };
    static const uint64_t values_8bit[]  = { 0, 1, 2,
-      UINT8_MAX  - 1, UINT8_MAX };
+      INT8_MAX  - 1, INT8_MAX, (uint8_t)INT8_MIN, (uint8_t)INT8_MIN + 1,
+      UINT8_MAX - 1, UINT8_MAX };
    static const uint64_t values_16bit[] = { 0, 1, 2,
+      INT8_MAX   - 1, INT8_MAX, (uint8_t)INT8_MIN, (uint8_t)INT8_MIN + 1,
       UINT8_MAX  - 1, UINT8_MAX, UINT8_MAX + 1,
+      INT16_MAX  - 1, INT16_MAX, (uint16_t)INT16_MIN, (uint16_t)INT16_MIN + 1,
       UINT16_MAX - 1, UINT16_MAX };
    static const uint64_t values_32bit[] = { 0, 1, 2,
-      UINT8_MAX  - 1, UINT8_MAX,  UINT8_MAX  + 1,
+      INT8_MAX   - 1, INT8_MAX, (uint8_t)INT8_MIN, (uint8_t)INT8_MIN + 1,
+      UINT8_MAX  - 1, UINT8_MAX, UINT8_MAX + 1,
+      INT16_MAX  - 1, INT16_MAX, (uint16_t)INT16_MIN, (uint16_t)INT16_MIN + 1,
       UINT16_MAX - 1, UINT16_MAX, UINT16_MAX + 1,
+      INT32_MAX  - 1, INT32_MAX, (uint32_t)INT32_MIN, (uint32_t)INT32_MIN + 1,
       UINT32_MAX - 1, UINT32_MAX };
    static const uint64_t values_64bit[] = { 0, 1, 2,
-      UINT8_MAX  - 1, UINT8_MAX,  UINT8_MAX  + 1,
+      INT8_MAX   - 1, INT8_MAX, (uint8_t)INT8_MIN, (uint8_t)INT8_MIN + 1,
+      UINT8_MAX  - 1, UINT8_MAX, UINT8_MAX + 1,
+      INT16_MAX  - 1, INT16_MAX, (uint16_t)INT16_MIN, (uint16_t)INT16_MIN + 1,
       UINT16_MAX - 1, UINT16_MAX, UINT16_MAX + 1,
-      UINT32_MAX - 1, UINT32_MAX, UINT32_MAX + 1,
+      INT32_MAX  - 1, INT32_MAX, (uint32_t)INT32_MIN, (uint32_t)INT32_MIN + 1,
+      UINT32_MAX - 1, UINT32_MAX, (uint64_t)UINT32_MAX + 1,
+      INT64_MAX  - 1, INT64_MAX, (uint64_t)INT64_MIN, (uint64_t)INT64_MIN + 1,
       UINT64_MAX - 1, UINT64_MAX };
 
    switch (type) {

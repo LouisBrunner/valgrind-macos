@@ -68,11 +68,14 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD
 SUBDIRS += amd64-freebsd
 endif
+if VGCONF_PLATFORMS_INCLUDE_ARM64_FREEBSD
+SUBDIRS += arm64-freebsd
+endif
 
 DIST_SUBDIRS = x86 amd64 arm64 ppc32 ppc64 s390x linux \
 		darwin solaris x86-linux amd64-linux arm64-linux riscv64-linux \
 		x86-solaris amd64-solaris mips32 mips64 \
-		freebsd amd64-freebsd x86-freebsd \
+		freebsd amd64-freebsd arm64-freebsd x86-freebsd \
 		common .
 
 dist_noinst_SCRIPTS = \
@@ -162,6 +165,9 @@ EXTRA_DIST = \
 	cxx17_aligned_new.stderr.exp cxx17_aligned_new.vgtest \
 		cxx17_aligned_new.stderr.exp_32 \
 		cxx17_aligned_new.stdout.exp \
+	duplicate_align_size_errors.stderr.exp \
+		duplicate_align_size_errors.stderr.exp-memalign \
+		duplicate_align_size_errors.vgtest \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \
 	sized_aligned_new_delete_misaligned1.stderr.exp \
@@ -613,6 +619,7 @@ endif
 
 if HAVE_ALIGNED_CXX_ALLOC
 check_PROGRAMS += cxx17_aligned_new sized_aligned_new_delete_args \
+	duplicate_align_size_errors \
 	new_aligned_delete_default \
 	sized_aligned_new_delete_misaligned1 \
 	sized_aligned_new_delete_misaligned2 \
@@ -631,8 +638,13 @@ check_PROGRAMS += reach_thread_register
 endif
 
 if HAVE_FSIZED_DEALLOCATION
-check_PROGRAMS += sized_delete new_delete_mismatch_size
+check_PROGRAMS += sized_delete
 endif
+
+if HAVE_ALIGN_VAL_T
+check_PROGRAMS += new_delete_mismatch_size
+endif
+
 
 if HAVE_GNU_STPNCPY
 check_PROGRAMS += stpncpy
@@ -708,6 +720,8 @@ bug340392_CFLAGS        = $(AM_CFLAGS) -O3 @FLAG_W_NO_MAYBE_UNINITIALIZED@
 if HAVE_ALIGNED_CXX_ALLOC
 cxx17_aligned_new_SOURCES  = cxx17_aligned_new.cpp
 cxx17_aligned_new_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_MISMATCHED_NEW_DELETE@
+duplicate_align_size_errors_SOURCES = duplicate_align_size_errors.cpp
+duplicate_align_size_errors_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
 new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
@@ -720,6 +734,7 @@ sized_aligned_new_delete_misaligned3_SOURCES = sized_aligned_new_delete_misalign
 sized_aligned_new_delete_misaligned3_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17 @FLAG_W_NO_UNUSED_VARIABLE@
 if COMPILER_IS_CLANG
 cxx17_aligned_new_CXXFLAGS += -fsized-deallocation
+duplicate_align_size_errors_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_args_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_misaligned1_CXXFLAGS += -fsized-deallocation
 sized_aligned_new_delete_misaligned2_CXXFLAGS += -fsized-deallocation

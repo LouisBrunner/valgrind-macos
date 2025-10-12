@@ -45,5 +45,6 @@
 #define __NR_rt_sigtimedwait_time64	421
 #define __NR_futex_time64	422
 #define __NR_sched_rr_get_interval_time64	423
+#define __NR_futex_waitv	449
 
 #endif

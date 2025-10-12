@@ -1,0 +1,3 @@
+prog: scalar_arg_check
+vgopts: -q --trace-syscalls=yes
+stderr_filter: filter_arg_check

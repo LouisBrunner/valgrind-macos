@@ -2,7 +2,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
-INSN_TESTS = cdsg cli cu21 cu42 ltgjhe tmxx vstrc vfae vistr vstrs
+INSN_TESTS = cdsg cli cu21 cu42 ltgjhe tmxx vstrc vfae vistr vstrs vme
 
 check_PROGRAMS = $(INSN_TESTS) 
 

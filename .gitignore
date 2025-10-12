@@ -1103,6 +1103,7 @@ configure~
 /memcheck/tests/amd64-linux/defcfaexpr
 /memcheck/tests/amd64-linux/int3-amd64
 /memcheck/tests/amd64-linux/reallocarray
+/memcheck/tests/amd64-linux/scalar
 /memcheck/tests/amd64-linux/Makefile
 /memcheck/tests/amd64-linux/Makefile.in
 
@@ -1177,7 +1178,7 @@ configure~
 /memcheck/tests/darwin/scalar_vfork
 
 # /memcheck/tests/linux/
-/memcheck/tests/linux/*.stderr.diff
+/memcheck/tests/linux/*.stderr.diff*
 /memcheck/tests/linux/*.stderr.out
 /memcheck/tests/linux/*.stdout.diff
 /memcheck/tests/linux/*.stdout.out
@@ -1270,6 +1271,7 @@ configure~
 /memcheck/tests/s390x/cu42
 /memcheck/tests/s390x/ltgjhe
 /memcheck/tests/s390x/tmxx
+/memcheck/tests/s390x/vme
 /memcheck/tests/s390x/vstrc
 /memcheck/tests/s390x/vfae
 /memcheck/tests/s390x/vistr
@@ -1491,6 +1493,7 @@ configure~
 /memcheck/tests/amd64-freebsd/posix_fallocate
 /memcheck/tests/amd64-freebsd/reallocarray
 /memcheck/tests/amd64-freebsd/reallocf
+/memcheck/tests/amd64-freebsd/scalar_arg_check
 
 # /memcheck/tests/x86-freebsd
 /memcheck/tests/x86-freebsd/*.stderr.diff
@@ -1503,6 +1506,17 @@ configure~
 /memcheck/tests/x86-freebsd/posix_fadvise
 /memcheck/tests/x86-freebsd/posix_fallocate
 /memcheck/tests/x86-freebsd/reallocarray
+/memcheck/tests/x86-freebsd/scalar_arg_check
+
+# /memcheck/tests/arm64-freebsd
+/memcheck/tests/arm64-freebsd/*.stderr.diff
+/memcheck/tests/arm64-freebsd/*.stderr.out
+/memcheck/tests/arm64-freebsd/*.stdout.diff
+/memcheck/tests/arm64-freebsd/*.stdout.out
+/memcheck/tests/arm64-freebsd/.deps
+/memcheck/tests/arm64-freebsd/Makefile
+/memcheck/tests/arm64-freebsd/Makefile.in
+/memcheck/tests/arm64-freebsd/scalar_arg_check
 
 # /mpi/
 /mpi/*.dSYM
@@ -1688,6 +1702,7 @@ configure~
 /none/tests/vgprintf
 /none/tests/vgprintf_nvalgrind
 /none/tests/yield
+/none/tests/getdents_filter
 
 # /none/tests/amd64/
 /none/tests/amd64/*.dSYM
@@ -1903,6 +1918,7 @@ configure~
 /none/tests/linux/open_client
 /none/tests/linux/pthread-stack
 /none/tests/linux/stack-overflow
+/none/tests/linux/getdents_filter
 
 # /none/tests/mips32/
 /none/tests/mips32/Makefile
@@ -2125,7 +2141,7 @@ configure~
 /none/tests/s390x/sub
 /none/tests/s390x/sub-z14
 /none/tests/s390x/sub_EI
-/none/tests/s390x/tcxb
+/none/tests/s390x/hfp
 /none/tests/s390x/xc
 /none/tests/s390x/xor
 /none/tests/s390x/xor_EI
@@ -2133,7 +2149,6 @@ configure~
 /none/tests/s390x/stcke
 /none/tests/s390x/stckf
 /none/tests/s390x/op_exception
-/none/tests/s390x/fgx
 /none/tests/s390x/condloadstore
 /none/tests/s390x/fold_And16
 /none/tests/s390x/stfle
@@ -2170,20 +2185,16 @@ configure~
 /none/tests/s390x/cu14_1
 /none/tests/s390x/cu41
 /none/tests/s390x/ecag
-/none/tests/s390x/fpext
 /none/tests/s390x/fpext_warn
-/none/tests/s390x/fpconv
-/none/tests/s390x/rounding-1
-/none/tests/s390x/rounding-2
-/none/tests/s390x/rounding-3
-/none/tests/s390x/rounding-4
-/none/tests/s390x/rounding-5
-/none/tests/s390x/bfp-1
-/none/tests/s390x/bfp-2
-/none/tests/s390x/bfp-3
-/none/tests/s390x/bfp-4
-/none/tests/s390x/srnm
-/none/tests/s390x/srnmb
+/none/tests/s390x/fpext_fail
+/none/tests/s390x/bfp-306054
+/none/tests/s390x/bfp-arith
+/none/tests/s390x/bfp-load
+/none/tests/s390x/bfp-fpc
+/none/tests/s390x/bfp-tdc
+/none/tests/s390x/bfp-muldiv
+/none/tests/s390x/bfp-compare
+/none/tests/s390x/bfp-convert
 /none/tests/s390x/comp-1
 /none/tests/s390x/comp-2
 /none/tests/s390x/ex
@@ -2208,7 +2219,6 @@ configure~
 /none/tests/s390x/spechelper-slgr
 /none/tests/s390x/spechelper-or
 /none/tests/s390x/spechelper-tm
-/none/tests/s390x/rounding-6
 /none/tests/s390x/laa
 /none/tests/s390x/dfp-1
 /none/tests/s390x/dfp-2
@@ -2220,7 +2230,6 @@ configure~
 /none/tests/s390x/srnmt
 /none/tests/s390x/pfpo
 /none/tests/s390x/rxsbg
-/none/tests/s390x/fixbr
 /none/tests/s390x/popcnt
 /none/tests/s390x/vector
 /none/tests/s390x/lsc2
@@ -2331,6 +2340,8 @@ configure~
 /none/tests/freebsd/bug498317
 none/tests/freebsd/bug499212
 /none/tests/freebsd/osrel
+/none/tests/freebsd/readlinkat
+/none/tests/freebsd/readlinkat2
 /none/tests/freebsd/swapcontext
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world

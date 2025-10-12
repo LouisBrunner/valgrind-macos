@@ -26,7 +26,7 @@ void open_socket()
 
 int main ()
 {
-  CLOSE_INHERITED_FDS;
+
 
   open_socket();
 

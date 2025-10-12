@@ -21,6 +21,7 @@ PARALLEL_JOBS=${PARALLEL_JOBS:-$(nproc)}
 # https://lore.kernel.org/ltp/20250505195003.GB137650@pevik/T/#t
 export LTP_COLORIZE_OUTPUT=0
 export LTP_REPRODUCIBLE_OUTPUT=1
+export LTP_QUIET=1
 
 # Initialize LOGDIR for bunsen upload (https://sourceware.org/bunsen/)
 mkdir -p $LOGDIR; rm -rf ${LOGDIR:?}/*
@@ -109,5 +110,11 @@ for test in "${files[@]}"; do
 done
 
 wait
+
+echo -e "\nBrief LTP test results summary"
+echo "-----------------------------------------"
+find $LOGDIR -type f -name '*.trs' -exec grep -F ':test-result:' '{}' ';' |\
+    sort -r | uniq -c | awk '{print $NF": "$1}'
+echo -e "-----------------------------------------\n"
 
 echo "TESTING FINISHED, logs in $LOGDIR"

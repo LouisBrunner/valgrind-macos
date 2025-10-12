@@ -186,6 +186,50 @@ git history. You can also look at
 
 https://docs.freebsd.org/en/books/porters-handbook/versions/
 
+Capsicum enabled applications
+-----------------------------
+Valgrind will not work well with Capsicum enabled applications. As an example,
+if you run
+
+valgrind --tool=massif echo hello
+
+you will get something like this in the output:
+
+==66088==
+==66088== WARNING: Valgrind may not operate correctly in capability mode.
+==66088==          Please consider disabling capability by using the RUNNING_ON_VALGRIND mechanism.
+==66088==          See http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.clientreq
+hello
+==66088==
+==66088== Error: can not open xtree output file `/home/paulf/massif.out.66088'
+
+Additionally capabilities mode can affect how the kernel uses syscall
+parameters. An example of this is the fd argument of the *at() syscall
+family. In capability mode fd must not be AT_FDCWD. The consequence
+of this is that we ought do adapt the syscall parameter checking depending
+on whether the guest is running in capability mode or not. Since we do not
+recommend running Capsicum enabled applications under Valgrind the checks
+are not adapted to to capability mode. Not to mention that adding checks
+for this would add a lot of complexity to these syscall wrappers
+
+One way that you might conditionally disable capabilities in your code as the
+above warning suggests is to do as follows.
+
+#if !defined(NDEBUG)
+#include <valgrind/valgrind.h>
+#endif
+
+void do_capsicum_setup(void); // contains capabilities code
+
+#if !defined(NDEBUG)
+    if (!RUNNING_ON_VALGRIND)
+    {
+#endif
+        do_capsicum_setup();
+#if !defined(NDEBUG)
+    }
+#endif
+
 
 Feedback
 ~~~~~~~~

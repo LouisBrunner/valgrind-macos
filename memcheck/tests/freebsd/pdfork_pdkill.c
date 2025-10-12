@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
              pid_t pid;
              pdgetpid(fd, &pid);
              pdkill(fd, 9);
+             int res_close = close(fd);
+             if (-1 == res_close) {
+                 perror("close");
+            }
         } else {
             fprintf(stderr, "parent: child exited\n");
         }
@@ -90,10 +94,17 @@ int main(int argc, char *argv[]) {
        fprintf(stderr, "parent after 1st bad pdfork\n");
        int anotherfd;
        int badflag;
+       anotherfd = 2 + badflag;
+       anotherfd -= badflag;
+       // without this the last pdfork succeeds on arm64
+       badflag = -1 + anotherfd;
+       badflag -=anotherfd;
        pid_t* pbadpid = malloc(sizeof(pid_t));
        free(pbadpid);
        pdgetpid(anotherfd, pbadpid);
        pdfork(&anotherfd, badflag);
+       pdkill(*badfd, 9);
+       close(*badfd);
     }
 
     return EXIT_SUCCESS;

@@ -112,17 +112,9 @@ ML_(do_syscall_for_client_WRK):
    movq  OFFSET_amd64_R10(%r11), %r10
    movq  OFFSET_amd64_R8(%r11), %r8
    movq  OFFSET_amd64_R9(%r11), %r9
-   /* 2 stack parameters plus return address (ignored by syscall) */
-   /* @todo PJF there is a potential bug here
-    * syscall can take up to 8 arguments
-    * but when syscall0 or syscall198 is being used
-    * one argument is used for the syscall0/198 id
-    * and one for the actual id and in this case
-    * there could be 3 stack parameters.
-    * However, only mmap takes 8 arguments
-    * and only on x86. It would be an unlikely combination,
-    * but this might break one day. */
+   /* get RSP */
    movq  OFFSET_amd64_RSP(%r11), %r11 /* r11 = simulated RSP */
+   /* 2 stack parameters */
    movq  16(%r11), %rax
    pushq %rax
    movq  8(%r11), %rax

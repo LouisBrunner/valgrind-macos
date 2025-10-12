@@ -438,6 +438,18 @@ typedef
       Iop_Or8,   Iop_Or16,   Iop_Or32,   Iop_Or64,
       Iop_And8,  Iop_And16,  Iop_And32,  Iop_And64,
       Iop_Xor8,  Iop_Xor16,  Iop_Xor32,  Iop_Xor64,
+      /* Bitwise shift ops
+         Semantics as per C standard:
+         If the value of the right operand is negative or is greater
+         than or equal to the width of the left operand, the behaviour is
+         undefined.
+         For Shl: The result of E1 << E2 is E1 left-shifted E2 bit positions.
+         Vacated bits are filled with zeroes.
+         For Shr: The result of E1 >> E2 is E1 right-shifted E2 bit positions.
+         Vacated bits are filled with zeroes.
+         For Sar: The result of E1 >> E2 is E1 right-shifted E2 bit positions.
+         Vacated bits are filled with the most significant bit of E1 prior
+         to shifting. */
       Iop_Shl8,  Iop_Shl16,  Iop_Shl32,  Iop_Shl64,
       Iop_Shr8,  Iop_Shr16,  Iop_Shr32,  Iop_Shr64,
       Iop_Sar8,  Iop_Sar16,  Iop_Sar32,  Iop_Sar64,
@@ -466,13 +478,6 @@ typedef
       Iop_MullU8, Iop_MullU16, Iop_MullU32, Iop_MullU64,
 
       /* Counting bits */
-      /* Ctz64/Ctz32/Clz64/Clz32 are UNDEFINED when given arguments of zero.
-         You must ensure they are never given a zero argument.  As of
-         2018-Nov-14 they are deprecated.  Try to use the Nat variants
-         immediately below, if you can.
-      */
-      Iop_Clz64, Iop_Clz32,   /* count leading zeroes */
-      Iop_Ctz64, Iop_Ctz32,   /* count trailing zeros */
       /* Count leading/trailing zeroes, with "natural" semantics for the
          case where the input is zero: then the result is the number of bits
          in the word. */
@@ -503,7 +508,13 @@ typedef
       Iop_CmpORD32S, Iop_CmpORD64S,
 
       /* Division */
-      /* TODO: clarify semantics wrt rounding, negative values, whatever */
+      /* Semantics of division as per C standard:
+         If the value of the divisor is zero, the behaviour is undefined.
+         When integers are divided, the result of division is the algebraic
+         quotient with any fractional part discarded. In other words:
+         truncation towards zero. If the quotient a/b is representable,
+         the expression (a/b)*b + a%b shall equal a; otherwise, the behaviour
+         of division and modulo operation is undefined. */
       Iop_DivU32,   // :: I32,I32 -> I32 (simple div, no mod)
       Iop_DivS32,   // ditto, signed
       Iop_DivU64,   // :: I64,I64 -> I64 (simple div, no mod)

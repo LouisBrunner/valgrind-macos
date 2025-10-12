@@ -100,6 +100,7 @@ typedef uint32_t vki_u32;
 
 #include <fcntl.h>
 #define VKI_SEEK_SET SEEK_SET
+#define VKI_AT_SYMLINK_NOFOLLOW AT_SYMLINK_NOFOLLOW
 
 
 #include <limits.h>

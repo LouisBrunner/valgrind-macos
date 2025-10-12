@@ -1,0 +1,109 @@
+LOAD AND TEST short BFP
+ltebr 100.000000 -> 100.000000   cc = 2
+ltebr -10.500000 -> -10.500000   cc = 1
+ltebr 0.000000 -> 0.000000   cc = 0
+ltebr nan -> nan   cc = 3
+ltebr -nan -> -nan   cc = 3
+ltebr inf -> inf   cc = 2
+ltebr -inf -> -inf   cc = 1
+LOAD AND TEST long BFP
+ltdbr 100.000000 -> 100.000000   cc = 2
+ltdbr -10.500000 -> -10.500000   cc = 1
+ltdbr 0.000000 -> 0.000000   cc = 0
+ltdbr nan -> nan   cc = 3
+ltdbr inf -> inf   cc = 2
+ltdbr -inf -> -inf   cc = 1
+LOAD AND TEST extended BFP
+ltxbr 100.000000 -> 100.000000   cc = 2
+ltxbr -10.500000 -> -10.500000   cc = 1
+ltxbr 0.000000 -> 0.000000   cc = 0
+ltxbr nan -> nan   cc = 3
+ltxbr inf -> inf   cc = 2
+ltxbr -inf -> -inf   cc = 1
+
+LOAD NEGATIVE short BFP
+lnebr 0.000000 -> -0.000000   cc = 0
+lnebr -0.000000 -> -0.000000   cc = 0
+lnebr 123.000000 -> -123.000000   cc = 1
+lnebr -12.000000 -> -12.000000   cc = 1
+lnebr nan -> -nan   cc = 3
+lnebr -nan -> -nan   cc = 3
+lnebr inf -> -inf   cc = 1
+lnebr -inf -> -inf   cc = 1
+LOAD NEGATIVE long BFP
+lndbr 0.000000 -> -0.000000   cc = 0
+lndbr -0.000000 -> -0.000000   cc = 0
+lndbr 123.000000 -> -123.000000   cc = 1
+lndbr -12.000000 -> -12.000000   cc = 1
+lndbr nan -> -nan   cc = 3
+lndbr -nan -> -nan   cc = 3
+lndbr inf -> -inf   cc = 1
+lndbr -inf -> -inf   cc = 1
+LOAD NEGATIVE extended BFP
+lnxbr 0.000000 -> -0.000000   cc = 0
+lnxbr -0.000000 -> -0.000000   cc = 0
+lnxbr 123.000000 -> -123.000000   cc = 1
+lnxbr -12.000000 -> -12.000000   cc = 1
+lnxbr nan -> -nan   cc = 3
+lnxbr -nan -> -nan   cc = 3
+lnxbr inf -> -inf   cc = 1
+lnxbr -inf -> -inf   cc = 1
+
+LOAD POSITIVE short BFP
+lpebr 0.000000 -> 0.000000   cc = 0
+lpebr -0.000000 -> 0.000000   cc = 0
+lpebr 123.000000 -> 123.000000   cc = 2
+lpebr -12.000000 -> 12.000000   cc = 2
+lpebr nan -> nan   cc = 3
+lpebr -nan -> nan   cc = 3
+lpebr inf -> inf   cc = 2
+lpebr -inf -> inf   cc = 2
+LOAD POSITIVE long BFP
+lpdbr 0.000000 -> 0.000000   cc = 0
+lpdbr -0.000000 -> 0.000000   cc = 0
+lpdbr 123.000000 -> 123.000000   cc = 2
+lpdbr -12.000000 -> 12.000000   cc = 2
+lpdbr nan -> nan   cc = 3
+lpdbr -nan -> nan   cc = 3
+lpdbr inf -> inf   cc = 2
+lpdbr -inf -> inf   cc = 2
+LOAD POSITIVE extended BFP
+lpxbr 0.000000 -> 0.000000   cc = 0
+lpxbr -0.000000 -> 0.000000   cc = 0
+lpxbr 123.000000 -> 123.000000   cc = 2
+lpxbr -12.000000 -> 12.000000   cc = 2
+lpxbr nan -> nan   cc = 3
+lpxbr -nan -> nan   cc = 3
+lpxbr inf -> inf   cc = 2
+lpxbr -inf -> inf   cc = 2
+
+LOAD COMPLEMENT short BFP
+lcebr 0.000000 -> -0.000000   cc = 0
+lcebr -0.000000 -> 0.000000   cc = 0
+lcebr 123.000000 -> -123.000000   cc = 1
+lcebr -12.000000 -> 12.000000   cc = 2
+lcebr nan -> -nan   cc = 3
+lcebr -nan -> nan   cc = 3
+lcebr inf -> -inf   cc = 1
+lcebr -inf -> inf   cc = 2
+LOAD COMPLEMENT long BFP
+lcdbr 0.000000 -> -0.000000   cc = 0
+lcdbr -0.000000 -> 0.000000   cc = 0
+lcdbr 123.000000 -> -123.000000   cc = 1
+lcdbr -12.000000 -> 12.000000   cc = 2
+lcdbr nan -> -nan   cc = 3
+lcdbr -nan -> nan   cc = 3
+lcdbr inf -> -inf   cc = 1
+lcdbr -inf -> inf   cc = 2
+LOAD COMPLEMENT extended BFP
+lcxbr 0.000000 -> -0.000000   cc = 0
+lcxbr -0.000000 -> 0.000000   cc = 0
+lcxbr 123.000000 -> -123.000000   cc = 1
+lcxbr -12.000000 -> 12.000000   cc = 2
+lcxbr nan -> -nan   cc = 3
+lcxbr -nan -> nan   cc = 3
+lcxbr inf -> -inf   cc = 1
+lcxbr -inf -> inf   cc = 2
+
+LOAD ZERO
+lzxr -->  00000000 00000000 00000000 00000000

@@ -1,0 +1,1 @@
+../amd64-freebsd/scalar_arg_check.c

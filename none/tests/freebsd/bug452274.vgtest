@@ -1,3 +1,4 @@
+prereq: [ `sysctl -n kern.vm_guest` = "none" ]
 prog: bug452274
 vgopts: -q
 stderr_filter: filter_452274

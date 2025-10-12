@@ -85,7 +85,7 @@ install</computeroutput> process;  full details are given in the
 README file in the distribution.</para>
 
 <para>Valgrind is licensed under the <xref linkend="license.gpl"/>,
-version 2.  The <computeroutput>valgrind/*.h</computeroutput> headers
+version 3.  The <computeroutput>valgrind/*.h</computeroutput> headers
 that you may wish to include in your code (eg.
 <filename>valgrind.h</filename>, <filename>memcheck.h</filename>,
 <filename>helgrind.h</filename>, etc.) are
@@ -97,9 +97,9 @@ Farrell, ISBN 1-56592-115-1, published by O'Reilly &amp; Associates,
 Inc.</para>
 
 <para>If you contribute code to Valgrind, please ensure your
-contributions are licensed as "GPLv2, or (at your option) any later
+contributions are licensed as "GPLv3, or (at your option) any later
 version."  This is so as to allow the possibility of easily upgrading
-the license to GPLv3 in future.  If you want to modify code in the VEX
+the license to a future version.  If you want to modify code in the VEX
 subdirectory, please also see the file VEX/HACKING.README in the
 distribution.</para>
 

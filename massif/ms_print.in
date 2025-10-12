@@ -12,7 +12,7 @@
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License as
-#  published by the Free Software Foundation; either version 2 of the
+#  published by the Free Software Foundation; either version 3 of the
 #  License, or (at your option) any later version.
 #
 #  This program is distributed in the hope that it will be useful, but
@@ -75,7 +75,7 @@ usage: ms_print [options] massif-out-file
     --y=<4..1000>         graph height, in rows [20]
 
   ms_print is Copyright (C) 2007-2017 Nicholas Nethercote.
-  and licensed under the GNU General Public License, version 2.
+  and licensed under the GNU General Public License, version 3.
   Bug reports, feedback, admiration, abuse, etc, to: njn\@valgrind.org.
                                                 
 END

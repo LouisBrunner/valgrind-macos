@@ -51,11 +51,11 @@ Note that AMD64 is just another name for x86_64, and Valgrind runs fine
 on Intel processors.  Also note that the core of macOS is called
 "Darwin" and this name is used sometimes.
 
-Valgrind is licensed under the GNU General Public License, version 2. 
+Valgrind is licensed under the GNU General Public License, version 3.
 Read the file COPYING in the source distribution for details.
 
 However: if you contribute code, you need to make it available as GPL
-version 2 or later, and not 2-only.
+version 3 or later, and not 3-only.
 
 
 Documentation

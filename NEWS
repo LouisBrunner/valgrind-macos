@@ -10,6 +10,8 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* Upgrade to the GNU General Public License version 3.
+
 * New VEX API function LibVEX_set_VexControl
 
 * The deprecated IROps: Iop_Clz32/64 and Iop_Ctz32/64 have been removed

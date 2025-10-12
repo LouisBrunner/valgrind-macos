@@ -3,7 +3,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License
-   as published by the Free Software Foundation; either version 2, or
+   as published by the Free Software Foundation; either version 3, or
    (at your option) any later version.
 
    In addition to the permissions in the GNU Library General Public

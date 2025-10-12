@@ -126,7 +126,8 @@
     && DARWIN_VERS != DARWIN_10_13 && DARWIN_VERS != DARWIN_10_14 \
     && DARWIN_VERS != DARWIN_10_15 && DARWIN_VERS != DARWIN_11_00 \
     && DARWIN_VERS != DARWIN_12_00 && DARWIN_VERS != DARWIN_13_00 \
-    && DARWIN_VERS != DARWIN_14_00 && DARWIN_VERS != DARWIN_15_00
+    && DARWIN_VERS != DARWIN_14_00 && DARWIN_VERS != DARWIN_15_00 \
+    && DARWIN_VERS != DARWIN_15_04
 #  error "Unknown DARWIN_VERS value.  This file only compiles on Darwin."
 #endif
 

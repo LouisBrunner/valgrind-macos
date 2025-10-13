@@ -98,7 +98,7 @@ bug469146_CXXFLAGS	= $(AM_CXXFLAGS) -O2 -fno-optimize-sibling-calls @FLAG_W_NO_U
 new_cpp_SOURCES		= new-cpp.cpp
 overloaded_new_SOURCES	= overloaded-new.cpp
 # aligned new needs C++17
-overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) -Wno-implicit-exception-spec-mismatch -Wno-missing-exception-spec -std=c++17
+overloaded_new_CXXFLAGS	= $(AM_CXXFLAGS) @FLAG_W_NO_IMPLICIT_EXCEPTION_SPEC_MISMATCH@ @FLAG_W_NO_MISSING_EXCEPTION_SPEC@ -std=c++17
 
 # Suppress warnings for issues we are testing for
 alloc_fns_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result

@@ -82,6 +82,8 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+286849  [PATCH] Interceptors for new/delete on Darwin were erroneously
+        commented out in r12043
 306098  s390x: Alternate opcode form for convert to/from fixed and friends
 309100  s390x: Testcases for extended BFP
 309554  Wrap syscall remap_file_pages (216)

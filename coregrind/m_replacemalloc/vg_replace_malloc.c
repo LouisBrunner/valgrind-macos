@@ -507,7 +507,7 @@ extern int * __error(void) __attribute__((weak));
  #if VG_WORDSIZE == 4
   ALLOC_or_BOMB(VG_Z_LIBSTDCXX_SONAME, _Znwj,          __builtin_new);
   ALLOC_or_BOMB(VG_Z_LIBCXX_SONAME,    _Znwj,          __builtin_new);
-  ALLOC_or_BOMB(VG_Z_LIBC_SONAME,      _Znwj,          __builtin_new);
+  ALLOC_or_BOMB(SO_SYN_MALLOC,         _Znwj,          __builtin_new);
  #endif
  // operator new(unsigned long)
  #if VG_WORDSIZE == 8
@@ -627,7 +627,7 @@ extern int * __error(void) __attribute__((weak));
  #if VG_WORDSIZE == 4
   ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnwjRKSt9nothrow_t,  __builtin_new);
   ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnwjRKSt9nothrow_t,  __builtin_new);
-  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnwjRKSt9nothrow_t,  __builtin_new);
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnwjRKSt9nothrow_t,  __builtin_new);
  #endif
  // operator new(unsigned long, std::nothrow_t const&)
  #if VG_WORDSIZE == 8
@@ -870,7 +870,7 @@ extern int * __error(void) __attribute__((weak));
  #if VG_WORDSIZE == 4
   ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, _ZnajRKSt9nothrow_t, __builtin_vec_new );
   ALLOC_or_NULL(VG_Z_LIBCXX_SONAME,    _ZnajRKSt9nothrow_t, __builtin_vec_new );
-  ALLOC_or_NULL(VG_Z_LIBC_SONAME,      _ZnajRKSt9nothrow_t, __builtin_vec_new );
+  ALLOC_or_NULL(SO_SYN_MALLOC,         _ZnajRKSt9nothrow_t, __builtin_vec_new );
  #endif
  // operator new[](unsigned long, std::nothrow_t const&)
  #if VG_WORDSIZE == 8

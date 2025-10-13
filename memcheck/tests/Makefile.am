@@ -700,7 +700,7 @@ if VGCONF_OS_IS_SOLARIS
 mallinfo_LDADD = -lmalloc
 endif
 mallinfo2_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
-malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
+malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@ @FLAG_W_NO_ALLOC_SIZE@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 if VGCONF_OS_IS_SOLARIS
 sbfragment_LDADD = -lmalloc
@@ -720,6 +720,7 @@ duplicate_align_size_errors_SOURCES = duplicate_align_size_errors.cpp
 duplicate_align_size_errors_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 new_aligned_delete_default_SOURCES = new_aligned_delete_default.cpp
 new_aligned_delete_default_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+realloc3_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE@
 sized_aligned_new_delete_args_SOURCES = sized_aligned_new_delete_args.cpp
 sized_aligned_new_delete_args_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 sized_aligned_new_delete_misaligned1_SOURCES = sized_aligned_new_delete_misaligned1.cpp

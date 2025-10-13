@@ -2566,20 +2566,6 @@ AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
   CFLAGS=$safe_CFLAGS
 ])
 
-# A variation of the above for arguments that
-# take a value
-AC_DEFUN([AC_GCC_WARNING_SUBST_NO_VAL],[
-  AC_MSG_CHECKING([if gcc accepts -W$1=$2])
-  safe_CFLAGS=$CFLAGS
-  CFLAGS="-W$1=$2 -Werror"
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
-  AC_SUBST([$3], [-Wno-$1])
-  AC_MSG_RESULT([yes])], [
-  AC_SUBST([$3], [])
-  AC_MSG_RESULT([no])])
-  CFLAGS=$safe_CFLAGS
-])
-
 # Convenience function. Like AC_GCC_WARNING_SUBST_NO, except it substitutes
 # -W$1  (instead of -Wno-$1).
 AC_DEFUN([AC_GCC_WARNING_SUBST],[
@@ -2623,8 +2609,8 @@ AC_GCC_WARNING_SUBST_NO([attributes], [FLAG_W_NO_ATTRIBUTES])
 AC_GCC_WARNING_SUBST_NO([unused-result], [FLAG_W_NO_UNUSED_RESULT])
 AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST_NO([deprecated], [FLAG_W_NO_DEPRECATED])
-
-AC_GCC_WARNING_SUBST_NO_VAL([alloc-size-larger-than], [1677216], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
+# OK for 32 and 64 bit
+AC_GCC_WARNING_SUBST_NO([alloc-size-larger-than=2147483647], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
 
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])

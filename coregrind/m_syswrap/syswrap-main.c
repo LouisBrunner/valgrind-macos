@@ -350,15 +350,14 @@ void do_syscall_for_client ( Int syscallno,
 {
    vki_sigset_t saved;
    UWord err;
-#  if defined(VGO_freebsd)
-   Word real_syscallno;
-#  endif
 #  if defined(VGO_linux)
    err = ML_(do_syscall_for_client_WRK)(
             syscallno, &tst->arch.vex, 
             syscall_mask, &saved, sizeof(vki_sigset_t)
          );
 #  elif defined(VGO_freebsd)
+   Word real_syscallno;
+   VG_(sigemptyset)(&saved);
    if (tst->arch.vex.guest_SC_CLASS == VG_FREEBSD_SYSCALL0)
       real_syscallno = __NR_syscall;
    else if (tst->arch.vex.guest_SC_CLASS == VG_FREEBSD_SYSCALL198)

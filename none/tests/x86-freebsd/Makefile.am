@@ -3,11 +3,11 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
-	445032.vgtest \
-	445032.stderr.exp
+	bug445032.vgtest \
+	bug445032.stderr.exp
 
 check_PROGRAMS = \
-	445032
+	bug445032
 
 # Linux also adds  $(FLAG_MMMX) $(FLAG_MSSE) to the first two
 AM_CFLAGS    += @FLAG_M32@

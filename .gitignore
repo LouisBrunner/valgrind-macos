@@ -2472,7 +2472,7 @@ none/tests/freebsd/bug499212
 /none/tests/x86-freebsd/.deps
 /none/tests/x86-freebsd/Makefile
 /none/tests/x86-freebsd/Makefile.in
-/none/tests/x86-freebsd/445032
+/none/tests/x86-freebsd/bug445032
 
 # /perf/
 /perf/*.dSYM

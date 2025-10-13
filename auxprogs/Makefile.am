@@ -18,7 +18,8 @@ dist_noinst_SCRIPTS = \
 LTP_FILTERS = \
 	filters/mmap18 \
 	filters/prctl10 \
-	filters/select03
+	filters/select03 \
+	filters/munmap01
 
 LTP_PATCHES =
 

@@ -1418,6 +1418,7 @@ void do_multi_mode(int check_trials, int in_port)
 #define QENVIRONMENTUNSET "QEnvironmentUnset"
 #define QSETWORKINGDIR "QSetWorkingDir"
 #define QTSTATUS "qTStatus"
+#define QEXECANDARGS "qExecAndArgs"
 
        if (strncmp(QSUPPORTED, buf, strlen(QSUPPORTED)) == 0) {
           DEBUG(1, "CASE %s\n", QSUPPORTED);
@@ -1669,6 +1670,10 @@ void do_multi_mode(int check_trials, int in_port)
           DEBUG(1, "Got qfThreadInfo\n");
           /* There are no threads yet, reply 'l' end of list. */
           send_packet ("l", noackmode);
+       } else if (strcmp(QEXECANDARGS, buf) == 0) {
+          DEBUG(1, "Got qExecAndArgs\n");
+          /* We don't have any.  */
+          send_packet ("U", noackmode);
        } else if (buf[0] != '\0') {
           // We didn't understand.
           DEBUG(1, "Unknown packet received: '%s'\n", buf);

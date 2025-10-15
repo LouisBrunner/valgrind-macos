@@ -1424,7 +1424,9 @@ gdb prog
     <listitem><para>Options to run valgrind with, in extended-remote
     mode. For example <option>-q</option>. Everything
     following <option>--vargs</option> will be provided as arguments
-    to valgrind as is. </para></listitem>
+    to valgrind as is. This is only for supplying valgrind options.
+    The program executable and its arguments are specified separately
+    by GDB and should NOT be included here.</para></listitem>
   </varlistentry>
 
   <varlistentry>

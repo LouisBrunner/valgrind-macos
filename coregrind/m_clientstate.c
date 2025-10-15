@@ -91,7 +91,7 @@ Int VG_(args_for_valgrind_noexecpass) = 0;
 
 /* The name of the client executable, as specified on the command
    line. */
-const HChar* VG_(args_the_exename) = NULL;
+HChar* VG_(args_the_exename) = NULL;
 
 /* The real name of the executable, with resolved
  * relative paths and symlinks */

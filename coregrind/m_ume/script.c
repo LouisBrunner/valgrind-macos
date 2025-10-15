@@ -67,7 +67,7 @@ Bool VG_(match_script)(const void *hdr, SizeT len)
 
 
 /* returns: 0 = success, non-0 is failure */
-Int VG_(load_script)(Int fd, const HChar* name, ExeInfo* info)
+Int VG_(load_script)(Int fd, HChar* name, ExeInfo* info)
 {
    HChar  hdr[4096];
    Int    len = sizeof hdr;

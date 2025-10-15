@@ -42,6 +42,7 @@
 
 #include "priv_ume.h"
 
+typedef Int (*load_function)( Int fd, const HChar *name, ExeInfo *info );
 
 typedef struct {
    Bool (*match_fn)(const void *hdr, SizeT len);
@@ -56,7 +57,7 @@ static ExeHandler exe_handlers[] = {
 #  else
 #    error "unknown OS"
 #  endif
-   { VG_(match_script), VG_(load_script) },
+   { VG_(match_script), (load_function)VG_(load_script) },
 };
 #define EXE_HANDLER_COUNT (sizeof(exe_handlers)/sizeof(exe_handlers[0]))
 

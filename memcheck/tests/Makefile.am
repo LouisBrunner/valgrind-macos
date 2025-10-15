@@ -704,7 +704,7 @@ if VGCONF_OS_IS_SOLARIS
 mallinfo_LDADD = -lmalloc
 endif
 mallinfo2_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
-malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
+malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@ @FLAG_W_NO_ALLOC_SIZE@
 sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
 if VGCONF_OS_IS_SOLARIS
 sbfragment_LDADD = -lmalloc
@@ -827,6 +827,7 @@ partial_load_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
 reach_thread_register_CFLAGS	= $(AM_CFLAGS) -O2
 reach_thread_register_LDADD	= -lpthread
 
+realloc3_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE@
 realloc_size_zero_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_INCOMPATIBLE_POINTER_TYPES_DISCARDS_QUALIFIERS@
 realloc_size_zero_mismatch_SOURCES = realloc_size_zero_mismatch.cpp
 realloc_size_zero_mismatch_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_MISMATCHED_NEW_DELETE@

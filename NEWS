@@ -70,7 +70,7 @@ There is a workaround. Run the following command (as root).
   "UnsafeZeroSize".
 
   Checks for C23 free_sized and free_aligned_sized have been added to
-  Linux. Almost no libraries support these functions yes, with
+  Linux. Almost no libraries support these functions yet, with
   the exception being Google tcmalloc.
 
 * ==================== FIXED BUGS ====================
@@ -82,6 +82,8 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+286849  [PATCH] Interceptors for new/delete on Darwin were erroneously
+        commented out in r12043
 306098  s390x: Alternate opcode form for convert to/from fixed and friends
 309100  s390x: Testcases for extended BFP
 309554  Wrap syscall remap_file_pages (216)
@@ -156,6 +158,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509107  memcheck/tests/duplicate_align_size_errors.cpp fails
 509139  Update BadSize error messages
 509258  FreeBSD: add jail_attach_jd and jail_remove_jd syscall wrappers
+509406  FreeBSD 15 issues
 509517  s390x: Even/odd lane confusion in various vector insns
 509566  Wrap amd64-linux syscall: 442 (mount_setattr)
 509572  s390x: Overhaul BFP testsuite

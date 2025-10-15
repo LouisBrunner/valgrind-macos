@@ -2845,20 +2845,6 @@ AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
   CFLAGS=$safe_CFLAGS
 ])
 
-# A variation of the above for arguments that
-# take a value
-AC_DEFUN([AC_GCC_WARNING_SUBST_NO_VAL],[
-  AC_MSG_CHECKING([if gcc accepts -W$1=$2])
-  safe_CFLAGS=$CFLAGS
-  CFLAGS="-W$1=$2 -Werror"
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
-  AC_SUBST([$3], [-Wno-$1])
-  AC_MSG_RESULT([yes])], [
-  AC_SUBST([$3], [])
-  AC_MSG_RESULT([no])])
-  CFLAGS=$safe_CFLAGS
-])
-
 # Convenience function. Like AC_GCC_WARNING_SUBST_NO, except it substitutes
 # -W$1  (instead of -Wno-$1).
 AC_DEFUN([AC_GCC_WARNING_SUBST],[
@@ -2902,8 +2888,9 @@ AC_GCC_WARNING_SUBST_NO([attributes], [FLAG_W_NO_ATTRIBUTES])
 AC_GCC_WARNING_SUBST_NO([unused-result], [FLAG_W_NO_UNUSED_RESULT])
 AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST_NO([deprecated], [FLAG_W_NO_DEPRECATED])
-
-AC_GCC_WARNING_SUBST_NO_VAL([alloc-size-larger-than], [1677216], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
+# OK for 32 and 64 bit
+AC_GCC_WARNING_SUBST_NO([alloc-size-larger-than=18446744073709551615], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
+AC_GCC_WARNING_SUBST_NO([alloc-size], [FLAG_W_NO_ALLOC_SIZE])
 
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
@@ -2916,6 +2903,24 @@ AC_GCC_WARNING_SUBST([missing-parameter-type], [FLAG_W_MISSING_PARAMETER_TYPE])
 AC_GCC_WARNING_SUBST([logical-op], [FLAG_W_LOGICAL_OP])
 AC_GCC_WARNING_SUBST([enum-conversion], [FLAG_W_ENUM_CONVERSION])
 AC_GCC_WARNING_SUBST([implicit-fallthrough=2], [FLAG_W_IMPLICIT_FALLTHROUGH])
+
+# as above, C++ flags
+AC_DEFUN([AC_GXX_WARNING_SUBST_NO],[
+  AC_MSG_CHECKING([if g++ accepts -W$1])
+  safe_CXXFLAGS=$CXXFLAGS
+  CXXFLAGS="-W$1 -Werror"
+  AC_LANG_PUSH(C++)
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
+                    AC_SUBST([$2], [-Wno-$1])
+  AC_LANG_POP()
+  AC_MSG_RESULT([yes])], [
+                AC_SUBST([$2], [])
+                AC_MSG_RESULT([no])])
+  CXXFLAGS=$safe_CXXFLAGS
+])
+
+AC_GXX_WARNING_SUBST_NO([missing-exception-spec], [FLAG_W_NO_MISSING_EXCEPTION_SPEC])
+AC_GXX_WARNING_SUBST_NO([implicit-exception-spec-mismatch], [FLAG_W_NO_IMPLICIT_EXCEPTION_SPEC_MISMATCH])
 
 # Does this compiler support -Wformat-security ?
 # Special handling is needed, because certain GCC versions require -Wformat

@@ -873,6 +873,65 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
       return;
    }
 
+   /* Without argument, traditional remote protocol.  */
+   if (strcmp ("qExecAndArgs", arg_own_buf) == 0) {
+     const HChar *exename = VG_(resolved_exename);
+
+     /* If we don't have an executable, return "U".  */
+     if (exename == NULL) {
+        arg_own_buf[0] = 'U';
+        arg_own_buf[1] = '\0';
+        return;
+     }
+
+     /* Build the response: "S;<hex-prog>;<hex-args>;"
+        Need to hex-encode both the program name and arguments.  */
+
+     /* First, encode the executable name.  */
+     char hex_exename[2 * VG_(strlen)(exename) + 1];
+     hexify(hex_exename, exename, VG_(strlen)(exename));
+
+     /* Build the arguments string from VG_(args_for_client).  */
+     int num_args = VG_(sizeXA)(VG_(args_for_client));
+     char *args_str = NULL;
+
+     if (num_args > 0) {
+       int count = 0;
+       for (int i = 0; i < num_args; i++) {
+         HChar* arg = * (HChar**) VG_(indexXA)(VG_(args_for_client), i);
+         count += VG_(strlen)(arg);
+       }
+
+       /* Allocate space for args + spaces between them + null terminator.  */
+       int args_str_size = count + num_args;
+       args_str = VG_(malloc)("handle_query.qExecAndArgs", args_str_size);
+       char *p = args_str;
+
+       for (int i = 0; i < num_args; i++) {
+         HChar* arg = * (HChar**) VG_(indexXA)(VG_(args_for_client), i);
+         int num = VG_(strlen)(arg);
+         VG_(memcpy)(p, arg, num);
+         p += num;
+         if (i < num_args - 1) {
+           *p++ = ' ';  /* Add space separator between arguments.  */
+         }
+       }
+       *p = '\0';  /* Null terminate the string.  */
+
+       char hex_args_buf[2 * VG_(strlen)(args_str) + 1];
+       hexify(hex_args_buf, args_str, VG_(strlen)(args_str));
+       VG_(free)(args_str);
+
+       /* Build the full response.  */
+       VG_(sprintf)(arg_own_buf, "S;%s;%s;", hex_exename, hex_args_buf);
+     } else {
+       /* No arguments, just send program name with empty args.  */
+       VG_(sprintf)(arg_own_buf, "S;%s;;", hex_exename);
+     }
+
+      return;
+   }
+
    if (strcmp ("qSymbol::", arg_own_buf) == 0) {
       /* We have no symbol to read. */
       write_ok (arg_own_buf);

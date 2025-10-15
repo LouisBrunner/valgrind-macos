@@ -45,7 +45,7 @@ extern Int  VG_(load_macho)  ( Int fd, const HChar *name, ExeInfo *info );
 #endif
 
 extern Bool VG_(match_script) ( const void *hdr, SizeT len );
-extern Int  VG_(load_script)  ( Int fd, const HChar *name, ExeInfo *info );
+extern Int  VG_(load_script)  ( Int fd, HChar *name, ExeInfo *info );
 
 
 #endif // __PRIV_UME_H

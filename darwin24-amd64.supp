@@ -122,6 +122,34 @@
    ...
 }
 
+{
+  OSX1500:dyld_GradedArchs_checksOSBinary
+  Memcheck:Value8
+  fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
+  ...
+  fun:_ZN5dyld412RuntimeState21loadInsertedLibrariesERN5dyld317OverflowSafeArrayIPNS_6LoaderELy4294967295EEEPKS3_
+  ...
+}
+
+{
+  OSX1500:dyld_MachOFile_compatibleSlice
+  Memcheck:Value8
+  fun:_ZN5dyld39MachOFile15compatibleSliceER11DiagnosticsRyS3_PKvmPKcN6mach_o8PlatformEbRKNS_11GradedArchsEb
+  ...
+  fun:_ZN5dyld412RuntimeState21loadInsertedLibrariesERN5dyld317OverflowSafeArrayIPNS_6LoaderELy4294967295EEEPKS3_
+  ...
+}
+
+{
+  OSX1500:dyld_mach_msg
+  Memcheck:Param
+  mach_msg2(msg)
+  fun:mach_msg2_trap
+  ...
+  fun:_ZNK5dyld313MachOAnalyzer18forEachInitializerER11DiagnosticsRKNS0_15VMAddrConverterEU13block_pointerFvjEPKv
+  ...
+}
+
 # Happens during a fork
 
 {

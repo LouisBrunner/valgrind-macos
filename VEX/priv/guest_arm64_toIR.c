@@ -7053,14 +7053,20 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
    /* ------------------ LDA{R,RH,RB} ------------------ */
    /* ------------------ STL{R,RH,RB} ------------------ */
+   /* ------------------ LDAP{R,RH,RB} ----------------- */
    /* 31 29     23  20      14    9 4
       sz 001000 110 11111 1 11111 n t   LDAR<sz> Rt, [Xn|SP]
       sz 001000 100 11111 1 11111 n t   STLR<sz> Rt, [Xn|SP]
+      sz 111000 101 11111 1 10000 n t   LDAPR<sz> Rt, [Xn|SP]
    */
-   if (INSN(29,23) == BITS7(0,0,1,0,0,0,1)
-       && INSN(21,10) == BITS12(0,1,1,1,1,1,1,1,1,1,1,1)) {
+   if ((INSN(29,23) == BITS7(0,0,1,0,0,0,1)
+        && INSN(21,10) == BITS12(0,1,1,1,1,1,1,1,1,1,1,1))
+       ||
+       (INSN(29,21) == BITS9(1,1,1,0,0,0,1,0,1)
+        && INSN(20,10) == BITS11(1,1,1,1,1,1,1,0,0,0,0)))
+   {
       UInt szBlg2 = INSN(31,30);
-      Bool isLD   = INSN(22,22) == 1;
+      Bool isLD   = INSN(23,21) != BITS3(1,0,0);
       UInt nn     = INSN(9,5);
       UInt tt     = INSN(4,0);
 

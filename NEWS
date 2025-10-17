@@ -133,6 +133,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506970  mmap needs an EBADF fd_allowed check
 507033  Remove deprecated Iop_Clz32/64 and Iop_Ctz32/64
 507173  s390x: Crash when constant folding is disabled
+507188  memcheck with track-fds=yes on x86 with popen: Assertion
 507720  Review syscalls returning file descriptors (other platforms)
 507721  Wire up illumos and Solaris mallinfo
 507853  faccessat and faccessat2 should handle AT_FDCWD and absolute paths

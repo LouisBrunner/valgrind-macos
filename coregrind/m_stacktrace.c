@@ -1709,7 +1709,8 @@ UInt VG_(get_StackTrace_with_deltas)(
       Int i;
       Int start = 0;
       DiEpoch ep = VG_(current_DiEpoch)();
-      for (i = 0; i < found; i++) {
+      /* We want to keep at least one frame.  */
+      for (i = 0; i < found - 1; i++) {
          /* This could be made a little more efficient by doing the lookups
             for the symbols at glibc load time and check the address falls
             inside the function symbol address range here. But given this

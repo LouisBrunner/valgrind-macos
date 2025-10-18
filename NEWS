@@ -1,4 +1,4 @@
-Release 3.26.0 (?? Oct 2025)
+Release 3.26.0.RC1 (17 Oct 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -176,6 +176,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
+
+(3.26.0.RC1: 17 Oct 2025)
 
 Release 3.25.0 (25 Apr 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -37,3 +37,6 @@ The possible values are:
 
       On exit the file descriptor is still open
 
+   FdBadUse
+
+      The file descriptor is (no longer) valid

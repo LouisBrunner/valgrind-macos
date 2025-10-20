@@ -12,9 +12,44 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * Upgrade to the GNU General Public License version 3.
 
+* Control building documentation. When using make dist set the
+  Makefile BUILD_DOCS to none, all or html. none, does not build any
+  documentation.  all, builds all documentation. html, builds HTML
+  docs but skips building PDFs. See also README_DEVELOPERS.
+
 * New VEX API function LibVEX_set_VexControl
 
 * The deprecated IROps: Iop_Clz32/64 and Iop_Ctz32/64 have been removed
+
+* The Linux Test Project (LTP) integration has been updated to
+  v20250930. The test output has been made compatible with bunsen.
+  Various issues with the linux syscall wrappers have been fixed.
+
+  New Linux syscall wrappers for: cachestat, futex_waitv, listmount,
+  mount_setattr, mseal, quotactl_fd, remap_file_pages, setdomainname,
+  statmount, swapoff, swapon, sysfs and ustat.
+
+* --modify-fds=yes has been added. It acts like --modify-fds=high (the
+  highest available file descriptor is returned first) except when
+  when the lowers stdin/stdout/stderr (file descriptors 0, 1, 2) are
+  available. With --modify-fds=yes 0, 1 or 2 are always returned first
+  when still available before higher file descriptor numbers are.
+
+* With --xml=yes log output protocol 6 is now always used (unlike
+  protocol 5 which was only used with--track-fds). The main difference
+  is that the xml output now contains error summaries. See also
+  xml-output-protocol6.txt.
+
+* Add "bad" option for --track-fds. When --track-fds=bad is specified,
+  do not produce errors about unclosed file descriptors at program
+  exit. Only produce errors for bad file descriptor usage, either
+  double close or use of file descriptor that is (no longer) valid.
+
+* vgdb will now handle the qExecAndArgs packet.
+
+* DWARF inlined subroutine handling has been rewritten to work cross
+  compile units. This should get rid of backtraces with
+  "UnknownInlinedFun".
 
 * ================== PLATFORM CHANGES =================
 

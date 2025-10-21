@@ -2366,9 +2366,10 @@ static Bool summarise_context(/*OUT*/Addr* base,
    *len = 0;
    VG_(bzero_inline)(si_m, sizeof(*si_m));
 
-   /*const*/ Bool is_s390x_linux = False;
 #  if defined(VGP_s390x_linux)
-   is_s390x_linux = True;
+   #define is_s390x_linux True
+#  else
+   #define is_s390x_linux False
 #  endif
 
    /* Guard against obviously stupid settings of the reg-rule stack

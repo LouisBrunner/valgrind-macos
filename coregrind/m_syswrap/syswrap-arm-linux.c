@@ -921,9 +921,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_add_key,           sys_add_key),        // 286
    LINX_(__NR_request_key,       sys_request_key),    // 287
    LINXY(__NR_keyctl,            sys_keyctl),         // not 288...
-//   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
-
-//   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290
+   LINX_(__NR_ioprio_set,        sys_ioprio_set),     // 289
+   LINX_(__NR_ioprio_get,        sys_ioprio_get),     // 290
    LINXY(__NR_inotify_init,    sys_inotify_init),   // 291
    LINX_(__NR_inotify_add_watch, sys_inotify_add_watch), // 292
    LINX_(__NR_inotify_rm_watch,    sys_inotify_rm_watch), // 293
@@ -953,11 +952,10 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_unshare,       sys_unshare),          // 310
    LINX_(__NR_set_robust_list,    sys_set_robust_list),  // 311
    LINXY(__NR_get_robust_list,    sys_get_robust_list),  // 312
-//   LINX_(__NR_splice,            sys_ni_syscall),       // 313
+   LINX_(__NR_splice,            sys_splice),           // 313
 //   LINX_(__NR_sync_file_range,   sys_sync_file_range),  // 314
-
-//   LINX_(__NR_tee,               sys_ni_syscall),       // 315
-//   LINX_(__NR_vmsplice,          sys_ni_syscall),       // 316
+   LINX_(__NR_tee,               sys_tee),              // 315
+   LINXY(__NR_vmsplice,          sys_vmsplice),         // 316
    LINXY(__NR_move_pages,        sys_move_pages),       // 317
 
    LINX_(__NR_utimensat,         sys_utimensat),        // 320
@@ -1018,7 +1016,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 384
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 385
-
+   LINXY(__NR_bpf,               sys_bpf),              // 386
    LINX_(__NR_execveat,          sys_execveat),         // 387
 
    LINXY(__NR_userfaultfd,       sys_userfaultfd),      // 388

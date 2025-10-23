@@ -74,16 +74,6 @@ my %insn_map = (
 
 sub main
 {
-    if ($#ARGV == 0 && $ARGV[0] eq "--check-prereq") {
-        my $stdout = `as --version`;
-        # GNU assembler (GNU Binutils for Ubuntu) 2.38
-        $stdout = (split /\n/, $stdout)[0];
-        $stdout =~ s/^[^0-9]+//;
-        my @v = split /\./, $stdout;
-        exit 0 if ($v[0] > 2 || ($v[0] == 2 && $v[1] >= 44));
-        exit 1;
-    }
-    
     #-----------------------------------------------------------------------
     # POP Chapter 9: Floating-Point Overview and Support Instructions
     #-----------------------------------------------------------------------
@@ -411,25 +401,24 @@ sub test_insn
 
 sub check_valgrind_output
 {
-    return 0;
     my ($mnm, $stdout) = @_;
 
     my @lines = split /\n/,$stdout;
     my $num_lines = scalar @lines;
 
-    if ($num_lines != 4) {
-        error("$mnm: Expected 4 lines; found $num_lines");
+    if ($num_lines != 2) {
+        error("$mnm: Expected 2 lines; found $num_lines");
         for my $line (@lines) {
             print "LINE |$line|\n";
         }
         return 1;
     }
-    if ($lines[0] !~ "Front end") {
+    if ($lines[0] !~ "Frontend") {
         error("$mnm: Unrecognised line |$lines[0]|");
         return 1;
     }
-    if ($lines[2] !~ "Assembly") {
-        error("$mnm: Unrecognised line |$lines[2]|");
+    if ($lines[1] !~ "Assembly") {
+        error("$mnm: Unrecognised line |$lines[1]|");
         return 1;
     }
     return 0;

@@ -27,7 +27,7 @@ use Cwd 'abs_path';
 
 my $rootdir  = get_rootdir();
 my $runone   = "$rootdir/auxprogs/s390-runone";
-my $valgrind = "$rootdir/coregrind/valgrind";
+my $valgrind = "$rootdir/vg-in-place";
 my $valargs  = "-q --tool=none --trace-notbelow=0 --trace-flags=10000001";
 
 
@@ -332,7 +332,7 @@ sub test_insn
     my $stdout = `$valgrind $valargs ./$exe 2>&1`;
 
     # Parse the output from valgrind
-    # Need to find the "interesting" insns in the stream. There isexactly
+    # Need to find the "interesting" insns in the stream. There is exactly
     # one such insn in the "frontend" part and in the "assembly" part.
     #
     # Let

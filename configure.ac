@@ -2173,25 +2173,6 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAVE_NR_IO_PGETEVENTS, [test x$ac_have_nr_io_pgetevents = xyes])
 
-safe_LIBS="$LIBS"
-LIBS="-laio"
-AC_MSG_CHECKING([for libaio])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <libaio.h>
-]], [[
-io_context_t ctx;
-io_submit(ctx, 1, NULL);
-]])], [
-ac_have_libaio=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_libaio=no
-AC_MSG_RESULT([no])
-])
-
-AM_CONDITIONAL(HAVE_LIBAIO, [test x$ac_have_libaio = xyes])
-LIBS=$safe_LIBS
-
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------
@@ -5393,6 +5374,28 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_primary"
+safe_LIBS="$LIBS"
+LIBS="-laio"
+AC_MSG_CHECKING([for libaio])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <libaio.h>
+]], [[
+io_context_t ctx;
+io_submit(ctx, 1, NULL);
+]])], [
+ac_have_libaio=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_libaio=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_LIBAIO, [test x$ac_have_libaio = xyes])
+LIBS=$safe_LIBS
+CFLAGS=$safe_CFLAGS
+
 
 # Check for __builtin_popcount
 AC_MSG_CHECKING([for __builtin_popcount()])
@@ -5559,6 +5562,8 @@ AM_CONDITIONAL([HAVE_OPENAT2],
 
 # check for crypto
 
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_primary"
 safe_LIBS="$LIBS"
 LIBS="-lcrypto"
 AC_MSG_CHECKING([if platform has openssl crypto])
@@ -5575,6 +5580,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   AC_MSG_RESULT([no])
 ])
 LIBS=$safe_LIBS
+CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_OPENSSL],
                [test x$ac_have_openssl = xyes])

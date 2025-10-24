@@ -4,6 +4,7 @@ vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mc
 prereq: test -e gdb
 stdout_filter: filter_memcheck_monitor
 stderr_filter: filter_memcheck_monitor
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ../memcheck/tests/leak-delta
 stdinB: mcleak.stdinB.gdb

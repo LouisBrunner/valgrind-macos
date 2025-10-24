@@ -6,6 +6,7 @@ prog: watchpoints
 vgopts: --tool=memcheck --vgdb=full --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcwatchpoints
 stdout_filter: filter_make_empty
 stderr_filter: filter_memcheck_monitor
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ./watchpoints
 stdinB: mcwatchpoints.stdinB.gdb

@@ -5,6 +5,7 @@ prog: self_invalidate
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlself_invalidate
 stderr_filter: filter_stderr
 prereq: test -e gdb && ( ../tests/arch_test amd64 || ../tests/arch_test mips32 || ../tests/arch_test mips64 )
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ./self_invalidate
 stdinB: nlself_invalidate.stdinB.gdb

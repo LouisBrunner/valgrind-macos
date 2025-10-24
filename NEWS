@@ -208,6 +208,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509643  Add missing s390x-linux syswraps
 510169  Update the LTP version in valgrind testsuite to 20250930
 510292  Silence false positive failure of LTP munmap01
+510436  Don't warn about fcntl F_GETFD with --track-fds
 510694  Handle qExecAndArgs remote protocol packet
 
 To see details of a given bug, visit

@@ -7447,7 +7447,16 @@ PRE(sys_fcntl)
 #  endif
       *flags |= SfMayBlock;
 
-   if (!ML_(fd_allowed)(ARG1, "fcntl", tid, False)) {
+   /* F_GETFD is used to check if a file descriptor is valid, so only
+      make sure it isn't a valgrind fd, otherwise we might warn, with
+      --track-fds=bad for any bad fd.  */
+   if (ARG2 == VKI_F_GETFD) {
+      if (ARG1 >= VG_(fd_soft_limit) ||
+          ARG1 == VG_(log_output_sink).fd ||
+          ARG1 == VG_(xml_output_sink).fd) {
+         SET_STATUS_Failure (VKI_EBADF);
+      }
+   } else if (!ML_(fd_allowed)(ARG1, "fcntl", tid, False)) {
      SET_STATUS_Failure (VKI_EBADF);
    }
 }
@@ -7563,8 +7572,17 @@ PRE(sys_fcntl64)
 #  endif
       *flags |= SfMayBlock;
 
-   if (!ML_(fd_allowed)(ARG1, "fcntl64", tid, False)) {
-     SET_STATUS_Failure (VKI_EBADF);
+   /* F_GETFD is used to check if a file descriptor is valid, so only
+      make sure it isn't a valgrind fd, otherwise we might warn, with
+      --track-fds=bad for any bad fd.  */
+   if (ARG2 == VKI_F_GETFD) {
+      if (ARG1 >= VG_(fd_soft_limit) ||
+          ARG1 == VG_(log_output_sink).fd ||
+          ARG1 == VG_(xml_output_sink).fd) {
+         SET_STATUS_Failure (VKI_EBADF);
+      }
+   } else if (!ML_(fd_allowed)(ARG1, "fcntl64", tid, False)) {
+      SET_STATUS_Failure (VKI_EBADF);
    }
 }
 

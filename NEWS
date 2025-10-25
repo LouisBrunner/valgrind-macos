@@ -1,3 +1,39 @@
+Release 3.27.0 (?? Apr 2025)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
+AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
+X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* ================== PLATFORM CHANGES =================
+
+
+* ==================== TOOL CHANGES ===================
+
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+487055  memcheck/tests/x86-linux/scalar fails running in Docker
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed above.
+
+(3.27.0.RC1: ?? Apr 2025)
+
+
 Release 3.26.0 (24 Oct 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -691,17 +691,18 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 # we are actually testing for at runtime.
 accounting_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 badfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
+brk2_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 bug155125_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNUSED_RESULT@ @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 bug472219_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 calloc_overflow_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 malloc_usable_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_UNINITIALIZED@
-mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
+mallinfo_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 if VGCONF_OS_IS_SOLARIS
 mallinfo_LDADD = -lmalloc
 endif
-mallinfo2_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
+mallinfo2_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@ @FLAG_W_NO_ALLOC_SIZE@
-sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
+sbfragment_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 if VGCONF_OS_IS_SOLARIS
 sbfragment_LDADD = -lmalloc
 endif
@@ -741,7 +742,7 @@ endif
 demangle_SOURCES = demangle.cpp
 demangle_rust_SOURCES = demangle-rust.c
 demangle_rust_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
-dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
+dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 
 descr_belowsp_LDADD     = -lpthread
 err_disable3_LDADD 	= -lpthread

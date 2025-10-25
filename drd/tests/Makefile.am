@@ -576,10 +576,11 @@ pth_create_chain_CFLAGS     += -D__EXTENSIONS__
 pth_detached_CFLAGS         += -D__EXTENSIONS__
 endif
 
+sem_as_mutex_CGLAGS         = ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 tsan_unittest_SOURCES       = tsan_unittest.cpp
 tsan_unittest_CXXFLAGS      = $(AM_CXXFLAGS) \
 			-DTHREAD_WRAPPERS='"tsan_thread_wrappers_pthread.h"' \
-			@FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
+			@FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@ @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 
 unit_bitmap_CFLAGS          = $(AM_CFLAGS) -O2 \
                               -DENABLE_DRD_CONSISTENCY_CHECKS \
@@ -626,6 +627,7 @@ if HAVE_PTHREAD_BARRIER
 matinv_LDADD                = $(LDADD) -lm
 endif
 
+pth_detached_sem_CFLAGS     = ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 rwlock_test_CFLAGS          = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
 if VGCONF_OS_IS_SOLARIS
 rwlock_test_CFLAGS          += -D__EXTENSIONS__
@@ -662,10 +664,11 @@ if !VGCONF_OS_IS_SOLARIS
 std_thread2_LDFLAGS          = -Wl,--no-as-needed
 endif
 
+sem_as_mutex_CFLAGS         = ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 sem_wait_SOURCES            = sem_wait.cpp
 
 swapcontext_SOURCES         = swapcontext.c
-swapcontext_CFLAGS          = $(AM_CFLAGS) -g
+swapcontext_CFLAGS          = $(AM_CFLAGS) -g @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 if VGCONF_OS_IS_SOLARIS
 swapcontext_CFLAGS          += -D__EXTENSIONS__
 endif

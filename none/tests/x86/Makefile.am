@@ -186,5 +186,13 @@ insn_ssse3_LDADD	= -lm
 x86locked_CFLAGS	= $(AM_CFLAGS) -O
 yield_LDADD		= -lpthread
 
+# Avoid linker warnings
+cmpxchg8b_LDFLAGS  = -no-pie
+fcmovnu_LDFLAGS    = -no-pie
+fxtract_LDFLAGS    = -no-pie
+incdec_alt_LDFLAGS = -no-pie
+looper_LDFLAGS     = -no-pie
+sbbmisc_LDFLAGS    = -no-pie
+
 .def.c:
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

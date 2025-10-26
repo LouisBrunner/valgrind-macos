@@ -80,5 +80,5 @@ pcmpgt_CXXFLAGS = $(AM_CXXFLAGS)
 endif
 
 # Avoid linker warnings
-fxsave_LDFLAGS   = -no-pie
-tronical_LDFLAGS = -no-pie
+fxsave_LDFLAGS   = @FLAG_NO_PIE@
+tronical_LDFLAGS = @FLAG_NO_PIE@

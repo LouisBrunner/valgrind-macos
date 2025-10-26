@@ -44,4 +44,4 @@ scalar_supp_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 shm_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 
 # Avoid linker warnings
-int3_x86_LDFLAGS = -no-pie
+int3_x86_LDFLAGS = @FLAG_NO_PIE@

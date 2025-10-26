@@ -36,4 +36,4 @@ reallocarray_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 scalar_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 # Avoid linker warnings
-int3_amd64_LDFLAGS = -no-pie
+int3_amd64_LDFLAGS = @FLAG_NO_PIE@

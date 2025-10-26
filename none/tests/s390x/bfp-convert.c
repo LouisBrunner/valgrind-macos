@@ -179,9 +179,9 @@ m3_rtext(unsigned m3_round)
 {
    switch (m3_round) {
    case M3_BFP_ROUND_PER_FPC:       return "[per fpc]";
-   case M3_BFP_ROUND_NEAREST_AWAY:  return "[-> near away]";
+   case M3_BFP_ROUND_NEAREST_AWAY:  return "[-> nearest with ties away from 0]";
    case M3_BFP_ROUND_PREPARE_SHORT: return "[-> prepare-short]";
-   case M3_BFP_ROUND_NEAREST_EVEN:  return "[-> near away]";
+   case M3_BFP_ROUND_NEAREST_EVEN:  return "[-> nearest with ties to even]";
    case M3_BFP_ROUND_ZERO:          return "[-> zero]";
    case M3_BFP_ROUND_POSINF:        return "[-> +inf]";
    case M3_BFP_ROUND_NEGINF:        return "[-> -inf]";
@@ -191,7 +191,7 @@ m3_rtext(unsigned m3_round)
 
 /* Can be converted to 64-bit and 128-bit values without issues. */
 static const float values[] = {
-   0.0f, -1.0f, 2.0f, NAN, INFINITY
+   0.0f, -0.25f, 2.0f, NAN, INFINITY
 };
 
 static void
@@ -230,7 +230,8 @@ convert_to_int_fpc_tests(unsigned mode)
       cgxbr(values[j], M3_BFP_ROUND_PER_FPC);
 }
 
-#if 0
+/* Note: In order to get cc = 1 it is not sufficient for the operand value
+   to be < 0. Additionally, the operand value after rounding must be 0. */
 static void
 convert_to_logical_fpc_tests(unsigned mode)
 {
@@ -266,7 +267,6 @@ convert_to_logical_fpc_tests(unsigned mode)
    for (int j = 0; j < sizeof values / sizeof values[0]; ++j)
       clgxbr(values[j], M3_BFP_ROUND_PER_FPC);
 }
-#endif
 
 int
 main(void)
@@ -292,19 +292,16 @@ main(void)
    }
 
    printf("Rounding as 'per M3'\n");
-   convert_to_int_m3_tests(1);  // M3_BFP_ROUND_NEAREST_AWAY
-   convert_to_int_m3_tests(3);  // M3_BFP_ROUND_PREPARE_SHORT
-   convert_to_int_m3_tests(4);  // M3_BFP_ROUND_NEAREST_EVEN
-   convert_to_int_m3_tests(5);  // M3_BFP_ROUND_ZERO
-   convert_to_int_m3_tests(6);  // M3_BFP_ROUND_POSINF
-   convert_to_int_m3_tests(7);  // M3_BFP_ROUND_NEGINF
+   convert_to_int_m3_tests(M3_BFP_ROUND_NEAREST_AWAY);
+   convert_to_int_m3_tests(M3_BFP_ROUND_PREPARE_SHORT);
+   convert_to_int_m3_tests(M3_BFP_ROUND_NEAREST_EVEN);
+   convert_to_int_m3_tests(M3_BFP_ROUND_ZERO);
+   convert_to_int_m3_tests(M3_BFP_ROUND_POSINF);
+   convert_to_int_m3_tests(M3_BFP_ROUND_NEGINF);
 
    //----------------------------------------------------------
    // Convert to logical
    //----------------------------------------------------------
-#if 0
-   /* Disabled until condition code weirdness has been cleared up.
-      Negative floating point number --> cc = 3. Seems wrong to me. */
    putchar('\n');
    printf("============ Convert to logical =============\n");
    printf("Rounding as 'per FPC'\n");
@@ -314,12 +311,12 @@ main(void)
    }
 
    printf("Rounding as 'per M3'\n");
-   convert_to_logical_m3_tests(1);  // M3_BFP_ROUND_NEAREST_AWAY
-   convert_to_logical_m3_tests(3);  // M3_BFP_ROUND_PREPARE_SHORT
-   convert_to_logical_m3_tests(4);  // M3_BFP_ROUND_NEAREST_EVEN
-   convert_to_logical_m3_tests(5);  // M3_BFP_ROUND_ZERO
-   convert_to_logical_m3_tests(6);  // M3_BFP_ROUND_POSINF
-   convert_to_logical_m3_tests(7);  // M3_BFP_ROUND_NEGINF
-#endif
+   convert_to_logical_m3_tests(M3_BFP_ROUND_NEAREST_AWAY);
+   convert_to_logical_m3_tests(M3_BFP_ROUND_PREPARE_SHORT);
+   convert_to_logical_m3_tests(M3_BFP_ROUND_NEAREST_EVEN);
+   convert_to_logical_m3_tests(M3_BFP_ROUND_ZERO);
+   convert_to_logical_m3_tests(M3_BFP_ROUND_POSINF);
+   convert_to_logical_m3_tests(M3_BFP_ROUND_NEGINF);
+
    return 0;
 }

@@ -8,6 +8,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <linux/openat2.h>
+#include <sstream>
 
 int main(int argc, char** argv)
 {
@@ -24,7 +25,9 @@ int main(int argc, char** argv)
    {
       if (errno != ELOOP)
       {
-         throw std::runtime_error("errno should be ELOOP");
+         std::stringstream ss;
+         ss << "errno should be ELOOP (value is " << errno << ')';
+         throw std::runtime_error(ss.str());
       }
    }
 
@@ -37,7 +40,9 @@ int main(int argc, char** argv)
    {
        if (errno != ELOOP)
        {
-           throw std::runtime_error("errno should be ELOOP");
+           std::stringstream ss;
+           ss << "errno should be ELOOP (value is " << errno << ')';
+           throw std::runtime_error(ss.str());
        }
    }
 #endif

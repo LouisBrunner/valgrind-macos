@@ -3343,7 +3343,7 @@ AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
   do { 		 
-      __asm__ __volatile__("lzcnt %%rax,%%rax" : : : "rax");
+      __asm__ __volatile__("lzcnt %%eax,%%eax" : : : "eax");
   } while (0)
 ]])], [
   ac_have_as_lzcnt=yes

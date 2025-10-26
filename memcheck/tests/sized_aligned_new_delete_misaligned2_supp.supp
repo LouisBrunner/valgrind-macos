@@ -48,7 +48,7 @@
 }
 
 {
-   scalar delete nothow bad alignment
+   scalar delete nothrow bad alignment
    Memcheck:BadAlign
    fun:_ZdlPvSt11align_val_tRKSt9nothrow_t
    fun:main

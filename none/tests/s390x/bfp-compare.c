@@ -1,5 +1,3 @@
-// FIXME rename bfp-compare.c
-
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>

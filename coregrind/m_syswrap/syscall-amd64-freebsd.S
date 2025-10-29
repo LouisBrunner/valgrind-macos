@@ -69,7 +69,8 @@
 				  void* guest_state,		// rsi
 				  const vki_sigset_t *sysmask,	// rdx
 				  const vki_sigset_t *postmask,	// rcx
-				  Int sigsetSzB)		// r8
+                                  Int sigsetSzB,		// r8
+                                  UCHar *cflag)			// r9
 */
 
 /* from vki_arch.h */
@@ -85,6 +86,7 @@ ML_(do_syscall_for_client_WRK):
    pushq %rdx  // -24(%rbp)  sysmask
    pushq %rcx  // -32(%rbp)  postmask
    pushq %r8   // -40(%rbp)  sigsetSzB
+   pushq %r9   // -48(%rbp)  cflag
 
 1: /* Even though we can't take a signal until the sigprocmask completes,
       start the range early.
@@ -132,23 +134,12 @@ ML_(do_syscall_for_client_WRK):
 3:   /* In the range [3, 4), the syscall result is in %rax,
       but hasn't been committed to RAX. */
 
-   /* stack contents: 3 words for syscall above, plus our prologue */
-   setc  0(%rsp)         /* stash returned carry flag */
 
-   movq  -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
+   movq  -16(%rbp), %r11                 /* r11 = VexGuestAMD64State * */
    movq  %rax, OFFSET_amd64_RAX(%r11)    /* save back to RAX */
    movq  %rdx, OFFSET_amd64_RDX(%r11)    /* save back to RDX */
-
-   /* save carry flag to VEX */
-   xorq  %rax, %rax
-   movb  0(%rsp), %al
-   movq  %rax, %rdi      /* arg1 = new flag */
-   movq  %r11, %rsi      /* arg2 = vex state */
-   addq  $24, %rsp       /* remove syscall parameters */
-   movl  $1, OFFSET_amd64_SETC(%r11)
-   call  LibVEX_GuestAMD64_put_rflag_c
-   movq  -16(%rbp), %r11 /* r11 = VexGuestAMD64State * */
-   movl  $0, OFFSET_amd64_SETC(%r11)
+   movq	-48(%rbp), %rcx
+   setc	0(%rcx)				 /* save returned carry flag */
 
 4: /* Re-block signals.  If eip is in [4,5), then the syscall
       is complete and we needn't worry about it. */

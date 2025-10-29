@@ -4820,8 +4820,6 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 
    vex_state->guest_EMNOTE = EmNote_NONE;
 
-   vex_state->guest_SETC = 0;
-
    /* These should not ever be either read or written, but we
       initialise them anyway. */
    vex_state->guest_CMSTART = 0;

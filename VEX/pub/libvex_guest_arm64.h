@@ -168,17 +168,11 @@ typedef
 
       /* Used for FreeBSD syscall dispatching. */
       ULong guest_SC_CLASS;
-      /* Used for FreeBSD client syscall when putting the carry flag
-         value into VEX. */
-      UInt guest_SETC;
-      UInt pad_end_0;
       /* Padding to make it have an 16-aligned size */
-      /* UInt  pad_end_1; */
-      /* ULong pad_end_2; */
+      ULong pad_end_1;
 
    }
    VexGuestARM64State;
-
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for ARM64 guest stuff.                ---*/

@@ -131,10 +131,7 @@ typedef
 
       /* Emulation notes */
       UInt  guest_EMNOTE;
-      /* Used by Darwin and FreeBSD when setting the carry flag from
-       * ML_(do_syscall_for_client_WRK). Needed to determine how
-       * to restart interrupted syscalls. */
-      UInt guest_SETC;
+      UInt  pad2;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to

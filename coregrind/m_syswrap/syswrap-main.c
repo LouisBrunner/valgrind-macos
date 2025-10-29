@@ -3355,18 +3355,6 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 #    error "Unknown OS"
 #  endif
 
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-  if (outside_range)
-  {
-     if (th_regs->vex.guest_SETC)
-     {
-        outside_range = False;
-        in_complete_to_committed = True;
-     }
-  }
-#endif
-
-
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */
    if (outside_range) {

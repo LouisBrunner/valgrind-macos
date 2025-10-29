@@ -98,7 +98,6 @@ void foo ( void )
    GENOFFSET(X86,x86,FS);
    GENOFFSET(X86,x86,GS);
    GENOFFSET(X86,x86,SS);
-   GENOFFSET(X86,x86,SETC);
 
    // amd64
    GENOFFSET(AMD64,amd64,RAX);
@@ -118,7 +117,6 @@ void foo ( void )
    GENOFFSET(AMD64,amd64,R14);
    GENOFFSET(AMD64,amd64,R15);
    GENOFFSET(AMD64,amd64,RIP);
-   GENOFFSET(AMD64,amd64,SETC);
 
    // ppc32
    GENOFFSET(PPC32,ppc32,GPR0);
@@ -174,7 +172,6 @@ void foo ( void )
    GENOFFSET(ARM64,arm64,X8);
    GENOFFSET(ARM64,arm64,XSP);
    GENOFFSET(ARM64,arm64,PC);
-   GENOFFSET(ARM64,arm64,SETC);
 
    // s390x
    GENOFFSET(S390X,s390x,r2);

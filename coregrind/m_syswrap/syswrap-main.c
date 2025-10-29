@@ -315,7 +315,8 @@ UWord ML_(do_syscall_for_client_unix_WRK)( Word syscallno,
                                            void* guest_state,
                                            const vki_sigset_t *syscall_mask,
                                            const vki_sigset_t *restore_mask,
-                                           Word sigsetSzB ); /* unused */
+                                           Word sigsetSzB, /* unused */
+                                           UChar* cflag );
 extern
 UWord ML_(do_syscall_for_client_mach_WRK)( Word syscallno, 
                                            void* guest_state,
@@ -375,7 +376,6 @@ void do_syscall_for_client ( Int syscallno,
    /* Save the carry flag. */
 #  if defined(VGP_amd64_freebsd)
    LibVEX_GuestAMD64_put_rflag_c(cflag, &tst->arch.vex);
-
 #  elif defined(VGP_arm64_freebsd)
    LibVEX_GuestARM64_put_nzcv_c(cflag, &tst->arch.vex);
 #  elif defined(VGP_x86_freebsd)
@@ -384,12 +384,23 @@ void do_syscall_for_client ( Int syscallno,
 #    error "Unknown platform"
 #  endif
 #  elif defined(VGO_darwin)
+   UChar cflag;
    switch (VG_DARWIN_SYSNO_CLASS(syscallno)) {
       case VG_DARWIN_SYSCALL_CLASS_UNIX:
          err = ML_(do_syscall_for_client_unix_WRK)(
                   VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex, 
-                  syscall_mask, &saved, 0/*unused:sigsetSzB*/
+                  syscall_mask, &saved, 0/*unused:sigsetSzB*/, &cflag
                );
+         /* Save the carry flag. */
+#  if defined(VGP_amd64_darwin)
+         LibVEX_GuestAMD64_put_rflag_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_arm64_darwin)
+         LibVEX_GuestARM64_put_nzcv_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_x86_darwin)
+         LibVEX_GuestX86_put_eflag_c(cflag, &tst->arch.vex);
+#  else
+#    error "Unknown platform"
+#  endif
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
          err = ML_(do_syscall_for_client_mach_WRK)(

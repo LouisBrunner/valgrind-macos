@@ -74,6 +74,7 @@
    FreeBSD:
    x86    eax +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
    amd64  rax rdi  rsi  rdx  rcx  r8   r9   +8   +16  rdx:rax, rflags.c
+   arm64  x8  x0   x1   x2   x3   x4   x5   x6   x7   x0:x1, nzcv.c
 
    On s390x the svc instruction is used for system calls. The system call
    number is encoded in the instruction (8 bit immediate field). Since Linux

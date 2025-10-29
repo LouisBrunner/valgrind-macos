@@ -826,6 +826,7 @@ fun:pthread_rwlock_init
 {
    OSX1013:helgrind:_pthread_join
    Helgrind:Race
+   ...
    fun:_pthread_join
 }
 
@@ -845,6 +846,89 @@ fun:pthread_rwlock_init
    OSX1013:helgrind:_pthread_body
    Helgrind:Race
    fun:_pthread_body
+}
+
+# various getaddrinfo suppressions
+{
+   OSC1013:helgrind:getaddrinfo
+   Helgrind:Race
+   ...
+   fun:getaddrinfo
+}
+
+{
+   OSX1013:helgrind:_fwalk
+   Helgrind:Race
+   fun:_fwalk
+}
+
+{
+   OSX1013:helgrind:exit
+   Helgrind:Race
+   fun:exit
+}
+
+{
+   OSX1013:helgrind:freeaddrinfo
+   Helgrind:Race
+   fun:freeaddrinfo
+}
+
+# some of these have deep callstacks, this might not work
+# with low values of --num-callers
+{
+   OSC1013:helgrind:si_addrinfo
+   Helgrind:Race
+   ...
+   fun:si_addrinfo
+}
+
+{
+   OSC1013:helgrind:file_addrinfo
+   Helgrind:Race
+   ...
+   fun:file_addrinfo
+}
+
+{
+   OSX1013:helgrind:xpc_dictionary_apply
+   Helgrind:Race
+   ...
+   fun:xpc_dictionary_apply
+}
+
+{
+   OSX1013:helgrind:cache_fill
+   Helgrind:Race
+   fun:cache_fill
+}
+
+{
+   OSX1013:helgrind:pthead_once
+   Helgrind:Race
+   ...
+   fun:pthread_once
+}
+
+{
+   OSX1013:helgrind:objc_destructInstance
+   Helgrind:Race
+   ...
+   fun:objc_destructInstance
+}
+
+{
+   OSX1013:helgrind:xpc_create_from_plist
+   Helgrind:Race
+   ...
+   fun:xpc_create_from_plist
+}
+
+{
+   OSX1013:helgrind:dispatch_once_f
+   Helgrind:Race
+   ...
+   fun:dispatch_once_f
 }
 
 {
@@ -940,23 +1024,42 @@ fun:pthread_rwlock_init
    drd:ConflictingAccess
    fun:_pthread_body
 }
+
+# various getaddrinfo suppressions
 {
    OSX1013:exit
    drd:ConflictingAccess
    ...
    fun:exit
 }
+
 {
    OSX1013:freeaddrinfo
    drd:ConflictingAccess
    fun:freeaddrinfo
 }
+
 {
    OSX1013:getaddrinfo
    drd:ConflictingAccess
    ...
    fun:getaddrinfo
 }
+
+{
+   OSX1013:drd:si_etaddrinfo
+   drd:ConflictingAccess
+   ...
+   fun:si_addrinfo
+}
+
+{
+   OSX1013:helgrind:nw_path_copy_interface_with_generation_internal
+   Helgrind:Race
+   ...
+   fun:nw_path_copy_interface_with_generation_internal
+}
+
 {
    OSX1013:cache_fill
    drd:ConflictingAccess
@@ -983,4 +1086,66 @@ fun:pthread_rwlock_init
    OSX1013:_nc_table
    drd:ConflictingAccess
    fun:_nc_table_*
+}
+
+{
+   OSX1013:drd:xpc_dictionary_apply
+   drd:ConflictingAccess
+   ...
+   fun:xpc_dictionary_apply
+}
+
+{
+   OSX1013:drd:getaddrinfo
+   drd:ConflictingAccess
+   ...
+   fun:getaddrinfo
+}
+
+{
+   OSX1013:drd:xpc_create_from_plist
+   drd:ConflictingAccess
+   ...
+   fun:xpc_create_from_plist
+}
+
+{
+   OSX1013:helgrind:nw_path_copy_interface_with_generation_internal
+   drd:ConflictingAccess
+   ...
+   fun:nw_path_copy_interface_with_generation_internal
+}
+
+{
+   OSX1013:drd:object_dispose
+   drd:ConflictingAccess
+   ...
+   fun:object_dispose
+}
+
+{
+   OSX1013:drd:dispatch_once_f
+   drd:ConflictingAccess
+   ...
+   fun:dispatch_once_f
+}
+
+{
+   OSX1013:drd:objc_destructInstance
+   drd:ConflictingAccess
+   ...
+   fun:objc_destructInstance
+}
+
+{
+   OSX1013:drd:pthread_rwlock_unlock
+   drd:ConflictingAccess
+   fun:pthread_rwlock_unlock
+}
+
+{
+   OSX1013:drd:xpc_pipe_routine
+   drd:ConflictingAccess
+   ...
+   fun:xpc_pipe_routine
 }

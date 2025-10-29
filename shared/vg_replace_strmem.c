@@ -1431,8 +1431,8 @@ static inline void my_exit ( int x )
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
 # if DARWIN_VERS >= DARWIN_10_9
-  /* _platform_memmove$VARIANT$Ivybridge */
-  MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDIvybridge)
+  /* _platform_memmove$VARIANT$Ivybridge, Nehelem etc. */
+  MEMMOVE(libsystemZuplatformZddylib, ZuplatformZumemmoveZDVARIANTZDZa)
 # endif
 
 #elif defined(VGO_solaris)

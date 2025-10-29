@@ -768,8 +768,8 @@ extern UWord do_syscall_WRK (
           UWord a5,            /* %r9 */
           UWord a6,            /* 8(%rsp) */
           UWord a7,            /* 16(%rsp) */
-          UInt *flags,         /* 32(%rsp) */
-          UWord *rv2           /* 40(%rsp) */
+          UInt *flags,         /* 24(%rsp) */
+          UWord *rv2           /* 32(%rsp) */
        );
 asm(
 ".text\n"

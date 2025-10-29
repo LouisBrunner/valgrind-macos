@@ -425,7 +425,6 @@ EXTRA_DIST = \
 	test-plo-no.vgtest test-plo-no.stdout.exp \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-le32-freebsd test-plo-no.stderr.exp-le64-freebsd \
-	    test-plo-no.stderr.exp-le32-freebsd-clang \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \

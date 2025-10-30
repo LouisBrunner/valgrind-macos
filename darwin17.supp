@@ -136,7 +136,7 @@
 {
    OSX1013:15-Leak
    Memcheck:Leak
-   match-leak-kinds: reachable
+   match-leak-kinds: definite,reachable
    fun:malloc
    fun:__smakebuf
    ...

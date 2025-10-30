@@ -95,7 +95,8 @@ dist_noinst_SCRIPTS = \
 	filter_stanza \
 	filter_stanza.awk \
 	filter_used_supp \
-	filter_stanza_and_size_t
+	filter_stanza_and_size_t \
+	filter_malloc_zone
 
 noinst_SCRIPTS = \
 	filter_dw4 \

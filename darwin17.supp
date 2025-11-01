@@ -198,6 +198,17 @@
    fun:_ZN4dyld24initializeMainExecutableEv
 }
 
+{
+   OSX1013:22-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__swsetup
+   fun:__sfvwrite
+   fun:fwrite
+}
+
 
 ############################################
 ## Non-leak errors

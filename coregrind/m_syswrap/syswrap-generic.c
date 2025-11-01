@@ -3381,7 +3381,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    PRE_MEM_READ(str2, arg_2_check, sizeof(Addr));
 
    /* argv[0] should not be NULL and valid.  */
-   if (ML_(safe_to_deref)((HChar **) (Addr)arg_2_check, sizeof(HChar *))) {
+   if (ML_(safe_to_deref)((HChar **)arg_2_check, sizeof(HChar *))) {
       Addr argv0 = *(Addr*)arg_2_check;
       PRE_MEM_RASCIIZ( str3, argv0 );
       /* The rest of argv can be NULL or a valid string pointer.  */
@@ -3400,7 +3400,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    str3[VG_(strlen)(str)] = '\0';
    if (arg_3 != 0) {
       /* At least the terminating NULL must be addressable. */
-      if (!ML_(safe_to_deref)((HChar **) (Addr)arg_3, sizeof(HChar *))) {
+      if (!ML_(safe_to_deref)((HChar **)arg_3, sizeof(HChar *))) {
          SET_STATUS_Failure(VKI_EFAULT);
          return;
       }
@@ -3429,11 +3429,11 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
 
    // debug-only printing
    if (0) {
-      VG_(printf)("pathname = %p(%s)\n", (void*)(Addr)pathname, (HChar*)(Addr)pathname);
+      VG_(printf)("pathname = %p(%s)\n", (void*)pathname, (HChar*)pathname);
       if (arg_2) {
          VG_(printf)("arg_2 = ");
          Int q;
-         HChar** vec = (HChar**)(Addr)arg_2;
+         HChar** vec = (HChar**)arg_2;
          for (q = 0; vec[q]; q++)
             VG_(printf)("%p(%s) ", vec[q], vec[q]);
          VG_(printf)("\n");
@@ -3445,10 +3445,10 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    // Decide whether or not we want to follow along
    { // Make 'child_argv' be a pointer to the child's arg vector
      // (skipping the exe name)
-     const HChar** child_argv = (const HChar**)(Addr)arg_2;
+     const HChar** child_argv = (const HChar**)arg_2;
      if (child_argv && child_argv[0] == NULL)
         child_argv = NULL;
-     trace_this_child = VG_(should_we_trace_this_child)( (HChar*)(Addr)pathname,
+     trace_this_child = VG_(should_we_trace_this_child)( (HChar*)pathname,
                                                           child_argv );
    }
 
@@ -3456,7 +3456,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    // ok, etc.  We allow setuid executables to run only in the case when
    // we are not simulating them, that is, they to be run natively.
    setuid_allowed = trace_this_child  ? False  : True;
-   res = VG_(pre_exec_check)((const HChar *)(Addr)pathname, NULL, setuid_allowed);
+   res = VG_(pre_exec_check)((const HChar *)pathname, NULL, setuid_allowed);
    if (sr_isError(res)) {
       SET_STATUS_Failure( sr_Err(res) );
       return;
@@ -3473,7 +3473,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    }
 
    /* After this point, we can't recover if the execve fails. */
-   VG_(debugLog)(1, "syswrap", "Exec of %s\n", (HChar*)(Addr)pathname);
+   VG_(debugLog)(1, "syswrap", "Exec of %s\n", (HChar*)pathname);
 
    
    // Terminate gdbserver if it is active.
@@ -3509,7 +3509,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
       }
 
    } else {
-      path = (HChar*)(Addr)pathname;
+      path = (HChar*)pathname;
    }
 
    // Set up the child's environment.
@@ -3526,7 +3526,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    if (arg_3 == 0) {
       envp = NULL;
    } else {
-      envp = VG_(env_clone)( (HChar**)(Addr)arg_3 );
+      envp = VG_(env_clone)( (HChar**)arg_3 );
       if (envp == NULL) goto hosed;
       VG_(env_remove_valgrind_env_stuff)( envp, True /*ro_strings*/, NULL );
    }
@@ -3545,7 +3545,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    // are omitted.
    //
    if (!trace_this_child) {
-      argv = (HChar**)(Addr)arg_2;
+      argv = (HChar**)arg_2;
    } else {
       vg_assert( VG_(args_for_valgrind) );
       vg_assert( VG_(args_for_valgrind_noexecpass) >= 0 );
@@ -3560,7 +3560,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
       // name of client exe
       tot_args++;
       // args for client exe, skipping [0]
-      arg2copy = (HChar**)(Addr)arg_2;
+      arg2copy = (HChar**)arg_2;
       if (arg2copy && arg2copy[0]) {
          for (i = 1; arg2copy[i]; i++)
             tot_args++;
@@ -3576,7 +3576,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
             continue;
          argv[j++] = * (HChar**) VG_(indexXA)( VG_(args_for_valgrind), i );
       }
-      argv[j++] = (HChar*)(Addr)pathname;
+      argv[j++] = (HChar*)pathname;
       if (arg2copy && arg2copy[0])
          for (i = 1; arg2copy[i]; i++)
             argv[j++] = arg2copy[i];
@@ -3650,7 +3650,7 @@ void handle_pre_sys_execve(ThreadId tid, SyscallStatus *status, Addr pathname,
    vg_assert(FAILURE);
    VG_(message)(Vg_UserMsg, "execve(%#" FMT_REGWORD "x(%s), %#" FMT_REGWORD
                 "x, %#" FMT_REGWORD "x) failed, errno %lu\n",
-                pathname, (HChar*)(Addr)pathname, arg_2, arg_3, ERR);
+                pathname, (HChar*)pathname, arg_2, arg_3, ERR);
    VG_(message)(Vg_UserMsg, "EXEC FAILED: I can't recover from "
                             "execve() failing, so I'm dying.\n");
    VG_(message)(Vg_UserMsg, "Add more stringent tests in PRE(sys_execve), "

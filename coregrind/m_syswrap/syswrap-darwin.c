@@ -10652,8 +10652,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_mincore,     sys_mincore), 
    GENXY(__NR_getgroups,   sys_getgroups), 
 // _____(__NR_setgroups),   // 80
-   GENX_(__NR_getpgrp,     sys_getpgrp), 
-   GENX_(__NR_setpgid,     sys_setpgid), 
+   GENX_(__NR_getpgrp,     sys_getpgrp),
+   GENX_(__NR_setpgid,     sys_setpgid),
    GENXY(__NR_setitimer,   sys_setitimer), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(84)),    // old wait
 // _____(__NR_swapon), 
@@ -10722,7 +10722,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(148)),   // old setquota
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(149)),   // old qquota
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(150)),   // old getsockname 
-// _____(__NR_getpgid), 
+   GENX_(__NR_getpgid,     sys_getpgid),
 // _____(__NR_setprivexec), 
    GENXY(__NR_pread,       sys_pread64), 
    GENX_(__NR_pwrite,      sys_pwrite64), 

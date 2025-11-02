@@ -1892,6 +1892,7 @@
 /none/tests/darwin/bug228343
 /none/tests/darwin/bug254164
 /none/tests/darwin/bug390269
+/none/tests/darwin/bug411369
 /none/tests/darwin/rlimit
 
 # /none/tests/linux/

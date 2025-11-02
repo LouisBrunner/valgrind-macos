@@ -9,6 +9,7 @@ EXTRA_DIST = \
 	bug228343.stderr.exp bug228343.stdout.exp bug228343.vgtest \
 	bug254164.stderr.exp bug254164.vgtest \
 	bug390269.stderr.exp bug390269.vgtest \
+	bug411369.stderr.exp bug411369.vgtest \
 	rlimit.stderr.exp rlimit.vgtest
 
 check_PROGRAMS = \
@@ -17,6 +18,7 @@ check_PROGRAMS = \
 	bug228343 \
 	bug254164 \
 	bug390269 \
+	bug411369 \
 	rlimit
 
 

@@ -1050,7 +1050,7 @@
 /memcheck/tests/wcscat
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
-/memcheck/tests/wcpncpy
+/memcheck/tests/wcpncpy1
 /memcheck/tests/wcsncpy
 /memcheck/tests/wmemcmp
 /memcheck/tests/wrap1

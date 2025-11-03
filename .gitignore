@@ -1051,7 +1051,7 @@ configure~
 /memcheck/tests/wcscat
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
-/memcheck/tests/wcpncpy
+/memcheck/tests/wcpncpy1
 /memcheck/tests/wcsncpy
 /memcheck/tests/wmemcmp
 /memcheck/tests/wrap1
@@ -1894,6 +1894,7 @@ configure~
 /none/tests/darwin/bug228343
 /none/tests/darwin/bug254164
 /none/tests/darwin/bug390269
+/none/tests/darwin/bug411369
 /none/tests/darwin/rlimit
 
 # /none/tests/linux/

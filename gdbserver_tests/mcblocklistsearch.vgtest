@@ -4,6 +4,7 @@ vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mc
 prereq: test -e gdb.eval
 stdout_filter: filter_make_empty
 stderr_filter: filter_make_empty
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx 1>&2 ../memcheck/tests/leak-tree
 stdinB: mcblocklistsearch.stdinB.gdb

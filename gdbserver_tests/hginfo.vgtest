@@ -5,6 +5,7 @@ vgopts: --tool=helgrind  --ignore-thread-creation=yes --vgdb=yes --vgdb-error=0 
 prereq: test -e gdb.eval
 stdout_filter: filter_make_empty
 stderr_filter: filter_stderr
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ../helgrind/tests/hg01_all_ok
 stdinB: hginfo.stdinB.gdb

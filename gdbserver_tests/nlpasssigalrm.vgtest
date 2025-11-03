@@ -8,6 +8,7 @@ prog: passsigalrm
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlpasssigalrm
 stderr_filter: filter_stderr
 prereq: test -e gdb
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ./passsigalrm
 stdinB: nlpasssigalrm.stdinB.gdb

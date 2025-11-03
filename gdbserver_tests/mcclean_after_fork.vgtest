@@ -3,6 +3,7 @@ prereq: test -e gdb
 prog: clean_after_fork
 vgopts: --tool=memcheck --vgdb=full --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcclean_after_fork
 stderr_filter: filter_memcheck_monitor
+envB: LC_ALL=C
 progB: gdb
 argsB:  --quiet -l 60 --nx ./clean_after_fork
 stdinB: mcclean_after_fork.stdinB.gdb

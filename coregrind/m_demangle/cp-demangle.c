@@ -1,12 +1,12 @@
 /* Demangler for g++ V3 ABI.
-   Copyright (C) 2003-2024 Free Software Foundation, Inc.
+   Copyright (C) 2003-2025 Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@wasabisystems.com>.
 
    This file is part of the libiberty library, which is part of GCC.
 
    This file is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2 of the License, or
+   the Free Software Foundation; either version 3 of the License, or
    (at your option) any later version.
 
    In addition to the permissions in the GNU General Public License, the
@@ -515,6 +515,8 @@ static struct demangle_component *d_template_head (struct d_info *, int *bad);
 static struct demangle_component *d_lambda (struct d_info *);
 
 static struct demangle_component *d_unnamed_type (struct d_info *);
+
+static struct demangle_component *d_unnamed_enum (struct d_info *);
 
 static struct demangle_component *
 d_clone_suffix (struct d_info *, struct demangle_component *);
@@ -1441,7 +1443,7 @@ d_encoding (struct d_info *di, int top_level)
 
 	      /* If this is a non-top-level local-name, clear the
 		 return type, so it doesn't confuse the user by
-		 being confused with the return type of whaever
+		 being confused with the return type of whatever
 		 this is nested within.  */
 	      if (!top_level && dc->type == DEMANGLE_COMPONENT_LOCAL_NAME
 		  && ftype->type == DEMANGLE_COMPONENT_FUNCTION_TYPE)
@@ -1816,6 +1818,9 @@ d_unqualified_name (struct d_info *di, struct demangle_component *scope,
     {
       switch (d_peek_next_char (di))
 	{
+	case 'e':
+	  ret = d_unnamed_enum (di);
+	  break;
 	case 'l':
 	  ret = d_lambda (di);
 	  break;
@@ -2745,13 +2750,20 @@ cplus_demangle_type (struct d_info *di)
       break;
 
     case 'U':
-      d_advance (di, 1);
-      ret = d_source_name (di);
-      if (d_peek_char (di) == 'I')
-	ret = d_make_comp (di, DEMANGLE_COMPONENT_TEMPLATE, ret,
-			   d_template_args (di));
-      ret = d_make_comp (di, DEMANGLE_COMPONENT_VENDOR_TYPE_QUAL,
-			 cplus_demangle_type (di), ret);
+      peek = d_peek_next_char (di);
+      if (IS_DIGIT (peek))
+	{
+	  d_advance (di, 1);
+	  ret = d_source_name (di);
+	  if (d_peek_char (di) == 'I')
+	    ret = d_make_comp (di, DEMANGLE_COMPONENT_TEMPLATE, ret,
+			       d_template_args (di));
+	  ret = d_make_comp (di, DEMANGLE_COMPONENT_VENDOR_TYPE_QUAL,
+			     cplus_demangle_type (di), ret);
+	}
+      else
+	/* Could be a closure type or an unnamed enum.  */
+	ret = d_unqualified_name (di, NULL, NULL);
       break;
 
     case 'D':
@@ -4107,6 +4119,33 @@ d_unnamed_type (struct d_info *di)
   return ret;
 }
 
+/* <unnamed-enum-name> ::= Ue <underlying type> <enumerator source-name> */
+
+static struct demangle_component *
+d_unnamed_enum (struct d_info *di)
+{
+  if (! d_check_char (di, 'U'))
+    return NULL;
+  if (! d_check_char (di, 'e'))
+    return NULL;
+
+  struct demangle_component *underlying = cplus_demangle_type (di);
+  struct demangle_component *name = d_source_name (di);
+
+  struct demangle_component *ret = d_make_empty (di);
+  if (ret)
+    {
+      ret->type = DEMANGLE_COMPONENT_UNNAMED_ENUM;
+      d_left (ret) = underlying;
+      d_right (ret) = name;
+    }
+
+  if (! d_add_substitution (di, ret))
+    return NULL;
+
+  return ret;
+}
+
 /* <clone-suffix> ::= [ . <clone-type-identifier> ] [ . <nonnegative number> ]*
 */
 
@@ -4413,6 +4452,7 @@ d_count_templates_scopes (struct d_print_info *dpi,
     case DEMANGLE_COMPONENT_CHARACTER:
     case DEMANGLE_COMPONENT_NUMBER:
     case DEMANGLE_COMPONENT_UNNAMED_TYPE:
+    case DEMANGLE_COMPONENT_UNNAMED_ENUM:
     case DEMANGLE_COMPONENT_STRUCTURED_BINDING:
     case DEMANGLE_COMPONENT_MODULE_NAME:
     case DEMANGLE_COMPONENT_MODULE_PARTITION:
@@ -4813,6 +4853,7 @@ d_find_pack (struct d_print_info *dpi,
     case DEMANGLE_COMPONENT_CHARACTER:
     case DEMANGLE_COMPONENT_FUNCTION_PARAM:
     case DEMANGLE_COMPONENT_UNNAMED_TYPE:
+    case DEMANGLE_COMPONENT_UNNAMED_ENUM:
     case DEMANGLE_COMPONENT_DEFAULT_ARG:
     case DEMANGLE_COMPONENT_NUMBER:
       return NULL;
@@ -6289,6 +6330,14 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
       d_append_string (dpi, "{unnamed type#");
       d_append_num (dpi, dc->u.s_number.number + 1);
       d_append_char (dpi, '}');
+      return;
+
+    case DEMANGLE_COMPONENT_UNNAMED_ENUM:
+      d_append_string (dpi, "{enum:");
+      d_print_comp (dpi, options, d_left (dc));
+      d_append_string (dpi, "{");
+      d_print_comp (dpi, options, d_right (dc));
+      d_append_string (dpi, "}}");
       return;
 
     case DEMANGLE_COMPONENT_CLONE:

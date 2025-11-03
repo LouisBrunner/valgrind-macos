@@ -1,0 +1,7 @@
+#! /bin/sh
+
+../filter_allocs "$@" |
+
+# on Darwin "uint64_t" becomes unsigned long long
+# on other platforms it is unsigned long
+sed 's/unsigned long long/unsigned long/'

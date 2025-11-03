@@ -12,7 +12,7 @@
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
-  published by the Free Software Foundation; either version 2 of the
+  published by the Free Software Foundation; either version 3 of the
   License, or (at your option) any later version.
 
   This program is distributed in the hope that it will be useful, but
@@ -67,7 +67,8 @@
               void* guest_state,             // x1
               const vki_sigset_t *sysmask,   // x2
               const vki_sigset_t *postmask,  // x3
-              Int nsigwords)                 // x4
+              Int nsigwords,                 // x4
+              UChar *cflag,                  // x5
 */
 /* from vki-arm64-freebsd.h */
 #define VKI_SIG_SETMASK 3
@@ -110,23 +111,15 @@ ML_(do_syscall_for_client_WRK):
 2: svc 0x00000000
 3:
 
-   /* stash returned carry flag */
-   mov x4, 1
-   csel x4, x4, xzr, cs
 
    ldr x5, [sp, #8] /* saved x1 == guest_state */
    str x0, [x5, #OFFSET_arm64_X0]
    str x1, [x5, #OFFSET_arm64_X1]
-
-   /* save carry flag to VEX */
-   mov x0, x4       /* arg1 = new flag */
-   ldr x1, [sp, #8] /* arg2 = vex state */
-   mov x20, 1
-   str x20, [x1, #OFFSET_arm64_SETC]
-   bl LibVEX_GuestARM64_put_nzcv_c
-   ldr x1, [sp, #8] /* arg2 = vex state */
-   mov x20, 0
-   str x20, [x1, #OFFSET_arm64_SETC]
+   /* stash returned carry flag */
+   mov x4, 1
+   csel x4, x4, xzr, cs
+   ldr  x5, [sp, #40] /* saved x5 == cflag */
+   strb w4, [x5]
 
 4:
    mov x8, #__NR_sigprocmask

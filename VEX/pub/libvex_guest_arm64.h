@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -144,9 +144,6 @@ typedef
          replace-style ones. */
       ULong guest_NRADDR;
 
-      /* Used for Darwin/FreeBSD syscall dispatching. */
-      ULong guest_SC_CLASS;
-
       /* Needed for Darwin (but mandated for all guest architectures):
          program counter at the last syscall insn (int 0x80/81/82,
          sysenter, syscall, svc).  Used when backing up to restart a
@@ -169,16 +166,13 @@ typedef
       ULong guest_LLSC_DATA_LO64; // Original value at _ADDR+0.
       ULong guest_LLSC_DATA_HI64; // Original value at _ADDR+8.
 
-      /* Used for FreeBSD client syscall when putting the carry flag
-         value into VEX. */
-      UInt guest_SETC;
-      UInt  pad_end_0;
+      /* Used for Darwin/FreeBSD syscall dispatching. */
+      ULong guest_SC_CLASS;
       /* Padding to make it have an 16-aligned size */
-      /* UInt  pad_end_1; */
-      /* ULong pad_end_2; */
+      ULong pad_end_1;
+
    }
    VexGuestARM64State;
-
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for ARM64 guest stuff.                ---*/

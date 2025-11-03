@@ -12,7 +12,7 @@
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
-  published by the Free Software Foundation; either version 2 of the
+  published by the Free Software Foundation; either version 3 of the
   License, or (at your option) any later version.
 
   This program is distributed in the hope that it will be useful, but
@@ -67,7 +67,8 @@
 				  void* guest_state,		// rsi
 				  const vki_sigset_t *sysmask,	// rdx
 				  const vki_sigset_t *postmask,	// rcx
-				  Int sigsetSzB)		// r8
+				  Int sigsetSzB,		// r8
+				  UChar *cflag)			// r9
 
         Note that sigsetSzB is totally ignored (and irrelevant).
 */
@@ -90,6 +91,7 @@
 	pushq	%rdx  // -24(%rbp)  sysmask
 	pushq	%rcx  // -32(%rbp)  postmask
 	pushq	%r8   // -40(%rbp)  sigsetSzB
+	pushq	%r9   // -48(%rbp)  cflag
 	// stack is now aligned
 	
 L_$0_1:	/* Even though we can't take a signal until the sigprocmask completes,
@@ -140,25 +142,16 @@ L_$0_3:	/* In the range [3, 4), the syscall result is in %rax,
 	   but hasn't been committed to RAX. */
 
 	/* stack contents: 3 words for syscall above, plus our prologue */
-	setc	0(%rsp) 	/* stash returned carry flag */
 
 	movq	-16(%rbp), %r11	/* r11 = VexGuestAMD64State * */
 	movq	%rax, OFFSET_amd64_RAX(%r11)	/* save back to RAX */
 	movq	%rdx, OFFSET_amd64_RDX(%r11)	/* save back to RDX */
 
 .if $0 == UNIX
-	/* save carry flag to VEX */
-	xor	%rax, %rax
-	movb	0(%rsp), %al
-	movq	%rax, %rdi	/* arg1 = new flag */
-	movq	%r11, %rsi	/* arg2 = vex state */
-	addq	$$24, %rsp	/* remove syscall parameters */
-        movl    $$1, OFFSET_amd64_SETC(%r11)
-	call	_LibVEX_GuestAMD64_put_rflag_c
-        movq	-16(%rbp), %r11
-        movl    $$0, OFFSET_amd64_SETC(%r11)
+	movq	-48(%rbp), %rcx
+	setc	0(%rcx)				/* save returned carry flag */
 .else
-	addq	$$24, %rsp	/* remove syscall parameters*/
+	addq	$$24, %rsp			/* remove syscall parameters*/
 .endif
 
 L_$0_4:	/* Re-block signals.  If eip is in [4,5), then the syscall 

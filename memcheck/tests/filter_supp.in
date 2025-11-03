@@ -5,6 +5,7 @@ SED=@SED@
 
 ./filter_stderr "$@" |
 
-$SED 'N;/^used_suppression/M{/^used_suppression/d;$!N;d};P;D'
+$SED '/^used_suppression/d' |
+cat -s
 
 exit 0

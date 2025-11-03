@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -74,6 +74,7 @@
    FreeBSD:
    x86    eax +4   +8   +12  +16  +20  +24  +28  +32  edx:eax, eflags.c
    amd64  rax rdi  rsi  rdx  rcx  r8   r9   +8   +16  rdx:rax, rflags.c
+   arm64  x8  x0   x1   x2   x3   x4   x5   x6   x7   x0:x1, nzcv.c
 
    On s390x the svc instruction is used for system calls. The system call
    number is encoded in the instruction (8 bit immediate field). Since Linux
@@ -302,18 +303,20 @@ UWord ML_(do_syscall_for_client_WRK)( Word syscallno,
                                       Word sigsetSzB );
 #elif defined(VGO_freebsd)
 extern
-UWord ML_(do_syscall_for_client_WRK)( Word syscallno,
-                                      void* guest_state,
-                                      const vki_sigset_t *syscall_mask,
-                                      const vki_sigset_t *restore_mask,
-                                      Word sigsetSzB );
+UWord ML_(do_syscall_for_client_WRK)(Word syscallno,
+                                     void* guest_state,
+                                     const vki_sigset_t *syscall_mask,
+                                     const vki_sigset_t *restore_mask,
+                                     Word sigsetSzB,
+                                     UChar *cflag);
 #elif defined(VGO_darwin)
 extern
 UWord ML_(do_syscall_for_client_unix_WRK)( Word syscallno,
                                            void* guest_state,
                                            const vki_sigset_t *syscall_mask,
                                            const vki_sigset_t *restore_mask,
-                                           Word sigsetSzB ); /* unused */
+                                           Word sigsetSzB, /* unused */
+                                           UChar* cflag );
 extern
 UWord ML_(do_syscall_for_client_mach_WRK)( Word syscallno,
                                            void* guest_state,
@@ -357,6 +360,7 @@ void do_syscall_for_client ( Int syscallno,
          );
 #  elif defined(VGO_freebsd)
    Word real_syscallno;
+   UChar cflag;
    VG_(sigemptyset)(&saved);
    if (tst->arch.vex.guest_SC_CLASS == VG_FREEBSD_SYSCALL0)
       real_syscallno = __NR_syscall;
@@ -366,15 +370,37 @@ void do_syscall_for_client ( Int syscallno,
       real_syscallno = syscallno;
    err = ML_(do_syscall_for_client_WRK)(
             real_syscallno, &tst->arch.vex,
-            syscall_mask, &saved, sizeof(vki_sigset_t)
+            syscall_mask, &saved, sizeof(vki_sigset_t),
+            &cflag
          );
+   /* Save the carry flag. */
+#  if defined(VGP_amd64_freebsd)
+   LibVEX_GuestAMD64_put_rflag_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_arm64_freebsd)
+   LibVEX_GuestARM64_put_nzcv_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_x86_freebsd)
+   LibVEX_GuestX86_put_eflag_c(cflag, &tst->arch.vex);
+#  else
+#    error "Unknown platform"
+#  endif
 #  elif defined(VGO_darwin)
+   UChar cflag;
    switch (VG_DARWIN_SYSNO_CLASS(syscallno)) {
       case VG_DARWIN_SYSCALL_CLASS_UNIX:
          err = ML_(do_syscall_for_client_unix_WRK)(
-                  VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex,
-                  syscall_mask, &saved, 0/*unused:sigsetSzB*/
+                  VG_DARWIN_SYSNO_FOR_KERNEL(syscallno), &tst->arch.vex, 
+                  syscall_mask, &saved, 0/*unused:sigsetSzB*/, &cflag
                );
+         /* Save the carry flag. */
+#  if defined(VGP_amd64_darwin)
+         LibVEX_GuestAMD64_put_rflag_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_arm64_darwin)
+         LibVEX_GuestARM64_put_nzcv_c(cflag, &tst->arch.vex);
+#  elif defined(VGP_x86_darwin)
+         LibVEX_GuestX86_put_eflag_c(cflag, &tst->arch.vex);
+#  else
+#    error "Unknown platform"
+#  endif
          break;
       case VG_DARWIN_SYSCALL_CLASS_MACH:
          err = ML_(do_syscall_for_client_mach_WRK)(
@@ -3451,18 +3477,6 @@ VG_(fixup_guest_state_after_syscall_interrupted)( ThreadId tid,
 #  else
 #    error "Unknown OS"
 #  endif
-
-#if defined(VGO_freebsd) || defined(VGO_darwin)
-  if (outside_range)
-  {
-     if (th_regs->vex.guest_SETC)
-     {
-        outside_range = False;
-        in_complete_to_committed = True;
-     }
-  }
-#endif
-
 
    /* Figure out what the state of the syscall was by examining the
       (real) IP at the time of the signal, and act accordingly. */

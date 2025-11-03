@@ -1,3 +1,4 @@
 prog: sh-mem-vec128
 args: -q
-vgopts: --partial-loads-ok=no
+vgopts: --partial-loads-ok=no -q
+stderr_filter: filter_malloc_zone

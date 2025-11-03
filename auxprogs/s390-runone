@@ -56,7 +56,8 @@ Usage:  s390-runone [options] FILE
      --template   Write template
      --build      Build executable from C file
      --insn INSN  Add INSN to template
-     --arch ARCH  Passed as -march=ARCH to GCC
+     --arch ARCH  Passed as -march=ARCH to the compiler
+     --cc COMP    Use COMP as compiler
      --help       Write this text
 
    FILE  is mandatory with --build
@@ -73,12 +74,14 @@ sub main {
     my $help     = 0;
     my $insn     = "";
     my $arch     = "arch14";
+    my $cc       = "gcc";
 
     GetOptions("template|t" => sub { $template = 1; $build = 0; },
                "build|b"    => sub { $template = 0; $build = 1; },
                "help|h"     => \$help,
                "insn|i=s"   => \$insn,
-               "arch|a=s"   => \$arch
+               "arch|a=s"   => \$arch,
+               "cc=s"       => \$cc
         ) or usage();
 
     usage() if ($help);
@@ -96,7 +99,7 @@ sub main {
     if ($template) {
         write_template($file, $insn);
     } elsif ($build) {
-        $rc = build_exe($file, $arch);
+        $rc = build_exe($file, $arch, $cc);
     } else {
         print "Nothing happens\n";
     }
@@ -138,7 +141,7 @@ END2
 
 sub build_exe
 {
-    my ($file, $arch) = @_;
+    my ($file, $arch, $cc) = @_;
 
     my $base = `basename "$file" .c`;
     chomp($base);
@@ -146,9 +149,9 @@ sub build_exe
     my $exe  = "$base";
 
 # Compile the testprogram to assembler
-    my $stderr = `gcc -S -fno-ident -march=$arch  $file 2>&1`;
+    my $stderr = `$cc -S -fno-ident -march=$arch  $file 2>&1`;
     if ($? != 0) {
-        error("GCC: Compilation failed\n    $stderr");
+        error("$cc: Compilation failed\n    $stderr");
         return 1;
     }
     `mv "$asm" "$asm.orig"`;     # save before massaging
@@ -166,7 +169,7 @@ sub build_exe
     open(IN, "$asm.orig") || fatal("Cannot open '$file': $!\n");
     while (my $line = <IN>) {
         chomp($line);
-        next if ($line =~ /^#/);     # comment
+        next if ($line =~ /^\s*#/);  # comment
         next if ($line =~ /\.cfi_/); # cfi stuff
         if ($in_main == 0) {
             $in_main = 1 if ($line =~ /^main:/);
@@ -192,12 +195,12 @@ sub build_exe
     close(OUT);
 
     # Assemble file and link to executable
-    my $gcc = "gcc -static -Wa,--fatal-warnings -Wl,--build-id=none"
+    my $ccc = "$cc -static -Wa,--fatal-warnings -Wl,--build-id=none"
             . " -nodefaultlibs -nostartfiles";
-    $stderr = `$gcc "$asm" -o "$exe" 2>&1`;
+    $stderr = `$ccc "$asm" -o "$exe" 2>&1`;
 
     if ($? != 0) {
-        error("GCC: Linking executable failed");
+        error("$cc: Linking executable failed");
         for my $line (split /\n/,$stderr) {
             print STDERR "$line\n" if ($line !~ /treating warnings as errors/);
         }

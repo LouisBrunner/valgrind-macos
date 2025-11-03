@@ -10,7 +10,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -1447,6 +1447,7 @@ void do_multi_mode(int check_trials, int in_port)
 #define QENVIRONMENTUNSET "QEnvironmentUnset"
 #define QSETWORKINGDIR "QSetWorkingDir"
 #define QTSTATUS "qTStatus"
+#define QEXECANDARGS "qExecAndArgs"
 
        if (strncmp(QSUPPORTED, buf, strlen(QSUPPORTED)) == 0) {
           DEBUG(1, "CASE %s\n", QSUPPORTED);
@@ -1698,6 +1699,10 @@ void do_multi_mode(int check_trials, int in_port)
           DEBUG(1, "Got qfThreadInfo\n");
           /* There are no threads yet, reply 'l' end of list. */
           send_packet ("l", noackmode);
+       } else if (strcmp(QEXECANDARGS, buf) == 0) {
+          DEBUG(1, "Got qExecAndArgs\n");
+          /* We don't have any.  */
+          send_packet ("U", noackmode);
        } else if (buf[0] != '\0') {
           // We didn't understand.
           DEBUG(1, "Unknown packet received: '%s'\n", buf);
@@ -2123,7 +2128,11 @@ void usage(void)
 "     gdbserver has not processed a command after number seconds\n"
 "  --multi start in extended-remote mode, wait for gdb to tell us what to run\n"
 "   --valgrind, pass the path to valgrind to use. If not specified, the system valgrind will be launched.\n"
-"   --vargs everything that follows is an argument for valgrind.\n"
+"   --vargs Additional valgrind tool options (must be used with --multi).\n"
+"           Everything following --vargs is passed to valgrind as tool options\n"
+"           (like -q, --leak-check=full, --tool=helgrind, etc.). The program\n"
+"           executable and its arguments are specified separately by GDB and\n"
+"           should NOT be included here.\n"
 "  -l  arg tells to show the list of running Valgrind gdbserver and then exit.\n"
 "  -T  arg tells to add timestamps to vgdb information messages.\n"
 "  -D  arg tells to show shared mem status and then exit.\n"

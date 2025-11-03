@@ -2,4 +2,4 @@
 
 ./filter_xml "$@" |
 
-sed -e '/<leak_summary>...<\/leak_summary>/,+1d'
+sed '/<leak_summary>...<\/leak_summary>/{N;s/\n//;};/<leak_summary>...<\/leak_summary>/d'

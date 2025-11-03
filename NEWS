@@ -1,4 +1,4 @@
-Release 3.26.0 (?? Oct 2025)
+Release 3.27.0 (?? Apr 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -10,9 +10,85 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* ================== PLATFORM CHANGES =================
+
+
+* ==================== TOOL CHANGES ===================
+
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+413369  unhandled amd64-darwin syscall: unix:151 (getpgid)
+487055  memcheck/tests/x86-linux/scalar fails running in Docker
+511329  Darwin and FreeBSD: Move setting of carry flag out of
+        ML_(do_syscall_for_client_WRK)
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed above.
+
+(3.27.0.RC1: ?? Apr 2025)
+
+
+Release 3.26.0 (24 Oct 2025)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
+AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
+X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+
+* ==================== CORE CHANGES ===================
+
+* Upgrade to the GNU General Public License version 3.
+
+* Control building documentation. When using make dist set the
+  Makefile BUILD_DOCS to none, all or html. none, does not build any
+  documentation.  all, builds all documentation. html, builds HTML
+  docs but skips building PDFs. See also README_DEVELOPERS.
+
 * New VEX API function LibVEX_set_VexControl
 
 * The deprecated IROps: Iop_Clz32/64 and Iop_Ctz32/64 have been removed
+
+* The Linux Test Project (LTP) integration has been updated to
+  v20250930. The test output has been made compatible with bunsen.
+  Various issues with the linux syscall wrappers have been fixed.
+
+  New Linux syscall wrappers for: cachestat, futex_waitv, listmount,
+  mount_setattr, mseal, quotactl_fd, remap_file_pages, setdomainname,
+  statmount, swapoff, swapon, sysfs and ustat.
+
+* --modify-fds=yes has been added. It acts like --modify-fds=high (the
+  highest available file descriptor is returned first) except when
+  when the lowers stdin/stdout/stderr (file descriptors 0, 1, 2) are
+  available. With --modify-fds=yes 0, 1 or 2 are always returned first
+  when still available before higher file descriptor numbers are.
+
+* With --xml=yes log output protocol 6 is now always used (unlike
+  protocol 5 which was only used with--track-fds). The main difference
+  is that the xml output now contains error summaries. See also
+  xml-output-protocol6.txt.
+
+* Add "bad" option for --track-fds. When --track-fds=bad is specified,
+  do not produce errors about unclosed file descriptors at program
+  exit. Only produce errors for bad file descriptor usage, either
+  double close or use of file descriptor that is (no longer) valid.
+
+* vgdb will now handle the qExecAndArgs packet.
+
+* DWARF inlined subroutine handling has been rewritten to work cross
+  compile units. This should get rid of backtraces with
+  "UnknownInlinedFun".
 
 * ================== PLATFORM CHANGES =================
 
@@ -93,6 +169,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 369030  Wrap linux syscall: 171 (setdomainname)
 388526  Inconsistent severity in message text: "WARNING: Serious error"
 418756  MAP_FIXED_NOREPLACE mmap flag unsupported
+454276  Some IPC syscalls is missing for x86 linux
+476465  AArch64 ARMv8.3 LDAPR/LDAPRH/LDAPRB instructions not supported
 493430  Review all syscalls that use or return (new) file descriptors
 493434  Add --track-fds=bad mode (no "leak" tracking)
 501741  syscall cachestat not wrapped
@@ -132,6 +210,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506970  mmap needs an EBADF fd_allowed check
 507033  Remove deprecated Iop_Clz32/64 and Iop_Ctz32/64
 507173  s390x: Crash when constant folding is disabled
+507188  memcheck with track-fds=yes on x86 with popen: Assertion
 507720  Review syscalls returning file descriptors (other platforms)
 507721  Wire up illumos and Solaris mallinfo
 507853  faccessat and faccessat2 should handle AT_FDCWD and absolute paths
@@ -167,10 +246,15 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509642  Add missing ppc64-linux syswraps
 509643  Add missing s390x-linux syswraps
 510169  Update the LTP version in valgrind testsuite to 20250930
+510292  Silence false positive failure of LTP munmap01
+510436  Don't warn about fcntl F_GETFD with --track-fds
+510694  Handle qExecAndArgs remote protocol packet
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
+
+(3.26.0.RC1: 17 Oct 2025)
 
 Release 3.25.0 (25 Apr 2025)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

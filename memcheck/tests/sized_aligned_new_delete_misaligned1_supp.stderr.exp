@@ -4,7 +4,7 @@ used_suppression:      1 scalar delete sized aligned bad alignment sized_aligned
 used_suppression:      1 scalar delete sized aligned alignment mismatch sized_aligned_new_delete_misaligned1_supp.supp
 used_suppression:      1 array delete aligned nothrow bad alignment sized_aligned_new_delete_misaligned1_supp.supp
 used_suppression:      1 array new aligned nothrow bad alignment sized_aligned_new_delete_misaligned1_supp.supp
-used_suppression:      2 scalar delete aligned nothow bad alignment sized_aligned_new_delete_misaligned1_supp.supp
+used_suppression:      2 scalar delete aligned nothrow bad alignment sized_aligned_new_delete_misaligned1_supp.supp
 used_suppression:      2 scalar new aligned nothrow bad alignment sized_aligned_new_delete_misaligned1_supp.supp
 used_suppression:      1 array delete aligned alignment mismatch sized_aligned_new_delete_misaligned1_supp.supp
 used_suppression:      1 array delete aligned bad alignment sized_aligned_new_delete_misaligned1_supp.supp

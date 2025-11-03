@@ -7,7 +7,7 @@
 
    Notice that the following BSD-style license applies to this one
    file (monitor_example.cpp) only.  The rest of Valgrind is licensed
-   under the terms of the GNU General Public License, version 2,
+   under the terms of the GNU General Public License, version 3,
    unless otherwise indicated.  See the COPYING file in the source
    distribution for details.
 
@@ -53,7 +53,7 @@
 
    Notice that the above BSD-style license applies to this one
    file (monitor_example.cpp) only.  The rest of Valgrind is licensed
-   under the terms of the GNU General Public License, version 2,
+   under the terms of the GNU General Public License, version 3,
    unless otherwise indicated.  See the COPYING file in the source
    distribution for details.
 

@@ -11628,28 +11628,43 @@ PRE(kdebug_trace64)
 PRE(syscall)
 {
   PRINT("syscall(%ld, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx) = ",
-        SARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
-  const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG1));
-  if (sys) {
-    // shift the arguments
-    RegWord tmp = ARG1;
-    ARG1 = ARG2;
-    ARG2 = ARG3;
-    ARG3 = ARG4;
-    ARG4 = ARG5;
-    ARG5 = ARG6;
-    ARG6 = ARG7;
-    ARG7 = ARG8;
-    ARG8 = tmp;
-    sys->before(tid, layout, arrghs, status, flags);
-  } else {
-    SET_STATUS_Failure( VKI_ENOSYS );
-  }
+        VG_DARWIN_SYSNO_INDEX(SARG1), ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
+  PRE_REG_READ1(int, "", int, syscallno); // FIXME: no name to match the regtests
+
+  RegWord back_sysno = SYSNO;
+  RegWord back_arg1 = ARG1;
+  RegWord actual_sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG1);
+
+  const SyscallTableEntry* sys = VG_(get_syscall_entry)(actual_sysno);
+
+  // shift the arguments
+  SYSNO = actual_sysno;
+  ARG1 = ARG2;
+  ARG2 = ARG3;
+  ARG3 = ARG4;
+  ARG4 = ARG5;
+  ARG5 = ARG6;
+  ARG6 = ARG7;
+  ARG7 = ARG8;
+  ARG8 = 0;
+
+  sys->before(tid, layout, arrghs, status, flags);
+
+  // deshift the arguments
+  ARG8 = ARG7;
+  ARG7 = ARG6;
+  ARG6 = ARG5;
+  ARG5 = ARG4;
+  ARG4 = ARG3;
+  ARG3 = ARG2;
+  ARG2 = ARG1;
+  ARG1 = back_arg1;
+  SYSNO = back_sysno;
 }
 
 POST(syscall)
 {
-  const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG8));
+  const SyscallTableEntry* sys = VG_(get_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG1));
   if (sys && sys->after) {
     sys->after(tid, arrghs, status);
   }

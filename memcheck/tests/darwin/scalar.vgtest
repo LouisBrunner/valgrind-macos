@@ -1,3 +1,4 @@
 prog: scalar
 vgopts: -q --error-limit=no
 args: < scalar.c
+stderr_filter: filter_scalar

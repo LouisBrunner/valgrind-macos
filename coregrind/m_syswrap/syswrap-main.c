@@ -2204,7 +2204,7 @@ void bad_before ( ThreadId              tid,
 static SyscallTableEntry bad_sys =
    { bad_before, NULL };
 
-static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
+const SyscallTableEntry* VG_(get_syscall_entry) ( Int syscallno )
 {
    const SyscallTableEntry* sys = NULL;
 
@@ -2450,7 +2450,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    /* Fetch the syscall's handlers.  If no handlers exist for this
       syscall, we are given dummy handlers which force an immediate
       return with ENOSYS. */
-   ent = get_syscall_entry(sysno);
+   ent = VG_(get_syscall_entry)(sysno);
 
    /* Fetch the layout information, which tells us where in the guest
       state the syscall args reside.  This is a platform-dependent
@@ -2755,7 +2755,7 @@ void VG_(post_syscall) (ThreadId tid)
       - it exists, and
       - Success or (Failure and PostOnFail is set)
    */
-   ent = get_syscall_entry(sysno);
+   ent = VG_(get_syscall_entry)(sysno);
    if (ent->after
        && ((!sr_isError(sci->status.sres))
            || (sr_isError(sci->status.sres)

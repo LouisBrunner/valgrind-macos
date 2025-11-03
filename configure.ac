@@ -495,6 +495,7 @@ case "${host_os}" in
       AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
       AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
       AC_ADD_DARWIN_VERS([DARWIN_15_04], 150400, [DARWIN_VERS value for macOS 15.4])
+      AC_ADD_DARWIN_VERS([DARWIN_26_00], 260000, [DARWIN_VERS value for macOS / iOS 26])
 
       AC_DEFINE([SDK_10_XX], 101200, [SDK_VERS value for Xcode SDK earlier than macOS 10.13 / iOS 11])
       AC_DEFINE([SDK_10_13], 101300, [SDK_VERS value for Xcode SDK macOS 10.13 / iOS 11])
@@ -636,9 +637,14 @@ case "${host_os}" in
           DARWIN_VERS=$DARWIN_15_04
           DARWIN_KERNEL_VERS=24
           ;;
+        macosx-25.*|iphoneos-26.*)
+          AC_MSG_RESULT([Darwin 25.x (${kernel}) / macOS & iOS 26 (Tahoe)])
+          DARWIN_VERS=$DARWIN_26_00
+          DARWIN_KERNEL_VERS=25
+          ;;
         *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-24.x (Mac OS X 10.6-10.11, macOS 10.12-15.0 and iOS 4-18)])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-15.0, iOS 4-18 and macOS/iOS 26)])
           ;;
       esac
 
@@ -732,7 +738,7 @@ case "${host_os}" in
           ;;
         *)
           AC_MSG_RESULT([unsupported (${sdkversion})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-24.x (Mac OS X 10.6-11 and macOS 10.12-15.0 and iOS 4-18)])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-15.0, iOS 4-18 and macOS/iOS 26)])
           ;;
       esac
       AC_MSG_RESULT([${sdkversion}])

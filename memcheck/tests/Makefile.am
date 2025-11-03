@@ -461,7 +461,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stdout.exp-darwin vcpu_fnfns.stdout.exp-solaris \
 	vcpu_fnfns.stdout.exp-illumos \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
-	wcpncpy.stderr.exp wcpncpy.vgtest \
+	wcpncpy1.stderr.exp wcpncpy1.vgtest \
 	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
 	wcscat.vgtest wcscat.stderr.exp wcscat.stdout.exp \
 	wcsncpy.vgtest wcsncpy.stderr.exp \
@@ -656,7 +656,7 @@ check_PROGRAMS += threadname
 endif
 
 if HAVE_WCPNCPY
-check_PROGRAMS += wcpncpy
+check_PROGRAMS += wcpncpy1
 endif
 
 # are there still pre-C99 C compilers?

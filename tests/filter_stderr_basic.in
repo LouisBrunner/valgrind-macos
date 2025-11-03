@@ -61,7 +61,8 @@ $SED "/sh: [1-9][0-9]*: \(Memory fault\|Alarm call\|Terminated\|Killed\|Abort\)/
 
 # Translate intercepted glibc functions back to their canonical name
 perl -p -e "s/: memcpy\@\@?GLIBC_[.1-9]+ \(vg_replace_strmem.c:.*?\)/: memcpy \(vg_replace_strmem.c:...\)/" |
-$SED -e "s/: \(__GI_\|__\|\)\(memcmp\|memcpy\|strcpy\|strncpy\|strchr\|strrchr\|wcpncpy\)\(\|_sse4_1\|_sse42\|_sse2_unaligned\|_sse2\) (vg_replace_strmem.c:/: \2 (vg_replace_strmem.c:/" |
+$SED -e "s/: \(__GI_\|__\|\)\(memcmp\|memcpy\|strcpy\|strncpy\|strchr\|strrchr\)\(\|_sse4_1\|_sse42\|_sse2_unaligned\|_sse2\) (vg_replace_strmem.c:/: \2 (vg_replace_strmem.c:/" |
+$SED -e "s/: wcpncpy \(vg_replace_strmem.c:.*?\)/: wcpncpy \(vg_replace_strmem.c:...\)/" |
 
 # Remove any ": dumping core" message as the user might have a
 # limit set that prevents the core dump

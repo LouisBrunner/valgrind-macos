@@ -4,19 +4,20 @@ This repository contains a version of Valgrind including a few patches to improv
 
 ## Status
 
-| Version                     | x86 | amd64 | arm64  | ppc    |
-| --------------------------- | --- | ----- | ------ | ------ |
-| macOS 10.13 and earlier[^1] | ✅  | ✅    | -      | ❌[^3] |
-| macOS 10.14 (Mojave)        | ✅  | ✅    | -      | -      |
-| macOS 10.15 (Catalina)      | ✅  | ✅    | -      | -      |
-| macOS 11 (Big Sur)          | -   | ✅    | ~[^2]  | -      |
-| macOS 12 (Monterey)         | -   | ✅    | ~      | -      |
-| macOS 13 (Ventura)          | -   | ✅    | ~      | -      |
-| macOS 14 (Sonoma)           | -   | ✅    | ~      | -      |
-| macOS 15 (Sequoia)          | -   | ✅    | ~      | -      |
+| Version                     | x86 | amd64 | arm64 | ppc    |
+| --------------------------- | --- | ----- | ----- | ------ |
+| macOS 10.13 and earlier[^1] | ✅  | ✅    | -     | ❌[^3] |
+| macOS 10.14 (Mojave)        | ✅  | ✅    | -     | -      |
+| macOS 10.15 (Catalina)      | ✅  | ✅    | -     | -      |
+| macOS 11 (Big Sur)          | -   | ✅    | ✅    | -      |
+| macOS 12 (Monterey)         | -   | ✅    | ✅    | -      |
+| macOS 13 (Ventura)          | -   | ✅    | ✅    | -      |
+| macOS 14 (Sonoma)           | -   | ✅    | ✅    | -      |
+| macOS 15 (Sequoia)          | -   | ✅    | ~[^2] | -      |
+| macOS 26 (Tahoe)            | -   | ✅    | ✅    | -      |
 
 [^1]: Supported as part of upstream Valgrind.
-[^2]: arm64 is experimental ([#123](https://github.com/LouisBrunner/valgrind-macos/issues/123))
+[^2]: macOS 15 arm64 is experimental ([#123](https://github.com/LouisBrunner/valgrind-macos/issues/123))
 [^3]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
 
 Note that every version from macOS 10.12 onwards currently has the following issues:
@@ -76,27 +77,38 @@ Some tests are hanging and were therefore disabled on macOS:
 These errors seem to come from the CI environment itself (as they show with or without my changes).
 
 ```
-== 842 tests, 14 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
+== 857 tests, 20 stderr failures, 1 stdout failure, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
 none/tests/fdleak_cmsg                   (stderr)
 none/tests/fdleak_cmsg_supp              (stderr)
+none/tests/fdleak_cmsg_xml               (stderr)
 none/tests/fdleak_creat                  (stderr)
 none/tests/fdleak_creat_sup              (stderr)
+none/tests/fdleak_creat_xml              (stderr)
 none/tests/fdleak_dup                    (stderr)
 none/tests/fdleak_dup2                   (stderr)
+none/tests/fdleak_dup2_xml               (stderr)
+none/tests/fdleak_dup_xml                (stderr)
 none/tests/fdleak_fcntl                  (stderr)
+none/tests/fdleak_fcntl_xml              (stderr)
 none/tests/fdleak_ipv4                   (stderr)
 none/tests/fdleak_open                   (stderr)
 none/tests/fdleak_pipe                   (stderr)
 none/tests/fdleak_socketpair             (stderr)
-none/tests/file_dclose                   (stderr)
-none/tests/file_dclose_sup               (stderr)
-none/tests/socket_close                  (stderr)
+none/tests/linux/getdents_filter         (stdout)
+none/tests/rlimit64_nofile               (stderr)
+none/tests/rlimit_nofile                 (stderr)
+none/tests/track_high                    (stderr)
+none/tests/track_yes                     (stderr)
 ```
 
 should be (according to the official Fedora x86_64 builds)
 
 ```
-== 815 tests, 0 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
+== 835 tests, 4 stderr failures, 0 stdout failures, 0 stderrB failures, 0 stdoutB failures, 0 post failures ==
+memcheck/tests/descr_belowsp             (stderr)
+helgrind/tests/tc22_exit_w_lock          (stderr)
+drd/tests/std_thread2                    (stderr)
+drd/tests/tls_threads                    (stderr)
 ```
 
 See [here](https://builder.sourceware.org/buildbot/#/builders?tags=%2Bvalgrind) for details.
@@ -161,4 +173,4 @@ You can then add them to a new file, e.g. one called `my.supp`, replace the name
 
 ## Acknowledgements
 
-- [tyrael9](https://github.com/tyrael9): for their work around porting Valgrind to iOS armv7 which was used as part of the port to M1 (see [here](https://github.com/tyrael9/valgrind-ios))
+- [tyrael9](https://github.com/tyrael9): for their work around porting Valgrind to iOS armv7 which was used as part of the port to arm64 (see [here](https://github.com/tyrael9/valgrind-ios))

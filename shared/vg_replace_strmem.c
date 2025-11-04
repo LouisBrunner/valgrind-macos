@@ -2380,8 +2380,10 @@ static inline void my_exit ( int x )
       return NULL; \
  }
 
-#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_darwin) || defined(VGO_solaris)
+#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  MEMCCPY(VG_Z_LIBC_SONAME, memccpy)
+#elif defined(VGO_darwin)
+ MEMCCPY(libsystemZuplatformZddylib, _platform_memccpy)
 #endif
 
  /*---------------------- wcpncpy ----------------------*/

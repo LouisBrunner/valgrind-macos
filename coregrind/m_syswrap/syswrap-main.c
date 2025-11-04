@@ -1833,7 +1833,7 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    hardwired. */
 
 static
-void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
+void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_syscall )
 {
    VG_(bzero_inline)(layout, sizeof(*layout));
 
@@ -1894,27 +1894,57 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->s_arg8   = sizeof(UWord) * 8;
  
 #elif defined(VGP_amd64_freebsd)
-   layout->o_sysno  = OFFSET_amd64_RAX;
-   layout->o_arg1   = OFFSET_amd64_RDI;
-   layout->o_arg2   = OFFSET_amd64_RSI;
-   layout->o_arg3   = OFFSET_amd64_RDX;
-   layout->o_arg4   = OFFSET_amd64_R10;
-   layout->o_arg5   = OFFSET_amd64_R8;
-   layout->o_arg6   = OFFSET_amd64_R9;
-   layout->s_arg7   = sizeof(UWord) * 1;
-   layout->s_arg8   = sizeof(UWord) * 2;
-   layout->arg6_is_reg = True;
+   if (syscall_syscall)
+   {
+      layout->o_sysno  = OFFSET_amd64_RDI;
+      layout->o_arg1   = OFFSET_amd64_RSI;
+      layout->o_arg2   = OFFSET_amd64_RDX;
+      layout->o_arg3   = OFFSET_amd64_R10;
+      layout->o_arg4   = OFFSET_amd64_R8;
+      layout->o_arg5   = OFFSET_amd64_R9;
+      layout->s_arg6   = sizeof(UWord) * 1;
+      layout->s_arg7   = sizeof(UWord) * 2;
+      layout->s_arg8   = sizeof(UWord) * 3;
+      layout->arg6_is_reg = False;
+   }
+   else
+   {
+      layout->o_sysno  = OFFSET_amd64_RAX;
+      layout->o_arg1   = OFFSET_amd64_RDI;
+      layout->o_arg2   = OFFSET_amd64_RSI;
+      layout->o_arg3   = OFFSET_amd64_RDX;
+      layout->o_arg4   = OFFSET_amd64_R10;
+      layout->o_arg5   = OFFSET_amd64_R8;
+      layout->o_arg6   = OFFSET_amd64_R9;
+      layout->s_arg7   = sizeof(UWord) * 1;
+      layout->s_arg8   = sizeof(UWord) * 2;
+      layout->arg6_is_reg = True;
+   }
 
 #elif defined(VGP_arm64_freebsd)
-   layout->o_sysno  = OFFSET_arm64_X8;
-   layout->o_arg1   = OFFSET_arm64_X0;
-   layout->o_arg2   = OFFSET_arm64_X1;
-   layout->o_arg3   = OFFSET_arm64_X2;
-   layout->o_arg4   = OFFSET_arm64_X3;
-   layout->o_arg5   = OFFSET_arm64_X4;
-   layout->o_arg6   = OFFSET_arm64_X5;
-   layout->o_arg7   = OFFSET_arm64_X6;
-   layout->o_arg8   = OFFSET_arm64_X7;
+   if (syscall_syscall)
+   {
+      layout->o_sysno  = OFFSET_arm64_X8;
+      layout->o_arg1   = OFFSET_arm64_X0;
+      layout->o_arg2   = OFFSET_arm64_X1;
+      layout->o_arg3   = OFFSET_arm64_X2;
+      layout->o_arg4   = OFFSET_arm64_X3;
+      layout->o_arg5   = OFFSET_arm64_X4;
+      layout->o_arg6   = OFFSET_arm64_X5;
+      layout->o_arg7   = OFFSET_arm64_X6;
+      layout->o_arg8   = OFFSET_arm64_X7;
+   }
+   else
+   {
+      layout->o_sysno  = OFFSET_arm64_X0;
+      layout->o_arg1   = OFFSET_arm64_X1;
+      layout->o_arg2   = OFFSET_arm64_X2;
+      layout->o_arg3   = OFFSET_arm64_X3;
+      layout->o_arg4   = OFFSET_arm64_X4;
+      layout->o_arg5   = OFFSET_arm64_X5;
+      layout->o_arg6   = OFFSET_arm64_X6;
+      layout->o_arg7   = OFFSET_arm64_X7;
+   }
 
 #elif defined(VGP_arm_linux)
    layout->o_sysno  = OFFSET_arm_R7;
@@ -2043,36 +2073,6 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
 #  error "getSyscallLayout: unknown arch"
 #endif
 }
-
-#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
-static
-void getSyscallArgLayout_0_198 ( /*OUT*/SyscallArgLayout* layout )
-{
-#if defined(VGP_amd64_freebsd)
-   VG_(bzero_inline)(layout, sizeof(*layout));
-   layout->o_sysno  = OFFSET_amd64_RDI;
-   layout->o_arg1   = OFFSET_amd64_RSI;
-   layout->o_arg2   = OFFSET_amd64_RDX;
-   layout->o_arg3   = OFFSET_amd64_R10;
-   layout->o_arg4   = OFFSET_amd64_R8;
-   layout->o_arg5   = OFFSET_amd64_R9;
-   layout->s_arg6   = sizeof(UWord) * 1;
-   layout->s_arg7   = sizeof(UWord) * 2;
-   layout->s_arg8   = sizeof(UWord) * 3;
-   layout->arg6_is_reg = False;
-#else
-   layout->o_sysno  = OFFSET_arm64_X0;
-   layout->o_arg1   = OFFSET_arm64_X1;
-   layout->o_arg2   = OFFSET_arm64_X2;
-   layout->o_arg3   = OFFSET_arm64_X3;
-   layout->o_arg4   = OFFSET_arm64_X4;
-   layout->o_arg5   = OFFSET_arm64_X5;
-   layout->o_arg6   = OFFSET_arm64_X6;
-   layout->o_arg7   = OFFSET_arm64_X7;
-#endif
-}
-#endif
-
 
 /* ---------------------------------------------------------------------
    The main driver logic
@@ -2205,6 +2205,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    const SyscallTableEntry* ent;
    SyscallArgLayout         layout;
    SyscallInfo*             sci;
+   Bool                     syscall_syscall = False;
 
    ensure_initialised();
 
@@ -2362,21 +2363,11 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
       checks (PRE_REG_READ calls) know which bits of the guest state
       they need to inspect. */
 #if defined(VGP_amd64_freebsd) || defined (VGP_arm64_freebsd)
-   // PJF - somewhat unfortunate uglificaton of the code, but the current code handles two
-   // types of syscall with different register use. Mixing them up is not good.
-   // I've avoided modifying the existing function (I could have added
-   // a FreeBSD amd64-only flag to it for this purpose).
    if (sci->orig_args.klass == VG_FREEBSD_SYSCALL0 || sci->orig_args.klass == VG_FREEBSD_SYSCALL198) {
-       getSyscallArgLayout_0_198( &layout );
-    } else {
-#endif
-
-   getSyscallArgLayout( &layout );
-
-#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
+      syscall_syscall = True;
    }
 #endif
-
+   getSyscallArgLayout( &layout, syscall_syscall );
 
    /* Make sure the tmp signal mask matches the real signal mask;
       sigsuspend may change this. */

@@ -1279,10 +1279,17 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    if (uregs.x30 != 0 && uregs.x30 != uregs.pc && i < max_n_ips
       && fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
       && ((UWord*)uregs.x29)[1] != uregs.x30) {
-      ips[i] = uregs.x30 - 1;
-      if (sps) sps[i] = uregs.sp;
-      if (fps) fps[i] = uregs.x29;
-      i++;
+      DiEpoch ep = VG_(current_DiEpoch)();
+      const HChar *previous;
+      const HChar *potential;
+      if (VG_(get_fnname_raw)(ep, ips[i-1], &previous)
+        && VG_(get_fnname_raw)(ep, ips[i], &potential)
+        && !VG_STREQ(previous, potential)) {
+        ips[i] = uregs.x30 - 1;
+        if (sps) sps[i] = uregs.sp;
+        if (fps) fps[i] = uregs.x29;
+        i++;
+      }
    }
 #endif
 

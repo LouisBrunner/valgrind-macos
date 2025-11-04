@@ -507,6 +507,7 @@ case "${host_os}" in
       AC_DEFINE([SDK_13_0], 130000, [SDK_VERS value for Xcode SDK macOS 13.0 / iOS 16])
       AC_DEFINE([SDK_14_0], 140000, [SDK_VERS value for Xcode SDK macOS 14.0 / iOS 17])
       AC_DEFINE([SDK_15_0], 150000, [SDK_VERS value for Xcode SDK macOS 15.0 / iOS 18])
+      AC_DEFINE([SDK_26_0], 260000, [SDK_VERS value for Xcode SDK macOS / iOS 26])
 
       # Substitute the Xcode include path detected earlier
       AC_SUBST(SDK_INC_DIR, [$xcodedir_inc])
@@ -726,6 +727,9 @@ case "${host_os}" in
           ;;
         macosx-15.*|iphoneos-18.*)
           AC_DEFINE([SDK_VERS], SDK_15_0, [SDK version])
+          ;;
+        *-26.*)
+          AC_DEFINE([SDK_VERS], SDK_26_0, [SDK version])
           ;;
         legacy)
           AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])

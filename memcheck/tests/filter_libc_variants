@@ -2,4 +2,4 @@
 
 ./filter_stderr "$@" |
 
-sed 's/ _platform_memcmp / memcmp /;s/ bcmp / memcmp /'
+sed 's/ _platform_memcmp / memcmp /;s/ bcmp / memcmp /;s/ _platform_memccpy / memccpy /'

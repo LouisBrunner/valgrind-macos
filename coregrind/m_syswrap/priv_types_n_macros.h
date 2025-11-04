@@ -240,12 +240,9 @@ extern
 SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
 
 #elif defined(VGO_darwin)
-/* XXX: Darwin still uses the old scheme of exposing the table
-   array(s) and size(s) directly to syswrap-main.c.  This should be
-   fixed. */
 
-extern const SyscallTableEntry ML_(syscall_table)[];
-extern const UInt ML_(syscall_table_size);
+extern
+const SyscallTableEntry* ML_(get_darwin_syscall_entry)( UInt sysno );
 
 #elif defined(VGO_solaris)
 extern

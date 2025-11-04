@@ -2119,28 +2119,7 @@ static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
    sys = ML_(get_freebsd_syscall_entry)( syscallno );
 
 #  elif defined(VGO_darwin)
-   Int idx = VG_DARWIN_SYSNO_INDEX(syscallno);
-
-   switch (VG_DARWIN_SYSNO_CLASS(syscallno)) {
-   case VG_DARWIN_SYSCALL_CLASS_UNIX:
-      if (idx >= 0 && idx < ML_(syscall_table_size) &&
-          ML_(syscall_table)[idx].before != NULL)
-         sys = &ML_(syscall_table)[idx];
-         break;
-   case VG_DARWIN_SYSCALL_CLASS_MACH:
-      if (idx >= 0 && idx < ML_(mach_trap_table_size) &&
-          ML_(mach_trap_table)[idx].before != NULL)
-         sys = &ML_(mach_trap_table)[idx];
-         break;
-   case VG_DARWIN_SYSCALL_CLASS_MDEP:
-      if (idx >= 0 && idx < ML_(mdep_trap_table_size) &&
-          ML_(mdep_trap_table)[idx].before != NULL)
-         sys = &ML_(mdep_trap_table)[idx];
-         break;
-   default: 
-      vg_assert(0);
-      break;
-   }
+   sys = ML_(get_darwin_syscall_entry)( syscallno );
 
 #  elif defined(VGO_solaris)
    sys = ML_(get_solaris_syscall_entry)(syscallno);

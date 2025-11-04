@@ -247,11 +247,11 @@
 #else
 #  define  VG_Z_LIBC_SONAME  libcZdsoZa              // libc.so*
 #endif
-#elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
-#  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
+#elif defined(VGO_darwin)
 
-#elif defined(VGO_darwin) && (DARWIN_VERS == DARWIN_10_7 \
-                              || DARWIN_VERS == DARWIN_10_8)
+#if (DARWIN_VERS <= DARWIN_10_6)
+#  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
+#elif (DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8)
 #  define  VG_Z_LIBC_SONAME  libsystemZucZaZddylib   // libsystem_c*.dylib
    /* Note that the idea of a single name for the C library falls
       apart on more recent Darwins (10.8 and later) since the
@@ -260,13 +260,16 @@
       libsystem_platform.dylib.  This makes VG_Z_LIBC_SONAME somewhat useless
       at least inside vg_replace_strmem.c, and that hardwires some dylib
       names directly, for OSX 10.9. */
-
-#elif defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_10_9)
+#elif (DARWIN_VERS >= DARWIN_10_9)
 #  define  VG_Z_LIBC_SONAME  libsystemZumallocZddylib  // libsystem_malloc.dylib
+#endif
+
+/* Not tested on systems older than OSX 10.13 */
+#define VG_Z_LIBSYSTEM_C_SONAME libsystemZucZddylib
+#define VG_Z_LIBSYSTEM_PLATFORM_SONAME libsystemZuplatformZddylib
 
 #else
 #  error "Unknown platform"
-
 #endif
 
 /* --- Sonames of the GNU C++ library. --- */

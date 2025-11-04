@@ -495,6 +495,7 @@ case "${host_os}" in
       AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
       AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
       AC_ADD_DARWIN_VERS([DARWIN_15_04], 150400, [DARWIN_VERS value for macOS 15.4])
+      AC_ADD_DARWIN_VERS([DARWIN_26_00], 260000, [DARWIN_VERS value for macOS / iOS 26])
 
       AC_DEFINE([SDK_10_XX], 101200, [SDK_VERS value for Xcode SDK earlier than macOS 10.13 / iOS 11])
       AC_DEFINE([SDK_10_13], 101300, [SDK_VERS value for Xcode SDK macOS 10.13 / iOS 11])
@@ -506,6 +507,7 @@ case "${host_os}" in
       AC_DEFINE([SDK_13_0], 130000, [SDK_VERS value for Xcode SDK macOS 13.0 / iOS 16])
       AC_DEFINE([SDK_14_0], 140000, [SDK_VERS value for Xcode SDK macOS 14.0 / iOS 17])
       AC_DEFINE([SDK_15_0], 150000, [SDK_VERS value for Xcode SDK macOS 15.0 / iOS 18])
+      AC_DEFINE([SDK_26_0], 260000, [SDK_VERS value for Xcode SDK macOS / iOS 26])
 
       # Substitute the Xcode include path detected earlier
       AC_SUBST(SDK_INC_DIR, [$xcodedir_inc])
@@ -636,9 +638,14 @@ case "${host_os}" in
           DARWIN_VERS=$DARWIN_15_04
           DARWIN_KERNEL_VERS=24
           ;;
+        macosx-25.*|iphoneos-26.*)
+          AC_MSG_RESULT([Darwin 25.x (${kernel}) / macOS & iOS 26 (Tahoe)])
+          DARWIN_VERS=$DARWIN_26_00
+          DARWIN_KERNEL_VERS=25
+          ;;
         *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-24.x (Mac OS X 10.6-10.11, macOS 10.12-15.0 and iOS 4-18)])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-15.0, iOS 4-18 and macOS/iOS 26)])
           ;;
       esac
 
@@ -721,6 +728,9 @@ case "${host_os}" in
         macosx-15.*|iphoneos-18.*)
           AC_DEFINE([SDK_VERS], SDK_15_0, [SDK version])
           ;;
+        *-26.*)
+          AC_DEFINE([SDK_VERS], SDK_26_0, [SDK version])
+          ;;
         legacy)
           AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
           ;;
@@ -732,7 +742,7 @@ case "${host_os}" in
           ;;
         *)
           AC_MSG_RESULT([unsupported (${sdkversion})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-24.x (Mac OS X 10.6-11 and macOS 10.12-15.0 and iOS 4-18)])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-15.0, iOS 4-18 and macOS/iOS 26)])
           ;;
       esac
       AC_MSG_RESULT([${sdkversion}])
@@ -1066,9 +1076,9 @@ case "$ARCH_MAX-$VGCONF_OS" in
           AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
           AC_MSG_ERROR([32-bit build with Darwin arm64 (aach64) is unsupported])
         fi
-        if test x$I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER != xyes; then
+        if test x$I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER != xyes -a $DARWIN_VERS -ge $DARWIN_15_00 -a $DARWIN_VERS -lt $DARWIN_26_00; then
           AC_MSG_RESULT([no (${ARCH_MAX}-${VGCONF_OS})])
-          AC_MSG_ERROR([Valgrind support on Darwin arm64 is experimental and may crash or even damage your computer. Please refer to https://github.com/LouisBrunner/valgrind-macos/issues/123 for more details and use at your own risk.])
+          AC_MSG_ERROR([Valgrind support on macOS 15 arm64 is experimental and may crash or even damage your computer. Please refer to https://github.com/LouisBrunner/valgrind-macos/issues/123 for more details and use at your own risk.])
         fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
@@ -6047,8 +6057,8 @@ AC_CONFIG_FILES([
    include/valgrind.h
    docs/Makefile
    docs/xml/vg-entities.xml
-   tests/Makefile 
-   perf/Makefile 
+   tests/Makefile
+   perf/Makefile
    gdbserver_tests/Makefile
    gdbserver_tests/solaris/Makefile
    include/Makefile

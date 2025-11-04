@@ -1268,6 +1268,31 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    }
 #  endif
 
+   /* If we are recording a stack trace, we most likely failed,
+    * this will usually happen inside a syscall/platform func,
+    * which are usually stub jumped into through a br.
+    * This means normal x29 unwinding will usually miss at least the last frame.
+    * So it's messy but the easiest way to get a somewhat sane stack trace is to force x30 in there.
+    * This will probably create a lot of false positives but isn't that better that no stack trace at all?
+    */
+#  if defined(VGO_darwin)
+   if (uregs.x30 != 0 && uregs.x30 != uregs.pc && i < max_n_ips
+      && fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
+      && ((UWord*)uregs.x29)[1] != uregs.x30) {
+      DiEpoch ep = VG_(current_DiEpoch)();
+      const HChar *previous;
+      const HChar *potential;
+      if (VG_(get_fnname_raw)(ep, ips[i-1], &previous)
+        && VG_(get_fnname_raw)(ep, uregs.x30 - 1, &potential)
+        && !VG_STREQ(previous, potential)) {
+        ips[i] = uregs.x30 - 1;
+        if (sps) sps[i] = uregs.sp;
+        if (fps) fps[i] = uregs.x29;
+        i++;
+      }
+   }
+#endif
+
    /* Loop unwinding the stack, using CFI. */
    while (True) {
       Addr old_sp;

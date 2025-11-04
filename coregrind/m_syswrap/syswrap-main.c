@@ -861,26 +861,47 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    // no canonical->sysno adjustment needed
 
 #elif defined(VGP_arm64_darwin)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   UWord *stack = (UWord *)gst->guest_XSP;
+
    vg_assert(trc == VEX_TRC_JMP_SYS_SYSCALL || trc == VEX_TRC_JMP_SYS_INT128);
 
-   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
    canonical->sysno = gst->guest_X16;
-   if (canonical->sysno == __SYSNO_thread_set_tsd_base) {
-     canonical->sysno = __NR_thread_set_tsd_base;
-   } else if (canonical->sysno >= 0) {
-     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
+   if (canonical->sysno != VG_DARWIN_SYSNO_INDEX(__NR_syscall)) {
+      if (canonical->sysno == __SYSNO_thread_set_tsd_base) {
+        canonical->sysno = __NR_thread_set_tsd_base;
+      } else if (canonical->sysno >= 0) {
+        canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
+      } else {
+        canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);
+      }
+      canonical->arg1  = gst->guest_X0;
+      canonical->arg2  = gst->guest_X1;
+      canonical->arg3  = gst->guest_X2;
+      canonical->arg4  = gst->guest_X3;
+      canonical->arg5  = gst->guest_X4;
+      canonical->arg6  = gst->guest_X5;
+      canonical->arg7  = gst->guest_X6;
+      canonical->arg8  = gst->guest_X7;
+      canonical->arg9  = gst->guest_X8;
    } else {
-     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);
+     // same issues as for amd64 and x86
+     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(gst->guest_X0);
+     vg_assert(canonical->sysno != __NR_syscall);
+     canonical->arg1  = gst->guest_X1;
+     canonical->arg2  = gst->guest_X2;
+     canonical->arg3  = gst->guest_X3;
+     canonical->arg4  = gst->guest_X4;
+     canonical->arg5  = gst->guest_X5;
+     canonical->arg6  = gst->guest_X6;
+     canonical->arg7  = gst->guest_X7;
+     canonical->arg8  = gst->guest_X8;
+     canonical->arg9  = stack[1];
+
+     PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
+           VG_(getpid)(), /*tid,*/
+           VG_SYSNUM_STRING(canonical->sysno));
    }
-   canonical->arg1  = gst->guest_X0;
-   canonical->arg2  = gst->guest_X1;
-   canonical->arg3  = gst->guest_X2;
-   canonical->arg4  = gst->guest_X3;
-   canonical->arg5  = gst->guest_X4;
-   canonical->arg6  = gst->guest_X5;
-   canonical->arg7  = gst->guest_X6;
-   canonical->arg8  = gst->guest_X7;
-   canonical->arg9  = gst->guest_X8;
 
    // no canonical->sysno adjustment needed
 
@@ -2204,7 +2225,7 @@ void bad_before ( ThreadId              tid,
 static SyscallTableEntry bad_sys =
    { bad_before, NULL };
 
-const SyscallTableEntry* VG_(get_syscall_entry) ( Int syscallno )
+static const SyscallTableEntry* get_syscall_entry ( Int syscallno )
 {
    const SyscallTableEntry* sys = NULL;
 
@@ -2450,7 +2471,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    /* Fetch the syscall's handlers.  If no handlers exist for this
       syscall, we are given dummy handlers which force an immediate
       return with ENOSYS. */
-   ent = VG_(get_syscall_entry)(sysno);
+   ent = get_syscall_entry(sysno);
 
    /* Fetch the layout information, which tells us where in the guest
       state the syscall args reside.  This is a platform-dependent
@@ -2755,7 +2776,7 @@ void VG_(post_syscall) (ThreadId tid)
       - it exists, and
       - Success or (Failure and PostOnFail is set)
    */
-   ent = VG_(get_syscall_entry)(sysno);
+   ent = get_syscall_entry(sysno);
    if (ent->after
        && ((!sr_isError(sci->status.sres))
            || (sr_isError(sci->status.sres)

@@ -1283,7 +1283,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       const HChar *previous;
       const HChar *potential;
       if (VG_(get_fnname_raw)(ep, ips[i-1], &previous)
-        && VG_(get_fnname_raw)(ep, ips[i], &potential)
+        && VG_(get_fnname_raw)(ep, uregs.x30 - 1, &potential)
         && !VG_STREQ(previous, potential)) {
         ips[i] = uregs.x30 - 1;
         if (sps) sps[i] = uregs.sp;

@@ -23,7 +23,6 @@ This repository contains a version of Valgrind including a few patches to improv
 Note that every version from macOS 10.12 onwards currently has the following issues:
 
 - using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
-- drd crashes on 10.15 (probably onwards)
 
 ## Usage
 
@@ -68,7 +67,7 @@ brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 
 Some tests are hanging and were therefore disabled on macOS:
 
-- `memcheck/tests/sigaltstack` (arm64)
+- `memcheck/tests/sigaltstack` & `drd/tests/sigaltstack` (arm64)
 
 ### Linux (Ubuntu 24.04)
 

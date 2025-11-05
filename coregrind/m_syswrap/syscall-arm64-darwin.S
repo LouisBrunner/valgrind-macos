@@ -90,6 +90,7 @@
    stp  x23, x24, [sp, #-16]!
    stp  x21, x22, [sp, #-16]!
    stp  x19, x20, [sp, #-16]!
+   stp  x4,  x5,  [sp, #-16]!
    stp  x2,  x3,  [sp, #-16]!
    stp  x0,  x1,  [sp, #-16]!
 
@@ -156,6 +157,7 @@ L_$0_5:	/* now safe from signals */
   mov  x0, #0
   ldp  xzr, x1,  [sp], #16
   ldp  x2,  x3,  [sp], #16
+  ldp  x4,  x5,  [sp], #16
   ldp  x19, x20, [sp], #16
   ldp  x21, x22, [sp], #16
   ldp  x23, x24, [sp], #16
@@ -168,6 +170,7 @@ L_$0_7: /* Failure: return 0x8000 | error code */
   orr  x0, x0, #0x8000
   ldp  xzr, x1,  [sp], #16
   ldp  x2,  x3,  [sp], #16
+  ldp  x4,  x5,  [sp], #16
   ldp  x19, x20, [sp], #16
   ldp  x21, x22, [sp], #16
   ldp  x23, x24, [sp], #16

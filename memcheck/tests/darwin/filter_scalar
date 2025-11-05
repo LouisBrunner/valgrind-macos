@@ -1,0 +1,4 @@
+#! /bin/sh
+
+./filter_stderr |
+sed 's/arm64-darwin/amd64-darwin/'

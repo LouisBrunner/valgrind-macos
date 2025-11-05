@@ -61,6 +61,7 @@ typedef
       RegWord arg8;
 #if defined(VGO_darwin)
       RegWord arg9;
+      Bool is_syscall;
 #endif
 #if defined(VGO_freebsd)
       Word klass;
@@ -92,7 +93,15 @@ typedef
       // (which have o_arg field names) the o_arg value is the offset into
       // the vex register state.  For stack arguments (which have s_arg
       // field names), the s_arg value is the offset from the stack pointer.
+#     if defined(VGP_x86_darwin)
+      union {
+        Int o_sysno;
+        Int s_sysno;
+      };
+      Bool sysno_is_reg;
+      #else
       Int o_sysno;
+#     endif
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_ppc32_linux) \
          || defined(VGP_arm_linux) || defined(VGP_s390x_linux) \
@@ -124,7 +133,7 @@ typedef
       Int s_arg6;
       Int s_arg7;
       Int s_arg8;
-#     elif defined(VGP_amd64_freebsd)
+#     elif defined(VGP_amd64_freebsd) || defined(VGP_amd64_darwin)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;
@@ -167,7 +176,7 @@ typedef
       Int s_arg6;
       Int s_arg7;
       Int s_arg8;
-#     elif defined(VGP_amd64_darwin) || defined(VGP_amd64_solaris)
+#     elif defined(VGP_amd64_solaris)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;
@@ -186,6 +195,7 @@ typedef
       Int o_arg7;
       Int o_arg8;
       Int o_arg9;
+      Bool arg9_is_used;
 #     elif defined(VGP_mips64_linux)
       Int o_arg1;
       Int o_arg2;
@@ -499,7 +509,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA7(s,t,a) PSRAn(7,s,t,a)
 #  define PRA8(s,t,a) PSRAn(8,s,t,a)
 
-#elif defined(VGP_amd64_freebsd)
+#elif defined(VGP_amd64_freebsd) || defined(VGP_amd64_darwin)
    /* Up to 8 parameters, 6 in registers, 2 on the stack. */
    /* or 7 in registers and 3 on the stack */
 #  define PRA1(s,t,a) PRRAn(1,s,t,a)
@@ -539,7 +549,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA7(s,t,a) PSRAn(7,s,t,a)
 #  define PRA8(s,t,a) PSRAn(8,s,t,a)
 
-#elif defined(VGP_amd64_darwin) || defined(VGP_amd64_solaris)
+#elif defined(VGP_amd64_solaris)
    /* Up to 8 parameters, 6 in registers, 2 on the stack. */
 #  define PRA1(s,t,a) PRRAn(1,s,t,a)
 #  define PRA2(s,t,a) PRRAn(2,s,t,a)
@@ -560,7 +570,12 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA6(s,t,a) PRRAn(6,s,t,a)
 #  define PRA7(s,t,a) PRRAn(7,s,t,a)
 #  define PRA8(s,t,a) PRRAn(8,s,t,a)
-#  define PRA9(s,t,a) PRRAn(9,s,t,a)
+// FIXME: would be nice to flag if a call uses arg9 when it's not available
+#  define PRA9(s,t,a) \
+   do { \
+      if (layout->arg9_is_used) \
+         PRRAn(9,s,t,a); \
+   } while (0)
 
 #else
 #  error Unknown platform
@@ -568,9 +583,23 @@ static inline UWord getERR ( SyscallStatus* st ) {
 
 
 /* Tell the tool that the syscall number is being read. */
+#if defined(VGP_x86_darwin)
+#define PRRSN \
+  do { \
+    if (layout->sysno_is_reg) { \
+      VG_(tdict).track_pre_reg_read(Vg_CoreSysCall, tid, "(syscallno)", \
+                                    layout->o_sysno, sizeof(RegWord)); \
+    } else { \
+      Addr here = layout->s_sysno + VG_(get_SP)(tid); \
+      VG_(tdict).track_pre_mem_read(Vg_CoreSysCallArgInMem, tid, "(syscallno)",  \
+                                    here, sizeof(RegWord);                       \
+    } \
+  } while (0)
+#else
 #define PRRSN \
       VG_(tdict).track_pre_reg_read(Vg_CoreSysCall, tid, "(syscallno)", \
                                     layout->o_sysno, sizeof(RegWord));
+#endif
 
 /* REGISTER PARAMETERS */
 

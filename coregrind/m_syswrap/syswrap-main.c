@@ -782,13 +782,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = stack[6];
       canonical->arg7  = stack[7];
       canonical->arg8  = stack[8];
+      canonical->is_syscall = False;
    } else {
-      // GrP fixme hack handle syscall()
-      // GrP fixme what about __syscall() ?
       // stack[0] is return address
-      // DDD: the tool can't see that the params have been shifted!  Can
-      //      lead to incorrect checking, I think, because the PRRAn/PSARn
-      //      macros will mention the pre-shifted args.
       canonical->sysno = stack[1];
       vg_assert(canonical->sysno != 0);
       canonical->arg1  = stack[2];
@@ -799,6 +795,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = stack[7];
       canonical->arg7  = stack[8];
       canonical->arg8  = stack[9];
+      canonical->is_syscall = True;
 
       PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
             VG_(getpid)(), /*tid,*/
@@ -861,13 +858,9 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = gst->guest_R9;
       canonical->arg7  = stack[1];
       canonical->arg8  = stack[2];
+      canonical->is_syscall = False;
    } else {
-      // GrP fixme hack handle syscall()
-      // GrP fixme what about __syscall() ?
       // stack[0] is return address
-      // DDD: the tool can't see that the params have been shifted!  Can
-      //      lead to incorrect checking, I think, because the PRRAn/PSARn
-      //      macros will mention the pre-shifted args.
       canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(gst->guest_RDI);
       vg_assert(canonical->sysno != __NR_syscall);
       canonical->arg1  = gst->guest_RSI;
@@ -878,6 +871,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = stack[1];
       canonical->arg7  = stack[2];
       canonical->arg8  = stack[3];
+      canonical->is_syscall = True;
 
       PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
             VG_(getpid)(), /*tid,*/
@@ -887,26 +881,49 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
    // no canonical->sysno adjustment needed
 
 #elif defined(VGP_arm64_darwin)
+   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
+   UWord *stack = (UWord *)gst->guest_XSP;
+
    vg_assert(trc == VEX_TRC_JMP_SYS_SYSCALL || trc == VEX_TRC_JMP_SYS_INT128);
 
-   VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
    canonical->sysno = gst->guest_X16;
-   if (canonical->sysno == __SYSNO_thread_set_tsd_base) {
-     canonical->sysno = __NR_thread_set_tsd_base;
-   } else if (canonical->sysno >= 0) {
-     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
+   if (canonical->sysno != VG_DARWIN_SYSNO_INDEX(__NR_syscall)) {
+      if (canonical->sysno == __SYSNO_thread_set_tsd_base) {
+        canonical->sysno = __NR_thread_set_tsd_base;
+      } else if (canonical->sysno >= 0) {
+        canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
+      } else {
+        canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);
+      }
+      canonical->arg1  = gst->guest_X0;
+      canonical->arg2  = gst->guest_X1;
+      canonical->arg3  = gst->guest_X2;
+      canonical->arg4  = gst->guest_X3;
+      canonical->arg5  = gst->guest_X4;
+      canonical->arg6  = gst->guest_X5;
+      canonical->arg7  = gst->guest_X6;
+      canonical->arg8  = gst->guest_X7;
+      canonical->arg9  = gst->guest_X8;
+      canonical->is_syscall = False;
    } else {
-     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);
+     // same issues as for amd64 and x86
+     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(gst->guest_X0);
+     vg_assert(canonical->sysno != __NR_syscall);
+     canonical->arg1  = gst->guest_X1;
+     canonical->arg2  = gst->guest_X2;
+     canonical->arg3  = gst->guest_X3;
+     canonical->arg4  = gst->guest_X4;
+     canonical->arg5  = gst->guest_X5;
+     canonical->arg6  = gst->guest_X6;
+     canonical->arg7  = gst->guest_X7;
+     canonical->arg8  = gst->guest_X8;
+     canonical->arg9  = 0;
+     canonical->is_syscall = True;
+
+     PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
+           VG_(getpid)(), /*tid,*/
+           VG_SYSNUM_STRING(canonical->sysno));
    }
-   canonical->arg1  = gst->guest_X0;
-   canonical->arg2  = gst->guest_X1;
-   canonical->arg3  = gst->guest_X2;
-   canonical->arg4  = gst->guest_X3;
-   canonical->arg5  = gst->guest_X4;
-   canonical->arg6  = gst->guest_X5;
-   canonical->arg7  = gst->guest_X6;
-   canonical->arg8  = gst->guest_X7;
-   canonical->arg9  = gst->guest_X8;
 
    // no canonical->sysno adjustment needed
 
@@ -1943,9 +1960,10 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    hardwired. */
 
 static
-void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
+void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, Bool is_syscall )
 {
    VG_(bzero_inline)(layout, sizeof(*layout));
+   (void) is_syscall;
 
 #if defined(VGP_x86_linux)
    layout->o_sysno  = OFFSET_x86_EAX;
@@ -2082,39 +2100,83 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->o_arg8   = OFFSET_mips64_r11;
 
 #elif defined(VGP_x86_darwin)
-   layout->o_sysno  = OFFSET_x86_EAX;
-   // syscall parameters are on stack in C convention
-   layout->s_arg1   = sizeof(UWord) * 1;
-   layout->s_arg2   = sizeof(UWord) * 2;
-   layout->s_arg3   = sizeof(UWord) * 3;
-   layout->s_arg4   = sizeof(UWord) * 4;
-   layout->s_arg5   = sizeof(UWord) * 5;
-   layout->s_arg6   = sizeof(UWord) * 6;
-   layout->s_arg7   = sizeof(UWord) * 7;
-   layout->s_arg8   = sizeof(UWord) * 8;
+   if (is_syscall) {
+    // all syscall parameters are on the stack
+    layout->s_sysno  = sizeof(UWord) * 1;
+    layout->sysno_is_reg = False;
+    layout->s_arg1   = sizeof(UWord) * 2;
+    layout->s_arg2   = sizeof(UWord) * 3;
+    layout->s_arg3   = sizeof(UWord) * 4;
+    layout->s_arg4   = sizeof(UWord) * 5;
+    layout->s_arg5   = sizeof(UWord) * 6;
+    layout->s_arg6   = sizeof(UWord) * 7;
+    layout->s_arg7   = sizeof(UWord) * 8;
+    layout->s_arg8   = sizeof(UWord) * 9;
+   } else {
+    layout->o_sysno  = OFFSET_x86_EAX;
+    layout->sysno_is_reg = True;
+    // syscall parameters are on stack in C convention
+    layout->s_arg1   = sizeof(UWord) * 1;
+    layout->s_arg2   = sizeof(UWord) * 2;
+    layout->s_arg3   = sizeof(UWord) * 3;
+    layout->s_arg4   = sizeof(UWord) * 4;
+    layout->s_arg5   = sizeof(UWord) * 5;
+    layout->s_arg6   = sizeof(UWord) * 6;
+    layout->s_arg7   = sizeof(UWord) * 7;
+    layout->s_arg8   = sizeof(UWord) * 8;
+   }
 
 #elif defined(VGP_amd64_darwin)
-   layout->o_sysno  = OFFSET_amd64_RAX;
-   layout->o_arg1   = OFFSET_amd64_RDI;
-   layout->o_arg2   = OFFSET_amd64_RSI;
-   layout->o_arg3   = OFFSET_amd64_RDX;
-   layout->o_arg4   = OFFSET_amd64_RCX;
-   layout->o_arg5   = OFFSET_amd64_R8;
-   layout->o_arg6   = OFFSET_amd64_R9;
-   layout->s_arg7   = sizeof(UWord) * 1;
-   layout->s_arg8   = sizeof(UWord) * 2;
+   if (is_syscall) {
+    layout->o_sysno  = OFFSET_amd64_RDI;
+    layout->o_arg1   = OFFSET_amd64_RSI;
+    layout->o_arg2   = OFFSET_amd64_RDX;
+    layout->o_arg3   = OFFSET_amd64_R10;
+    layout->o_arg4   = OFFSET_amd64_R8;
+    layout->o_arg5   = OFFSET_amd64_R9;
+    layout->s_arg6   = sizeof(UWord) * 1;
+    layout->s_arg7   = sizeof(UWord) * 2;
+    layout->s_arg8   = sizeof(UWord) * 3;
+    layout->arg6_is_reg = False;
+   } else {
+    layout->o_sysno  = OFFSET_amd64_RAX;
+    layout->o_arg1   = OFFSET_amd64_RDI;
+    layout->o_arg2   = OFFSET_amd64_RSI;
+    layout->o_arg3   = OFFSET_amd64_RDX;
+    layout->o_arg4   = OFFSET_amd64_RCX;
+    layout->o_arg5   = OFFSET_amd64_R8;
+    layout->o_arg6   = OFFSET_amd64_R9;
+    layout->s_arg7   = sizeof(UWord) * 1;
+    layout->s_arg8   = sizeof(UWord) * 2;
+    layout->arg6_is_reg = True;
+   }
 
 #elif defined(VGP_arm64_darwin)
-   layout->o_sysno  = OFFSET_arm64_X16;
-   layout->o_arg1   = OFFSET_arm64_X0;
-   layout->o_arg2   = OFFSET_arm64_X1;
-   layout->o_arg3   = OFFSET_arm64_X2;
-   layout->o_arg4   = OFFSET_arm64_X3;
-   layout->o_arg5   = OFFSET_arm64_X4;
-   layout->o_arg6   = OFFSET_arm64_X5;
-   layout->o_arg7   = OFFSET_arm64_X6;
-   layout->o_arg8   = OFFSET_arm64_X7;
-   layout->o_arg9   = OFFSET_arm64_X8;
+   if (is_syscall) {
+    layout->o_sysno  = OFFSET_arm64_X0;
+    layout->o_arg1   = OFFSET_arm64_X1;
+    layout->o_arg2   = OFFSET_arm64_X2;
+    layout->o_arg3   = OFFSET_arm64_X3;
+    layout->o_arg4   = OFFSET_arm64_X4;
+    layout->o_arg5   = OFFSET_arm64_X5;
+    layout->o_arg6   = OFFSET_arm64_X6;
+    layout->o_arg7   = OFFSET_arm64_X7;
+    layout->o_arg8   = OFFSET_arm64_X8;
+    layout->o_arg9   = 0;
+    layout->arg9_is_used = False;
+   } else {
+    layout->o_sysno  = OFFSET_arm64_X16;
+    layout->o_arg1   = OFFSET_arm64_X0;
+    layout->o_arg2   = OFFSET_arm64_X1;
+    layout->o_arg3   = OFFSET_arm64_X2;
+    layout->o_arg4   = OFFSET_arm64_X3;
+    layout->o_arg5   = OFFSET_arm64_X4;
+    layout->o_arg6   = OFFSET_arm64_X5;
+    layout->o_arg7   = OFFSET_arm64_X6;
+    layout->o_arg8   = OFFSET_arm64_X7;
+    layout->o_arg9   = OFFSET_arm64_X8;
+    layout->arg9_is_used = True;
+   }
 
 #elif defined(VGP_s390x_linux)
    layout->o_sysno  = OFFSET_s390x_SYSNO;
@@ -2327,6 +2389,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    const SyscallTableEntry* ent;
    SyscallArgLayout         layout;
    SyscallInfo*             sci;
+   Bool                     syscall_syscall = False;
 
    ensure_initialised();
 
@@ -2493,7 +2556,11 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
     } else {
 #endif
 
-   getSyscallArgLayout( &layout );
+#if defined(VGO_darwin)
+   syscall_syscall = sci->orig_args.is_syscall;
+#endif
+
+   getSyscallArgLayout( &layout, syscall_syscall );
 
 #if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    }

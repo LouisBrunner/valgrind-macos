@@ -11620,45 +11620,6 @@ PRE(kdebug_trace64)
 
 
 /* ---------------------------------------------------------------------
- Added for arm64 (macOS 11 and onwards)
- ------------------------------------------------------------------ */
-
-#if defined(VGA_arm64)
-
-PRE(syscall)
-{
-  PRINT("syscall(%ld, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx, %#lx) = ",
-        SARG1, ARG2, ARG3, ARG4, ARG5, ARG6, ARG7, ARG8);
-  const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG1));
-  if (sys) {
-    // shift the arguments
-    RegWord tmp = ARG1;
-    ARG1 = ARG2;
-    ARG2 = ARG3;
-    ARG3 = ARG4;
-    ARG4 = ARG5;
-    ARG5 = ARG6;
-    ARG6 = ARG7;
-    ARG7 = ARG8;
-    ARG8 = tmp;
-    sys->before(tid, layout, arrghs, status, flags);
-  } else {
-    SET_STATUS_Failure( VKI_ENOSYS );
-  }
-}
-
-POST(syscall)
-{
-  const SyscallTableEntry* sys = ML_(get_darwin_syscall_entry)(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(ARG8));
-  if (sys && sys->after) {
-    sys->after(tid, arrghs, status);
-  }
-}
-
-#endif /* defined(VGA_arm64) */
-
-
-/* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
 
@@ -11682,11 +11643,7 @@ POST(syscall)
         XY : PRE and POST handlers
 */
 const SyscallTableEntry ML_(syscall_table)[] = {
-#if defined(VGA_arm64)
-   MACX_(__NR_syscall,     syscall),
-#else
-// _____(__NR_syscall),   // 0
-#endif
+// _____(__NR_syscall),   // 0, handled in syswrap-main.c (getSyscallArgsFromGuestState)
    MACX_(__NR_exit,        exit),
    GENX_(__NR_fork,        sys_fork),
    GENXY(__NR_read,        sys_read),

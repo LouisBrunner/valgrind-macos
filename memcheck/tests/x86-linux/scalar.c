@@ -33,6 +33,11 @@ int main(void)
    long  x0  = px[0];
    long  res;
 
+   int in_docker = 0;
+   if (access("/.dockerenv", F_OK) == 0) {
+      in_docker = 1;
+   }
+
    // All __NR_xxx numbers are taken from x86
 
    // __NR_restart_syscall 0  // XXX: not yet handled, perhaps should be...
@@ -191,7 +196,12 @@ int main(void)
 
    // __NR_nice 34
    GO(__NR_nice, "1s 0m");
-   SY(__NR_nice, x0); SUCC;
+   SY(__NR_nice, x0);
+   if (in_docker) {
+      FAIL;
+   } else {
+      SUCC;
+   }
 
    // __NR_ftime 35
    GO(__NR_ftime, "ni");

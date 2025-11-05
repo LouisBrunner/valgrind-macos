@@ -1,0 +1,35 @@
+#!/bin/awk -f
+
+# Filter out stuff like the following, since it is expected output for the munmap01 testcase:
+
+# munmap01: unempty log2.filtered:
+# ==1980523==
+# ==1980523== Process terminating with default action of signal 11 (SIGSEGV): dumping core
+# ==1980523==  Access not within mapped region at address 0x483F000
+# ==1980523==    at 0x401F9A: run (munmap01.c:46)
+# ==1980523==    by 0x40D42F: fork_testrun.isra.0 (tst_test.c:1669)
+# ==1980523==    by 0x40F894: tst_run_tcases (tst_test.c:2041)
+# ==1980523==    by 0x401DCD: main (tst_test.h:738)
+# ==1980523==  If you believe this happened as a result of a stack
+# ==1980523==  overflow in your program's main thread (unlikely but
+# ==1980523==  possible), you can try to increase the size of the
+# ==1980523==  main thread stack using the --main-stacksize= flag.
+# ==1980523==  The main thread stack size used in this run was 8388608.
+# ==1980540==
+# ==1980540== Process terminating with default action of signal 11 (SIGSEGV): dumping core
+# ==1980540==  Access not within mapped region at address 0x4840000
+# ==1980540==    at 0x401F9A: run (munmap01.c:46)
+# ==1980540==    by 0x40D42F: fork_testrun.isra.0 (tst_test.c:1669)
+# ==1980540==    by 0x40F894: tst_run_tcases (tst_test.c:2041)
+# ==1980540==    by 0x401DCD: main (tst_test.h:738)
+# ==1980540==  If you believe this happened as a result of a stack
+# ==1980540==  overflow in your program's main thread (unlikely but
+# ==1980540==  possible), you can try to increase the size of the
+# ==1980540==  main thread stack using the --main-stacksize= flag.
+# ==1980540==  The main thread stack size used in this run was 8388608.
+
+skip = 0
+/==[0-9][0-9]*==/ { skip = 1 }
+/Process terminating with default action of signal 11/ { skip = 1; skipblock=1 }
+/The main thread stack size used in this run was/ { skip = 1; skipblock=0 }
+!skip && !skipblock { print }

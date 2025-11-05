@@ -58,14 +58,14 @@ if BUILD_MPIWRAP_PRI
 libmpiwrap_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_SOURCES  = libmpiwrap.c
 libmpiwrap_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CPPFLAGS = -I$(top_builddir)/include
 libmpiwrap_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_CFLAGS   = \
-	$(CFLAGS_MPI) $(MPI_FLAG_M3264_PRI) -Wno-deprecated-declarations
+	$(CFLAGS_MPI) $(MPI_FLAG_M3264_PRI) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 libmpiwrap_@VGCONF_ARCH_PRI@_@VGCONF_OS@_so_LDFLAGS  = $(LDFLAGS_MPI)
 endif
 if BUILD_MPIWRAP_SEC
 libmpiwrap_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_SOURCES  = libmpiwrap.c
 libmpiwrap_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CPPFLAGS = -I$(top_builddir)/include
 libmpiwrap_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_CFLAGS   = \
-	$(CFLAGS_MPI) $(MPI_FLAG_M3264_SEC) -Wno-deprecated-declarations
+	$(CFLAGS_MPI) $(MPI_FLAG_M3264_SEC) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 libmpiwrap_@VGCONF_ARCH_SEC@_@VGCONF_OS@_so_LDFLAGS  = $(LDFLAGS_MPI)
 endif
 

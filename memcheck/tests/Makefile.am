@@ -95,7 +95,8 @@ dist_noinst_SCRIPTS = \
 	filter_stanza \
 	filter_stanza.awk \
 	filter_used_supp \
-	filter_stanza_and_size_t
+	filter_stanza_and_size_t \
+	filter_malloc_zone
 
 noinst_SCRIPTS = \
 	filter_dw4 \
@@ -167,6 +168,7 @@ EXTRA_DIST = \
 		cxx17_aligned_new.stdout.exp \
 	duplicate_align_size_errors.stderr.exp \
 		duplicate_align_size_errors.stderr.exp-memalign \
+		duplicate_align_size_errors.stderr.exp-darwin \
 		duplicate_align_size_errors.vgtest \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \
@@ -425,7 +427,6 @@ EXTRA_DIST = \
 	test-plo-no.vgtest test-plo-no.stdout.exp \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-le32-freebsd test-plo-no.stderr.exp-le64-freebsd \
-	    test-plo-no.stderr.exp-le32-freebsd-clang \
 	test-plo-yes.vgtest test-plo-yes.stdout.exp \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
@@ -460,7 +461,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stdout.exp-darwin vcpu_fnfns.stdout.exp-solaris \
 	vcpu_fnfns.stdout.exp-illumos \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
-	wcpncpy.stderr.exp wcpncpy.vgtest \
+	wcpncpy1.stderr.exp wcpncpy1.vgtest \
 	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
 	wcscat.vgtest wcscat.stderr.exp wcscat.stdout.exp \
 	wcsncpy.vgtest wcsncpy.stderr.exp \
@@ -655,11 +656,7 @@ check_PROGRAMS += threadname
 endif
 
 if HAVE_WCPNCPY
-check_PROGRAMS += wcpncpy
-endif
-
-if HAVE_WCPNCPY
-check_PROGRAMS += wcpncpy
+check_PROGRAMS += wcpncpy1
 endif
 
 # are there still pre-C99 C compilers?
@@ -695,17 +692,18 @@ leak_cpp_interior_SOURCES	= leak_cpp_interior.cpp
 # we are actually testing for at runtime.
 accounting_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 badfree_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
+brk2_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 bug155125_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNUSED_RESULT@ @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 bug472219_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 calloc_overflow_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@
 malloc_usable_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_UNINITIALIZED@
-mallinfo_CFLAGS		= $(AM_CFLAGS) -Wno-deprecated-declarations
+mallinfo_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 if VGCONF_OS_IS_SOLARIS
 mallinfo_LDADD = -lmalloc
 endif
-mallinfo2_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
+mallinfo2_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 malloc3_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_ALLOC_SIZE_LARGER_THAN@ @FLAG_W_NO_ALLOC_SIZE@
-sbfragment_CFLAGS	= $(AM_CFLAGS) -Wno-deprecated-declarations
+sbfragment_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 if VGCONF_OS_IS_SOLARIS
 sbfragment_LDADD = -lmalloc
 endif
@@ -745,7 +743,7 @@ endif
 demangle_SOURCES = demangle.cpp
 demangle_rust_SOURCES = demangle-rust.c
 demangle_rust_CFLAGS	= $(AM_CFLAGS) @FLAG_W_NO_USE_AFTER_FREE@
-dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section
+dw4_CFLAGS		= $(AM_CFLAGS) -gdwarf-4 -fdebug-types-section @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 
 descr_belowsp_LDADD     = -lpthread
 err_disable3_LDADD 	= -lpthread

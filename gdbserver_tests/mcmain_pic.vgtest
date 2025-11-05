@@ -8,6 +8,7 @@ prog: main_pic
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcmain_pic
 stdout_filter: filter_gdb
 stderr_filter: filter_memcheck_monitor
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ./main_pic
 stdinB: mcmain_pic.stdinB.gdb

@@ -16,10 +16,10 @@ AC_PREREQ(2.69)
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [26])
+m4_define([v_minor_ver], [27])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
-m4_define([v_rel_date], ["?? Oct 2025"])
+m4_define([v_rel_date], ["?? Apr 2026"])
 m4_define([v_version],
 	  m4_if(v_suffix_ver, [],
 		[v_major_ver.v_minor_ver.v_micro_ver],
@@ -2462,25 +2462,6 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAVE_NR_IO_PGETEVENTS, [test x$ac_have_nr_io_pgetevents = xyes])
 
-safe_LIBS="$LIBS"
-LIBS="-laio"
-AC_MSG_CHECKING([for libaio])
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <libaio.h>
-]], [[
-io_context_t ctx;
-io_submit(ctx, 1, NULL);
-]])], [
-ac_have_libaio=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_libaio=no
-AC_MSG_RESULT([no])
-])
-
-AM_CONDITIONAL(HAVE_LIBAIO, [test x$ac_have_libaio = xyes])
-LIBS=$safe_LIBS
-
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------
@@ -2901,6 +2882,7 @@ AC_GCC_WARNING_SUBST_NO([deprecated], [FLAG_W_NO_DEPRECATED])
 # OK for 32 and 64 bit
 AC_GCC_WARNING_SUBST_NO([alloc-size-larger-than=18446744073709551615], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
 AC_GCC_WARNING_SUBST_NO([alloc-size], [FLAG_W_NO_ALLOC_SIZE])
+AC_GCC_WARNING_SUBST_NO([deprecated-declarations], [FLAG_W_NO_DEPRECATED_DECLARATIONS])
 
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
@@ -3649,8 +3631,8 @@ AM_CONDITIONAL(BUILD_FMA4_TESTS, test x$ac_have_as_vfmaddpd = xyes)
 AC_MSG_CHECKING([if x86/amd64 assembler supports 'lzcnt'])
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  do {
-      __asm__ __volatile__("lzcnt %%rax,%%rax" : : : "rax");
+  do { 		 
+      __asm__ __volatile__("lzcnt %%eax,%%eax" : : : "eax");
   } while (0)
 ]])], [
   ac_have_as_lzcnt=yes
@@ -5687,6 +5669,28 @@ CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_OPENMP], [test x$ac_have_openmp = xyes])
 
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_primary"
+safe_LIBS="$LIBS"
+LIBS="-laio"
+AC_MSG_CHECKING([for libaio])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#include <libaio.h>
+]], [[
+io_context_t ctx;
+io_submit(ctx, 1, NULL);
+]])], [
+ac_have_libaio=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_libaio=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_LIBAIO, [test x$ac_have_libaio = xyes])
+LIBS=$safe_LIBS
+CFLAGS=$safe_CFLAGS
+
 
 # Check for __builtin_popcount
 AC_MSG_CHECKING([for __builtin_popcount()])
@@ -5853,6 +5857,8 @@ AM_CONDITIONAL([HAVE_OPENAT2],
 
 # check for crypto
 
+safe_CFLAGS=$CFLAGS
+CFLAGS="$mflag_primary"
 safe_LIBS="$LIBS"
 LIBS="-lcrypto"
 AC_MSG_CHECKING([if platform has openssl crypto])
@@ -5869,6 +5875,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   AC_MSG_RESULT([no])
 ])
 LIBS=$safe_LIBS
+CFLAGS=$safe_CFLAGS
 
 AM_CONDITIONAL([HAVE_OPENSSL],
                [test x$ac_have_openssl = xyes])

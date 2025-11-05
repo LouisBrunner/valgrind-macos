@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr filter_malloc_zone filter_pcmpgt
 
 INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
 

@@ -1,13 +1,13 @@
 Invalid read of size 4
    ...
  Address 0x........ is 4 bytes inside a block of size 5 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
+   at 0x........: posix_memalign (vg_replace_malloc.c:...)
    ...
 
 Invalid read of size 4
    ...
  Address 0x........ is 4 bytes inside a block of size 5 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
+   at 0x........: posix_memalign (vg_replace_malloc.c:...)
    ...
 
 Invalid read of size 4

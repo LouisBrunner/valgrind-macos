@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -31,7 +31,9 @@
 //
 //   ANSI C Library for maintenance of AVL Balanced Trees
 //   (C) 2000 Daniel Nagy, Budapest University of Technology and Economics
-//   Released under GNU General Public License (GPL) version 2
+//   Released under GNU General Public License (GPL) version 2+
+//
+//   See also coregrind/m_wordfm.c which has the full (license) history.
 //----------------------------------------------------------------------
 
 // This file implements a generic ordered set using an AVL tree.

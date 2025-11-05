@@ -10,6 +10,7 @@ vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mc
 prereq: test -e gdb -a -f gdb.step && ! ../tests/os_test darwin
 # filter_gdb to replace pid and Thread numbers in the output of the program:
 stderr_filter: filter_gdb
+envB: LC_ALL=C
 progB: gdb
 argsB:  --quiet -l 60 --nx 1>&2 ./sleepers
 stdinB: mcinfcallWSRU.stdinB.gdb

@@ -15,3 +15,6 @@ AM_CXXFLAGS  += @FLAG_M32@ $(FLAG_MMMX) $(FLAG_MSSE)
 AM_CCASFLAGS += @FLAG_M32@
 
 fpu_28_108_SOURCES	= fpu-28-108.S
+
+# Avoid linker warnings
+fpu_28_108_LDFLAGS = @FLAG_NO_PIE@

@@ -462,6 +462,7 @@ resolv_CFLAGS		= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS
 resolv_CFLAGS		+= -U_REENTRANT
 endif
+semlimit_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 semlimit_LDADD		= -lpthread
 sha1_test_CFLAGS	= $(AM_CFLAGS)
 if VGCONF_OS_IS_SOLARIS

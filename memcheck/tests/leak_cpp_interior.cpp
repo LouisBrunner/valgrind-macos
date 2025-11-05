@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include "../memcheck.h"
+#include "leak.h"
 // Derived from test provided by Timur Iskhodzhanov (bug 280271)
 
 class MyClass
@@ -132,6 +133,7 @@ void doit(void)
 int main() {
 
    doit();
+   CLEAR_CALLER_SAVED_REGS;
    (void) VALGRIND_MONITOR_COMMAND("v.set log_output");
 
    fprintf(stderr, "VALGRIND_DO_LEAK_CHECK\n");

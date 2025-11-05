@@ -5,6 +5,7 @@ vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mc
 stdout_filter: filter_make_empty
 stderr_filter: filter_make_empty
 prereq: test -e gdb.eval
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ./t
 stdinB: mcvabits.stdinB.gdb

@@ -1924,6 +1924,17 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_s
 #elif defined(VGP_arm64_freebsd)
    if (syscall_syscall)
    {
+      layout->o_sysno  = OFFSET_arm64_X0;
+      layout->o_arg1   = OFFSET_arm64_X1;
+      layout->o_arg2   = OFFSET_arm64_X2;
+      layout->o_arg3   = OFFSET_arm64_X3;
+      layout->o_arg4   = OFFSET_arm64_X4;
+      layout->o_arg5   = OFFSET_arm64_X5;
+      layout->o_arg6   = OFFSET_arm64_X6;
+      layout->o_arg7   = OFFSET_arm64_X7;
+   }
+   else
+   {
       layout->o_sysno  = OFFSET_arm64_X8;
       layout->o_arg1   = OFFSET_arm64_X0;
       layout->o_arg2   = OFFSET_arm64_X1;
@@ -1933,17 +1944,6 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_s
       layout->o_arg6   = OFFSET_arm64_X5;
       layout->o_arg7   = OFFSET_arm64_X6;
       layout->o_arg8   = OFFSET_arm64_X7;
-   }
-   else
-   {
-      layout->o_sysno  = OFFSET_arm64_X0;
-      layout->o_arg1   = OFFSET_arm64_X1;
-      layout->o_arg2   = OFFSET_arm64_X2;
-      layout->o_arg3   = OFFSET_arm64_X3;
-      layout->o_arg4   = OFFSET_arm64_X4;
-      layout->o_arg5   = OFFSET_arm64_X5;
-      layout->o_arg6   = OFFSET_arm64_X6;
-      layout->o_arg7   = OFFSET_arm64_X7;
    }
 
 #elif defined(VGP_arm_linux)

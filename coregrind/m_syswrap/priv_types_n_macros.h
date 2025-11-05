@@ -570,10 +570,11 @@ static inline UWord getERR ( SyscallStatus* st ) {
 #  define PRA6(s,t,a) PRRAn(6,s,t,a)
 #  define PRA7(s,t,a) PRRAn(7,s,t,a)
 #  define PRA8(s,t,a) PRRAn(8,s,t,a)
+// FIXME: would be nice to flag if a call uses arg9 when it's not available
 #  define PRA9(s,t,a) \
    do { \
       if (layout->arg9_is_used) \
-         PRRAn(9,s,t,a); \ // FIXME: would be nice to flag if a call uses arg9 when it's not available
+         PRRAn(9,s,t,a); \
    } while (0)
 
 #else

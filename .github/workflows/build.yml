@@ -7,6 +7,8 @@ on:
 
 env:
   TEST_FOLDER: .github/test
+  # required for macOS 15
+  I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER: yes
 
 jobs:
   build_various_platforms:
@@ -16,17 +18,16 @@ jobs:
         os:
           - ubuntu-24.04
           # x86_64
-          # FIXME: none at the moment, hopefully Github will add macos-26-intel
-          - macos-15-intel # crashes, is it actually virtualized on top of arm64?
+          - macos-15-intel
           # arm64
           - macos-14
-          - macos-15 # unsupported
+          - macos-15
           - macos-26
         include:
           - run-tests: true
-          - os: macos-15
+          - os: macos-15 # fully unsupported
             run-tests: false
-          - os: macos-15-intel
+          - os: macos-15-intel # crashes, is it actually virtualized on top of arm64?
             run-tests: false
 
     runs-on: ${{ matrix.os }}

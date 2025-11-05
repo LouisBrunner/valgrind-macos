@@ -756,6 +756,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = stack[6];
       canonical->arg7  = stack[7];
       canonical->arg8  = stack[8];
+      canonical->is_syscall = False;
    } else {
       // GrP fixme hack handle syscall()
       // GrP fixme what about __syscall() ?
@@ -773,6 +774,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = stack[7];
       canonical->arg7  = stack[8];
       canonical->arg8  = stack[9];
+      canonical->is_syscall = True;
 
       PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
             VG_(getpid)(), /*tid,*/
@@ -835,6 +837,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = gst->guest_R9;
       canonical->arg7  = stack[1];
       canonical->arg8  = stack[2];
+      canonical->is_syscall = False;
    } else {
       // GrP fixme hack handle syscall()
       // GrP fixme what about __syscall() ?
@@ -852,6 +855,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg6  = stack[1];
       canonical->arg7  = stack[2];
       canonical->arg8  = stack[3];
+      canonical->is_syscall = True;
 
       PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
             VG_(getpid)(), /*tid,*/
@@ -884,6 +888,7 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->arg7  = gst->guest_X6;
       canonical->arg8  = gst->guest_X7;
       canonical->arg9  = gst->guest_X8;
+      canonical->is_syscall = False;
    } else {
      // same issues as for amd64 and x86
      canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(gst->guest_X0);
@@ -896,7 +901,8 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
      canonical->arg6  = gst->guest_X6;
      canonical->arg7  = gst->guest_X7;
      canonical->arg8  = gst->guest_X8;
-     canonical->arg9  = stack[1];
+     canonical->arg9  = 0;
+     canonical->is_syscall = True;
 
      PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
            VG_(getpid)(), /*tid,*/
@@ -1938,9 +1944,10 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
    hardwired. */
 
 static
-void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
+void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, Bool is_syscall )
 {
    VG_(bzero_inline)(layout, sizeof(*layout));
+   (void) is_syscall;
 
 #if defined(VGP_x86_linux)
    layout->o_sysno  = OFFSET_x86_EAX;
@@ -2100,16 +2107,29 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout )
    layout->s_arg8   = sizeof(UWord) * 2;
 
 #elif defined(VGP_arm64_darwin)
-   layout->o_sysno  = OFFSET_arm64_X16;
-   layout->o_arg1   = OFFSET_arm64_X0;
-   layout->o_arg2   = OFFSET_arm64_X1;
-   layout->o_arg3   = OFFSET_arm64_X2;
-   layout->o_arg4   = OFFSET_arm64_X3;
-   layout->o_arg5   = OFFSET_arm64_X4;
-   layout->o_arg6   = OFFSET_arm64_X5;
-   layout->o_arg7   = OFFSET_arm64_X6;
-   layout->o_arg8   = OFFSET_arm64_X7;
-   layout->o_arg9   = OFFSET_arm64_X8;
+   if (is_syscall) {
+    layout->o_sysno  = OFFSET_arm64_X0;
+    layout->o_arg1   = OFFSET_arm64_X1;
+    layout->o_arg2   = OFFSET_arm64_X2;
+    layout->o_arg3   = OFFSET_arm64_X3;
+    layout->o_arg4   = OFFSET_arm64_X4;
+    layout->o_arg5   = OFFSET_arm64_X5;
+    layout->o_arg6   = OFFSET_arm64_X6;
+    layout->o_arg7   = OFFSET_arm64_X7;
+    layout->o_arg8   = OFFSET_arm64_X8;
+    layout->o_arg9   = 0;
+   } else {
+    layout->o_sysno  = OFFSET_arm64_X16;
+    layout->o_arg1   = OFFSET_arm64_X0;
+    layout->o_arg2   = OFFSET_arm64_X1;
+    layout->o_arg3   = OFFSET_arm64_X2;
+    layout->o_arg4   = OFFSET_arm64_X3;
+    layout->o_arg5   = OFFSET_arm64_X4;
+    layout->o_arg6   = OFFSET_arm64_X5;
+    layout->o_arg7   = OFFSET_arm64_X6;
+    layout->o_arg8   = OFFSET_arm64_X7;
+    layout->o_arg9   = OFFSET_arm64_X8;
+   }
 
 #elif defined(VGP_s390x_linux)
    layout->o_sysno  = OFFSET_s390x_SYSNO;
@@ -2322,6 +2342,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    const SyscallTableEntry* ent;
    SyscallArgLayout         layout;
    SyscallInfo*             sci;
+   Bool                     syscall_syscall = False;
 
    ensure_initialised();
 
@@ -2488,7 +2509,11 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
     } else {
 #endif
 
-   getSyscallArgLayout( &layout );
+#if defined(VGO_darwin)
+   syscall_syscall = sci->orig_args.is_syscall;
+#endif
+
+   getSyscallArgLayout( &layout, syscall_syscall );
 
 #if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    }

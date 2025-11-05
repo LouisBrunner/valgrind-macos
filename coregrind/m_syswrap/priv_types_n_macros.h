@@ -61,6 +61,7 @@ typedef
       RegWord arg8;
 #if defined(VGO_darwin)
       RegWord arg9;
+      Bool is_syscall;
 #endif
 #if defined(VGO_freebsd)
       Word klass;

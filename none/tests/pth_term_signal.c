@@ -69,6 +69,8 @@ int main(int argc, char **argv)
     if ( ! childpid)
         childprocess();
 
+    sleep(1);
+
     if (kill(childpid, SIGTERM))
     {
         fprintf(stderr, "Error line %u\n", __LINE__);

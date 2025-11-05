@@ -442,6 +442,8 @@ static void unimplemented ( const HChar* str )
 
 #define OFFB_NRADDR    offsetof(VexGuestAMD64State,guest_NRADDR)
 
+#define OFFB_IP_AT_SYSCALL offsetof(VexGuestAMD64State,guest_IP_AT_SYSCALL)
+
 
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
@@ -21818,6 +21820,8 @@ Long dis_ESC_0F (
       /* It's important that all guest state is up-to-date
          at this point.  So we declare an end-of-block here, which
          forces any cached guest state to be flushed. */
+      stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+                        mkU64(guest_RIP_curr_instr) ) );
       jmp_lit(dres, Ijk_Sys_syscall, guest_RIP_next_assumed);
       vassert(dres->whatNext == Dis_StopHere);
       DIP("syscall\n");

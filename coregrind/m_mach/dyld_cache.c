@@ -266,6 +266,10 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
   ULong res = 0;
   SizeT len = 0;
 
+  if (VG_(strstr)(path, "/PrivateFrameworks/") != NULL) {
+    return 0;
+  }
+
   // If not init'd, there is no point trying
   if (dyld_cache.header == NULL) {
     return 0;

@@ -1053,7 +1053,11 @@ UInt VG_(read_millisecond_timer) ( void )
      struct vki_timeval tv_now = { 0, 0 };
      res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
      vg_assert(! sr_isError(res));
+#  if defined(VGA_arm64)
+     now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
+#  else
      now = sr_Res(res) * 1000000ULL + sr_ResHI(res);
+#  endif
    }
 
 #  else

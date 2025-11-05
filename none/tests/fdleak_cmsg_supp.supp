@@ -97,7 +97,7 @@
 {
    sup10
    CoreError:FdNotClosed
-   fun:__so_accept
+   fun:*_accept
    fun:accept
    fun:server
    fun:main

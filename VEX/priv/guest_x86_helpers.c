@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -2913,8 +2913,6 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
    vex_state->guest_NRADDR   = 0;
    vex_state->guest_SC_CLASS = 0;
    vex_state->guest_IP_AT_SYSCALL = 0;
-
-   vex_state->guest_SETC = 0;
 
    vex_state->padding1 = 0;
    vex_state->padding2 = 0;

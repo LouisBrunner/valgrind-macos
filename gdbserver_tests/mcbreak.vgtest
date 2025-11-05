@@ -5,6 +5,7 @@ prog: t
 vgopts: --tool=memcheck --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-mcbreak
 stdout_filter: filter_gdb
 stderr_filter: filter_make_empty
+envB: LC_ALL=C
 progB: gdb
 argsB:  --quiet -l 60 --nx ./t
 stdinB: mcbreak.stdinB.gdb

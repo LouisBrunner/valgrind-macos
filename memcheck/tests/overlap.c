@@ -42,16 +42,16 @@ int main(void)
    memcpy(x, x+20, 21);    // overlap
 
    strncpy(x+20, x, 20);    // ok
-   strncpy(x+20, x, 21);    // overlap
+   (strncpy)(x+20, x, 21);    // overlap
    strncpy(x, x+20, 20);    // ok
-   strncpy(x, x+20, 21);    // overlap
+   (strncpy)(x, x+20, 21);    // overlap
    
    x[39] = '\0';
    strcpy(x, x+20);    // ok
 
    x[39] = 39;
    x[40] = '\0';
-   strcpy(x, x+20);    // overlap
+   (strcpy)(x, x+20);    // overlap
 
    x[19] = '\0';
    strcpy(x+20, x);    // ok
@@ -109,8 +109,8 @@ int main(void)
       always run forever, I think... */
 
    for ( i = 0; i < 2; i++) 
-      strncat(a+20, a, 21);    // run twice to check 2nd error isn't shown
-   strncat(a, a+20, 21);
+      (strncat)(a+20, a, 21);    // run twice to check 2nd error isn't shown
+   (strncat)(a, a+20, 21);
 
    /* This is ok, but once gave a warning when strncpy() was wrong,
       and used 'n' for the length, even when the src was shorter than 'n' */

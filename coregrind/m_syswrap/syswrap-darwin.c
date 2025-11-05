@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -11777,7 +11777,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setgroups),   // 80
    GENX_(__NR_getpgrp,     sys_getpgrp),
    GENX_(__NR_setpgid,     sys_setpgid),
-   GENXY(__NR_setitimer,   sys_setitimer),
+   GENXY(__NR_setitimer,   sys_setitimer), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(84)),    // old wait
 // _____(__NR_swapon),
    GENXY(__NR_getitimer,   sys_getitimer),
@@ -11844,12 +11844,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_setsid,      sys_setsid),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(148)),   // old setquota
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(149)),   // old qquota
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(150)),   // old getsockname
-// _____(__NR_getpgid),
-// _____(__NR_setprivexec),
-   GENXY(__NR_pread,       sys_pread64),
-   GENX_(__NR_pwrite,      sys_pwrite64),
-// _____(__NR_nfssvc),
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(150)),   // old getsockname 
+   GENX_(__NR_getpgid,     sys_getpgid),
+// _____(__NR_setprivexec), 
+   GENXY(__NR_pread,       sys_pread64), 
+   GENX_(__NR_pwrite,      sys_pwrite64), 
+// _____(__NR_nfssvc), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(156)),   // old getdirentries
    GENXY(__NR_statfs,      sys_statfs),
    GENXY(__NR_fstatfs,     sys_fstatfs),

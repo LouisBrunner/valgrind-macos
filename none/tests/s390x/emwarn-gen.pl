@@ -14,7 +14,7 @@ use Getopt::Long;
 
 my $rootdir  = get_rootdir();
 my $runone   = "$rootdir/auxprogs/s390-runone";
-my $valgrind = "$rootdir/coregrind/valgrind";
+my $valgrind = "$rootdir/vg-in-place";
 my $valargs  = "-q --tool=none --show-emwarns=yes";
 
 &main;

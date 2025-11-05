@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -801,8 +801,8 @@ extern UWord do_syscall_WRK (
           UWord a5,            /* %r9 */
           UWord a6,            /* 8(%rsp) */
           UWord a7,            /* 16(%rsp) */
-          UInt *flags,         /* 32(%rsp) */
-          UWord *rv2           /* 40(%rsp) */
+          UInt *flags,         /* 24(%rsp) */
+          UWord *rv2           /* 32(%rsp) */
        );
 asm(
 ".text\n"

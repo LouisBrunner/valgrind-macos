@@ -14,7 +14,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -1782,7 +1782,8 @@ UInt VG_(get_StackTrace_with_deltas)(
       Int i;
       Int start = 0;
       DiEpoch ep = VG_(current_DiEpoch)();
-      for (i = 0; i < found; i++) {
+      /* We want to keep at least one frame.  */
+      for (i = 0; i < found - 1; i++) {
          /* This could be made a little more efficient by doing the lookups
             for the symbols at glibc load time and check the address falls
             inside the function symbol address range here. But given this

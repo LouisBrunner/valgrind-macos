@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -3739,10 +3739,13 @@ void typeOfPrimop ( IROp op,
       case Iop_PwExtUSMulQAdd8x16:
          BINARY(Ity_V128,Ity_V128, Ity_V128);
 
-      case Iop_DivU128:  case Iop_DivS128:
+      /* Note: Semantically, operands and result of these IROps are 128-bit
+         integers (c.f. libvex_ir.h). The Ity_V128 type is used here to
+         indicate that those values require a vector register to be stored. */
+      case Iop_DivU128: case Iop_DivS128:
       case Iop_DivU128E: case Iop_DivS128E:
       case Iop_ModU128:  case Iop_ModS128:
-         BINARY(Ity_I128,Ity_I128, Ity_I128);
+         BINARY(Ity_V128,Ity_V128, Ity_V128);
 
       case Iop_2xMultU64Add128CarryOut:
       case Iop_Perm8x16x2:

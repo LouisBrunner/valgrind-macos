@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -1588,7 +1588,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 355
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 356
-//   LIN__(__NR_bpf,               sys_ni_syscall),     // 357
+   LINXY(__NR_bpf,               sys_bpf),              // 357
    LINX_(__NR_execveat,          sys_execveat),         // 358
    LINXY(__NR_socket,            sys_socket),           // 359
    LINXY(__NR_socketpair,        sys_socketpair),       // 360
@@ -1624,10 +1624,18 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_io_pgetevents,     sys_io_pgetevents),    // 385
    GENX_(__NR_rseq,              sys_ni_syscall),       // 386
 
+   LINX_(__NR_semget,            sys_semget),           // 393
+   LINXY(__NR_semctl,            sys_semctl),           // 394
+
    LINX_(__NR_shmget,            sys_shmget),           // 395
    LINX_(__NR_shmctl,            sys_shmctl),           // 396
    LINX_(__NR_shmat,             sys_shmat),            // 397
    LINX_(__NR_shmdt,             sys_shmdt),            // 398
+
+   LINX_(__NR_msgget,            sys_msgget),           // 399
+   LINX_(__NR_msgsnd,            sys_msgsnd),           // 400
+   LINXY(__NR_msgrcv,            sys_msgrcv),           // 401
+   LINXY(__NR_msgctl,            sys_msgctl),           // 402
 
    LINXY(__NR_clock_gettime64,   sys_clock_gettime64),  // 403
    LINX_(__NR_clock_settime64,   sys_clock_settime64),  // 404

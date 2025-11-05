@@ -42,3 +42,6 @@ scalar_openat2_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 endif
 scalar_supp_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 shm_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+
+# Avoid linker warnings
+int3_x86_LDFLAGS = @FLAG_NO_PIE@

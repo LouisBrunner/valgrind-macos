@@ -12,7 +12,7 @@
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
-  published by the Free Software Foundation; either version 2 of the
+  published by the Free Software Foundation; either version 3 of the
   License, or (at your option) any later version.
 
   This program is distributed in the hope that it will be useful, but
@@ -67,7 +67,8 @@
 				  void* guest_state,		// ebp+12
 				  const vki_sigset_t *sysmask,	// ebp+16
 				  const vki_sigset_t *postmask,	// ebp+20
-				  Int sigsetSzB)		// ebp+24
+				  Int sigsetSzB,		// ebp+24
+				  UChar *cflag)			// ebp+28
 
         Note that sigsetSzB is totally ignored (and irrelevant).
 */
@@ -145,22 +146,12 @@ L_$0_2:
 
 L_$0_3:	/* In the range [3, 4), the syscall result is in %eax and %edx and C,
            but hasn't been committed to the thread state. */
-	setc	0(%esp)				/* stash returned carry flag */
 	movl	12(%ebp), %ecx
 	movl	%eax, OFFSET_x86_EAX(%ecx)	/* save EAX to vex */
 	movl	%edx, OFFSET_x86_EDX(%ecx)	/* save EDX to vex */
 .if $0 == UNIX
-	/* UNIX: save carry flag to vex */
-	subl	$$12, %esp
-	movl	%ecx, 4(%esp)
-	movl	$$0, 0(%esp)
-	movb	12(%esp), %al
-	movb	%al, 0(%esp)
-        movl    $$1, OFFSET_x86_SETC(%ecx)
-	call	_LibVEX_GuestX86_put_eflag_c
-        movl	12(%ebp), %ecx
-        movl    $$0, OFFSET_x86_SETC(%ecx)
-	addl	$$12, %esp
+	movl	 28(%ebp), %ecx
+	setc	 0(%ecx)			/* save returned carry flag */
 .endif
 
 L_$0_4:	/* Re-block signals.  If eip is in [4,5), then the syscall is

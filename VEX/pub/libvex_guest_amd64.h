@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -131,10 +131,7 @@ typedef
 
       /* Emulation notes */
       UInt  guest_EMNOTE;
-      /* Used by Darwin and FreeBSD when setting the carry flag from
-       * ML_(do_syscall_for_client_WRK). Needed to determine how
-       * to restart interrupted syscalls. */
-      UInt guest_SETC;
+      UInt  pad2;
 
       /* Translation-invalidation area description.  Not used on amd64
          (there is no invalidate-icache insn), but needed so as to

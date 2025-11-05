@@ -78,3 +78,7 @@ pcmpgt_CXXFLAGS = $(AM_CXXFLAGS) $(FLAG_32ON64_GXX)
 else
 pcmpgt_CXXFLAGS = $(AM_CXXFLAGS)
 endif
+
+# Avoid linker warnings
+fxsave_LDFLAGS   = @FLAG_NO_PIE@
+tronical_LDFLAGS = @FLAG_NO_PIE@

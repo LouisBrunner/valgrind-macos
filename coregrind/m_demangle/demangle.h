@@ -1,9 +1,9 @@
 /* Defs for interface to demanglers.
-   Copyright (C) 1992-2024 Free Software Foundation, Inc.
+   Copyright (C) 1992-2025 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU Library General Public License
-   as published by the Free Software Foundation; either version 2, or
+   as published by the Free Software Foundation; either version 3, or
    (at your option) any later version.
 
    In addition to the permissions in the GNU Library General Public
@@ -437,6 +437,8 @@ enum demangle_component_type
   DEMANGLE_COMPONENT_DEFAULT_ARG,
   /* An unnamed type.  */
   DEMANGLE_COMPONENT_UNNAMED_TYPE,
+  /* An unnamed enum.  */
+  DEMANGLE_COMPONENT_UNNAMED_ENUM,
   /* A transactional clone.  This has one subtree, the encoding for
      which it is providing alternative linkage.  */
   DEMANGLE_COMPONENT_TRANSACTION_CLONE,

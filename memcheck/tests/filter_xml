@@ -35,8 +35,6 @@ perl -0 -p -e "s/<suppressed_contexts>.*<\/suppressed_contexts>/<suppressed_from
 # Chops everything within <stack>...</stack>.
 perl -p -0 -e 's/(<what>Syscall param[^\n]*\n)([^\n]*(stack|frame|ip|obj|fn|dir|file|line)[^\n]*\n)+/$1/gs' |
 
-sed "/<all_heap_blocks_freed>/,+1d"
-
 # Collected wisdom re Perl magic incantation:
 #
 # From: Tom Hughes
@@ -51,3 +49,6 @@ sed "/<all_heap_blocks_freed>/,+1d"
 # can do with the -0 switch.                                              
 #
 # Hence -0 -p.
+
+sed "/<all_heap_blocks_freed>/{N;s/\n//;};/<all_heap_blocks_freed>/d"
+

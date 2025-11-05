@@ -12,7 +12,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -4819,8 +4819,6 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
 #  undef AVXZERO
 
    vex_state->guest_EMNOTE = EmNote_NONE;
-
-   vex_state->guest_SETC = 0;
 
    /* These should not ever be either read or written, but we
       initialise them anyway. */

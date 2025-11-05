@@ -13,7 +13,7 @@
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
-   published by the Free Software Foundation; either version 2 of the
+   published by the Free Software Foundation; either version 3 of the
    License, or (at your option) any later version.
 
    This program is distributed in the hope that it will be useful, but
@@ -2370,9 +2370,10 @@ static Bool summarise_context(/*OUT*/Addr* base,
    *len = 0;
    VG_(bzero_inline)(si_m, sizeof(*si_m));
 
-   /*const*/ Bool is_s390x_linux = False;
 #  if defined(VGP_s390x_linux)
-   is_s390x_linux = True;
+   #define is_s390x_linux True
+#  else
+   #define is_s390x_linux False
 #  endif
 
    /* Guard against obviously stupid settings of the reg-rule stack

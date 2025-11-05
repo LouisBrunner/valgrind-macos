@@ -4,6 +4,7 @@ vgopts: --tool=helgrind --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-hg
 prereq: test -e gdb && test -e ../none/tests/tls && grep '^#define HAVE_TLS 1' ../config.h > /dev/null  && grep '^#define HAVE_DLINFO_RTLD_DI_TLS_MODID 1'  ../config.h > /dev/null
 stdout_filter: filter_make_empty
 stderr_filter: filter_make_empty
+envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ../none/tests/tls
 stdinB: hgtls.stdinB.gdb

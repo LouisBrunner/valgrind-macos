@@ -69,10 +69,10 @@ jobs:
         run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
 
       - name: run regression tests
-        if: ${{ matrix.run-tests == 'true' }}
+        if: ${{ matrix.run-tests }}
         run: XMLLINT=does_not_exist make regtest | tee ${{ env.TEST_FOLDER }}/raw-results.txt
       - name: skip regression tests
-        if: ${{ matrix.run-tests == 'false' }}
+        if: ${{ !matrix.run-tests }}
         run: touch ${{ env.TEST_FOLDER }}/raw-results.txt
 
       - name: process results

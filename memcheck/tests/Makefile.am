@@ -656,10 +656,6 @@ check_PROGRAMS += threadname
 endif
 
 if HAVE_WCPNCPY
-check_PROGRAMS += wcpncpy
-endif
-
-if HAVE_WCPNCPY
 check_PROGRAMS += wcpncpy1
 endif
 

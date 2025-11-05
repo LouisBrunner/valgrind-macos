@@ -68,7 +68,8 @@
               void* guest_state,             // x1
               const vki_sigset_t *sysmask,   // x2
               const vki_sigset_t *postmask,  // x3
-              Int nsigwords)                 // x4
+              Int nsigwords,                 // x4
+              UChar *cflag)                  // x5
 */
 
 /* from vki_arch.h */
@@ -130,19 +131,16 @@ L_$0_2:	svc 0x80
 L_$0_3:	/* In the range [3, 4), the syscall result is in %rax,
 	   but hasn't been committed to RAX. */
 
-  /* stash returned carry flag */
-  mov x4, 1
-  csel x4, x4, xzr, cs
-
   ldr x5, [sp, #8] /* saved x1 == guest_state */
   str x0, [x5, #OFFSET_arm64_X0]
   str x1, [x5, #OFFSET_arm64_X1]
 
 .if $0 == UNIX
-	/* save carry flag to VEX */
-  mov x0, x4       /* arg1 = new flag */
-  ldr x1, [sp, #8] /* arg2 = vex state */
-	bl	_LibVEX_GuestARM64_put_nzcv_c
+	/* stash returned carry flag */
+  mov x4, 1
+  csel x4, x4, xzr, cs
+  ldr  x5, [sp, #40] /* saved x5 == cflag */
+  strb w4, [x5]
 .endif
 
 L_$0_4:	/* Re-block signals.  If eip is in [4,5), then the syscall

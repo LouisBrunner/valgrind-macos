@@ -17,11 +17,17 @@ jobs:
           - ubuntu-24.04
           # x86_64
           # FIXME: none at the moment, hopefully Github will add macos-26-intel
-          # - macos-15-intel # crashes, is it actually virtualized on top of arm64?
+          - macos-15-intel # crashes, is it actually virtualized on top of arm64?
           # arm64
           - macos-14
-          # - macos-15 # unsupported
+          - macos-15 # unsupported
           - macos-26
+        include:
+          - run-tests: true
+          - os: macos-15
+            run-tests: false
+          - os: macos-15-intel
+            run-tests: false
 
     runs-on: ${{ matrix.os }}
 
@@ -61,8 +67,14 @@ jobs:
         run: XMLLINT=does_not_exist make check
       - name: create artifacts folder
         run: mkdir -p ${{ env.TEST_FOLDER }}/outputs
+
       - name: run regression tests
+        if: ${{ matrix.run-tests == 'true' }}
         run: XMLLINT=does_not_exist make regtest | tee ${{ env.TEST_FOLDER }}/raw-results.txt
+      - name: skip regression tests
+        if: ${{ matrix.run-tests == 'false' }}
+        run: touch ${{ env.TEST_FOLDER }}/raw-results.txt
+
       - name: process results
         if: always()
         run: |

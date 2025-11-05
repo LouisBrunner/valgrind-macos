@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 env:
   TEST_FOLDER: .github/test
   # required for macOS 15
@@ -33,6 +37,8 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     name: Build and Test on ${{matrix.os}}
+
+    if: ${{ github.event.pull_request.head.repo.full_name != github.repository || github.event_name == 'push' }}
 
     steps:
       - name: display environment (macOS)

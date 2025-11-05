@@ -80,7 +80,7 @@ jobs:
         run: XMLLINT=does_not_exist make regtest | tee ${{ env.TEST_FOLDER }}/raw-results.txt
       - name: skip regression tests
         if: ${{ !matrix.run-tests }}
-        run: touch ${{ env.TEST_FOLDER }}/raw-results.txt
+        run: touch ${{ env.TEST_FOLDER }}/raw-results.txt ${{ env.TEST_FOLDER }}/filtered-results.txt
 
       - name: process results
         if: always()

@@ -235,7 +235,6 @@ int ensure_init(void) {
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
-#endif
 
   return 1;
 }

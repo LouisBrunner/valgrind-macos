@@ -1243,6 +1243,9 @@ static inline void my_exit ( int x )
 # endif
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
+# if defined(VGP_arm64_darwin)
+ MEMCPY(VG_Z_LIBSYSTEM_C_SONAME, __memcpy_chk)
+# endif
 
 #elif defined(VGO_solaris)
  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
@@ -1519,6 +1522,7 @@ static inline void my_exit ( int x )
 #elif defined(VGO_darwin)
 # if defined(VGP_arm64_darwin)
   MEMMOVE(VG_Z_LIBSYSTEM_PLATFORM_SONAME, _platform_memmove)
+  MEMMOVE(VG_Z_LIBSYSTEM_C_SONAME, __memmove_chk)
 # else
 #  if DARWIN_VERS <= DARWIN_10_6
   MEMMOVE(VG_Z_LIBC_SONAME, memmove)
@@ -1729,6 +1733,8 @@ static inline void my_exit ( int x )
  GLIBC25___STRCPY_CHK(VG_Z_LIBC_SONAME, __strcpy_chk)
 
 #elif defined(VGO_darwin)
+ // currently handled in the generic strcpy
+ // GLIBC25___STRCPY_CHK(VG_Z_LIBSYSTEM_C_SONAME, __strcpy_chk)
 
 #elif defined(VGO_solaris)
 

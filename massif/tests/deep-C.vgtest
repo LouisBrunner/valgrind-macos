@@ -7,6 +7,8 @@ vgopts: --alloc-fn=_xpc_malloc --ignore-fn=_xpc_dictionary_insert --ignore-fn=ma
 vgopts: --ignore-fn="realizeClassWithoutSwift(objc_class*, objc_class*)" --ignore-fn="allocBuckets(unsigned int)" --alloc-fn=_xpc_alloc_typed --ignore-fn=_xpc_array_create --alloc-fn=_xpc_strdup --ignore-fn=NXCreateMapTable --ignore-fn=NXCreateHashTable --ignore-fn="id2data(objc_object*, SyncKind, usage)" --ignore-fn="class_rw_t::extAlloc(class_ro_t const*, bool)" --ignore-fn="_fetchInitializingClassList(bool)" --ignore-fn="objc::SafeRanges::add(unsigned long, unsigned long)" --ignore-fn="cache_t::insert(objc_selector*, void (*)(), objc_object*)" --ignore-fn=_vasprintf --ignore-fn=xpc_bundle_create_from_origin --ignore-fn=_xpc_realpath --ignore-fn=_xpc_realpath_fd --ignore-fn=_xpc_bundle_resolve_executable_variant --ignore-fn=_xpc_bundle_copy_container --alloc-fn=_xpc_alloc --alloc-fn=_malloc_zone_malloc_with_options_np_outlined
 vgopts: --ignore-fn="objc::DenseMap<objc_class*, objc::category_list, objc::DenseMapValueInfo<objc::category_list>, objc::DenseMapInfo<objc_class*>, objc::detail::DenseMapPair<objc_class*, objc::category_list> >::init(unsigned int)"
 vgopts: --ignore-fn="objc::DenseMap<DisguisedPtr<objc_class>, objc::category_list, objc::DenseMapValueInfo<objc::category_list>, objc::DenseMapInfo<DisguisedPtr<objc_class> >, objc::detail::DenseMapPair<DisguisedPtr<objc_class>, objc::category_list> >::init(unsigned int)"
+# Darwin ignore functions, as of macOS
+vgopts: --ignore-fn=xpc_bundle_create_from_origin_with_string_cache
 stderr_filter: filter_verbose
 post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
 cleanup: rm massif.out

@@ -72,7 +72,7 @@ extern void VG_(mach_record_system_memory)(void);
 #if DARWIN_VERS >= DARWIN_11_00
 // Dyld shared cache (DSC) parsing, which is required as system libraries are not provided on disk
 // starting with macOS 11.0 (Big Sur)
-extern void VG_(dyld_cache_init)(void);
+extern void VG_(dyld_cache_init)(const HChar*);
 extern int VG_(dyld_cache_might_be_in)(const HChar*);
 extern int VG_(dyld_cache_load_library)(const HChar*);
 extern Addr VG_(dyld_cache_get_slide)(void);

@@ -1,2 +1,3 @@
+prereq: ! ../../tests/os_test darwin
 prog: ../../memcheck/tests/sigaltstack
 vgopts: -q

@@ -1045,15 +1045,19 @@ UInt VG_(read_millisecond_timer) ( void )
      now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
    }
 #  elif defined(VGO_darwin)
-   // Weird: it seems that gettimeofday() doesn't fill in the timeval, but
-   // rather returns the tv_sec as the low 32 bits of the result and the
-   // tv_usec as the high 32 bits of the result.  (But the timeval cannot be
-   // NULL!)  See bug 200990.
    { SysRes res;
      struct vki_timeval tv_now = { 0, 0 };
      res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
      vg_assert(! sr_isError(res));
+#   if DARWIN_VERS >= DARWIN_11_00
+     now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
+#   else
+     // Weird: it seems that gettimeofday() doesn't fill in the timeval, but
+     // rather returns the tv_sec as the low 32 bits of the result and the
+     // tv_usec as the high 32 bits of the result.  (But the timeval cannot be
+     // NULL!)  See bug 200990.
      now = sr_Res(res) * 1000000ULL + sr_ResHI(res);
+#   endif
    }
 
 #  else

@@ -9577,7 +9577,7 @@ PRE(sys_ioctl)
          break;
 
       VG_(memset)(&harrghs, 0, sizeof(harrghs));
-      harrghs.sysno = args->op;
+      harrghs.canonical_sysno = args->op;
       harrghs.arg1 = args->arg[0];
       harrghs.arg2 = args->arg[1];
       harrghs.arg3 = args->arg[2];
@@ -12316,7 +12316,7 @@ POST(sys_ioctl)
           break;
 
        VG_(memset)(&harrghs, 0, sizeof(harrghs));
-       harrghs.sysno = args->op;
+       harrghs.canonical_sysno = args->op;
        harrghs.arg1 = args->arg[0];
        harrghs.arg2 = args->arg[1];
        harrghs.arg3 = args->arg[2];

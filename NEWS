@@ -29,6 +29,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 487055  memcheck/tests/x86-linux/scalar fails running in Docker
 511329  Darwin and FreeBSD: Move setting of carry flag out of
         ML_(do_syscall_for_client_WRK)
+511713  Refactor syscall argument handling
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

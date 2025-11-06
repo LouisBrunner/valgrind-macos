@@ -50,7 +50,14 @@
 /* Arguments for a syscall. */
 typedef
    struct SyscallArgs {
-      Word sysno;
+      Word canonical_sysno;
+#if defined(VGO_freebsd)
+      /*
+        * This may be the same as canonical_sysno (normal syscalls)
+       * Or it may be __NR_syscall or __NR___syscall
+       */
+      Word original_sysno;
+#endif
       RegWord arg1;
       RegWord arg2;
       RegWord arg3;
@@ -59,9 +66,6 @@ typedef
       RegWord arg6;
       RegWord arg7;
       RegWord arg8;
-#if defined(VGO_freebsd)
-      Word klass;
-#endif
    }
    SyscallArgs;
 
@@ -360,7 +364,7 @@ const SyscallTableEntry* ML_(get_freebsd_syscall_entry)( UInt sysno );
 
 /* Reference to the syscall's arguments -- the ones which the
    pre-wrapper may have modified, not the original copy. */
-#define SYSNO  (arrghs->sysno)
+#define SYSNO  (arrghs->canonical_sysno)
 #define ARG1   (arrghs->arg1)
 #define ARG2   (arrghs->arg2)
 #define ARG3   (arrghs->arg3)

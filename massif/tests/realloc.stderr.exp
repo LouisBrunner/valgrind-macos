@@ -22,6 +22,7 @@ Massif:   _xpc_calloc
 Massif:   _xpc_alloc_typed
 Massif:   _xpc_strdup
 Massif:   _xpc_alloc
+Massif:   _malloc_zone_malloc_with_options_np_outlined
 Massif: ignore-fns:
 Massif:   0: __part_load_locale
 Massif:   1: __time_load_locale

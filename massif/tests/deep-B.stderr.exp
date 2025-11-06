@@ -65,6 +65,7 @@ Massif:   30: _xpc_bundle_resolve_executable_variant
 Massif:   31: _xpc_bundle_copy_container
 Massif:   32: objc::DenseMap<objc_class*, objc::category_list, objc::DenseMapValueInfo<objc::category_list>, objc::DenseMapInfo<objc_class*>, objc::detail::DenseMapPair<objc_class*, objc::category_list> >::init(unsigned int)
 Massif:   33: objc::DenseMap<DisguisedPtr<objc_class>, objc::category_list, objc::DenseMapValueInfo<objc::category_list>, objc::DenseMapInfo<DisguisedPtr<objc_class> >, objc::detail::DenseMapPair<DisguisedPtr<objc_class>, objc::category_list> >::init(unsigned int)
+Massif:   34: xpc_bundle_create_from_origin_with_string_cache
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:408, hp:400, ex:8, st:0)
 Massif:   alloc S.  2 (t:816, hp:800, ex:16, st:0)

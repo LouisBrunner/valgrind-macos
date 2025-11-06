@@ -66,6 +66,7 @@ EXTRA_DIST = \
 	internals/Darwin-debug.txt \
 	internals/Darwin-notes.txt \
 	internals/SPEC-notes.txt \
+	internals/client_syscall_arguments.txt \
 	internals/directory-structure.txt \
 	internals/git-HOWTO.txt \
 	internals/howto_BUILD_KDE42.txt \

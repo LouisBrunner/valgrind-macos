@@ -1,0 +1,112 @@
+Client Syscall Arguments
+========================
+
+This document describes how Valgrind handles arguments for client syscalls.
+Everything described here takes place in VG_(client_syscall), syswrap-main.c.
+
+
+Data Structures
+~~~~~~~~~~~~~~~
+
+There are 3 data structures that get used during the argument handling.
+
+1. VexGuestArchState, the usual storage for registers.
+2. SyscallArgLayout, contains info about where the arguments are.
+3. SyscallArgs (two copies in SyscallInfo), contains the argument values.
+
+Flow
+~~~~
+
+The main steps in the function are to call the PRE syscall wrapper.
+That may perform the syscall (or simulate the syscall) and it may
+also mark the syscall as blocking. If the PRE did not mark the syscall
+as completed it will proceed to either make a non-blocking or a blocking
+call. Lastly the POST gets called, if required.
+
+All of the above can be complicated by the fact that some platforms have
+a "syscall syscall". Most platforms have a libc function called "syscall()".
+On some platforms libc shuffles the arguments and just performs the
+requested syscall directly . Other platforms have a syscall for performing syscalls.
+There may even be more than one such syscall. In these cases it is the kernel
+that shuffles the arguments to pass them on to the appropriate
+syscall.
+
+The main platforms that have a "syscall syscall" are Darwin and FreeBSD.
+Linux mips32 also has some special handling for syscall syscall.
+
+In Valgrind when there is a "syscall syscall" we don't want to just pass
+all of the parameters through. If we did that then "syscall syscall" PRE wrapper
+would need to handle all other kinds of syscalls, probably by some kind
+of second level of recursive call. This is not the approach that has been taken.
+Instead the arguments get "canonicalised" so that the PRE sees "syscall(SYS_write)"
+is if it were just a normal direct write syscall.
+
+The argument layout for such "syscall syscalls" is the same as normal syscalls
+but offset by one in register/stack positions. The first argument will be that for
+syscall or __syscall. The second argument will be the target normal syscall
+followed by the target arguments.
+
+
+Flow in Detail
+~~~~~~~~~~~~~~
+
+1. Get the canonical arguments.
+Call getSyscallArgsFromGuestState()
+This stores the canonical arguments (syscall syscall format gets shuffled)
+in the SyscallArgs structure.
+
+2. Get the syscall argument layout
+This just initialises the fields of the SyscallArgLayout structure. The layout
+will be different depending if it is a normal syscall or a syscall syscall.
+It cannot be canonicalised - we can shuffle around the values but we can't
+shuffle around where they are stored.
+
+4. Call the syscall PRE wrapper
+The argument values are passed in a pointer to SyscallArgs. The fields of that
+structure are used by the ARGX and SARGX macros to access the argument values
+in the wrapper.
+
+The argument layout is passed in a pointer to SyscallArgLayout. The fields of
+this structure are used indirectly by the PRE_REG_READX macros (X being an
+integer for the argument position) For each argument the PRE_REG_READX macro
+uses a PRAX macro which in turn uses either PSRAn for stack accesses or
+PRRAn for register accesses. In the case of amd64 the location of argument 6
+depends on whether it is a normal syscall or a syscall syscall. In the former
+case it will be in a register. In the latter case it will be on the stack.
+There is special handling for this case.
+
+If the syscall has not been completed by the PRE then either step 5 or step 6
+will be executed for blocking and non-blocking syscalls respectively.
+
+5. Perform a blocking syscall
+This is the more complicated of the two as we need to release the global lock,
+change to using the guest signal mask, do the syscall, restore the Valgrind
+signal mask and request the global lock again.
+
+A call to putSyscallArgsIntoGuestState is made. The PRE may have changed
+some of the arguments so we need to put the arguments back into
+VexGuestArchState.
+
+The syscall (and the signal mask handling) is performed in a call to
+do_syscall_for_client(). This takes the arguments other than the syscall number
+from VexGuestArchState.
+
+6. Perform a non-blocking syscall.
+
+This is much simpler. It performs the syscall via VG_(do_syscall).
+The arguments are passed via struct SyscallArgs (possibly modified by the PRE
+wrapper).
+
+7. Call VG_(post_syscall)()
+This will call the POST wrapper if required.
+
+Future Work
+~~~~~~~~~~~
+
+The flow would be simpler if do_syscall_for_client() used struct SyscallArgs
+to get the arg values like VG_(do_syscall). That would avoid having to
+put modified arguments back into the guest state. I have not checked, but
+I am not certain that the modified guest state is not visible after the syscall.
+
+The handling of "syscall syscall" does an excessive amount of shuffling,
+especially for the syscall number. I think that this can be simplified.

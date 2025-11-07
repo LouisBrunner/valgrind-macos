@@ -56,18 +56,21 @@
    be important for Darwin.  (be conservative)
 */
 
+const UInt MAGIC_PI = 0x31415927U;
+
+struct vg_sigframe {
+  UInt magicPI;
+  UInt sigNo_private;
+  vki_sigset_t mask;
+  VexGuestARM64State vex;
+  VexGuestARM64State vex_shadow1;
+  VexGuestARM64State vex_shadow2;
+};
+
 struct hacky_sigframe {
    vki_siginfo_t info;
    struct vki_ucontext uc;
-
-   unsigned long retcode[2];
-
-   UInt magicPI;
-   UInt sigNo_private;
-   vki_sigset_t mask;
-   VexGuestARM64State vex;
-   VexGuestARM64State vex_shadow1;
-   VexGuestARM64State vex_shadow2;
+   struct vg_sigframe vg;
 };
 
 
@@ -150,16 +153,21 @@ void VG_(sigframe_create)( ThreadId tid,
    if (! ML_(sf_maybe_extend_stack)(tst, sp, size, flags))
       return; // Give up.  No idea if this is correct
 
-  frame = (struct hacky_sigframe *) sp;
+   frame = (struct hacky_sigframe *) sp;
+
+   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler internal frame",
+             (Addr)frame, offsetof(struct hacky_sigframe, vg));
 
    /* save stuff in frame */
-   // FIXME: track writes?
-   frame->magicPI = 0x31415927;
-   frame->sigNo_private = siginfo->si_signo;
-   frame->mask = tst->sig_mask;
-   frame->vex = tst->arch.vex;
-   frame->vex_shadow1 = tst->arch.vex_shadow1;
-   frame->vex_shadow2 = tst->arch.vex_shadow2;
+   frame->vg.magicPI = MAGIC_PI;
+   frame->vg.sigNo_private = siginfo->si_signo;
+   frame->vg.mask = tst->sig_mask;
+   frame->vg.vex = tst->arch.vex;
+   frame->vg.vex_shadow1 = tst->arch.vex_shadow1;
+   frame->vg.vex_shadow2 = tst->arch.vex_shadow2;
+
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid,
+             (Addr)frame, offsetof(struct hacky_sigframe, vg));
 
    /* Fill in the siginfo and ucontext.  */
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler frame",
@@ -237,19 +245,19 @@ void VG_(sigframe_destroy)( ThreadId tid, Bool isRT )
    sp = VG_(get_SP)(tid);
 
    frame = (struct hacky_sigframe *)sp;
-   vg_assert(frame->magicPI == 0x31415927);
+   vg_assert(frame->vg.magicPI == MAGIC_PI);
 
    vg_assert(VG_IS_16_ALIGNED((Addr)frame));
 
    /* restore the entire guest state, and shadows, from the frame. */
-   tst->arch.vex         = frame->vex;
-   tst->arch.vex_shadow1 = frame->vex_shadow1;
-   tst->arch.vex_shadow2 = frame->vex_shadow2;
+   tst->arch.vex         = frame->vg.vex;
+   tst->arch.vex_shadow1 = frame->vg.vex_shadow1;
+   tst->arch.vex_shadow2 = frame->vg.vex_shadow2;
    restore_from_ucontext(tst, &frame->uc);
 
-   tst->sig_mask            = frame->mask;
-   tst->tmp_sig_mask        = frame->mask;
-   sigNo                    = frame->sigNo_private;
+   tst->sig_mask            = frame->vg.mask;
+   tst->tmp_sig_mask        = frame->vg.mask;
+   sigNo                    = frame->vg.sigNo_private;
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,

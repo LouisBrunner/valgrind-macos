@@ -18,8 +18,17 @@ int main(int argv, char** argc) {
   // We give EXEC permissions because this won't work on ppc32 unless you
   // ask for an alt stack with EXEC permissions,
   // since signal returning requires execution of code on the stack.      
+#if defined(VGO_darwin)
+  char *stk = (char *)mmap(0, size, PROT_READ|PROT_WRITE,
+                                    MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+  if (stk == MAP_FAILED) {
+    perror("mmap");
+    return 1;
+  }
+#else
   char *stk = (char *)mmap(0, size, PROT_READ|PROT_WRITE|PROT_EXEC, 
                                     MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+#endif
   sigstk.ss_sp = stk;
 
   sigstk.ss_size = size;

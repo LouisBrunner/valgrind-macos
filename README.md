@@ -16,13 +16,9 @@ This repository contains a version of Valgrind including a few patches to improv
 | macOS 15 (Sequoia)          | -   | ✅    | ~[^2] | -      |
 | macOS 26 (Tahoe)            | -   | ✅    | ✅    | -      |
 
-[^1]: Supported as part of upstream Valgrind.
+[^1]: Supported as part of upstream Valgrind
 [^2]: macOS 15 arm64 is experimental ([#123](https://github.com/LouisBrunner/valgrind-macos/issues/123))
 [^3]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
-
-Note that every version from macOS 10.12 onwards currently has the following issues:
-
-- using threads and signals together is undefined (crashes, hanging, etc), note: a few tests were disabled because of that
 
 ## Usage
 
@@ -64,10 +60,6 @@ brew upgrade --fetch-HEAD LouisBrunner/valgrind/valgrind
 ```
 
 ## Tests
-
-Some tests are hanging and were therefore disabled on macOS:
-
-- `memcheck/tests/sigaltstack` & `drd/tests/sigaltstack` (arm64)
 
 ### Linux (Ubuntu 24.04)
 

@@ -69,12 +69,15 @@ int main(int argc, char **argv)
     if ( ! childpid)
         childprocess();
 
-    sleep(1);
-
-    if (kill(childpid, SIGTERM))
+    // Required on macOS (10.12+) due to timing issues
+    for (int i = 0; i < 5; ++i)
     {
-        fprintf(stderr, "Error line %u\n", __LINE__);
-        return 255;
+      if (kill(childpid, SIGTERM))
+      {
+          fprintf(stderr, "Error line %u\n", __LINE__);
+          return 255;
+      }
+      sleep(1);
     }
 
     int status;

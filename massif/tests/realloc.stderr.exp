@@ -19,6 +19,10 @@ Massif:   operator new[](unsigned, std::align_val_t, std::nothrow_t const&)
 Massif:   _xpc_malloc
 Massif:   strdup
 Massif:   _xpc_calloc
+Massif:   _xpc_alloc_typed
+Massif:   _xpc_strdup
+Massif:   _xpc_alloc
+Massif:   _malloc_zone_malloc_with_options_np_outlined
 Massif: ignore-fns:
 Massif:   0: __part_load_locale
 Massif:   1: __time_load_locale
@@ -36,6 +40,25 @@ Massif:   12: add_class_to_loadable_list
 Massif:   13: class_createInstance
 Massif:   14: xpc_string_create
 Massif:   15: xpc_array_create
+Massif:   16: realizeClassWithoutSwift(objc_class*, objc_class*)
+Massif:   17: allocBuckets(unsigned int)
+Massif:   18: _xpc_array_create
+Massif:   19: NXCreateMapTable
+Massif:   20: NXCreateHashTable
+Massif:   21: id2data(objc_object*, SyncKind, usage)
+Massif:   22: class_rw_t::extAlloc(class_ro_t const*, bool)
+Massif:   23: _fetchInitializingClassList(bool)
+Massif:   24: objc::SafeRanges::add(unsigned long, unsigned long)
+Massif:   25: cache_t::insert(objc_selector*, void (*)(), objc_object*)
+Massif:   26: _vasprintf
+Massif:   27: xpc_bundle_create_from_origin
+Massif:   28: _xpc_realpath
+Massif:   29: _xpc_realpath_fd
+Massif:   30: _xpc_bundle_resolve_executable_variant
+Massif:   31: _xpc_bundle_copy_container
+Massif:   32: objc::DenseMap<objc_class*, objc::category_list, objc::DenseMapValueInfo<objc::category_list>, objc::DenseMapInfo<objc_class*>, objc::detail::DenseMapPair<objc_class*, objc::category_list> >::init(unsigned int)
+Massif:   33: objc::DenseMap<DisguisedPtr<objc_class>, objc::category_list, objc::DenseMapValueInfo<objc::category_list>, objc::DenseMapInfo<DisguisedPtr<objc_class> >, objc::detail::DenseMapPair<DisguisedPtr<objc_class>, objc::category_list> >::init(unsigned int)
+Massif:   34: xpc_bundle_create_from_origin_with_string_cache
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:800, hp:800, ex:0, st:0)
 Massif: realloc S.  2 (t:800, hp:800, ex:0, st:0)

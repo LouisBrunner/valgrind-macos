@@ -856,7 +856,7 @@ Syscall param bind(addrlen) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-105:          SYS_setsockopt 5s 0m
+105:          SYS_setsockopt 5s 1m
 ---------------------------------------------------------
 Syscall param setsockopt(s) contains uninitialised byte(s)
    ...
@@ -871,6 +871,12 @@ Syscall param setsockopt(optval) contains uninitialised byte(s)
    ...
 
 Syscall param setsockopt(optlen) contains uninitialised byte(s)
+   ...
+
+Syscall param socketcall.setsockopt(optval) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 16 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
    ...
 
 ---------------------------------------------------------
@@ -913,21 +919,30 @@ Syscall param getrusage(usage) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
-105:          SYS_setsockopt 5s 1m
+118:          SYS_getsockopt 5s 1m
 ---------------------------------------------------------
-Syscall param setsockopt(s) contains uninitialised byte(s)
+Syscall param getsockopt(s) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(level) contains uninitialised byte(s)
+Syscall param getsockopt(level) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(optname) contains uninitialised byte(s)
+Syscall param getsockopt(optname) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(optval) contains uninitialised byte(s)
+Syscall param getsockopt(optval) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(optlen) contains uninitialised byte(s)
+Syscall param getsockopt(*optlen) contains uninitialised byte(s)
+   ...
+
+Syscall param getsockopt(optlen) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   ...
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
    ...
 
 ---------------------------------------------------------

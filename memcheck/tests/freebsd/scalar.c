@@ -449,8 +449,8 @@ int main(void)
    SY(SYS_bind, x0, x0, x0); FAIL;
 
    /* SYS_setsockopt              105 */
-   GO(SYS_setsockopt, "5s 0m");
-   SY(SYS_setsockopt, x0, x0, x0, x0, x0); FAIL;
+   GO(SYS_setsockopt, "5s 1m");
+   SY(SYS_setsockopt, x0, x0, x0, px+x0, sizeof(socklen_t)+x0); FAIL;
 
    /* SYS_listen                  106 */
    GO(SYS_listen, "2s 0m");
@@ -482,9 +482,18 @@ int main(void)
    GO(SYS_getrusage, "2s 1m");
    SY(SYS_getrusage, x0, x0); FAIL;
 
+   socklen_t *len = malloc(sizeof(socklen_t));
+   *len = 2*sizeof(long)+x0;
+   free(len);
+   /*
+    * Should be 2m but it is hard to trigger an optval
+    * error in the scalar, len needs to be safe to deref
+    * and the syscall needs to succeed to trigger a write
+    * error to optval
+    */
    /* SYS_getsockopt              118 */
-   GO(SYS_setsockopt, "5s 1m");
-   SY(SYS_setsockopt, x0, x0, x0, x0, x0); FAIL;
+   GO(SYS_getsockopt, "5s 1m");
+   SY(SYS_getsockopt, x0, x0, x0, px+x0, len+x0); FAIL;
 
    /* unimpl resuba               119 */
 

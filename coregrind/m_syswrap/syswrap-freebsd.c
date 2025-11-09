@@ -1510,7 +1510,7 @@ PRE(sys_getsockopt)
    PRINT("sys_getsockopt ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(int, "getsockopt",
                  int, s, int, level, int, optname,
-                 void *, optval, int, *optlen);
+                 void *, optval, vki_socklen_t, *optlen);
    if (optval_p != (Addr)NULL) {
       ML_(buf_and_len_pre_check) ( tid, optval_p, optlen_p,
                                    "getsockopt(optval)",

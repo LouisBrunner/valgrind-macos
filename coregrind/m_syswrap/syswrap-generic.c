@@ -5030,8 +5030,13 @@ PRE(sys_poll)
    *flags |= SfMayBlock;
    PRINT("sys_poll ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %ld )\n",
          ARG1, ARG2, SARG3);
+#if defined(VGO_darwin)
+   PRE_REG_READ3(long, "poll",
+                 struct vki_pollfd *, ufds, unsigned int, nfds, int, timeout);
+#else
    PRE_REG_READ3(long, "poll",
                  struct vki_pollfd *, ufds, unsigned int, nfds, long, timeout);
+#endif
 
    for (i = 0; i < ARG2; i++) {
       PRE_MEM_READ( "poll(ufds.fd)",

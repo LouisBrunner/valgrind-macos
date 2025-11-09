@@ -51,7 +51,7 @@
 typedef
    struct SyscallArgs {
       Word canonical_sysno;
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
       /*
         * This may be the same as canonical_sysno (normal syscalls)
        * Or it may be __NR_syscall or __NR___syscall
@@ -125,7 +125,7 @@ typedef
       Int s_arg6;
       Int s_arg7;
       Int s_arg8;
-#     elif defined(VGP_amd64_freebsd)
+#     elif defined(VGP_amd64_freebsd) || defined(VGP_amd64_darwin)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;
@@ -168,7 +168,7 @@ typedef
       Int s_arg6;
       Int s_arg7;
       Int s_arg8;
-#     elif defined(VGP_amd64_darwin) || defined(VGP_amd64_solaris)
+#     elif defined(VGP_amd64_solaris)
       Int o_arg1;
       Int o_arg2;
       Int o_arg3;

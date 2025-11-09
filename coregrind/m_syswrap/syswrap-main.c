@@ -460,7 +460,7 @@ static
 Bool eq_SyscallArgs ( SyscallArgs* a1, SyscallArgs* a2 )
 {
    return a1->canonical_sysno == a2->canonical_sysno
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
           && a1->original_sysno == a2->original_sysno
 #endif
           && a1->arg1 == a2->arg1
@@ -790,6 +790,8 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
             VG_SYSNUM_STRING(canonical->canonical_sysno));
    }
 
+   canonical->original_sysno = gst->guest_EAX;
+
    // Here we determine what kind of syscall it was by looking at the
    // interrupt kind, and then encode the syscall number using the 64-bit
    // encoding for Valgrind's internal use.
@@ -868,6 +870,8 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
             VG_(getpid)(), /*tid,*/
             VG_SYSNUM_STRING(canonical->canonical_sysno));
    }
+
+   canonical->original_sysno = gst->guest_RAX;
 
    // no canonical->canonical_sysno adjustment needed
 
@@ -1865,7 +1869,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_s
    layout->s_arg7   = sizeof(UWord) * 7;
    layout->s_arg8   = sizeof(UWord) * 8;
  
-#elif defined(VGP_amd64_freebsd)
+#elif defined(VGP_amd64_freebsd) || defined(VGP_amd64_darwin)
    if (syscall_syscall)
    {
       layout->o_sysno  = OFFSET_amd64_RDI;
@@ -2292,7 +2296,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    /* Save the syscall number in the thread state in case the syscall 
       is interrupted by a signal. */
    canonical_sysno = sci->orig_args.canonical_sysno;
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
    original_sysno = sci->orig_args.original_sysno;
 #else
    /*
@@ -2347,6 +2351,12 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
        original_sysno == __NR___syscall) {
       syscall_syscall = True;
    }
+#endif
+#if defined(VGP_amd64_darwin)
+   if (original_sysno == __NR_syscall) {
+      syscall_syscall = True;
+   }
+   original_sysno = canonical_sysno;
 #endif
    getSyscallArgLayout( &layout, syscall_syscall );
 

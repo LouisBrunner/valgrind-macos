@@ -4,6 +4,7 @@
 #include <sched.h>
 #include <signal.h>
 #include <sys/shm.h>
+#include <sys/socket.h>
 
 // See memcheck/tests/x86-linux/scalar.c for an explanation of what this test
 // is doing.
@@ -210,7 +211,7 @@ int main(void)
    // __NR_bind 104
 
    GO(__NR_setsockopt, 105, "5s 1m");
-   SY(__NR_setsockopt, x0, x0, x0, x0+1, x0+1); FAIL;
+   SY(__NR_setsockopt, x0, x0, x0, px+x0, sizeof(socklen_t)+x0); FAIL;
 
    // __NR_listen 106
 
@@ -236,10 +237,11 @@ int main(void)
    // __NR_gettimeofday 116
    // __NR_getrusage 117
 
-   // Nb: there's no "getsockopt(optlen) points to unaddressable byte(s)";
-   // difficult to get with arg4 being checked with buf_and_len_pre_check.
-   GO(__NR_getsockopt, 118, "5s 1m");
-   SY(__NR_getsockopt, x0, x0, x0, x0+1, x0+&px[1]); FAIL;
+   socklen_t *len = malloc(sizeof(socklen_t));
+   *len = 2*sizeof(long)+x0;
+   free(len);
+   GO(__NR_getsockopt, 118, "5s 2m");
+   SY(__NR_getsockopt, x0, x0, x0, x0+1, len+x0); FAIL;
 
    GO_UNIMP(119, "old resuba");
 
@@ -505,10 +507,12 @@ int main(void)
       // requires the 4th arg to point to a valid value.
       SY(__NR_lstat_extended, 0, 0, 0, &one); FAIL;
 
-      GO(__NR_fstat_extended, 280, "4s 3m");
+      GO(__NR_fstat_extended, 280, "4s 2m");
       SY(__NR_fstat_extended, x0, x0, x0, x0); FAIL;
+
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
+      GO(__NR_fstat_extended, 280, "0s 2m");
       SY(__NR_fstat_extended, 0, 0, 0, &one); FAIL;
    }
 
@@ -611,20 +615,26 @@ int main(void)
       size_t one = 1;
       GO(__NR_stat64_extended, 341, "4s 4m");
       SY(__NR_stat64_extended, x0, x0, x0, x0); FAIL;
+
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
+      GO(__NR_stat64_extended, 341, "0s 3m");
       SY(__NR_stat64_extended, 0, 0, 0, &one); FAIL;
 
       GO(__NR_lstat64_extended, 342, "4s 4m");
       SY(__NR_lstat64_extended, x0, x0, x0, x0); FAIL;
+
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
+      GO(__NR_lstat64_extended, 342, "0s 3m");
       SY(__NR_lstat64_extended, 0, 0, 0, &one); FAIL;
 
-      GO(__NR_fstat64_extended, 342, "4s 3m");
+      GO(__NR_fstat64_extended, 342, "4s 2m");
       SY(__NR_fstat64_extended, x0, x0, x0, x0); FAIL;
+
       // Go again to get a complaint about where the 3rd arg points;  it
       // requires the 4th arg to point to a valid value.
+      GO(__NR_fstat64_extended, 342, "0s 2m");
       SY(__NR_fstat64_extended, 0, 0, 0, &one); FAIL;
    }
 
@@ -662,13 +672,10 @@ int main(void)
 
    GO_UNIMP(369-373, "unused");
 
-#if DARWIN_VERS >= DARWIN_10_11
-   {
-      long args[8] = { x0+8, x0+0xffffffee, x0+1, x0+1, x0+1, x0+1, x0+1, x0+1 };
-      GO(__NR_kevent_qos, 374, "1s 8m");
-      SY(__NR_kevent_qos, args+x0); FAIL;
-   }
-#endif /* DARWIN_VERS >= DARWIN_10_11 */
+#if defined(__NR_kevent_qos)
+   GO(__NR_kevent_qos, 374, "8s 4m");
+   SY(__NR_kevent_qos, x0+8, x0+0xffffffee, x0+1, x0+1, x0+1, x0+1, x0+1, x0+1); FAIL;
+#endif
 
    GO_UNIMP(375-379, "unused");
 
@@ -687,15 +694,11 @@ int main(void)
    // __NR___mac_get_lctx 392
    // __NR___mac_set_lctx 393
 
-#if DARWIN_VERS >= DARWIN_10_11
-   {
-      long args[6] = { x0+8, x0+0xffffffee, x0+1, x0+1, x0+1, x0+1 };
-      GO(__NR_pselect, 394, "1s 6m");
-      SY(__NR_pselect, args+x0); FAIL;
-   }
-#else
+#if defined(__NR_pselect)
+   GO(__NR_pselect, 394, "5s 4m");
+   SY(__NR_pselect, x0+8, x0+0xffffffee, x0+1, x0+1, x0+1, x0+1); FAIL;
+#endif
    // __NR_setlcid 394
-#endif /* DARWIN_VERS >= DARWIN_10_11 */
 
    // __NR_getlcid 395
 
@@ -1005,11 +1008,8 @@ int main(void)
    SY(__NR_setgroups, x0+1, x0+1); FAIL;
 
    // __NR_select 82
-   {
-      long args[5] = { x0+8, x0+0xffffffee, x0+1, x0+1, x0+1 };
-      GO(__NR_select, "1s 5m");
-      SY(__NR_select, args+x0); FAIL;
-   }
+   GO(__NR_select, "5s ?m");
+   SY(__NR_select, x0+8, x0+0xffffffee, x0+1, x0+1, x0+1); FAIL;
 
    // __NR_symlink 83
    GO(__NR_symlink, "2s 2m");
@@ -1040,11 +1040,8 @@ int main(void)
    // (superseded, not handled by Valgrind)
 
    // __NR_mmap 90
-   {
-      long args[6] = { x0, x0, x0, x0, x0-1, x0 };
-      GO(__NR_mmap, "1s 1m");
-      SY(__NR_mmap, args+x0); FAIL;
-   }
+   GO(__NR_mmap, "6s 1m");
+   SY(__NR_mmap, x0, x0, x0, x0, x0-1, x0); FAIL;
 
    // __NR_munmap 91
    GO(__NR_munmap, "2s 0m");

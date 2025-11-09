@@ -1,0 +1,13 @@
+#! /bin/sh
+
+sed '/in frame #., created by/d' |
+
+./filter_stderr "$@" |
+
+sed '/by 0x.*: main.*scalar.*\.c.*/d' |
+
+# get rid of error limit message
+# but there is still an added extra blank line before
+sed '/More than 100 errors detected.  Subsequent errors/d' |
+sed '/will still be recorded, but in less detail than before./d'
+

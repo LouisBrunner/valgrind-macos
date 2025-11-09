@@ -1,3 +1,4 @@
 prog: scalar_nocancel
 vgopts: -q --error-limit=no
 args: < scalar_nocancel.c
+stderr_filter: filter_scalar

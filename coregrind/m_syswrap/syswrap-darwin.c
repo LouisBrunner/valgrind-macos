@@ -2764,7 +2764,7 @@ PRE(fstat_extended)
    PRE_REG_READ4(int, "fstat_extended", int, fd, struct stat *, buf, 
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_WRITE(   "fstat_extended(buf)",        ARG2, sizeof(struct vki_stat) );
-   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE("fstat_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "fstat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
@@ -2785,7 +2785,7 @@ PRE(stat64_extended)
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_RASCIIZ( "stat64_extended(file_name)",  ARG1 );
    PRE_MEM_WRITE(   "stat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
-   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE("stat64_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "stat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
@@ -2806,7 +2806,7 @@ PRE(lstat64_extended)
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_RASCIIZ( "lstat64_extended(file_name)",  ARG1 );
    PRE_MEM_WRITE(   "lstat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
-   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE(   "lstat64_extended(fsacl)",   ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "lstat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
@@ -2826,7 +2826,7 @@ PRE(fstat64_extended)
    PRE_REG_READ4(int, "fstat64_extended", int, fd, struct stat64 *, buf, 
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_WRITE(   "fstat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
-   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE("fstat64_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "fstat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }

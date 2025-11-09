@@ -386,7 +386,8 @@ static inline void my_exit ( int x )
  STRNCAT(VG_Z_LIBC_SONAME, strncat)
 
 #elif defined(VGO_darwin)
- //STRNCAT(VG_Z_LIBC_SONAME, strncat)
+ STRNCAT(VG_Z_LIBSYSTEM_C_SONAME, strncat)
+ STRNCAT(VG_Z_LIBSYSTEM_C_SONAME, __strncat_chk)
  //STRNCAT(VG_Z_DYLD,        strncat)
 
 #elif defined(VGO_solaris)
@@ -572,9 +573,8 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
-# if DARWIN_VERS == DARWIN_10_9
-  STRCPY(VG_Z_LIBSYSTEM_C_SONAME, strcpy)
-# endif
+ STRCPY(VG_Z_LIBSYSTEM_C_SONAME, strcpy)
+ STRCPY(VG_Z_LIBSYSTEM_C_SONAME, __strcpy_chk)
 
 #elif defined(VGO_solaris)
  STRCPY(VG_Z_LIBC_SONAME, strcpy)
@@ -620,9 +620,8 @@ static inline void my_exit ( int x )
 
 #elif defined(VGO_darwin)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
-# if DARWIN_VERS >= DARWIN_10_9
-  STRNCPY(VG_Z_LIBSYSTEM_C_SONAME, strncpy)
-# endif
+ STRNCPY(VG_Z_LIBSYSTEM_C_SONAME, strncpy)
+ STRNCPY(VG_Z_LIBSYSTEM_C_SONAME, __strncpy_chk)
 
 #elif defined(VGO_solaris)
  STRNCPY(VG_Z_LIBC_SONAME, strncpy)
@@ -1175,6 +1174,7 @@ static inline void my_exit ( int x )
 # endif
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
+ MEMCPY(VG_Z_LIBSYSTEM_C_SONAME, __memcpy_chk)
 
 #elif defined(VGO_solaris)
  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
@@ -2383,6 +2383,7 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  MEMCCPY(VG_Z_LIBC_SONAME, memccpy)
 #elif defined(VGO_darwin)
+ MEMCCPY(VG_Z_LIBSYSTEM_C_SONAME, __memccpy_chk)
  MEMCCPY(VG_Z_LIBSYSTEM_PLATFORM_SONAME, _platform_memccpy)
 #endif
 

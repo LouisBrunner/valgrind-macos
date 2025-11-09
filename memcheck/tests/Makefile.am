@@ -814,7 +814,13 @@ origin4_many_CFLAGS	= $(AM_CFLAGS) -O @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_UNIN
 
 # Apply -O so as to run in reasonable time.
 origin5_bz2_CFLAGS	= $(AM_CFLAGS) -O -Wno-inline
+if VGCONF_OS_IS_DARWIN
+origin5_bz2_CFLAGS		+= -fno-inline
+endif
 origin6_fp_CFLAGS	= $(AM_CFLAGS) -O
+if VGCONF_OS_IS_DARWIN
+origin6_fp_CFLAGS		+= -fno-inline
+endif
 
 # Don't allow GCC to inline memcpy() and strcpy(),
 # because then we can't intercept it
@@ -876,11 +882,27 @@ wrap6_CFLAGS		= $(AM_CFLAGS) -O2
 # To make it a bit more realistic, have some optimisation enabled
 # for the varinfo tests.  We still expect sane results.
 varinfo1_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
+if VGCONF_OS_IS_DARWIN
+varinfo1_CFLAGS		+= -fno-inline
+endif
 varinfo2_CFLAGS		= $(AM_CFLAGS) -O -Wno-shadow @FLAG_W_NO_MAYBE_UNINITIALIZED@
+if VGCONF_OS_IS_DARWIN
+varinfo2_CFLAGS         += -fno-inline
+endif
 varinfo3_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
+if VGCONF_OS_IS_DARWIN
+varinfo3_CFLAGS         += -fno-inline
+endif
 varinfo4_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
+if VGCONF_OS_IS_DARWIN
+varinfo4_CFLAGS         += -fno-inline
+endif
 varinfo5_CFLAGS		= $(AM_CFLAGS) -O
 varinfo6_CFLAGS		= $(AM_CFLAGS) -O @FLAG_W_NO_MAYBE_UNINITIALIZED@
+if VGCONF_OS_IS_DARWIN
+varinfo6_CFLAGS         += -fno-inline
+endif
+
 
 # Build shared object for varinfo5
 varinfo5_SOURCES        = varinfo5.c

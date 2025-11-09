@@ -2,3 +2,4 @@ prog: overlap
 vgopts: -q
 # https://bugs.kde.org/show_bug.cgi?id=402833
 prereq: ! ../../tests/os_test linux || ! ../../tests/arch_test amd64
+stderr_filter: filter_libc_variants

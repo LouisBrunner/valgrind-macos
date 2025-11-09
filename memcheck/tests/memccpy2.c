@@ -8,9 +8,9 @@ int main(void)
 {
    char* astring = strdup("this is a string # with something to seek");
    size_t len = strlen(astring);
-   (memccpy)(astring+10, astring, '#', len-10);
+   memccpy(astring+10, astring, '#', len-10);
    sprintf(astring, "this is a string # with something to seek");
-   (memccpy)(astring, astring+10, '#', len);
+   memccpy(astring, astring+10, '#', len);
    
    sprintf(astring, "this is a string # with something to seek");
    /*
@@ -23,10 +23,10 @@ int main(void)
    assert(res && *res == 'g');
    sprintf(astring, "this is a string # with something to seek");
    /* length is 0, nothing copied, returns NULL */
-   res = (memccpy)(astring, "abcdefhhijklmnopqrstuvwxy", 'z', 0);
+   res = memccpy(astring, "abcdefhhijklmnopqrstuvwxy", 'z', 0);
    assert(NULL == res);
    /* 'z' not found so 20 bytes copied, returns NULL */
-   res = (memccpy)(astring, "abcdefhhijklmnopqrstuvwxy", 'z', 20);
+   res = memccpy(astring, "abcdefhhijklmnopqrstuvwxy", 'z', 20);
    assert(NULL == res);
    free(astring);
 }

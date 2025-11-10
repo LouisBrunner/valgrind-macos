@@ -1061,6 +1061,9 @@ Syscall param kevent_qos(eventlist) contains uninitialised byte(s)
 Syscall param kevent_qos(nevents) contains uninitialised byte(s)
    ...
 
+Syscall param kevent_qos(data_out) contains uninitialised byte(s)
+   ...
+
 Syscall param kevent_qos(data_available) contains uninitialised byte(s)
    ...
 

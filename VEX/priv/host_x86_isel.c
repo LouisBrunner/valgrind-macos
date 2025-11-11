@@ -3867,6 +3867,12 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
       case Iop_NarrowBin16to8x16:
          fn = (HWord)h_generic_calc_NarrowBin16to8x16;
          goto do_SseAssistedBinary;
+      case Iop_Max32Sx4:
+         fn = (HWord)h_generic_calc_Max32Sx4;
+         goto do_SseAssistedBinary;
+      case Iop_Min32Sx4:
+         fn = (HWord)h_generic_calc_Min32Sx4;
+         goto do_SseAssistedBinary;
       do_SseAssistedBinary: {
          /* As with the amd64 case (where this is copied from) we
             generate pretty bad code. */

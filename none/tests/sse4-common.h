@@ -263,4 +263,15 @@ static inline void test_PMAXSD ( void )
    }
 }
 
+static inline void test_PMINSD ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pminsd", src, dst);
+   }
+}
+
 #endif /* __SSE4_COMMON_H */

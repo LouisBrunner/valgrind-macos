@@ -25,6 +25,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+510864  Add SSE4.1 PMAXSD and PMINSD instructions support for 32-bit x86
 413369  unhandled amd64-darwin syscall: unix:151 (getpgid)
 487055  memcheck/tests/x86-linux/scalar fails running in Docker
 511329  Darwin and FreeBSD: Move setting of carry flag out of

@@ -12995,6 +12995,26 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 38 39 /r  - PMINSD xmm1, xmm2/m128
+      66 0F 38 3D /r  - PMAXSD xmm1, xmm2/m128
+      66 prefix (sz == 2): SSE2/SSE4 XMM instructions (128-bit)
+      0F 38 is the secondary escape used for SSSE3, SSE4, and later extensions
+      39 = PMINSD (minimum of packed signed 32-bit integers)
+      3D = PMAXSD (maximum of packed signed 32-bit integers)
+      reference: Intel Software Developer Manual (Volume 2: Instruction Set Reference)  */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x39 || insn[2] == 0x3D)) {
+     Bool isMAX = insn[2] == 0x3D;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxsd" : "pminsd",
+         isMAX ? Iop_Max32Sx4 : Iop_Min32Sx4,
+         False
+         );
+     goto decode_success;
+   }
+
    /* 66 0F 3A 0B /r ib = ROUNDSD imm8, xmm2/m64, xmm1
       (Partial implementation only -- only deal with cases where
       the rounding mode is specified directly by the immediate byte.)
@@ -13071,6 +13091,8 @@ DisResult disInstr_X86_WRK (
          DIP("lzcnt%c %s, %s\n", nameISize(sz), dis_buf,
              nameIReg(sz, gregOfRM(modrm)));
       }
+
+
 
       IRTemp res = gen_LZCNT(ty, src);
       putIReg(sz, gregOfRM(modrm), mkexpr(res));

@@ -826,7 +826,7 @@ extern void pthread_hijack_asm(void);
 extern void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, 
                            Addr stacksize, Addr flags, Addr sp);
 extern void wqthread_hijack_asm(void);
-extern void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem, Int reuse, Addr sp);
+extern void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem, UInt reuse, Int kevent_count, Addr sp);
 
 extern Addr pthread_starter;
 extern Addr wqthread_starter;

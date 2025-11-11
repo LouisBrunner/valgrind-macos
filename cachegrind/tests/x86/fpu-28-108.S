@@ -24,3 +24,5 @@ VG_SYM_ASM(main):
         movl    $0, %eax
         ret
 
+        .section        .note.GNU-stack,"",@progbits
+

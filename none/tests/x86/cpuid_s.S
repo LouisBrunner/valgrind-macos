@@ -71,3 +71,5 @@ VG_SYM_ASM(get_cpuid1):
 
 
 	.ident	"GCC: (GNU) 2.96 20000731 (Red Hat Linux 7.1 2.96-98)"
+        .section        .note.GNU-stack,"",@progbits
+

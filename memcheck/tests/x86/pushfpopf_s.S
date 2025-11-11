@@ -46,3 +46,5 @@ theend:
 	.size	VG_SYM_ASM(fooble),.Lfe1-VG_SYM_ASM(fooble)
 #endif
 	.ident	"GCC: (GNU) 2.96 20000731 (Red Hat Linux 7.1 2.96-98)"
+        .section        .note.GNU-stack,"",@progbits
+

@@ -159,16 +159,23 @@ static inline double mkNegNan ( void ) { return -mkPosNan(); }
 
 /* Macros for testing XMM register to register and memory to register operations */
 
+/* Use xmm7 for 32-bit x86, xmm11 for amd64 (xmm8-15 don't exist in 32-bit mode) */
+#ifdef __x86_64__
+#define XMMREG_DST "xmm11"
+#else
+#define XMMREG_DST "xmm7"
+#endif
+
 #define DO_imm_r_r(_opname, _imm, _src, _dst)  \
    {  \
       V128 _tmp;  \
       __asm__ __volatile__(  \
          "movupd (%0), %%xmm2"    "\n\t"  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " $" #_imm ", %%xmm2, %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
+         "movupd (%1), %%" XMMREG_DST   "\n\t"  \
+         _opname " $" #_imm ", %%xmm2, %%" XMMREG_DST  "\n\t"  \
+         "movupd %%" XMMREG_DST ", (%2)" "\n"  \
          : /*out*/ : /*in*/ "r"(&(_src)), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm2", "xmm11"                            \
+         : "cc", "memory", "xmm2", XMMREG_DST                            \
       );  \
       RRArgs rra;  \
       memcpy(&rra.arg1, &(_src), sizeof(V128));  \
@@ -183,11 +190,11 @@ static inline double mkNegNan ( void ) { return -mkPosNan(); }
       V128* _srcM = memalign16(sizeof(V128));  \
       memcpy(_srcM, &(_src), sizeof(V128));  \
       __asm__ __volatile__(  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " $" #_imm ", (%0), %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
+         "movupd (%1), %%" XMMREG_DST   "\n\t"  \
+         _opname " $" #_imm ", (%0), %%" XMMREG_DST  "\n\t"  \
+         "movupd %%" XMMREG_DST ", (%2)" "\n"  \
          : /*out*/ : /*in*/ "r"(_srcM), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm11"  \
+         : "cc", "memory", XMMREG_DST  \
       );  \
       RRArgs rra;  \
       memcpy(&rra.arg1, &(_src), sizeof(V128));  \
@@ -206,11 +213,11 @@ static inline double mkNegNan ( void ) { return -mkPosNan(); }
       V128 _tmp;  \
       __asm__ __volatile__(  \
          "movupd (%0), %%xmm2"    "\n\t"  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " %%xmm2, %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
+         "movupd (%1), %%" XMMREG_DST   "\n\t"  \
+         _opname " %%xmm2, %%" XMMREG_DST  "\n\t"  \
+         "movupd %%" XMMREG_DST ", (%2)" "\n"  \
          : /*out*/ : /*in*/ "r"(&(_src)), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm2", "xmm11"  \
+         : "cc", "memory", "xmm2", XMMREG_DST  \
       );  \
       RRArgs rra;  \
       memcpy(&rra.arg1, &(_src), sizeof(V128));  \
@@ -225,11 +232,11 @@ static inline double mkNegNan ( void ) { return -mkPosNan(); }
       V128* _srcM = memalign16(sizeof(V128));  \
       memcpy(_srcM, &(_src), sizeof(V128));  \
       __asm__ __volatile__(  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " (%0), %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
+         "movupd (%1), %%" XMMREG_DST   "\n\t"  \
+         _opname " (%0), %%" XMMREG_DST  "\n\t"  \
+         "movupd %%" XMMREG_DST ", (%2)" "\n"  \
          : /*out*/ : /*in*/ "r"(_srcM), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm11"  \
+         : "cc", "memory", XMMREG_DST  \
       );  \
       RRArgs rra;  \
       memcpy(&rra.arg1, &(_src), sizeof(V128));  \
@@ -242,5 +249,18 @@ static inline double mkNegNan ( void ) { return -mkPosNan(); }
 #define DO_mandr_r(_opname, _src, _dst)  \
       DO_r_r(_opname, _src, _dst) \
       DO_m_r(_opname, _src, _dst)
+
+/* Common test functions */
+
+static inline void test_PMAXSD ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pmaxsd", src, dst);
+   }
+}
 
 #endif /* __SSE4_COMMON_H */

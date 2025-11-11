@@ -1503,17 +1503,6 @@ void test_PMAXSB ( void )
    }
 }
 
-void test_PMAXSD ( void )
-{
-   V128 src, dst;
-   Int i;
-   for (i = 0; i < 10; i++) {
-      randV128(&src);
-      randV128(&dst);
-      DO_mandr_r("pmaxsd", src, dst);
-   }
-}
-
 void test_PMAXUD ( void )
 {
    V128 src, dst;

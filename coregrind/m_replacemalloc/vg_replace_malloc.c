@@ -2094,34 +2094,37 @@ extern int * __error(void) __attribute__((weak));
 
 #define WITH_OPTIONS_INIT_FLAG 1
 
-#define ZONEMEMALIGN_WITH_OPTIONS(soname, fnname)                                 \
-   ZONEMEMALIGN(soname, fnname);                                                  \
-                                                                                  \
+#define ZONEMEMALIGN_WITH_OPTIONS(soname, fnname)                                   \
+   ZONEMEMALIGN(soname, fnname);                                                    \
+                                                                                    \
    void* VG_REPLACE_FUNCTION_EZU(10101, soname, fnname)(void* zone, SizeT alignment, SizeT n, UWord options); \
    void* VG_REPLACE_FUNCTION_EZU(10101, soname, fnname)(void* zone, SizeT alignment, SizeT n, UWord options)  \
-   {                                                                              \
-     void* v = VG_REPLACE_FUNCTION_EZU(10100,soname,fnname)(zone, alignment, n);  \
-     if (v != NULL && (options & WITH_OPTIONS_INIT_FLAG) != 0) {                  \
-       for (SizeT i = 0; i < n; i += 1) {                                      \
-         ((UChar*)v)[i] = 0;                                                      \
-       }                                                                          \
-     }                                                                            \
-     return v;                                                                    \
+   {                                                                                \
+      void *v;                                                                      \
+      if (alignment != 0) {                                                         \
+        v = VG_REPLACE_FUNCTION_EZU(10100,soname,fnname)(zone, alignment, n);       \
+        if (v != NULL && (options & WITH_OPTIONS_INIT_FLAG) != 0) {                 \
+          for (SizeT i = 0; i < n; i += 1) {                                        \
+            ((UChar*)v)[i] = 0;                                                     \
+          }                                                                         \
+        }                                                                           \
+      } else {                                                                      \
+        if ((options & WITH_OPTIONS_INIT_FLAG) == 0) {                              \
+          v = (void*)VALGRIND_NON_SIMD_CALL1(info.tl_malloc, n);                    \
+        } else {                                                                    \
+          v = (void*)VALGRIND_NON_SIMD_CALL2(info.tl_calloc, 0x1, n);               \
+        }                                                                           \
+      }                                                                             \
+      return v;                                                                     \
    }
 
-#define ZONEMEMALIGN_TYPE_WITH_OPTIONS(soname, fnname)                            \
-   ZONEMEMALIGN(soname, fnname);                                                  \
-                                                                                  \
+#define ZONEMEMALIGN_TYPE_WITH_OPTIONS(soname, fnname)                                 \
+   ZONEMEMALIGN_WITH_OPTIONS(soname, fnname);                                          \
+                                                                                       \
    void* VG_REPLACE_FUNCTION_EZU(10102, soname, fnname)(void* zone, SizeT alignment, SizeT n, UWord type, UWord options); \
    void* VG_REPLACE_FUNCTION_EZU(10102, soname, fnname)(void* zone, SizeT alignment, SizeT n, UWord type, UWord options)  \
-   {                                                                              \
-     void* v = VG_REPLACE_FUNCTION_EZU(10100,soname,fnname)(zone, alignment, n);  \
-     if (v != NULL && (options & WITH_OPTIONS_INIT_FLAG) != 0) {                  \
-       for (SizeT i = 0; i < n; i += 1) {                                      \
-         ((UChar*)v)[i] = 0;                                                      \
-       }                                                                          \
-     }                                                                            \
-     return v;                                                                    \
+   {                                                                                   \
+     return VG_REPLACE_FUNCTION_EZU(10101,soname,fnname)(zone, alignment, n, options); \
    }
 
 #endif

@@ -30,6 +30,9 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 511329  Darwin and FreeBSD: Move setting of carry flag out of
         ML_(do_syscall_for_client_WRK)
 511713  Refactor syscall argument handling
+511972  valgrind-3.26.0 tests fail to build on upcomig gcc-16:
+        unrecognized command-line option
+        '-Wno-alloc-size-larger-than=18446744073709551615'
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

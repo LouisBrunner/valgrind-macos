@@ -2,3 +2,127 @@
 # Suppressions for Darwin 25.x / macOS 26.0 Tahoe (arm64)
 
 ############################################
+
+# Bugs
+
+## Most likely a bug: libsystem_featureflags doesn't initialize the 3rd argument to shm_open
+{
+   OSX2600:libsystem_featureflags_shm_open
+   Memcheck:Param
+   shm_open("mode")
+   ...
+   fun:_os_feature_table_once
+}
+
+# False positives
+
+## Could be a bug: value is created by __CFInitialize's getpwuid_r
+## I wish we could suppress based on origin because it would be much simpler for this
+
+{
+   OSX2600:getpwuid_r_cond_1
+   Memcheck:Cond
+   ...
+   fun:getpwuid_r
+}
+
+{
+   OSX2600:getpwuid_r_cond_2
+   Memcheck:Cond
+   ...
+   fun:ds_user_byuid
+}
+
+{
+   OSX2600:getpwuid_r_value8_1
+   Memcheck:Value8
+   ...
+   fun:ds_user_byuid
+}
+
+{
+   OSX2600:getpwuid_r_cond_3
+   Memcheck:Cond
+   ...
+   fun:xpc_dictionary_apply
+   fun:_extract_user
+   fun:_ds_item
+   ...
+}
+
+{
+   OSX2600:getpwuid_r_cond_4
+   Memcheck:Cond
+   ...
+   fun:_CFCopyHomeDirURLForUser
+   ...
+}
+
+{
+   OSX2600:getpwuid_r_cond_5
+   Memcheck:Cond
+   ...
+   fun:-[_CFXPreferences withSearchLists:]
+   ...
+}
+
+{
+   OSX2600:getpwuid_r_value8_2
+   Memcheck:Value8
+   ...
+   fun:-[_CFXPreferences withSearchLists:]
+   ...
+}
+
+{
+   OSX2600:getpwuid_r_param_1
+   Memcheck:Param
+   stat64(path)
+   fun:stat
+   ...
+   fun:-[_CFXPreferences withSearchLists:]
+   ...
+}
+
+## Could be a bug: result of xpc_pipe_routine is not completely initialized after malloc
+## I wish we could suppress based on origin because it would be much simpler for this
+{
+   OSX1500:xpc_pipe_routine_uninitialized_cond_2
+   Memcheck:Cond
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_value8_6
+   Memcheck:Value8
+   ...
+   fun:__CFInitialize
+   ...
+}
+{
+   OSX1500:xpc_pipe_routine_uninitialized_open_param_1
+   Memcheck:Param
+   open(filename)
+   ...
+   fun:__CFInitialize
+   ...
+}
+
+## New, unsure
+
+{
+   OSX2600:cfx_notification_center_setup_connection_addr1
+   Memcheck:Addr1
+   ...
+   fun:__CFXNotificationCenterSetupConnection
+   ...
+}
+
+{
+   OSX2600:cfxpreferences_canlookupagents_addr1
+   Memcheck:Addr1
+   ...
+   fun:-[_CFXPreferences canLookUpAgents]
+   ...
+}

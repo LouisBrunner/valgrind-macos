@@ -1684,8 +1684,13 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 /*------------------------------------------------------------*/
 
 #if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+#if DARWIN_VERS >= DARWIN_26_00
+// The new xzm_main_malloc_zone_create makes a 25GB (0x600000000) map in memory so, no choice but to raise the limit...
+# define VA_LARGE_RANGE ((ULong) 25 * 1024 * 1024 * 1024)
+# else
 // Now that we parse the DSC, we might get mmap which are up to 4GB, put 2GB to be safe for now
-#define VA_LARGE_RANGE ((ULong) 2 * 1024 * 1024 * 1024)
+# define VA_LARGE_RANGE ((ULong) 2 * 1024 * 1024 * 1024)
+#endif
 #else
 #define VA_LARGE_RANGE 256 * 1024 * 1024
 #endif

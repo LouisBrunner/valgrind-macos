@@ -34,6 +34,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         unrecognized command-line option
         '-Wno-alloc-size-larger-than=18446744073709551615'
 512030  s390x: bfp-convert testcase fails
+512037  malloc trace does not print free size or alignment
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -306,7 +306,7 @@ extern int * __error(void) __attribute__((weak));
       \
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
-      MALLOC_TRACE(#fnname "(%llu)", (ULong)n ); \
+      MALLOC_TRACE(#fnname "(%zu)", n ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
@@ -329,7 +329,7 @@ extern int * __error(void) __attribute__((weak));
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
       struct AlignedAllocInfo aligned_alloc_info = { .orig_alignment=alignment, .size=n, .alloc_kind=AllocKind##tag}; \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE(#fnname "(size %llu, al %llu)", (ULong)n, (ULong)alignment ); \
+      MALLOC_TRACE(#fnname "(%zu, %zu)", n, alignment ); \
       \
       if ((alignment == 0) \
        || ((alignment & (alignment - 1)) != 0)) { \
@@ -356,7 +356,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord) zone);	\
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n);                   \
-      MALLOC_TRACE(#fnname "(%p, %llu)", zone, (ULong)n ); \
+      MALLOC_TRACE(#fnname "(%p, %zu)", zone, n ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
@@ -376,8 +376,8 @@ extern int * __error(void) __attribute__((weak));
       void* v; \
       \
       DO_INIT; \
-      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n);           \
-      MALLOC_TRACE(#fnname "(%llu)", (ULong)n );        \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
+      MALLOC_TRACE(#fnname "(%zu)", n ); \
       \
       v = (void*)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, n ); \
       MALLOC_TRACE(" = %p\n", v ); \
@@ -407,7 +407,7 @@ extern int * __error(void) __attribute__((weak));
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n);           \
       struct AlignedAllocInfo aligned_alloc_info = { .orig_alignment=alignment, .size=n, .alloc_kind=AllocKind##tag }; \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE(#fnname "(size %llu, al %llu)", (ULong)n, (ULong)alignment ); \
+      MALLOC_TRACE(#fnname "(%zu, %zu)", n, alignment ); \
       \
       if ((alignment == 0) \
        || ((alignment & (alignment - 1)) != 0)) { \
@@ -1022,7 +1022,7 @@ extern int * __error(void) __attribute__((weak));
        DO_INIT; \
        TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
-       MALLOC_TRACE(#fnname "(%p)\n", p ); \
+       MALLOC_TRACE(#fnname "(%p, %zu)\n", p, size ); \
        if (p == NULL)  \
        return; \
        (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -1065,7 +1065,7 @@ extern int * __error(void) __attribute__((weak));
        TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)alignment); \
        TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
-       MALLOC_TRACE(#fnname "(%p)\n", p ); \
+       MALLOC_TRACE(#fnname "(%p, %zu, %zu)\n", p, size, alignment ); \
        if (p == NULL)  \
        return; \
        (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -1163,7 +1163,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE(#fnname "(%p)\n", p ); \
+      MALLOC_TRACE(#fnname "(%p, %zu)\n", p, size ); \
       if (p == NULL)  \
          return; \
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -1238,7 +1238,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)alignment); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE(#fnname "(%p)\n", p ); \
+      MALLOC_TRACE(#fnname "(%p, %zu)\n", p, alignment ); \
       if (p == NULL)  \
          return; \
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -1255,7 +1255,7 @@ extern int * __error(void) __attribute__((weak));
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)size); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)alignment); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE(#fnname "(%p)\n", p ); \
+      MALLOC_TRACE(#fnname "(%p, %zu, %zu)\n", p, size, alignment ); \
       if (p == NULL)  \
          return; \
       (void)VALGRIND_NON_SIMD_CALL1( info.tl_##vg_replacement, p ); \
@@ -1709,7 +1709,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(new_size); \
-      MALLOC_TRACE("zone_realloc(%p,%p,%llu)", zone, ptrV, (ULong)new_size ); \
+      MALLOC_TRACE("zone_realloc(%p,%p,%zu)", zone, ptrV, new_size ); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
       if (v == NULL) { \
@@ -1732,7 +1732,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(new_size); \
-      MALLOC_TRACE("realloc(%p,%llu)", ptrV, (ULong)new_size ); \
+      MALLOC_TRACE("realloc(%p,%zu)", ptrV, new_size ); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
       if (v == NULL) { \
@@ -1755,7 +1755,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(new_size); \
-      MALLOC_TRACE("reallocf(%p,%llu)", ptrV, (ULong)new_size ); \
+      MALLOC_TRACE("reallocf(%p,%zu)", ptrV, new_size ); \
       v = (void*)VALGRIND_NON_SIMD_CALL2( info.tl_realloc, ptrV, new_size ); \
       MALLOC_TRACE(" = %p\n", v ); \
       if (v == NULL) { \
@@ -1781,7 +1781,7 @@ extern int * __error(void) __attribute__((weak));
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(ptrV); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(nmemb); \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
-      MALLOC_TRACE("reallocarray(%p,%llu,%llu)", ptrV, (ULong)nmemb, (ULong)size ); \
+      MALLOC_TRACE("reallocarray(%p,%zu,%zu)", ptrV, nmemb, size ); \
       if (nmemb > 0 && (SizeT)-1 / nmemb < size) { \
          SET_ERRNO_ENOMEM; \
          MALLOC_TRACE(" = 0\n"); \
@@ -1883,8 +1883,8 @@ extern int * __error(void) __attribute__((weak));
       VERIFY_ALIGNMENT(&aligned_alloc_info);                                   \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)zone);                        \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n);                                  \
-      MALLOC_TRACE("zone_memalign(%p, al %llu, size %llu)", zone,              \
-                   (ULong)alignment, (ULong)n);                                \
+      MALLOC_TRACE("zone_memalign(%p, al %zu, size %zu)", zone,                \
+                   alignment, n);                                              \
                                                                                \
       if (alignment == 0 || alignment % sizeof(void*) != 0 ||                  \
           (alignment & (alignment - 1)) != 0) {                                \
@@ -1952,8 +1952,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE("memalign(al %llu, size %llu)", \
-                   (ULong)alignment, (ULong)n ); \
+      MALLOC_TRACE("memalign(al %zu, size %zu)", alignment, n ); \
       \
       /* Round up to minimum alignment if necessary. */ \
       if (alignment < VG_MIN_MALLOC_SZB) \
@@ -1986,8 +1985,7 @@ extern int * __error(void) __attribute__((weak));
                                                                                \
       DO_INIT;                                                                 \
       VERIFY_ALIGNMENT(&aligned_alloc_info);                                   \
-      MALLOC_TRACE("memalign(alignment %llu, size %llu)", (ULong)alignment,    \
-                   (ULong)size);                                               \
+      MALLOC_TRACE("memalign(%zu, %zu)", alignment, size);                     \
       if ((VG_MEMALIGN_NO_SIZE_ZERO && (size == 0)) ||                         \
           (VG_MEMALIGN_NO_ALIGN_ZERO && (alignment == 0)) ||                   \
           (VG_MEMALIGN_ALIGN_POWER_TWO &&                                      \
@@ -2193,8 +2191,7 @@ extern int * __error(void) __attribute__((weak));
       DO_INIT; \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
       VERIFY_ALIGNMENT(&aligned_alloc_info); \
-      MALLOC_TRACE("posix_memalign(al %llu, size %llu)", \
-            (ULong)alignment, (ULong)size ); \
+      MALLOC_TRACE("posix_memalign(%p, %zu, %zu)", memptr, alignment, size ); \
       /* Test whether the alignment argument is valid.  It must be \
          a power of two multiple of sizeof (void *).  */ \
       if (alignment == 0 \
@@ -2337,8 +2334,7 @@ extern int * __error(void) __attribute__((weak));
        DO_INIT; \
        TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(size); \
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
-       MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
-                (ULong)alignment, (ULong)size ); \
+       MALLOC_TRACE("aligned_alloc(al %zu, size %zu)", alignment, size ); \
        \
        /* Round up to minimum alignment if necessary. */ \
        if (alignment < VG_MIN_MALLOC_SZB) \
@@ -2370,8 +2366,7 @@ extern int * __error(void) __attribute__((weak));
        \
        DO_INIT; \
        VERIFY_ALIGNMENT(&aligned_alloc_info); \
-       MALLOC_TRACE("aligned_alloc(al %llu, size %llu)", \
-                (ULong)alignment, (ULong)size ); \
+       MALLOC_TRACE("aligned_alloc(%zu, %zu)", alignment, size ); \
        if ((VG_ALIGNED_ALLOC_NO_SIZE_ZERO && (size == 0)) \
            || (VG_ALIGNED_ALLOC_NO_ALIGN_ZERO && (alignment == 0)) \
            || (VG_ALIGNED_ALLOC_SIZE_MULTIPLE_ALIGN && alignment && (size % alignment != 0)) \
@@ -2431,7 +2426,7 @@ extern int * __error(void) __attribute__((weak));
          return 0; \
       \
       pszB = (SizeT)VALGRIND_NON_SIMD_CALL1( info.tl_malloc_usable_size, p ); \
-      MALLOC_TRACE(" = %llu\n", (ULong)pszB ); \
+      MALLOC_TRACE(" = %zu\n", pszB ); \
       \
       return pszB; \
    }

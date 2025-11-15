@@ -2518,14 +2518,15 @@ s390_V128_bitwiseITE(IRExpr* vCond, IRExpr* v1, IRExpr* v2)
 /* Extract the bfp rounding mode from the guest FPC reg and encode it as an
    IRRoundingMode:
 
-   rounding mode | s390 | IR
-   -------------------------
-   to nearest    |  00  | 00
-   to zero       |  01  | 11
-   to +infinity  |  10  | 10
-   to -infinity  |  11  | 01
+   rounding mode   | s390 | IR
+   ----------------------------
+   to nearest      |  000 | 000
+   to zero         |  001 | 011
+   to +infinity    |  010 | 010
+   to -infinity    |  011 | 001
+   prepare shorter |  111 | 101
 
-   So:  IR = (4 - s390) & 3
+   So:  IR = (4 - s390) & (3 | s390)
 */
 static IRExpr *
 get_bfp_rounding_mode_from_fpc(void)
@@ -2538,29 +2539,16 @@ get_bfp_rounding_mode_from_fpc(void)
       extract the least significant 3 bits. */
    assign(fpc_bits, binop(Iop_And32, get_fpc_w0(), mkU32(7)));
 
-   /* fixs390:
+   IRExpr *rm_s390 = mkexpr(fpc_bits);
 
-
-      if (! s390_host_has_fpext && rounding_mode > 3) {
-         emulation warning @ runtime and
-         set fpc to round nearest
-      }
-   */
-
-   /* For now silently adjust an unsupported rounding mode to "nearest" */
-   IRExpr *rm_s390 = mkite(binop(Iop_CmpLE32S, mkexpr(fpc_bits), mkU32(3)),
-                           mkexpr(fpc_bits),
-                           mkU32(S390_FPC_BFP_ROUND_NEAREST_EVEN));
-
-   // rm_IR = (4 - rm_s390) & 3;
-   return binop(Iop_And32, binop(Iop_Sub32, mkU32(4), rm_s390), mkU32(3));
+   // rm_IR = (4 - rm_s390) & (3 | rm_s390);
+   return binop(Iop_And32,
+                binop(Iop_Sub32, mkU32(4), rm_s390),
+                binop(Iop_Or32,  mkU32(3), rm_s390));
 }
 
 /* Encode the s390 rounding mode as it appears in the m3 field of certain
-   instructions to VEX's IRRoundingMode. Rounding modes that cannot be
-   represented in VEX are converted to Irrm_NEAREST. The rationale is, that
-   Irrm_NEAREST refers to IEEE 754's roundTiesToEven which the standard
-   considers the default rounding mode (4.3.3). */
+   instructions to VEX's IRRoundingMode. */
 static IRTemp
 encode_bfp_rounding_mode(UChar mode)
 {

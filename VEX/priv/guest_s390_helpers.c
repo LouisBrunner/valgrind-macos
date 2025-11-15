@@ -784,6 +784,10 @@ decode_bfp_rounding_mode(UInt irrm)
    case Irrm_ZERO:    return S390_BFP_ROUND_ZERO;
    case Irrm_NEAREST_TIE_AWAY_0: return S390_BFP_ROUND_NEAREST_AWAY;
    case Irrm_PREPARE_SHORTER:    return S390_BFP_ROUND_PREPARE_SHORT;
+   case Irrm_AWAY_FROM_ZERO:
+   case Irrm_NEAREST_TIE_TOWARD_0:
+      /* These cannot occur as they are DFP specific */
+      break;
    }
    vpanic("decode_bfp_rounding_mode");
 }

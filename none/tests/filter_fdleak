@@ -29,7 +29,7 @@ sed '/__open/d' |
 sed 's/__systemcall6/creat/' |
 
 # arm systems substitute open for creat
-perl -p -e 's/open \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
+perl -p -e 's/open(?:64)? \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |
 perl -p -e "s/: open \(/: creat (/" |
 # arm64 write resolved to file:line with debuginfo
 perl -p -e "s/write\.c:[1-9][0-9]*/in \/...libc.../" |

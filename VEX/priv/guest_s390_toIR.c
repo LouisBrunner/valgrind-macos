@@ -16797,11 +16797,7 @@ s390_call_ecag(IRExpr *op2addr)
 static const HChar *
 s390_irgen_ECAG(UChar r1, UChar r3 __attribute__((unused)), IRTemp op2addr)
 {
-   if (! s390_host_has_gie) {
-      emulation_failure(EmFail_S390X_ecag);
-   } else {
-      put_gpr_dw0(r1, s390_call_ecag(mkexpr(op2addr)));
-   }
+   put_gpr_dw0(r1, s390_call_ecag(mkexpr(op2addr)));
 
    return "ecag";
 }

@@ -15,9 +15,6 @@ Limitations
   `docs/internals/s390-opcodes.csv', by grepping for "not implemented".
 - FP signalling is not accurate. E.g., the "compare and signal"
   instructions behave like their non-signalling counterparts.
-- On machine models predating z10, cachegrind will assume a z10 cache
-  architecture. Otherwise, cachegrind will query the hosts cache system
-  and use those parameters.
 - Some gcc versions use mvc to copy 4/8 byte values. This will affect
   certain debug messages. For example, memcheck will complain about
   4 one-byte reads/writes instead of just a single read/write.

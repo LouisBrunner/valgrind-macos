@@ -1553,8 +1553,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Instruction stfle is not supported on this host";
      case EmFail_S390X_stckf:
         return "Instruction stckf is not supported on this host";
-     case EmFail_S390X_ecag:
-        return "Instruction ecag is not supported on this host";
      case EmFail_S390X_pfpo:
         return "Instruction pfpo is not supported on this host";
      case EmFail_S390X_DFP_insn:

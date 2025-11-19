@@ -2,9 +2,7 @@
 Requirements
 ------------
 - You need GCC 3.4 or later to compile the s390 port.
-- To run valgrind a z10 machine or any later model is recommended.
-  Older machine models down to and including z990 may work but have
-  not been tested extensively.
+- Valgrind requires a machine not older than z196 to run.
 
 
 Limitations

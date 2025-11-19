@@ -1541,6 +1541,12 @@ Bool VG_(machine_get_hwcaps)( void )
         identification yet. Keeping fingers crossed. */
      model = VG_(get_machine_model)();
 
+     if (model < VEX_S390X_MODEL_Z196) {
+        VG_(message)(Vg_FailMsg, "Your machine is too old. "
+                     "You need at least a z196 to run valgrind.\n");
+        VG_(exit)(1);
+     }
+
      /* Unblock SIGILL and stash away the old action for that signal */
      VG_(sigemptyset)(&tmp_set);
      VG_(sigaddset)(&tmp_set, VKI_SIGILL);

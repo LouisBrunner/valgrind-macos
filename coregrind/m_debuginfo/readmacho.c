@@ -140,8 +140,8 @@ Bool ML_(check_macho_and_get_rw_loads)( Int fd, Int* rw_loads )
       for (unsigned int i = 0U; i < mh->ncmds; ++i) {
          if (lc->cmd == LC_SEGMENT_CMD) {
             const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
-            if (sc->initprot == 3) {
-              ++*rw_loads;
+            if (sc->initprot == 3 && sc->filesize) {
+               ++*rw_loads;
             }
          }
          const char* tmp = (const char*)lc + lc->cmdsize;

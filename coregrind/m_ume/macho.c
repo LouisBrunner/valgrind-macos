@@ -243,7 +243,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    vmsize = VG_PGROUNDUP(segcmd->vmsize);
    if (filesize > 0) {
       addr = slided_addr;
-      VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu)\n", addr, filesize);
+      VG_(debugLog)(2, "ume", "mmap fixed (file) (%#lx, %lu, %x)\n", addr, filesize, prot);
       res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd, 
                                                  offset + segcmd->fileoff, 
                                                  filename);
@@ -260,7 +260,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
       // page-aligned part
       SizeT length = vmsize - filesize;
       addr = (Addr)(filesize + slided_addr);
-      VG_(debugLog)(2, "ume", "mmap fixed (anon) (%#lx, %lu)\n", addr, length);
+      VG_(debugLog)(2, "ume", "mmap fixed (anon) (%#lx, %lu, %u)\n", addr, length, prot);
       res = VG_(am_mmap_anon_fixed_client)(addr, length, prot);
       check_mmap(res, addr, length, "load_segment2");
    }

@@ -46,7 +46,7 @@ EXTRA_DIST = \
 	bfp-tdc.vgtest bfp-tdc.stdout.exp bfp-tdc.stderr.exp \
 	bfp-emit.vgtest bfp-emit.stderr.exp bfp-emit.post.exp \
 	bfp-XxC.vgtest bfp-XxC.stderr.exp bfp-XxC.post.exp \
-	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
+	ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 ecag.stdout.exp-z17 \
 	op00.stderr.exp op00.vgtest \

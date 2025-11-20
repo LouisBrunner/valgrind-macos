@@ -781,6 +781,10 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    di->text_bias = 0;
 
+   if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
+      VG_(message)(Vg_DebugMsg, "Reading syms from %s\n",
+                   di->fsm.filename );
+
    { 
       DiCursor cmd_cur = ML_(cur_from_sli)(msli);
 

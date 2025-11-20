@@ -102,9 +102,6 @@ typedef
       /* stfle insn is not supported on this host */
       EmFail_S390X_stfle,
 
-      /* stckf insn is not supported on this host */
-      EmFail_S390X_stckf,
-
       /* pfpo insn is not supported on this host */
       EmFail_S390X_pfpo,
 

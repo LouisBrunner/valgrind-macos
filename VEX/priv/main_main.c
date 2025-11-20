@@ -1551,8 +1551,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
                "  IEEE-invalid-operation exceptions will not be suppressed.";
      case EmFail_S390X_stfle:
         return "Instruction stfle is not supported on this host";
-     case EmFail_S390X_stckf:
-        return "Instruction stckf is not supported on this host";
      case EmFail_S390X_pfpo:
         return "Instruction pfpo is not supported on this host";
      case EmFail_S390X_DFP_insn:
@@ -1933,7 +1931,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_STFLE, "stfle" },
       { VEX_HWCAPS_S390X_ETF2,  "etf2" },
       { VEX_HWCAPS_S390X_ETF3,  "etf3" },
-      { VEX_HWCAPS_S390X_STCKF, "stckf" },
       { VEX_HWCAPS_S390X_FPEXT, "fpext" },
       { VEX_HWCAPS_S390X_LSC,   "lsc" },
       { VEX_HWCAPS_S390X_PFPO,  "pfpo" },

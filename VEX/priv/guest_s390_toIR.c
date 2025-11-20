@@ -15792,20 +15792,16 @@ s390_irgen_STCK(IRTemp op2addr)
 static const HChar *
 s390_irgen_STCKF(IRTemp op2addr)
 {
-   if (! s390_host_has_stckf) {
-      emulation_failure(EmFail_S390X_stckf);
-   } else {
-      IRTemp cc = newTemp(Ity_I64);
+   IRTemp cc = newTemp(Ity_I64);
 
-      IRDirty *d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCKF",
-                                     &s390x_dirtyhelper_STCKF,
-                                     mkIRExprVec_1(mkexpr(op2addr)));
-      d->mFx   = Ifx_Write;
-      d->mAddr = mkexpr(op2addr);
-      d->mSize = 8;
-      stmt(IRStmt_Dirty(d));
-      s390_cc_set(cc);
-   }
+   IRDirty *d = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_STCKF",
+                                  &s390x_dirtyhelper_STCKF,
+                                  mkIRExprVec_1(mkexpr(op2addr)));
+   d->mFx   = Ifx_Write;
+   d->mAddr = mkexpr(op2addr);
+   d->mSize = 8;
+   stmt(IRStmt_Dirty(d));
+   s390_cc_set(cc);
    return "stckf";
 }
 

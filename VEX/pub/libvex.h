@@ -162,7 +162,6 @@ typedef
 #define VEX_S390X_MODEL_UNKNOWN  19     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
-#define VEX_HWCAPS_S390X_LDISP (1<<6)   /* Long-displacement facility */
 #define VEX_HWCAPS_S390X_EIMM  (1<<7)   /* Extended-immediate facility */
 #define VEX_HWCAPS_S390X_GIE   (1<<8)   /* General-instruction-extension facility */
 #define VEX_HWCAPS_S390X_DFP   (1<<9)   /* Decimal floating point facility */
@@ -188,8 +187,7 @@ typedef
 #define VEX_HWCAPS_S390X_MSA9  (1<<30)  /* Message-security-assist extension 9 */
 
 /* Special value representing all available s390x hwcaps */
-#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_LDISP | \
-                                VEX_HWCAPS_S390X_EIMM  | \
+#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_EIMM  | \
                                 VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_DFP   | \
                                 VEX_HWCAPS_S390X_FGX   | \

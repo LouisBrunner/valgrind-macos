@@ -1533,7 +1533,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
 
-     volatile Bool have_LDISP, have_STFLE;
+     volatile Bool have_STFLE;
      Int i, r, model;
 
      /* If the model is "unknown" don't treat this as an error. Assume
@@ -1570,17 +1570,6 @@ Bool VG_(machine_get_hwcaps)( void )
      /* Determine hwcaps. Note, we cannot use the stfle insn because it
         is not supported on z900. */
 
-     have_LDISP = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_LDISP = False;
-     } else {
-       /* BASR loads the address of the next insn into r1. Needed to avoid
-          a segfault in XY. */
-        __asm__ __volatile__("basr %%r1,%%r0\n\t"
-                             ".long  0xe3001000\n\t"  /* XY  0,0(%r1) */
-                             ".short 0x0057" : : : "r0", "r1", "cc", "memory");
-     }
-
      /* Check availability of STFLE. If available store facility bits
         in hoststfle. */
      ULong hoststfle[S390_NUM_FACILITY_DW];
@@ -1610,12 +1599,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
      vai.hwcaps = model;
      if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
-     if (have_LDISP) {
-        /* Use long displacement only on machines >= z990. For all other
-           machines it is millicoded and therefore slow. */
-        if (model >= VEX_S390X_MODEL_Z990)
-           vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
-     }
 
      /* Detect presence of certain facilities using the STFLE insn.
         Note, that these facilities were introduced at the same time or later
@@ -1627,7 +1610,6 @@ Bool VG_(machine_get_hwcaps)( void )
         UInt hwcaps_bit;
         const HChar name[6];   // may need adjustment for new facility names
      } fac_hwcaps[] = {
-        { False,  18,  VEX_HWCAPS_S390X_LDISP, "LDISP" },
         { False,  21,  VEX_HWCAPS_S390X_EIMM,  "EIMM"  },
         { False,  34,  VEX_HWCAPS_S390X_GIE,   "GIE"   },
         { False,  42,  VEX_HWCAPS_S390X_DFP,   "DFP"   },

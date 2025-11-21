@@ -2963,7 +2963,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
 
 #elif defined(VGP_x86_darwin)
-   arch->vex.guest_EIP = arch->vex.guest_IP_AT_SYSCALL; 
+   arch->vex.guest_EIP -= 2;
 
    /* Make sure our caller is actually sane, and we're really backing
       back over a syscall.
@@ -2987,7 +2987,7 @@ void ML_(fixup_guest_state_to_restart_syscall) ( ThreadArchState* arch )
    }
    
 #elif defined(VGP_amd64_darwin)
-   arch->vex.guest_RIP = arch->vex.guest_IP_AT_SYSCALL;
+   arch->vex.guest_RIP -= 2;
     
    /* Make sure our caller is actually sane, and we're really backing
       back over a syscall.

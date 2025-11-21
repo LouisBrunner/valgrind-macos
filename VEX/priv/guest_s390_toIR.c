@@ -15825,10 +15825,6 @@ s390_irgen_STCKE(IRTemp op2addr)
 static const HChar *
 s390_irgen_STFLE(UChar b2, UShort d2)
 {
-   if (! s390_host_has_stfle) {
-      emulation_failure(EmFail_S390X_stfle);
-      return "stfle";
-   }
    extension(S390_EXT_STFLE, b2 | (d2 << 8));
    return "stfle";
 }

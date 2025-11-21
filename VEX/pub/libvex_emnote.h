@@ -99,9 +99,6 @@ typedef
          in VEX and is expected to be zero. */
       EmWarn_S390X_XiC_not_zero,
 
-      /* stfle insn is not supported on this host */
-      EmFail_S390X_stfle,
-
       /* pfpo insn is not supported on this host */
       EmFail_S390X_pfpo,
 

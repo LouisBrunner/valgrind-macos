@@ -167,7 +167,6 @@ typedef
 #define VEX_HWCAPS_S390X_DFP   (1<<9)   /* Decimal floating point facility */
 #define VEX_HWCAPS_S390X_FGX   (1<<10)  /* FPR-GR transfer facility */
 #define VEX_HWCAPS_S390X_ETF2  (1<<11)  /* ETF2-enhancement facility */
-#define VEX_HWCAPS_S390X_STFLE (1<<12)  /* STFLE facility */
 #define VEX_HWCAPS_S390X_ETF3  (1<<13)  /* ETF3-enhancement facility */
 #define VEX_HWCAPS_S390X_FPEXT (1<<15)  /* Floating point extension facility */
 #define VEX_HWCAPS_S390X_LSC   (1<<16)  /* Conditional load/store facility */
@@ -191,7 +190,6 @@ typedef
                                 VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_DFP   | \
                                 VEX_HWCAPS_S390X_FGX   | \
-                                VEX_HWCAPS_S390X_STFLE | \
                                 VEX_HWCAPS_S390X_FPEXT | \
                                 VEX_HWCAPS_S390X_LSC   | \
                                 VEX_HWCAPS_S390X_ETF3  | \

@@ -1549,8 +1549,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Encountered an insn with the IEEE-invalid-operation-exception\n"
                "  control (XiC) bit set to 1. This is not supported. Continuing anyway.\n"
                "  IEEE-invalid-operation exceptions will not be suppressed.";
-     case EmFail_S390X_stfle:
-        return "Instruction stfle is not supported on this host";
      case EmFail_S390X_pfpo:
         return "Instruction pfpo is not supported on this host";
      case EmFail_S390X_DFP_insn:
@@ -1927,7 +1925,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_GIE,   "gie" },
       { VEX_HWCAPS_S390X_DFP,   "dfp" },
       { VEX_HWCAPS_S390X_FGX,   "fgx" },
-      { VEX_HWCAPS_S390X_STFLE, "stfle" },
       { VEX_HWCAPS_S390X_ETF2,  "etf2" },
       { VEX_HWCAPS_S390X_ETF3,  "etf3" },
       { VEX_HWCAPS_S390X_FPEXT, "fpext" },

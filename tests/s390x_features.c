@@ -1,7 +1,5 @@
 /* -*- mode: C; c-basic-offset: 3; -*- */
 
-#include <setjmp.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,8 +38,6 @@
 //   z900:z9   -- Host needs to be at least a z900 and at most a z9.
 //                Any model in between is OK, too.
 
-jmp_buf env;
-
 #if defined(VGA_s390x)
 
 // Features that require kernel support should be checked against HWCAP instead
@@ -58,11 +54,6 @@ jmp_buf env;
 /* Number of double words needed to store all facility bits. */
 #define S390_NUM_FACILITY_DW 3
 
-void handle_sigill(int signum)
-{
-   longjmp(env, 1);
-}
-
 static void clear_facilities(unsigned long long *ret)
 {
    unsigned int index;
@@ -74,15 +65,9 @@ static void clear_facilities(unsigned long long *ret)
 
 void stfle(unsigned long long *ret)
 {
-   signal(SIGILL, handle_sigill);
-   if (setjmp(env)) {
-      /* stfle not available: assume no facilities */
-      clear_facilities(ret);
-   } else {
-      register unsigned long long r0 asm("0") = S390_NUM_FACILITY_DW - 1;
-      asm volatile(".insn s,0xb2b00000,%0\n" /* stfle */
-       : "=m" (*ret), "+d"(r0) :: "cc", "memory");
-   }
+   register unsigned long long r0 asm("0") = S390_NUM_FACILITY_DW - 1;
+   asm volatile(".insn s,0xb2b00000,%0\n" /* stfle */
+                : "=m" (*ret), "+d"(r0) :: "cc", "memory");
 }
 
 
@@ -244,8 +229,6 @@ static int go(char *feature, char *cpu)
       match = (facilities[0] & FAC_BIT(1)) && (facilities[0] & FAC_BIT(2));
    } else if (strcmp(feature, "s390x-n3") == 0 ) {
       match = facilities[0] & FAC_BIT(0);
-   } else if (strcmp(feature, "s390x-stfle") == 0 ) {
-      match = facilities[0] & FAC_BIT(7);
    } else if (strcmp(feature, "s390x-eimm") == 0 ) {
       match = facilities[0] & FAC_BIT(21);
    } else if (strcmp(feature, "s390x-genins") == 0 ) {

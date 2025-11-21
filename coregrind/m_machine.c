@@ -513,10 +513,10 @@ Int VG_(machine_arm_archlevel) = 4;
 #endif
 
 
-/* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
+/* For hwcaps detection on ppc32/64, mips and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
-    || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32) \
+    || defined(VGA_arm) || defined(VGA_mips32) \
     || defined(VGA_mips64) || defined(VGA_arm64)
 #include "pub_core_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
@@ -1533,8 +1533,7 @@ Bool VG_(machine_get_hwcaps)( void )
      vki_sigaction_fromK_t saved_sigill_act;
      vki_sigaction_toK_t     tmp_sigill_act;
 
-     volatile Bool have_STFLE;
-     Int i, r, model;
+     Int i, model;
 
      /* If the model is "unknown" don't treat this as an error. Assume
         this is a brand-new machine model for which we don't have the 
@@ -1547,63 +1546,24 @@ Bool VG_(machine_get_hwcaps)( void )
         VG_(exit)(1);
      }
 
-     /* Unblock SIGILL and stash away the old action for that signal */
-     VG_(sigemptyset)(&tmp_set);
-     VG_(sigaddset)(&tmp_set, VKI_SIGILL);
-
-     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
-     vg_assert(r == 0);
-
-     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
-     vg_assert(r == 0);
-     tmp_sigill_act = saved_sigill_act;
-
-     /* NODEFER: signal handler does not return (from the kernel's point of
-        view), hence if it is to successfully catch a signal more than once,
-        we need the NODEFER flag. */
-     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
-     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
-     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
-     tmp_sigill_act.ksa_handler = handler_unsup_insn;
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-
-     /* Determine hwcaps. Note, we cannot use the stfle insn because it
-        is not supported on z900. */
-
-     /* Check availability of STFLE. If available store facility bits
-        in hoststfle. */
      ULong hoststfle[S390_NUM_FACILITY_DW];
 
      for (i = 0; i < S390_NUM_FACILITY_DW; ++i)
         hoststfle[i] = 0;
 
-     have_STFLE = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_STFLE = False;
-     } else {
-         register ULong reg0 asm("0") = S390_NUM_FACILITY_DW - 1;
+     register ULong reg0 asm("0") = S390_NUM_FACILITY_DW - 1;
 
-         __asm__(".insn s,0xb2b00000,%0" /* stfle */
+     __asm__(".insn s,0xb2b00000,%0" /* stfle */
                  : "=Q"(hoststfle), "+d"(reg0)
                  :
                  : "cc");
-     }
 
-     /* Restore signals */
-     r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
-     vg_assert(r == 0);
-     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     vg_assert(r == 0);
      va = VexArchS390X;
      vai.endness = VexEndnessBE;
 
      vai.hwcaps = model;
-     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
 
-     /* Detect presence of certain facilities using the STFLE insn.
-        Note, that these facilities were introduced at the same time or later
-        as STFLE, so the absence of STLFE implies the absence of the facility
-        we're trying to detect. */
+     /* Detect presence of certain facilities using the STFLE insn. */
      struct fac_hwcaps_map {
         UInt installed;
         UInt facility_bit;
@@ -1615,7 +1575,6 @@ Bool VG_(machine_get_hwcaps)( void )
         { False,  42,  VEX_HWCAPS_S390X_DFP,   "DFP"   },
         { False,  41,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
         { False,  24,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
-        { False,   7,  VEX_HWCAPS_S390X_STFLE, "STFLE" },
         { False,  30,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
         { False,  37,  VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
         { False,  45,  VEX_HWCAPS_S390X_LSC,   "LSC"   },

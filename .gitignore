@@ -2184,8 +2184,6 @@
 /none/tests/s390x/cu14_1
 /none/tests/s390x/cu41
 /none/tests/s390x/ecag
-/none/tests/s390x/fpext_warn
-/none/tests/s390x/fpext_fail
 /none/tests/s390x/bfp-306054
 /none/tests/s390x/bfp-arith
 /none/tests/s390x/bfp-load

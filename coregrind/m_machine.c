@@ -1528,11 +1528,6 @@ Bool VG_(machine_get_hwcaps)( void )
 #  include "libvex_s390x_common.h"
 
    {
-     /* Instruction set detection code borrowed from ppc above. */
-     vki_sigset_t          saved_set, tmp_set;
-     vki_sigaction_fromK_t saved_sigill_act;
-     vki_sigaction_toK_t     tmp_sigill_act;
-
      Int i, model;
 
      /* If the model is "unknown" don't treat this as an error. Assume
@@ -1576,7 +1571,6 @@ Bool VG_(machine_get_hwcaps)( void )
         { False,  41,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
         { False,  24,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
         { False,  30,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
-        { False,  37,  VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
         { False,  45,  VEX_HWCAPS_S390X_LSC,   "LSC"   },
         { False,  44,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
         { False, 129,  VEX_HWCAPS_S390X_VX,    "VX"    },

@@ -1234,14 +1234,7 @@ get_irop(IROp op)
          case Iop_F64toI32U:
          case Iop_F64toI64U:
          case Iop_F128toI32U:
-         case Iop_F128toI64U: {
-            /* These IROps require the floating point extension facility */
-            rc = system(S390X_FEATURES " s390x-fpext");
-            // s390x_features returns 1 if feature does not exist
-            rc /= 256;
-            if (rc != 0) return NULL;
-         }
-         break;
+         case Iop_F128toI64U:
          /* PFPO Iops */
          case Iop_F32toD32:
          case Iop_F32toD64:

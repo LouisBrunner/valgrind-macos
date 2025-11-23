@@ -2392,12 +2392,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          irrm = expr->Iex.Binop.arg1;
          left = expr->Iex.Binop.arg2;
          
-         if (s390_host_has_fpext) {
-            rm = get_bfp_rounding_mode(env, irrm);
-         } else {
-            set_bfp_rounding_mode_in_fpc(env, irrm);
-            rm = S390_BFP_ROUND_PER_FPC;
-         }
+         rm = get_bfp_rounding_mode(env, irrm);
 
          s390_isel_float128_expr(&op_hi, &op_lo, env, left);
          /* operand --> (f4, f6) */
@@ -2677,12 +2672,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          /* convert-from-fixed and load-rounded have a rounding mode field
             when the floating point extension facility is installed. */
          dst = newVRegF(env);
-         if (s390_host_has_fpext) {
-            rounding_mode = get_bfp_rounding_mode(env, irrm);
-         } else {
-            set_bfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_BFP_ROUND_PER_FPC;
-         }
+         rounding_mode = get_bfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
                                              rounding_mode));
          return dst;
@@ -2753,14 +2743,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          /* result --> (f12, f14) */
 
-         /* load-rounded has a rounding mode field when the floating point
-            extension facility is installed. */
-         if (s390_host_has_fpext) {
-            rounding_mode = get_bfp_rounding_mode(env, irrm);
-         } else {
-            set_bfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_BFP_ROUND_PER_FPC;
-         }
+         rounding_mode = get_bfp_rounding_mode(env, irrm);
 
          addInstr(env, s390_insn_bfp128_convert_from(size, conv, f12, f14,
                                                      f13, f15, rounding_mode));
@@ -2974,15 +2957,7 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          addInstr(env, s390_insn_move(8, f12, op2_hi));
          addInstr(env, s390_insn_move(8, f14, op2_lo));
 
-         /* DFP arithmetic ops take rounding mode only when fpext is
-            installed. But, DFP quantize operation takes rm irrespective
-            of fpext facility . */
-         if (s390_host_has_fpext || op == Iop_QuantizeD128) {
-            rounding_mode = get_dfp_rounding_mode(env, irrm);
-         } else {
-            set_dfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-         }
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_dfp128_binop(16, dfpop, f13, f15, f9, f11,
                                               f12, f14, rounding_mode));
          /* Move result to virtual destination register */
@@ -3294,15 +3269,9 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       convert: {
             s390_dfp_round_t rounding_mode;
-            /* convert-from-fixed and load-rounded have a rounding mode field
-               when the floating point extension facility is installed. */
+
             dst = newVRegF(env);
-            if (s390_host_has_fpext) {
-               rounding_mode = get_dfp_rounding_mode(env, irrm);
-            } else {
-               set_dfp_rounding_mode_in_fpc(env, irrm);
-               rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-            }
+            rounding_mode = get_dfp_rounding_mode(env, irrm);
             addInstr(env, s390_insn_dfp_convert(size, conv, dst, h1,
                                                 rounding_mode));
             return dst;
@@ -3368,14 +3337,7 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          /* result --> (f12, f14) */
  
-         /* load-rounded has a rounding mode field when the floating point
-            extension facility is installed. */
-         if (s390_host_has_fpext) {
-            rounding_mode = get_dfp_rounding_mode(env, irrm);
-         } else {
-            set_dfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-         }
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_dfp128_convert_from(size, conv, f12, f14,
                                                      f13, f15, rounding_mode));
          dst = newVRegF(env);
@@ -3495,15 +3457,7 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
          op2  = s390_isel_dfp_expr(env, left);  /* Process 1st operand */
          op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
          dst  = newVRegF(env);
-         /* DFP arithmetic ops take rounding mode only when fpext is
-            installed. But, DFP quantize operation takes rm irrespective
-            of fpext facility . */
-         if (s390_host_has_fpext || dfpop == S390_DFP_QUANTIZE) {
-            rounding_mode = get_dfp_rounding_mode(env, irrm);
-         } else {
-            set_dfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-         }
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_dfp_binop(size, dfpop, dst, op2, op3,
                                            rounding_mode));
          return dst;

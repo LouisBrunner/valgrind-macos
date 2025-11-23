@@ -84,11 +84,6 @@ typedef
       EmWarn_PPC64_redir_overflow,
       EmWarn_PPC64_redir_underflow,
 
-      /* insn specifies a rounding mode other than "according to FPC"
-         which requires the floating point extension facility. But that
-         facility is not available on this host */
-      EmWarn_S390X_fpext_rounding,
-
       /* Various BFP insns have an M4 field containing the
          IEEE-inexact-exception (XxC) control bit. That bit cannot me modelled
          in VEX and is expected to be zero. */
@@ -104,10 +99,6 @@ typedef
 
       /* DFP insns are not supported on this host */
       EmFail_S390X_DFP_insn,
-
-      /* insn needs floating point extension facility which is not
-         available on this host */
-      EmFail_S390X_fpext,
 
       /* GPR 0 contains invalid rounding mode for PFPO instruction */
       EmFail_S390X_invalid_PFPO_rounding_mode,

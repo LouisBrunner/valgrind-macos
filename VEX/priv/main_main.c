@@ -1536,11 +1536,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "PPC64 function redirection stack overflow";
      case EmWarn_PPC64_redir_underflow:
         return "PPC64 function redirection stack underflow";
-     case EmWarn_S390X_fpext_rounding:
-        return "The specified rounding mode cannot be supported. That\n"
-               "  feature requires the floating point extension facility\n"
-               "  which is not available on this host. Continuing using\n"
-               "  the rounding mode from FPC. Results may differ!";
      case EmWarn_S390X_XxC_not_zero:
         return "Encountered an insn with the IEEE-inexact-exception control\n"
                "  (XxC) bit set to 1. This is not supported. Continuing anyway.\n"
@@ -1553,10 +1548,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Instruction pfpo is not supported on this host";
      case EmFail_S390X_DFP_insn:
         return "DFP instructions are not supported on this host";
-     case EmFail_S390X_fpext:
-        return "Encountered an instruction that requires the floating "
-               "point extension facility.\n"
-               "  That facility is not available on this host";
      case EmFail_S390X_invalid_PFPO_rounding_mode:
         return "The rounding mode in GPR 0 for the PFPO instruction"
                " is invalid";
@@ -1927,7 +1918,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_FGX,   "fgx" },
       { VEX_HWCAPS_S390X_ETF2,  "etf2" },
       { VEX_HWCAPS_S390X_ETF3,  "etf3" },
-      { VEX_HWCAPS_S390X_FPEXT, "fpext" },
       { VEX_HWCAPS_S390X_LSC,   "lsc" },
       { VEX_HWCAPS_S390X_PFPO,  "pfpo" },
       { VEX_HWCAPS_S390X_VX,    "vx" },

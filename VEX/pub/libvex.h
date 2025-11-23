@@ -168,7 +168,6 @@ typedef
 #define VEX_HWCAPS_S390X_FGX   (1<<10)  /* FPR-GR transfer facility */
 #define VEX_HWCAPS_S390X_ETF2  (1<<11)  /* ETF2-enhancement facility */
 #define VEX_HWCAPS_S390X_ETF3  (1<<13)  /* ETF3-enhancement facility */
-#define VEX_HWCAPS_S390X_FPEXT (1<<15)  /* Floating point extension facility */
 #define VEX_HWCAPS_S390X_LSC   (1<<16)  /* Conditional load/store facility */
 #define VEX_HWCAPS_S390X_PFPO  (1<<17)  /* Perform floating point ops facility */
 #define VEX_HWCAPS_S390X_VX    (1<<18)  /* Vector facility */
@@ -190,7 +189,6 @@ typedef
                                 VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_DFP   | \
                                 VEX_HWCAPS_S390X_FGX   | \
-                                VEX_HWCAPS_S390X_FPEXT | \
                                 VEX_HWCAPS_S390X_LSC   | \
                                 VEX_HWCAPS_S390X_ETF3  | \
                                 VEX_HWCAPS_S390X_ETF2  | \

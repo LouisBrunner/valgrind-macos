@@ -1,2 +1,0 @@
-prog: fpext_fail
-prereq: test -e fpext_fail && ../../../tests/s390x_features '!s390x-fpext'

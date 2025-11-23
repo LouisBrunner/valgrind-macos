@@ -2399,7 +2399,7 @@ extern int * __error(void) __attribute__((weak));
   ALIGNED_ALLOC(SO_SYN_MALLOC,    aligned_alloc);
 
 #elif defined(VGO_freebsd)
- ALIGNED_ALLOC(G_Z_LIBC_SONAME, aligned_alloc);
+ ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
  ALIGNED_ALLOC(SO_SYN_MALLOC,   aligned_alloc);
 
  #elif defined(VGO_darwin)

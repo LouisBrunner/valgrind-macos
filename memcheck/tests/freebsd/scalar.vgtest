@@ -1,3 +1,4 @@
+prereq: kldstat -m mqueuefs > /dev/null 2>&1
 prog: scalar
 vgopts: -q --error-limit=no --suppressions=scalar.supp
 stderr_filter: filter_scalar

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# FreeBSD has a (rather iffy if you ask me) belt and braces
+# approach to stack guards. When a stack gets dreated the
+# kernel adds a gurad page. Fair enough. When a pthread
+# is created, the pthread library also creates a stack
+# guard. Can't be too careful, eh?
+
+# From a Valgrind perspectve this is bad news. We use a heuristic
+# that uses VG_(am_find_nsegment) to determine whether an address
+# is part of a stack (including guard page) then
+# find_tid_with_stack_containing() with the address rounded
+# up to the nearest page. That doesn't work when there are
+# two guard pages.
+
+# There is a sysctl to turn off the kernel guard page,
+# but that requires root privileges
+
+if [ "$(uname)" = FreeBSD ]; then
+
+  sysctl security.bsd.stack_guard_page | grep 0 > /dev/null
+  exit $?
+
+fi 

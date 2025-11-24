@@ -1581,10 +1581,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Encountered an instruction that requires the message-security"
                " assist.\n"
                "  That assist is not available on this host";
-     case EmFail_S390X_msa4:
-        return "Encountered an instruction that requires the"
-               " message-security-assist extension 4.\n"
-               "  That extension is not available on this host";
      case EmFail_S390X_msa8:
         return "Encountered an instruction that requires the"
                " message-security-assist extension 8.\n"
@@ -1927,7 +1923,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_VXE2,  "vxe2" },
       { VEX_HWCAPS_S390X_VXD,   "vxd" },
       { VEX_HWCAPS_S390X_MSA,   "msa" },
-      { VEX_HWCAPS_S390X_MSA4,  "msa4" },
       { VEX_HWCAPS_S390X_MSA8,  "msa8" },
       { VEX_HWCAPS_S390X_MSA9,  "msa9" },
    };

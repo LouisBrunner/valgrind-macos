@@ -1582,7 +1582,6 @@ Bool VG_(machine_get_hwcaps)( void )
         { False, 148,  VEX_HWCAPS_S390X_VXE2,  "VXE2"  },
         { False, 134,  VEX_HWCAPS_S390X_VXD,   "VXD"   },
         { False,  17,  VEX_HWCAPS_S390X_MSA,   "MSA"   },
-        { False,  77,  VEX_HWCAPS_S390X_MSA4,  "MSA4"  },
         { False, 146,  VEX_HWCAPS_S390X_MSA8,  "MSA8"  },
         { False, 155,  VEX_HWCAPS_S390X_MSA9,  "MSA9"  },
      };

@@ -20142,10 +20142,6 @@ s390_irgen_KMAC(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_PCC(void)
 {
-   if (! s390_host_has_msa4) {
-      emulation_failure(EmFail_S390X_msa4);
-      return "pcc";
-   }
    extension(S390_EXT_PCC, 0);
    return "pcc";
 }
@@ -20153,10 +20149,6 @@ s390_irgen_PCC(void)
 static const HChar *
 s390_irgen_KMCTR(UChar r3, UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa4) {
-      emulation_failure(EmFail_S390X_msa4);
-      return "kmctr";
-   }
    s390_insn_assert("kmctr", r1 % 2 == 0 && r1 != 0 && r2 % 2 == 0 && r2 != 0 &&
                     r3 % 2 == 0 && r3 != 0);
    extension(S390_EXT_KMCTR, r1 | (r2 << 4) | (r3 << 8));
@@ -20166,10 +20158,6 @@ s390_irgen_KMCTR(UChar r3, UChar r1, UChar r2)
 static const HChar *
 s390_irgen_KMO(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa4) {
-      emulation_failure(EmFail_S390X_msa4);
-      return "kmo";
-   }
    s390_insn_assert("kmo", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KMO, r1 | (r2 << 4));
    return "kmo";
@@ -20178,10 +20166,6 @@ s390_irgen_KMO(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_KMF(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa4) {
-      emulation_failure(EmFail_S390X_msa4);
-      return "kmf";
-   }
    s390_insn_assert("kmf", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KMF, r1 | (r2 << 4));
    return "kmf";

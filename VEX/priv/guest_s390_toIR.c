@@ -15495,7 +15495,7 @@ s390_irgen_TROO(UChar m3, UChar r1, UChar r2)
                         mkexpr(tab_addr)));
    assign(op1, load(Ity_I8, mkexpr(result)));
 
-   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+   if ((m3 & 0x1) == 0) {
       s390_cc_set_val(1);
       next_insn_if(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)));
    }
@@ -15545,7 +15545,7 @@ s390_irgen_TRTO(UChar m3, UChar r1, UChar r2)
 
    assign(op1, load(Ity_I8, mkexpr(result)));
 
-   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+   if ((m3 & 0x1) == 0) {
       s390_cc_set_val(1);
       next_insn_if(binop(Iop_CmpEQ8, mkexpr(op1), mkexpr(test_byte)));
    }
@@ -15594,7 +15594,7 @@ s390_irgen_TROT(UChar m3, UChar r1, UChar r2)
                         mkexpr(tab_addr)));
    assign(op1, load(Ity_I16, mkexpr(result)));
 
-   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+   if ((m3 & 0x1) == 0) {
       s390_cc_set_val(1);
       next_insn_if(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)));
    }
@@ -15643,7 +15643,7 @@ s390_irgen_TRTT(UChar m3, UChar r1, UChar r2)
                         mkexpr(tab_addr)));
    assign(op1, load(Ity_I16, mkexpr(result)));
 
-   if (! s390_host_has_etf2 || (m3 & 0x1) == 0) {
+   if ((m3 & 0x1) == 0) {
       s390_cc_set_val(1);
       next_insn_if(binop(Iop_CmpEQ16, mkexpr(op1), mkexpr(test_byte)));
    }
@@ -15789,7 +15789,7 @@ s390_irgen_CU21(UChar m3, UChar r1, UChar r2)
 
    /* Before we can test whether the 1st operand is exhausted we need to
       test for an invalid low surrogate. Because cc=2 outranks cc=1. */
-   if (s390_host_has_etf3 && (m3 & 0x1) == 1) {
+   if ((m3 & 0x1) == 1) {
       IRExpr *invalid_low_surrogate =
          binop(Iop_And64, mkexpr(retval), mkU64(0xff));
 
@@ -15920,7 +15920,7 @@ s390_irgen_CU24(UChar m3, UChar r1, UChar r2)
 
    /* Before we can test whether the 1st operand is exhausted we need to
       test for an invalid low surrogate. Because cc=2 outranks cc=1. */
-   if (s390_host_has_etf3 && (m3 & 0x1) == 1) {
+   if ((m3 & 0x1) == 1) {
       IRExpr *invalid_low_surrogate =
          binop(Iop_And64, mkexpr(retval), mkU64(0xff));
 
@@ -16202,7 +16202,7 @@ s390_irgen_cu12_cu14(UChar m3, UChar r1, UChar r2, Bool is_cu12)
    assign(len1, get_gpr_dw0(r1 + 1));
    assign(len2, get_gpr_dw0(r2 + 1));
 
-   UInt extended_checking = s390_host_has_etf3 && (m3 & 0x1) == 1;
+   UInt extended_checking = (m3 & 0x1) == 1;
 
    /* We're processing the 2nd operand 1 byte at a time. Therefore, if
       there is less than 1 byte left, then the 2nd operand is exhausted

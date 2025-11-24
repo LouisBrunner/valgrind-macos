@@ -1568,8 +1568,6 @@ Bool VG_(machine_get_hwcaps)( void )
         { False,  21,  VEX_HWCAPS_S390X_EIMM,  "EIMM"  },
         { False,  34,  VEX_HWCAPS_S390X_GIE,   "GIE"   },
         { False,  41,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
-        { False,  24,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
-        { False,  30,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
         { False,  45,  VEX_HWCAPS_S390X_LSC,   "LSC"   },
         { False,  44,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
         { False, 129,  VEX_HWCAPS_S390X_VX,    "VX"    },

@@ -1905,8 +1905,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_EIMM,  "eimm" },
       { VEX_HWCAPS_S390X_GIE,   "gie" },
       { VEX_HWCAPS_S390X_FGX,   "fgx" },
-      { VEX_HWCAPS_S390X_ETF2,  "etf2" },
-      { VEX_HWCAPS_S390X_ETF3,  "etf3" },
       { VEX_HWCAPS_S390X_LSC,   "lsc" },
       { VEX_HWCAPS_S390X_PFPO,  "pfpo" },
       { VEX_HWCAPS_S390X_VX,    "vx" },

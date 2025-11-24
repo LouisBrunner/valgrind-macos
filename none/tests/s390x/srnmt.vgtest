@@ -1,2 +1,1 @@
 prog: srnmt
-prereq: test -e srnmt && ../../../tests/s390x_features s390x-dfp

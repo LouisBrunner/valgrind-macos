@@ -1,2 +1,1 @@
 prog: dfptest
-prereq: test -e dfptest && ../../../tests/s390x_features s390x-dfp

@@ -237,8 +237,6 @@ static int go(char *feature, char *cpu)
       match = facilities[0] & FAC_BIT(35);
    } else if (strcmp(feature, "s390x-etf3") == 0 ) {
       match = facilities[0] & FAC_BIT(30);
-   } else if (strcmp(feature, "s390x-dfp") == 0 ) {
-      match = facilities[0] & FAC_BIT(42);
    } else if (strcmp(feature, "s390x-pfpo") == 0 ) {
       match = facilities[0] & FAC_BIT(44);
    } else if (strcmp(feature, "s390x-highw") == 0 ) {

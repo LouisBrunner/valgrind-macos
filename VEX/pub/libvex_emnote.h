@@ -97,9 +97,6 @@ typedef
       /* pfpo insn is not supported on this host */
       EmFail_S390X_pfpo,
 
-      /* DFP insns are not supported on this host */
-      EmFail_S390X_DFP_insn,
-
       /* GPR 0 contains invalid rounding mode for PFPO instruction */
       EmFail_S390X_invalid_PFPO_rounding_mode,
 

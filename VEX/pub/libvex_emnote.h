@@ -85,12 +85,12 @@ typedef
       EmWarn_PPC64_redir_underflow,
 
       /* Various BFP insns have an M4 field containing the
-         IEEE-inexact-exception (XxC) control bit. That bit cannot me modelled
+         IEEE-inexact-exception (XxC) control bit. That bit cannot be modelled
          in VEX and is expected to be zero. */
       EmWarn_S390X_XxC_not_zero,
 
       /* Various DFP insns have an M4 field containing the
-         IEEE-invalid-operation (XiC) control bit. That bit cannot me modelled
+         IEEE-invalid-operation (XiC) control bit. That bit cannot be modelled
          in VEX and is expected to be zero. */
       EmWarn_S390X_XiC_not_zero,
 

@@ -130,10 +130,6 @@ typedef
          this host */
       EmFail_S390X_vxd,
 
-      /* insn needs message-security assist which is not available on
-         this host */
-      EmFail_S390X_msa,
-
       /* insn needs message-security-assist extension 8 which is not available
          on this host */
       EmFail_S390X_msa8,

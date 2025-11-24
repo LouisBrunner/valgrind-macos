@@ -20079,10 +20079,6 @@ s390_irgen_NNPA(void)
 static const HChar *
 s390_irgen_KM(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa) {
-      emulation_failure(EmFail_S390X_msa);
-      return "km";
-   }
    s390_insn_assert("km", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KM, r1 | (r2 << 4));
    return "km";
@@ -20091,10 +20087,6 @@ s390_irgen_KM(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_KMC(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa) {
-      emulation_failure(EmFail_S390X_msa);
-      return "kmc";
-   }
    s390_insn_assert("kmc", r1 != 0 && r1 % 2 == 0 && r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KMC, r1 | (r2 << 4));
    return "kmc";
@@ -20103,10 +20095,6 @@ s390_irgen_KMC(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_KIMD(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa) {
-      emulation_failure(EmFail_S390X_msa);
-      return "kimd";
-   }
    /* r1 is reserved */
    s390_insn_assert("kimd", r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KIMD, r1 | (r2 << 4));
@@ -20116,10 +20104,6 @@ s390_irgen_KIMD(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_KLMD(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa) {
-      emulation_failure(EmFail_S390X_msa);
-      return "klmd";
-   }
    /* r1 is only used by some functions */
    s390_insn_assert("klmd", r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KLMD, r1 | (r2 << 4));
@@ -20129,10 +20113,6 @@ s390_irgen_KLMD(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_KMAC(UChar r1, UChar r2)
 {
-   if (! s390_host_has_msa) {
-      emulation_failure(EmFail_S390X_msa);
-      return "kmac";
-   }
    /* r1 is ignored */
    s390_insn_assert("kmac", r2 != 0 && r2 % 2 == 0);
    extension(S390_EXT_KMAC, r1 | (r2 << 4));

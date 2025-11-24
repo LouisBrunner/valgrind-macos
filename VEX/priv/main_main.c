@@ -1577,10 +1577,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Encountered an instruction that requires the vector-packed-decimal\n"
                " facility.\n"
                "  That facility is not available on this host";
-     case EmFail_S390X_msa:
-        return "Encountered an instruction that requires the message-security"
-               " assist.\n"
-               "  That assist is not available on this host";
      case EmFail_S390X_msa8:
         return "Encountered an instruction that requires the"
                " message-security-assist extension 8.\n"
@@ -1922,7 +1918,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       { VEX_HWCAPS_S390X_DFLT,  "dflt" },
       { VEX_HWCAPS_S390X_VXE2,  "vxe2" },
       { VEX_HWCAPS_S390X_VXD,   "vxd" },
-      { VEX_HWCAPS_S390X_MSA,   "msa" },
       { VEX_HWCAPS_S390X_MSA8,  "msa8" },
       { VEX_HWCAPS_S390X_MSA9,  "msa9" },
    };

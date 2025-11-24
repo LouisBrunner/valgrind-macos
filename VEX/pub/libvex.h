@@ -162,7 +162,6 @@ typedef
 #define VEX_S390X_MODEL_UNKNOWN  19     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
-#define VEX_HWCAPS_S390X_EIMM  (1<<7)   /* Extended-immediate facility */
 #define VEX_HWCAPS_S390X_GIE   (1<<8)   /* General-instruction-extension facility */
 #define VEX_HWCAPS_S390X_FGX   (1<<10)  /* FPR-GR transfer facility */
 #define VEX_HWCAPS_S390X_LSC   (1<<16)  /* Conditional load/store facility */
@@ -180,8 +179,7 @@ typedef
 #define VEX_HWCAPS_S390X_MSA9  (1<<30)  /* Message-security-assist extension 9 */
 
 /* Special value representing all available s390x hwcaps */
-#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_EIMM  | \
-                                VEX_HWCAPS_S390X_GIE   | \
+#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_GIE   | \
                                 VEX_HWCAPS_S390X_FGX   | \
                                 VEX_HWCAPS_S390X_LSC   | \
                                 VEX_HWCAPS_S390X_PFPO  | \

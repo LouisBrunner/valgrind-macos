@@ -1565,7 +1565,6 @@ Bool VG_(machine_get_hwcaps)( void )
         UInt hwcaps_bit;
         const HChar name[6];   // may need adjustment for new facility names
      } fac_hwcaps[] = {
-        { False,  45,  VEX_HWCAPS_S390X_LSC,   "LSC"   },
         { False,  44,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
         { False, 129,  VEX_HWCAPS_S390X_VX,    "VX"    },
         { False,  57,  VEX_HWCAPS_S390X_MSA5,  "MSA5"  },

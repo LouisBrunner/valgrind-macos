@@ -1902,7 +1902,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       UInt  hwcaps_bit;
       HChar name[6];
    } hwcaps_list[] = {
-      { VEX_HWCAPS_S390X_LSC,   "lsc" },
       { VEX_HWCAPS_S390X_PFPO,  "pfpo" },
       { VEX_HWCAPS_S390X_VX,    "vx" },
       { VEX_HWCAPS_S390X_MSA5,  "msa5" },

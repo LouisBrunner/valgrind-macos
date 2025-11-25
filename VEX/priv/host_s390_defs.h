@@ -918,8 +918,6 @@ VexInvalRange patchProfInc_S390(VexEndness endness_host,
 extern UInt s390_host_hwcaps;
 
 /* Convenience macros to test installed facilities */
-#define s390_host_has_lsc \
-                      (s390_host_hwcaps & (VEX_HWCAPS_S390X_LSC))
 #define s390_host_has_pfpo \
                       (s390_host_hwcaps & (VEX_HWCAPS_S390X_PFPO))
 #define s390_host_has_vx \

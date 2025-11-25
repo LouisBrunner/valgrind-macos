@@ -10826,6 +10826,26 @@ PRE(sys_ioctl)
    case VKI_EVIOCGRAB:
 	/* This just takes an int argument. */
 	break;
+   case VKI_PROCMAP_QUERY: {
+      /* https://www.kernel.org/doc/html/latest/filesystems/proc.html */
+      /* linux source: include/uapi/linux/fs.h:561 */
+      struct vki_procmap_query *pq =
+         (struct vki_procmap_query *)(Addr)ARG3;
+      if (!ML_(safe_to_deref) (pq, sizeof(struct vki_procmap_query)))
+         break;
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).size", pq->size);
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).query_flags", pq->query_flags);
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).query_addr", pq->query_addr);
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).vma_name_size", pq->vma_name_size);
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).vma_name_addr", pq->vma_name_addr);
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).build_id_size", pq->build_id_size);
+      PRE_FIELD_READ("ioctl(PROCMAP_QUERY).build_id_addr", pq->build_id_addr);
+      if (pq->vma_name_size > 0)
+         PRE_MEM_WRITE("ioctl(PROCMAP_QUERY)", (Addr)pq->vma_name_addr, pq->vma_name_size);
+      if (pq->build_id_size > 0)
+         PRE_MEM_WRITE("ioctl(PROCMAP_QUERY)", (Addr)pq->build_id_addr, pq->build_id_size);
+      break;
+   }
 
    default:
       /* EVIOC* are variable length and return size written on success */
@@ -12984,6 +13004,20 @@ POST(sys_ioctl)
    case VKI_PTP_ENABLE_PPS:
    case VKI_PTP_PIN_SETFUNC:
       break;
+   case VKI_PROCMAP_QUERY: {
+      /* https://www.kernel.org/doc/html/latest/filesystems/proc.html */
+      /* linux source: include/uapi/linux/fs.h:561 */
+      struct vki_procmap_query *pq =
+         (struct vki_procmap_query *)(Addr)ARG3;
+      if (pq->vma_name_size > 0)
+         POST_MEM_WRITE(pq->vma_name_addr, pq->vma_name_size);
+      if (pq->build_id_size > 0)
+         POST_MEM_WRITE(pq->build_id_addr, pq->build_id_size);
+      /* assume everything is written/defined with POST_MEM_WRITE */
+      /* instead of doing individual POST_FIELD_WRITEs */
+      POST_MEM_WRITE((Addr)pq, pq->size);
+      break;
+   }
 
    default:
       /* EVIOC* are variable length and return size written on success */

@@ -1193,6 +1193,7 @@
 /memcheck/tests/linux/dlclose_leak_so.so
 /memcheck/tests/linux/getregset
 /memcheck/tests/linux/ioctl-tiocsig
+/memcheck/tests/linux/ioctl_procmap_query
 /memcheck/tests/linux/lsframe1
 /memcheck/tests/linux/lsframe2
 /memcheck/tests/linux/Makefile

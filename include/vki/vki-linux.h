@@ -3900,6 +3900,30 @@ struct vki_ion_custom_data {
 #define VKI_ION_IOC_CUSTOM \
    _VKI_IOWR(VKI_ION_IOC_MAGIC, 6, struct vki_ion_custom_data)
 
+struct vki_procmap_query {
+    __vki_u64 size;
+    __vki_u64 query_flags;              /* in */
+    __vki_u64 query_addr;               /* in */
+    __vki_u64 vma_start;                /* out */
+    __vki_u64 vma_end;                  /* out */
+    __vki_u64 vma_flags;                /* out */
+    __vki_u64 vma_page_size;            /* out */
+    __vki_u64 vma_offset;               /* out */
+    __vki_u64 inode;                    /* out */
+    __vki_u32 dev_major;                /* out */
+    __vki_u32 dev_minor;                /* out */
+    __vki_u32 vma_name_size;            /* in/out */
+    __vki_u32 build_id_size;            /* in/out */
+    __vki_u64 vma_name_addr;            /* in */
+    __vki_u64 build_id_addr;            /* in */
+};
+
+// linux/fs.h
+#define VKI_PROCFS_IOCTL_MAGIC 'f'
+
+#define VKI_PROCMAP_QUERY \
+   _VKI_IOWR(VKI_PROCFS_IOCTL_MAGIC, 17, struct vki_procmap_query)
+
 //----------------------------------------------------------------------
 // From include/uapi/linux/sync_file.h 6.10.3
 //----------------------------------------------------------------------

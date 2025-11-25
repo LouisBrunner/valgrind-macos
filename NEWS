@@ -233,6 +233,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508030  Add several missing syscall hooks to ppc64-linux
 508093  VALGRIND_CLO_CHANGE does not update vex_control
 508145  ppc64le needs ld.so hardwire for strcmp
+508328  Memory allegedly uninitialized after ioctl(PROCMAP_QUERY)
 508154  PRE(sys_fchownat) not handling VKI_AT_FDCWD
 508638  Self-hosting not working on FreeBSD
 508777  amd64-linux: add minimal scalar test

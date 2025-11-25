@@ -1,0 +1,6 @@
+#! /bin/sh
+
+# drop the 3rd (last) line of the output, since it's a
+# binary blob (build_id) which needs to be printed but
+# not checked
+/usr/bin/head -2

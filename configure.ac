@@ -2173,6 +2173,21 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAVE_NR_IO_PGETEVENTS, [test x$ac_have_nr_io_pgetevents = xyes])
 
+AC_MSG_CHECKING([for PROCMAP_QUERY])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/fs.h>
+]], [[
+return PROCMAP_QUERY
+]])], [
+ac_have_procmap_query=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_procmap_query=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_PROCMAP_QUERY, [test x$ac_have_procmap_query = xyes])
+
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
 #----------------------------------------------------------------------------

@@ -5006,7 +5006,7 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          we can use a memory-to-memory insn */
       difference = new_value - old_value;
 
-      if (s390_host_has_gie && ulong_fits_signed_8bit(difference)) {
+      if (ulong_fits_signed_8bit(difference)) {
          am = s390_amode_for_guest_state(offset);
          addInstr(env, s390_insn_madd(sizeofIRType(tyd), am,
                                       (difference & 0xFF), new_value));

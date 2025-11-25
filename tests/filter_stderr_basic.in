@@ -77,7 +77,9 @@ $SED "s/[0-9][0-9]* bytes below stack pointer/.... bytes below stack pointer/" |
 $SED '/warning: the debug information found in "[^"]*" does not match/d' |
 
 # Suppress warnings from Dwarf reader
-$SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d'
+$SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d' |
 
 # Suppress Darwin dyld errors
-$SED '/^used_suppression:.*OSX.*dyld.*default.supp:*/d'
+$SED '/^used_suppression:.*OSX.*dyld.*default.supp:*/d' |
+# Suppress Darwin running dsymutil
+$SED -e '/^run: \/usr\/bin\/dsymutil.*/d' \

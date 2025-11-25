@@ -27,7 +27,6 @@ $SED \
 -e "/^warning: evaluate_Dwarf3_Expr: unhandled DW_OP_.*/d" \
 -e '/^warning: addVar:.*/d' \
 -e 's/^Allocation context: Data section of .\//Allocation context: BSS section of /' \
--e '/^run: \/usr\/bin\/dsymutil.*/d' \
 -e "s/, in frame #[0-9]* of thread /, in frame #? of thread /" \
 -e "s/(\(functional\|thread\):[0-9]*)/(\1:...)/" \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \

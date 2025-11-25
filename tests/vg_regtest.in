@@ -689,8 +689,8 @@ sub test_one_dir($$)
     # ppc/ directories ('arch_test' returns 1 for this case).  Likewise for
     # the OS and platform.
     # Nb: weird Perl-ism -- exit code of '1' is seen by Perl as 256...
-    if (256 == system("$tests_dir/tests/arch_test $dir"))  { return; }
-    if (256 == system("$tests_dir/tests/os_test   $dir"))  { return; }
+    if (256 == system("$tests_dir/tests/arch_test '$dir'"))  { return; }
+    if (256 == system("$tests_dir/tests/os_test   '$dir'"))  { return; }
     if ($dir =~ /(\w+)-(\w+)/ &&
         256 == system("$tests_dir/tests/platform_test $1 $2")) { return; }
     if ($dir =~ "dSYM") { return; }

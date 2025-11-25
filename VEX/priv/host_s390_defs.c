@@ -3658,8 +3658,6 @@ s390_emit_LDY(UChar *p, UChar r1, UChar x2, UChar b2, UShort dl2, UChar dh2)
 static UChar *
 s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 {
-   vassert(s390_host_has_fgx);
-
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       S390_DISASM(MNM("ldgr"), FPR(r1), GPR(r2));
 
@@ -3670,8 +3668,6 @@ s390_emit_LDGR(UChar *p, UChar r1, UChar r2)
 static UChar *
 s390_emit_LGDR(UChar *p, UChar r1, UChar r2)
 {
-   vassert(s390_host_has_fgx);
-
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM))
       S390_DISASM(MNM("lgdr"), GPR(r1), FPR(r2));
 
@@ -5086,38 +5082,8 @@ s390_emit_load_32imm(UChar *p, UChar reg, UInt val)
 }
 
 /*------------------------------------------------------------*/
-/*--- Wrapper functions                                    ---*/
+/*--- Emit functions for vector insns                      ---*/
 /*------------------------------------------------------------*/
-
-static UChar *
-s390_emit_LGDRw(UChar *p, UChar r1, UChar r2)
-{
-   if (s390_host_has_fgx) {
-      return s390_emit_LGDR(p, r1, r2);
-   }
-
-   /* Store the FPR at memory[sp - 8]. This is safe because SP grows towards
-      smaller addresses and is 8-byte aligned. Then load the GPR from that
-      memory location/ */
-   p = s390_emit_STDY(p, r2, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
-   return s390_emit_LG(p, r1, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
-}
-
-
-static UChar *
-s390_emit_LDGRw(UChar *p, UChar r1, UChar r2)
-{
-   if (s390_host_has_fgx) {
-      return s390_emit_LDGR(p, r1, r2);
-   }
-
-   /* Store the GPR at memory[sp - 8]. This is safe because SP grows towards
-      smaller addresses and is 8-byte aligned. Then load the FPR from that
-      memory location/ */
-   p = s390_emit_STG(p, r2, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
-   return s390_emit_LDY(p, r1, R0, S390_REGNO_STACK_POINTER, DISP20(-8));
-}
-
 
 static UChar *
 s390_emit_VL(UChar *p, UChar v1, UChar x2, UChar b2, UShort d2)
@@ -8040,17 +8006,17 @@ s390_insn_move_emit(UChar *buf, const s390_insn *insn)
       if (dst_class == HRcFlt64 && src_class == HRcInt64) {
          if (insn->size == 4) {
             buf = s390_emit_SLLG(buf, R0, src, 0, DISP20(32)); /* r0 = src << 32 */
-            return s390_emit_LDGRw(buf, dst, R0);
+            return s390_emit_LDGR(buf, dst, R0);
          } else {
-            return s390_emit_LDGRw(buf, dst, src);
+            return s390_emit_LDGR(buf, dst, src);
          }
       }
       if (dst_class == HRcInt64 && src_class == HRcFlt64) {
          if (insn->size == 4) {
-            buf = s390_emit_LGDRw(buf, dst, src);
+            buf = s390_emit_LGDR(buf, dst, src);
             return s390_emit_SRLG(buf, dst, dst, 0, DISP20(32)); /* dst >>= 32 */
          } else {
-            return s390_emit_LGDRw(buf, dst, src);
+            return s390_emit_LGDR(buf, dst, src);
          }
       }
       if (dst_class == HRcFlt64 && src_class == HRcVec128) {

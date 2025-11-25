@@ -9530,11 +9530,6 @@ s390_call_pfpo_helper(IRExpr *gr0)
 static const HChar *
 s390_irgen_PFPO(void)
 {
-   if (! s390_host_has_pfpo) {
-      emulation_failure(EmFail_S390X_pfpo);
-      return "pfpo";
-   }
-
    IRTemp gr0 = newTemp(Ity_I32);     /* word 1 [32:63] of GR 0 */
    IRTemp test_bit = newTemp(Ity_I32); /* bit 32 of GR 0 - test validity */
    IRTemp fn = newTemp(Ity_I32);       /* [33:55] of GR 0 - function code */

@@ -1544,8 +1544,6 @@ const HChar* LibVEX_EmNote_string ( VexEmNote ew )
         return "Encountered an insn with the IEEE-invalid-operation-exception\n"
                "  control (XiC) bit set to 1. This is not supported. Continuing anyway.\n"
                "  IEEE-invalid-operation exceptions will not be suppressed.";
-     case EmFail_S390X_pfpo:
-        return "Instruction pfpo is not supported on this host";
      case EmFail_S390X_invalid_PFPO_rounding_mode:
         return "The rounding mode in GPR 0 for the PFPO instruction"
                " is invalid";
@@ -1902,7 +1900,6 @@ static const HChar* show_hwcaps_s390x ( UInt hwcaps )
       UInt  hwcaps_bit;
       HChar name[6];
    } hwcaps_list[] = {
-      { VEX_HWCAPS_S390X_PFPO,  "pfpo" },
       { VEX_HWCAPS_S390X_VX,    "vx" },
       { VEX_HWCAPS_S390X_MSA5,  "msa5" },
       { VEX_HWCAPS_S390X_MI2,   "mi2" },

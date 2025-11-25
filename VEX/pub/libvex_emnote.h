@@ -94,9 +94,6 @@ typedef
          in VEX and is expected to be zero. */
       EmWarn_S390X_XiC_not_zero,
 
-      /* pfpo insn is not supported on this host */
-      EmFail_S390X_pfpo,
-
       /* GPR 0 contains invalid rounding mode for PFPO instruction */
       EmFail_S390X_invalid_PFPO_rounding_mode,
 

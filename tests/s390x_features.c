@@ -231,8 +231,6 @@ static int go(char *feature, char *cpu)
       match = facilities[0] & FAC_BIT(0);
    } else if (strcmp(feature, "s390x-exrl") == 0 ) {
       match = facilities[0] & FAC_BIT(35);
-   } else if (strcmp(feature, "s390x-pfpo") == 0 ) {
-      match = facilities[0] & FAC_BIT(44);
    } else if (strcmp(feature, "s390x-vx") == 0 ) {
       /* VX needs kernel support; thus check the appropriate HWCAP bit. */
       match = GET_HWCAP() & 0x800;

@@ -4838,7 +4838,6 @@ emit_E(UChar *p, UInt op)
 static UChar *
 s390_emit_PFPO(UChar *p)
 {
-   vassert(s390_host_has_pfpo);
    if (UNLIKELY(vex_traceflags & VEX_TRACE_ASM)) {
       S390_DISASM(MNM("pfpo"));
    }

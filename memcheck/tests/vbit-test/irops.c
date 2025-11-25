@@ -1208,7 +1208,6 @@ get_irop(IROp op)
       if (p->op == op) {
 #ifdef __s390x__
 #define S390X_FEATURES "../../../tests/s390x_features"
-        int rc;
 
          switch (op) {
          case Iop_I32StoD64:    // CDFTR
@@ -1253,14 +1252,7 @@ get_irop(IROp op)
          case Iop_D64toF128:
          case Iop_D128toF32:
          case Iop_D128toF64:
-         case Iop_D128toF128: {
-            /* These IROps require the Perform Floating Point Operation
-               facility */
-            rc = system(S390X_FEATURES " s390x-pfpo");
-            // s390x_features returns 1 if feature does not exist
-            rc /= 256;
-            if (rc != 0) return NULL;
-         }
+         case Iop_D128toF128:
          break;
          /* Other */
          default:

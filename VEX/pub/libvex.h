@@ -162,7 +162,6 @@ typedef
 #define VEX_S390X_MODEL_UNKNOWN  19     /* always last in list */
 #define VEX_S390X_MODEL_MASK     0x3F
 
-#define VEX_HWCAPS_S390X_PFPO  (1<<17)  /* Perform floating point ops facility */
 #define VEX_HWCAPS_S390X_VX    (1<<18)  /* Vector facility */
 #define VEX_HWCAPS_S390X_MSA5  (1<<19)  /* Message-security-assistance facility 5 */
 #define VEX_HWCAPS_S390X_MI2   (1<<20)  /* Miscellaneous-instruction-extensions facility 2 */
@@ -176,8 +175,7 @@ typedef
 #define VEX_HWCAPS_S390X_MSA9  (1<<30)  /* Message-security-assist extension 9 */
 
 /* Special value representing all available s390x hwcaps */
-#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_PFPO  | \
-                                VEX_HWCAPS_S390X_VX    | \
+#define VEX_HWCAPS_S390X_ALL   (VEX_HWCAPS_S390X_VX    | \
                                 VEX_HWCAPS_S390X_MSA5  | \
                                 VEX_HWCAPS_S390X_MI2   | \
                                 VEX_HWCAPS_S390X_LSC2  | \

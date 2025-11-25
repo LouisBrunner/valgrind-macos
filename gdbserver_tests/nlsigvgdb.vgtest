@@ -7,7 +7,7 @@ prog: sleepers
 args: 1 10000000 0 -S-S-S-S 1
 vgopts: --tool=none --vgdb=yes --vgdb-error=0 --vgdb-prefix=./vgdb-prefix-nlsigvgdb
 stderr_filter: filter_stderr
-prereq: test -e gdb -a -f vgdb.invoker
+prereq: test -e gdb -a -f vgdb.invoker && ( ! ../tests/os_test freebsd || [ "$(sysctl -n debug.ptrace_attach_transparent 2>/dev/null || echo 0)" -eq 0 ] )
 envB: LC_ALL=C
 progB: gdb
 argsB: --quiet -l 60 --nx ./sleepers

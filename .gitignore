@@ -1541,6 +1541,7 @@
 /nightly/valgrind-old
 
 # /none/
+/none/*.dSYM
 /none/*.so
 /none/.deps
 /none/Makefile

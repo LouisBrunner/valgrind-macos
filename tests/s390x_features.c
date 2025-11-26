@@ -225,22 +225,14 @@ static int go(char *feature, char *cpu)
    clear_facilities(facilities);
    stfle(facilities);
 
-   if        (strcmp(feature, "s390x-zarch") == 0 ) {
-      match = (facilities[0] & FAC_BIT(1)) && (facilities[0] & FAC_BIT(2));
-   } else if (strcmp(feature, "s390x-n3") == 0 ) {
-      match = facilities[0] & FAC_BIT(0);
-   } else if (strcmp(feature, "s390x-exrl") == 0 ) {
-      match = facilities[0] & FAC_BIT(35);
-   } else if (strcmp(feature, "s390x-vx") == 0 ) {
+   if (strcmp(feature, "s390x-vx") == 0 ) {
       /* VX needs kernel support; thus check the appropriate HWCAP bit. */
-      match = GET_HWCAP() & 0x800;
+      match = (GET_HWCAP() & 0x800) && (facilities[2] & FAC_BIT(1));
    } else if (strcmp(feature, "s390x-msa5") == 0 ) {
       match = facilities[0] & FAC_BIT(57); /* message security assist 5 facility */
    } else if (strcmp(feature, "s390x-mi2") == 0 ) {
       match = facilities[0] & FAC_BIT(58);
-   } else if (strcmp(feature, "s390x-mi3") == 0 ) {
-      match = facilities[0] & FAC_BIT(61);
-   } else if (strcmp(feature, "s390x-vx2") == 0 ) {
+   } else if (strcmp(feature, "s390x-vxe2") == 0 ) {
       match = (GET_HWCAP() & 0x800) && (facilities[2] & FAC_BIT(20));
    } else {
       return 2;          // Unrecognised feature.

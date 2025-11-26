@@ -2296,7 +2296,7 @@ void VG_(client_syscall) ( ThreadId tid, UInt trc )
    /* Save the syscall number in the thread state in case the syscall 
       is interrupted by a signal. */
    canonical_sysno = sci->orig_args.canonical_sysno;
-#if defined(VGO_freebsd) || defined(VGO_darwin)
+#if defined(VGO_freebsd) || defined(VGP_amd64_darwin)
    original_sysno = sci->orig_args.original_sysno;
 #else
    /*

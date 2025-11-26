@@ -1883,7 +1883,7 @@ extern int * __error(void) __attribute__((weak));
       VERIFY_ALIGNMENT(&aligned_alloc_info);                                   \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED((UWord)zone);                        \
       TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(n);                                  \
-      MALLOC_TRACE("zone_memalign(%p, %lu, %u)", zone,                \
+      MALLOC_TRACE("zone_memalign(%p, %lu, %lu)", zone,                        \
                    alignment, n);                                              \
                                                                                \
       if (alignment == 0 || alignment % sizeof(void*) != 0 ||                  \

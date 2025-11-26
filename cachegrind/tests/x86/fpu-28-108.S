@@ -24,5 +24,8 @@ VG_SYM_ASM(main):
         movl    $0, %eax
         ret
 
+#if !defined(VGO_darwin)
         .section        .note.GNU-stack,"",@progbits
+#endif
+
 

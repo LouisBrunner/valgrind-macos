@@ -1858,6 +1858,10 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_s
    layout->uu_arg8  = -1; /* impossible value */
 
 #elif defined(VGP_x86_freebsd)
+   // libc converts syscall_syscall to canonical form
+   // (it just needs to pop the ret address, pop the sysno into eax
+  // do the syscall
+   // and push back the ret address)
    layout->o_sysno  = OFFSET_x86_EAX;
    // syscall parameters are on stack in C convention
    layout->s_arg1   = sizeof(UWord) * 1;

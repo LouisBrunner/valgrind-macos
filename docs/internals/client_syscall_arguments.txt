@@ -56,6 +56,7 @@ This stores the canonical arguments (syscall syscall format gets shuffled)
 in the SyscallArgs structure.
 
 2. Get the syscall argument layout
+Call getSyscallArgLayout()
 This just initialises the fields of the SyscallArgLayout structure. The layout
 will be different depending if it is a normal syscall or a syscall syscall.
 It cannot be canonicalised - we can shuffle around the values but we can't
@@ -83,7 +84,7 @@ This is the more complicated of the two as we need to release the global lock,
 change to using the guest signal mask, do the syscall, restore the Valgrind
 signal mask and request the global lock again.
 
-A call to putSyscallArgsIntoGuestState is made. The PRE may have changed
+A call to putSyscallArgsIntoGuestState() is made. The PRE may have changed
 some of the arguments so we need to put the arguments back into
 VexGuestArchState.
 
@@ -93,7 +94,7 @@ from VexGuestArchState.
 
 6. Perform a non-blocking syscall.
 
-This is much simpler. It performs the syscall via VG_(do_syscall).
+This is much simpler. It performs the syscall via VG_(do_syscall)().
 The arguments are passed via struct SyscallArgs (possibly modified by the PRE
 wrapper).
 

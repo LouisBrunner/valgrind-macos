@@ -602,7 +602,7 @@ static UInt VG_(get_machine_model)(void)
 {
    static struct model_map {
       const HChar name[5];
-      UInt  id;
+      const UInt  id;
    } model_map[] = {
       { "2064", VEX_S390X_MODEL_Z900 },
       { "2066", VEX_S390X_MODEL_Z800 },
@@ -1561,9 +1561,9 @@ Bool VG_(machine_get_hwcaps)( void )
      /* Detect presence of certain facilities using the STFLE insn. */
      struct fac_hwcaps_map {
         UInt installed;
-        UInt facility_bit;
-        UInt hwcaps_bit;
-        const HChar name[6];   // may need adjustment for new facility names
+        const UInt facility_bit;
+        const UInt hwcaps_bit;
+        const HChar name[5];   // may need adjustment for new facility names
      } fac_hwcaps[] = {
         { False, 129,  VEX_HWCAPS_S390X_VX,    "VX"    },
         { False,  57,  VEX_HWCAPS_S390X_MSA5,  "MSA5"  },

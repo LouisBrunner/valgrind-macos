@@ -322,7 +322,8 @@ is_virtual_gpr(HReg reg)
 
 /* Helper function for all vector operations */
 static UChar
-s390_getM_from_size(const UChar size) {
+s390_getM_from_size(const UChar size)
+{
    switch(size) {
    case 1:
       return 0;
@@ -342,7 +343,8 @@ s390_getM_from_size(const UChar size) {
 
 /* Helper for generating RXB field in vector instructions */
 static UChar
-s390_update_rxb(const UChar rxb, const UChar index, UChar* vr) {
+s390_update_rxb(const UChar rxb, const UChar index, UChar* vr)
+{
    vassert((index >= 1) && (index <= 4));
    UChar result = rxb;
    if(vr != NULL) {
@@ -684,7 +686,8 @@ no_match:
    return NULL;
 }
 
-s390_insn* genMove_S390(HReg from, HReg to, Bool mode64)
+s390_insn *
+genMove_S390(HReg from, HReg to, Bool mode64)
 {
    switch (hregClass(from)) {
    case HRcInt64:
@@ -6822,7 +6825,7 @@ s390_insn_profinc(void)
 
 s390_insn *
 s390_insn_vec_amodeop(UChar size, s390_vec_amodeop_t tag, HReg dst, HReg op1,
-                    s390_amode *op2)
+                      s390_amode *op2)
 {
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
@@ -6838,8 +6841,9 @@ s390_insn_vec_amodeop(UChar size, s390_vec_amodeop_t tag, HReg dst, HReg op1,
    return insn;
 }
 
-s390_insn *s390_insn_vec_amodeintop(UChar size, s390_vec_amodeintop_t tag, HReg dst,
-                                    s390_amode* op2, HReg op3)
+s390_insn *
+s390_insn_vec_amodeintop(UChar size, s390_vec_amodeintop_t tag, HReg dst,
+                         s390_amode* op2, HReg op3)
 {
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
@@ -6855,8 +6859,9 @@ s390_insn *s390_insn_vec_amodeintop(UChar size, s390_vec_amodeintop_t tag, HReg 
    return insn;
 }
 
-s390_insn *s390_insn_vec_binop(UChar size, s390_vec_binop_t tag, HReg dst,
-                               HReg op1, HReg op2)
+s390_insn *
+s390_insn_vec_binop(UChar size, s390_vec_binop_t tag, HReg dst,
+                    HReg op1, HReg op2)
 {
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
@@ -6872,8 +6877,9 @@ s390_insn *s390_insn_vec_binop(UChar size, s390_vec_binop_t tag, HReg dst,
    return insn;
 }
 
-s390_insn *s390_insn_vec_triop(UChar size, s390_vec_triop_t tag, HReg dst,
-                               HReg op1, HReg op2, HReg op3)
+s390_insn *
+s390_insn_vec_triop(UChar size, s390_vec_triop_t tag, HReg dst,
+                    HReg op1, HReg op2, HReg op3)
 {
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
@@ -6889,8 +6895,8 @@ s390_insn *s390_insn_vec_triop(UChar size, s390_vec_triop_t tag, HReg dst,
    return insn;
 }
 
-s390_insn *s390_insn_vec_replicate(UChar size, HReg dst, HReg op1,
-                                   UChar idx)
+s390_insn *
+s390_insn_vec_replicate(UChar size, HReg dst, HReg op1, UChar idx)
 {
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 

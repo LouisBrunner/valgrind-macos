@@ -890,8 +890,8 @@ Int   emit_S390Instr       ( Bool *, UChar *, Int, const s390_insn *, Bool,
 const RRegUniverse *getRRegUniverse_S390( void );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );
 void  genReload_S390       ( HInstr **, HInstr **, HReg , Int , Bool );
-HInstr* directReload_S390  ( HInstr *, HReg, Short );
-extern s390_insn* genMove_S390(HReg from, HReg to, Bool mode64);
+HInstr *directReload_S390  ( HInstr *, HReg, Short );
+s390_insn *genMove_S390    ( HReg from, HReg to, Bool mode64);
 HInstrArray *iselSB_S390   ( const IRSB *, VexArch, const VexArchInfo *,
                              const VexAbiInfo *, Int, Int, Bool, Bool, Addr);
 

@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./inlinfomalloc
-Massif arguments:   --stacks=no --heap-admin=0 --time-unit=B --threshold=0 --detailed-freq=6 --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+Massif arguments:   --stacks=no --heap-admin=0 --time-unit=B --threshold=0 --detailed-freq=6 --massif-out-file=massif.out
 ms_print arguments: --threshold=0 massif.out
 --------------------------------------------------------------------------------
 

@@ -2,5 +2,5 @@ prog: mmapunmap
 vgopts: --pages-as-heap=yes --threshold=30.0 -q
 vgopts: --stacks=no --time-unit=B --depth=8 --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
-post: grep -A5 -e =peak massif.out | grep -e 'main (mmapunmap.c:16)\|(below main)' | tr -s ' ' | ../../tests/filter_addresses | ../../tests/filter_libc
+post: grep -A5 -e =peak massif.out | grep -e 'main (mmapunmap.c:16)\|(below main)' | tr -s ' ' | ../../tests/filter_addresses | ../../tests/filter_libc | ./filter_ignore_fn
 cleanup: rm massif.out

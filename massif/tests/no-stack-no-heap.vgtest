@@ -1,5 +1,5 @@
 prog: basic
 vgopts: --stacks=no --heap=no --time-unit=B --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
-post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
+post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses | ./filter_ignore_fn
 cleanup: rm massif.out

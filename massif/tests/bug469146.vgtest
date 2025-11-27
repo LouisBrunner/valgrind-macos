@@ -4,5 +4,5 @@ vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-f
 vgopts: --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0
 vgopts: --ignore-fn=call_init --ignore-fn=pool
 vgopts: --ignore-fn=filter_function1 --ignore-fn="filter_function2(int)" --ignore-fn=filter_function3
-post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ../../tests/filter_addresses
+post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ../../tests/filter_addresses | ./filter_ignore_fn
 cleanup: rm massif.out

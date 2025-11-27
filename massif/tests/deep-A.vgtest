@@ -3,5 +3,5 @@ vgopts: --stacks=no --time-unit=B --depth=8 --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
 # Darwin ignore functions, for macOS 10.13
 vgopts: --alloc-fn=_xpc_malloc --ignore-fn=_xpc_dictionary_insert --ignore-fn=map_images_nolock --ignore-fn="allocBuckets(void*, unsigned int)" --ignore-fn="realizeClass(objc_class*)" --ignore-fn=_NXHashRehashToCapacity --ignore-fn=NXCreateHashTableFromZone --ignore-fn=NXCreateMapTableFromZone --ignore-fn=NXHashInsert --ignore-fn=add_class_to_loadable_list --ignore-fn=class_createInstance --ignore-fn=xpc_string_create --alloc-fn=strdup --alloc-fn=_xpc_calloc --ignore-fn=xpc_array_create
-post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses
+post: perl ../../massif/ms_print massif.out | ../../tests/filter_addresses | ./filter_ignore_fn
 cleanup: rm massif.out

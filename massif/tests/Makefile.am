@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr filter_verbose filter_new_aligned
+dist_noinst_SCRIPTS = filter_stderr filter_verbose filter_new_aligned filter_ignore_fn
 
 EXTRA_DIST = \
 	alloc-fns-A.post.exp alloc-fns-A.stderr.exp alloc-fns-A.vgtest \

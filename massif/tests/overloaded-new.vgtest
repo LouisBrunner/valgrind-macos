@@ -4,5 +4,5 @@ vgopts: --stacks=no --time-unit=B --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook
 vgopts: --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0
 vgopts: --ignore-fn=call_init --ignore-fn=pool
-post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ./filter_new_aligned
+post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ./filter_new_aligned | ./filter_ignore_fn
 cleanup: rm massif.out

@@ -1,0 +1,5 @@
+#! /bin/sh
+
+awk '/Massif arguments/{gsub(/ unsigned int/, "uint")}{print}' |
+# unmangled C++ names can contain spaces so the above filter removes themn first
+awk '{gsub(/ --ignore-fn=[^ ]*/, ""); print}'

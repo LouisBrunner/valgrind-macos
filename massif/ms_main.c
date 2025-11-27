@@ -321,13 +321,13 @@ static void init_alloc_fns(void)
    //
    DO("malloc"                                              );
    DO("__builtin_new"                                       );
-# if VG_WORDSIZE == 4
+# if VG_WORDSIZE == 4 && !defined(VGO_darwin)
    DO("operator new(unsigned)"                              );
 #else
    DO("operator new(unsigned long)"                         );
 #endif
    DO("__builtin_vec_new"                                   );
-# if VG_WORDSIZE == 4
+# if VG_WORDSIZE == 4 && !defined(VGO_darwin)
    DO("operator new[](unsigned)"                            );
 #else
    DO("operator new[](unsigned long)"                       );
@@ -338,7 +338,7 @@ static void init_alloc_fns(void)
    DO("memalign"                                            );
    DO("posix_memalign"                                      );
    DO("valloc"                                              );
-# if VG_WORDSIZE == 4
+# if VG_WORDSIZE == 4 && !defined(VGO_darwin)
    DO("operator new(unsigned, std::nothrow_t const&)"       );
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
    DO("operator new(unsigned, std::align_val_t)"            );

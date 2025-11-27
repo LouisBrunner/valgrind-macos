@@ -1,6 +1,8 @@
 prog: inlinfomalloc
 vgopts: --stacks=no --heap-admin=0 --time-unit=B --threshold=0 --detailed-freq=6 --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+# macOS allocations
+vgopts: --ignore-fn="allocBuckets(void*, unsigned int)" --ignore-fn="realizeClass(objc_class*)" --ignore-fn=map_images_nolock --ignore-fn=NXCreateHashTableFromZone --ignore-fn=_NXHashRehashToCapacity --ignore-fn=NXCreateMapTableFromZone --ignore-fn=NXHashInsert --ignore-fn=add_class_to_loadable_list --ignore-fn=class_createInstance --ignore-fn=_xpc_malloc --ignore-fn=strdup --ignore-fn=_xpc_calloc
 stderr_filter: filter_verbose
 post: perl ../../massif/ms_print --threshold=0 massif.out | ../../tests/filter_addresses | ./filter_ignore_fn
 cleanup: rm massif.out

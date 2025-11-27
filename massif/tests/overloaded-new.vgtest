@@ -4,5 +4,7 @@ vgopts: --stacks=no --time-unit=B --massif-out-file=massif.out
 vgopts: --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook
 vgopts: --ignore-fn=get_or_create_key_element --ignore-fn=_GLOBAL__sub_I_eh_alloc.cc --ignore-fn=call_init.part.0
 vgopts: --ignore-fn=call_init --ignore-fn=pool
+# macOS allocations
+vgopts: --ignore-fn="allocBuckets(void*, unsigned int)" --ignore-fn=map_images_nolock --ignore-fn="realizeClass(objc_class*)" --ignore-fn=_NXHashRehashToCapacity --ignore-fn=NXCreateHashTableFromZone --ignore-fn=NXCreateMapTableFromZone --ignore-fn=NXHashInsert --ignore-fn=add_class_to_loadable_list --ignore-fn=class_createInstance --ignore-fn=_xpc_malloc
 post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ./filter_new_aligned | ./filter_ignore_fn
 cleanup: rm massif.out

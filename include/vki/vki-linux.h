@@ -5598,6 +5598,18 @@ struct vki_statmount {
 	char str[];		/* Variable size part containing strings */
 };
 
+//----------------------------------------------------------------------
+// From uapi/linux/fs.h
+//----------------------------------------------------------------------
+
+struct vki_file_attr {
+	__vki_u64 fa_xflags;	/* xflags field value (get/set) */
+	__vki_u32 fa_extsize;	/* extsize field value (get/set)*/
+	__vki_u32 fa_nextents;	/* nextents field value (get)   */
+	__vki_u32 fa_projid;	/* project identifier (get/set) */
+	__vki_u32 fa_cowextsize;	/* CoW extsize field value (get/set) */
+};
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

@@ -861,6 +861,8 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_statmount,         sys_statmount),         // 457
    LINXY(__NR_listmount,         sys_listmount),         // 458
    LINX_(__NR_mseal,             sys_mseal),             // 462
+   LINXY(__NR_file_getattr,      sys_file_getattr),      // 468
+   LINX_(__NR_file_setattr,      sys_file_setattr),      // 469
 };
 
 

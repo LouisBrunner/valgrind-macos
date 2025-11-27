@@ -4482,6 +4482,44 @@ POST(sys_listmount)
    }
 }
 
+PRE(sys_file_getattr)
+{
+   // SYSCALL_DEFINE5(file_getattr, int, dfd, const char __user *, filename,
+   //                 struct file_attr __user *, ufattr, size_t, usize,
+   //                 unsigned int, at_flags)
+   // in: dfd, filename, at_flags
+   // out: ufattr, usize
+   *flags |= SfMayBlock;
+   PRINT("sys_file_getattr ( %ld, %#" FMT_REGWORD "x(%s), %#"
+          FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )" ,
+         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "file_getattr", int, dfd, const char*, filename,
+                 struct vki_file_attr *, ufattr, vki_size_t, usize, int, at_flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "file_getattr", tid, status);
+   PRE_MEM_WRITE("file_getattr(ufattr)", ARG3, ARG4);
+}
+
+POST(sys_file_getattr)
+{
+   POST_MEM_WRITE(ARG3, ARG4);
+}
+
+PRE(sys_file_setattr)
+{
+   // SYSCALL_DEFINE5(file_setattr, int, dfd, const char __user *, filename,
+   //                 struct file_attr __user *, ufattr, size_t, usize,
+   //                 unsigned int, at_flags)
+   // in: dfd, filename, ufattr, usize, at_flags
+   *flags |= SfMayBlock;
+   PRINT("sys_file_setattr ( %ld, %#" FMT_REGWORD "x(%s), %#"
+          FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x )" ,
+         SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "file_setattr", int, dfd, const char*, filename,
+                 struct vki_file_attr *, ufattr, vki_size_t, usize, int, at_flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "sys_file_setattr", tid, status);
+   PRE_MEM_READ("file_setattr(ufattr)", ARG3, ARG4);
+}
+
 PRE(sys_syncfs)
 {
    *flags |= SfMayBlock;

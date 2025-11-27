@@ -373,6 +373,10 @@ DECL_TEMPLATE(linux, sys_statmount);
 // Since Linux 6.10
 DECL_TEMPLATE(linux, sys_mseal);
 
+// Since Linux 6.17-rc1
+DECL_TEMPLATE(linux, sys_file_getattr);
+DECL_TEMPLATE(linux, sys_file_setattr);
+
 /* ---------------------------------------------------------------------
    Wrappers for sockets and ipc-ery.  These are split into standalone
    procedures because x86-linux hides them inside multiplexors

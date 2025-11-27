@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_MACH_H
 #define __PUB_CORE_MACH_H
 
+#define DARWIN_FAKE_MEMORY_PATH "/dev/macos/internals/"
+
 //--------------------------------------------------------------------
 // PURPOSE: This module contains the Mach kernel interface, 
 // for operating systems like Darwin / Mac OS X that use it.
@@ -38,6 +40,9 @@
 
 // Call this early in Valgrind's main(). It depends on nothing.
 extern void VG_(mach_init)(void);
+
+// Record system memory after aspace has been init'd
+extern void VG_(mach_record_system_memory)(void);
 
 #endif // __PUB_CORE_MACH_H
 

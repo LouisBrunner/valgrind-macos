@@ -1910,7 +1910,7 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
    addr2dihandle = VG_(newXA)( VG_(malloc), "main.vm.2",
                                VG_(free), sizeof(Addr_n_ULong) );
 
-#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
+#  if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_darwin) || defined(VGO_freebsd)
    { Addr* seg_starts;
      Int   n_seg_starts;
      Addr_n_ULong anu;
@@ -1930,22 +1930,6 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
            anu.a = seg_starts[i];
            VG_(addToXA)( addr2dihandle, &anu );
         }
-     }
-
-     VG_(free)( seg_starts );
-   }
-#  elif defined(VGO_darwin)
-   { Addr* seg_starts;
-     Int   n_seg_starts;
-     seg_starts = VG_(get_segment_starts)( SkFileC, &n_seg_starts );
-     vg_assert(seg_starts && n_seg_starts >= 0);
-
-     /* show them all to the debug info reader.
-        Don't read from V segments (unlike Linux) */
-     // GrP fixme really?
-     for (i = 0; i < n_seg_starts; i++) {
-        VG_(di_notify_mmap)( seg_starts[i], False/*don't allow_SkFileV*/,
-                             -1/*don't use_fd*/);
      }
 
      VG_(free)( seg_starts );
@@ -2101,22 +2085,8 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
                True   /* executable? */,
                0 /* di_handle: no associated debug info */ );
 
-     /* Darwin only: tell the tools where the client's kernel commpage
-        is.  It would be better to do this by telling aspacemgr about
-        it -- see the now disused record_system_memory() in
-        initimg-darwin.c -- but that causes the sync checker to fail,
-        since the mapping doesn't appear in the kernel-supplied
-        process map.  So do it here instead. */
-#    if defined(VGP_amd64_darwin)
-     VG_TRACK( new_mem_startup,
-               0x7fffffe00000, 0x7ffffffff000-0x7fffffe00000,
-               True, False, True, /* r-x */
-               0 /* di_handle: no associated debug info */ );
-#    elif defined(VGP_x86_darwin)
-     VG_TRACK( new_mem_startup,
-               0xfffec000, 0xfffff000-0xfffec000,
-               True, False, True, /* r-x */
-               0 /* di_handle: no associated debug info */ );
+#if defined(VGO_darwin)
+     VG_(mach_record_system_memory)();
 #    endif
 
      /* Clear the running thread indicator */

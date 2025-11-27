@@ -61,10 +61,6 @@ machinery was removed in r10155.
 Valgrind-developer notes, todos re the MacOSX port
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* m_syswrap/syscall-amd64-darwin.S
-  - correct signal mask is not applied during syscall
-  - restart-labels are completely bogus
-
 * m_syswrap/syswrap-darwin.c:
   - PRE(sys_posix_spawn) completely ignores signal issues, and
     also ignores the file_actions argument
@@ -94,12 +90,6 @@ Valgrind-developer notes, todos re the MacOSX port
 * Cleanups: #if !HAVE_PROC in m_main (to do with /proc/<pid>/cmdline
 
 --------
-
-m_main doesn't read symbols for the valgrind exe itself, which is
-annoying.  On minimal investigation it seems that the executable isn't
-even listed by aspacem.  This is very strange and not in accordance
-with the Linux or AIX ports.
-
 
 m_main: relatedly, Darwin version does not collect/give out
 initial debuginfo handles; hence ptrcheck won't work

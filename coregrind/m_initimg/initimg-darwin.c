@@ -48,6 +48,7 @@
 #include "pub_core_threadstate.h"     /* ThreadArchState */
 #include "pub_core_pathscan.h"        /* find_executable */
 #include "pub_core_initimg.h"         /* self */
+#include "pub_core_mach.h"
 
 
 /*====================================================================*/
@@ -63,6 +64,7 @@ static void load_client ( /*OUT*/ExeInfo* info,
    Int    ret;
 
    vg_assert( VG_(args_the_exename) != NULL);
+   vg_assert( VG_(strlen)(VG_(args_the_exename)) >= 1 );
    exe_name = VG_(find_executable)( VG_(args_the_exename) );
 
    if (!exe_name) {
@@ -338,6 +340,9 @@ Addr setup_client_stack( void*  init_sp,
       stringsize += VG_(strlen)(info->interp_args) + 1;
    }
 
+   vg_assert( VG_(args_the_exename) );
+   vg_assert( VG_(strlen)( VG_(args_the_exename) ) >= 1 );
+
    /* now scan the args we're given... */
    stringsize += VG_(strlen)( VG_(args_the_exename) ) + 1;
 
@@ -355,8 +360,16 @@ Addr setup_client_stack( void*  init_sp,
       stringsize += VG_(strlen)(*cpp) + 1;
    }
 
+   // @todo PJF there is a bug in the size calculation or rounding
+   // somewhere. This should be "+= 2" (one of the pointer to exec
+   // path and one for the terminating NULL pointer). When I run
+   // "./tests/vg_regtest none/tests" from a Korn shell script
+   // then the allexec32/64 tests fail because they print out "argv[0]".
+   // I think that what happens is that writing to "ptr" overwrites the
+   // start of strtab resulting in the argv[0] the exe name being a
+   // string starting with 8 \0s (not tested)
    /* Darwin executable_path + NULL */
-   auxsize += 2 * sizeof(Word);
+   auxsize += 3 * sizeof(Word);
    if (info->executable_path) {
        stringsize += 1 + VG_(strlen)(info->executable_path);
    }
@@ -367,8 +380,8 @@ Addr setup_client_stack( void*  init_sp,
    /* OK, now we know how big the client stack is */
    stacksize =
       sizeof(Word) +                          /* argc */
-      sizeof(HChar **) +                      /* argc[0] == exename */
-      sizeof(HChar **)*argc +                 /* argv */
+      sizeof(HChar **) +                      /* argv[0] == exename */
+      sizeof(HChar **)*argc +                 /* argv guest args */
       sizeof(HChar **) +                      /* terminal NULL */
       sizeof(HChar **)*envc +                 /* envp */
       sizeof(HChar **) +                      /* terminal NULL */
@@ -441,9 +454,9 @@ Addr setup_client_stack( void*  init_sp,
 
    /* --- executable_path + NULL --- */
    if (info->executable_path) 
-       *ptr++ = (Addr)copy_str(&strtab, info->executable_path);
+      *ptr++ = (Addr)copy_str(&strtab, info->executable_path);
    else 
-       *ptr++ = 0;
+      *ptr++ = 0;
    *ptr++ = 0;
 
    vg_assert((strtab-stringbase) == stringsize);
@@ -469,6 +482,38 @@ Addr setup_client_stack( void*  init_sp,
 /*====================================================================*/
 /*=== Record system memory regions                                 ===*/
 /*====================================================================*/
+
+void VG_(mach_record_system_memory)(void) {
+    /* Darwin only: tell the tools where the client's kernel commpage
+      is.  It would be better to do this by telling aspacemgr about
+      it -- see the now disused record_system_memory() below --
+      but that causes the sync checker to fail,
+      since the mapping doesn't appear in the kernel-supplied
+      process map.  So do it here instead. */
+
+#if defined(VGA_amd64)
+  VG_TRACK( new_mem_startup,
+            0x7fffffe00000, 0x7ffffffff000-0x7fffffe00000,
+            True, False, True, /* r-x */
+            0 /* di_handle: no associated debug info */ );
+#elif defined(VGA_x86)
+  VG_TRACK( new_mem_startup,
+            0xfffec000, 0xfffff000-0xfffec000,
+            True, False, True, /* r-x */
+            0 /* di_handle: no associated debug info */ );
+#elif defined(VGA_arm64)
+  VG_TRACK( new_mem_startup,
+            0xfffff4000, 0x1000,
+            True, False, True, /* r-- */
+            0 /* di_handle: no associated debug info */ );
+  VG_TRACK( new_mem_startup,
+            0xfffffc000, 0x1000,
+            True, False, True, /* r-x */
+            0 /* di_handle: no associated debug info */ );
+#else
+# error "Unknown Darwin architecture"
+#endif
+}
 
 static void record_system_memory(void)
 {

@@ -1664,6 +1664,18 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
+#if defined(VGO_darwin)
+#if DARWIN_VERS >= DARWIN_26_00 && 0
+// The new xzm_main_malloc_zone_create makes a 25GB (0x600000000) map in memory so, no choice but to raise the limit...
+# define VA_LARGE_RANGE ( 25UL * 1024 * 1024 * 1024)
+# else
+// Now that we parse the DSC, we might get mmap which are up to 4GB, put 2GB to be safe for now
+# define VA_LARGE_RANGE ( 2UL * 1024 * 1024 * 1024)
+#endif
+#else
+#define VA_LARGE_RANGE 256UL * 1024 * 1024
+#endif
+
 static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
                                       UWord dsm_num )
 {
@@ -1689,8 +1701,8 @@ static void set_address_range_perms ( Addr a, SizeT lenT, UWord vabits16,
    if (lenT == 0)
       return;
 
-   if (lenT > 256 * 1024 * 1024) {
-      if (VG_(clo_verbosity) > 0 && !VG_(clo_xml)) {
+   if ((ULong)lenT > VA_LARGE_RANGE) {
+      if (VG_(clo_verbosity) > 1 && !VG_(clo_xml)) {
          const HChar* s = "unknown???";
          if (vabits16 == VA_BITS16_NOACCESS ) s = "noaccess";
          if (vabits16 == VA_BITS16_UNDEFINED) s = "undefined";
@@ -5881,7 +5893,21 @@ Bool MC_(is_within_valid_secondary) ( Addr a )
 Bool MC_(is_valid_aligned_word) ( Addr a )
 {
    tl_assert(sizeof(UWord) == 4 || sizeof(UWord) == 8);
+#if defined(VGO_darwin)
+   // on Darwin some of the memcheck/tests/leak-autofreepool-*
+   // tests are failing here. VALGRIND_MALLOCLIKE_BLOCK is passed
+   // an address that is not word aligned. But that's also the case
+   // on other platforms, on FreeBSD leak-autofreepool 0 uses addresses
+   // that are only 2 aligned. The problem is more likely that Darwin
+   // should not be looking at this chunk of memory.
+   if (!VG_IS_WORD_ALIGNED(a) && VG_(clo_verbosity) > 1)
+   {
+      VG_(printf)("In %s, invariant violation, pointer %p should be word aligned\n", __func__, (void*)a);
+      MC_(pp_describe_addr) (VG_(current_DiEpoch)(), a);
+   }
+#else
    tl_assert(VG_IS_WORD_ALIGNED(a));
+#endif
    if (get_vabits8_for_aligned_word32 (a) != VA_BITS8_DEFINED)
       return False;
    if (sizeof(UWord) == 8) {

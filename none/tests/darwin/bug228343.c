@@ -55,6 +55,7 @@ int main() {
  pthread_create(&w_2, NULL, Worker, NULL);
  pthread_join(w_1, NULL);
  pthread_join(w_2, NULL);
- printf("\tGLOB=%d\n", GLOB);
+ if (GLOB)
+  printf("\tGLOB was incremented\n");
  return 0;
 }

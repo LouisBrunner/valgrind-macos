@@ -58,6 +58,9 @@
 #endif
 
 #include "pub_core_aspacemgr.h"  // self
+#if defined(VGO_darwin)
+#include "pub_core_mach.h"       // macos support
+#endif
 
 
 /* --------------- Implemented in aspacemgr-common.c ---------------*/

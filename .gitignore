@@ -79,6 +79,7 @@
 
 # /cachegrind/
 /cachegrind/*.so
+/cachegrind/*.dSYM
 /cachegrind/.deps
 /cachegrind/cachegrind-*-darwin
 /cachegrind/cachegrind-*-linux
@@ -129,6 +130,7 @@
 
 # /callgrind/
 /callgrind/*.so
+/callgrind/*.dSYM
 /callgrind/.deps
 /callgrind/callgrind-*-darwin
 /callgrind/callgrind-*-linux
@@ -746,6 +748,7 @@
 
 # /lackey/
 /lackey/*.so
+/lackey/*.dSYM
 /lackey/.deps
 /lackey/lackey-*-darwin
 /lackey/lackey-*-linux

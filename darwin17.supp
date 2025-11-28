@@ -585,13 +585,6 @@
    obj:*CoreServices.framework*LaunchServices*
 }
 
-##{
-##   OSX1013:libsystem_pthread-1
-##   Memcheck:Cond
-##   obj:*libsystem_pthread*dylib*
-##   obj:*ImageIO.framework*ImageIO*
-##   obj:*ImageIO.framework*ImageIO*
-##}
 
 {
    OSX1013:ApplicationServices-1
@@ -780,13 +773,6 @@
 }
 
 {
-   OSX1013:_pthread_start
-   Helgrind:Race
-   fun:_pthread_start
-   fun:thread_start
-}
-
-{
    OSX1013:vng_aes_encrypt_opt
    Memcheck:Value8
    fun:vng_aes_encrypt_opt
@@ -799,40 +785,9 @@
 }
 
 {
-   OSX1013:helgrind:_pthread_deallocate
+   OSX1013:helgrind:pthread library
    Helgrind:Race
-   fun:_pthread_deallocate
-}
-
-{
-   OSX1013:helgrind:_pthread_join_cleanup
-   Helgrind:Race
-   fun:_pthread_join_cleanup
-}
-
-{
-   OSX1013:helgrind:_pthread_join
-   Helgrind:Race
-   ...
-   fun:_pthread_join
-}
-
-{
-   OSX1013:helgrind:_pthread_terminate
-   Helgrind:Race
-   fun:_pthread_terminate
-}
-
-{
-   OSX1013:helgrind:_pthread_exit
-   Helgrind:Race
-   fun:_pthread_exit
-}
-
-{
-   OSX1013:helgrind:_pthread_body
-   Helgrind:Race
-   fun:_pthread_body
+   obj:/usr/lib/system/libsystem_pthread.dylib
 }
 
 # various getaddrinfo suppressions
@@ -891,13 +846,6 @@
 }
 
 {
-   OSX1013:helgrind:pthead_once
-   Helgrind:Race
-   ...
-   fun:pthread_once
-}
-
-{
    OSX1013:helgrind:objc_destructInstance
    Helgrind:Race
    ...
@@ -919,50 +867,14 @@
 }
 
 {
-   OSX1013:nanosleep
+   OSX1013:drd:nanosleep
    drd:ConflictingAccess
    fun:nanosleep
 }
 {
-   OSX1013:_pthread_join
+   OSX1013:drd:pthread library
    drd:ConflictingAccess
-   fun:_pthread_join
-}
-{
-   OSX1013:usleep
-   drd:ConflictingAccess
-   fun:pthread_testcancel
-   fun:usleep
-}
-{
-   OSX1013:_pthread_join_cleanup
-   drd:ConflictingAccess
-   fun:_pthread_join_cleanup
-}
-{
-   OSX1013:pthread_mutex_destroy
-   drd:ConflictingAccess
-   fun:pthread_mutex_destroy
-}
-{
-   OSX1013:pthread_cond_destroy
-   drd:ConflictingAccess
-   fun:pthread_cond_destroy
-}
-{
-   OSX1013:pthread_mutex_unlock
-   drd:ConflictingAccess
-   fun:pthread_mutex_unlock
-}
-{
-   OSX1013:pthread_mutex_lock
-   drd:ConflictingAccess
-   fun:pthread_mutex_lock
-}
-{
-   OSX1013:_pthread_deallocate
-   drd:ConflictingAccess
-   fun:_pthread_deallocate
+   obj:/usr/lib/system/libsystem_pthread.dylib
 }
 {
    OSX1013:std::timed_mutex::unlock
@@ -975,34 +887,9 @@
    fun:_ZNSt3__111timed_mutex14try_lock_untilINS_6chrono12steady_clockENS2_8durationIxNS_5ratio*
 }
 {
-   OSX1013:_pthread_cond_updateval
-   drd:ConflictingAccess
-   fun:_pthread_cond_updateval
-}
-{
-   OSX1013:pthread_cond_signal
-   drd:ConflictingAccess
-   fun:pthread_cond_signal
-}
-{
-   OSX1013:_pthread_mutex_droplock
-   drd:ConflictingAccess
-   fun:_pthread_mutex_droplock
-}
-{
-   OSX1013:_pthread_cond_wait
-   drd:ConflictingAccess
-   fun:_pthread_cond_wait
-}
-{
    OSX1013:mach_timebase_info
    drd:ConflictingAccess
    fun:mach_timebase_info
-}
-{
-   OSX1013:pthread_testcancel
-   drd:ConflictingAccess
-   fun:pthread_testcancel
 }
 # take care with this, don't want to suppress anything in user
 # thread functions
@@ -1116,6 +1003,11 @@
    fun:_ZN9rwlock_ttILb0EE5writeEv
 }
 
+{
+   OSX1013:helgrind:gomp_barrier_wait
+   Helgrind:Race
+   fun:gomp_barrier_wait
+}
 
 {
    OSX1013:drd:object_dispose
@@ -1136,12 +1028,6 @@
    drd:ConflictingAccess
    ...
    fun:objc_destructInstance
-}
-
-{
-   OSX1013:drd:pthread_rwlock_unlock
-   drd:ConflictingAccess
-   fun:pthread_rwlock_unlock
 }
 
 {

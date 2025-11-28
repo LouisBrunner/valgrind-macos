@@ -240,19 +240,29 @@ Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 
 #if defined(VGO_darwin)
 /* A helper function for sigaction on Darwin. */
-static 
-void darwin_signal_demux(void* a1, UWord a2, UWord a3, void* a4, void* a5) {
+static
+void darwin_signal_demux(void* catcher, UWord infostyle, UWord sig, void* sinfo, void* uctx
+# if defined(VGA_arm64)
+, void* token
+# endif
+) {
    VG_(debugLog)(2, "libcsignal",
-                    "PRE  demux sig, a2 = %lu, signo = %lu\n", a2, a3);
-   if (a2 == 1)
-      ((void(*)(int))a1) (a3);
+                    "PRE  demux sig, infostyle = %s, signo = %lu\n", infostyle == VKI_UC_TRAD ? "TRAD" : "FLAVOR", sig);
+   if (infostyle == VKI_UC_TRAD)
+      ((void(*)(int))catcher) (sig);
    else
-      ((void(*)(int,void*,void*))a1) (a3,a4,a5);
+      ((void(*)(int,void*,void*))catcher) (sig, sinfo, uctx);
    VG_(debugLog)(2, "libcsignal",
-                    "POST demux sig, a2 = %lu, signo = %lu\n", a2, a3);
-   VG_(do_syscall2)(__NR_sigreturn, (UWord)a5, 0x1E);
+                    "POST demux sig, infostyle = %s, signo = %lu\n", infostyle == VKI_UC_TRAD ? "TRAD" : "FLAVOR", sig);
+# if defined(VGA_arm64)
+   VG_(do_syscall3)(__NR_sigreturn, (UWord)uctx, VKI_UC_FLAVOR, (UWord)token);
+   /* NOTREACHED */
+   __asm__ __volatile__("udf #0");
+# else
+   VG_(do_syscall2)(__NR_sigreturn, (UWord)uctx, VKI_UC_FLAVOR);
    /* NOTREACHED */
    __asm__ __volatile__("ud2");
+# endif
 }
 #endif
 

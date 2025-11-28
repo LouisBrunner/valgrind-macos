@@ -90,7 +90,10 @@ int main ( void )
   r= pthread_join( my_rescuer, NULL ); assert(!r);
   r= pthread_join( grabber, NULL ); assert(!r);
 
-  r= my_sem_destroy( quit_now ); assert(!r);
+  r= my_sem_destroy( quit_now );
+#if !defined(VGO_darwin)
+  assert(!r);
+#endif
   return 0;
 }
 

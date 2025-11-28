@@ -526,6 +526,9 @@ typedef struct {
 //typedef  struct __sigaction  vki_sigaction_toK_t;
 //typedef  struct sigaction    vki_sigaction_fromK_t;
 
+#define VKI_UC_TRAD        1
+#define VKI_UC_FLAVOR     30
+
 typedef
    struct {
       void* ksa_handler;

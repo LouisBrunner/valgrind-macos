@@ -867,6 +867,13 @@
 }
 
 {
+   OSX1013:helgrind:nanosleep
+   Helgrind:Race
+   ...
+   fun:nanosleep
+}
+
+{
    OSX1013:drd:nanosleep
    drd:ConflictingAccess
    fun:nanosleep
@@ -1007,6 +1014,18 @@
    OSX1013:helgrind:gomp_barrier_wait
    Helgrind:Race
    fun:gomp_barrier_wait
+}
+
+{
+   OSX1013:helgrind:_os_unfair_lock_lock_slow
+   Helgrind:Race
+   fun:_os_unfair_lock_lock_slow
+}
+
+{
+   OSX1013:helgrind:sem_trywait
+   Helgrind:Race
+   fun:sem_trywait
 }
 
 {

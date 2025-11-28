@@ -617,28 +617,10 @@
    obj:*libdispatch.dylib*
 }
 
-##{
-##   OSX1013:CoreImage-1
-##   Memcheck:Cond
-##   obj:*CoreImage.framework*CoreImage*
-##   obj:*CoreImage.framework*CoreImage*
-##   obj:*CoreImage.framework*CoreImage*
-##}
-
-##{
-##   OSX1013:strncpy-1
-##   Memcheck:Cond
-##   fun:strncpy
-##   obj:*CoreServicesInternal.framework*CoreServicesInternal
-##   obj:*CoreServicesInternal.framework*CoreServicesInternal
-##}
-
 {
    OSX1013:pthread_rwlock_init
    Memcheck:Cond
    fun:pthread_rwlock_init
-   obj:*ImageIO.framework*ImageIO*
-   obj:*ImageIO.framework*ImageIO*
 }
 
 {
@@ -756,13 +738,6 @@
    fun:setenv
 }
 
-# See https://bugs.kde.org/show_bug.cgi?id=196528
-{
-macos-__pthread_rwlock_init-see-our-bug-196528
-Memcheck:Cond
-fun:pthread_rwlock_init
-}
-
 # macOS 10.13 mach-o loader at startup
 {
    OSX1013:map_images-1
@@ -780,6 +755,7 @@ fun:pthread_rwlock_init
    fun:map_images_nolock
    fun:map_images
 }
+
 {
    OSX1013:map_images-3
    Memcheck:Leak
@@ -1127,6 +1103,20 @@ fun:pthread_rwlock_init
    fun:nw_path_copy_interface_with_generation_internal
 }
 
+
+{
+   OSX1013:helgrind:rwlock_tt<false>::read()
+   Helgrind:Race
+   fun:_ZN9rwlock_ttILb0EE4readEv
+}
+
+{
+   OSX1013:helgrind:rwlock_tt<false>::write()
+   Helgrind:Race
+   fun:_ZN9rwlock_ttILb0EE5writeEv
+}
+
+
 {
    OSX1013:drd:object_dispose
    drd:ConflictingAccess
@@ -1160,3 +1150,4 @@ fun:pthread_rwlock_init
    ...
    fun:xpc_pipe_routine
 }
+

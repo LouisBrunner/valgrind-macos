@@ -289,7 +289,8 @@
 #elif defined(VGO_freebsd)
 #  define  VG_Z_LIBPTHREAD_SONAME  libthrZdsoZa          // libthr.so*
 #elif defined(VGO_darwin)
-#  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
+//#  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
+#  define  VG_Z_LIBPTHREAD_SONAME  libsystemZupthreadZddylib  // libSystem.*.dylib
 #elif defined(VGO_solaris)
 #  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd1     // libpthread.so.1
 #else

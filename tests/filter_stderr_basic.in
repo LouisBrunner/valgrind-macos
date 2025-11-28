@@ -83,6 +83,7 @@ $SED '/warning: evaluate_Dwarf3_Expr: unhandled DW_OP_/d' |
 $SED '/^used_suppression:.*OSX.*dyld.*default.supp:*/d' |
 # Suppress Darwin running dsymutil
 $SED -e '/run: \/usr\/bin\/dsymutil.*/d' |
-# Suppress Darwin unknown mach ports
-$SED -e '/UNKNOWN Mach port modified/d'
+# Suppress Darwin unknown mach ports and mach_msg
+$SED -e '/UNKNOWN Mach port modified/d' |
+$SED -e '/UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option/d'
 

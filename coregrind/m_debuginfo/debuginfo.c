@@ -60,11 +60,11 @@
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 # include "priv_readelf.h"
 # include "priv_readdwarf3.h"
-# include "priv_readpdb.h"
 #elif defined(VGO_darwin)
 # include "priv_readmacho.h"
-# include "priv_readpdb.h"
+# include "pub_core_mach.h"
 #endif
+# include "priv_readpdb.h"
 #if defined(VGO_freebsd)
 #include "pub_core_clientstate.h"
 #endif
@@ -1196,6 +1196,9 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    if (sr_isError(statres)) {
       DebugInfo fake_di;
       Bool quiet = VG_(strstr)(filename, "/var/run/nscd/") != NULL
+#if defined(VGO_darwin)
+                   || VG_(strstr)(filename, DARWIN_FAKE_MEMORY_PATH) != NULL
+#endif
                    || VG_(strstr)(filename, "/dev/shm/") != NULL
                    || VG_(strncmp)("/memfd:", filename,
                                    VG_(strlen)("/memfd:")) == 0;

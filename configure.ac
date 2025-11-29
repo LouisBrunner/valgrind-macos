@@ -396,6 +396,15 @@ case "${host_os}" in
         AC_DEFINE([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11])
         AC_DEFINE([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12])
         AC_DEFINE([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13])
+        AC_DEFINE([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14 / iOS 12])
+        AC_DEFINE([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15 / iOS 13])
+        AC_DEFINE([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0 / iOS 14])
+        AC_DEFINE([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0 / iOS 15])
+        AC_DEFINE([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
+        AC_DEFINE([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
+        AC_DEFINE([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
+        AC_DEFINE([DARWIN_15_04], 150400, [DARWIN_VERS value for macOS 15.4])
+        AC_DEFINE([DARWIN_26_00], 260000, [DARWIN_VERS value for macOS / iOS 26])
 
 	AC_MSG_CHECKING([for the kernel version])
 	kernel=`uname -r`

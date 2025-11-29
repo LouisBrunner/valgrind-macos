@@ -19,7 +19,14 @@ fi |
 
 # And FreeBSD
 if $dir/../../tests/os_test freebsd; then
-   #perl -p $dir/filter_stderr_freebsd
+   awk -f $dir/filter_freebsd.awk
+else
+   cat
+fi |
+
+# And Darwin
+if $dir/../../tests/os_test darwin; then
+   # reuse the FreeBSD filter to start with
    awk -f $dir/filter_freebsd.awk
 else
    cat

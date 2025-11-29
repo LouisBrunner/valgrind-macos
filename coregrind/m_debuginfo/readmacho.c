@@ -83,6 +83,41 @@
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+static Int count_rw_loads(const struct load_command* macho_load_commands, unsigned int ncmds)
+{
+  Int rw_loads = 0;
+  const struct load_command* lc = (const struct load_command*)macho_load_commands;
+  for (unsigned int i = 0U; i < ncmds; ++i) {
+      if (lc->cmd == LC_SEGMENT_CMD) {
+        const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
+        if (sc->initprot == 3 && sc->filesize
+#if DARWIN_VERS >= DARWIN_13_00
+// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 13 and later (not sure when that started)
+// so we ignore it otherwise some binaries don't get symbols
+            && VG_(strcmp)(sc->segname, "__DATA_CONST") != 0
+#endif
+        ) {
+          rw_loads += 1;
+        }
+      }
+      const char* tmp = (const char*)lc + lc->cmdsize;
+      lc = (const struct load_command*)tmp;
+  }
+  return rw_loads;
+}
+
+static Bool check_fat_macho_and_get_rw_loads(const void* macho_header, Int* rw_loads)
+{
+  const struct fat_header*  fh_be = (const struct fat_header*)macho_header;
+  vg_assert(fh_be);
+  if (VG_(ntohl)(fh_be->magic) == FAT_MAGIC) {
+     // @todo PJF not yet handled, previous behaviour was to assume that the count is 1
+     *rw_loads = 1;
+     return True;
+  }
+  return False;
+}
+
 /* A DiSlice is used to handle the thin/fat distinction for MachO images.
    (1) the entire mapped-in ("primary") image, fat headers, kitchen sink,
        whatnot: the entire file.  This is the DiImage* that is the backing
@@ -93,20 +128,11 @@
        memory that falls entirely inside the primary image.
 */
 
+STATIC_ASSERT(sizeof(struct fat_header) <= sizeof(struct MACH_HEADER));
+
 Bool ML_(check_macho_and_get_rw_loads)( Int fd, Int* rw_loads )
 {
-   /* (JRS: the Mach-O headers might not be in this mapped data,
-      because we only mapped a page for this initial check,
-      or at least not very much, and what's at the start of the file
-      is in general a so-called fat header.  The Mach-O object we're
-      interested in could be arbitrarily far along the image, and so
-      we can't assume its header will fall within this page.) */
-
-   /* But we can say that either it's a fat object, in which case it
-      begins with a fat header, or it's unadorned Mach-O, in which
-      case it starts with a normal header.  At least do what checks we
-      can to establish whether or not we're looking at something
-      sane. */
+   vg_assert(rw_loads);
 
    HChar macho_header[sizeof(struct MACH_HEADER)];
    SysRes preadres = VG_(pread)( fd, macho_header, sizeof(struct MACH_HEADER), 0 );
@@ -115,43 +141,26 @@ Bool ML_(check_macho_and_get_rw_loads)( Int fd, Int* rw_loads )
       return False;
    }
 
-   const struct fat_header*  fh_be = (const struct fat_header*)macho_header;
+   if (check_fat_macho_and_get_rw_loads(macho_header, rw_loads)) {
+      return True;
+   }
+
    const struct MACH_HEADER* mh    = (const struct MACH_HEADER*)macho_header;
-
-   vg_assert(fh_be);
    vg_assert(mh);
-   vg_assert(rw_loads);
-   STATIC_ASSERT(sizeof(struct fat_header) <= sizeof(struct MACH_HEADER));
-   if (VG_(ntohl)(fh_be->magic) == FAT_MAGIC) {
-      // @todo PJF not yet handled, previous behaviour was to assume that the count is 1
-      *rw_loads = 1;
-      return True;
+   if (mh->magic != MAGIC) {
+     return False;
    }
 
-   if (mh->magic == MAGIC) {
-      HChar* macho_load_commands = ML_(dinfo_zalloc)("di.readmacho.macho_load_commands", mh->sizeofcmds);
-      preadres = VG_(pread)( fd, macho_load_commands, mh->sizeofcmds, sizeof(struct MACH_HEADER) );
-      if (sr_isError(preadres) || sr_Res(preadres) < mh->sizeofcmds) {
-         ML_(dinfo_free)(macho_load_commands);
-         return False;
-      }
-
-      const struct load_command* lc = (const struct load_command*)macho_load_commands;
-      for (unsigned int i = 0U; i < mh->ncmds; ++i) {
-         if (lc->cmd == LC_SEGMENT_CMD) {
-            const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
-            if (sc->initprot == 3 && sc->filesize) {
-               ++*rw_loads;
-            }
-         }
-         const char* tmp = (const char*)lc + lc->cmdsize;
-         lc = (const struct load_command*)tmp;
-      }
+   HChar* macho_load_commands = ML_(dinfo_zalloc)("di.readmacho.macho_load_commands", mh->sizeofcmds);
+   preadres = VG_(pread)( fd, macho_load_commands, mh->sizeofcmds, sizeof(struct MACH_HEADER) );
+   if (sr_isError(preadres) || sr_Res(preadres) < mh->sizeofcmds) {
       ML_(dinfo_free)(macho_load_commands);
-      return True;
+      return False;
    }
 
-   return False;
+   *rw_loads = count_rw_loads((const struct load_command*)macho_load_commands, mh->ncmds);
+   ML_(dinfo_free)(macho_load_commands);
+   return True;
 }
 
 

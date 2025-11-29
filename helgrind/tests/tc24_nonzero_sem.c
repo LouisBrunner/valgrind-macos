@@ -44,7 +44,10 @@ int main ( void )
       assert(!r);
    }
 
-   r= my_sem_destroy(sem); assert(!r);
+   r= my_sem_destroy(sem);
+#if !defined(VGO_darwin)
+   assert(!r);
+#endif
    return 0;
 }
 

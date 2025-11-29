@@ -3517,9 +3517,7 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
-#  elif defined(VGP_arm64_linux)
-   ipHere = uregsHere->pc;
-#  elif defined(VGP_arm64_freebsd)
+#  elif defined(VGA_arm64)
    ipHere = uregsHere->pc;
 #  elif defined(VGP_riscv64_linux)
    ipHere = uregsHere->pc;

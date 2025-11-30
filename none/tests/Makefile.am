@@ -95,7 +95,7 @@ dist_noinst_SCRIPTS = \
 	allexec_prepare_prereq \
 	filter_sort
 
-noinst_HEADERS = fdleak.h
+noinst_HEADERS = fdleak.h sse4-common.h
 
 EXTRA_DIST = \
 	allexec32.stdout.exp allexec32.stderr.exp allexec32.vgtest\

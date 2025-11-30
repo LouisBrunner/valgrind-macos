@@ -74,6 +74,7 @@ typedef struct load_info_t {
   vki_uint8_t *linker_entry; // dylinker entry point
   Addr linker_offset; // dylinker text offset
   vki_size_t max_addr; // biggest address reached while loading segments
+  Addr text_slide; // slide of the text segment because of "ASLR" (arm64-only)
 } load_info_t;
 
 static void print(const HChar *str)
@@ -180,7 +181,7 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
    vki_size_t vmsize;   // page-aligned
    vki_size_t vmend;    // page-aligned
    unsigned int prot;
-   Addr slided_addr = segcmd->vmaddr + out_info->linker_offset;
+   Addr slided_addr = segcmd->vmaddr + out_info->linker_offset + out_info->text_slide;
 
    // GrP fixme mark __UNIXSTACK as SF_STACK
     
@@ -449,6 +450,7 @@ load_dylinker(struct dylinker_command *dycmd, load_info_t *out_info)
    linker_info.entry = NULL;
    linker_info.linker_entry = NULL;
    linker_info.linker_offset = 0;
+   linker_info.text_slide = 0;
    linker_info.max_addr = out_info->max_addr;
 
    if (dycmd->name.offset >= dycmd->cmdsize) {
@@ -816,7 +818,7 @@ Bool VG_(match_macho)(const void *hdr, SizeT len)
 
    // GrP fixme check more carefully for matching fat arch?
 
-   return (len >= VKI_PAGE_SIZE  &&  
+   return (len >= sizeof(*magic)  &&
            (*magic == MAGIC  ||  *magic == VG_(ntohl)(FAT_MAGIC))) 
       ? True : False;
 }
@@ -834,6 +836,7 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
    load_info.linker_entry = NULL;
    load_info.linker_offset = 0;
    load_info.max_addr = 0;
+   load_info.text_slide = 0;
 
    err = VG_(fstat)(fd, &sb);
    if (err) {
@@ -855,6 +858,11 @@ Int VG_(load_macho)(Int fd, const HChar *name, ExeInfo *info)
    info->stack_end = (Addr) load_info.stack_end;
    info->text = (Addr) load_info.text;
    info->dynamic = load_info.linker_entry ? True : False;
+
+   if (!info->dynamic && load_info.text_slide) {
+      print("cannot slide static executables\n");
+      return VKI_ENOEXEC;
+   }
 
    info->executable_path = VG_(strdup)("ume.macho.executable_path", name);
 

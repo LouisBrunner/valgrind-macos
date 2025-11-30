@@ -39,6 +39,7 @@
 
 #if defined(VGO_darwin) 
 
+#include "config.h" // for DARWIN_VERS
 #include "pub_core_basics.h"
 #include "pub_core_mach.h"
 
@@ -56,16 +57,15 @@ mach_msg_trap(mach_msg_header_t *msg,
               mach_msg_timeout_t timeout,
               mach_port_t notify);
 
-mach_msg_return_t
-mach_msg(msg, option, send_size, rcv_size, rcv_name, timeout, notify)
-    mach_msg_header_t *msg;
-    mach_msg_option_t option;
-    mach_msg_size_t send_size;
-    mach_msg_size_t rcv_size;
-    mach_port_t rcv_name;
-    mach_msg_timeout_t timeout;
-    mach_port_t notify;
-{
+mach_msg_return_t mach_msg(
+  mach_msg_header_t *msg,
+  mach_msg_option_t option,
+  mach_msg_size_t send_size,
+  mach_msg_size_t rcv_size,
+  mach_port_t rcv_name,
+  mach_msg_timeout_t timeout,
+  mach_port_t notify
+) {
     mach_msg_return_t mr;
 
     /*

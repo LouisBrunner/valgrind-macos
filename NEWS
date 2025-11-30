@@ -12,6 +12,7 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ================== PLATFORM CHANGES =================
 
+s390x: Machine models older than z196 are no longer supported.
 
 * ==================== TOOL CHANGES ===================
 
@@ -28,6 +29,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 228343  none/tests/darwin/bug228343 fails on OS X
 413369  unhandled amd64-darwin syscall: unix:151 (getpgid)
 487055  memcheck/tests/x86-linux/scalar fails running in Docker
+509562  s390x: Define minimum required machine model
 510416  Missing syswraps for file_getattr and file_setattr
 510864  Add SSE4.1 PMAXSD and PMINSD instructions support for 32-bit x86
 511329  Darwin and FreeBSD: Move setting of carry flag out of

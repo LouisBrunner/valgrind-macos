@@ -1,7 +1,8 @@
 
 Requirements
 ------------
-- You need GCC 3.4 or later to compile the s390 port.
+- You need a GCC-compatible compiler with C11 support to compile
+  the s390 port.
 - Valgrind requires a machine not older than z196 to run.
 
 

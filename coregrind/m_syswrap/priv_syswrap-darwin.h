@@ -39,14 +39,6 @@ void start_thread_NORETURN ( Word arg );
 void assign_port_name(mach_port_t port, const char *name);
 void record_named_port(ThreadId tid, mach_port_t port, mach_port_right_t right, const char *name);
 
-extern const SyscallTableEntry ML_(mach_trap_table)[];
-extern const SyscallTableEntry ML_(syscall_table)[];
-extern const SyscallTableEntry ML_(mdep_trap_table)[];
-
-extern const UInt ML_(syscall_table_size);
-extern const UInt ML_(mach_trap_table_size);
-extern const UInt ML_(mdep_trap_table_size);
-
 void VG_(show_open_ports)(void);
 
 Bool ML_(sync_mappings)(const HChar *when, const HChar *where, UWord num);
@@ -240,7 +232,7 @@ DECL_TEMPLATE(darwin, csops_audittoken);        // 170
 // NYI kdebug_typefilter                        // 177
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_11
-// NYI kdebug_trace_string                      // 178
+DECL_TEMPLATE(darwin, kdebug_trace_string); // 178
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 // 179
 DECL_TEMPLATE(darwin, kdebug_trace);            // 180
@@ -589,7 +581,7 @@ DECL_TEMPLATE(darwin, faccessat);                // 466
 // NYI fstatat         // 469
 DECL_TEMPLATE(darwin, fstatat64);                // 470
 // NYI linkat          // 471
-// NYI unlinkat        // 472
+DECL_TEMPLATE(darwin, unlinkat);                 // 472
 DECL_TEMPLATE(darwin, readlinkat);               // 473
 // NYI symlinkat       // 474
 DECL_TEMPLATE(darwin,  mkdirat);                 // 475
@@ -768,6 +760,7 @@ DECL_TEMPLATE(darwin, semaphore_wait_signal);
 DECL_TEMPLATE(darwin, semaphore_timedwait);
 DECL_TEMPLATE(darwin, semaphore_timedwait_signal);
 DECL_TEMPLATE(darwin, task_for_pid);
+DECL_TEMPLATE(darwin, task_name_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
 
 #if DARWIN_VERS >= DARWIN_10_13

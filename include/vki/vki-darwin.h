@@ -981,6 +981,11 @@ struct ByteRangeLockPB2
 #define VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY 128  /* max() in the provided priority in the the priority of the event manager */
 #define VKI_WQOPS_THREAD_WORKLOOP_RETURN     256  /* parks the thread after delivering the passed kevent array */
 #define VKI_WQOPS_SHOULD_NARROW              512  /* checks whether we should narrow our concurrency */
+#define VKI_WQOPS_SETUP_DISPATCH            1024  /* setup pthread workqueue-related operations */
+
+#define VKI_WORKQ_DISPATCH_CONFIG_VERSION        2
+#define VKI_WORKQ_DISPATCH_MIN_SUPPORTED_VERSION 1
+#define VKI_WORKQ_DISPATCH_SUPPORTED_FLAGS       0
 
 
 #include <sys/ttycom.h>

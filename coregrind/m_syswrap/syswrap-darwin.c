@@ -66,6 +66,7 @@
 #include <mach/mach.h>
 #include <mach/mach_vm.h>
 #include <semaphore.h>
+#include <sys/kdebug.h>
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 #define msgh_request_port      msgh_remote_port
@@ -271,7 +272,6 @@ static void run_a_thread_NORETURN ( Word tidW )
       tst->status = VgTs_Empty;
       // GrP fixme race here! new thread may claim this V thread stack 
       // before we get out here!
-      // GrP fixme use bsdthread_terminate for safe cleanup?
       mach_msg(&msg, MACH_SEND_MSG|MACH_MSG_OPTION_NONE, 
                sizeof(msg), 0, 0, MACH_MSG_TIMEOUT_NONE, 0);
 
@@ -712,6 +712,189 @@ void VG_(show_open_ports)(void)
    }
 
    VG_(message)(Vg_UserMsg, "\n");
+}
+
+
+/* ---------------------------------------------------------------------
+   kdebug helpers
+   ------------------------------------------------------------------ */
+
+// Adapted from https://newosxbook.com/tools/kdv.html
+static const HChar *kdebug_std_codes[] =
+{
+  NULL,
+  "MACH",    // #define DBG_MACH                1
+  "NETWORK", // #define DBG_NETWORK             2
+  "FSYSTEM", // #define DBG_FSYSTEM             3
+  "BSD",     // #define DBG_BSD                 4
+  "IOKIT",   // #define DBG_IOKIT               5
+  "DRIVERS", // #define DBG_DRIVERS             6
+  "TRACE",   // #define DBG_TRACE               7
+  "DLIL",    // #define DBG_DLIL                8
+  "PTHREAD", // #define DBG_PTHREAD             9
+  "CORESTORAGE", // #define DBG_CORESTORAGE         10
+  "COREGRAPHICS", // #define DBG_CG                  11
+  "MONOTONICS", // #define DBG_MONOTONIC           12
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  "MISC",    // #define DBG_MISC                20
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+  "SECURITY", // As of 10.10
+  "DYLD",    // #define DBG_DYLD                31
+  "QT",      // #define DBG_QT                  32
+  "APPS",    // #define DBG_APPS                33
+  "LAUNCHD", // #define DBG_LAUNCHD             34
+  "SILICON", // #define DBG_SILICON             35
+  "HANGTRACER",      // iOS 9: undocumented
+  "PERF" ,    // #define DBG_PERF                37
+  // added in 10.9
+  "IMPORTANCE",  // #define DBG_IMPORTANCE          38
+  NULL,  // Apparently present in iOS?
+  // Added in 10.10
+  "BANK",    // #define DBG_BANK                40
+  "XPC",     //#define DBG_XPC                 41
+  "ATM" ,    // #define DBG_ATM                 42
+  "ARIADNE", // #define DBG_ARIADNE             43
+  // Added in 10.11
+  "DAEMON",  // #define DBG_DAEMON              44
+  "ENERGYTRACE",  // #define DBG_ENERGYTRACE         45
+  "DISPATCH", // #define DBG_DISPATCH            46
+  NULL, NULL,
+  "IMG", // #define DBG_IMG                 49
+  NULL,
+  "UMALLOC", // #define DBG_UMALLOC             51
+  NULL,
+  "TURNSTILE", // #define DBG_TURNSTILE           53
+  "AUDIO", // #define DBG_AUDIO               54
+  NULL, NULL, NULL, NULL, NULL, // 55-59
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 60-69
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 70-79
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 80-89
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 90-99
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 100-109
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 110-119
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 120-129
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 130-139
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 140-149
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 150-159
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 160-169
+  "WINDOWSERVER", // apparently deprecated in 10.11 and merged with 49
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 171-179
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 180-189
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 190-199
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 200-209
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 210-219
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 220-229
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 230-238
+  "IOS_APPS", // iOS: Used by tons of Apps, undocumented
+  NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, // 240-249
+  NULL, NULL, NULL, NULL, NULL, // 250-254
+  "MIG", // #define DBG_MIG                 255
+};
+
+struct KDebugTraceCode {
+  ULong code;
+  const HChar name[64];
+};
+
+static const HChar *kdebug_debugid(ULong did)
+{
+  static Bool kdebug_trace_codes_initd = False;
+  static UInt kdebug_trace_codes_count = 0;
+  static struct KDebugTraceCode* kdebug_trace_codes = NULL;
+
+  static HChar buf[64];
+
+  Int class = KDBG_EXTRACT_CLASS(did);
+  ULong event_id = did & KDBG_EVENTID_MASK;
+  HChar dir = '\0';
+  const HChar* found_class = NULL;
+
+  if (!kdebug_trace_codes_initd) {
+    HChar rbuf[1024];
+    Int leftover = 0;
+
+    kdebug_trace_codes_initd = True;
+    SysRes fd = VG_(open)("/usr/share/misc/trace.codes", O_RDONLY, 0);
+    if (sr_isError(fd)) {
+      VG_(close)(sr_Res(fd));
+    } else {
+      kdebug_trace_codes_count = 0;
+      while (1) {
+        Int count = VG_(read)(sr_Res(fd), rbuf, sizeof(rbuf));
+        if (count <= 0) {
+          break;
+        }
+        for (HChar* p = rbuf; p < rbuf + count; p += 1) {
+          if (*p == '\n') {
+            kdebug_trace_codes_count += 1;
+          }
+        }
+      }
+      kdebug_trace_codes = VG_(malloc)("kdebug_trace_codes",
+                                       kdebug_trace_codes_count *
+                                       sizeof(struct KDebugTraceCode));
+      VG_(lseek)(sr_Res(fd), 0, VKI_SEEK_SET);
+      kdebug_trace_codes_count = 0;
+      while (1) {
+        Int count = VG_(read)(sr_Res(fd), rbuf+leftover, sizeof(rbuf)-leftover);
+        if (count <= 0) {
+          break;
+        }
+        count += leftover;
+        Int start = 0;
+        for (HChar* p = rbuf; p < rbuf + count; p += 1) {
+          if (*p != '\n') {
+            continue;
+          }
+
+          HChar* end = NULL;
+          *p = '\0';
+          kdebug_trace_codes[kdebug_trace_codes_count].code = VG_(strtoll16)(rbuf+start, &end);
+          while (*end == ' ' || *end == '\t') {
+            end += 1;
+          }
+          // FIXME: gross cast!
+          VG_(strlcpy)((HChar*)(Addr)kdebug_trace_codes[kdebug_trace_codes_count].name, end, sizeof(kdebug_trace_codes[kdebug_trace_codes_count].name));
+          kdebug_trace_codes_count += 1;
+          start = p - rbuf + 1;
+        }
+        if (start < count) {
+          leftover = count - start;
+          VG_(memmove)(rbuf, rbuf+start, leftover);
+        }
+      }
+      VG_(close)(sr_Res(fd));
+    }
+  }
+
+  for (Int i = 0; i < kdebug_trace_codes_count; i += 1) {
+    const struct KDebugTraceCode* entry = &kdebug_trace_codes[i];
+    if (entry->code == event_id) {
+      found_class = entry->name;
+      break;
+    }
+  }
+  if (found_class == NULL) {
+    found_class = kdebug_std_codes[class];
+  }
+  if (found_class == NULL) {
+    found_class = "UNKNOWN";
+  }
+
+  if (did & DBG_FUNC_START) {
+    dir = '>';
+  }
+  if (did & DBG_FUNC_END) {
+    dir = '<';
+  }
+
+  if (dir) {
+    VG_(sprintf)(buf, "%c%s", dir, found_class);
+  } else {
+    VG_(sprintf)(buf, "%s", found_class);
+  }
+
+  return buf;
 }
 
 
@@ -2055,7 +2238,7 @@ PRE(disconnectx)
 PRE(kevent)
 {
    PRINT("kevent( %ld, %#lx, %ld, %#lx, %ld, %#lx )", 
-         SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+         SARG1, ARG2, SARG3, ARG4, SARG5, ARG6);
    PRE_REG_READ6(int,"kevent", int,kq, 
                  const struct vki_kevent *,changelist, int,nchanges, 
                  struct vki_kevent *,eventlist, int,nevents, 
@@ -2073,7 +2256,7 @@ PRE(kevent)
 
 POST(kevent)
 {
-   PRINT("kevent ret %ld dst %#lx (%zu)", RES, ARG4, sizeof(struct vki_kevent));
+   PRINT("kevent ret %ld dst %#lx (%zu)", (Word)RES, ARG4, sizeof(struct vki_kevent));
    if (RES > 0) POST_MEM_WRITE(ARG4, RES * sizeof(struct vki_kevent));
 }
 
@@ -2169,6 +2352,7 @@ static const HChar *workqop_name(int op)
    case VKI_WQOPS_SET_EVENT_MANAGER_PRIORITY: return "SET_EVENT_MANAGER_PRIORITY";
    case VKI_WQOPS_THREAD_WORKLOOP_RETURN:     return "THREAD_WORKLOOP_RETURN";
    case VKI_WQOPS_SHOULD_NARROW:              return "SHOULD_NARROW";
+   case VKI_WQOPS_SETUP_DISPATCH:             return "SETUP_DISPATCH";
    default: return "?";
    }
 }
@@ -2226,11 +2410,33 @@ PRE(workq_ops)
       // RK fixme need anything here?
       // RK fixme may block?
       break;
+   case VKI_WQOPS_SETUP_DISPATCH: {
+      // docs says: setup pthread workqueue-related operations
+#if DARWIN_VERS >= DARWIN_10_15
+#pragma pack(4)
+      struct workq_dispatch_config {
+        uint32_t wdc_version;
+        uint32_t wdc_flags;
+        uint64_t wdc_queue_serialno_offs;
+        uint64_t wdc_queue_label_offs;
+      };
+#pragma pack()
+      PRE_MEM_READ("workq_ops(item)", ARG2, MIN(sizeof(struct workq_dispatch_config), SARG3));
+      struct workq_dispatch_config* cfg = (struct workq_dispatch_config*)ARG2;
+      if (cfg->wdc_flags & ~VKI_WORKQ_DISPATCH_SUPPORTED_FLAGS ||
+          cfg->wdc_version < VKI_WORKQ_DISPATCH_MIN_SUPPORTED_VERSION) {
+        SET_STATUS_Failure( VKI_ENOTSUP );
+      }
+#endif
+      break;
+   }
    default:
-      VG_(printf)("UNKNOWN workq_ops option %ld\n", ARG1);
+      PRINT("workq_ops ( %lu [??], ... )", ARG1);
+      log_decaying("UNKNOWN workq_ops option %lu!", ARG1);
       break;
    }
 }
+
 POST(workq_ops)
 {
    ThreadState *tst = VG_(get_ThreadState)(tid);
@@ -2809,10 +3015,11 @@ PRE(fstat_extended)
    PRE_REG_READ4(int, "fstat_extended", int, fd, struct stat *, buf, 
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_WRITE(   "fstat_extended(buf)",        ARG2, sizeof(struct vki_stat) );
-   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE("fstat_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "fstat_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
+
 POST(fstat_extended)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat) );
@@ -2830,10 +3037,11 @@ PRE(stat64_extended)
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_RASCIIZ( "stat64_extended(file_name)",  ARG1 );
    PRE_MEM_WRITE(   "stat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
-   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE("stat64_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "stat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
+
 POST(stat64_extended)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
@@ -2841,7 +3049,6 @@ POST(stat64_extended)
       POST_MEM_WRITE( ARG3, *(vki_size_t *)ARG4 );
    POST_MEM_WRITE( ARG4, sizeof(vki_size_t) );
 }
-
 
 PRE(lstat64_extended)
 {
@@ -2851,10 +3058,11 @@ PRE(lstat64_extended)
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_RASCIIZ( "lstat64_extended(file_name)",  ARG1 );
    PRE_MEM_WRITE(   "lstat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
-   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if ( ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE(   "lstat64_extended(fsacl)",   ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "lstat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
+
 POST(lstat64_extended)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
@@ -2871,10 +3079,11 @@ PRE(fstat64_extended)
    PRE_REG_READ4(int, "fstat64_extended", int, fd, struct stat64 *, buf, 
                  void *, fsacl, vki_size_t *, fsacl_size);
    PRE_MEM_WRITE(   "fstat64_extended(buf)",        ARG2, sizeof(struct vki_stat64) );
-   if (ARG4 && ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
+   if (ML_(safe_to_deref)( (void*)ARG4, sizeof(vki_size_t) ))
       PRE_MEM_WRITE("fstat64_extended(fsacl)",      ARG3, *(vki_size_t *)ARG4 );
    PRE_MEM_READ(    "fstat64_extended(fsacl_size)", ARG4, sizeof(vki_size_t) );
 }
+
 POST(fstat64_extended)
 {
    POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
@@ -5131,6 +5340,7 @@ POST(host_get_clock_service)
 
    Reply *reply = (Reply *)ARG1;
 
+   record_named_port(tid, reply->clock_serv.name, -1, "clock-%p");
    assign_port_name(reply->clock_serv.name, "clock-%p");
    PRINT("%s", name_for_port(reply->clock_serv.name));
 }
@@ -6053,6 +6263,7 @@ POST(task_get_special_port)
    switch (MACH_ARG(task_get_special_port.which_port)) {
    case TASK_BOOTSTRAP_PORT:
       vg_bootstrap_port = reply->special_port.name;
+      record_named_port(tid, reply->special_port.name, -1, "bootstrap");
       assign_port_name(reply->special_port.name, "bootstrap");
       break;
    case TASK_KERNEL_PORT:
@@ -6155,6 +6366,7 @@ POST(semaphore_create)
 
    Reply *reply = (Reply *)ARG1;
 
+   record_named_port(tid, reply->semaphore.name, -1, "semaphore-%p");
    assign_port_name(reply->semaphore.name, "semaphore-%p");
    PRINT("%s", name_for_port(reply->semaphore.name));
 }
@@ -8921,6 +9133,25 @@ PRE(__semwait_signal)
 //   *flags |= SfMayBlock;
 //}
 
+PRE(task_name_for_pid)
+{
+   PRINT("task_name_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), SARG2, ARG3);
+   PRE_REG_READ3(long, "task_name_for_pid",
+                 mach_port_t,"target",
+                 vki_pid_t, "pid", mach_port_t *,"task");
+   PRE_MEM_WRITE("task_name_for_pid(task)", ARG3, sizeof(mach_port_t));
+}
+
+POST(task_name_for_pid)
+{
+   mach_port_t task;
+
+   POST_MEM_WRITE(ARG3, sizeof(mach_port_t));
+
+   task = *(mach_port_t *)ARG3;
+   record_named_port(tid, task, MACH_PORT_RIGHT_SEND, "task-name-%p");
+   PRINT("task-name %#x", task);
+}
 
 PRE(task_for_pid)
 {
@@ -9472,6 +9703,17 @@ static void munge_wll(UWord* a1, ULong* a2, ULong* a3,
 #  endif
 }
 
+static void munge_wlww(UWord* a1, ULong* a2, UWord* a3, UWord* a4,
+                       UWord aRG1, UWord aRG2, UWord aRG3,
+                       UWord aRG4, UWord aRG5)
+{
+#  if defined(VGA_x86)
+   *a1 = aRG1; *a2 = LOHI64(aRG2,aRG3); *a3 = aRG4; *a4 = aRG5;
+#  else
+   *a1 = aRG1; *a2 = aRG2; *a3 = aRG3; *a4 = aRG4;
+#  endif
+}
+
 static void munge_wwlw(UWord* a1, UWord* a2, ULong* a3, UWord* a4,
                        UWord aRG1, UWord aRG2, UWord aRG3,
                        UWord aRG4, UWord aRG5)
@@ -9757,9 +9999,12 @@ PRE(kernelrpc_mach_port_construct_trap)
 {
    UWord a1; UWord a2; ULong a3; UWord a4;
    munge_wwlw(&a1, &a2, &a3, &a4, ARG1, ARG2, ARG3, ARG4, ARG5);
+   mach_port_options_t* options = (mach_port_options_t*) a2;
    PRINT("kernelrpc_mach_port_construct_trap"
-         "(target: %s, options: %#lx, content: %llx, name: %p)",
-         name_for_port(a1), a2, a3, *(mach_port_name_t**)a4);
+         "(target: %s, options: %#lx {flags: %#x, mpl_ql: %#x}, context: %llx, name: %p)",
+         name_for_port(a1), a2, options->flags, options->mpl.mpl_qlimit, a3, *(mach_port_name_t**)a4);
+   PRE_MEM_READ("kernelrpc_mach_port_construct_trap(options)", a2,
+                sizeof(mach_port_options_t));
    PRE_MEM_WRITE("kernelrpc_mach_port_construct_trap(name)", a4,
                  sizeof(mach_port_name_t*));
 }
@@ -9925,6 +10170,15 @@ POST(fstatat64)
     POST_MEM_WRITE( ARG3, sizeof(struct vki_stat64) );
 }
 
+PRE(unlinkat)
+{
+    PRINT("unlinkat ( %ld, %#lx(%s), %#lx )",
+          SARG1, ARG2, (HChar*)ARG2, ARG3);
+    PRE_REG_READ3(long, "unlinkat",
+                  int, fd, const char *, path, int, flag);
+    PRE_MEM_RASCIIZ( "unlinkat(path)", ARG2 );
+}
+
 PRE(readlinkat)
 {
     PRINT("readlinkat ( %ld, %#lx(%s), %#lx, %ld )",
@@ -10079,6 +10333,15 @@ PRE(mkdirat)
    ------------------------------------------------------------------ */
 
 #if DARWIN_VERS >= DARWIN_10_11
+
+PRE(kdebug_trace_string)
+{
+  PRINT("kdebug_trace_string(%#lx (%s), %#lx, %s)", ARG1, kdebug_debugid(ARG1), ARG2, (HChar*)(Addr)ARG3);
+  if (ARG3 != 0) {
+    PRE_MEM_RASCIIZ("kdebug_trace_string(string)", ARG3);
+  }
+  SET_STATUS_Success(0);
+}
 
 PRE(kevent_qos)
 {
@@ -10798,6 +11061,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(175)),   // old gc_control
 // _____(__NR_add_profil), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)),   // ???
+#if DARWIN_VERS >= DARWIN_10_11
+   MACX_(__NR_kdebug_trace_string, kdebug_trace_string), // 178
+#else
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(179)),   // ???
    MACX_(__NR_kdebug_trace, kdebug_trace),     // 180
@@ -11143,7 +11411,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #endif
    MACX_(__NR_faccessat,           faccessat),          // 466
    MACXY(__NR_fstatat64,           fstatat64),          // 470
+   MACX_(__NR_unlinkat,            unlinkat),           // 472
    MACXY(__NR_readlinkat,          readlinkat),         // 473
+   MACX_(__NR_mkdirat,             mkdirat),            // 475
    MACX_(__NR_bsdthread_ctl,       bsdthread_ctl),      // 478
    MACXY(__NR_csrctl,              csrctl),             // 483
    MACX_(__NR_guarded_open_dprotected_np, guarded_open_dprotected_np),  // 484
@@ -11228,7 +11498,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(9)), 
 
 #  if DARWIN_VERS >= DARWIN_10_8
-   MACXY(__NR_kernelrpc_mach_vm_allocate_trap, kernelrpc_mach_vm_allocate_trap),
+   MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10), kernelrpc_mach_vm_allocate_trap),
 #  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)), 
 #  endif
@@ -11318,7 +11588,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(43)),
 #  endif
 
-// _____(__NR_task_name_for_pid),
+   MACXY(__NR_task_name_for_pid, task_name_for_pid),
    MACXY(__NR_task_for_pid, task_for_pid),
    MACXY(__NR_pid_for_task, pid_for_task),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(47)),
@@ -11401,17 +11671,15 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
 // calling convention instead of the syscall convention.
 // Use ML_(mdep_trap_table)[syscallno - ML_(mdep_trap_base)] .
 
+const SyscallTableEntry ML_(mdep_trap_table)[] = {
 #if defined(VGA_x86)
-const SyscallTableEntry ML_(mdep_trap_table)[] = {
    MACX_(__NR_thread_fast_set_cthread_self, thread_fast_set_cthread_self), 
-};
 #elif defined(VGA_amd64)
-const SyscallTableEntry ML_(mdep_trap_table)[] = {
    MACX_(__NR_thread_fast_set_cthread_self, thread_fast_set_cthread_self), 
-};
 #else
 #error unknown architecture
 #endif
+};
 
 const SyscallTableEntry* ML_(get_darwin_syscall_entry) ( UInt sysno )
 {

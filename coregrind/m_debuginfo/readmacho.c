@@ -37,6 +37,7 @@
 #include "pub_core_libcfile.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_aspacemgr.h"    /* for mmaping debuginfo files */
+#include "pub_core_mach.h"         /* VG_(dyld_cache_get_slide) */
 #include "pub_core_machine.h"      /* VG_ELF_CLASS */
 #include "pub_core_options.h"
 #include "pub_core_oset.h"
@@ -145,7 +146,7 @@ Bool ML_(check_macho_and_get_rw_loads)( Int fd, Int* rw_loads )
       return True;
    }
 
-   const struct MACH_HEADER* mh    = (const struct MACH_HEADER*)macho_header;
+   const struct MACH_HEADER* mh = (const struct MACH_HEADER*)macho_header;
    vg_assert(mh);
    if (mh->magic != MAGIC) {
      return False;
@@ -154,13 +155,34 @@ Bool ML_(check_macho_and_get_rw_loads)( Int fd, Int* rw_loads )
    HChar* macho_load_commands = ML_(dinfo_zalloc)("di.readmacho.macho_load_commands", mh->sizeofcmds);
    preadres = VG_(pread)( fd, macho_load_commands, mh->sizeofcmds, sizeof(struct MACH_HEADER) );
    if (sr_isError(preadres) || sr_Res(preadres) < mh->sizeofcmds) {
-      ML_(dinfo_free)(macho_load_commands);
-      return False;
+       ML_(dinfo_free)(macho_load_commands);
+       return False;
    }
-
    *rw_loads = count_rw_loads((const struct load_command*)macho_load_commands, mh->ncmds);
    ML_(dinfo_free)(macho_load_commands);
    return True;
+}
+
+Bool ML_(check_macho_and_get_rw_loads_from_memory)( const void* buf, SizeT szB, Int* rw_loads )
+{
+  vg_assert(buf);
+  vg_assert(rw_loads);
+
+  if (szB < sizeof(struct fat_header)) {
+    return False;
+  }
+  if (check_fat_macho_and_get_rw_loads(buf, rw_loads)) {
+    return True;
+  }
+
+  const struct MACH_HEADER* mh = (const struct MACH_HEADER*)buf;
+  vg_assert(mh);
+  if (mh->magic != MAGIC) {
+    return False;
+  }
+
+  *rw_loads = count_rw_loads((const struct load_command*)((const HChar*)mh + sizeof(struct MACH_HEADER)), mh->ncmds);
+  return True;
 }
 
 
@@ -174,19 +196,29 @@ static void unmap_image ( /*MOD*/DiSlice* sli )
    }
 }
 
-
 /* Open the given file, find the thin part if necessary, do some
    checks, and return a DiSlice containing details of both the thin
    part and (implicitly, via the contained DiImage*) the fat part.
    returns DiSlice_INVALID if it fails.  If it succeeds, the returned
    slice is guaranteed to refer to a valid(ish) Mach-O image. */
 static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
-                                  const HChar* filename )
+                                  const HChar* filename,
+                                  const DebugInfoMapping* rx_map )
 {
    DiSlice sli = DiSlice_INVALID;
 
    /* First off, try to map the thing in. */
-   DiImage* mimg = ML_(img_from_local_file)(filename);
+   DiImage* mimg;
+
+   if (rx_map != NULL) {
+     // FIXME: basically, we make a slice from the place where the mach_header is until the end of the memory space
+     // unfortunately, all the data needed for parsing from the DSC is spread across many places in memory
+     // and there is no way to know for sure the size of the DSC perfectly, so this is the best method at the moment
+     // and it's _very_ unsafe
+     mimg = ML_(img_from_memory)(rx_map->avma, MACH_DSC_END - rx_map->avma, filename);
+   } else {
+     mimg = ML_(img_from_local_file)(filename);
+   }
    if (mimg == NULL) {
       VG_(message)(Vg_UserMsg, "warning: connection to image %s failed\n",
                                filename );
@@ -199,7 +231,7 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
    DiOffT            fh_be_ioff = 0;
    struct fat_header fh_be;
    struct fat_header fh;
-     
+
    // Assume initially that we have a thin image, and narrow
    // the bounds if it turns out to be fat.  This stores |mimg| as
    // |sli.img|, so NULL out |mimg| after this point, for the sake of
@@ -240,6 +272,8 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
          Int cputype = CPU_TYPE_X86;
 #        elif defined(VGA_amd64)
          Int cputype = CPU_TYPE_X86_64;
+#        elif defined(VGA_arm64)
+         Int cputype = CPU_TYPE_ARM64;
 #        else
 #          error "unknown architecture"
 #        endif
@@ -328,20 +362,108 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
+static
+void add_symbol( /*OUT*/XArray* /* DiSym */ syms,
+                 struct _DebugInfo* di,
+                 struct NLIST* nl, Addr sym_addr,
+                 const HChar* prefix,
+                 DiCursor strtab_cur, UInt strtab_sz )
+{
+  DiSym  disym;
+
+  // "start_according_to_valgrind"
+  static const HChar* s_a_t_v = NULL; /* do not make non-static */
+
+  Bool inside_text = di->text_present && sym_addr >= di->text_avma && sym_addr < di->text_avma + di->text_size;
+  Bool inside_data = di->data_present && sym_addr >= di->data_avma && sym_addr < di->data_avma + di->data_size;
+  Bool inside_d_data = di->sdata_present && sym_addr >= di->sdata_avma && sym_addr < di->sdata_avma + di->sdata_size;
+
+  if (di->trace_symtab) {
+      HChar* str = ML_(cur_read_strdup)(
+                      ML_(cur_plus)(strtab_cur, nl->n_un.n_strx),
+                      "di.read_symtab.1");
+      VG_(printf)("nlist raw: avma %010lx  %s in %s %s\n",
+                  sym_addr, str,
+                  inside_text ? "__TEXT" : inside_data ? "__DATA" : inside_d_data ? "__DATA_DIRTY" : "???",
+                  prefix
+      );
+      ML_(dinfo_free)(str);
+  }
+
+  /* If no part of the symbol falls within the mapped range,
+      ignore it. */
+  if (!inside_text && !inside_data && !inside_d_data) {
+      return;
+  }
+
+  /* skip names which point outside the string table;
+      following these risks segfaulting Valgrind */
+  if (nl->n_un.n_strx < 0 || nl->n_un.n_strx >= strtab_sz) {
+      return;
+  }
+
+  HChar* name
+      = ML_(cur_read_strdup)( ML_(cur_plus)(strtab_cur, nl->n_un.n_strx),
+                              "di.read_symtab.2");
+
+  /* skip nameless symbols; these appear to be common, but
+      useless */
+  if (*name == 0) {
+      ML_(dinfo_free)(name);
+      return;
+  }
+
+  if (prefix[0]) {
+      HChar* newname = ML_(dinfo_zalloc)("di.read_symtab.3",
+                                         VG_(strlen)(prefix) + VG_(strlen)(name));
+      VG_(strcpy)(newname, prefix);
+      VG_(strcat)(newname, name);
+      ML_(dinfo_free)(name);
+      name = newname;
+  }
+
+  VG_(bzero_inline)(&disym, sizeof(disym));
+  disym.avmas.main = sym_addr;
+  SET_TOCPTR_AVMA(disym, 0);
+  SET_LOCAL_EP_AVMA(disym, 0);
+  disym.pri_name   = ML_(addStr)(di, name, -1);
+  disym.sec_names  = NULL;
+  disym.size       = // let canonicalize fix it
+                      di->text_avma+di->text_size - sym_addr;
+  disym.isText     = inside_text;
+  disym.isIFunc    = False;
+  disym.isGlobal   = inside_data || inside_d_data;
+  // Lots of user function names get prepended with an underscore.  Eg. the
+  // function 'f' becomes the symbol '_f'.  And the "below main"
+  // function is called "start".  So we skip the leading underscore, and
+  // if we see 'start' and --show-below-main=no, we rename it as
+  // "start_according_to_valgrind", which makes it easy to spot later
+  // and display as "(below main)".
+  if (disym.pri_name[0] == '_') {
+      disym.pri_name++;
+  }
+  else if (!VG_(clo_show_below_main) && VG_STREQ(disym.pri_name, "start")) {
+      if (s_a_t_v == NULL)
+        s_a_t_v = ML_(addStr)(di, "start_according_to_valgrind", -1);
+      vg_assert(s_a_t_v);
+      disym.pri_name = s_a_t_v;
+  }
+
+  vg_assert(disym.pri_name);
+  VG_(addToXA)( syms, &disym );
+  ML_(dinfo_free)(name);
+}
+
 /* Read a symbol table (nlist).  Add the resulting candidate symbols
    to 'syms'; the caller will post-process them and hand them off to
    ML_(addSym) itself. */
 static
 void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
-                  struct _DebugInfo* di, 
+                  struct _DebugInfo* di,
                   DiCursor symtab_cur, UInt symtab_count,
                   DiCursor strtab_cur, UInt strtab_sz )
 {
    Int    i;
-   DiSym  disym;
-
-   // "start_according_to_valgrind"
-   static const HChar* s_a_t_v = NULL; /* do not make non-static */
 
    for (i = 0; i < symtab_count; i++) {
       struct NLIST nl;
@@ -358,72 +480,37 @@ void read_symtab( /*OUT*/XArray* /* DiSym */ syms,
       } else {
          continue;
       }
-      
-      if (di->trace_symtab) {
-         HChar* str = ML_(cur_read_strdup)(
-                         ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
-                         "di.read_symtab.1");
-         VG_(printf)("nlist raw: avma %010lx  %s\n", sym_addr, str );
-         ML_(dinfo_free)(str);
-      }
 
-      /* If no part of the symbol falls within the mapped range,
-         ignore it. */
-      if (sym_addr <= di->text_avma
-          || sym_addr >= di->text_avma+di->text_size) {
-         continue;
-      }
-
-      /* skip names which point outside the string table;
-         following these risks segfaulting Valgrind */
-      if (nl.n_un.n_strx < 0 || nl.n_un.n_strx >= strtab_sz) {
-         continue;
-      }
-
-      HChar* name
-         = ML_(cur_read_strdup)( ML_(cur_plus)(strtab_cur, nl.n_un.n_strx),
-                                 "di.read_symtab.2");
-
-      /* skip nameless symbols; these appear to be common, but
-         useless */
-      if (*name == 0) {
-         ML_(dinfo_free)(name);
-         continue;
-      }
-
-      VG_(bzero_inline)(&disym, sizeof(disym));
-      disym.avmas.main = sym_addr;
-      SET_TOCPTR_AVMA(disym, 0);
-      SET_LOCAL_EP_AVMA(disym, 0);
-      disym.pri_name   = ML_(addStr)(di, name, -1);
-      disym.sec_names  = NULL;
-      disym.size       = // let canonicalize fix it
-                         di->text_avma+di->text_size - sym_addr;
-      disym.isText     = True;
-      disym.isIFunc    = False;
-      disym.isGlobal   = False;
-      // Lots of user function names get prepended with an underscore.  Eg. the
-      // function 'f' becomes the symbol '_f'.  And the "below main"
-      // function is called "start".  So we skip the leading underscore, and
-      // if we see 'start' and --show-below-main=no, we rename it as
-      // "start_according_to_valgrind", which makes it easy to spot later
-      // and display as "(below main)".
-      if (disym.pri_name[0] == '_') {
-         disym.pri_name++;
-      } 
-      else if (!VG_(clo_show_below_main) && VG_STREQ(disym.pri_name, "start")) {
-         if (s_a_t_v == NULL)
-            s_a_t_v = ML_(addStr)(di, "start_according_to_valgrind", -1);
-         vg_assert(s_a_t_v);
-         disym.pri_name = s_a_t_v;
-      }
-
-      vg_assert(disym.pri_name);
-      VG_(addToXA)( syms, &disym );
-      ML_(dinfo_free)(name);
+      add_symbol(syms, di, &nl, sym_addr, "", strtab_cur, strtab_sz);
    }
 }
 
+// See reason for disabling later in this file
+#if 0
+static
+void add_indirect_symbols( /*OUT*/XArray* /* DiSym */ syms,
+                  struct _DebugInfo* di,
+                  struct SECTION* section, SizeT entry_size,
+                  DiCursor indir_cur, UInt indir_count,
+                  DiCursor symtab_cur, UInt symtab_count,
+                  DiCursor strtab_cur, UInt strtab_sz )
+{
+   for (Int i = 0; i < indir_count; i++) {
+      Int index;
+      struct NLIST nl;
+      ML_(cur_read_get)(&index,
+                        ML_(cur_plus)(indir_cur, i * sizeof(Int)),
+                        sizeof(index));
+      ML_(cur_read_get)(&nl,
+                        ML_(cur_plus)(symtab_cur, index * sizeof(struct NLIST)),
+                        sizeof(nl));
+
+      Addr sym_addr = di->text_bias + section->addr + i * entry_size;
+
+      add_symbol(syms, di, &nl, sym_addr, section->sectname, strtab_cur, strtab_sz);
+   }
+}
+#endif
 
 /* Compare DiSyms by their start address, and for equal addresses, use
    the primary name as a secondary sort key. */
@@ -536,7 +623,7 @@ static Bool file_exists_p(const HChar *path)
 }
 
 
-/* Search for an existing dSYM file as a possible separate debug file.  
+/* Search for an existing dSYM file as a possible separate debug file.
    Adapted from gdb. */
 static HChar *
 find_separate_debug_file (const HChar *executable_name)
@@ -545,7 +632,7 @@ find_separate_debug_file (const HChar *executable_name)
    HChar *dot_ptr;
    HChar *slash_ptr;
    HChar *dsymfile;
-    
+
    /* Make sure the object file name itself doesn't contain ".dSYM" in it or we
       will end up with an infinite loop where after we add a dSYM symbol file,
       it will then enter this function asking if there is a debug file for the
@@ -554,23 +641,23 @@ find_separate_debug_file (const HChar *executable_name)
    {
       /* Check for the existence of a .dSYM file for a given executable.  */
       basename_str = VG_(basename) (executable_name);
-      dsymfile = ML_(dinfo_zalloc)("di.readmacho.dsymfile", 
+      dsymfile = ML_(dinfo_zalloc)("di.readmacho.dsymfile",
                     VG_(strlen) (executable_name)
                     + VG_(strlen) (APPLE_DSYM_EXT_AND_SUBDIRECTORY)
                     + VG_(strlen) (basename_str)
                     + 1
                  );
-        
+
       /* First try for the dSYM in the same directory as the original file.  */
       VG_(strcpy) (dsymfile, executable_name);
       VG_(strcat) (dsymfile, APPLE_DSYM_EXT_AND_SUBDIRECTORY);
       VG_(strcat) (dsymfile, basename_str);
-        
+
       if (file_exists_p (dsymfile))
          return dsymfile;
-        
+
       /* Now search for any parent directory that has a '.' in it so we can find
-         Mac OS X applications, bundles, plugins, and any other kinds of files. 
+         Mac OS X applications, bundles, plugins, and any other kinds of files.
          Mac OS X application bundles wil have their program in
          "/some/path/MyApp.app/Contents/MacOS/MyApp" (or replace ".app" with
          ".bundle" or ".plugin" for other types of bundles).  So we look for any
@@ -595,7 +682,7 @@ find_separate_debug_file (const HChar *executable_name)
             if (file_exists_p (dsymfile))
                return dsymfile;
          }
-         
+
          /* NULL terminate the string at the '.' character and append
             the path down to the dSYM file.  */
          *dot_ptr = '\0';
@@ -603,11 +690,11 @@ find_separate_debug_file (const HChar *executable_name)
          VG_(strcat) (dot_ptr, basename_str);
          if (file_exists_p (dsymfile))
             return dsymfile;
-         
+
          /* NULL terminate the string at the '.' locatated by the strrchr()
             function again.  */
          *dot_ptr = '\0';
-         
+
          /* We found a previous extension '.' character and did not find a
             dSYM file so now find previous directory delimiter so we don't
             try multiple times on a file name that may have a version number
@@ -640,7 +727,7 @@ static DiSlice getsectdata ( DiSlice img,
 
    Int c;
    for (c = 0; c < mh.ncmds; c++) {
-      struct load_command cmd;          
+      struct load_command cmd;
       ML_(cur_read_get)(&cmd, cur, sizeof(cmd));
       if (cmd.cmd == LC_SEGMENT_CMD) {
          struct SEGMENT_COMMAND seg;
@@ -652,7 +739,7 @@ static DiSlice getsectdata ( DiSlice img,
             for (s = 0; s < seg.nsects; s++) {
                struct SECTION sect;
                ML_(cur_step_get)(&sect, &sects_cur, sizeof(sect));
-               if (0 == VG_(strncmp)(sect.sectname, sectname, 
+               if (0 == VG_(strncmp)(sect.sectname, sectname,
                                      sizeof(sect.sectname))) {
                   DiSlice res = img;
                   res.ioff = sect.offset;
@@ -741,17 +828,31 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    DiCursor dysym_cur    = DiCursor_INVALID;
    HChar*   dsymfilename = NULL;
    Bool     have_uuid    = False;
+   Bool     from_memory  = False; // True if we're reading from DSC
+   Bool     have_rw      = False;
+   Addr     kernel_slide = 0; // Used when from_memory is True
    UChar    uuid[16];
    Word     i;
+   struct SEGMENT_COMMAND     data_const = {.cmd = 0};
+   struct SEGMENT_COMMAND     link_edit = {.cmd = 0};
    const DebugInfoMapping* rx_map = NULL;
    const DebugInfoMapping* rw_map = NULL;
 
-   /* mmap the object file to look for di->soname and di->text_bias 
+   /* mmap the object file to look for di->soname and di->text_bias
       and uuid and nlist */
 
    /* This should be ensured by our caller (that we're in the accept
       state). */
    vg_assert(di->fsm.have_rx_map);
+#if DARWIN_VERS >= DARWIN_11_00
+   if (di->from_memory) {
+     from_memory = True;
+     kernel_slide = VG_(dyld_cache_get_slide)();
+   }
+#endif
+   if (di->fsm.rw_map_count) {
+      have_rw = True;
+   }
 
    for (i = 0; i < VG_(sizeXA)(di->fsm.maps); i++) {
       const DebugInfoMapping* map = VG_(indexXA)(di->fsm.maps, i);
@@ -759,19 +860,27 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          rx_map = map;
       if (map->rw && !rw_map)
          rw_map = map;
-      if (rx_map && rw_map)
+      if (rx_map && (rw_map || !have_rw))
          break;
    }
    vg_assert(rx_map);
+   vg_assert(!have_rw || rw_map);
 
-   if (VG_(clo_verbosity) > 1)
+   if (VG_(clo_verbosity) > 1) {
+      if (!have_rw) {
+        VG_(message)(Vg_DebugMsg,
+                    "%s (rx at %#lx)\n", di->fsm.filename,
+                    rx_map->avma);
+      } else {
       VG_(message)(Vg_DebugMsg,
                    "%s (rx at %#lx, rw at %#lx)\n", di->fsm.filename,
                    rx_map->avma, rw_map->avma );
+      }
+   }
 
    VG_(memset)(&uuid, 0, sizeof(uuid));
 
-   msli = map_image_aboard( di, di->fsm.filename );
+   msli = map_image_aboard( di, di->fsm.filename, from_memory ? rx_map : NULL );
    if (!ML_(sli_is_valid)(msli)) {
       ML_(symerr)(di, False, "Connect to main image failed.");
       goto fail;
@@ -782,19 +891,15 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    /* Poke around in the Mach-O header, to find some important
       stuff. */
    // Find LC_SYMTAB and LC_DYSYMTAB, if present.
-   // Read di->soname from LC_ID_DYLIB if present, 
-   //    or from LC_ID_DYLINKER if present, 
+   // Read di->soname from LC_ID_DYLIB if present,
+   //    or from LC_ID_DYLINKER if present,
    //    or use "NONE".
    // Get di->text_bias (aka slide) based on the corresponding LC_SEGMENT
    // Get uuid for later dsym search
 
    di->text_bias = 0;
 
-   if (VG_(clo_verbosity) > 1 || VG_(clo_trace_redir))
-      VG_(message)(Vg_DebugMsg, "Reading syms from %s\n",
-                   di->fsm.filename );
-
-   { 
+   {
       DiCursor cmd_cur = ML_(cur_from_sli)(msli);
 
       struct MACH_HEADER mh;
@@ -808,13 +913,13 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       for (c = 0; c < mh.ncmds; c++) {
          struct load_command cmd;
          ML_(cur_read_get)(&cmd, cmd_cur, sizeof(cmd));
- 
+
          if (cmd.cmd == LC_SYMTAB) {
             sym_cur = cmd_cur;
-         } 
+         }
          else if (cmd.cmd == LC_DYSYMTAB) {
             dysym_cur = cmd_cur;
-         } 
+         }
          else if (cmd.cmd == LC_ID_DYLIB && mh.filetype == MH_DYLIB) {
             // GrP fixme bundle?
             struct dylib_command dcmd;
@@ -879,7 +984,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
             if (!di->text_present
                 && 0 == VG_(strcmp)(&seg.segname[0], "__TEXT")
                 /* DDD: is the  next line a kludge? -- JRS */
-                && seg.fileoff == 0 && seg.filesize != 0) {
+                && (from_memory || seg.fileoff == 0) && seg.filesize != 0) {
                di->text_present = True;
                di->text_svma = (Addr)seg.vmaddr;
                di->text_avma = rx_map->avma;
@@ -893,17 +998,55 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->text_debug_svma = di->text_svma;
                di->text_debug_bias = di->text_bias;
             }
+            if (0 == VG_(strcmp)(seg.segname, "__DATA_CONST")) {
+               data_const = seg;
+            }
             /* Try for __DATA */
-            if (!di->data_present
+            if (have_rw && !di->data_present
                 && 0 == VG_(strcmp)(&seg.segname[0], "__DATA")
                 /* && DDD:seg->fileoff == 0 */ && seg.filesize != 0) {
                di->data_present = True;
                di->data_svma = (Addr)seg.vmaddr;
                di->data_avma = rw_map->avma;
+#if defined(VGA_arm64)
+               // FIXME: the same mmap contains both __DATA_CONST, __DATA and __DATA_DIRTY
+               // this means that symbols in __DATA/__DATA_DIRTY are offset by the size of __DATA_CONST
+               // not sure when this started to be an issue so I am going to gate this under arm64 for now
+               if (data_const.cmd != 0) {
+                  di->data_avma += data_const.vmsize;
+               }
+#endif
                di->data_size = seg.vmsize;
                di->data_bias = di->data_avma - di->data_svma;
                di->data_debug_svma = di->data_svma;
                di->data_debug_bias = di->data_bias;
+            }
+            /* We store __DATA_DIRTY inside .sdata (because they correspond somewhat).
+               Some binaries have very important information there,
+               notably dyld and its dyld_all_image_infos. */
+            if (have_rw && !di->sdata_present
+                && 0 == VG_(strcmp)(&seg.segname[0], "__DATA_DIRTY")
+                /* && DDD:seg->fileoff == 0 */ && seg.filesize != 0) {
+               di->sdata_present = True;
+               di->sdata_svma = (Addr)seg.vmaddr;
+               // FIXME: assumes __DATA was found first (which in practice should be fine)
+               di->sdata_avma = rw_map->avma + di->data_size;
+#if defined(VGA_arm64)
+               // FIXME: the same mmap contains both __DATA_CONST, __DATA and __DATA_DIRTY
+               // this means that symbols in __DATA/__DATA_DIRTY are offset by the size of __DATA_CONST
+               // not sure when this started to be an issue so I am going to gate this under arm64 for now
+               if (data_const.cmd != 0) {
+                  di->sdata_avma += data_const.vmsize;
+               }
+#endif
+               di->sdata_size = seg.vmsize;
+               di->sdata_bias = di->sdata_avma - di->sdata_svma;
+               di->sdata_debug_svma = di->sdata_svma;
+               di->sdata_debug_bias = di->sdata_bias;
+            }
+            /* Try for __LINKEDIT */
+            if (0 == VG_(strcmp)(&seg.segname[0], "__LINKEDIT")) {
+              link_edit = seg;
             }
          }
          else if (cmd.cmd == LC_UUID) {
@@ -914,6 +1057,11 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          cmd_cur = ML_(cur_plus)(cmd_cur, cmd.cmdsize);
       }
    }
+
+  if (from_memory && link_edit.cmd == 0) {
+    ML_(symerr)(di, False, "Invalid Mach-O file (missing __LINKEDIT).");
+    goto fail;
+  }
 
    if (!di->soname) {
       di->soname = ML_(dinfo_strdup)("di.readmacho.noname", "NONE");
@@ -930,13 +1078,19 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
    // We already asserted that ..
    vg_assert(msli.img != NULL && msli.szB > 0);
 
-   if (ML_(cur_is_valid)(sym_cur) && ML_(cur_is_valid)(dysym_cur)) {
+   if (ML_(cur_is_valid)(sym_cur)) {
+      // Some binaries (e.g. Valgrind's tools themselves, like memcheck)
+      // don't have dynamic symbols because they are static binaries.
+      // Let's try to load symbols using a single table.
+      Bool has_dynamic = ML_(cur_is_valid)(dysym_cur);
 
       struct symtab_command   symcmd;
       struct dysymtab_command dysymcmd;
 
       ML_(cur_read_get)(&symcmd,   sym_cur,   sizeof(symcmd));
-      ML_(cur_read_get)(&dysymcmd, dysym_cur, sizeof(dysymcmd));
+      if (has_dynamic) {
+        ML_(cur_read_get)(&dysymcmd, dysym_cur, sizeof(dysymcmd));
+      }
 
       /* Read nlist symbol table */
       DiCursor syms = DiCursor_INVALID;
@@ -944,25 +1098,50 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       XArray* /* DiSym */ candSyms = NULL;
       Word nCandSyms;
 
-      if (msli.szB < symcmd.stroff + symcmd.strsize
-          || msli.szB < symcmd.symoff + symcmd.nsyms
-                                        * sizeof(struct NLIST)) {
+      // FIXME: there is no real nice way to check this when using DSC
+      // the chunk that msli points to is only the mach_header + load_commands
+      // but not the actual sections (__TEXT, __DATA, __LINKEDIT, etc)
+      // so those checks will always fail because they point to data much further in memory
+      // (as DSC groups all this kind of data together for X amount of images)
+      if (!from_memory
+          && (msli.szB < symcmd.stroff + symcmd.strsize
+          || msli.szB < symcmd.symoff + symcmd.nsyms * sizeof(struct NLIST))) {
          ML_(symerr)(di, False, "Invalid Mach-O file (5 too small).");
          goto fail;
-      }   
-      if (dysymcmd.ilocalsym + dysymcmd.nlocalsym > symcmd.nsyms
-          || dysymcmd.iextdefsym + dysymcmd.nextdefsym > symcmd.nsyms) {
+      }
+      if (has_dynamic
+          && (dysymcmd.ilocalsym + dysymcmd.nlocalsym > symcmd.nsyms
+          || dysymcmd.iextdefsym + dysymcmd.nextdefsym > symcmd.nsyms)) {
          ML_(symerr)(di, False, "Invalid Mach-O file (bad symbol table).");
          goto fail;
       }
 
-      syms = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.symoff);
-      strs = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.stroff);
-      
-      if (VG_(clo_verbosity) > 1)
+      if (from_memory) {
+        // First, we calculate the real position of __LINKEDIT in the DSC by adding the slide
+        // Then we get the offset of syms/strings within __LINKEDIT by removing the fileoffset
+        // Then we add the __LINKEDIT address
+        // Finally we calculate the proper offset of those addresses compared to the mach_header slice
+        Addr link_edit_addr = link_edit.vmaddr + kernel_slide;
+        syms = ML_(cur_from_sli)(msli);
+        syms.ioff = (link_edit_addr + (symcmd.symoff - link_edit.fileoff)) - rx_map->avma;
+        strs = ML_(cur_from_sli)(msli);
+        strs.ioff = (link_edit_addr + (symcmd.stroff - link_edit.fileoff)) - rx_map->avma;
+      } else {
+        syms = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.symoff);
+        strs = ML_(cur_plus)(ML_(cur_from_sli)(msli), symcmd.stroff);
+      }
+
+      if (VG_(clo_verbosity) > 1) {
+        if (has_dynamic) {
          VG_(message)(Vg_DebugMsg,
-            "   reading syms   from primary file (%d %d)\n",
+            "   reading syms   from primary file (%u %u)\n",
             dysymcmd.nextdefsym, dysymcmd.nlocalsym );
+        } else {
+          VG_(message)(Vg_DebugMsg,
+              "   reading syms   from primary file (%u)\n",
+              symcmd.nsyms );
+        }
+      }
 
       /* Read candidate symbols into 'candSyms', so we can truncate
          overlapping ends and generally tidy up, before presenting
@@ -972,18 +1151,95 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                     ML_(dinfo_free), sizeof(DiSym)
                  );
 
-      // extern symbols
-      read_symtab(candSyms,
-                  di,
-                  ML_(cur_plus)(syms,
-                                dysymcmd.iextdefsym * sizeof(struct NLIST)),
-                  dysymcmd.nextdefsym, strs, symcmd.strsize);
-      // static and private_extern symbols
-      read_symtab(candSyms,
-                  di,
-                  ML_(cur_plus)(syms,
-                                dysymcmd.ilocalsym * sizeof(struct NLIST)),
-                  dysymcmd.nlocalsym, strs, symcmd.strsize);
+      if (has_dynamic) {
+        // extern symbols
+        read_symtab(candSyms,
+                    di,
+                    ML_(cur_plus)(syms,
+                                  dysymcmd.iextdefsym * sizeof(struct NLIST)),
+                    dysymcmd.nextdefsym, strs, symcmd.strsize);
+        // static and private_extern symbols
+        read_symtab(candSyms,
+                    di,
+                    ML_(cur_plus)(syms,
+                                  dysymcmd.ilocalsym * sizeof(struct NLIST)),
+                    dysymcmd.nlocalsym, strs, symcmd.strsize);
+
+// Due to the usage of dyld_cache, I am unsure how to properly capture the stubs from there
+// moreover we don't have a rw_map for those so loads of logic need to change above.
+// This is only really useful when reading librairies from disk which is limited now.
+// Finally, there is also a weird overflow of some kind on arm64 macOS 15.
+// So I am disabling this for now.
+#if 0
+        {
+          DiCursor cmd_cur = ML_(cur_from_sli)(msli);
+          DiCursor indirs = DiCursor_INVALID;
+
+          if (from_memory) {
+            Addr link_edit_addr = link_edit.vmaddr + kernel_slide;
+            indirs = ML_(cur_from_sli)(msli);
+            indirs.ioff = (link_edit_addr + (dysymcmd.indirectsymoff - link_edit.fileoff)) - rx_map->avma;
+          } else {
+            indirs = ML_(cur_plus)(ML_(cur_from_sli)(msli), dysymcmd.indirectsymoff);
+          }
+
+          struct MACH_HEADER mh;
+          ML_(cur_step_get)(&mh, &cmd_cur, sizeof(mh));
+          for (Int c = 0; c < mh.ncmds; c++) {
+            struct load_command cmd;
+            ML_(cur_read_get)(&cmd, cmd_cur, sizeof(cmd));
+
+            if (cmd.cmd == LC_SEGMENT_CMD) {
+              struct SEGMENT_COMMAND seg;
+              ML_(cur_read_get)(&seg, cmd_cur, sizeof(seg));
+
+              for (i = 0; i < seg.nsects; i += 1) {
+                DiCursor sect_cur = ML_(cur_plus)(cmd_cur, sizeof(seg));
+                struct SECTION sect;
+                ML_(cur_read_get)(&sect, sect_cur, sizeof(sect));
+                Int indexOfIndirects = sect.reserved1;
+
+                if ((sect.flags & S_SYMBOL_STUBS) == S_SYMBOL_STUBS) {
+                  Int sizeOfStub = sect.reserved2;
+                  Int amountOfStubs = sect.size / sizeOfStub;
+                  if (indexOfIndirects + amountOfStubs > dysymcmd.nindirectsyms) {
+                    ML_(symerr)(di, False, "Invalid Mach-O file (invalid stub section).");
+                    goto fail;
+                  }
+                  // add symbols where we have stub assembly
+                  add_indirect_symbols(candSyms, di,
+                    &sect, sizeOfStub,
+                    ML_(cur_plus)(indirs, indexOfIndirects * sizeof(UInt)), amountOfStubs,
+                    syms, symcmd.nsyms, strs, symcmd.strsize);
+                }
+                if ((sect.flags & S_LAZY_SYMBOL_POINTERS) == S_LAZY_SYMBOL_POINTERS) {
+                  Int sizeOfPointer = VG_WORDSIZE;
+                  Int amountOfPointers = sect.size / sizeOfPointer;
+                  if (indexOfIndirects + amountOfPointers > dysymcmd.nindirectsyms) {
+                    ML_(symerr)(di, False, "Invalid Mach-O file (invalid lazy symbol section).");
+                    goto fail;
+                  }
+                  // add symbols where we have lazy symbol pointers
+                  add_indirect_symbols(candSyms, di,
+                    &sect, sizeOfPointer,
+                    ML_(cur_plus)(indirs, indexOfIndirects * sizeof(UInt)), amountOfPointers,
+                    syms, symcmd.nsyms, strs, symcmd.strsize);
+                }
+
+                sect_cur = ML_(cur_plus)(sect_cur, sizeof(sect));
+              }
+            }
+
+            cmd_cur = ML_(cur_plus)(cmd_cur, cmd.cmdsize);
+          }
+        }
+#endif
+      } else {
+        read_symtab(candSyms,
+                    di,
+                    syms,
+                    symcmd.nsyms, strs, symcmd.strsize);
+      }
 
       /* tidy up the cand syms -- trim overlapping ends.  May resize
          candSyms. */
@@ -1027,7 +1283,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dSYM= %s\n", dsymfilename);
 
-      dsli = map_image_aboard( di, dsymfilename );
+      dsli = map_image_aboard( di, dsymfilename, NULL );
       if (!ML_(sli_is_valid)(dsli)) {
          ML_(symerr)(di, False, "Connect to debuginfo image failed "
                                 "(first attempt).");
@@ -1065,7 +1321,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
          VG_(message)(Vg_DebugMsg, "%sdSYM directory %s; consider using "
                       "--dsymutil=yes\n",
                       VG_(clo_verbosity) > 1 ? "   " : "",
-                      dsymfilename ? "has wrong UUID" : "is missing"); 
+                      dsymfilename ? "has wrong UUID" : "is missing");
       goto success;
    }
 
@@ -1073,7 +1329,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
 
    { Int r;
      const HChar* dsymutil = "/usr/bin/dsymutil ";
-     HChar* cmd = ML_(dinfo_zalloc)( "di.readmacho.tmp1", 
+     HChar* cmd = ML_(dinfo_zalloc)( "di.readmacho.tmp1",
                                      VG_(strlen)(dsymutil)
                                      + VG_(strlen)(di->fsm.filename)
                                      + 32 /* misc */ );
@@ -1097,7 +1353,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
       if (VG_(clo_verbosity) > 1)
          VG_(message)(Vg_DebugMsg, "   dsyms= %s\n", dsymfilename);
 
-      dsli = map_image_aboard( di, dsymfilename );
+      dsli = map_image_aboard( di, dsymfilename, NULL );
       if (!ML_(sli_is_valid)(dsli)) {
          ML_(symerr)(di, False, "Connect to debuginfo image failed "
                                 "(second attempt).");
@@ -1173,13 +1429,13 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                                          eh_frame_svma + di->text_bias,
                                          True/*is_ehframe*/);
       }
-   
+
       if (ML_(sli_is_valid)(debug_info_mscn)) {
          if (VG_(clo_verbosity) > 1) {
             if (0)
             VG_(message)(Vg_DebugMsg,
                          "Reading dwarf3 for %s (%#lx) from %s"
-                         " (%lld %lld %lld %lld %lld %lld)\n",
+                         " (%llu %llu %llu %llu %llu %llu)\n",
                          di->fsm.filename, di->text_avma, dsymfilename,
                          debug_info_mscn.szB, debug_abbv_mscn.szB,
                          debug_line_mscn.szB, debug_str_mscn.szB,

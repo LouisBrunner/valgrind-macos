@@ -356,3 +356,9 @@
    obj:/usr/lib/*/libnss_mdns4*.so.*
 }
 
+{
+   helgrind---_dl_allocate_tls_init
+   Helgrind:Race
+   fun:mempcpy
+   fun:_dl_allocate_tls_init
+}

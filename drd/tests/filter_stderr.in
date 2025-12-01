@@ -38,6 +38,7 @@ $SED \
 -e "s/[A-Za-z_]* (pthread_create.c:[0-9]*)/(within libpthread-?.?.so)/" \
 -e "s/[A-Za-z_]* (in [^ ]*libpthread-[0-9.]*\.so)/(within libpthread-?.?.so)/" \
 -e "s/... (in \/lib\/libthr.so.3)/start_thread/" \
+-e "s/_pthread_body (in \/...libc...)/start_thread/" \
 -e "s:(within /lib[0-9]*/ld-[0-9.]*\.so):(within ld-?.?.so):" \
 -e "s/was held during [0-9][0-9]*/was held during .../" \
 -e "s: BSS section of [^<]*/: BSS section of :g" \

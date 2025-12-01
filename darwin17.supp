@@ -1056,3 +1056,42 @@
    fun:xpc_pipe_routine
 }
 
+{
+   OSX1013:drd:__si_module_static_cache_block_invoke
+   drd:MutexErr
+   fun:pthread_mutex_init
+   fun:__si_module_static_cache_block_invoke
+}
+
+{
+   OSX1013:drd:setlocale
+   drd:ConflictingAccess
+   ...
+   fun:setlocale
+}
+
+{
+   OSX1013:drd:std::__1::__thread_specific_ptr<std::__1::__thread_struct>::set_pointer(std::__1::__thread_struct*)
+
+   drd:ConflictingAccess
+   fun:_ZNSt3__121__thread_specific_ptrINS_15__thread_structEE11set_pointerEPS1_
+}
+
+{
+   OSX1013:drd:std::__1::__thread_local_data
+   drd:ConflictingAccess
+   fun:_ZNSt3__119__thread_local_dataEv
+}
+
+{
+   OSX1013:drd:get_counter
+   drd:ConflictingAccess
+   fun:_ZL11get_counterv
+}
+
+{
+   OSX1013:drd:gomp_barier_wait
+   drd:ConflictingAccess
+   fun:gomp_barrier_wait
+   fun:child
+}

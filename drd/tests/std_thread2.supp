@@ -98,3 +98,10 @@
    drd:ConflictingAccess
    fun:__set_vma_name
 }
+
+{
+   drd-libc-__is_decorate_maps_enabled
+   drd:ConflictingAccess
+   fun:__is_decorate_maps_enabled
+}
+

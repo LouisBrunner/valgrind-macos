@@ -104,8 +104,14 @@ int main(void)
 {
    // ------ SSE 4.1 ------
    test_PINSRD();
+   test_PMAXSB();
    test_PMAXSD();
+   test_PMAXUD();
+   test_PMAXUW();
+   test_PMINSB();
    test_PMINSD();
+   test_PMINUD();
+   test_PMINUW();
 
    return 0;
 }

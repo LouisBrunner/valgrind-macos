@@ -33,6 +33,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 510416  Missing syswraps for file_getattr and file_setattr
 510563  Add missing syswraps for lsm_get_self_attr and lsm_set_self_attr
 510864  Add SSE4.1 PMAXSD and PMINSD instructions support for 32-bit x86
+512873  Add SSE4.1 min/max instructions for x86 32 bit
 511329  Darwin and FreeBSD: Move setting of carry flag out of
         ML_(do_syscall_for_client_WRK)
 511713  Refactor syscall argument handling

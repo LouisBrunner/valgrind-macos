@@ -12995,6 +12995,24 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 38 38 /r  - PMINSB xmm1, xmm2/m128
+      66 0F 38 3C /r  - PMAXSB xmm1, xmm2/m128
+      Minimum/Maximum of Packed Signed Byte Integers (XMM)
+   */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x38 || insn[2] == 0x3C)) {
+     /* FIXME: this needs an alignment check */
+     Bool isMAX = insn[2] == 0x3C;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxsb" : "pminsb",
+         isMAX ? Iop_Max8Sx16 : Iop_Min8Sx16,
+         False
+         );
+     goto decode_success;
+   }
+
    /* 66 0F 38 39 /r  - PMINSD xmm1, xmm2/m128
       66 0F 38 3D /r  - PMAXSD xmm1, xmm2/m128
       66 prefix (sz == 2): SSE2/SSE4 XMM instructions (128-bit)
@@ -13010,6 +13028,42 @@ DisResult disInstr_X86_WRK (
          sorb, delta+3,
          isMAX ? "pmaxsd" : "pminsd",
          isMAX ? Iop_Max32Sx4 : Iop_Min32Sx4,
+         False
+         );
+     goto decode_success;
+   }
+
+   /* 66 0F 38 3A /r  - PMINUW xmm1, xmm2/m128
+      66 0F 38 3E /r  - PMAXUW xmm1, xmm2/m128
+      Minimum/Maximum of Packed Unsigned Word Integers (XMM)
+   */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x3A || insn[2] == 0x3E)) {
+     /* FIXME: this needs an alignment check */
+     Bool isMAX = insn[2] == 0x3E;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxuw" : "pminuw",
+         isMAX ? Iop_Max16Ux8 : Iop_Min16Ux8,
+         False
+         );
+     goto decode_success;
+   }
+
+   /* 66 0F 38 3B /r  - PMINUD xmm1, xmm2/m128
+      66 0F 38 3F /r  - PMAXUD xmm1, xmm2/m128
+      Minimum/Maximum of Packed Unsigned Doubleword Integers (XMM)
+   */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x3B || insn[2] == 0x3F)) {
+     /* FIXME: this needs an alignment check */
+     Bool isMAX = insn[2] == 0x3F;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxud" : "pminud",
+         isMAX ? Iop_Max32Ux4 : Iop_Min32Ux4,
          False
          );
      goto decode_success;

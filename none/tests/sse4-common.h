@@ -274,4 +274,70 @@ static inline void test_PMINSD ( void )
    }
 }
 
+static inline void test_PMAXSB ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pmaxsb", src, dst);
+   }
+}
+
+static inline void test_PMAXUD ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pmaxud", src, dst);
+   }
+}
+
+static inline void test_PMAXUW ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pmaxuw", src, dst);
+   }
+}
+
+static inline void test_PMINSB ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pminsb", src, dst);
+   }
+}
+
+static inline void test_PMINUD ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pminud", src, dst);
+   }
+}
+
+static inline void test_PMINUW ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pminuw", src, dst);
+   }
+}
+
 #endif /* __SSE4_COMMON_H */

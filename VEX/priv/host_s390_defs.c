@@ -10620,8 +10620,7 @@ s390_insn_xassisted_emit(UChar *buf, const s390_insn *insn,
 
    The dispatch counter is a 32-bit value. */
 static UChar *
-s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn,
-                       VexEndness endness_host)
+s390_insn_evcheck_emit(UChar *buf, const s390_insn *insn)
 {
    s390_amode *amode;
    UInt b, d;
@@ -11060,7 +11059,7 @@ emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
       break;
 
    case S390_INSN_EVCHECK:
-      end = s390_insn_evcheck_emit(buf, insn, endness_host);
+      end = s390_insn_evcheck_emit(buf, insn);
       break;
 
    case S390_INSN_XDIRECT:

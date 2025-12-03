@@ -10896,7 +10896,7 @@ s390_insn_vec_replicate_emit(UChar *buf, const s390_insn *insn)
 
 Int
 emit_S390Instr(Bool *is_profinc, UChar *buf, Int nbuf, const s390_insn *insn,
-               Bool mode64, VexEndness endness_host,
+               Bool mode64, const VexArchInfo *archinfo,
                const void *disp_cp_chain_me_to_slowEP,
                const void *disp_cp_chain_me_to_fastEP,
                const void *disp_cp_xindir,

@@ -1115,7 +1115,7 @@ extern void mapRegs_ARM64Instr     ( HRegRemap*, ARM64Instr*, Bool );
 extern Int  emit_ARM64Instr        ( /*MB_MOD*/Bool* is_profInc,
                                      UChar* buf, Int nbuf, const ARM64Instr* i,
                                      Bool mode64,
-                                     VexEndness endness_host,
+                                     const VexArchInfo *archinfo_host,
                                      const void* disp_cp_chain_me_to_slowEP,
                                      const void* disp_cp_chain_me_to_fastEP,
                                      const void* disp_cp_xindir,

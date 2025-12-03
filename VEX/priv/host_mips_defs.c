@@ -3768,7 +3768,7 @@ static UChar *mkMoveReg(UChar * p, UInt r_dst, UInt r_src)
 Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                      UChar* buf, Int nbuf, const MIPSInstr* i,
                      Bool mode64,
-                     VexEndness endness_host,
+                     const VexArchInfo* archinfo_host,
                      const void* disp_cp_chain_me_to_slowEP,
                      const void* disp_cp_chain_me_to_fastEP,
                      const void* disp_cp_xindir,

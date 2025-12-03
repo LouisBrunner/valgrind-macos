@@ -2122,7 +2122,7 @@ static UChar* push_word_from_tags ( UChar* p, UShort tags )
 
 Int emit_X86Instr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, const X86Instr* i, 
-                    Bool mode64, VexEndness endness_host,
+                    Bool mode64, const VexArchInfo* archinfo_host,
                     const void* disp_cp_chain_me_to_slowEP,
                     const void* disp_cp_chain_me_to_fastEP,
                     const void* disp_cp_xindir,

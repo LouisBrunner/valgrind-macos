@@ -885,7 +885,7 @@ UInt ppHRegS390(HReg);
 void  getRegUsage_S390Instr( HRegUsage *, const s390_insn *, Bool );
 void  mapRegs_S390Instr    ( HRegRemap *, s390_insn *, Bool );
 Int   emit_S390Instr       ( Bool *, UChar *, Int, const s390_insn *, Bool,
-                             VexEndness, const void *, const void *,
+                             const VexArchInfo *, const void *, const void *,
                              const void *, const void *);
 const RRegUniverse *getRRegUniverse_S390( void );
 void  genSpill_S390        ( HInstr **, HInstr **, HReg , Int , Bool );

@@ -780,9 +780,9 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
                                   const VexAbiInfo*, Int, Int, Bool, Bool,
                                   Addr );
    Int          (*emit)         ( /*MB_MOD*/Bool*,
-                                  UChar*, Int, const HInstr*, Bool, VexEndness,
-                                  const void*, const void*, const void*,
-                                  const void* );
+                                  UChar*, Int, const HInstr*, Bool,
+                                  const VexArchInfo*, const void*,
+                                  const void*, const void*, const void* );
    Bool (*preciseMemExnsFn) ( Int, Int, VexRegisterUpdates );
 
    const RRegUniverse* rRegUniv = NULL;
@@ -1232,7 +1232,7 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
       }
       j = emit( &hi_isProfInc,
                 insn_bytes, sizeof insn_bytes, hi,
-                mode64, vta->archinfo_host.endness,
+                mode64, &vta->archinfo_host,
                 vta->disp_cp_chain_me_to_slowEP,
                 vta->disp_cp_chain_me_to_fastEP,
                 vta->disp_cp_xindir,

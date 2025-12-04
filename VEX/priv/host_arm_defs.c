@@ -39,7 +39,7 @@
 #include "host_generic_regs.h"
 #include "host_arm_defs.h"
 
-UInt arm_hwcaps = 0;
+static UInt arm_hwcaps;
 
 
 /* --------- Registers. --------- */
@@ -3079,6 +3079,8 @@ Int emit_ARMInstr ( /*MB_MOD*/Bool* is_profInc,
    vassert(nbuf >= 32);
    vassert(mode64 == False);
    vassert(0 == (((HWord)buf) & 3));
+
+   arm_hwcaps = archinfo_host->hwcaps;
 
    switch (i->tag) {
       case ARMin_Alu: {

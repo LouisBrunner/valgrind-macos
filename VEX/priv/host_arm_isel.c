@@ -6553,9 +6553,6 @@ HInstrArray* iselSB_ARM ( const IRSB* bb,
    /* guard against unexpected space regressions */
    vassert(sizeof(ARMInstr) <= 28);
 
-   /* hwcaps should not change from one ISEL call to another. */
-   arm_hwcaps = hwcaps_host; // JRS 2012 Mar 31: FIXME (RM)
-
    /* Make up an initial environment to use. */
    env = LibVEX_Alloc_inline(sizeof(ISelEnv));
    env->vreg_ctr = 0;

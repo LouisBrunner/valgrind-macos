@@ -32,9 +32,6 @@
 #include "libvex.h"                      // VexArch
 #include "host_generic_regs.h"           // HReg
 
-extern UInt arm_hwcaps;
-
-
 /* --------- Registers. --------- */
 
 #define ST_IN static inline

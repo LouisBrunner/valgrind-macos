@@ -708,7 +708,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //zz 
 //zz    // Nb: get_kernel_syms() was removed 2.4-->2.6
 //   GENX_(__NR_get_kernel_syms,   sys_ni_syscall),     // 130
-   LINX_(__NR_quotactl,          sys_quotactl),       // 131
+   LINXY(__NR_quotactl,          sys_quotactl),       // 131
    GENX_(__NR_getpgid,           sys_getpgid),        // 132
    GENX_(__NR_fchdir,            sys_fchdir),         // 133
 //zz    //   (__NR_bdflush,           sys_bdflush),        // 134 */Linux
@@ -1068,7 +1068,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_faccessat2,        sys_faccessat2),        // 439
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
    LINX_(__NR_mount_setattr,     sys_mount_setattr),     // 442
-   LINX_(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
+   LINXY(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445

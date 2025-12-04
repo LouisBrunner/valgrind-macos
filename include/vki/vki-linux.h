@@ -5610,6 +5610,57 @@ struct vki_file_attr {
 	__vki_u32 fa_cowextsize;	/* CoW extsize field value (get/set) */
 };
 
+//----------------------------------------------------------------------
+// From uapi/linux/mount.h
+//----------------------------------------------------------------------
+
+#define VKI_SUBCMDMASK  0x00ff
+#define VKI_SUBCMDSHIFT 8
+
+#define VKI_Q_SYNC     0x800001	/* sync disk copy of a filesystems quotas */
+#define VKI_Q_QUOTAON  0x800002	/* turn quotas on */
+#define VKI_Q_QUOTAOFF 0x800003	/* turn quotas off */
+#define VKI_Q_GETFMT   0x800004	/* get quota format used on given filesystem */
+#define VKI_Q_GETINFO  0x800005	/* get information about quota files */
+#define VKI_Q_SETINFO  0x800006	/* set information about quota files */
+#define VKI_Q_GETQUOTA 0x800007	/* get user quota structure */
+#define VKI_Q_SETQUOTA 0x800008	/* set user quota structure */
+#define VKI_Q_GETNEXTQUOTA 0x800009	/* get disk limits and usage >= ID */
+
+struct vki_dqblk
+  {
+    __vki_u64 dqb_bhardlimit;	/* absolute limit on disk quota blocks alloc */
+    __vki_u64 dqb_bsoftlimit;	/* preferred limit on disk quota blocks */
+    __vki_u64 dqb_curspace;	/* current quota block count */
+    __vki_u64 dqb_ihardlimit;	/* maximum # allocated inodes */
+    __vki_u64 dqb_isoftlimit;	/* preferred inode limit */
+    __vki_u64 dqb_curinodes;	/* current # allocated inodes */
+    __vki_u64 dqb_btime;	/* time limit for excessive disk use */
+    __vki_u64 dqb_itime;	/* time limit for excessive files */
+    __vki_u32 dqb_valid;	/* bitmask of QIF_* constants */
+  };
+
+
+struct vki_nextdqblk {
+	__vki_u64 dqb_bhardlimit;
+	__vki_u64 dqb_bsoftlimit;
+	__vki_u64 dqb_curspace;
+	__vki_u64 dqb_ihardlimit;
+	__vki_u64 dqb_isoftlimit;
+	__vki_u64 dqb_curinodes;
+	__vki_u64 dqb_btime;
+	__vki_u64 dqb_itime;
+	__vki_u32 dqb_valid;
+	__vki_u32 dqb_id;
+};
+
+struct vki_dqinfo {
+	__vki_u64 dqi_bgrace;
+	__vki_u64 dqi_igrace;
+	__vki_u32 dqi_flags;	/* DFQ_* */
+	__vki_u32 dqi_valid;
+};
+
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/

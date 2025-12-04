@@ -684,7 +684,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_delete_module,     sys_delete_module),  // 176 
    //   (__NR_get_kernel_syms,   sys_ni_syscall),     // 177 
    //   (__NR_query_module,      sys_ni_syscall),     // 178 
-   LINX_(__NR_quotactl,          sys_quotactl),       // 179 
+   LINXY(__NR_quotactl,          sys_quotactl),       // 179
 
    //   (__NR_nfsservctl,        sys_nfsservctl),     // 180 
    //   (__NR_getpmsg,           sys_ni_syscall),     // 181
@@ -896,7 +896,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
    LINX_(__NR_mount_setattr,     sys_mount_setattr),     // 442
-   LINX_(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
+   LINXY(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445

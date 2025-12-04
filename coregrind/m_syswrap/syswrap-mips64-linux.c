@@ -644,7 +644,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_ (__NR_delete_module, sys_delete_module),
    GENX_ (__NR_get_kernel_syms, sys_ni_syscall),
    GENX_ (__NR_query_module, sys_ni_syscall),
-   LINX_ (__NR_quotactl, sys_quotactl),
+   LINXY (__NR_quotactl, sys_quotactl),
    /* GENX_(__NR_nfsservctl,sys_nfsservctl), */
    GENXY (__NR_getpmsg, sys_getpmsg),
    GENX_ (__NR_putpmsg, sys_putpmsg),
@@ -799,9 +799,9 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_listmount, sys_listmount),
    LINX_ (__NR_mseal, sys_mseal),
    LINX_ (__NR_futex_waitv, sys_futex_waitv),
-   LINX_ (__NR_quotactl_fd, sys_quotactl_fd),
-   LINXY(__NR_file_getattr, sys_file_getattr),
-   LINX_(__NR_file_setattr, sys_file_setattr),
+   LINXY (__NR_quotactl_fd, sys_quotactl_fd),
+   LINXY (__NR_file_getattr, sys_file_getattr),
+   LINX_ (__NR_file_setattr, sys_file_setattr),
 };
 
 SyscallTableEntry * ML_(get_linux_syscall_entry) ( UInt sysno )

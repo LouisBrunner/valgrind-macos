@@ -2655,19 +2655,19 @@ PRE(sys_io_destroy)
 }  
 
 static
-void common_pre_io_getevents(ThreadId tid, UWord a1, UWord a2, UWord a3, UWord a4, UWord a5, UWord a6, UWord* flags, const HChar* funtion_name)
+void common_pre_io_getevents(ThreadId tid, UWord a1, UWord a2, UWord a3, UWord a4, UWord a5, UWord a6, UWord* flags, const HChar* function_name)
 {
    HChar buf[25];
    *flags |= SfMayBlock;
    PRINT("sys_%s ( %llu, %lld, %lld, %#" FMT_REGWORD "x, %#"
-         FMT_REGWORD "x )", funtion_name,
+         FMT_REGWORD "x )", function_name,
          (ULong)a1,(Long)a2,(Long)a3,a4,a5);
    if (a3 > 0) {
-      VG_(snprintf)(buf, 25, "%s(events)", funtion_name);
+      VG_(snprintf)(buf, 25, "%s(events)", function_name);
       PRE_MEM_WRITE( buf, a4, sizeof(struct vki_io_event)*a3 );
    }
    if (a5 != 0) {
-      VG_(snprintf)(buf, 25, "%s(timeout)", funtion_name);
+      VG_(snprintf)(buf, 25, "%s(timeout)", function_name);
       PRE_MEM_READ( buf, a5, sizeof(struct vki_timespec));
    }
 
@@ -2688,7 +2688,7 @@ PRE(sys_io_getevents)
 }
 
 static
-void common_post_sys_io_events(ThreadId tid, UWord a4, SyscallStatus* status, const HChar* funtion_name)
+void common_post_sys_io_events(ThreadId tid, UWord a4, SyscallStatus* status, const HChar* function_name)
 {
    Int i;
    vg_assert(SUCCESS);
@@ -2736,7 +2736,7 @@ void common_post_sys_io_events(ThreadId tid, UWord a4, SyscallStatus* status, co
          default:
             VG_(message)(Vg_DebugMsg,
                         "Warning: unhandled %s opcode: %u\n",
-                        funtion_name,
+                        function_name,
                         cb->aio_lio_opcode);
             break;
          }
@@ -4125,14 +4125,124 @@ POST(sys_dup3)
       ML_(record_fd_open_named)(tid, RES);
 }
 
+static
+void common_pre_quotactl_p4_check(ThreadId tid, Int subop, Int a4, SyscallStatus* status, const HChar* function_name)
+{
+   HChar buf[25];
+   VG_(snprintf)(buf, sizeof(buf), "%s(addr)", function_name);
+   switch (subop) {
+      case VKI_Q_QUOTAON:
+         // The addr argument points to the pathname of a file
+         // containing the quotas for the filesystem.
+         PRE_MEM_RASCIIZ( buf, a4 );
+         break;
+      case VKI_Q_QUOTAOFF:
+         // The addr and id arguments are ignored.
+         break;
+      case VKI_Q_GETQUOTA:
+         // Get disk quota limits and current usage for user or group id.  The
+         // addr argument is a pointer to a dqblk structure defined in
+         // <sys/quota.h> as follows:
+         if (a4 != 0)
+            PRE_MEM_WRITE(buf, a4, sizeof(struct vki_dqblk));
+         break;
+      case VKI_Q_GETNEXTQUOTA:
+         // The addr argument is a pointer to a nextdqblk structure
+         // whose fields are as for the dqblk, except for the addition
+         // of a dqb_id field that is used to return the ID for which
+         // quota information is being returned:
+         if (a4 != 0)
+            PRE_MEM_WRITE(buf, a4, sizeof(struct vki_nextdqblk));
+         break;
+      case VKI_Q_SETQUOTA:
+         // Set quota information for user or group id, using the
+         // information supplied in the dqblk structure pointed to by
+         // addr.
+         if (a4 != 0)
+            PRE_MEM_READ(buf, a4, sizeof(struct vki_dqblk));
+         break;
+      case VKI_Q_GETINFO:
+         // The addr argument should be a pointer to a dqinfo structure.
+         if (a4 != 0)
+            PRE_MEM_WRITE(buf, a4, sizeof(struct vki_dqinfo));
+         break;
+      case VKI_Q_SETINFO:
+         // The addr argument should be a pointer to a dqinfo structure
+         if (a4 != 0)
+            PRE_MEM_READ(buf, a4, sizeof(struct vki_dqinfo));
+         break;
+      case VKI_Q_GETFMT:
+         // The addr argument should be a pointer to a 4-byte buffer where the
+         // format number will be stored.
+         if (a4 != 0)
+            PRE_MEM_WRITE(buf, a4, 4);
+         break;
+      case VKI_Q_SYNC:
+         // The addr and id arguments are ignored.
+         break;
+      // case VKI_Q_GETSTATS: was only supported up to Linux 2.4.21 - skipping)
+      default:
+         return;
+   }
+}
+
+static
+void common_post_quotactl_p4_check(ThreadId tid, Int subop, Int a4, const HChar* function_name)
+{
+   switch (subop) {
+      case VKI_Q_GETQUOTA:
+         // Get disk quota limits and current usage for user or group id.  The
+         // addr argument is a pointer to a dqblk structure defined in
+         // <sys/quota.h> as follows:
+         if (a4 != 0)
+            POST_MEM_WRITE(a4, sizeof(struct vki_dqblk));
+         break;
+      case VKI_Q_GETNEXTQUOTA:
+         // The addr argument is a pointer to a nextdqblk structure
+         // whose fields are as for the dqblk, except for the addition
+         // of a dqb_id field that is used to return the ID for which
+         // quota information is being returned:
+         if (a4 != 0)
+            POST_MEM_WRITE(a4, sizeof(struct vki_nextdqblk));
+         break;
+      case VKI_Q_GETINFO:
+         // The addr argument should be a pointer to a dqinfo structure.
+         if (a4 != 0)
+            POST_MEM_WRITE(a4, sizeof(struct vki_dqinfo));
+         break;
+      case VKI_Q_GETFMT:
+         // The addr argument should be a pointer to a 4-byte buffer where the
+         // format number will be stored.
+         if (a4 != 0)
+            POST_MEM_WRITE(a4, 4);
+         break;
+      // case VKI_Q_GETSTATS: was only supported up to Linux 2.4.21 - skipping)
+      default:
+         return;
+   }
+}
+
+
 PRE(sys_quotactl)
 {
+   // SYSCALL_DEFINE4(quotactl,
+   //                 unsigned int, cmd,
+   //                 const char __user *, special,
+   //                 qid_t, id,
+   //                 void __user *, addr)
+   Int subop = ARG1 >> VKI_SUBCMDSHIFT;
    PRINT("sys_quotactl (0x%" FMT_REGWORD "x, %#" FMT_REGWORD "x, 0x%"
          FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "quotactl",
                  unsigned int, cmd, const char *, special, vki_qid_t, id,
                  void *, addr);
    PRE_MEM_RASCIIZ( "quotactl(special)", ARG2 );
+   common_pre_quotactl_p4_check(tid, subop, ARG4, status, "quotactl");
+}
+POST(sys_quotactl)
+{
+   Int subop = ARG1 >> VKI_SUBCMDSHIFT;
+   common_post_quotactl_p4_check(tid, subop, ARG4, "quotactl");
 }
 
 PRE(sys_quotactl_fd)
@@ -4142,13 +4252,20 @@ PRE(sys_quotactl_fd)
    //     unsigned int, cmd,
    //     qid_t, id,
    //     void __user *, addr)
-   PRINT("sys_quotactl (0x%" FMT_REGWORD "x, 0x%#" FMT_REGWORD "x, 0x%"
+   Int subop = ARG2 >> VKI_SUBCMDSHIFT;
+   PRINT("sys_quotactl_fd (0x%" FMT_REGWORD "x, 0x%#" FMT_REGWORD "x, 0x%"
          FMT_REGWORD "x, 0x%" FMT_REGWORD "x )", ARG1, ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "quotactl_fd",
                  unsigned int, fd, unsigned int, cmd, vki_qid_t, id,
                  void *, addr);
    if (!ML_(fd_allowed)(ARG1, "quotactl_fd", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
+   common_pre_quotactl_p4_check(tid, subop, ARG4, status, "quotactl_fd");
+}
+POST(sys_quotactl_fd)
+{
+   Int subop = ARG2 >> VKI_SUBCMDSHIFT;
+   common_post_quotactl_p4_check(tid, subop, ARG4, "quotactl_fd");
 }
 
 PRE(sys_waitid)

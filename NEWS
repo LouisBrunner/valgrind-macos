@@ -256,6 +256,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509572  s390x: Overhaul BFP testsuite
 509590  Run the LTP tests with LTP_QUIET
 509567  unhandled amd64-linux syscall: 443 (quotactl_fd)
+509634  Add ARG4 checks for quotactl and quotactl_fd syswraps
 509642  Add missing ppc64-linux syswraps
 509643  Add missing s390x-linux syswraps
 510169  Update the LTP version in valgrind testsuite to 20250930

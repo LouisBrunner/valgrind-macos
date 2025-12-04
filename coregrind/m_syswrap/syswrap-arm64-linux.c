@@ -608,7 +608,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_close,             sys_close),             // 57
    LINX_(__NR_vhangup,           sys_vhangup),           // 58
    LINXY(__NR_pipe2,             sys_pipe2),             // 59
-   LINX_(__NR_quotactl,          sys_quotactl),          // 60
+   LINXY(__NR_quotactl,          sys_quotactl),          // 60
    GENXY(__NR_getdents64,        sys_getdents64),        // 61
    LINX_(__NR_lseek,             sys_lseek),             // 62
    GENXY(__NR_read,              sys_read),              // 63
@@ -847,7 +847,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
    LINX_(__NR_mount_setattr,     sys_mount_setattr),     // 442
-   LINX_(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
+   LINXY(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445

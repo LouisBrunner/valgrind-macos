@@ -864,6 +864,7 @@ static void sync_check_mapping_callback ( Addr addr, SizeT len, UInt prot,
 
 #if defined(VGO_darwin)
       // GrP fixme kernel info doesn't have dev/inode
+      // FIXME PJF but now ino is being used for vm tag
       cmp_devino = False;
 
       // GrP fixme V and kernel don't agree on offsets
@@ -1473,8 +1474,9 @@ static void add_segment ( const NSegment* seg )
    Addr sEnd   = seg->end;
 
 #if defined(VGO_darwin)
-   // FIXME: the cast is unfortunate but I don't want to change every callsite to call 2 functions
-   fill_segment((NSegment*) (Addr) seg);
+   // FIXME: adding for all segments causes some failures and alignment crashes in leak check
+   // need to debug more
+   //fill_segment((NSegment*) (Addr) seg);
 #endif
 
    aspacem_assert(sStart <= sEnd);
@@ -1611,6 +1613,10 @@ static void read_maps_callback ( Addr addr, SizeT len, UInt prot,
       seg.fnIdx = ML_(am_allocate_segname)( filename );
 
    if (0) show_nsegment( 2,0, &seg );
+#if defined(VGO_darwin)
+   // FIXME this is the one that causes problems with leak checks
+   //fill_segment( &seg );
+#endif
    add_segment( &seg );
 }
 
@@ -1923,10 +1929,16 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
 
    if (aspacem_cStart > Addr_MIN) {
       init_resvn(&seg, Addr_MIN, aspacem_cStart-1);
+#if defined(VGO_darwin)
+      fill_segment( &seg );
+#endif
       add_segment(&seg);
    }
    if (aspacem_maxAddr < Addr_MAX) {
       init_resvn(&seg, aspacem_maxAddr+1, Addr_MAX);
+#if defined(VGO_darwin)
+      fill_segment( &seg );
+#endif
       add_segment(&seg);
    }
 
@@ -1936,6 +1948,9 @@ Addr VG_(am_startup) ( Addr sp_at_startup )
       valgrind allocations at the boundary, this is kind of necessary
       in order to get it to start allocating in the right place. */
    init_resvn(&seg, aspacem_vStart,  aspacem_vStart + VKI_PAGE_SIZE - 1);
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment(&seg);
 
    VG_(am_show_nsegments)(2, "Initial layout");
@@ -2323,6 +2338,9 @@ VG_(am_notify_client_mmap)( Addr a, SizeT len, UInt prot, UInt flags,
       seg.isFF = (flags & VKI_MAP_FIXED);
 #endif
    }
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
    AM_SANITY_CHECK;
    return needDiscard;
@@ -2354,6 +2372,9 @@ VG_(am_notify_client_shmat)( Addr a, SizeT len, UInt prot )
    seg.hasR   = toBool(prot & VKI_PROT_READ);
    seg.hasW   = toBool(prot & VKI_PROT_WRITE);
    seg.hasX   = toBool(prot & VKI_PROT_EXEC);
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
    AM_SANITY_CHECK;
    return needDiscard;
@@ -2454,6 +2475,9 @@ Bool VG_(am_notify_munmap)( Addr start, SizeT len )
    else
       seg.kind = SkFree;
 
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    /* Unmapping could create two adjacent free segments, so a preen is
@@ -2566,6 +2590,9 @@ SysRes VG_(am_mmap_named_file_fixed_client_flags)
 #if defined(VGO_freebsd)
    seg.isFF = (flags & VKI_MAP_FIXED);
 #endif
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -2624,6 +2651,9 @@ SysRes VG_(am_mmap_anon_fixed_client) ( Addr start, SizeT length, UInt prot )
    seg.hasR  = toBool(prot & VKI_PROT_READ);
    seg.hasW  = toBool(prot & VKI_PROT_WRITE);
    seg.hasX  = toBool(prot & VKI_PROT_EXEC);
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -2683,6 +2713,9 @@ static SysRes am_mmap_anon_float_client ( SizeT length, Int prot, Bool isCH )
    seg.hasW  = toBool(prot & VKI_PROT_WRITE);
    seg.hasX  = toBool(prot & VKI_PROT_EXEC);
    seg.isCH  = isCH;
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -2785,6 +2818,9 @@ SysRes VG_(am_mmap_anon_float_valgrind)( SizeT length )
    seg.hasR  = True;
    seg.hasW  = True;
    seg.hasX  = True;
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -2877,6 +2913,9 @@ static SysRes VG_(am_mmap_file_float_valgrind_flags) ( SizeT length, UInt prot,
    }
 #if defined(VGO_freebsd)
    seg.isFF = (flags & VKI_MAP_FIXED);
+#endif
+#if defined(VGO_darwin)
+   fill_segment( &seg );
 #endif
    add_segment( &seg );
 
@@ -3099,6 +3138,9 @@ Bool VG_(am_create_reservation) ( Addr start, SizeT length,
                            reservation. */
    seg.end   = end1;
    seg.smode = smode;
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;
@@ -3272,6 +3314,9 @@ const NSegment *VG_(am_extend_map_client)( Addr addr, SizeT delta )
 
    NSegment seg_copy = *seg;
    seg_copy.end += delta;
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg_copy );
 
    if (0)
@@ -3345,6 +3390,9 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    }
    seg.start = new_addr;
    seg.end   = new_addr + new_len - 1;
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    /* Create a free hole in the old location. */
@@ -3360,6 +3408,9 @@ Bool VG_(am_relocate_nooverlap_client)( /*OUT*/Bool* need_discard,
    else
       seg.kind = SkFree;
 
+#if defined(VGO_darwin)
+   fill_segment( &seg );
+#endif
    add_segment( &seg );
 
    AM_SANITY_CHECK;

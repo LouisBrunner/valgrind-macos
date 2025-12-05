@@ -360,16 +360,8 @@ Addr setup_client_stack( void*  init_sp,
       stringsize += VG_(strlen)(*cpp) + 1;
    }
 
-   // @todo PJF there is a bug in the size calculation or rounding
-   // somewhere. This should be "+= 2" (one of the pointer to exec
-   // path and one for the terminating NULL pointer). When I run
-   // "./tests/vg_regtest none/tests" from a Korn shell script
-   // then the allexec32/64 tests fail because they print out "argv[0]".
-   // I think that what happens is that writing to "ptr" overwrites the
-   // start of strtab resulting in the argv[0] the exe name being a
-   // string starting with 8 \0s (not tested)
-   /* Darwin executable_path + NULL */
-   auxsize += 3 * sizeof(Word);
+   /* NULL separator and executable path */
+   auxsize += 2 * sizeof(HChar **);
    if (info->executable_path) {
        stringsize += 1 + VG_(strlen)(info->executable_path);
    }
@@ -395,7 +387,7 @@ Addr setup_client_stack( void*  init_sp,
    client_SP = VG_ROUNDDN(client_SP, 32); /* make stack 32 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (HChar *)clstack_end 
+   stringbase = strtab = (HChar *)clstack_end + 1
                          - VG_ROUNDUP(stringsize, sizeof(int));
 
    /* The max stack size */

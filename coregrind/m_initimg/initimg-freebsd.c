@@ -473,17 +473,14 @@ static Addr setup_client_stack(const void*  init_sp,
          break;
       case VKI_AT_CANARYLEN:
          canarylen = cauxv->u.a_val;
-         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
          stringsize += canarylen;
          break;
       case VKI_AT_PAGESIZESLEN:
          pagesizeslen = cauxv->u.a_val;
-         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
          stringsize += pagesizeslen;
          break;
 #if 0
       case VKI_AT_TIMEKEEP:
-         /*VG_ROUNDUP(stringsize, sizeof(Word));*/
          stringsize += sizeof(struct vki_vdso_timehands);
          break;
 #endif
@@ -519,7 +516,7 @@ static Addr setup_client_stack(const void*  init_sp,
    client_SP = VG_ROUNDDN(client_SP, 16); /* make stack 16 byte aligned */
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (HChar *)clstack_end
+   stringbase = strtab = (HChar *)clstack_end + 1
                          - VG_ROUNDUP(stringsize, sizeof(int));
 
    clstack_start = VG_PGROUNDDN(client_SP);

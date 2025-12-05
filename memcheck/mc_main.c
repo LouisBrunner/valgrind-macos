@@ -5893,21 +5893,7 @@ Bool MC_(is_within_valid_secondary) ( Addr a )
 Bool MC_(is_valid_aligned_word) ( Addr a )
 {
    tl_assert(sizeof(UWord) == 4 || sizeof(UWord) == 8);
-#if defined(VGO_darwin)
-   // on Darwin some of the memcheck/tests/leak-autofreepool-*
-   // tests are failing here. VALGRIND_MALLOCLIKE_BLOCK is passed
-   // an address that is not word aligned. But that's also the case
-   // on other platforms, on FreeBSD leak-autofreepool 0 uses addresses
-   // that are only 2 aligned. The problem is more likely that Darwin
-   // should not be looking at this chunk of memory.
-   if (!VG_IS_WORD_ALIGNED(a) && VG_(clo_verbosity) > 1)
-   {
-      VG_(printf)("In %s, invariant violation, pointer %p should be word aligned\n", __func__, (void*)a);
-      MC_(pp_describe_addr) (VG_(current_DiEpoch)(), a);
-   }
-#else
    tl_assert(VG_IS_WORD_ALIGNED(a));
-#endif
    if (get_vabits8_for_aligned_word32 (a) != VA_BITS8_DEFINED)
       return False;
    if (sizeof(UWord) == 8) {

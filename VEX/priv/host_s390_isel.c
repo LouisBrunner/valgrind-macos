@@ -1277,13 +1277,21 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto do_multiply;
 
       do_multiply: {
-            HReg r10, r11;
-            UInt arg_size = is_single_multiply ? size : size / 2;
-
             order_commutative_operands(arg1, arg2);
 
             h1   = s390_isel_int_expr(env, arg1);       /* Process 1st operand */
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
+            res  = newVRegI(env);
+
+            if (is_single_multiply) {
+               /* No register pair needed */
+               addInstr(env, s390_insn_move(size, res, h1));
+               addInstr(env, s390_insn_alu(size, S390_ALU_MUL, res, op2));
+               return res;
+            }
+
+            HReg r10, r11;
+            UInt arg_size = size / 2;
 
             /* We use non-virtual registers r10 and r11 as pair */
             r10  = make_gpr(10);
@@ -1295,16 +1303,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             /* Multiply */
             addInstr(env, s390_insn_mul(arg_size, r10, r11, op2, is_signed_multiply));
 
-            res  = newVRegI(env);
             if (arg_size == 1 || arg_size == 2) {
                /* For 8-bit and 16-bit multiplication the result is in
                   r11[32:63] */
-               addInstr(env, s390_insn_move(size, res, r11));
-               return res;
-            }
-
-            /* For Iop_Mul64 the result is in r11[0:63] */
-            if (expr->Iex.Binop.op == Iop_Mul64) {
                addInstr(env, s390_insn_move(size, res, r11));
                return res;
             }

@@ -9015,14 +9015,7 @@ s390_irgen_MLG(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_MSR(UChar r1, UChar r2)
 {
-   IRTemp op1 = newTemp(Ity_I32);
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op1, get_gpr_w1(r1));
-   assign(op2, get_gpr_w1(r2));
-   assign(result, binop(Iop_MullS32, mkexpr(op1), mkexpr(op2)));
-   put_gpr_w1(r1, unop(Iop_64to32, mkexpr(result)));
+   put_gpr_w1(r1, binop(Iop_Mul32, get_gpr_w1(r1), get_gpr_w1(r2)));
 
    return "msr";
 }
@@ -9030,14 +9023,7 @@ s390_irgen_MSR(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_MSGR(UChar r1, UChar r2)
 {
-   IRTemp op1 = newTemp(Ity_I64);
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I128);
-
-   assign(op1, get_gpr_dw0(r1));
-   assign(op2, get_gpr_dw0(r2));
-   assign(result, binop(Iop_MullS64, mkexpr(op1), mkexpr(op2)));
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   put_gpr_dw0(r1, binop(Iop_Mul64, get_gpr_dw0(r1), get_gpr_dw0(r2)));
 
    return "msgr";
 }
@@ -9045,15 +9031,8 @@ s390_irgen_MSGR(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_MSGFR(UChar r1, UChar r2)
 {
-   IRTemp op1 = newTemp(Ity_I64);
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I128);
-
-   assign(op1, get_gpr_dw0(r1));
-   assign(op2, get_gpr_w1(r2));
-   assign(result, binop(Iop_MullS64, mkexpr(op1), unop(Iop_32Sto64, mkexpr(op2))
-          ));
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   put_gpr_dw0(
+      r1, binop(Iop_Mul64, get_gpr_dw0(r1), unop(Iop_32Sto64, get_gpr_w1(r2))));
 
    return "msgfr";
 }
@@ -9061,14 +9040,8 @@ s390_irgen_MSGFR(UChar r1, UChar r2)
 static const HChar *
 s390_irgen_MS(UChar r1, IRTemp op2addr)
 {
-   IRTemp op1 = newTemp(Ity_I32);
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op1, get_gpr_w1(r1));
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(result, binop(Iop_MullS32, mkexpr(op1), mkexpr(op2)));
-   put_gpr_w1(r1, unop(Iop_64to32, mkexpr(result)));
+   put_gpr_w1(r1,
+              binop(Iop_Mul32, get_gpr_w1(r1), load(Ity_I32, mkexpr(op2addr))));
 
    return "ms";
 }
@@ -9078,13 +9051,11 @@ s390_irgen_MSC(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I32);
    IRTemp op2 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I64);
 
    assign(op1, get_gpr_w1(r1));
    assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(result, binop(Iop_MullS32, mkexpr(op1), mkexpr(op2)));
    s390_cc_thunk_putSS(S390_CC_OP_MUL_32, op1, op2);
-   put_gpr_w1(r1, unop(Iop_64to32, mkexpr(result)));
+   put_gpr_w1(r1, binop(Iop_Mul32, mkexpr(op1), mkexpr(op2)));
 
    return "msc";
 }
@@ -9094,13 +9065,11 @@ s390_irgen_MSRKC(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I32);
    IRTemp op3 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I64);
 
    assign(op2, get_gpr_w1(r2));
    assign(op3, get_gpr_w1(r3));
-   assign(result, binop(Iop_MullS32, mkexpr(op2), mkexpr(op3)));
    s390_cc_thunk_putSS(S390_CC_OP_MUL_32, op2, op3);
-   put_gpr_w1(r1, unop(Iop_64to32, mkexpr(result)));
+   put_gpr_w1(r1, binop(Iop_Mul32, mkexpr(op2), mkexpr(op3)));
 
    return "msrkc";
 }
@@ -9108,14 +9077,8 @@ s390_irgen_MSRKC(UChar r3, UChar r1, UChar r2)
 static const HChar *
 s390_irgen_MSY(UChar r1, IRTemp op2addr)
 {
-   IRTemp op1 = newTemp(Ity_I32);
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op1, get_gpr_w1(r1));
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(result, binop(Iop_MullS32, mkexpr(op1), mkexpr(op2)));
-   put_gpr_w1(r1, unop(Iop_64to32, mkexpr(result)));
+   put_gpr_w1(r1,
+              binop(Iop_Mul32, get_gpr_w1(r1), load(Ity_I32, mkexpr(op2addr))));
 
    return "msy";
 }
@@ -9123,14 +9086,8 @@ s390_irgen_MSY(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_MSG(UChar r1, IRTemp op2addr)
 {
-   IRTemp op1 = newTemp(Ity_I64);
-   IRTemp op2 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I128);
-
-   assign(op1, get_gpr_dw0(r1));
-   assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(result, binop(Iop_MullS64, mkexpr(op1), mkexpr(op2)));
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   put_gpr_dw0(r1,
+              binop(Iop_Mul64, get_gpr_dw0(r1), load(Ity_I64, mkexpr(op2addr))));
 
    return "msg";
 }
@@ -9140,13 +9097,11 @@ s390_irgen_MSGC(UChar r1, IRTemp op2addr)
 {
    IRTemp op1 = newTemp(Ity_I64);
    IRTemp op2 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I128);
 
    assign(op1, get_gpr_dw0(r1));
    assign(op2, load(Ity_I64, mkexpr(op2addr)));
-   assign(result, binop(Iop_MullS64, mkexpr(op1), mkexpr(op2)));
    s390_cc_thunk_putSS(S390_CC_OP_MUL_64, op1, op2);
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   put_gpr_dw0(r1, binop(Iop_Mul64, mkexpr(op1), mkexpr(op2)));
 
    return "msgc";
 }
@@ -9154,15 +9109,8 @@ s390_irgen_MSGC(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_MSGF(UChar r1, IRTemp op2addr)
 {
-   IRTemp op1 = newTemp(Ity_I64);
-   IRTemp op2 = newTemp(Ity_I32);
-   IRTemp result = newTemp(Ity_I128);
-
-   assign(op1, get_gpr_dw0(r1));
-   assign(op2, load(Ity_I32, mkexpr(op2addr)));
-   assign(result, binop(Iop_MullS64, mkexpr(op1), unop(Iop_32Sto64, mkexpr(op2))
-          ));
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   put_gpr_dw0(r1, binop(Iop_Mul64, get_gpr_dw0(r1),
+                         unop(Iop_32Sto64, load(Ity_I32, mkexpr(op2addr)))));
 
    return "msgf";
 }
@@ -9170,14 +9118,7 @@ s390_irgen_MSGF(UChar r1, IRTemp op2addr)
 static const HChar *
 s390_irgen_MSFI(UChar r1, UInt i2)
 {
-   IRTemp op1 = newTemp(Ity_I32);
-   Int op2;
-   IRTemp result = newTemp(Ity_I64);
-
-   assign(op1, get_gpr_w1(r1));
-   op2 = (Int)i2;
-   assign(result, binop(Iop_MullS32, mkexpr(op1), mkU32((UInt)op2)));
-   put_gpr_w1(r1, unop(Iop_64to32, mkexpr(result)));
+   put_gpr_w1(r1, binop(Iop_Mul32, get_gpr_w1(r1), mkU32(i2)));
 
    return "msfi";
 }
@@ -9185,15 +9126,8 @@ s390_irgen_MSFI(UChar r1, UInt i2)
 static const HChar *
 s390_irgen_MSGFI(UChar r1, UInt i2)
 {
-   IRTemp op1 = newTemp(Ity_I64);
-   Int op2;
-   IRTemp result = newTemp(Ity_I128);
-
-   assign(op1, get_gpr_dw0(r1));
-   op2 = (Int)i2;
-   assign(result, binop(Iop_MullS64, mkexpr(op1), unop(Iop_32Sto64, mkU32((UInt)
-          op2))));
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   ULong op2 = (ULong)i2 - (((ULong)i2 & (1 << 31)) << 1);
+   put_gpr_dw0(r1, binop(Iop_Mul64, get_gpr_dw0(r1), mkU64(op2)));
 
    return "msgfi";
 }
@@ -9203,13 +9137,11 @@ s390_irgen_MSGRKC(UChar r3, UChar r1, UChar r2)
 {
    IRTemp op2 = newTemp(Ity_I64);
    IRTemp op3 = newTemp(Ity_I64);
-   IRTemp result = newTemp(Ity_I128);
 
    assign(op2, get_gpr_dw0(r2));
    assign(op3, get_gpr_dw0(r3));
-   assign(result, binop(Iop_MullS64, mkexpr(op2), mkexpr(op3)));
    s390_cc_thunk_putSS(S390_CC_OP_MUL_64, op2, op3);
-   put_gpr_dw0(r1, unop(Iop_128to64, mkexpr(result)));
+   put_gpr_dw0(r1, binop(Iop_Mul64, mkexpr(op2), mkexpr(op3)));
 
    return "msgrkc";
 }

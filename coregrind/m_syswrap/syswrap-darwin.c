@@ -972,9 +972,19 @@ void update_syncstats ( CheckHowOften cho,
    // reorder
    static UInt reorder_ctr = 0;
    if (i > 0 && 0 == (1 & reorder_ctr++)) {
+#if defined(VGA_amd64)
+      // Some kind of compiler xmm-based optimization which causes a EXC_I386_GPFLT
+      // happens on amd64 on later macOS versions (seen on 15.0).
+      // Instead we do a boring memcpy.
+      SyncStats tmp;
+      VG_(memcpy)(&tmp, &syncstats[i-1], sizeof(SyncStats));
+      VG_(memcpy)(&syncstats[i-1], &syncstats[i], sizeof(SyncStats));
+      VG_(memcpy)(&syncstats[i], &tmp, sizeof(SyncStats));
+#else
       SyncStats tmp = syncstats[i-1];
       syncstats[i-1] = syncstats[i];
       syncstats[i] = tmp;
+#endif
    }
 }
 

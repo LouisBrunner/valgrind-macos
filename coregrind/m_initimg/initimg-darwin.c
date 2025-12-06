@@ -453,6 +453,8 @@ Addr setup_client_stack( void*  init_sp,
 
    vg_assert((strtab-stringbase) == stringsize);
 
+   vg_assert((HChar*)ptr <= stringbase);
+
    if (VG_(resolved_exename) == NULL) {
       const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
       HChar interp_name[VKI_PATH_MAX];

@@ -841,6 +841,8 @@ static Addr setup_client_stack(const void*  init_sp,
 
    vg_assert((strtab-stringbase) == stringsize);
 
+   vg_assert((HChar*)auxv < stringbase);
+
    /* client_SP is pointing at client's argc/argv */
 
    if (0) {

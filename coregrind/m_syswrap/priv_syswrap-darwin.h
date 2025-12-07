@@ -726,8 +726,9 @@ DECL_TEMPLATE(darwin, mach_voucher_extract_attr_recipe_trap); // MACH 72
 
 // Mach traps
 #if DARWIN_VERS >= DARWIN_10_8
-DECL_TEMPLATE(darwin, kernelrpc_mach_vm_allocate_trap);
-DECL_TEMPLATE(darwin, kernelrpc_mach_vm_deallocate_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_allocate_trap); // MACH 10
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_purgable_control_trap); // MACH 11
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_deallocate_trap); // MACH 12
 DECL_TEMPLATE(darwin, kernelrpc_mach_vm_protect_trap);
 DECL_TEMPLATE(darwin, kernelrpc_mach_vm_map_trap);
 DECL_TEMPLATE(darwin, kernelrpc_mach_port_allocate_trap);

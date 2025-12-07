@@ -9814,6 +9814,7 @@ PRE(kernelrpc_mach_vm_allocate_trap)
    PRE_MEM_WRITE("kernelrpc_mach_vm_allocate_trap(address)",
                  a2, sizeof(void*));
 }
+
 POST(kernelrpc_mach_vm_allocate_trap)
 {
    UWord a1; UWord a2; ULong a3; UWord a4;
@@ -9833,6 +9834,20 @@ POST(kernelrpc_mach_vm_allocate_trap)
          VKI_PROT_READ|VKI_PROT_WRITE, VKI_MAP_ANON, -1, 0);
 #     endif
    }
+}
+
+// MACH 11
+// kern_return_t _kernelrpc_mach_vm_purgable_control_trap(mach_port_name_t target,
+//                                                        mach_vm_offset_t address,
+//                                                        vm_purgable_t control,
+//                                                        int *state);
+PRE(kernelrpc_mach_vm_purgable_control_trap)
+{
+    // FIXME PJF munge?
+    PRINT("kernelrpc_mach_vm_purgable_control_trap"
+          "(target:%#lx, address:%#lx, control:%ld, state:%#lx)",
+          ARG1, ARG2, SARG3, ARG4);
+    // FIXME PJF PRE_REG_READ and READ/WRITE MEM
 }
 
 PRE(kernelrpc_mach_vm_deallocate_trap)
@@ -11554,7 +11569,7 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)), 
 #  endif
 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)), 
+   MACX_(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11), kernelrpc_mach_vm_purgable_control_trap),
 
 #  if DARWIN_VERS >= DARWIN_10_8
    MACXY(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12), kernelrpc_mach_vm_deallocate_trap),

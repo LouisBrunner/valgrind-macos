@@ -141,6 +141,7 @@
 // osfmk/mach/syscall_sw.h
 
 #define __NR_kernelrpc_mach_vm_allocate_trap         VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)
+#define __NR_kernelrpc_mach_vm_purgable_control_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)
 
 #define __NR_kernelrpc_mach_vm_deallocate_trap       VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12)
 

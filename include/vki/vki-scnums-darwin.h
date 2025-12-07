@@ -213,6 +213,8 @@
 #define __NR_host_create_mach_voucher_trap    VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)
 #endif
 
+#define __NR_mach_voucher_extract_attr_recipe_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(72)
+
 #define __NR_mach_timebase_info               VG_DARWIN_SYSCALL_CONSTRUCT_MACH(89)
 #define __NR_mach_wait_until                  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(90)
 #define __NR_mk_timer_create                  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(91)

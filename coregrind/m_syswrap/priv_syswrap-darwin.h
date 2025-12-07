@@ -722,6 +722,7 @@ DECL_TEMPLATE(darwin, mach_msg_bootstrap);
 DECL_TEMPLATE(darwin, mach_msg_host);
 DECL_TEMPLATE(darwin, mach_msg_task);
 DECL_TEMPLATE(darwin, mach_msg_thread);
+DECL_TEMPLATE(darwin, mach_voucher_extract_attr_recipe_trap); // MACH 72
 
 // Mach traps
 #if DARWIN_VERS >= DARWIN_10_8

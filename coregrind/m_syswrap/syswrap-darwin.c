@@ -9358,7 +9358,7 @@ PRE(swtch_pri)
 }
 
 
-PRE(FAKE_SIGRETURN)
+PRE(fake_sigreturn)
 {
    /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
       an explanation of what follows. */
@@ -9366,7 +9366,7 @@ PRE(FAKE_SIGRETURN)
       sigframe-x86-darwin.c. */
    /* See also comments just below on PRE(sigreturn). */
 
-   PRINT("FAKE_SIGRETURN ( )");
+   PRINT("fake_sigreturn ( )");
 
    vg_assert(VG_(is_valid_tid)(tid));
    vg_assert(tid >= 1 && tid < VG_N_THREADS);
@@ -9430,10 +9430,10 @@ PRE(sigreturn)
       1. Change the second argument of VG_(sigframe_destroy) from
          "Bool isRT" to "UInt sysno", so we can pass the syscall
          number, so it can distinguish this case from the
-         __NR_DARWIN_FAKE_SIGRETURN case.
+         __NR_darwin_fake_sigreturn case.
 
       2. In VG_(sigframe_destroy), look at sysno to distinguish the
-         cases.  For __NR_DARWIN_FAKE_SIGRETURN, behave as at present.
+         cases.  For __NR_darwin_fake_sigreturn, behave as at present.
          For this case, restore the thread's CPU state (or at least
          the integer regs) from the ucontext in ARG1 (and do all the
          other "signal-returns" stuff too).
@@ -11542,8 +11542,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_ntp_gettime),                             // 528
 // _____(__NR_os_fault_with_payload),                   // 529
 #endif
-// _____(__NR_MAXSYSCALL)
-   MACX_(__NR_DARWIN_FAKE_SIGRETURN, FAKE_SIGRETURN)
+
+   MACX_(__NR_darwin_fake_sigreturn, fake_sigreturn)
 };
 
 

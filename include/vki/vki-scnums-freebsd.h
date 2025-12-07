@@ -640,6 +640,6 @@
 #define __NR_jail_attach_jd      597
 #define __NR_jail_remove_jd      598
 
-#define __NR_fake_sigreturn      1000
+#define __NR_freebsd_fake_sigreturn 1000
 
 #endif /* VKI_UNISTD_FREEBSD_H */

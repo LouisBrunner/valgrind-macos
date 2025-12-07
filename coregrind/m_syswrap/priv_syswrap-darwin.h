@@ -240,7 +240,7 @@ DECL_TEMPLATE(darwin, kdebug_trace);            // 180
 DECL_TEMPLATE(darwin, setegid);                 // 182
 DECL_TEMPLATE(darwin, seteuid);                 // 183
 DECL_TEMPLATE(darwin, sigreturn);               // 184
-DECL_TEMPLATE(darwin, FAKE_SIGRETURN);
+DECL_TEMPLATE(darwin, fake_sigreturn);          // 1000
 // NYI chud 185
 #if DARWIN_VERS >= DARWIN_10_13
 // NYI thread_selfcounts                        // 186

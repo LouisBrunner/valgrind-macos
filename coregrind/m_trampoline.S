@@ -960,7 +960,7 @@ VG_(x86_freebsd_SUBST_FOR_sigreturn):
 	pushl	%eax
 	pushl	%eax			/* fake return addr */
 /*	movl	0x44(%eax), %gs	; restore %gs, not done by sigreturn */
-        movl    $__NR_fake_sigreturn, %eax
+        movl    $__NR_freebsd_fake_sigreturn, %eax
         int     $0x80
         ud2
 
@@ -987,7 +987,7 @@ VG_(amd64_freebsd_SUBST_FOR_sigreturn):
         /* This is a very specific sequence which GDB uses to
            recognize signal handler frames. */
 
-        movq    $__NR_fake_sigreturn, %rax
+        movq    $__NR_freebsd_fake_sigreturn, %rax
 
         /* running the preprocessor on
          * src/amd64.amd64/lib/libc/sigreturn.S
@@ -1046,7 +1046,7 @@ VG_(trampoline_stuff_start):
 .global VG_(arm64_freebsd_SUBST_FOR_sigreturn)
 .type   VG_(arm64_freebsd_SUBST_FOR_sigreturn),#function
 VG_(arm64_freebsd_SUBST_FOR_sigreturn):
-	mov x8, # __NR_fake_sigreturn
+	mov x8, # __NR_freebsd_fake_sigreturn
         mov x0, sp
         svc #0
         .long 0xFFFFFFFF /*illegal insn*/
@@ -1082,7 +1082,7 @@ VG_(trampoline_stuff_start):
 VG_(x86_darwin_SUBST_FOR_sigreturn):
         /* XXX does this need to have any special form? (cf x86-linux
 	version) */
-        movl    $ __NR_DARWIN_FAKE_SIGRETURN, %eax
+        movl    $ __NR_darwin_fake_sigreturn, %eax
         int     $0x80
         ud2
 
@@ -1242,7 +1242,7 @@ VG_(trampoline_stuff_start):
 VG_(amd64_darwin_SUBST_FOR_sigreturn):
         /* XXX does this need to have any special form? (cf x86-linux
 	version) */
-        movq    $ __NR_DARWIN_FAKE_SIGRETURN, %rax
+        movq    $ __NR_darwin_fake_sigreturn, %rax
         syscall
         ud2
 

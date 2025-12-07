@@ -1041,7 +1041,7 @@ extern void my_sigreturn(void);
    ".text\n" \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
-   "    movl $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%eax\n" \
+   "    movl $" VG_STRINGIFY(__NR_darwin_fake_sigreturn) ",%eax\n" \
    "    int $0x80\n"
 
 #elif defined(VGP_amd64_darwin)
@@ -1049,7 +1049,7 @@ extern void my_sigreturn(void);
    ".text\n" \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n" \
-   "    movq $" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) ",%rax\n" \
+   "    movq $" VG_STRINGIFY(__NR_darwin_fake_sigreturn) ",%rax\n" \
    "    syscall\n"
 
 #elif defined(VGP_s390x_linux)

@@ -4,9 +4,9 @@ Release 3.27.0 (?? Apr 2025)
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
-X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
-AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
-X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+X86/Android, X86/Solaris, AMD64/Solaris, X86/macOS, AMD64/macOS. 
+X86/FreeBSD, AMD64/FreeBSD and ARM64/FreeBSD. There is preliminary support
+for nanoMIPS/Linux. macOS is supported up to version 10.13 High Sierra.
 
 * ==================== CORE CHANGES ===================
 

@@ -117,14 +117,10 @@
 #include <mach-o/fat.h>
 #include <mach/i386/thread_status.h>
 
-/* Get hold of DARWIN_VERS, and check it has a sane value. */
+/* Check that DARWIN_VERS is defined */
 #include "config.h"
-#if DARWIN_VERS != DARWIN_10_5 && DARWIN_VERS != DARWIN_10_6 \
-    && DARWIN_VERS != DARWIN_10_7 && DARWIN_VERS != DARWIN_10_8 \
-    && DARWIN_VERS != DARWIN_10_9 && DARWIN_VERS != DARWIN_10_10 \
-    && DARWIN_VERS != DARWIN_10_11 && DARWIN_VERS != DARWIN_10_12 \
-    && DARWIN_VERS != DARWIN_10_13
-#  error "Unknown DARWIN_VERS value.  This file only compiles on Darwin."
+#if !defined(DARWIN_VERS)
+#  error "DARWIN_VERS not defind. This file only compiles on Darwin."
 #endif
 
 
@@ -519,8 +515,13 @@ void modify_macho_loadcmds ( HChar* filename,
          fail("has __UNIXSTACK, but wrong ::vmaddr");
       if (seg->vmsize != expected_stack_size)
          fail("has __UNIXSTACK, but wrong ::vmsize");
+#if SDK_VERS >= SDK_10_14_6
+      if (seg->maxprot != 3)
+         fail("has __UNIXSTACK, but wrong ::maxprot (should be 3)");
+#else
       if (seg->maxprot != 7)
          fail("has __UNIXSTACK, but wrong ::maxprot (should be 7)");
+#endif
       if (seg->initprot != 3)
          fail("has __UNIXSTACK, but wrong ::initprot (should be 3)");
       if (seg->nsects != 0)

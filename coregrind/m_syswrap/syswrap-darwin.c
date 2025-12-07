@@ -5407,7 +5407,8 @@ PRE(host_request_notification)
    }
 
     // GrP fixme only do this on success
-   assign_port_name(req->notify_port.name, "host_notify-%p");
+   // PJF moved to POST(mach_msg_post)
+   //assign_port_name(req->notify_port.name, "host_notify-%p");
 }
 
 
@@ -8771,6 +8772,7 @@ PRE(mach_msg)
    else if (mh->msgh_request_port == vg_host_port) {
       // message sent to mach_host_self()
       CALL_PRE(mach_msg_host);
+      AFTER = POST_FN(mach_msg_host);
       return;
    }
    else if (is_task_port(mh->msgh_request_port)) {
@@ -8969,6 +8971,34 @@ POST(mach_msg_unhandled_check)
 {
    if (ML_(sync_mappings)("after", "mach_msg_receive (unhandled_check)", 0))
       PRINT("mach_msg_unhandled_check tid:%d missed mapping change()", tid);
+}
+
+POST(mach_msg_host)
+{
+   mach_msg_header_t *mh = (mach_msg_header_t *)ARG1;
+
+   // FIXME PJF put this in a header rather than have a copy and paste duplicate
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      /* start of the kernel processed data */
+      mach_msg_body_t msgh_body;
+      mach_msg_port_descriptor_t notify_port;
+      /* end of the kernel processed data */
+      NDR_record_t NDR;
+      host_flavor_t notify_type;
+   } Request;
+#pragma pack()
+
+   switch (mh->msgh_id) {
+   case 217: {
+         Request *req = (Request *)ARG1;
+         assign_port_name(req->notify_port.name, "host_notify-%p");
+      }
+      break;
+   default:
+      break;
+   }
 }
 
 

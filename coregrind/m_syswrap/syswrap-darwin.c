@@ -11106,7 +11106,6 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 #else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
 #endif
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(178)),   // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(179)),   // ???
    MACX_(__NR_kdebug_trace, kdebug_trace),     // 180
    GENX_(__NR_setgid,      sys_setgid), 
@@ -11445,7 +11444,6 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_necp_match_policy,   necp_match_policy),  // 460
    MACXY(__NR_getattrlistbulk,     getattrlistbulk),    // 461
    MACXY(__NR_openat,              openat),             // 463
-   MACX_(__NR_mkdirat,             mkdirat),            // 475
 #if DARWIN_VERS >= DARWIN_10_13
    MACXY(__NR_openat_nocancel,     openat_nocancel),    // 464
 #endif

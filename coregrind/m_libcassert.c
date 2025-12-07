@@ -27,6 +27,7 @@
 */
 
 #include "pub_core_basics.h"
+#include "pub_core_debuglog.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
 #include "pub_core_threadstate.h"
@@ -499,6 +500,10 @@ static void report_and_quit ( const HChar* report,
                           False, // exited_threads
                           startRegsIN);
 
+   if (VG_(debugLog_getLevel) > 0) {
+      VG_(am_show_nsegments) (1, "report_and_quit");
+      (void) VG_(am_do_sync_check) ("report_and_quit", __FILE__, __LINE__);
+   }
    if (VG_(clo_xml)) // After flushing outputs
       VG_(printf_xml)("</valgrindoutput>\n");
 

@@ -691,7 +691,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          fact that we are prodding at & ((UWord*)fp)[1] and so need to
          adjust the limit check accordingly.  Omitting this has been
          observed to cause segfaults on rare occasions. */
-      if (fp_min <= uregs.xbp && uregs.xbp <= fp_max - 1 * sizeof(UWord)) {
+      if (fp_min <= uregs.xbp && uregs.xbp <= fp_max - 1 * sizeof(UWord)
+#if defined(VGO_darwin)
+          // FIXME PJF temporary? workaround for segfaults
+          // without this extra check there will be some SIGSEGVs which end stuck
+          // in an infinite loop
+
+          // The faulting address seems to be in a fairly small rw- mapping
+          // (according to lldb)
+          // happens in Helgrind multithread apps, error arises in
+          // sync_signalhandler (called from darwin_signal_demux with signal 11)
+
+          && ML_(safe_to_deref)((void*)uregs.xbp, 2*sizeof(UWord))
+#endif
+                                                                        ) {
          /* fp looks sane, so use it. */
          uregs.xip = (((UWord*)uregs.xbp)[1]);
          if (0 == uregs.xip || 1 == uregs.xip) break;

@@ -505,81 +505,57 @@ case "${host_os}" in
 	kernel=`uname -r`
       fi
 
-        # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
-        # has only one relevant version, the OS version. The `uname` check
-        # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
-        # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
-        # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion), 
-        # and we don't know of an macros similar to __GLIBC__ to get that info.
-        #
-        # XXX: `uname -r` won't do the right thing for cross-compiles, but
-        # that's not a problem yet.
-        #
-        # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
-        # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
-        # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
-        # time support for 10.5 (the 9.* pattern just below), I'll leave it
-        # in for now, just in case anybody wants to give it a try.  But I'm
-        # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
-        DARWIN_DRD_SUPP="darwin10-drd.supp"
+        DARWIN_DRD_SUPP="darwin-drd.supp"
 	case "${kernel}" in
 	     9.*)
 		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
 		  DARWIN_VERS=$DARWIN_10_5
-                  DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin9-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
+		  DARWIN_DRD_SUPP="darwin9-drd.supp"
 		  ;;
 	     10.*)
 		  AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
 		  DARWIN_VERS=$DARWIN_10_6
-                  DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
 		  ;;
 	     11.*)
 		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
 		  DARWIN_VERS=$DARWIN_10_7
-                  DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
 		  ;;
 	     12.*)
 		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
 		  DARWIN_VERS=$DARWIN_10_8
-                  DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
 		  ;;
 	     13.*)
 		  AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks])
 		  DARWIN_VERS=$DARWIN_10_9
-                  DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
 		  ;;
 	     14.*)
 		  AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite])
 		  DARWIN_VERS=$DARWIN_10_10
-                  DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
 		  ;;
 	     15.*)
 		  AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
 		  DARWIN_VERS=$DARWIN_10_11
-                  DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
 		  ;;
 	     16.*)
 		  AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra])
 		  DARWIN_VERS=$DARWIN_10_12
-                  DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
-                  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
+		  DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
 		  ;;
 	     17.*)
 		  AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
 		  DARWIN_VERS=$DARWIN_10_13
 		  DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
-		  DEFAULT_SUPP="$srcdir/darwin10-drd.supp ${DEFAULT_SUPP}"
 		  ;;
              *) 
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-15.0, iOS 4-18 and macOS/iOS 26)])
+          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-10.13)])
 		  ;;
 	esac
 
@@ -589,7 +565,7 @@ case "${host_os}" in
 
       AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X / macOS / iOS version])
       AC_SUBST(DARWIN_VERS)
-      DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"
+      DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP} $srcdir/darwin-helgrind.supp"
 
       AC_MSG_CHECKING([for the the minimum macOS SDK version])
       case "${darwin_platform}" in

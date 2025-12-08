@@ -123,3 +123,21 @@
    fun:_os_unfair_lock_lock_slow
 }
 
+{
+   OSX1013:helgrind:mach_timebase_info
+   Helgrind:Race
+   fun:mach_timebase_info
+}
+
+{
+   OSX1013:helgrind:std::__1::__thread_specific_ptr<std::__1::__thread_struct>::set_pointer(std::__1::__thread_struct*)
+   Helgrind:Race
+   fun:_ZNSt3__121__thread_specific_ptrINS_15__thread_structEE11set_pointerEPS1_
+}
+
+{
+   OSX1013:helgrind:std::__1::__thread_local_data()
+   Helgrind:Race
+   fun:_ZNSt3__119__thread_local_dataEv
+}
+

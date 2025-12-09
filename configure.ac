@@ -508,11 +508,7 @@ case "${host_os}" in
         DARWIN_DRD_SUPP="darwin-drd.supp"
 
 	case "${kernel}" in
-	     9.*)
-		  DARWIN_DRD_SUPP="darwin9-drd.supp"
-		  DEFAULT_SUPP="$srcdir/darwin-legacy.supp ${DEFAULT_SUPP}"
-		  ;;
-	     1[0-6].*)
+	     1[2-6].*)
 		  DEFAULT_SUPP="$srcdir/darwin-legacy.supp ${DEFAULT_SUPP}"
 		  ;;
 	     *)
@@ -522,18 +518,6 @@ case "${host_os}" in
 
 
 	case "${kernel}" in
-	     9.*)
-		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
-		  DARWIN_VERS=$DARWIN_10_5
-		  ;;
-	     10.*)
-		  AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
-		  DARWIN_VERS=$DARWIN_10_6
-		  ;;
-	     11.*)
-		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
-		  DARWIN_VERS=$DARWIN_10_7
-		  ;;
 	     12.*)
 		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
 		  DARWIN_VERS=$DARWIN_10_8
@@ -560,7 +544,7 @@ case "${host_os}" in
 		  ;;
 	     *)
 		  AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-10.13)])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.8-10.11, macOS 10.12-10.13)])
 		  ;;
 	esac
 

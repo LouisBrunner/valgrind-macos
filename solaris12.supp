@@ -220,12 +220,6 @@
 }
 
 {
-   Solaris:_nsc_proc_is_cache
-   Helgrind:Race
-   fun:_nsc_proc_is_cache
-}
-
-{
    Solaris:nss_dbop_search
    Helgrind:Race
    fun:nss_dbop_search

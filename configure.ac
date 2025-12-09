@@ -496,72 +496,73 @@ case "${host_os}" in
       esac
       AC_MSG_RESULT([ok (${darwin_platform})])
 
-	AC_MSG_CHECKING([for the kernel version])
+      AC_MSG_CHECKING([for the kernel version])
       kernel=$darwin_version
       if test "x$kernel" = "x"; then
           if test "${host_cpu}" != "${build_cpu}"; then
               AC_MSG_WARN([You are cross-compiling without specifying the target\'s darwin-version, valgrind might not work.])
           fi
-	kernel=`uname -r`
+          kernel=`uname -r`
       fi
 
         DARWIN_DRD_SUPP="darwin-drd.supp"
+
+	case "${kernel}" in
+	     9.*)
+		  DARWIN_DRD_SUPP="darwin9-drd.supp"
+		  DEFAULT_SUPP="$srcdir/darwin-legacy.supp ${DEFAULT_SUPP}"
+		  ;;
+	     1[0-6].*)
+		  DEFAULT_SUPP="$srcdir/darwin-legacy.supp ${DEFAULT_SUPP}"
+		  ;;
+	     *)
+		  DEFAULT_SUPP="$srcdir/darwin.supp ${DEFAULT_SUPP}"
+		  ;;
+	esac
+
+
 	case "${kernel}" in
 	     9.*)
 		  AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
 		  DARWIN_VERS=$DARWIN_10_5
-		  DEFAULT_SUPP="$srcdir/darwin9.supp ${DEFAULT_SUPP}"
-		  DARWIN_DRD_SUPP="darwin9-drd.supp"
 		  ;;
 	     10.*)
 		  AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard])
 		  DARWIN_VERS=$DARWIN_10_6
-		  DEFAULT_SUPP="$srcdir/darwin10.supp ${DEFAULT_SUPP}"
 		  ;;
 	     11.*)
 		  AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion])
 		  DARWIN_VERS=$DARWIN_10_7
-		  DEFAULT_SUPP="$srcdir/darwin11.supp ${DEFAULT_SUPP}"
 		  ;;
 	     12.*)
 		  AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion])
 		  DARWIN_VERS=$DARWIN_10_8
-		  DEFAULT_SUPP="$srcdir/darwin12.supp ${DEFAULT_SUPP}"
 		  ;;
 	     13.*)
 		  AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks])
 		  DARWIN_VERS=$DARWIN_10_9
-		  DEFAULT_SUPP="$srcdir/darwin13.supp ${DEFAULT_SUPP}"
 		  ;;
 	     14.*)
 		  AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite])
 		  DARWIN_VERS=$DARWIN_10_10
-		  DEFAULT_SUPP="$srcdir/darwin14.supp ${DEFAULT_SUPP}"
 		  ;;
 	     15.*)
 		  AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan])
 		  DARWIN_VERS=$DARWIN_10_11
-		  DEFAULT_SUPP="$srcdir/darwin15.supp ${DEFAULT_SUPP}"
 		  ;;
 	     16.*)
 		  AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra])
 		  DARWIN_VERS=$DARWIN_10_12
-		  DEFAULT_SUPP="$srcdir/darwin16.supp ${DEFAULT_SUPP}"
 		  ;;
 	     17.*)
 		  AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
 		  DARWIN_VERS=$DARWIN_10_13
-		  DEFAULT_SUPP="$srcdir/darwin17.supp ${DEFAULT_SUPP}"
 		  ;;
-             *) 
-          AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-          AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-10.13)])
+	     *)
+		  AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
+		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.6-10.11, macOS 10.12-10.13)])
 		  ;;
 	esac
-
-      if test -f "$srcdir/darwin${DARWIN_KERNEL_VERS}.supp"; then
-        DEFAULT_SUPP="$srcdir/darwin${DARWIN_KERNEL_VERS}.supp ${DEFAULT_SUPP}"
-      fi
 
       AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X / macOS / iOS version])
       AC_SUBST(DARWIN_VERS)

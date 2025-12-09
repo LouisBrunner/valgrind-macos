@@ -46,6 +46,11 @@
 #include "pub_core_trampoline.h"
 #include "config.h"
 
+#if defined(VGO_darwin)
+// FIXME PJF this is bad (it's a syswrap private function)
+// but the alternative for the moment is crashes when trying to produce stack traces
+extern Bool ML_(safe_to_deref) ( const void *start, SizeT size );
+#endif
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/

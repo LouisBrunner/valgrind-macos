@@ -6,13 +6,15 @@ PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
 X86/Android, X86/Solaris, AMD64/Solaris, X86/macOS, AMD64/macOS. 
 X86/FreeBSD, AMD64/FreeBSD and ARM64/FreeBSD. There is preliminary support
-for nanoMIPS/Linux. macOS is supported up to version 10.13 High Sierra.
+for nanoMIPS/Linux. macOS is supported up to version 10.14 Mojave.
 
 * ==================== CORE CHANGES ===================
 
 * ================== PLATFORM CHANGES =================
 
 s390x: Machine models older than z196 are no longer supported.
+
+Initial support for macOS 10.14 Mojave has been added.
 
 * ==================== TOOL CHANGES ===================
 

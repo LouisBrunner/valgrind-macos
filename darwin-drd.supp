@@ -299,3 +299,71 @@
    fun:gomp_barrier_wait
    fun:child
 }
+
+# DRD suppressions for Darwin 18 / macOS 10.14 Mohave
+
+{
+   macOS1014:pthread_mutex_destroy
+   drd:MutexErr
+   fun:pthread_mutex_destroy
+}
+
+{
+   macOS1014:_xpc_dictionary_look_up_table
+   drd:ConflictingAccess
+   ...
+   fun:_xpc_dictionary_look_up_table
+}
+
+{
+   macOS1014:objc_msgSendSuper2
+   drd:ConflictingAccess
+   fun:objc_msgSendSuper2
+}
+
+{
+   mac1014:nw_path_copy_interface_with_generation
+   drd:ConflictingAccess
+   ...
+   fun:nw_path_copy_interface_with_generation
+}
+
+{
+   mac1014:__setenv_locked
+   drd:ConflictingAccess
+   fun:__setenv_locked
+}
+
+{
+   mac1014:dlopen_internal
+   drd:ConflictingAccess
+   ...
+   fun:dlopen_internal
+}
+
+{
+   mac1014:getpwuid_r
+   drd:ConflictingAccess
+   fun:si_search
+   fun:getpwuid_r
+}
+
+{
+   mac1014:_pthread_tsd_cleanup
+   drd:ConflictingAccess
+   ...
+   fun:_pthread_tsd_cleanup
+}
+
+{
+   macOS1014:dyld::findMappedRange(unsigned long)
+   drd:ConflictingAccess
+   fun:_ZN4dyld15findMappedRangeEm
+}
+
+{
+   macOS1014:dyld::addImage(ImageLoader*)
+   drd:ConflictingAccess
+   ...
+   fun:_ZN4dyldL8addImageEP11ImageLoader
+}

@@ -542,6 +542,10 @@ case "${host_os}" in
 		  AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra])
 		  DARWIN_VERS=$DARWIN_10_13
 		  ;;
+	     18.*)
+		  AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave])
+		  DARWIN_VERS=$DARWIN_10_14
+		  ;;
 	     *)
 		  AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
 		  AC_MSG_ERROR([Valgrind works on Darwin 10.x-25.x (Mac OS X 10.8-10.11, macOS 10.12-10.13)])

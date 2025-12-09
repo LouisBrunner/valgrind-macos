@@ -141,3 +141,46 @@
    fun:_ZNSt3__119__thread_local_dataEv
 }
 
+# Helgrind Suppressions for Darwin 18.x / macOS 10.14 Mojave
+
+{
+   macOS1014:_xpc_dictionary_look_up_tab
+   Helgrind:Race
+   fun:_platform_strcmp
+   fun:_xpc_dictionary_look_up_table
+}
+
+{
+   macOS1014:_pthread_tsd_cleanup
+   Helgrind:Race
+   ...
+   fun:_pthread_tsd_cleanup
+}
+
+{
+   macOS1014:nw_path_copy_interface_with_generation
+   Helgrind:Race
+   ...
+   fun:nw_path_copy_interface_with_generation
+}
+
+{
+   macOS1014:__setenv_locked
+   Helgrind:Race
+   fun:__setenv_locked
+}
+
+{
+   macOS1014:_pthread_once_handler
+   Helgrind:Race
+   ...
+   fun:__pthread_once_handler
+}
+
+{
+   macOS1014:getpwuid_r
+   Helgrind:Race
+   fun:si_search
+   fun:getpwuid_r
+}
+

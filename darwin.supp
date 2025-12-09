@@ -783,3 +783,27 @@
    Memcheck:Cond
    fun:ccaes_vng_ctr_crypt
 }
+
+# Suppressions for Darwin 18.x / macOS 10.14 Mojave
+
+{
+   macOS1014:_dyld_start
+   Memcheck:Cond
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1014:libSystem_initializer
+   Memcheck:Addr16
+   ...
+   fun:libSystem_initializer
+}
+
+{
+   macOS1014:_NXHashRehashToCapacity
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_calloc
+   fun:_NXHashRehashToCapacity
+}

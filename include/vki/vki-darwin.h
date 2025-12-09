@@ -408,6 +408,9 @@ typedef uint32_t vki_u32;
 # define VKI_F_BARRIERFSYNC              F_BARRIERFSYNC
 # define VKI_F_ADDFILESIGS_RETURN        F_ADDFILESIGS_RETURN
 #endif
+#if DARWIN_VERS >= DARWIN_10_14
+# define VKI_F_CHECK_LV                  F_CHECK_LV
+#endif
 #define VKI_F_FULLFSYNC	F_FULLFSYNC
 #define VKI_F_PATHPKG_CHECK	F_PATHPKG_CHECK
 #define VKI_F_FREEZE_FS	F_FREEZE_FS

@@ -1777,6 +1777,9 @@ static const HChar *name_for_fcntl(UWord cmd) {
       F(F_BARRIERFSYNC);
       F(F_ADDFILESIGS_RETURN);
 #     endif
+#     if DARWIN_VERS >= DARWIN_10_14
+      F(F_CHECK_LV);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -1972,6 +1975,13 @@ PRE(fcntl)
    case VKI_F_ADDFILESIGS_RETURN: /* Add signature from same file, return end offset in 
                                      structure on success */
       // FIXME: RK
+      break;
+#  endif
+
+#  if DARWIN_VERS >= DARWIN_10_14
+   case VKI_F_CHECK_LV: /* Check if Library Validation allows this Mach-O file to be
+                           mapped into the calling process */
+      // FIXME: Dejan
       break;
 #  endif
 
@@ -10916,9 +10926,29 @@ POST(thread_get_special_reply_port)
    record_named_port(tid, RES, MACH_PORT_RIGHT_RECEIVE, "special-reply-%p");
    PRINT("special reply port %s", name_for_port(RES));
 }
-
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 
+
+/* ---------------------------------------------------------------------
+ Added for macOS 10.14 (Mojave)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_14
+PRE(kernelrpc_mach_port_get_attributes_trap)
+{
+  PRINT("kernelrpc_mach_port_get_attributes_trap( %s, %s, %ld, %#lx, %#lx )",
+        name_for_port(ARG1), name_for_port(ARG2), SARG3, ARG4, ARG5);
+  PRE_REG_READ5(kern_return_t, "kernelrpc_mach_port_get_attributes_trap",
+                mach_port_name_t, target, mach_port_name_t, name, mach_port_flavor_t, flavor,
+	              mach_port_info_t, port_info_out, mach_msg_type_number_t*, port_info_outCnt);
+  PRE_MEM_READ( "kernelrpc_mach_port_get_attributes_trap(port_info_outCnt)", ARG5, sizeof(mach_msg_type_number_t));
+  PRE_MEM_WRITE( "kernelrpc_mach_port_get_attributes_trap(port_info_outCnt)", ARG5, sizeof(mach_msg_type_number_t));
+  mach_msg_type_number_t count = *(mach_msg_type_number_t*)ARG5;
+  if (count > 0) {
+    PRE_MEM_WRITE( "kernelrpc_mach_port_get_attributes_trap(port_info_out)", ARG4, count * sizeof(integer_t));
+  }
+}
+#endif /* DARWIN_VERS >= DARWIN_10_14 */
 /* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
@@ -11542,6 +11572,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_ntp_gettime),                             // 528
 // _____(__NR_os_fault_with_payload),                   // 529
 #endif
+#if DARWIN_VERS >= DARWIN_10_14
+// _____(__NR_kqueue_workloop_ctl),                     // 530
+// _____(__NR___mach_bridge_remote_time),               // 531
+#endif
 
    MACX_(__NR_darwin_fake_sigreturn, fake_sigreturn)
 };
@@ -11634,7 +11668,12 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACX_(__NR_semaphore_wait_signal_trap, semaphore_wait_signal),
    MACX_(__NR_semaphore_timedwait_trap, semaphore_timedwait),
    MACX_(__NR_semaphore_timedwait_signal_trap, semaphore_timedwait_signal),
+
+#  if DARWIN_VERS >= DARWIN_10_14
+   MACX_(__NR_kernelrpc_mach_port_get_attributes_trap, kernelrpc_mach_port_get_attributes_trap),
+#  else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)),    // -40
+#  endif
 
 #  if DARWIN_VERS >= DARWIN_10_9
    MACX_(__NR_kernelrpc_mach_port_guard_trap, kernelrpc_mach_port_guard_trap),

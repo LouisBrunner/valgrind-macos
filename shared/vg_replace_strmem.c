@@ -388,7 +388,6 @@ static inline void my_exit ( int x )
 #elif defined(VGO_darwin)
  STRNCAT(VG_Z_LIBSYSTEM_C_SONAME, strncat)
  STRNCAT(VG_Z_LIBSYSTEM_C_SONAME, __strncat_chk)
- //STRNCAT(VG_Z_DYLD,        strncat)
 
 #elif defined(VGO_solaris)
  STRNCAT(VG_Z_LIBC_SONAME, strncat)

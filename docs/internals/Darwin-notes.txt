@@ -58,6 +58,20 @@ storage.c to choose between symbol table names vs. Dwarf3 names.  So this
 machinery was removed in r10155.
 
 
+Mac OS X / macOS supported platforms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since January 2025 (and thus Valgrind 3.25) we have required a compiler
+that supports C11. See 42eb19c0da3bb280de88b7f8fc9b7caaa44aedfem for
+details. We also need an xcrun that supports --show-sdk-path (since
+December 2025). I'm not sure when both of those became supported.
+Definitely neither are on Mac OS 10.7 with XCode 4.6.3. And equally
+definitely both are supported on macOS 10.13 with XCode 10.1. That
+means that I don't know which is the oldest version of macOS that
+will build Valgrind (as of December 2025). Somewhere between 10.8 (Darwin 12)
+and 10.12 (Darwin 16).
+
+
 Valgrind-developer notes, todos re the MacOSX port
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

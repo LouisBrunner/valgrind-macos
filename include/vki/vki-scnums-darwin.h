@@ -174,6 +174,10 @@
 #define __NR_semaphore_timedwait_trap         VG_DARWIN_SYSCALL_CONSTRUCT_MACH(38)
 #define __NR_semaphore_timedwait_signal_trap  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(39)
 
+#if DARWIN_VERS >= DARWIN_10_14
+#define __NR_kernelrpc_mach_port_get_attributes_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(40)
+#endif
+
 #if DARWIN_VERS >= DARWIN_10_9
 #define __NR_kernelrpc_mach_port_guard_trap   VG_DARWIN_SYSCALL_CONSTRUCT_MACH(41)
 #define __NR_kernelrpc_mach_port_unguard_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(42)
@@ -849,6 +853,11 @@
 #define	__NR_ntp_gettime            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(528)
 #define	__NR_os_fault_with_payload  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(529)
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
+
+#if DARWIN_VERS >= DARWIN_10_14
+#define	__NR_kqueue_workloop_ctl    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(530)
+#define	__NR___mach_bridge_remote_time VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(531)
+#endif /* DARWIN_VERS >= DARWIN_10_14 */
 
 #define __NR_darwin_fake_sigreturn  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(1000)
 

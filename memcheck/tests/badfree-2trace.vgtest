@@ -1,3 +1,3 @@
-vgopts: --num-callers=2 -q
+vgopts: --num-callers=2 -q --suppressions=darwin.supp
 prog:   badfree
 stderr_filter_args: badfree.c

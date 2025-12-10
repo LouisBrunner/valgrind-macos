@@ -46,6 +46,9 @@ Massif:   12: add_class_to_loadable_list
 Massif:   13: class_createInstance
 Massif:   14: xpc_string_create
 Massif:   15: xpc_array_create
+Massif:   16: _NXMapRehash(_NXMapTable*)
+Massif:   17: arc4_init
+Massif:   18: realizeClassWithoutSwift(objc_class*)
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:408, hp:400, ex:8, st:0)
 Massif:   alloc S.  2 (t:816, hp:800, ex:16, st:0)

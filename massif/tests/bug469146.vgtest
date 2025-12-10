@@ -6,5 +6,7 @@ vgopts: --ignore-fn=call_init --ignore-fn=pool
 vgopts: --ignore-fn=filter_function1 --ignore-fn="filter_function2(int)" --ignore-fn=filter_function3
 # macOS allocations
 vgopts: --ignore-fn="allocBuckets(void*, unsigned int)" --ignore-fn=map_images_nolock --ignore-fn="realizeClass(objc_class*)" --ignore-fn=_NXHashRehashToCapacity --ignore-fn=NXCreateHashTableFromZone --ignore-fn=NXCreateMapTableFromZone --ignore-fn=NXHashInser --ignore-fn=add_class_to_loadable_list --ignore-fn=NXHashInsert --ignore-fn=class_createInstance --ignore-fn=_xpc_malloc --ignore-fn=strdup --ignore-fn=_xpc_calloc
+# Darwin ignore functions, for macOS 10.14
+vgopts: --ignore-fn="_NXMapRehash(_NXMapTable*)" --ignore-fn=arc4_init --ignore-fn="realizeClassWithoutSwift(objc_class*)"
 post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ../../tests/filter_addresses | ./filter_ignore_fn
 cleanup: rm massif.out

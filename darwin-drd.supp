@@ -367,3 +367,56 @@
    ...
    fun:_ZN4dyldL8addImageEP11ImageLoader
 }
+
+{
+   macOS1014:isKnownClass(objc_class*)
+   drd:ConflictingAccess
+   fun:_ZL12isKnownClassP10objc_class
+}
+
+{
+   macOS1014:ImageLoader::ImageLoader(char const*, unsigned int)
+   drd:ConflictingAccess
+   fun:_ZN11ImageLoaderC2EPKcj
+}
+
+{
+   macOS1014:_os_once_callout
+   drd:ConflictingAccess
+   ...
+   fun:_os_once_callout
+}
+
+{
+   macOS1014:ImageLoaderMachO::ImageLoaderMachO(macho_header const*, char const*, unsigned int, unsigned int*, unsigned int)
+   drd:ConflictingAccess
+   fun:_ZN16ImageLoaderMachOC2EPK12macho_headerPKcjPjj
+}
+
+{
+   macOS1014:_fsi_get_validation
+   drd:ConflictingAccess
+   ...
+   fun:_fsi_get_validation
+}
+
+{
+   macOS1014:__nw_context_copy_implicit_context_block_invoke
+   drd:ConflictingAccess
+   ...
+   fun:__nw_context_copy_implicit_context_block_invoke
+}
+
+{
+   macOS1014:_objc_msgSend_uncached
+   drd:ConflictingAccess
+   ...
+   fun:_objc_msgSend_uncached
+}
+
+{
+   macOS1014:dyld::load(char const*, dyld::LoadContext const&, unsigned int&)
+   drd:ConflictingAccess
+   ...
+   fun:_ZN4dyld4loadEPKcRKNS_11LoadContextERj
+}

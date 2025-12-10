@@ -1,5 +1,5 @@
 prog: err_disable4
-vgopts: -q --num-callers=3 --valgrind-stacksize=131072
+vgopts: -q --num-callers=3 --valgrind-stacksize=131072 --suppressions=darwin.supp
 ## 131072 is the minimum value needed on ppc64 (2 pages of 64K)
 stderr_filter: ../../helgrind/tests/filter_stderr
 ## This is so as to get rid of the "Thread #" lines, which

@@ -1,0 +1,34 @@
+# macOS needs lots of suppressions for memory faults
+# and leaks. This testcase restricts the recorded callstack to
+# a depth of 2 which means several of the default suppressions
+# with a depth of 3 or more no longer match
+
+# so this file puts back a load of 2-deep suppressions
+{
+   macOS dyld 1
+   Memcheck:Cond
+   ...
+   fun:_ZN13dyldbootstrap5startEPK12macho_headeriPPKclS2_Pm
+}
+
+{
+   macOS dyld 2
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyld5_mainEPK12macho_headermiPPKcS5_S5_Pm
+}
+
+{
+   macOS dyld 3
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyldL25checkEnvironmentVariablesEPPKc
+}
+
+{
+   macOS dyld 4
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyldL10loadPhase1EPKcS1_RKNS_11LoadContextERjPNSt3__16vectorIS1_NS6_9allocatorIS1_EEEE
+}
+

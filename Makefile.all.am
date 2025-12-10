@@ -151,6 +151,7 @@ if VGCONF_OS_IS_DARWIN
 AM_CFLAGS_PSO_BASE = -dynamic \
 		     -O -g -fno-omit-frame-pointer -fno-strict-aliasing \
 		     -fpic -fPIC -fno-builtin @FLAG_FNO_IPA_ICF@
+AM_CFLAGS_BASE += @FLAG_W_NO_EXPANSION_TO_DEFINED@ @FLAG_W_NO_NULLABILITY_COMPLETENESS@
 else
 if VGCONF_OS_IS_FREEBSD
 AM_CFLAGS_PSO_BASE = -O -g -fno-omit-frame-pointer -fno-strict-aliasing \

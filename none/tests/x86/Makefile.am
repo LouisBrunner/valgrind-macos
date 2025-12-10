@@ -183,6 +183,7 @@ insn_sse3_SOURCES	= insn_sse3.def
 insn_sse3_LDADD		= -lm
 insn_ssse3_SOURCES	= insn_ssse3.def
 insn_ssse3_LDADD	= -lm
+sse4_x86_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_FUNCTION@
 x86locked_CFLAGS	= $(AM_CFLAGS) -O
 yield_LDADD		= -lpthread
 

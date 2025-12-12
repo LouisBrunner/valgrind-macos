@@ -7259,7 +7259,7 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
 {
    Int       i, j;
    HReg      hregLo, hregMedLo, hregMedHi, hregHi;
-   ISelEnv*  env;
+   ISelEnv  *env, envmem;
    UInt      hwcaps_host = archinfo_host->hwcaps;
    Bool      mode64 = False;
    UInt      mask32, mask64;
@@ -7297,7 +7297,7 @@ HInstrArray* iselSB_PPC ( const IRSB* bb,
      IEndianess = Iend_LE;
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
 
    /* Are we being ppc32 or ppc64? */

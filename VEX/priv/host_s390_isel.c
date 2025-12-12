@@ -5497,7 +5497,7 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
 {
    UInt     i, j;
    HReg     hreg, hregHI;
-   ISelEnv *env;
+   ISelEnv *env, envmem;
    UInt     hwcaps_host = archinfo_host->hwcaps;
 
    /* Do some sanity checks */
@@ -5507,7 +5507,7 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
    vassert(archinfo_host->endness == VexEndnessBE);
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

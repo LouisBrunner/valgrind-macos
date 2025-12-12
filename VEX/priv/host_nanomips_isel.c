@@ -1515,7 +1515,7 @@ HInstrArray *iselSB_NANOMIPS(const IRSB * bb,
 {
    Int      i, j;
    HReg     hreg, hregHI;
-   ISelEnv *env;
+   ISelEnv *env, envmem;
    hwcaps_host = archinfo_host->hwcaps;
    /* sanity ... */
    vassert(arch_host == VexArchNANOMIPS);
@@ -1523,7 +1523,7 @@ HInstrArray *iselSB_NANOMIPS(const IRSB * bb,
    vassert(archinfo_host->endness == VexEndnessLE
            || archinfo_host->endness == VexEndnessBE);
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
    /* Set up output code array. */
    env->code = newHInstrArray();

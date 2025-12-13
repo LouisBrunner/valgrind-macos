@@ -31,7 +31,7 @@ EXTRA_DIST = \
 	avx_estimate_insn.stdout.exp avx_estimate_insn.stdout.exp-amd \
 	avx-vmovq.vgtest avx-vmovq.stdout.exp avx-vmovq.stderr.exp \
 	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
-	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
+	asorep.stderr.exp asorep.vgtest \
 	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
 	bt_flags.stderr.exp bt_flags.stdout.exp bt_flags.vgtest \
 	fma.stderr.exp fma.stdout.exp fma.vgtest \
@@ -72,7 +72,7 @@ EXTRA_DIST = \
 	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
 	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
 	movbe.stderr.exp movbe.stdout.exp movbe.vgtest \
-	mpx.stderr.exp mpx.stdout.exp mpx.vgtest \
+	mpx.stderr.exp mpx.vgtest \
 	nan80and64.stderr.exp nan80and64.stdout.exp nan80and64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
@@ -92,8 +92,7 @@ EXTRA_DIST = \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
-	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
-	ssse3_misaligned.vgtest \
+	ssse3_misaligned.stderr.exp ssse3_misaligned.vgtest \
 	sse4-64.stderr.exp sse4-64.stdout.exp sse4-64.vgtest \
 	sse4-64.stdout.exp-older-glibc \
 	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \

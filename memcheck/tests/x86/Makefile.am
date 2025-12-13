@@ -8,7 +8,7 @@ noinst_SCRIPTS = filter_pushfpopf
 INSN_TESTS = insn_basic insn_fpu insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
 
 EXTRA_DIST = \
-	bug152022.vgtest bug152022.stderr.exp bug152022.stdout.exp \
+	bug152022.vgtest bug152022.stderr.exp \
 	bug487993.vgtest bug487993.stderr.exp \
 	espindola2.vgtest espindola2.stderr.exp \
 	fpeflags.stderr.exp fpeflags.vgtest \
@@ -22,10 +22,8 @@ EXTRA_DIST = \
 	pcmpgt.stderr.exp pcmpgt.vgtest \
 	sh-mem-vec128-plo-no.vgtest \
 		sh-mem-vec128-plo-no.stderr.exp \
-		sh-mem-vec128-plo-no.stdout.exp \
 	sh-mem-vec128-plo-yes.vgtest \
 		sh-mem-vec128-plo-yes.stderr.exp \
-		sh-mem-vec128-plo-yes.stdout.exp \
 	sse1_memory.stderr.exp sse1_memory.stdout.exp sse1_memory.vgtest \
 	sse2_memory.stderr.exp sse2_memory.stdout.exp sse2_memory.vgtest \
 	tronical.stderr.exp tronical.vgtest \

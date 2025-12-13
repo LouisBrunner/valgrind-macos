@@ -7,10 +7,8 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
-	access_below_sp_1.vgtest \
-	access_below_sp_1.stderr.exp access_below_sp_1.stdout.exp \
-	access_below_sp_2.vgtest \
-	access_below_sp_2.stderr.exp access_below_sp_2.stdout.exp \
+	access_below_sp_1.vgtest access_below_sp_1.stderr.exp \
+	access_below_sp_2.vgtest access_below_sp_2.stderr.exp \
 	defcfaexpr.vgtest defcfaexpr.stderr.exp \
 	int3-amd64.vgtest int3-amd64.stderr.exp int3-amd64.stdout.exp \
 	scalar.stderr.exp scalar.vgtest \

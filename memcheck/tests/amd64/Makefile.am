@@ -28,21 +28,17 @@ EXTRA_DIST = \
 		rh2257546_256.stderr.exp rh2257546_256.stdout.exp \
 	sh-mem-vec128-plo-no.vgtest \
 		sh-mem-vec128-plo-no.stderr.exp \
-		sh-mem-vec128-plo-no.stdout.exp \
 	sh-mem-vec128-plo-yes.vgtest \
 		sh-mem-vec128-plo-yes.stderr.exp \
-		sh-mem-vec128-plo-yes.stdout.exp \
 	sh-mem-vec256-plo-no.vgtest \
 		sh-mem-vec256-plo-no.stderr.exp \
-		sh-mem-vec256-plo-no.stdout.exp \
 	sh-mem-vec256-plo-yes.vgtest \
 		sh-mem-vec256-plo-yes.stderr.exp \
-		sh-mem-vec256-plo-yes.stdout.exp \
 	shr_edx.stderr.exp shr_edx.stdout.exp shr_edx.vgtest \
 	sse_memory.stderr.exp sse_memory.stdout.exp sse_memory.vgtest \
 	xor-undef-amd64.stderr.exp xor-undef-amd64.stdout.exp \
 	xor-undef-amd64.stderr.exp-freebsd xor-undef-amd64.vgtest \
-	xsave-avx.vgtest xsave-avx.stdout.exp xsave-avx.stderr.exp
+	xsave-avx.vgtest xsave-avx.stderr.exp
 
 check_PROGRAMS = \
 	bt_everything \
@@ -65,8 +61,7 @@ if HAVE_ASM_CONSTRAINT_P
 endif
 # clang 3.5.0 barfs about -mfancy-math-387
 if !COMPILER_IS_CLANG
- check_PROGRAMS += \
- 	more_x87_fp
+ check_PROGRAMS += more_x87_fp
 endif
 
 # initially this was a "not clang" test

@@ -12,8 +12,7 @@ EXTRA_DIST = \
 	clonev.stdout.exp clonev.stderr.exp clonev.vgtest \
 	getdents_filter.stderr.exp getdents_filter.stdout.exp getdents_filter.vgtest \
         membarrier.stderr.exp membarrier.vgtest \
-	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.stdout.exp \
-	    mremap.vgtest \
+	mremap.stderr.exp mremap.stderr.exp-glibc27 mremap.vgtest \
 	mremap2.stderr.exp mremap2.stdout.exp mremap2.vgtest \
 	mremap3.stderr.exp mremap3.stdout.exp mremap3.vgtest \
 	mremap4.stderr.exp mremap4.vgtest \

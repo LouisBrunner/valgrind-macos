@@ -14,12 +14,9 @@ noinst_SCRIPTS = \
 	filter_stderr
 
 EXTRA_DIST = \
-	annotate_hbefore.vgtest annotate_hbefore.stdout.exp \
-		annotate_hbefore.stderr.exp \
-	annotate_rwlock.vgtest annotate_rwlock.stdout.exp \
-		annotate_rwlock.stderr.exp \
-	annotate_smart_pointer.vgtest annotate_smart_pointer.stdout.exp \
-		annotate_smart_pointer.stderr.exp \
+	annotate_hbefore.vgtest annotate_hbefore.stderr.exp \
+	annotate_rwlock.vgtest annotate_rwlock.stderr.exp \
+	annotate_smart_pointer.vgtest annotate_smart_pointer.stderr.exp \
 	bug322621.vgtest bug322621.stderr.exp \
 	bug327548.vgtest bug327548.stderr.exp \
 	bug392331.vgtest bug392331.stdout.exp bug392331.stderr.exp \
@@ -27,43 +24,35 @@ EXTRA_DIST = \
 	bug392331.supp \
 	bug484480.vgtest bug484480.stderr.exp bug484480.stdout.exp \
 	cond_init_destroy.vgtest cond_init_destroy.stderr.exp \
-	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
-		cond_timedwait_invalid.stderr.exp \
-	cond_timedwait_test.vgtest cond_timedwait_test.stdout.exp \
-		cond_timedwait_test.stderr.exp \
-	bar_bad.vgtest bar_bad.stdout.exp bar_bad.stderr.exp \
+	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stderr.exp \
+	cond_timedwait_test.vgtest cond_timedwait_test.stderr.exp \
+	bar_bad.vgtest bar_bad.stderr.exp \
 		bar_bad.stderr.exp-destroy-hang \
 		bar_bad.stderr.exp-freebsd \
 		bar_bad.stderr.exp-illumos \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
-	free_is_write.vgtest free_is_write.stdout.exp \
-		free_is_write.stderr.exp \
+	free_is_write.vgtest free_is_write.stderr.exp \
 	getaddrinfo.vgtest getaddrinfo.stderr.exp \
-	hg01_all_ok.vgtest hg01_all_ok.stdout.exp hg01_all_ok.stderr.exp \
-	hg02_deadlock.vgtest hg02_deadlock.stdout.exp hg02_deadlock.stderr.exp \
-	hg03_inherit.vgtest hg03_inherit.stdout.exp hg03_inherit.stderr.exp \
-	hg04_race.vgtest hg04_race.stdout.exp hg04_race.stderr.exp \
-	hg04_race_h9.vgtest hg04_race_h9.stdout.exp hg04_race_h9.stderr.exp \
-	hg05_race2.vgtest hg05_race2.stdout.exp hg05_race2.stderr.exp \
-	hg06_readshared.vgtest hg06_readshared.stdout.exp \
-		hg06_readshared.stderr.exp \
+	hg01_all_ok.vgtest hg01_all_ok.stderr.exp \
+	hg02_deadlock.vgtest hg02_deadlock.stderr.exp \
+	hg03_inherit.vgtest hg03_inherit.stderr.exp \
+	hg04_race.vgtest hg04_race.stderr.exp \
+	hg04_race_h9.vgtest hg04_race_h9.stderr.exp \
+	hg05_race2.vgtest hg05_race2.stderr.exp \
+	hg06_readshared.vgtest hg06_readshared.stderr.exp \
 	locked_vs_unlocked1_fwd.vgtest \
 		locked_vs_unlocked1_fwd.stderr.exp \
-		locked_vs_unlocked1_fwd.stdout.exp \
 	locked_vs_unlocked1_rev.vgtest \
 		locked_vs_unlocked1_rev.stderr.exp \
-		locked_vs_unlocked1_rev.stdout.exp \
 	locked_vs_unlocked2.vgtest \
 		locked_vs_unlocked2.stderr.exp \
-		locked_vs_unlocked2.stdout.exp \
 		locked_vs_unlocked2.stderr.exp-freebsd \
 	locked_vs_unlocked3.vgtest \
 		locked_vs_unlocked3.stderr.exp \
-		locked_vs_unlocked3.stdout.exp \
 		locked_vs_unlocked3.stderr.exp-freebsd \
-	pth_barrier1.vgtest pth_barrier1.stdout.exp pth_barrier1.stderr.exp \
-	pth_barrier2.vgtest pth_barrier2.stdout.exp pth_barrier2.stderr.exp \
-	pth_barrier3.vgtest pth_barrier3.stdout.exp pth_barrier3.stderr.exp \
+	pth_barrier1.vgtest pth_barrier1.stderr.exp \
+	pth_barrier2.vgtest pth_barrier2.stderr.exp \
+	pth_barrier3.vgtest pth_barrier3.stderr.exp \
 	pth_destroy_cond.vgtest \
 		pth_destroy_cond.stdout.exp pth_destroy_cond.stderr.exp \
 	pth_cond_destroy_busy.vgtest pth_cond_destroy_busy.stderr.exp \
@@ -71,63 +60,63 @@ EXTRA_DIST = \
 		pth_cond_destroy_busy.stderr.exp-solaris \
 		pth_cond_destroy_busy.stderr.exp-freebsd \
 	pth_mempcpy_false_races.vgtest pth_mempcpy_false_races.stderr.exp \
-	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
-	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
-	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
+	pth_spinlock.vgtest pth_spinlock.stderr.exp \
+	rwlock_race.vgtest rwlock_race.stderr.exp \
+	rwlock_test.vgtest rwlock_test.stderr.exp \
 	sem_clockwait_np.vgtest sem_clockwait_np.stdout.exp \
 		sem_clockwait_np.stderr.exp \
 	sem_timedwait.vgtest sem_timedwait.stdout.exp sem_timedwait.stderr.exp \
 	shared_timed_mutex.vgtest shared_timed_mutex.stderr.exp \
-	shmem_abits.vgtest shmem_abits.stdout.exp shmem_abits.stderr.exp \
-	stackteardown.vgtest stackteardown.stdout.exp stackteardown.stderr.exp \
+	shmem_abits.vgtest shmem_abits.stderr.exp \
+	stackteardown.vgtest stackteardown.stderr.exp \
 	t2t_laog.vgtest t2t_laog.stdout.exp t2t_laog.stderr.exp \
-	tc01_simple_race.vgtest tc01_simple_race.stdout.exp \
+	tc01_simple_race.vgtest \
 		tc01_simple_race.stderr.exp \
-	tc02_simple_tls.vgtest tc02_simple_tls.stdout.exp \
+	tc02_simple_tls.vgtest \
 		tc02_simple_tls.stderr.exp \
-	tc03_re_excl.vgtest tc03_re_excl.stdout.exp \
+	tc03_re_excl.vgtest \
 		tc03_re_excl.stderr.exp \
-	tc04_free_lock.vgtest tc04_free_lock.stdout.exp \
+	tc04_free_lock.vgtest \
 		tc04_free_lock.stderr.exp \
 		tc04_free_lock.stderr.exp-freebsd \
-	tc05_simple_race.vgtest tc05_simple_race.stdout.exp \
+	tc05_simple_race.vgtest \
 		tc05_simple_race.stderr.exp \
-	tc06_two_races.vgtest tc06_two_races.stdout.exp \
+	tc06_two_races.vgtest \
 		tc06_two_races.stderr.exp \
-	tc06_two_races_xml.vgtest tc06_two_races_xml.stdout.exp \
+	tc06_two_races_xml.vgtest \
 		tc06_two_races_xml.stderr.exp \
 		tc06_two_races_xml.stderr.exp-freebsd \
 	tc07_hbl1.vgtest tc07_hbl1.stdout.exp tc07_hbl1.stderr.exp \
 	tc08_hbl2.vgtest tc08_hbl2.stdout.exp tc08_hbl2.stderr.exp \
-	tc09_bad_unlock.vgtest tc09_bad_unlock.stdout.exp \
+	tc09_bad_unlock.vgtest \
 		tc09_bad_unlock.stderr.exp tc09_bad_unlock.stderr.exp-solaris \
 		tc09_bad_unlock.stderr.exp-freebsd \
-	tc10_rec_lock.vgtest tc10_rec_lock.stdout.exp tc10_rec_lock.stderr.exp \
+	tc10_rec_lock.vgtest tc10_rec_lock.stderr.exp \
 	tc11_XCHG.vgtest tc11_XCHG.stdout.exp tc11_XCHG.stderr.exp \
-	tc12_rwl_trivial.vgtest tc12_rwl_trivial.stdout.exp \
+	tc12_rwl_trivial.vgtest \
 		tc12_rwl_trivial.stderr.exp \
 		tc12_rwl_trivial.stderr.exp-darwin970 \
 		tc12_rwl_trivial.stderr.exp-solaris \
 		tc12_rwl_trivial.stderr.exp-freebsd \
-	tc13_laog1.vgtest tc13_laog1.stdout.exp tc13_laog1.stderr.exp \
-	tc14_laog_dinphils.vgtest tc14_laog_dinphils.stdout.exp \
+	tc13_laog1.vgtest tc13_laog1.stderr.exp \
+	tc14_laog_dinphils.vgtest \
 		tc14_laog_dinphils.stderr.exp \
-	tc15_laog_lockdel.vgtest tc15_laog_lockdel.stdout.exp \
+	tc15_laog_lockdel.vgtest \
 		tc15_laog_lockdel.stderr.exp \
-	tc16_byterace.vgtest tc16_byterace.stdout.exp \
+	tc16_byterace.vgtest \
 		tc16_byterace.stderr.exp \
-	tc17_sembar.vgtest tc17_sembar.stdout.exp \
+	tc17_sembar.vgtest \
 		tc17_sembar.stderr.exp \
-	tc18_semabuse.vgtest tc18_semabuse.stdout.exp \
+	tc18_semabuse.vgtest \
 		tc18_semabuse.stderr.exp \
 		tc18_semabuse.stderr.exp-linux-mips32 \
 		tc18_semabuse.stderr.exp-linux-mips32-b \
 		tc18_semabuse.stderr.exp-solaris \
 		tc18_semabuse.stderr.exp-freebsd \
-	tc19_shadowmem.vgtest tc19_shadowmem.stdout.exp \
+	tc19_shadowmem.vgtest \
 		tc19_shadowmem.stderr.exp tc19_shadowmem.stderr.exp-mips32 \
 		tc19_shadowmem.stderr.exp-mips32-BE \
-	tc20_verifywrap.vgtest tc20_verifywrap.stdout.exp \
+	tc20_verifywrap.vgtest \
 		tc20_verifywrap.stderr.exp \
 		tc20_verifywrap.stderr.exp-glibc-2.18 \
 		tc20_verifywrap.stderr.exp-glibc-2.21 \
@@ -136,19 +125,17 @@ EXTRA_DIST = \
 		tc20_verifywrap.stderr.exp-s390x \
 		tc20_verifywrap.stderr.exp-solaris \
 	tc21_pthonce.vgtest tc21_pthonce.stdout.exp tc21_pthonce.stderr.exp \
-	tc22_exit_w_lock.vgtest tc22_exit_w_lock.stdout.exp \
+	tc22_exit_w_lock.vgtest \
 		tc22_exit_w_lock.stderr.exp \
 		tc22_exit_w_lock.stderr.exp-kfail-x86 \
 		tc22_exit_w_lock.stderr.exp-solaris \
 		tc22_exit_w_lock.stderr.exp-freebsd15 \
-	tc23_bogus_condwait.vgtest tc23_bogus_condwait.stdout.exp \
+	tc23_bogus_condwait.vgtest \
 		tc23_bogus_condwait.stderr.exp \
 		tc23_bogus_condwait.stderr.exp-mips32 \
 		tc23_bogus_condwait.stderr.exp-freebsd \
-	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stdout.exp \
-		tc24_nonzero_sem.stderr.exp \
-	tls_threads.vgtest tls_threads.stdout.exp \
-		tls_threads.stderr.exp \
+	tc24_nonzero_sem.vgtest tc24_nonzero_sem.stderr.exp \
+	tls_threads.vgtest tls_threads.stderr.exp \
 	tls_threads2.vgtest tls_threads2.stderr.exp \
 	trylock.vgtest trylock.stderr.exp
 

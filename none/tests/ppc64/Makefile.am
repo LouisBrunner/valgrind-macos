@@ -26,7 +26,7 @@ EXTRA_DIST = \
 	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest \
 	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
 	opcodes.h \
-	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
+	power6_bcmp.stderr.exp power6_bcmp.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part1.stdout.exp-LE \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
@@ -47,7 +47,7 @@ EXTRA_DIST = \
 	jm_int_isa_2_07.stdout.exp  jm_int_isa_2_07.stdout.exp-LE \
 	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
 	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
-	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \
+	test_touch_tm.stderr.exp  test_touch_tm.vgtest \
 	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest \
 	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest \
 	test_isa_3_0_altivec.stderr.exp  \

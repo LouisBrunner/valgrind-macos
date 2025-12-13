@@ -13,7 +13,7 @@ EXTRA_DIST = \
 	env.stderr.exp env.vgtest \
 	ioctl-tiocsbrk.stderr.exp ioctl-tiocsbrk.vgtest \
 	pth-supp.stderr.exp pth-supp.vgtest \
-	pth-undocumented.stderr.exp pth-undocumented.stdout.exp pth-undocumented.vgtest \
+	pth-undocumented.stderr.exp pth-undocumented.vgtest \
 	mkfifo.stderr.exp mkfifo.vgtest \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \

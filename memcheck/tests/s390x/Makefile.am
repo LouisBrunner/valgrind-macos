@@ -8,8 +8,8 @@ check_PROGRAMS = $(INSN_TESTS)
 
 EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
-	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS))
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	tmxx.stdout.exp
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@

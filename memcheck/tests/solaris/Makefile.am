@@ -14,50 +14,50 @@ noinst_HEADERS = scalar.h
 EXTRA_DIST = \
 	aligned_alloc.stderr.exp aligned_alloc.vgtest \
 	aligned_alloc.stderr.exp-solaris \
-	brk.stderr.exp brk.stdout.exp brk.vgtest \
-	context_stack_die.stderr.exp context_stack_die.stdout.exp context_stack_die.vgtest \
+	brk.stderr.exp brk.vgtest \
+	context_stack_die.stderr.exp context_stack_die.vgtest \
 	door_data.stderr.exp door_data.stdout.exp door_data.vgtest \
 	door_kill.stderr.exp door_kill.stdout.exp door_kill.vgtest \
 	execx.stderr.exp execx.stdout.exp execx.vgtest \
 	getzoneoffset.stderr.exp getzoneoffset.vgtest \
 	gethrtime.stderr.exp gethrtime.stdout.exp gethrtime.vgtest \
 	gethrusec.stderr.exp gethrusec.stdout.exp gethrusec.vgtest \
-	ioctl.stderr.exp ioctl.stdout.exp ioctl.vgtest \
-	ldynsym.stderr.exp ldynsym.stdout.exp ldynsym.vgtest \
+	ioctl.stderr.exp ioctl.vgtest \
+	ldynsym.stderr.exp ldynsym.vgtest \
 	lsframe1.stderr.exp lsframe1.stdout.exp lsframe1.vgtest \
 	lsframe2.stderr.exp lsframe2.stdout.exp lsframe2.vgtest \
 	mmapobj_bssonly.stderr.exp mmapobj_bssonly.stdout.exp mmapobj_bssonly.vgtest \
 	name_service_door.stderr.exp-amd64 name_service_door.stderr.exp-x86 \
 	name_service_door.stdout.exp name_service_door.vgtest \
-	pkcs11.stderr.exp-illumos pkcs11.stderr.exp-solaris pkcs11.stdout.exp pkcs11.vgtest \
-	scalar.stderr.exp scalar.stdout.exp scalar.vgtest \
-	scalar_auditon_stat.stderr.exp scalar_auditon_stat.stdout.exp scalar_auditon_stat.vgtest \
-	scalar_frealpathat.stderr.exp scalar_frealpathat.stdout.exp scalar_frealpathat.vgtest \
-	scalar_getrandom.stderr.exp scalar_getrandom.stdout.exp scalar_getrandom.vgtest \
+	pkcs11.stderr.exp-illumos pkcs11.stderr.exp-solaris pkcs11.vgtest \
+	scalar.stderr.exp scalar.vgtest \
+	scalar_auditon_stat.stderr.exp scalar_auditon_stat.vgtest \
+	scalar_frealpathat.stderr.exp scalar_frealpathat.vgtest \
+	scalar_getrandom.stderr.exp scalar_getrandom.vgtest \
 	scalar_getrandom.stderr.exp-illumos \
-	scalar_ioctl.stderr.exp scalar_ioctl.stdout.exp scalar_ioctl.vgtest \
-	scalar_lwp_kill.stderr.exp scalar_lwp_kill.stdout.exp scalar_lwp_kill.vgtest \
-	scalar_lwp_name.stderr.exp scalar_lwp_name.stdout.exp scalar_lwp_name.vgtest \
-	scalar_lwp_sigqueue.stderr.exp scalar_lwp_sigqueue.stdout.exp scalar_lwp_sigqueue.vgtest \
+	scalar_ioctl.stderr.exp scalar_ioctl.vgtest \
+	scalar_lwp_kill.stderr.exp scalar_lwp_kill.vgtest \
+	scalar_lwp_name.stderr.exp scalar_lwp_name.vgtest \
+	scalar_lwp_sigqueue.stderr.exp scalar_lwp_sigqueue.vgtest \
 	scalar_lwp_sigqueue_pid.stderr.exp scalar_lwp_sigqueue_pid.vgtest \
-	scalar_modctl_modnvl.stderr.exp scalar_modctl_modnvl.stdout.exp scalar_modctl_modnvl.vgtest \
-	scalar_obsolete.stderr.exp scalar_obsolete.stdout.exp scalar_obsolete.vgtest \
-	scalar_shm_new.stderr.exp scalar_shm_new.stdout.exp scalar_shm_new.vgtest \
-	scalar_spawn.stderr.exp scalar_spawn.stdout.exp scalar_spawn.vgtest \
-	scalar_system_stats.stderr.exp scalar_system_stats.stdout.exp scalar_system_stats.vgtest \
+	scalar_modctl_modnvl.stderr.exp scalar_modctl_modnvl.vgtest \
+	scalar_obsolete.stderr.exp scalar_obsolete.vgtest \
+	scalar_shm_new.stderr.exp scalar_shm_new.vgtest \
+	scalar_spawn.stderr.exp scalar_spawn.vgtest \
+	scalar_system_stats.stderr.exp scalar_system_stats.vgtest \
 	scalar_tsol_clearance.stderr.exp scalar_tsol_clearance.vgtest \
-	scalar_utimensat.stderr.exp scalar_utimensat.stdout.exp scalar_utimensat.vgtest \
-	scalar_utimesys.stderr.exp scalar_utimesys.stdout.exp scalar_utimesys.vgtest \
-	scalar_uuidsys.stderr.exp scalar_uuidsys.stdout.exp scalar_uuidsys.vgtest \
-	scalar_zone_defunct.stderr.exp scalar_zone_defunct.stdout.exp scalar_zone_defunct.vgtest \
+	scalar_utimensat.stderr.exp scalar_utimensat.vgtest \
+	scalar_utimesys.stderr.exp scalar_utimesys.vgtest \
+	scalar_uuidsys.stderr.exp scalar_uuidsys.vgtest \
+	scalar_zone_defunct.stderr.exp scalar_zone_defunct.vgtest \
 	sendfilev.stderr.exp sendfilev.stdout.exp sendfilev.vgtest \
 	shmat.stderr.exp shmat.stdout.exp shmat.vgtest \
 	spawn.stderr.exp spawn.stdout.exp spawn.vgtest \
-	strlcpy.stderr.exp strlcpy.stdout.exp strlcpy.vgtest \
+	strlcpy.stderr.exp strlcpy.vgtest \
 	supponlyobj.stderr.exp supponlyobj.supp supponlyobj.vgtest \
-	syscall_at.stderr.exp syscall_at.stdout.exp syscall_at.vgtest \
+	syscall_at.stderr.exp syscall_at.vgtest \
 	thr_daemon_exit_libc.stderr.exp thr_daemon_exit_libc.stdout.exp thr_daemon_exit_libc.vgtest \
-	thr_daemon_exit_standalone.stderr.exp thr_daemon_exit_standalone.stdout.exp thr_daemon_exit_standalone.vgtest \
+	thr_daemon_exit_standalone.stderr.exp thr_daemon_exit_standalone.vgtest \
 	memalign.vgtest memalign.stderr.exp
 
 check_PROGRAMS = \

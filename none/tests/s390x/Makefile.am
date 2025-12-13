@@ -3,9 +3,9 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr bfp-emit.pl emwarn-gen.pl
 
 INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
-             and or xor insert div srst fold_And16 flogr sub_EI add_EI \
+             and or xor insert div srst fold_And16 sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
-             op_exception stck stckf stcke stfle cksm mvcl clcl troo \
+             op_exception stck stckf stcke stfle mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
              ex_sig ex_clone cu14 cu14_1 cu41 ecag \
@@ -46,6 +46,8 @@ EXTRA_DIST = \
 	bfp-tdc.vgtest bfp-tdc.stdout.exp bfp-tdc.stderr.exp \
 	bfp-emit.vgtest bfp-emit.stderr.exp bfp-emit.post.exp \
 	bfp-XxC.vgtest bfp-XxC.stderr.exp bfp-XxC.post.exp \
+	cksm.vgtest cksm.stderr.exp \
+	flogr.vgtest flogr.stderr.exp \
 	ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 ecag.stdout.exp-z17 \

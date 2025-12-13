@@ -54,7 +54,7 @@ EXTRA_DIST = \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	gnu_binutils_nop.stderr.exp gnu_binutils_nop.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
-	int.stderr.exp int.stdout.exp int.disabled \
+	int.stderr.exp int.disabled \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -73,7 +73,7 @@ EXTRA_DIST = \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
 	shift_ndep.stderr.exp shift_ndep.stdout.exp shift_ndep.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
-	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
+	ssse3_misaligned.stderr.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
 	sse4-x86.stdout.exp sse4-x86.stderr.exp sse4-x86.vgtest \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \

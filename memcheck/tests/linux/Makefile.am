@@ -16,16 +16,14 @@ EXTRA_DIST = \
 	capget.stderr.exp4 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
 	debuginfod-check.pl \
-	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.stdout.exp \
-	    dlclose_leak-no-keep.vgtest \
-	dlclose_leak.stderr.exp dlclose_leak.stdout.exp \
-	    dlclose_leak.vgtest \
+	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.vgtest \
+	dlclose_leak.stderr.exp dlclose_leak.vgtest \
 	ioctl_procmap_query.stderr.exp \
 		ioctl_procmap_query.stdout.exp \
 		ioctl_procmap_query.vgtest \
 	ioctl-tiocsig.vgtest ioctl-tiocsig.stderr.exp \
-	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
-	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	lsframe1.vgtest lsframe1.stderr.exp \
+	lsframe2.vgtest lsframe2.stderr.exp \
 	memfd_create.vgtest memfd_create.stderr.exp \
 		memfd_create.stderr.exp-fcntl64 \
 	rfcomm.vgtest rfcomm.stderr.exp \
@@ -36,7 +34,7 @@ EXTRA_DIST = \
 	syscalls-2007.vgtest syscalls-2007.stderr.exp \
 	syslog-syscall.vgtest syslog-syscall.stderr.exp \
 	sys-copy_file_range.vgtest sys-copy_file_range.stderr.exp \
-	sys-openat.vgtest sys-openat.stderr.exp sys-openat.stdout.exp \
+	sys-openat.vgtest sys-openat.stderr.exp \
 	sys-statx.vgtest sys-statx.stderr.exp \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \

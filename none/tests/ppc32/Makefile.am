@@ -32,7 +32,7 @@ EXTRA_DIST = \
 	xlc_dbl_u32.stderr.exp xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest \
 	opcodes.h \
 	power5+_round.stderr.exp power5+_round.stdout.exp power5+_round.vgtest \
-	power6_bcmp.stderr.exp power6_bcmp.stdout.exp power6_bcmp.vgtest \
+	power6_bcmp.stderr.exp power6_bcmp.vgtest \
 	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
 	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
@@ -51,7 +51,7 @@ EXTRA_DIST = \
 	jm_int_isa_2_07.stdout.exp \
 	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
 	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
-	test_touch_tm.stderr.exp test_touch_tm.stdout.exp test_touch_tm.vgtest \
+	test_touch_tm.stderr.exp test_touch_tm.vgtest \
 	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest \
 	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest
 

@@ -152,10 +152,10 @@ EXTRA_DIST = \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
 	close_range.vgtest close_range.stderr.exp \
 	close_range.stderr.exp.linux \
-	cond_ld.vgtest cond_ld.stdout.exp cond_ld.stderr.exp-arm \
+	cond_ld.vgtest cond_ld.stderr.exp-arm \
 		cond_ld.stderr.exp-64bit-non-arm \
 		cond_ld.stderr.exp-32bit-non-arm \
-	cond_st.vgtest cond_st.stdout.exp cond_st.stderr.exp-arm \
+	cond_st.vgtest cond_st.stderr.exp-arm \
 		cond_st.stderr.exp-64bit-non-arm \
 		cond_st.stderr.exp-32bit-non-arm \
 	leak_cpp_interior.stderr.exp leak_cpp_interior.stderr.exp-64bit leak_cpp_interior.vgtest libstdc++.supp \
@@ -166,7 +166,6 @@ EXTRA_DIST = \
 	custom-overlap.stderr.exp custom-overlap.vgtest \
 	cxx17_aligned_new.stderr.exp cxx17_aligned_new.vgtest \
 		cxx17_aligned_new.stderr.exp_32 \
-		cxx17_aligned_new.stdout.exp \
 	darwin.supp \
 	duplicate_align_size_errors.stderr.exp \
 		duplicate_align_size_errors.stderr.exp-memalign \
@@ -212,7 +211,7 @@ EXTRA_DIST = \
 	describe-block.stderr.exp describe-block.vgtest \
 	descr_belowsp.vgtest descr_belowsp.stderr.exp \
 	doublefree.stderr.exp doublefree.vgtest \
-	dw4.vgtest dw4.stderr.exp dw4.stderr.exp-solaris dw4.stdout.exp \
+	dw4.vgtest dw4.stderr.exp dw4.stderr.exp-solaris \
 	err_disable1.vgtest err_disable1.stderr.exp \
 	err_disable2.vgtest err_disable2.stderr.exp \
 	err_disable3.vgtest err_disable3.stderr.exp \
@@ -235,15 +234,13 @@ EXTRA_DIST = \
 	fwrite.stderr.exp fwrite.vgtest fwrite.stderr.exp-kfail \
 	gone_abrt_xml.vgtest gone_abrt_xml.stderr.exp gone_abrt_xml.stderr.exp-solaris \
 		gone_abrt_xml.stderr.exp-freebsd \
-	holey_buffer_too_small.vgtest holey_buffer_too_small.stdout.exp \
-	holey_buffer_too_small.stderr.exp \
+	holey_buffer_too_small.vgtest holey_buffer_too_small.stderr.exp \
 	inits.stderr.exp inits.vgtest \
 	inline.stderr.exp inline.stdout.exp inline.vgtest \
-	inlinfo.stderr.exp inlinfo.stdout.exp inlinfo.vgtest \
-	inlinfosupp.stderr.exp inlinfosupp.stdout.exp inlinfosupp.supp inlinfosupp.vgtest \
-	inlinfosuppobj.stderr.exp inlinfosuppobj.stdout.exp inlinfosuppobj.supp inlinfosuppobj.vgtest \
-	inltemplate.stderr.exp inltemplate.stdout.exp inltemplate.vgtest \
-		inltemplate.stderr.exp-old-gcc \
+	inlinfo.stderr.exp inlinfo.vgtest \
+	inlinfosupp.stderr.exp inlinfosupp.supp inlinfosupp.vgtest \
+	inlinfosuppobj.stderr.exp inlinfosuppobj.supp inlinfosuppobj.vgtest \
+	inltemplate.vgtest inltemplate.stderr.exp inltemplate.stderr.exp-old-gcc \
 	leak-0.vgtest leak-0.stderr.exp \
 	leak-cases-exit-on-definite.vgtest leak-cases-exit-on-definite.stderr.exp \
 	leak-cases-full.vgtest leak-cases-full.stderr.exp \
@@ -266,7 +263,7 @@ EXTRA_DIST = \
 	leak-autofreepool-5.stderr.exp-freebsd \
 	leak-tree.vgtest leak-tree.stderr.exp \
 	leak-segv-jmp.vgtest leak-segv-jmp.stderr.exp \
-	lks.vgtest lks.stdout.exp lks.supp lks.stderr.exp \
+	lks.vgtest lks.supp lks.stderr.exp \
 	long_namespace_xml.vgtest long_namespace_xml.stdout.exp \
 	long_namespace_xml.stderr.exp long_namespace_xml.stderr.exp-freebsd \
 	long-supps.vgtest long-supps.stderr.exp long-supps.supp \
@@ -310,18 +307,15 @@ EXTRA_DIST = \
 	nanoleak2.stderr.exp nanoleak2.vgtest \
 	new_nothrow.stderr.exp new_nothrow.vgtest \
 	new_override.stderr.exp new_override.stdout.exp new_override.vgtest \
-	noisy_child.vgtest noisy_child.stderr.exp noisy_child.stdout.exp \
+	noisy_child.vgtest noisy_child.stderr.exp \
 	null_socket.stderr.exp null_socket.vgtest \
-	origin1-yes.vgtest origin1-yes.stdout.exp origin1-yes.stderr.exp \
+	origin1-yes.vgtest origin1-yes.stderr.exp \
 		origin1-yes.stderr.exp-freebsd \
-	origin2-not-quite.vgtest origin2-not-quite.stdout.exp \
-	origin2-not-quite.stderr.exp \
+	origin2-not-quite.vgtest origin2-not-quite.stderr.exp \
 		origin2-not-quite.stderr.exp-freebsd \
-	origin3-no.vgtest origin3-no.stdout.exp \
+	origin3-no.vgtest origin3-no.stderr.exp \
 		origin3-no.stderr.exp-freebsd \
-	origin3-no.stderr.exp \
-	origin4-many.vgtest origin4-many.stdout.exp \
-	origin4-many.stderr.exp \
+	origin4-many.vgtest origin4-many.stderr.exp \
 	origin5-bz2.vgtest origin5-bz2.stdout.exp \
 	origin5-bz2.stderr.exp-glibc25-x86 \
 	origin5-bz2.stderr.exp-glibc25-amd64 \
@@ -332,7 +326,7 @@ EXTRA_DIST = \
 	origin5-bz2.stderr.exp-glibc234-s390x \
 	origin5-bz2.stderr.exp-glibc218-mips32 \
 	origin5-bz2.stderr.exp-glibc236-arm \
-	origin6-fp.vgtest origin6-fp.stdout.exp \
+	origin6-fp.vgtest \
 	origin6-fp.stderr.exp-glibc25-amd64 \
 	origin6-fp.stderr.exp-glibc27-ppc64 \
 	overlap.stderr.exp overlap.stdout.exp overlap.vgtest \
@@ -373,12 +367,10 @@ EXTRA_DIST = \
 	realloc_size_zero_yes.stderr.exp realloc_size_zero_yes.stdout.exp \
 		realloc_size_zero_yes.vgtest \
 	realloc_size_zero_again_yes.stderr.exp \
-		realloc_size_zero_again_yes.stdout.exp \
 		realloc_size_zero_again_yes.vgtest \
 	realloc_size_zero_no.stderr.exp realloc_size_zero_no.stdout.exp \
 		realloc_size_zero_no.vgtest \
 	realloc_size_zero_again_no.stderr.exp \
-		realloc_size_zero_again_no.stdout.exp \
 		realloc_size_zero_again_no.vgtest \
 	realloc_size_zero_off.stderr.exp realloc_size_zero_off.stdout.exp \
 		realloc_size_zero_off.vgtest \
@@ -409,7 +401,7 @@ EXTRA_DIST = \
 	sigprocmask.stderr.exp sigprocmask.stderr.exp2 sigprocmask.vgtest \
 	sized_delete.stderr.exp sized_delete.stderr.exp-x86 sized_delete.vgtest \
 	static_malloc.stderr.exp static_malloc.vgtest \
-	stpncpy.vgtest stpncpy.stderr.exp stpncpy.stdout.exp \
+	stpncpy.vgtest stpncpy.stderr.exp \
 	strchr.stderr.exp strchr.stderr.exp2 strchr.stderr.exp3 strchr.vgtest \
 	str_tester.stderr.exp str_tester.vgtest \
 	supp-dir.vgtest supp-dir.stderr.exp \
@@ -421,15 +413,15 @@ EXTRA_DIST = \
 	suppfree.stderr.exp suppfree.supp suppfree.vgtest \
 	suppfreecollision.stderr.exp suppfreecollision.supp suppfreecollision.vgtest \
 	supponlyobj.stderr.exp supponlyobj.supp supponlyobj.vgtest \
-	suppsrc_lineno.stderr.exp suppsrc_lineno.stdout.exp suppsrc_lineno.vgtest \
+	suppsrc_lineno.stderr.exp suppsrc_lineno.vgtest \
 	suppsrc_lineno.supp \
-	suppsrc_sanlineno.stderr.exp suppsrc_sanlineno.stdout.exp suppsrc_sanlineno.vgtest \
+	suppsrc_sanlineno.stderr.exp suppsrc_sanlineno.vgtest \
 	suppsrc_sanlineno.supp \
 	suppvarinfo5.stderr.exp suppvarinfo5.supp suppvarinfo5.vgtest \
-	test-plo-no.vgtest test-plo-no.stdout.exp \
+	test-plo-no.vgtest \
 	    test-plo-no.stderr.exp-le64 test-plo-no.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-le32-freebsd test-plo-no.stderr.exp-le64-freebsd \
-	test-plo-yes.vgtest test-plo-yes.stdout.exp \
+	test-plo-yes.vgtest \
 	    test-plo-yes.stderr.exp-le64 test-plo-yes.stderr.exp-le32 \
 	    test-plo-no.stderr.exp-s390x-mvc \
 	thread_alloca.stderr.exp thread_alloca.vgtest \
@@ -439,18 +431,18 @@ EXTRA_DIST = \
 	undef_malloc_args.stderr.exp undef_malloc_args.vgtest \
 	unit_libcbase.stderr.exp unit_libcbase.vgtest \
 	unit_oset.stderr.exp unit_oset.stdout.exp unit_oset.vgtest \
-	varinfo1.vgtest varinfo1.stdout.exp varinfo1.stderr.exp \
+	varinfo1.vgtest varinfo1.stderr.exp \
 		varinfo1.stderr.exp-ppc64 \
 		varinfo1.stderr.exp-freebsd \
-	varinfo2.vgtest varinfo2.stdout.exp varinfo2.stderr.exp \
+	varinfo2.vgtest varinfo2.stderr.exp \
 		varinfo2.stderr.exp-ppc64 \
-	varinfo3.vgtest varinfo3.stdout.exp varinfo3.stderr.exp \
+	varinfo3.vgtest varinfo3.stderr.exp \
 		varinfo3.stderr.exp-ppc64 \
 		varinfo3.stderr.exp-freebsd \
 	varinfo4.vgtest varinfo4.stdout.exp varinfo4.stderr.exp \
 		varinfo4.stderr.exp-ppc64 \
 		varinfo4.stderr.exp-freebsd \
-	varinfo5.vgtest varinfo5.stdout.exp varinfo5.stderr.exp \
+	varinfo5.vgtest varinfo5.stderr.exp \
 		varinfo5.stderr.exp-ppc64 \
 		varinfo5.stderr.exp-freebsd \
 		varinfo5.stderr.exp-freebsd2 \
@@ -464,7 +456,7 @@ EXTRA_DIST = \
 	vcpu_fnfns.stdout.exp-illumos \
 	vcpu_fnfns.stderr.exp vcpu_fnfns.vgtest \
 	wcpncpy1.stderr.exp wcpncpy1.vgtest \
-	wcs.vgtest wcs.stderr.exp wcs.stdout.exp \
+	wcs.vgtest wcs.stderr.exp \
 	wcscat.vgtest wcscat.stderr.exp wcscat.stdout.exp \
 	wcsncpy.vgtest wcsncpy.stderr.exp \
 	wmemcmp.vgtest wmemcmp.stderr.exp \
@@ -497,7 +489,7 @@ check_PROGRAMS = \
 	bug287260 \
 	bug340392 \
 	bug401284 \
- 	bug445235_ada_demangle \
+	bug445235_ada_demangle \
 	bug464969_d_demangle \
 	bug472219 \
 	calloc-overflow \

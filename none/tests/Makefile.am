@@ -139,9 +139,9 @@ EXTRA_DIST = \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp \
 	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 \
 	exec-sigmask.stdout.exp-solaris exec-sigmask.stderr.exp \
-	execve.vgtest execve.stdout.exp execve.stderr.exp \
+	execve.vgtest execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
-	fcntl_setown.vgtest fcntl_setown.stdout.exp fcntl_setown.stderr.exp \
+	fcntl_setown.vgtest fcntl_setown.stderr.exp \
 	fdleak_cat.vgtest fdleak_cat.stderr.exp \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_cmsg_xml.stderr.exp-ppc64le \
@@ -182,8 +182,7 @@ EXTRA_DIST = \
 	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
-	mmap_fcntl_bug.vgtest mmap_fcntl_bug.stdout.exp \
-		mmap_fcntl_bug.stderr.exp \
+	mmap_fcntl_bug.vgtest mmap_fcntl_bug.stderr.exp \
 	mmap_o_direct.stderr.exp mmap_o_direct.vgtest \
 	mq.stderr.exp mq.vgtest \
 	munmap_exe.stderr.exp munmap_exe.vgtest \
@@ -193,16 +192,15 @@ EXTRA_DIST = \
 	nodir.stderr.exp nodir.vgtest \
 		nodir.stderr.exp-freebsd \
 	pending.stdout.exp pending.stderr.exp pending.vgtest \
-	ppoll_alarm.stdout.exp ppoll_alarm.stderr.exp ppoll_alarm.vgtest \
+	ppoll_alarm.stderr.exp ppoll_alarm.vgtest \
 	procfs-linux.stderr.exp-with-readlinkat \
 	procfs-linux.stderr.exp-without-readlinkat \
 	procfs-linux.vgtest \
 	procfs-non-linux.vgtest \
 	procfs-non-linux.stderr.exp-with-readlinkat \
 	procfs-non-linux.stderr.exp-without-readlinkat \
-	pselect_alarm.stdout.exp pselect_alarm.stderr.exp pselect_alarm.vgtest \
-	pselect_sigmask_null.vgtest \
-	pselect_sigmask_null.stdout.exp pselect_sigmask_null.stderr.exp \
+	pselect_alarm.stderr.exp pselect_alarm.vgtest \
+	pselect_sigmask_null.vgtest pselect_sigmask_null.stderr.exp \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
 	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
@@ -235,19 +233,19 @@ EXTRA_DIST = \
 	require-text-symbol-3.vgtest require-text-symbol-3.stderr.exp \
 	res_search.stderr.exp res_search.stdout.exp res_search.vgtest \
 	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
-	rlimit_nofile.stderr.exp rlimit_nofile.stdout.exp rlimit_nofile.vgtest \
-	rlimit64_nofile.stderr.exp rlimit64_nofile.stdout.exp rlimit64_nofile.vgtest \
+	rlimit_nofile.stderr.exp rlimit_nofile.vgtest \
+	rlimit64_nofile.stderr.exp rlimit64_nofile.vgtest \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
-	sem.stderr.exp sem.stdout.exp sem.vgtest \
-	semlimit.stderr.exp semlimit.stdout.exp semlimit.vgtest \
+	sem.stderr.exp sem.vgtest \
+	semlimit.stderr.exp semlimit.vgtest \
 	sha1_test.stderr.exp sha1_test.vgtest \
 	shortpush.stderr.exp shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
 	sigstackgrowth.stdout.exp sigstackgrowth.stderr.exp sigstackgrowth.vgtest \
 	sigsusp.stderr.exp sigsusp.vgtest \
 	stackgrowth.stdout.exp stackgrowth.stderr.exp stackgrowth.vgtest \
-	syscall-restart1.vgtest syscall-restart1.stdout.exp syscall-restart1.stderr.exp \
-	syscall-restart2.vgtest syscall-restart2.stdout.exp syscall-restart2.stderr.exp \
+	syscall-restart1.vgtest syscall-restart1.stderr.exp \
+	syscall-restart2.vgtest syscall-restart2.stderr.exp \
 	syslog.vgtest syslog.stderr.exp \
 	system.stderr.exp system.vgtest \
 	thread-exits.stderr.exp thread-exits.stdout.exp thread-exits.vgtest \
@@ -275,8 +273,7 @@ EXTRA_DIST = \
 	xml-track-fds.stderr.exp xml-track-fds.vgtest \
 	fdbaduse.stderr.exp fdbaduse.vgtest \
 	use_after_close.stderr.exp use_after_close.vgtest \
-	track_new.stderr.exp track_new.stdout.exp \
-	track_new.vgtest track_new.stderr.exp-illumos \
+	track_new.stderr.exp track_new.vgtest track_new.stderr.exp-illumos \
 	track_yes.vgtest track_high.vgtest \
 	track_yes.stderr.exp track_high.stderr.exp \
 	track_bad.vgtest track_bad.stderr.exp

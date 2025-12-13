@@ -115,7 +115,6 @@ EXTRA_DIST = \
 	sctp.stdout.exp \
 	sctp2.vgtest \
 	sctp2.stderr.exp \
-	sctp2.stdout.exp \
 	setcred.vgtest \
 	setcred.stderr.exp \
 	setproctitle.vgtest \

@@ -296,7 +296,7 @@ typedef uint32_t vki_u32;
 #define vki_cmsghdr cmsghdr
 
 
-#define VKI_CMSG_ALIGN(a) 	ALIGN(a)
+#define VKI_CMSG_ALIGN(a) 	__DARWIN_ALIGN32(a)
 #define	VKI_CMSG_DATA(cmsg)	CMSG_DATA(cmsg)
 #define	VKI_CMSG_FIRSTHDR(mhdr)	CMSG_FIRSTHDR(mhdr)
 #define	VKI_CMSG_NXTHDR(mhdr, cmsg)	CMSG_NXTHDR(mhdr, cmsg)

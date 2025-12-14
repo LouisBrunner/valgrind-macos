@@ -30,6 +30,8 @@ endif
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
+		 cksm \
+		 flogr \
 		 op00
 
 noinst_HEADERS = add.h and.h div.h dfp_utils.h insert.h mul.h opcodes.h \

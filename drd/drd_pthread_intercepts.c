@@ -202,6 +202,13 @@ ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBPTHREAD_SONAME,zf) argl_decl         \
    { return implf argl; }
 #endif
 
+#if defined(VGO_darwin)
+#define LIBC_FUNC(ret_ty, zf, implf, argl_decl, argl)                    \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBSYSTEM_KERNEL_SONAME,zf) argl_decl;           \
+   ret_ty VG_WRAP_FUNCTION_ZZ(VG_Z_LIBSYSTEM_KERNEL_SONAME,zf) argl_decl            \
+   { return implf argl; }
+#endif
+
 /**
  * Macro for generating three Valgrind interception functions: one with the
  * Z-encoded name zf, one with ZAZa ("@*") appended to the name zf and one
@@ -1491,7 +1498,7 @@ int sem_init_intercept(sem_t *sem, int pshared, unsigned int value)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZuinit, sem_init_intercept,
           (sem_t *sem, int pshared, unsigned int value), (sem, pshared, value));
 #else
@@ -1534,7 +1541,7 @@ int sem_destroy_intercept(sem_t *sem)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
 #else
 PTH_FUNCS(int, semZudestroy, sem_destroy_intercept, (sem_t *sem), (sem));
@@ -1570,7 +1577,7 @@ sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(sem_t *, semZuopen, sem_open_intercept,
           (const char *name, int oflag, mode_t mode, unsigned int value),
           (name, oflag, mode, value));
@@ -1593,7 +1600,7 @@ static __always_inline int sem_close_intercept(sem_t *sem)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZuclose, sem_close_intercept, (sem_t *sem), (sem));
 #else
 PTH_FUNCS(int, semZuclose, sem_close_intercept, (sem_t *sem), (sem));
@@ -1612,7 +1619,7 @@ static __always_inline int sem_wait_intercept(sem_t *sem)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
 #else
 PTH_FUNCS(int, semZuwait, sem_wait_intercept, (sem_t *sem), (sem));
@@ -1635,7 +1642,7 @@ static __always_inline int sem_trywait_intercept(sem_t *sem)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
 #else
 PTH_FUNCS(int, semZutrywait, sem_trywait_intercept, (sem_t *sem), (sem));
@@ -1658,7 +1665,7 @@ int sem_timedwait_intercept(sem_t *sem, const struct timespec *abs_timeout)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZutimedwait, sem_timedwait_intercept,
           (sem_t *sem, const struct timespec *abs_timeout),
           (sem, abs_timeout));
@@ -1711,7 +1718,7 @@ static __always_inline int sem_post_intercept(sem_t *sem)
    return ret;
 }
 
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));
 #else
 PTH_FUNCS(int, semZupost, sem_post_intercept, (sem_t *sem), (sem));

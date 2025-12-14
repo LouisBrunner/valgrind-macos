@@ -3118,6 +3118,7 @@ static int sem_init_WRK(sem_t* sem, int pshared, unsigned long value)
       return sem_init_WRK(sem, pshared, value);
    }
 #elif defined(VGO_darwin)
+// exists but fails with ENOSYS function not implemented
    LIBC_FUNC(int, semZuinit, // sem_init
                  sem_t* sem, int pshared, unsigned long value) {
       return sem_init_WRK(sem, pshared, value);
@@ -3206,6 +3207,7 @@ static int sem_destroy_WRK(sem_t* sem)
       return sem_destroy_WRK(sem);
    }
 #elif defined(VGO_darwin)
+// exists but fails with ENOSYS function not implemented
    LIBC_FUNC(int, semZudestroy,  // sem_destroy
                  sem_t* sem) {
       return sem_destroy_WRK(sem);
@@ -3274,6 +3276,7 @@ static int sem_wait_WRK(sem_t* sem)
       return sem_wait_WRK(sem);
    }
 #elif defined(VGO_darwin)
+// exists but fails with EBADF bad file number
    LIBC_FUNC(int, semZuwait, sem_t* sem) { /* sem_wait */
       return sem_wait_WRK(sem);
    }

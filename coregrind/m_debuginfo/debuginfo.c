@@ -555,9 +555,26 @@ static Bool ranges_overlap (Addr s1, SizeT len1, Addr s2, SizeT len2 )
 /* Do the basic mappings of the two DebugInfos overlap in any way? */
 static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
 {
-   Word i, j;
    vg_assert(di1);
    vg_assert(di2);
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_10_15
+   // FIXME: This is probably wrong but the other methods returns too many false positives
+   // as it doesn't account for munmap being called on one of these maps.
+   // dyld will mmap and then munmap every library ro_map at the same address thus every library shows
+   // an overlap and only the last is retained, making most debug UNKNOW_FUNCTION UNKNOWN_OBJECT.
+   // Seeing how discard_syms_in_range relies exclusively on text_* to check conflicts, let's do the same here
+
+   // Sanity check needed by discard_DebugInfos_which_overlap_with
+   if (di1 == di2) {
+     return True;
+   }
+   if (!di1->text_present || !di2->text_present) {
+     return False;
+   }
+   return ranges_overlap(di1->text_avma, di1->text_size, di2->text_avma, di2->text_size);
+#else
+   Word i, j;
+
    for (i = 0; i < VG_(sizeXA)(di1->fsm.maps); i++) {
       const DebugInfoMapping* map1 = VG_(indexXA)(di1->fsm.maps, i);
       for (j = 0; j < VG_(sizeXA)(di2->fsm.maps); j++) {
@@ -569,6 +586,7 @@ static Bool do_DebugInfos_overlap ( const DebugInfo* di1, const DebugInfo* di2 )
    }
 
    return False;
+#endif
 }
 
 

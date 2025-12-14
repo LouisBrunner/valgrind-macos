@@ -8,5 +8,7 @@ vgopts: --ignore-fn=call_init --ignore-fn=pool
 vgopts: --ignore-fn="allocBuckets(void*, unsigned int)" --ignore-fn=map_images_nolock --ignore-fn="realizeClass(objc_class*)" --ignore-fn=_NXHashRehashToCapacity --ignore-fn=NXCreateHashTableFromZone --ignore-fn=NXCreateMapTableFromZone --ignore-fn=NXHashInsert --ignore-fn=add_class_to_loadable_list --ignore-fn=class_createInstance --ignore-fn=_xpc_malloc
 # Darwin ignore functions, for macOS 10.14
 vgopts: --ignore-fn="_NXMapRehash(_NXMapTable*)" --ignore-fn=arc4_init --ignore-fn="realizeClassWithoutSwift(objc_class*)"
+# Darwin ignore functions, for macOS 10.15
+vgopts: --ignore-fn=_objc_init --ignore-fn-"objc::DenseMap<char const*, objc::detail::DenseSetEmpty, objc::DenseMapValueInfo<objc::detail::DenseSetEmpty>, objc::DenseMapInfo<char const*>, objc::detail::DenseSetPair<char const*> >::grow(unsigned int)" --ignore-fn="objc::DenseMap<char const*, objc::detail::DenseSetEmpty, objc::DenseMapValueInfo<objc::detail::DenseSetEmpty>, objc::DenseMapInfo<char const*>, objc::detail::DenseSetPair<char const*> >::grow(unsigned int)" --ignore-fn="realizeClassWithoutSwift(objc_class*, objc_class*)" --ignore-fn="schedule_class_load(objc_class*)" --ignore-fn="objc::SafeRanges::add(unsigned long, unsigned long)"
 post: perl ../../massif/ms_print massif.out | sed 's/gcc[0-9]*/gcc/' | ./filter_new_aligned | ./filter_ignore_fn
 cleanup: rm massif.out

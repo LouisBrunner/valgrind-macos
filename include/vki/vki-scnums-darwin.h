@@ -218,6 +218,11 @@
 #define __NR_host_create_mach_voucher_trap    VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)
 #endif
 
+#if DARWIN_VERS >= DARWIN_10_15
+#define __NR_kernelrpc_mach_port_type_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)
+#define __NR_kernelrpc_mach_port_request_notification_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)
+#endif
+
 #define __NR_mach_voucher_extract_attr_recipe_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(72)
 
 #define __NR_mach_timebase_info               VG_DARWIN_SYSCALL_CONSTRUCT_MACH(89)
@@ -858,6 +863,12 @@
 #define	__NR_kqueue_workloop_ctl    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(530)
 #define	__NR___mach_bridge_remote_time VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(531)
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
+
+#if DARWIN_VERS >= DARWIN_10_15
+#define __NR_coalition_ledger               VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(532)
+#define __NR_log_data                       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(533)
+#define __NR_memorystatus_available_memory  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
+#endif
 
 #define __NR_darwin_fake_sigreturn  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(1000)
 

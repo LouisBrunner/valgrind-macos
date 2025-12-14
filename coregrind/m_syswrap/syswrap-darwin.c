@@ -1780,6 +1780,9 @@ static const HChar *name_for_fcntl(UWord cmd) {
 #     if DARWIN_VERS >= DARWIN_10_14
       F(F_CHECK_LV);
 #     endif
+#     if DARWIN_VERS >= DARWIN_10_15
+      F(F_SPECULATIVE_READ);
+#     endif
    default:
       return "UNKNOWN";
    }
@@ -1982,6 +1985,29 @@ PRE(fcntl)
    case VKI_F_CHECK_LV: /* Check if Library Validation allows this Mach-O file to be
                            mapped into the calling process */
       // FIXME: Dejan
+      break;
+#  endif
+
+#  if DARWIN_VERS >= DARWIN_10_15
+   case VKI_F_SPECULATIVE_READ: /* Synchronous advisory read fcntl for regular and compressed file */
+      PRINT("fcntl ( %lu, %s, %#lx )", ARG1, name_for_fcntl(ARG2), ARG3);
+      PRE_REG_READ3(long, "fcntl",
+                    unsigned int, fd, unsigned int, cmd,
+                    fspecread_t *, args);
+
+      {
+        fspecread_t *fspecread = (fspecread_t *)ARG3;
+        PRE_FIELD_READ( "fcntl(VKI_F_SPECULATIVE_READ, fspecread->fsr_flags)",
+                         fspecread->fsr_flags);
+        PRE_FIELD_READ( "fcntl(VKI_F_SPECULATIVE_READ, fspecread->fsr_offset)",
+                        fspecread->fsr_offset);
+        PRE_FIELD_READ( "fcntl(VKI_F_SPECULATIVE_READ, fspecread->fsr_length)",
+                        fspecread->fsr_length);
+
+        if (fspecread->fsr_offset < 0 || fspecread->fsr_length < 0) {
+          SET_STATUS_Failure( VKI_EINVAL );
+        }
+      }
       break;
 #  endif
 
@@ -3399,8 +3425,13 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_CMN_OWNERID,         sizeof(uid_t) },
       { ATTR_CMN_GRPID,           sizeof(gid_t) },
       { ATTR_CMN_ACCESSMASK,      sizeof(uint32_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMN_GEN_COUNT,       sizeof(uint32_t) },
+      { ATTR_CMN_DOCUMENT_ID,     sizeof(uint32_t) },
+#else
       { ATTR_CMN_NAMEDATTRCOUNT,  sizeof(uint32_t) },
       { ATTR_CMN_NAMEDATTRLIST,   -1 },
+#endif
       { ATTR_CMN_FLAGS,           sizeof(uint32_t) },
       { ATTR_CMN_USERACCESS,      sizeof(uint32_t) },
       { ATTR_CMN_EXTENDED_SECURITY, -1 },
@@ -3413,6 +3444,10 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #endif
 #if DARWIN_VERS >= DARWIN_10_8
       { ATTR_CMN_ADDEDTIME,       -1 },
+#endif
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMN_ERROR,           sizeof(uint32_t) },
+      { ATTR_CMN_DATA_PROTECT_FLAGS, sizeof(uint32_t) },
 #endif
       { 0,                        0 }
    };
@@ -3440,6 +3475,10 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
 #if DARWIN_VERS >= DARWIN_10_6
       { ATTR_VOL_UUID,            sizeof(uuid_t) }, 
 #endif
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_VOL_QUOTA_SIZE,      sizeof(off_t) },
+      { ATTR_VOL_RESERVED_SIZE,   sizeof(off_t) },
+#endif
       { ATTR_VOL_ATTRIBUTES,      sizeof(vol_attributes_attr_t) },
       { 0,                        0 }
    };
@@ -3448,6 +3487,11 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_DIR_LINKCOUNT,       sizeof(uint32_t) },
       { ATTR_DIR_ENTRYCOUNT,      sizeof(uint32_t) },
       { ATTR_DIR_MOUNTSTATUS,     sizeof(uint32_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_DIR_ALLOCSIZE,       sizeof(off_t) },
+      { ATTR_DIR_IOBLOCKSIZE,     sizeof(uint32_t) },
+      { ATTR_DIR_DATALENGTH,      sizeof(off_t) },
+#endif
       { 0,                        0 }
    };
    static const attrspec fileattr[] = {
@@ -3473,6 +3517,16 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       // This order is important.
       { ATTR_FORK_TOTALSIZE,      sizeof(off_t) },
       { ATTR_FORK_ALLOCSIZE,      sizeof(off_t) },
+#if DARWIN_VERS >= DARWIN_10_15
+      { ATTR_CMNEXT_RELPATH,      sizeof(struct attrreference) },
+      { ATTR_CMNEXT_PRIVATESIZE,  sizeof(off_t) },
+      { ATTR_CMNEXT_LINKID,       sizeof(uint64_t) },
+      { ATTR_CMNEXT_NOFIRMLINKPATH,  sizeof(struct attrreference) },
+      { ATTR_CMNEXT_REALDEVID,    sizeof(uint32_t) },
+      { ATTR_CMNEXT_REALFSID,     sizeof(fsid_t) },
+      { ATTR_CMNEXT_CLONEID,      sizeof(uint64_t) },
+      { ATTR_CMNEXT_EXT_FLAGS,    sizeof(uint64_t) },
+#endif
       { 0,                        0 }
    };
 
@@ -8643,6 +8697,12 @@ PRE(mach_msg_task)
       CALL_PRE(mach_vm_purgable_control);
       return;
 
+#if DARWIN_VERS >= DARWIN_10_15
+   case 8000:
+      CALL_PRE(task_restartable_ranges_register);
+      return;
+#endif
+
    default:
       // unknown message to task self
       log_decaying("UNKNOWN task message [id %d, to %s, reply 0x%x]",
@@ -10949,6 +11009,79 @@ PRE(kernelrpc_mach_port_get_attributes_trap)
   }
 }
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
+
+
+/* ---------------------------------------------------------------------
+ Added for macOS 10.15 (Catalina)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_10_15
+
+PRE(task_restartable_ranges_register)
+{
+   PRINT("task_restartable_ranges_register(%s, %#lx, %ld)", name_for_port(ARG1), ARG2, SARG3);
+}
+
+POST(task_restartable_ranges_register)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;
+
+   if (!reply->RetCode) {
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
+
+PRE(kernelrpc_mach_port_request_notification_trap)
+{
+  PRINT("kernelrpc_mach_port_request_notification_trap(%s, %s, %ld, %ld, %s, %ld, %#lx)",
+         name_for_port(ARG1), name_for_port(ARG2), SARG3, SARG4, name_for_port(ARG5), SARG6, ARG7);
+  PRE_REG_READ7(kern_return_t, "kernelrpc_mach_port_request_notification_trap",
+    ipc_space_t, task, mach_port_name_t, name, mach_msg_id_t, msgid,
+	  mach_port_mscount_t, sync, mach_port_name_t, notify, mach_msg_type_name_t, notifyPoly,
+	  mach_port_name_t*, previous);
+  if (ARG7 != 0) {
+    PRE_MEM_WRITE("kernelrpc_mach_port_request_notification_trap(previous)", ARG7, sizeof(mach_port_name_t));
+  }
+}
+
+POST(kernelrpc_mach_port_request_notification_trap)
+{
+  if (RES == 0 && ARG7 != 0) {
+    POST_MEM_WRITE(ARG7, sizeof(mach_port_name_t));
+    PRINT("-> previous:%s", name_for_port(*(mach_port_name_t*)ARG7));
+  }
+}
+
+PRE(kernelrpc_mach_port_type_trap)
+{
+  PRINT("kernelrpc_mach_port_type_trap(%s, %s, %#lx)",
+         name_for_port(ARG1), name_for_port(ARG2), ARG3);
+  PRE_REG_READ3(kern_return_t, "kernelrpc_mach_port_type_trap",
+    ipc_space_t, task, mach_port_name_t, name, mach_port_type_t*, ptype);
+  if (ARG3 != 0) {
+    PRE_MEM_WRITE("kernelrpc_mach_port_type_trap(ptype)", ARG3, sizeof(mach_port_type_t));
+  }
+}
+
+POST(kernelrpc_mach_port_type_trap)
+{
+  if (RES == 0 && ARG3 != 0) {
+    POST_MEM_WRITE(ARG3, sizeof(mach_port_type_t));
+    PRINT("-> ptype:%#x", *(mach_port_type_t*)ARG3);
+  }
+}
+
+#endif /* DARWIN_VERS >= DARWIN_10_15 */
+
 /* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
@@ -11576,7 +11709,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_kqueue_workloop_ctl),                     // 530
 // _____(__NR___mach_bridge_remote_time),               // 531
 #endif
-
+#if DARWIN_VERS >= DARWIN_10_15
+// _____(__NR_coalition_ledger),                        // 532
+// _____(__NR_log_data),                                // 533
+// _____(__NR_memorystatus_available_memory),           // 534
+#endif
    MACX_(__NR_darwin_fake_sigreturn, fake_sigreturn)
 };
 
@@ -11744,8 +11881,13 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(73)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(74)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(75)),
+#if DARWIN_VERS >= DARWIN_10_15
+   MACXY(__NR_kernelrpc_mach_port_type_trap, kernelrpc_mach_port_type_trap),
+   MACXY(__NR_kernelrpc_mach_port_request_notification_trap, kernelrpc_mach_port_request_notification_trap),
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(77)),
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(78)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(79)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(80)),   // -80

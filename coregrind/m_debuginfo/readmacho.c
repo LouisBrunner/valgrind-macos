@@ -92,8 +92,8 @@ static Int count_rw_loads(const struct load_command* macho_load_commands, unsign
       if (lc->cmd == LC_SEGMENT_CMD) {
         const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
         if (sc->initprot == 3 && sc->filesize
-#if DARWIN_VERS >= DARWIN_13_00
-// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 13 and later (not sure when that started)
+#if DARWIN_VERS >= DARWIN_10_15
+// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 10.15
 // so we ignore it otherwise some binaries don't get symbols
             && VG_(strcmp)(sc->segname, "__DATA_CONST") != 0
 #endif
@@ -1010,7 +1010,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->data_present = True;
                di->data_svma = (Addr)seg.vmaddr;
                di->data_avma = rw_map->avma;
-#if defined(VGA_arm64)
+#if defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_10_15)
                // FIXME: the same mmap contains both __DATA_CONST, __DATA and __DATA_DIRTY
                // this means that symbols in __DATA/__DATA_DIRTY are offset by the size of __DATA_CONST
                // not sure when this started to be an issue so I am going to gate this under arm64 for now

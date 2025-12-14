@@ -432,6 +432,7 @@ COREGRIND_SOURCES_COMMON = \
 	m_mach/mach_msg.c \
 	m_mach/mach_traps-x86-darwin.S \
 	m_mach/mach_traps-amd64-darwin.S \
+	m_mach/mig_strncpy.c \
 	m_replacemalloc/replacemalloc_core.c \
 	m_scheduler/sched-lock.c \
 	m_scheduler/sched-lock-generic.c \

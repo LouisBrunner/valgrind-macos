@@ -54,21 +54,9 @@
 {
    OSX1013:6-Leak
    Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc_zone_?alloc
+   match-leak-kinds: all
    ...
    fun:map_images_nolock
-   fun:map_2_images
-}
-
-{
-   OSX1013:7-Leak
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:malloc_zone_?alloc
-   ...
-   fun:map_images_nolock
-   fun:map_2_images
 }
 
 {
@@ -741,33 +729,17 @@
 }
 
 {
-   OSX1013:map_images-2
-   Memcheck:Leak
-   match-leak-kinds: possible
-   fun:calloc
-   fun:map_images_nolock
-   fun:map_images
-}
-
-{
    OSX1013:map_images-3
    Memcheck:Leak
    match-leak-kinds: definite
    fun:calloc
    fun:_ZL12realizeClassP10objc_class
 }
-{
-   OSX1013:map_images-4
-   Memcheck:Leak
-   match-leak-kinds: indirect
-   fun:malloc_zone_malloc
-   ...
-   fun:map_images_nolock
-}
+
 {
    OSX1013:map_images-5
    Memcheck:Leak
-   match-leak-kinds: indirect
+   match-leak-kinds: all
    fun:malloc_zone_calloc
    fun:*NXHash*
 }
@@ -807,3 +779,12 @@
    fun:malloc_zone_calloc
    fun:_NXHashRehashToCapacity
 }
+
+# I suppose that this is deliberate
+# and that Apple know what they are doing?
+{
+   masOS1015:__chkstk_darwin_probe
+   Memcheck:Addr8
+   fun:__chkstk_darwin_probe
+}
+

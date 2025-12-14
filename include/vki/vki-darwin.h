@@ -411,6 +411,9 @@ typedef uint32_t vki_u32;
 #if DARWIN_VERS >= DARWIN_10_14
 # define VKI_F_CHECK_LV                  F_CHECK_LV
 #endif
+#if DARWIN_VERS >= DARWIN_10_15
+# define VKI_F_SPECULATIVE_READ          F_SPECULATIVE_READ
+#endif
 #define VKI_F_FULLFSYNC	F_FULLFSYNC
 #define VKI_F_PATHPKG_CHECK	F_PATHPKG_CHECK
 #define VKI_F_FREEZE_FS	F_FREEZE_FS

@@ -420,3 +420,24 @@
    ...
    fun:_ZN4dyld4loadEPKcRKNS_11LoadContextERj
 }
+
+{
+   macOS1015:_CFInitialize
+   drd:ConflictingAccess
+   ...
+   fun:__CFInitialize
+}
+
+{
+   macOS1015:cache_validate_item
+   drd:ConflictingAccess
+   ...
+   fun:cache_validate_item
+}
+
+{
+   macOS1015:ds_user_byuid
+   drd:ConflictingAccess
+   ...
+   fun:ds_user_byuid
+}

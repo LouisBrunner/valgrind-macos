@@ -170,6 +170,7 @@ EXTRA_DIST = \
 	duplicate_align_size_errors.stderr.exp \
 		duplicate_align_size_errors.stderr.exp-memalign \
 		duplicate_align_size_errors.stderr.exp-darwin \
+		duplicate_align_size_errors.stderr.exp-darwin2 \
 		duplicate_align_size_errors.vgtest \
 	sized_aligned_new_delete_args.stderr.exp \
 		sized_aligned_new_delete_args.vgtest \
@@ -288,6 +289,7 @@ EXTRA_DIST = \
 	memalign_args.vgtest memalign_args.stderr.exp \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-darwin \
+		memalign_args.stderr.exp-darwin2 \
 		memalign_args.stderr.exp-solaris \
 	memccpy1.stderr.exp memccpy1.stdout.exp memccpy1.vgtest \
 	memccpy2.stderr.exp memccpy2.vgtest \

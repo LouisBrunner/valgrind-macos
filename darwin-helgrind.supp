@@ -190,3 +190,29 @@
    ...
    fun:_objc_msgSend_uncached
 }
+
+{
+   macOS1015:NXMapInsert
+   Helgrind:Race
+   fun:NXMapInsert
+}
+
+{
+   macOS1015:notify_monitor_file
+   Helgrind:Race
+   fun:notify_monitor_file
+}
+
+{
+   macOS1015:_xpc_asprintf
+   Helgrind:Race
+   ...
+   fun:_xpc_asprintf
+}
+
+{
+   macOS1015:lookUpImpOrForward
+   Helgrind:Race
+   ...
+   fun:lookUpImpOrForward
+}

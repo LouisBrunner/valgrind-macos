@@ -650,6 +650,11 @@ DECL_TEMPLATE(darwin, abort_with_payload);          // 521
 // NYI kqueue_workloop_ctl                          // 530
 // NYI __mach_bridge_remote_time                    // 531
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
+#if DARWIN_VERS >= DARWIN_10_15
+// NYI coalition_ledger               // 532
+// NYI log_data                       // 533
+// NYI memorystatus_available_memory  // 534
+#endif
 
 // Mach message helpers
 DECL_TEMPLATE(darwin, mach_port_set_context);
@@ -793,6 +798,12 @@ DECL_TEMPLATE(darwin, swtch_pri);
 #if DARWIN_VERS >= DARWIN_10_14
 DECL_TEMPLATE(darwin, kernelrpc_mach_port_get_attributes_trap);
 #endif /* DARWIN_VERS >= DARWIN_10_14 */
+
+#if DARWIN_VERS >= DARWIN_10_15
+DECL_TEMPLATE(darwin, task_restartable_ranges_register);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_type_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_port_request_notification_trap);
+#endif /* DARWIN_VERS >= DARWIN_10_15 */
 
 // Machine-dependent traps
 DECL_TEMPLATE(darwin, thread_fast_set_cthread_self);

@@ -160,7 +160,11 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
    /* Allocate a new space */
    ret = VG_(malloc) ("initimg-darwin.sce.3", 
+#if DARWIN_VERS >= DARWIN_10_15
+                      sizeof(HChar *) * (envc+3+1)); /* 3 new entries + NULL */
+#else
                       sizeof(HChar *) * (envc+2+1)); /* 2 new entries + NULL */
+#endif
 
    /* copy it over */
    for (cpp = ret; *origenv; )
@@ -211,7 +215,10 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
       ret[envc++] = cp;
    }
-   
+#if DARWIN_VERS >= DARWIN_10_15
+   // pthread really wants a non-zero value for ptr_munge
+   ret[envc++] = VG_(strdup)("initimg-darwin.sce.6", "PTHREAD_PTR_MUNGE_TOKEN=0x00000001");
+#endif
 
    /* ret[0 .. envc-1] is live now. */
    /* Find and remove a binding for VALGRIND_LAUNCHER. */

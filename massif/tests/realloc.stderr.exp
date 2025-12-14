@@ -39,6 +39,11 @@ Massif:   15: xpc_array_create
 Massif:   16: _NXMapRehash(_NXMapTable*)
 Massif:   17: arc4_init
 Massif:   18: realizeClassWithoutSwift(objc_class*)
+Massif:   19: _objc_init
+Massif:   20: objc::DenseMap<char const*, objc::detail::DenseSetEmpty, objc::DenseMapValueInfo<objc::detail::DenseSetEmpty>, objc::DenseMapInfo<char const*>, objc::detail::DenseSetPair<char const*> >::grow(unsigned int)
+Massif:   21: realizeClassWithoutSwift(objc_class*, objc_class*)
+Massif:   22: schedule_class_load(objc_class*)
+Massif:   23: objc::SafeRanges::add(unsigned long, unsigned long)
 Massif: startup S.  0 (t:0, hp:0, ex:0, st:0)
 Massif:   alloc S.  1 (t:800, hp:800, ex:0, st:0)
 Massif: realloc S.  2 (t:800, hp:800, ex:0, st:0)

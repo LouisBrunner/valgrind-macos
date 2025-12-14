@@ -267,6 +267,7 @@
 /* Not tested on systems older than OSX 10.13 */
 #define VG_Z_LIBSYSTEM_C_SONAME libsystemZucZddylib
 #define VG_Z_LIBSYSTEM_PLATFORM_SONAME libsystemZuplatformZddylib
+#define VG_Z_LIBSYSTEM_KERNEL_SONAME libsystemZukernelZddylib
 
 #else
 #  error "Unknown platform"

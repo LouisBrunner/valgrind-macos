@@ -45,7 +45,11 @@ int main ( void )
    }
 
    r= my_sem_destroy(sem);
-#if !defined(VGO_darwin)
+#if defined(VGO_darwin)
+   // This outputs "function not implemented" if uncommented
+   //if (r != 0)
+   //   perror("sem_destroy");
+#else
    assert(!r);
 #endif
    return 0;

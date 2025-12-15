@@ -898,7 +898,6 @@
 /memcheck/tests/demangle-rust
 /memcheck/tests/describe-block
 /memcheck/tests/descr_belowsp
-/memcheck/tests/dir
 /memcheck/tests/doublefree
 /memcheck/tests/duplicate_align_size_errors
 /memcheck/tests/dw4

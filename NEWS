@@ -45,6 +45,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 512030  s390x: bfp-convert testcase fails
 512037  malloc trace does not print free size or alignment
 512571  regtest problems with darwin dsymuti
+513257  Add missing syswraps for lsm_list_modules
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

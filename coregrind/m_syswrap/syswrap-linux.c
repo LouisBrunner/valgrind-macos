@@ -4676,6 +4676,28 @@ PRE(sys_lsm_set_self_attr)
    PRE_MEM_READ("lsm_get_self_attr(ctx)", ARG2, ARG3);
 }
 
+PRE(sys_lsm_list_modules)
+{
+   //  * sys_lsm_list_modules - Return a list of the active security modules
+   //  * @ids: the LSM module ids
+   //  * @size: pointer to size of @ids, updated on return
+   //  * @flags: reserved for future use, must be zero
+   // SYSCALL_DEFINE3(lsm_list_modules, u64 __user *, ids, u32 __user *, size,
+   //                 u32, flags)
+   PRINT("sys_lsm_list_modules (  %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %#" FMT_REGWORD "x)", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "lsm_list_modules", __vki_u64 *, ids, __vki_u32 *, size, __vki_u32, flags);
+   PRE_MEM_READ("lsm_list_modules(size)", ARG2, sizeof(__vki_u32));
+   if (ML_(safe_to_deref)((__vki_u32 *)ARG2,sizeof(__vki_u32)))
+      PRE_MEM_READ("lsm_list_modules(ids)", ARG1, *(__vki_u32 *)ARG2);
+}
+
+POST(sys_lsm_list_modules)
+{
+   // No need to POST_MEM_WRITE((Addr)ARG2, sizeof(__vki_u32));
+   // per https://bugs.kde.org/show_bug.cgi?id=513257#c4
+   POST_MEM_WRITE(ARG1, *(__vki_u32 *)ARG2);
+}
+
 PRE(sys_syncfs)
 {
    *flags |= SfMayBlock;

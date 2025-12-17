@@ -1236,7 +1236,7 @@ static const char *opcodes[] = {
    "vpks    v1,v2,v3,m4:{1..3},m5:{0,1}", // no spec. exception for m5
    "vpkls   v1,v2,v3,m4:{1..3},m5:{0,1}", // no spec. exception for m5
    "vperm   v1,v2,v3,v4",
-   "vpdi    v1,v2,v3,m4",
+   "vpdi    v1,v2,v3,m4:{0,1,4,5}",       // no spec. exception for m4
 //   "vrep    v1,v3,i2:u16,m4:{0..3}",
    "vrepi   v1,i2:s16,m3:{0..3}",
    "vscef   v1,d12(v2,b2),m3:{0..3}",

@@ -500,7 +500,7 @@ static void report_and_quit ( const HChar* report,
                           False, // exited_threads
                           startRegsIN);
 
-   if (VG_(debugLog_getLevel) > 0) {
+   if (VG_(debugLog_getLevel)() > 0) {
       VG_(am_show_nsegments) (1, "report_and_quit");
       (void) VG_(am_do_sync_check) ("report_and_quit", __FILE__, __LINE__);
    }

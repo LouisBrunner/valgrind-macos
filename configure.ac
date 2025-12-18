@@ -682,7 +682,7 @@ esac
 # does not support building 32 bit programs
 
 case "$ARCH_MAX-$VGCONF_OS" in
-     amd64-linux|ppc64be-linux|arm64-linux|amd64-solaris)
+     amd64-linux|ppc64be-linux|arm64-linux|amd64-solaris|amd64-darwin|amd64-freebsd)
         AC_MSG_CHECKING([for 32 bit build support])
         safe_CFLAGS=$CFLAGS
         CFLAGS="-m32"

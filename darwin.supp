@@ -783,8 +783,16 @@
 # I suppose that this is deliberate
 # and that Apple know what they are doing?
 {
-   masOS1015:__chkstk_darwin_probe
+   macOS1015:__chkstk_darwin_probe
    Memcheck:Addr8
    fun:__chkstk_darwin_probe
+}
+
+{
+   macOS1015:_mh_execute_header
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_mh_execute_header
 }
 

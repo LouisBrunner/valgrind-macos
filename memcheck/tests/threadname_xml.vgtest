@@ -1,4 +1,4 @@
 prereq: test -e ./threadname && ! ../../tests/os_test illumos
 prog: threadname
 vgopts: --xml=yes --xml-fd=2 --log-file=/dev/null
-stderr_filter: filter_xml
+stderr_filter: filter_xml_leak

@@ -117,18 +117,10 @@
 #include <mach-o/fat.h>
 #include <mach/i386/thread_status.h>
 
-/* Get hold of DARWIN_VERS, and check it has a sane value. */
+/* Check that DARWIN_VERS is defined */
 #include "config.h"
-#if DARWIN_VERS != DARWIN_10_5 && DARWIN_VERS != DARWIN_10_6 \
-    && DARWIN_VERS != DARWIN_10_7 && DARWIN_VERS != DARWIN_10_8 \
-    && DARWIN_VERS != DARWIN_10_9 && DARWIN_VERS != DARWIN_10_10 \
-    && DARWIN_VERS != DARWIN_10_11 && DARWIN_VERS != DARWIN_10_12 \
-    && DARWIN_VERS != DARWIN_10_13 && DARWIN_VERS != DARWIN_10_14 \
-    && DARWIN_VERS != DARWIN_10_15 && DARWIN_VERS != DARWIN_11_00 \
-    && DARWIN_VERS != DARWIN_12_00 && DARWIN_VERS != DARWIN_13_00 \
-    && DARWIN_VERS != DARWIN_14_00 && DARWIN_VERS != DARWIN_15_00 \
-    && DARWIN_VERS != DARWIN_15_04 && DARWIN_VERS != DARWIN_26_00
-#  error "Unknown DARWIN_VERS value.  This file only compiles on Darwin."
+#if !defined(DARWIN_VERS)
+#  error "DARWIN_VERS not defind. This file only compiles on Darwin."
 #endif
 
 
@@ -581,7 +573,7 @@ void modify_macho_loadcmds ( HChar* filename,
    seg__pagezero->vmaddr = 0;
 #  endif
 
-  out:
+  out:   
    if (ii.img)
       unmap_image(&ii);
 }

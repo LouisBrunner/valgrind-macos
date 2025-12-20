@@ -43,12 +43,12 @@
 #include "pub_core_mallocfree.h"
 #include "pub_core_machine.h"
 #include "pub_core_ume.h"
+#include "pub_core_mach.h"
 #include "pub_core_options.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_threadstate.h"     /* ThreadArchState */
 #include "pub_core_pathscan.h"        /* find_executable */
 #include "pub_core_initimg.h"         /* self */
-#include "pub_core_mach.h"
 
 
 /*====================================================================*/
@@ -98,8 +98,13 @@ static void load_client ( /*OUT*/ExeInfo* info,
    Also, remove any binding for VALGRIND_LAUNCHER=.  The client should
    not be able to see this.
 
+   Before macOS 11:
    Also, add DYLD_SHARED_REGION=avoid, because V doesn't know how 
    to process the dyld shared cache file.
+
+   Since macOS 11:
+   Use DYLD_SHARED_REGION=use because system libraries aren't provided outside the cache anymore.
+   This means we need to start processing the dyld shared cache file.
 
    Also, change VYLD_* (mangled by launcher) back to DYLD_*.
 
@@ -111,7 +116,11 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    const HChar* preload_core    = "vgpreload_core";
    const HChar* ld_preload      = "DYLD_INSERT_LIBRARIES=";
    const HChar* dyld_cache      = "DYLD_SHARED_REGION=";
+#if DARWIN_VERS >= DARWIN_11_00
+   const HChar* dyld_cache_value= "use";
+#else
    const HChar* dyld_cache_value= "avoid";
+#endif
    const HChar* v_launcher      = VALGRIND_LAUNCHER "=";
    Int    ld_preload_len  = VG_(strlen)( ld_preload );
    Int    dyld_cache_len  = VG_(strlen)( dyld_cache );
@@ -194,7 +203,7 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
          *cpp = cp;
 
-         ld_preload_done = True;
+         dyld_cache_done = True;
       }
    }
 
@@ -371,7 +380,17 @@ Addr setup_client_stack( void*  init_sp,
    auxsize += 2 * sizeof(HChar **);
    if (info->executable_path) {
        stringsize += 1 + VG_(strlen)(info->executable_path);
+#if SDK_VERS >= SDK_10_14_6
+       stringsize += 16; // executable_path=
+#endif
    }
+
+#if defined(VGA_arm64)
+    // This is required so that dyld can load our dylib specified in DYLD_INSERT_LIBRARIES
+#define EXTRA_APPLE_ARG "arm64e_abi=all"
+    stringsize += VG_(strlen)(EXTRA_APPLE_ARG) + 1;
+    auxsize += sizeof(Word);
+#endif
 
    /* Darwin mach_header */
    if (info->dynamic) auxsize += sizeof(Word);
@@ -387,7 +406,7 @@ Addr setup_client_stack( void*  init_sp,
       auxsize +                               /* auxv */
       VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
 
-   if (0) VG_(printf)("stacksize = %d\n", stacksize);
+   if (0) VG_(printf)("stacksize = %u\n", stacksize);
 
    /* client_SP is the client's stack pointer */
    client_SP = clstack_end + 1 - stacksize;
@@ -409,10 +428,10 @@ Addr setup_client_stack( void*  init_sp,
    VG_(clstk_end)  = clstack_end;
 
    if (0)
-      VG_(printf)("stringsize=%d auxsize=%d stacksize=%d maxsize=0x%x\n"
+      VG_(printf)("stringsize=%u auxsize=%u stacksize=%u maxsize=0x%x\n"
                   "clstack_start %p\n"
                   "clstack_end   %p\n",
-	          stringsize, auxsize, stacksize, (Int)clstack_max_size,
+	          stringsize, auxsize, stacksize, (UInt)clstack_max_size,
                   (void*)clstack_start, (void*)clstack_end);
 
    /* ==================== allocate space ==================== */
@@ -451,11 +470,25 @@ Addr setup_client_stack( void*  init_sp,
       *ptr = (Addr)copy_str(&strtab, *cpp);
    *ptr++ = 0;
 
-   /* --- executable_path + NULL --- */
-   if (info->executable_path) 
+   /* --- executable_path --- */
+   if (info->executable_path) {
+#if SDK_VERS >= SDK_10_14_6
+       Int executable_path_len = VG_(strlen)(info->executable_path) + 16 + 1;
+       HChar *executable_path = VG_(malloc)("initimg-darwin.scs.1", executable_path_len);
+       VG_(snprintf)(executable_path, executable_path_len, "executable_path=%s", info->executable_path);
+       *ptr++ = (Addr)copy_str(&strtab, executable_path);
+       VG_(free)(executable_path);
+#else
       *ptr++ = (Addr)copy_str(&strtab, info->executable_path);
-   else 
-      *ptr++ = 0;
+#endif
+   }
+   // FIXME PJF there was an extra  *ptr++ = 0; in an else here
+   // there is a good chance that executable_path is never NULL so itr was nevwer used
+
+#if defined(VGA_arm64)
+   *ptr++ = (Addr)copy_str(&strtab, EXTRA_APPLE_ARG);
+#endif
+
    *ptr++ = 0;
 
    vg_assert((strtab-stringbase) == stringsize);
@@ -470,7 +503,7 @@ Addr setup_client_stack( void*  init_sp,
       }
       HChar resolved_name[VKI_PATH_MAX];
       VG_(realpath)(exe_name, resolved_name);
-      VG_(resolved_exename) = VG_(strdup)("initimg-darwin.sre.1", resolved_name);
+      VG_(resolved_exename) = VG_(strdup)("initimg-darwin.scs.2", resolved_name);
    }
 
    /* client_SP is pointing at client's argc/argv */
@@ -675,3 +708,4 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

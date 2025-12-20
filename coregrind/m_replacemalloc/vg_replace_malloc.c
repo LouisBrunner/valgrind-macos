@@ -455,6 +455,19 @@ extern int * __error(void) __attribute__((weak));
  ALLOC_or_NULL(SO_SYN_MALLOC,         malloc,      malloc);
  ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME,  malloc_zone_malloc, malloc);
  ZONEALLOC_or_NULL(SO_SYN_MALLOC,     malloc_zone_malloc, malloc);
+#if DARWIN_VERS >= DARWIN_15_00
+#if defined(VGA_arm64)
+ // on arm64, malloc_type_malloc is used for malloc, new and new[]
+ // __typed_operator_new_impl[abi:ne180100]@libc++abi.dylib calls it for new and new[]
+ // all other usages (Swift, ObjC, C) it calls it for malloc
+ // this matters as we need to put the right tag in the allocation
+ // otherwise the tool might report a mismatch between allocation func and free func
+ TYPE_ALLOC_or_NULL(VG_Z_LIBC_SONAME, malloc_type_malloc);
+#else
+ ALLOC_or_NULL(VG_Z_LIBC_SONAME,      malloc_type_malloc,      malloc);
+#endif
+ ZONEALLOC_or_NULL(VG_Z_LIBC_SONAME,  malloc_type_zone_malloc, malloc);
+#endif
 
 #elif defined(VGO_solaris)
  ALLOC_or_NULL(VG_Z_LIBSTDCXX_SONAME, malloc,      malloc);
@@ -943,6 +956,8 @@ extern int * __error(void) __attribute__((weak));
 #elif defined(VGO_darwin)
  FREE(VG_Z_LIBC_SONAME,       free,                 free );
  FREE(SO_SYN_MALLOC,          free,                 free );
+ FREE(VG_Z_LIBC_SONAME,       vfree,                free );
+ FREE(SO_SYN_MALLOC,          vfree,                free );
  ZONEFREE(VG_Z_LIBC_SONAME,   malloc_zone_free,     free );
  ZONEFREE(SO_SYN_MALLOC,      malloc_zone_free,     free );
 
@@ -2156,8 +2171,9 @@ extern int * __error(void) __attribute__((weak));
  POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
 
 #elif defined(VGO_darwin)
-#if (DARWIN_VERSIO >= DARWIN_10_6)
+#if (DARWIN_VERS >= DARWIN_10_6)
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
+ POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
 #endif
 
 #elif defined(VGO_solaris)
@@ -2326,7 +2342,7 @@ extern int * __error(void) __attribute__((weak));
  ALIGNED_ALLOC(SO_SYN_MALLOC,   aligned_alloc);
 
  #elif defined(VGO_darwin)
-  //ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
+ ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
 
  #elif defined(VGO_solaris)
   ALIGNED_ALLOC(VG_Z_LIBC_SONAME, aligned_alloc);
@@ -2495,6 +2511,17 @@ static size_t my_malloc_size ( void* zone, void* ptr )
    return res;
 }
 
+#define ZONE_DESTROY(soname, fnname) \
+   \
+   void VG_REPLACE_FUNCTION_EZU(10291,soname,fnname)(void* zone); \
+   void VG_REPLACE_FUNCTION_EZU(10291,soname,fnname)(void* zone)  \
+   { \
+      TRIGGER_MEMCHECK_ERROR_IF_UNDEFINED(zone); \
+   }
+
+ZONE_DESTROY(VG_Z_LIBC_SONAME, malloc_zone_destroy);
+ZONE_DESTROY(SO_SYN_MALLOC,    malloc_zone_destroy);
+
 /* Note that the (void*) casts below are a kludge which stops
    compilers complaining about the fact that the replacement
    functions aren't really of the right type. */
@@ -2507,7 +2534,7 @@ static vki_malloc_zone_t vg_default_zone = {
     (void*)VG_REPLACE_FUNCTION_EZU(10130,VG_Z_LIBC_SONAME,malloc_zone_valloc),
     (void*)VG_REPLACE_FUNCTION_EZU(10040,VG_Z_LIBC_SONAME,malloc_zone_free),
     (void*)VG_REPLACE_FUNCTION_EZU(10080,VG_Z_LIBC_SONAME,malloc_zone_realloc),
-    NULL, // GrP fixme: destroy
+    (void*)VG_REPLACE_FUNCTION_EZU(10291,VG_Z_LIBC_SONAME,malloc_zone_destroy),
     "ValgrindMallocZone",
     NULL, // batch_malloc
     NULL, // batch_free

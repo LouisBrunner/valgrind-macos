@@ -76,6 +76,10 @@ extern void VG_(di_notify_pdb_debuginfo)( Int fd, Addr avma,
 extern void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot );
 #endif
 
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+extern ULong VG_(di_notify_dsc)( const HChar* path, Addr header, SizeT len );
+#endif
+
 extern void VG_(addr_load_di)( Addr a );
 
 extern void VG_(di_load_di)( DebugInfo *di );

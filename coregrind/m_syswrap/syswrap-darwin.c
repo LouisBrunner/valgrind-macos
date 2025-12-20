@@ -44,6 +44,7 @@
 #include "pub_core_libcprint.h"
 #include "pub_core_libcproc.h"
 #include "pub_core_libcsignal.h"
+#include "pub_core_mach.h"         // VG_(dyld_cache_*)
 #include "pub_core_machine.h"      // VG_(get_SP)
 #include "pub_core_mallocfree.h"
 #include "pub_core_options.h"
@@ -3312,10 +3313,34 @@ PRE(stat64)
    PRE_REG_READ2(long, "stat", const char *,path, struct stat64 *,buf);
    PRE_MEM_RASCIIZ("stat64(path)", ARG1);
    PRE_MEM_WRITE( "stat64(buf)", ARG2, sizeof(struct vki_stat64) );
+
+#if DARWIN_VERS >= DARWIN_11_00
+   // Starting with macOS 11.0, some system libraries are not provided on the disk but only though
+   // shared dyld cache, thus we try to detect if dyld tried (and failed) to load a dylib,
+   // in which case we do the same thing as dyld and load the info from the cache directly
+   //
+   // This is our entry point for checking a particular dylib: if it looks like one,
+   // we want to see the error result, if any, and subsequently check the cache
+   if (ARG1 != 0 && VG_(dyld_cache_might_be_in)((HChar *)ARG1)) {
+     *flags |= SfPostOnFail;
+   }
+#endif
 }
 POST(stat64)
 {
-   POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+   if (SUCCESS) {
+      POST_MEM_WRITE( ARG2, sizeof(struct vki_stat64) );
+   }
+
+#if DARWIN_VERS >= DARWIN_11_00
+   if (SUCCESS || (FAILURE && ERR == VKI_ENOENT)) {
+     // It failed and `SfPostOnFail` was set, thus this is probably a dylib,
+     // try to load it from cache which will call VG_(di_notify_mmap) like the previous versions did
+     if (VG_(dyld_cache_load_library)((HChar *)ARG1)) {
+       ML_(sync_mappings)("after", "stat64", 0);
+     }
+   }
+#endif
 }
 
 PRE(lstat64)
@@ -11082,6 +11107,109 @@ POST(kernelrpc_mach_port_type_trap)
 
 #endif /* DARWIN_VERS >= DARWIN_10_15 */
 
+
+/* ---------------------------------------------------------------------
+ Added for macOS 11.0 (Big Sur)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_11_00
+
+#define DYLD_VM_END_MWL (-1ull)
+
+PRE(shared_region_check_np)
+{
+  // Special value used by dyld to forbid further uses of map_with_linking_np on macOS 13+
+  Bool special_call = DARWIN_VERS >= DARWIN_13_00 && ARG1 == DYLD_VM_END_MWL;
+
+  if (special_call) {
+    PRINT("shared_region_check_np(disable_map_with_linking)");
+  } else {
+  PRINT("shared_region_check_np(%#lx)", ARG1);
+  }
+  PRE_REG_READ1(kern_return_t, "shared_region_check_np", uint64_t*, start_address);
+
+  if (!special_call) {
+  PRE_MEM_WRITE("shared_region_check_np(start_address)", ARG1, sizeof(uint64_t));
+}
+}
+
+POST(shared_region_check_np)
+{
+  Bool special_call = DARWIN_VERS >= DARWIN_13_00 && ARG1 == DYLD_VM_END_MWL;
+
+  if (special_call) {
+    return;
+  }
+
+  if (RES == 0) {
+    POST_MEM_WRITE(ARG1, sizeof(uint64_t));
+    PRINT("shared dyld cache %#llx", *((uint64_t*) ARG1));
+  }
+}
+
+PRE(shared_region_map_and_slide_np)
+{
+  PRINT("shared_region_map_and_slide_np(%ld, %lu, %#lx, %lu, %#lx, %lu)", SARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+  PRE_REG_READ6(kern_return_t, "shared_region_map_and_slide_np",
+    int, fd, uint32_t, count, const struct shared_file_mapping_np*, mappings,
+    uint32_t, slide, uint64_t*, slide_start, uint32_t, slide_size);
+}
+
+PRE(task_read_for_pid)
+{
+  PRINT("task_read_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), SARG2, ARG3);
+  PRE_REG_READ3(kern_return_t, "task_read_for_pid", mach_port_name_t, target_tport, int, pid, mach_port_name_t*, t);
+
+  if (ARG3 != 0) {
+    PRE_MEM_WRITE("task_read_for_pid(t)", ARG3, sizeof(mach_port_name_t));
+  }
+}
+
+POST(task_read_for_pid)
+{
+  if (RES == 0 && ARG3 != 0) {
+    POST_MEM_WRITE(ARG3, sizeof(mach_port_name_t));
+    PRINT("-> t:%s", name_for_port(*(mach_port_name_t*)ARG3));
+  }
+}
+
+PRE(ulock_wait2)
+{
+  PRINT("ulock_wait2(%ld, %#lx, %ld, %#lx, %ld)",
+        SARG1, ARG2, SARG3, ARG4, SARG5);
+  PRE_REG_READ5(int, "ulock_wait2",
+                uint32_t, operation, void*, addr, uint64_t, value,
+                uint32_t, timeout, uint64_t, value2);
+  Int value_size = 4;
+  if (ARG1 == VKI_UL_COMPARE_AND_WAIT64
+      || ARG1 == VKI_UL_COMPARE_AND_WAIT64_SHARED
+      || ARG1 == VKI_UL_COMPARE_AND_WAIT_SHARED) {
+    value_size = 8;
+  }
+  if (ARG2 != 0) {
+    PRE_MEM_READ("ulock_wait2(addr)", ARG2, value_size);
+    *flags |= SfMayBlock;
+  } else {
+    SET_STATUS_Failure( VKI_EINVAL );
+  }
+}
+
+#if defined(VGA_arm64)
+PRE(sys_crossarch_trap)
+{
+  PRINT("sys_crossarch_trap(%lu)", ARG1);
+  PRE_REG_READ1(kern_return_t, "sys_crossarch_trap", uint32_t, name);
+}
+
+PRE(objc_bp_assist_cfg_np)
+{
+  PRINT("objc_bp_assist_cfg_np(%#lx, %#lx)", ARG1, ARG2);
+}
+#endif
+
+#endif /* DARWIN_VERS >= DARWIN_11_00 */
+
+
 /* ---------------------------------------------------------------------
    syscall tables
    ------------------------------------------------------------------ */
@@ -11433,7 +11561,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_mkfifo_extended),
 // _____(__NR_mkdir_extended),
 // _____(__NR_identitysvc),
-// _____(__NR_shared_region_check_np),
+#if DARWIN_VERS >= DARWIN_11_00
+   MACXY(__NR_shared_region_check_np, shared_region_check_np), // 294
+#endif
 // _____(__NR_shared_region_map_np),
 #if DARWIN_VERS >= DARWIN_10_6
 // _____(__NR_vm_pressure_monitor), 
@@ -11620,7 +11750,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(435)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(436)),        // ???
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(437)),        // ???
-// _____(__NR_shared_region_map_and_slide_np),          // 438
+#if DARWIN_VERS >= DARWIN_11_00
+    MACX_(__NR_shared_region_map_and_slide_np, shared_region_map_and_slide_np), // 438
+#endif
 // _____(__NR_kas_info),                                // 439
 // _____(__NR_memorystatus_control),                    // 440
     MACX_(__NR_guarded_open_np, guarded_open_np),
@@ -11714,6 +11846,22 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_log_data),                                // 533
 // _____(__NR_memorystatus_available_memory),           // 534
 #endif
+#if DARWIN_VERS >= DARWIN_11_00
+#if defined(VGP_arm64_darwin)
+   MACX_(__NR_objc_bp_assist_cfg_np, objc_bp_assist_cfg_np), // 535
+#endif
+// _____(__NR_shared_region_map_and_slide_2_np),        // 536
+// _____(__NR_pivot_root),                              // 537
+// _____(__NR_task_inspect_for_pid),                    // 538
+   MACXY(__NR_task_read_for_pid, task_read_for_pid),    // 539
+// _____(__NR_sys_preadv),                              // 540
+// _____(__NR_sys_pwritev),                             // 541
+// _____(__NR_sys_preadv_nocancel),                     // 542
+// _____(__NR_sys_pwritev_nocancel),                    // 543
+   MACX_(__NR_ulock_wait2, ulock_wait2),                // 544
+// _____(__NR_proc_info_extended_id),                   // 545
+#endif
+
    MACX_(__NR_darwin_fake_sigreturn, fake_sigreturn)
 };
 

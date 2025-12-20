@@ -453,6 +453,10 @@ typedef uint32_t vki_u32;
 #define	VKI_MAP_RESERVED0080	MAP_RESERVED0080
 #define	VKI_MAP_NOEXTEND	MAP_NOEXTEND
 #define	VKI_MAP_HASSEMAPHORE	MAP_HASSEMAPHORE
+#if DARWIN_VERS >= DARWIN_11_00
+#define VKI_MAP_NOCACHE MAP_NOCACHE
+#define VKI_MAP_JIT MAP_JIT
+#endif
 #define	VKI_MAP_FILE	MAP_FILE
 #define	VKI_MAP_ANON	MAP_ANON
 #define VKI_MAP_FAILED	MAP_FAILED
@@ -1287,6 +1291,13 @@ struct vki_necp_aggregate_result {
 
 #define VKI_IFXNAMSIZ     IFNAMSIZ + 8
 #define VKI_IFNET_SIGNATURELEN      20
+
+#define VKI_UL_COMPARE_AND_WAIT             1
+#define VKI_UL_UNFAIR_LOCK                  2
+#define VKI_UL_COMPARE_AND_WAIT_SHARED      3
+#define VKI_UL_UNFAIR_LOCK64_SHARED         4
+#define VKI_UL_COMPARE_AND_WAIT64           5
+#define VKI_UL_COMPARE_AND_WAIT64_SHARED    6
 
 struct vki_necp_client_signable {
 	uuid_t client_id;

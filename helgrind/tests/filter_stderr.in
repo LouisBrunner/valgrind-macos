@@ -26,8 +26,7 @@ fi |
 
 # And Darwin
 if $dir/../../tests/os_test darwin; then
-   # reuse the FreeBSD filter to start with
-   awk -f $dir/filter_freebsd.awk
+   awk -f $dir/filter_darwin.awk
 else
    cat
 fi |

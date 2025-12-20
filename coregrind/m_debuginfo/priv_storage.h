@@ -1094,6 +1094,12 @@ struct _DebugInfo {
       This helps performance a lot during ML_(addLineInfo) etc., which can
       easily be invoked hundreds of thousands of times. */
    DebugInfoMapping* last_rx_map;
+
+#if DARWIN_VERS >= DARWIN_11_00
+   /* Indicate that this debug info was loaded from memory (i.e. DSC)
+      instead than from a file. This means that some data might be missing (e.g. rw data). */
+   Bool from_memory;
+#endif
 };
 
 /* --------------------- functions --------------------- */

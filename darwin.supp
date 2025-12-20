@@ -796,3 +796,30 @@
    fun:_mh_execute_header
 }
 
+{
+   macOS1100:_dyld_start
+   Memcheck:Addr8
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1100:_dyld_start
+   Memcheck:Addr4
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1100:__chkstk_darwin_probe
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+}
+
+{
+   macOS1100:_dyld_start
+   Memcheck:Addr1
+   ...
+   fun:_dyld_start
+}
+

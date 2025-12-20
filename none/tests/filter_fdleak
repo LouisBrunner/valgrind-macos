@@ -25,8 +25,23 @@ sed '/ _so_socket /d;' |
 sed 's/__xnet_socket/socket/' |
 awk '/ socket /{sub(/ by /, " at "); print; next}{print}' |
 awk '/ at .* _syscall6 /{getline; getline; sub(/ by /, " at "); print; next}{print}' |
-sed '/__open/d' |
 sed 's/__systemcall6/creat/' |
+
+# handling '__open' is different for Solaris and macOS 11+
+
+# Perform Solaris-specific filtering.
+if $dir/../../tests/os_test solaris; then
+   sed '/__open/d'
+else
+   cat
+fi |
+
+if $dir/../../tests/os_test darwin; then
+   sed 's/__open/creat/'
+else
+   cat
+fi |
+
 
 # arm systems substitute open for creat
 perl -p -e 's/open(?:64)? \(open64\.c:[1-9][0-9]*\)/creat (in \/...libc...)/' |

@@ -117,6 +117,9 @@ struct _IIFinaliseImageInfo {
    Addr  initial_client_SP;
    /* ------ Per-OS fields ------ */
    Addr  initial_client_IP;
+#if defined(VGO_darwin)
+   Bool  dynamic;  /* False iff executable is static */
+#endif
 };
 
 /* ------------------------- Solaris ------------------------- */

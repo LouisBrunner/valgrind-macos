@@ -7,6 +7,7 @@ dist_noinst_SCRIPTS = \
 		      filter_xml \
                       filter_fiw \
 		      filter_freebsd.awk \
+		      filter_darwin.awk \
 		      filter_stderr_freebsd \
 		      filter_bug392331
 

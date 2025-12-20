@@ -1664,8 +1664,8 @@ void mc_STOREVn_slow ( Addr a, SizeT nBits, ULong vbytes, Bool bigendian )
 /*--- Setting permissions over address ranges.             ---*/
 /*------------------------------------------------------------*/
 
-#if defined(VGO_darwin)
-#if DARWIN_VERS >= DARWIN_26_00 && 0
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+#if DARWIN_VERS >= DARWIN_26_00
 // The new xzm_main_malloc_zone_create makes a 25GB (0x600000000) map in memory so, no choice but to raise the limit...
 # define VA_LARGE_RANGE ( 25UL * 1024 * 1024 * 1024)
 # else

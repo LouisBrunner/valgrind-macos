@@ -216,3 +216,17 @@
    ...
    fun:lookUpImpOrForward
 }
+
+{
+   maxOS1100:dlopen_internal
+   Helgrind:Race
+   ...
+   fun:dlopen_internal
+}
+
+{
+   macOS1100::__CFInitialize
+   Helgrind:Race
+   ...
+   fun:__CFInitialize
+}

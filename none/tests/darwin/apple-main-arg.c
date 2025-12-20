@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/syslimits.h>
+#include "../../../config.h"
 
 // On Darwin there's this secret fourth argument, 'apple', which is a pointer
 // to a string that contains the executable path, like argv[0], but unlike
@@ -23,8 +24,17 @@ int main(int argc, char *argv[], char *envp[], char *apple[])
 
    // Make sure realpath(argv[0]) == realpath(apple[0]).  (realpath resolves
    // symlinks.)
-   realpath(argv[0], pargv);
+   // PJF this changed with macOS 11, apple path now has a prefix
+#if (DARWIN_VERS >= DARWIN_11_00)
+   const char prefix[] = "executable_path=";
+   const size_t prefix_len = strlen(prefix);
+   assert(strncmp(apple[0], prefix, prefix_len) == 0);
+   realpath(apple[0]+prefix_len, pappl);
+   exit(0);
+#else
    realpath(apple[0], pappl);
+#endif
+   realpath(argv[0], pargv);
    assert(0 == strcmp(pargv, pappl));
 
    return 0;

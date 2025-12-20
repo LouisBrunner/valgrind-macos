@@ -290,6 +290,7 @@ EXTRA_DIST = \
 		memalign_args.stderr.exp-glibc \
 		memalign_args.stderr.exp-darwin \
 		memalign_args.stderr.exp-darwin2 \
+		memalign_args.stderr.exp-darwin3 \
 		memalign_args.stderr.exp-solaris \
 	memccpy1.stderr.exp memccpy1.stdout.exp memccpy1.vgtest \
 	memccpy2.stderr.exp memccpy2.vgtest \

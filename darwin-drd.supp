@@ -441,3 +441,10 @@
    ...
    fun:ds_user_byuid
 }
+
+{
+   macOS1100:_os_semaphore_wait.cold.1
+   drd:ConflictingAccess
+   fun:_os_semaphore_wait.cold.1
+}
+

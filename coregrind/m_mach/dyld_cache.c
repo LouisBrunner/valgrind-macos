@@ -211,7 +211,7 @@ Addr VG_(dyld_cache_get_slide)(void) {
   return dyld_cache.slide;
 }
 
-int ensure_init(void) {
+static int ensure_init(void) {
   if (dyld_cache.header != NULL) {
     return 1;
   }

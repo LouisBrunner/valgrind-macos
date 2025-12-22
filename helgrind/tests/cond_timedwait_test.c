@@ -1,20 +1,28 @@
 #include <pthread.h>
 #include <string.h>
+#include <assert.h>
+#include <errno.h>
 
-int main() {
-  pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-  pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+int main(void)
+{
+   pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+   pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+   int res;
 
-  // This time has most definitely passed already. (Epoch)
-  struct timespec now;
-  memset(&now, 0, sizeof(now));
+   // This time has most definitely passed already. (Epoch)
+   struct timespec now;
+   memset(&now, 0, sizeof(now));
 
-  pthread_mutex_lock(&mutex);
-  pthread_cond_timedwait(&cond, &mutex, &now);
-  pthread_mutex_unlock(&mutex);
+   res = pthread_mutex_lock(&mutex);
+   assert(res == 0);
+   res = pthread_cond_timedwait(&cond, &mutex, &now);
+   assert(res == ETIMEDOUT);
 
-  pthread_mutex_destroy(&mutex);
-  pthread_cond_destroy(&cond);
+   res = pthread_mutex_unlock(&mutex);
+   assert(res == 0);
 
-  return 0;
+   res = pthread_mutex_destroy(&mutex);
+   assert(res == 0);
+   res = pthread_cond_destroy(&cond);
+   assert(res == 0);
 }

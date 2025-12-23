@@ -1887,10 +1887,7 @@ static void default_action(const vki_siginfo_t *info, ThreadId tid)
    }
 
    if ( VG_(clo_verbosity) >= 1 
-#if !defined(VGO_darwin)
-        // Can't tell apart sync and async signals on Darwin
         || (could_core && is_signal_from_kernel(tid, sigNo, info->si_code))
-#endif
         || VG_(clo_xml) ) {
       if (VG_(clo_xml)) {
          VG_(printf_xml)("<fatal_signal>\n");

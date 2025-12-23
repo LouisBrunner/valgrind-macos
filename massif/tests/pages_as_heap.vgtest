@@ -1,4 +1,4 @@
-prereq: test -e ./pages_as_heap
+prereq: test -e ./pages_as_heap && ! ../../tests/os_test darwin
 prog: pages_as_heap
 vgopts: --stacks=no --time-unit=B --heap-admin=0 --pages-as-heap=yes --massif-out-file=massif.out --detailed-freq=3
 vgopts: --ignore-fn=mmap

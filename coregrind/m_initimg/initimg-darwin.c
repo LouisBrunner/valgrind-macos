@@ -393,7 +393,8 @@ Addr setup_client_stack( void*  init_sp,
 #endif
 
    /* Darwin mach_header */
-   if (info->dynamic) auxsize += sizeof(Word);
+   if (info->dynamic)
+       auxsize += sizeof(Word);
 
    /* OK, now we know how big the client stack is */
    stacksize =
@@ -443,7 +444,8 @@ Addr setup_client_stack( void*  init_sp,
    ptr = (Addr*)client_SP;
 
    /* --- mach_header --- */
-   if (info->dynamic) *ptr++ = info->text;
+   if (info->dynamic)
+      *ptr++ = info->text;
 
    /* --- client argc --- */
    *ptr++ = (Addr)(argc + 1);

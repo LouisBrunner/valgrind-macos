@@ -25,12 +25,14 @@
    The GNU General Public License is contained in the file COPYING.
 */
 
+#include "config.h" // for DARWIN_VERS
+
 // While dyld_caching as existed for longer than that
 // we have used DYLD_SHARED_REGION=avoid in the past
 //
 // Starting with macOS 11 (Big Sur), it isn't an option anymore
 // as some dylib are not provided in file format anymore
-#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+#if defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_11_00)
 
 #include "pub_core_debuginfo.h"             // VG_(di_notify_dsc)
 #include "pub_core_debuglog.h"              // VG_(debugLog)

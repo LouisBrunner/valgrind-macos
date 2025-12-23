@@ -1,3 +1,4 @@
+prereq: ../../drd/tests/supported_sem_init
 prog: tc23_bogus_condwait
 vgopts: -q  --check-cond-signal-mutex=yes
 

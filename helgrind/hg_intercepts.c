@@ -2656,7 +2656,19 @@ static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
                  pthread_rwlock_t*,rwlock, long,1/*isW*/,
                  long, (ret == 0) ? True : False);
    if (ret != 0) {
+      Bool api_error = False;
+#if defined(VGO_darwin)
+      // When rwlock is locked and there is an attempt to trylock it on the
+      // same thread POSIX says that it may return EADADLK. Darwin is the
+      // only one to do this, Linux, FreeBSD and Solaris all return EBUSY.
+      if (ret != EBUSY && ret != EDEADLK)
+         api_error = True;
+#else
       if (ret != EBUSY)
+         api_error = True;
+#endif
+
+      if (api_error)
          DO_PthAPIerror( "pthread_rwlock_trywrlock", ret );
    }
 

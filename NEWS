@@ -198,6 +198,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 516289  illumos lsframe2 regtest fails
 516748  Incorrect use of SET_STATUS_Failure for syscall wrappers that return
         error codes rather than -1 on error
+517144  Add PACKUSDW SSE4.1 support for x86
 517455  Add PCMPEQQ SSE4.1 support for x86
 517697  Implement CLRSSONSTACK and SETUJMPBUF handling on Solaris.
 517748  Add ability to redirect global functions to Darwin

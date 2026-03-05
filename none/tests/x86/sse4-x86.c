@@ -167,6 +167,7 @@ int main(void)
    test_ROUNDSD_w_mxcsr_rounding();
    test_ROUNDSS_w_mxcsr_rounding();
    test_PEXTRD();
+   test_PACKUSDW();
 
    return 0;
 }

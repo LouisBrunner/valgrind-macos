@@ -1621,4 +1621,28 @@ static inline void test_ROUNDSS_w_mxcsr_rounding ( void )
    assert(rm == 0); // 0 == RN == default
 }
 
+static inline void test_PACKUSDW ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      if (i < 9) {
+         randV128(&src);
+         randV128(&dst);
+      } else {
+         memset(&src, 0, sizeof(src));
+         memset(&dst, 0, sizeof(src));
+         src[0] = 0x11; src[1] = 0x22;
+         src[4] = 0x33; src[5] = 0x44;
+         src[8] = 0x55; src[9] = 0x66;
+         src[12] = 0x77; src[13] = 0x88;
+         dst[0] = 0xaa; dst[1] = 0xbb;
+         dst[4] = 0xcc; dst[5] = 0xdd;
+         dst[8] = 0xee; dst[9] = 0xff;
+         dst[12] = 0xa1; dst[13] = 0xb2;
+      }
+      DO_mandr_r("packusdw", src, dst);
+   }
+}
+
 #endif /* __SSE4_COMMON_H */

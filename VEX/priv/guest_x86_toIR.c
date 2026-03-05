@@ -13332,6 +13332,39 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
+   /* 66 0F 38 2B /r  - PACKUSDW xmm1, xmm2/m128
+      2x 32x4 S->U saturating narrow from xmm2/m128 to xmm1 */
+   if ( sz == 2
+        && insn[0] == 0x0f && insn[1] == 0x38 && insn[2] == 0x2b ) {
+      modrm = insn[3];
+
+      IRTemp argL = newTemp(Ity_V128);
+      IRTemp argR = newTemp(Ity_V128);
+
+      if ( epartIsReg(modrm) ) {
+         assign( argL, getXMMReg( eregOfRM(modrm) ) );
+         delta += 3 + 1;
+         DIP( "packusdw %s,%s\n",
+              nameXMMReg( eregOfRM(modrm) ),
+              nameXMMReg( gregOfRM(modrm) ) );
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         gen_SEGV_if_not_16_aligned( addr );
+         assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
+         delta += 3 + alen;
+         DIP( "packusdw %s,%s\n",
+              dis_buf, nameXMMReg( gregOfRM(modrm) ) );
+      }
+
+      assign(argR, getXMMReg( gregOfRM(modrm) ));
+
+      putXMMReg( gregOfRM(modrm),
+                 binop( Iop_QNarrowBin32Sto16Ux8,
+                        mkexpr(argL), mkexpr(argR)) );
+
+      goto decode_success;
+   }
+
    /* 66 0F 38 38 /r  - PMINSB xmm1, xmm2/m128
       66 0F 38 3C /r  - PMAXSB xmm1, xmm2/m128
       Minimum/Maximum of Packed Signed Byte Integers (XMM)

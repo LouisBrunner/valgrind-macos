@@ -874,6 +874,36 @@ ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void )
 /* CALLED FROM GENERATED CODE */
 /* DIRTY HELPER (non-referentially-transparent) */
 /* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_CNTPCT_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, cntpct_el0" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+
+#if defined(VGP_arm64_darwin)
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
+ULong arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0 ( void )
+{
+#  if defined(__aarch64__) && !defined(__arm__)
+   ULong w = 0x5555555555555555ULL; /* overwritten */
+   __asm__ __volatile__("mrs %0, s3_6_c15_c1_5" : "=r"(w));
+   return w;
+#  else
+   return 0ULL;
+#  endif
+}
+#endif
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER (non-referentially-transparent) */
+/* Horrible hack.  On non-arm64 platforms, return 0. */
 ULong arm64g_dirtyhelper_MRS_MIDR_EL1 ( void )
 {
 #  if defined(__aarch64__) && !defined(__arm__)

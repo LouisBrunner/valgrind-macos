@@ -236,7 +236,7 @@ DECL_TEMPLATE(darwin, csops_audittoken);        // 170
 // old gc_control
 // NYI add_profil 176
 #if DARWIN_VERS >= DARWIN_10_12
-// NYI kdebug_typefilter                        // 177
+DECL_TEMPLATE(darwin, kdebug_typefilter);       // 177
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_11
 DECL_TEMPLATE(darwin, kdebug_trace_string); // 178

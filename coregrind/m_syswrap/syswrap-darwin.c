@@ -2781,6 +2781,28 @@ PRE(__pthread_fchdir)
 }
 
 
+#if DARWIN_VERS >= DARWIN_10_12
+PRE(kdebug_typefilter)
+{
+   PRINT("kdebug_typefilter ( %#lx, %#lx )", ARG1, ARG2);
+   /* ARG1: pointer to a (void *) that receives the typefilter page address.
+      ARG2: pointer to a (size_t) that receives the page size. */
+   PRE_REG_READ2(kern_return_t, "kdebug_typefilter",
+                 void **, "addr", size_t *, "size");
+   if (ARG1) PRE_MEM_WRITE("kdebug_typefilter(addr)", ARG1, sizeof(void *));
+   if (ARG2) PRE_MEM_WRITE("kdebug_typefilter(size)", ARG2, sizeof(vki_size_t));
+}
+POST(kdebug_typefilter)
+{
+   /* Mark the two output arguments as written. */
+   if (ARG1) POST_MEM_WRITE(ARG1, sizeof(void *));
+   if (ARG2) POST_MEM_WRITE(ARG2, sizeof(vki_size_t));
+
+   ML_(sync_mappings)("after", "kdebug_typefilter", 0);
+}
+#endif /* DARWIN_VERS >= DARWIN_10_12 */
+
+
 PRE(kdebug_trace)
 {
    PRINT("kdebug_trace(%#lx (%s), %#lx, %#lx, %#lx, %#lx, %#lx)",
@@ -11832,7 +11854,11 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(174)),   // old getdents
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(175)),   // old gc_control
 // _____(__NR_add_profil),
+#if DARWIN_VERS >= DARWIN_10_12
+   MACXY(__NR_kdebug_typefilter, kdebug_typefilter), // 177
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(177)),   // ???
+#endif
 #if DARWIN_VERS >= DARWIN_10_11
    MACX_(__NR_kdebug_trace_string, kdebug_trace_string), // 178
 #else

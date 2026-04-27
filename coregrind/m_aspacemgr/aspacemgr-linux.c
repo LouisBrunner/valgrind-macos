@@ -3877,6 +3877,9 @@ static Bool get_name_from_tag(int tag, HChar* path, SizeT path_len) {
     case VKI_VM_MEMORY_IOKIT:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[iokit]", path_len);
       break;
+    case VKI_VM_MEMORY_VM_RECLAIM:
+      VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[vm reclaim]", path_len);
+      break;
     case VKI_VM_MEMORY_GUARD:
       VG_(strlcpy)(path, DARWIN_FAKE_MEMORY_PATH "[guard]", path_len);
       break;

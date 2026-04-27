@@ -8238,6 +8238,53 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("mrs %s, cntfrq_el0\n", nameIReg64orZR(tt));
       return True;
    }
+   /* ---- Case for CNTPCT_EL0 ----
+      This is always RO at EL0, so it's safe to pass through to the host.
+      D5 3B E0 001 Rt  MRS Xt, cntpct_el0
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53BE020) {
+      UInt     tt   = INSN(4,0);
+      IRTemp   val  = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                         val,
+                         0/*regparms*/,
+                         "arm64g_dirtyhelper_MRS_CNTPCT_EL0",
+                         &arm64g_dirtyhelper_MRS_CNTPCT_EL0,
+                         args
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, cntpct_el0\n", nameIReg64orZR(tt));
+      return True;
+   }
+
+#if defined(VGP_arm64_darwin)
+   /* ---- Case for SPRR_UPERM_EL0 ----
+      Apple-proprietary SPRR User Permissions register.
+      Read by dyld_get_active_platform() in libdyld during early libSystem
+      initialisation on macOS 26 / Darwin 25, to verify that TPRO regions
+      are not writable.
+   */
+   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53EF1A0) {
+      UInt     tt   = INSN(4,0);
+      IRTemp   val  = newTemp(Ity_I64);
+      IRExpr** args = mkIRExprVec_0();
+      IRDirty* d    = unsafeIRDirty_1_N (
+                         val,
+                         0/*regparms*/,
+                         "arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0",
+                         &arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0,
+                         args
+                      );
+      /* execute the dirty call, dumping the result in val. */
+      stmt( IRStmt_Dirty(d) );
+      putIReg64orZR(tt, mkexpr(val));
+      DIP("mrs %s, sprr_uperm_el0\n", nameIReg64orZR(tt));
+      return True;
+   }
+#endif
 
    /* ------------------ IC_IVAU ------------------ */
    /* D5 0B 75 001 Rt  ic ivau, rT

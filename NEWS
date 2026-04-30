@@ -6,6 +6,8 @@ Branch 3.27
 The following bugs have been fixed or resolved on this branch.
 
 519574  valgrind 3.27 "--fair-sched=yes" does not work
+519613  Valgrind incorrectly unpacks the result of sys_port (port_getn)
+        on error, leading to a ~60s wallclock time delay on every call
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

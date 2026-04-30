@@ -1298,6 +1298,7 @@
 /memcheck/tests/solaris/Makefile.in
 /memcheck/tests/solaris/aligned_alloc
 /memcheck/tests/solaris/brk
+/memcheck/tests/solaris/bug519613
 /memcheck/tests/solaris/context_stack_die
 /memcheck/tests/solaris/door_data
 /memcheck/tests/solaris/door_kill

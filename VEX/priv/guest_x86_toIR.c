@@ -13167,6 +13167,37 @@ DisResult disInstr_X86_WRK (
       }
    }
 
+   /* 66 0F 3A 16 /r ib = PEXTRD reg/mem32, xmm2, imm8
+      Extract Doubleword int from xmm reg and store in gen.reg or mem. */
+   if ( sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x16 ) {
+     Int    imm8_10;
+     modrm = insn[3];
+
+     if ( epartIsReg( modrm ) ) {
+       imm8_10 = (Int)(insn[3+1] & 3);
+     } else {
+       addr = disAMode( &alen, sorb, delta+3, dis_buf );
+       imm8_10 = (Int)((insn[3+alen]) & 3);
+     }
+
+     if ( epartIsReg( modrm ) ) {
+       putIReg( 4, eregOfRM(modrm), getXMMRegLane32(gregOfRM(modrm), imm8_10) );
+       delta += 1+1+3;
+       DIP( "pextrd $%d, %s,%s\n", imm8_10,
+           nameXMMReg( gregOfRM(modrm) ),
+           nameIReg( 4, eregOfRM(modrm) ) );
+     } else {
+       storeLE( mkexpr(addr), getXMMRegLane32(gregOfRM(modrm), imm8_10) );
+       delta += alen+1+3;
+       DIP( "pextrd $%d, %s,%s\n",
+           imm8_10, nameXMMReg( gregOfRM(modrm) ), dis_buf );
+     }
+
+     goto decode_success;
+   }
+
+
    /* 66 0F 3A 22 /r ib = PINSRD xmm1, r/m32, imm8
       Extract Doubleword int from gen.reg/mem32 and insert into xmm1 */
    if ( sz == 2

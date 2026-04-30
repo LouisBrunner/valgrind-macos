@@ -23,6 +23,7 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+295974  Add SSE4.1 PEXTRD instruction for x86 32 bit
 391311  [Patch] Fix arm64 valgrind tests compilation with clang
 519223  Recognize ioctl(UFFDIO_*) operations
 519539  Darwin shm_open mode is optional and depends on oflag

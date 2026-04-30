@@ -9,6 +9,88 @@
    gcc -m64 -g -O -Wall -o sse4-64 sse4-64.c
 */
 
+/* Architecture-specific macros for amd64 (use %r11) */
+
+#define DO_imm_r_to_rscalar(_opname, _imm, _src, _dstsuffix)       \
+   {  \
+      ULong _scbefore = 0x5555555555555555ULL;  \
+      ULong _scafter  = 0xAAAAAAAAAAAAAAAAULL; \
+      /* This assumes that gcc won't make any of %0, %1, %2 */ \
+      /* be r11.  That should be ensured (cough, cough) */ \
+      /* by declaring r11 to be clobbered. */ \
+      __asm__ __volatile__(  \
+         "movupd (%0), %%xmm2"    "\n\t"  \
+         "movq   (%1), %%r11"   "\n\t"  \
+         _opname " $" #_imm ", %%xmm2, %%r11" _dstsuffix  "\n\t"  \
+         "movq   %%r11, (%2)" "\n"  \
+         : /*out*/ \
+         : /*in*/ "r"(&(_src)), "r"(&(_scbefore)), "r"(&(_scafter))  \
+         : "cc", "memory", "xmm2", "r11"  \
+      );  \
+      showIAG("r", (_opname), (_imm), &(_src), (_scbefore), (_scafter));  \
+   }
+
+#define DO_imm_r_to_mscalar(_opname, _imm, _src)   \
+   {  \
+      ULong _scbefore = 0x5555555555555555ULL;  \
+      ULong _scafter = _scbefore; \
+      __asm__ __volatile__(  \
+         "movupd (%0), %%xmm2"    "\n\t"  \
+         _opname " $" #_imm ", %%xmm2, (%1)"  "\n\t"  \
+         : /*out*/ \
+         : /*in*/ "r"(&(_src)), "r"(&(_scafter))  \
+         : "cc", "memory", "xmm2"  \
+      );  \
+      showIAG("m", (_opname), (_imm), &(_src), (_scbefore), (_scafter));  \
+   }
+
+#define DO_imm_r_to_mandrscalar(_opname, _imm, _src, _dstsuffix)   \
+      DO_imm_r_to_rscalar( _opname, _imm, _src, _dstsuffix )       \
+      DO_imm_r_to_mscalar( _opname, _imm, _src )
+
+#define DO_imm_rscalar_to_r(_opname, _imm, _src, _srcsuffix)       \
+   {  \
+      V128  dstv;         \
+      V128  res;          \
+      ULong src64 = (ULong)(_src); \
+      memcpy(dstv, fives, sizeof(dstv)); \
+      memcpy(res,  zeroes, sizeof(res)); \
+      /* This assumes that gcc won't make any of %0, %1, %2 */ \
+      /* be r11.  That should be ensured (cough, cough) */ \
+      /* by declaring r11 to be clobbered. */ \
+      __asm__ __volatile__(  \
+         "movupd (%0), %%xmm2"    "\n\t"   /*dstv*/   \
+         "movq   (%1), %%r11"     "\n\t"   /*src64*/  \
+         _opname " $" #_imm ", %%r11" _srcsuffix ", %%xmm2"   "\n\t"  \
+         "movupd  %%xmm2, (%2)" "\n" /*res*/                          \
+         : /*out*/ \
+         : /*in*/ "r"(&dstv), "r"(&src64), "r"(&res)  \
+         : "cc", "memory", "xmm2", "r11"  \
+      );  \
+      showIGVV("r", (_opname), (_imm), src64, &dstv, &res); \
+   }
+#define DO_imm_mscalar_to_r(_opname, _imm, _src)       \
+   {  \
+      V128  dstv;         \
+      V128  res;          \
+      ULong src64 = (ULong)(_src); \
+      memcpy(dstv, fives, sizeof(dstv)); \
+      memcpy(res,  zeroes, sizeof(res)); \
+      __asm__ __volatile__(  \
+         "movupd (%0), %%xmm2"    "\n\t"   /*dstv*/   \
+         _opname " $" #_imm ", (%1), %%xmm2"   "\n\t"  \
+         "movupd  %%xmm2, (%2)" "\n" /*res*/                          \
+         : /*out*/ \
+         : /*in*/ "r"(&dstv), "r"(&src64), "r"(&res)  \
+         : "cc", "memory", "xmm2"  \
+      );  \
+      showIGVV("m", (_opname), (_imm), src64, &dstv, &res); \
+   }
+
+#define DO_imm_mandrscalar_to_r(_opname, _imm, _src, _dstsuffix)   \
+      DO_imm_rscalar_to_r( _opname, _imm, _src, _dstsuffix )       \
+      DO_imm_mscalar_to_r( _opname, _imm, _src )
+
 #include "../sse4-common.h"
 
 /* Architecture-specific macros for amd64 (use %r11) */
@@ -52,12 +134,6 @@
 #define DO_imm_r_to_mandrscalar(_opname, _imm, _src, _dstsuffix)   \
       DO_imm_r_to_rscalar( _opname, _imm, _src, _dstsuffix )       \
       DO_imm_r_to_mscalar( _opname, _imm, _src )
-
-
-
-
-
-
 
 
 #define DO_imm_rscalar_to_r(_opname, _imm, _src, _srcsuffix)       \
@@ -1038,15 +1114,6 @@ void test_PINSRW ( void )
 }
 
 
-void test_PEXTRD ( void )
-{
-   V128 src;
-   randV128(&src);
-   DO_imm_r_to_mandrscalar("pextrd", 0, src, "d");
-   DO_imm_r_to_mandrscalar("pextrd", 1, src, "d");
-   DO_imm_r_to_mandrscalar("pextrd", 2, src, "d");
-   DO_imm_r_to_mandrscalar("pextrd", 3, src, "d");
-}
 
 void test_PINSRD ( void )
 {

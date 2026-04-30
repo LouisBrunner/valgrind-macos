@@ -3,23 +3,17 @@
    Copied from amd64 version.
 */
 
-#include "../sse4-common.h"
-
 #define DO_imm_r_to_rscalar(_opname, _imm, _src)       \
    {  \
       ULong _scbefore = 0x5555555555555555ULL;  \
-      ULong _scafter  = 0xAAAAAAAAAAAAAAAAULL; \
-      /* This assumes that gcc won't make any of %0, %1, %2 */ \
-      /* be r11.  That should be ensured (cough, cough) */ \
-      /* by declaring r11 to be clobbered. */ \
+      ULong _scafter  = 0ULL; \
       __asm__ __volatile__(  \
          "movupd (%0), %%xmm2"    "\n\t"  \
-         "movq   (%1), %%r11"   "\n\t"  \
-         _opname " $" #_imm ", %%xmm2, %%r11"  "\n\t"  \
-         "movq   %%r11, (%2)" "\n"  \
+         _opname " $" #_imm ", %%xmm2, %%eax"  "\n\t"  \
+         "movl   %%eax, (%1)" "\n"  \
          : /*out*/ \
-         : /*in*/ "r"(&(_src)), "r"(&(_scbefore)), "r"(&(_scafter))  \
-         : "cc", "memory", "xmm2", "r11"  \
+         : /*in*/ "r"(&(_src)), "r"(&(_scafter))  \
+         : "cc", "memory", "xmm2", "eax"  \
       );  \
       showIAG("r", (_opname), (_imm), &(_src), (_scbefore), (_scafter));  \
    }
@@ -38,8 +32,8 @@
       showIAG("m", (_opname), (_imm), &(_src), (_scbefore), (_scafter));  \
    }
 
-#define DO_imm_r_to_mandrscalar(_opname, _imm, _src )   \
-      DO_imm_r_to_rscalar( _opname, _imm, _src )       \
+#define DO_imm_r_to_mandrscalar(_opname, _imm, _src, ...)   \
+      DO_imm_r_to_rscalar( _opname, _imm, _src )            \
       DO_imm_r_to_mscalar( _opname, _imm, _src )
 
 
@@ -83,6 +77,8 @@
 #define DO_imm_mandrscalar_to_r(_opname, _imm, _src )   \
       DO_imm_rscalar_to_r( _opname, _imm, _src )       \
       DO_imm_mscalar_to_r( _opname, _imm, _src )
+
+#include "../sse4-common.h"
 
 
 void test_PINSRD ( void )
@@ -170,6 +166,7 @@ int main(void)
    test_ROUNDSS_w_immediate_rounding();
    test_ROUNDSD_w_mxcsr_rounding();
    test_ROUNDSS_w_mxcsr_rounding();
+   test_PEXTRD();
 
    return 0;
 }

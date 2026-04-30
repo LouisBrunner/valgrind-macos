@@ -929,6 +929,17 @@ static inline void test_BLENDVPS ( void )
    }
 }
 
+/* ------------ PEXTRD ------------ */
+static inline void test_PEXTRD ( void )
+{
+   V128 src;
+   randV128(&src);
+   DO_imm_r_to_mandrscalar("pextrd", 0, src, "d");
+   DO_imm_r_to_mandrscalar("pextrd", 1, src, "d");
+   DO_imm_r_to_mandrscalar("pextrd", 2, src, "d");
+   DO_imm_r_to_mandrscalar("pextrd", 3, src, "d");
+}
+
 static inline void test_PCMPEQQ ( void )
 {
    V128 src, dst;

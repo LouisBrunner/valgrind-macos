@@ -32,6 +32,10 @@ Syscall param faccessat(fd) contains uninitialised byte(s)
    at 0x........: faccessat (in /...libc...)
    by 0x........: main (access.c:39)
 
+Syscall param faccessat(mode) contains uninitialised byte(s)
+   at 0x........: faccessat (in /...libc...)
+   by 0x........: main (access.c:39)
+
 Syscall param faccessat(flag) contains uninitialised byte(s)
    at 0x........: faccessat (in /...libc...)
    by 0x........: main (access.c:39)

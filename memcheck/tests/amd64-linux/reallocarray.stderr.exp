@@ -1,6 +1,7 @@
 
 All heap blocks were freed -- no leaks are possible
 
+Added leak check, expect 40 bytes still reachable
 LEAK SUMMARY:
    definitely lost: 0 (+0) bytes in 0 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
@@ -10,24 +11,27 @@ LEAK SUMMARY:
 Reachable blocks (those to which a pointer was found) are not shown.
 To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
-realloc() with size 0
+reallocarray() with size 0
    at 0x........: reallocarray (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:14)
+   by 0x........: main (reallocarray.c:19)
  Address 0x........ is 0 bytes inside a block of size 40 alloc'd
    at 0x........: reallocarray (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:12)
+   by 0x........: main (reallocarray.c:14)
 
+Added leak check, expect all blocks freed
 All heap blocks were freed -- no leaks are possible
 
-realloc() with size 0
+reallocarray() with size 0
    at 0x........: reallocarray (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:17)
+   by 0x........: main (reallocarray.c:25)
  Address 0x........ is 0 bytes inside a block of size 10 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
-   by 0x........: main (reallocarray.c:16)
+   by 0x........: main (reallocarray.c:23)
 
+Added leak check, expect all blocks freed
 All heap blocks were freed -- no leaks are possible
 
+Added leak check, expect 40 bytes still reachable
 LEAK SUMMARY:
    definitely lost: 0 (+0) bytes in 0 (+0) blocks
    indirectly lost: 0 (+0) bytes in 0 (+0) blocks
@@ -37,8 +41,17 @@ LEAK SUMMARY:
 Reachable blocks (those to which a pointer was found) are not shown.
 To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
-All heap blocks were freed -- no leaks are possible
+Added leak check, expect 40 bytes still reachable
+LEAK SUMMARY:
+   definitely lost: 0 (+0) bytes in 0 (+0) blocks
+   indirectly lost: 0 (+0) bytes in 0 (+0) blocks
+     possibly lost: 0 (+0) bytes in 0 (+0) blocks
+   still reachable: 40 (+0) bytes in 1 (+0) blocks
+        suppressed: 0 (+0) bytes in 0 (+0) blocks
+Reachable blocks (those to which a pointer was found) are not shown.
+To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
+Added leak check, expect all blocks freed
 All heap blocks were freed -- no leaks are possible
 
 

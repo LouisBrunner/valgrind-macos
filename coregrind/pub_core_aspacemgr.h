@@ -119,6 +119,11 @@ extern void VG_(am_show_nsegments) ( Int logLevel, const HChar* who );
 extern Bool VG_(am_do_sync_check) ( const HChar* fn, 
                                     const HChar* file, Int line );
 
+/* VG_(is_guarded) checks if address is part of a madvise
+   MADV_GUARD_INSTALL guard page */
+extern Bool VG_(is_guarded) ( Addr addr );
+
+
 //--------------------------------------------------------------
 // Functions pertaining to the central query-notify mechanism
 // used to handle mmap/munmap/mprotect resulting from client
@@ -186,6 +191,9 @@ extern Bool VG_(am_notify_client_shmat)( Addr a, SizeT len, UInt prot );
    should immediately discard translations from the specified address
    range. */
 extern Bool VG_(am_notify_mprotect)( Addr start, SizeT len, UInt prot );
+
+/* Bug 514297: Notifies aspacem about madvise(MADV_GUARD_*) */
+extern Bool VG_(am_notify_madv_guard) ( Addr start, SizeT len, Bool install );
 
 /* Notifies aspacem that an munmap completed successfully.  The
    segment array is updated accordingly.  As with

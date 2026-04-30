@@ -253,7 +253,11 @@ static sem_t* my_sem_init (char* identity, int pshared, unsigned count)
 
 static int my_sem_destroy ( sem_t* s )
 {
+#if defined(VGO_darwin)
+return 0;
+#else
    return sem_destroy(s);
+#endif
 }
 
 static int my_sem_wait(sem_t* s)

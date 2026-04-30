@@ -770,7 +770,7 @@ static SyscallTableEntry syscall_table[] = {
 //..
 //..    // Nb: get_kernel_syms() was removed 2.4-->2.6
 //..    GENX_(__NR_get_kernel_syms,   sys_ni_syscall),        // 130
-//..    LINX_(__NR_quotactl,          sys_quotactl),          // 131
+   LINXY(__NR_quotactl,          sys_quotactl),          // 131
    GENX_(__NR_getpgid,           sys_getpgid),           // 132
    GENX_(__NR_fchdir,            sys_fchdir),            // 133
 //..    //   (__NR_bdflush,           sys_bdflush),           // 134 */Linux
@@ -861,10 +861,10 @@ static SyscallTableEntry syscall_table[] = {
    GENXY(__NR_getdents64,        sys_getdents64),        // 202
    LINX_(__NR_pivot_root,        sys_pivot_root),        // 203
    LINXY(__NR_fcntl64,           sys_fcntl64),           // 204
-   GENX_(__NR_madvise,           sys_madvise),           // 205
+   GENXY(__NR_madvise,           sys_madvise),           // 205
    GENXY(__NR_mincore,           sys_mincore),           // 206
    LINX_(__NR_gettid,            sys_gettid),            // 207
-//..    LINX_(__NR_tkill,             sys_tkill),             // 208 */Linux
+   LINXY(__NR_tkill,             sys_tkill),             // 208 */Linux
    LINX_(__NR_setxattr,          sys_setxattr),          // 209
    LINX_(__NR_lsetxattr,         sys_lsetxattr),         // 210
    LINX_(__NR_fsetxattr,         sys_fsetxattr),         // 211
@@ -887,7 +887,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_sendfile64,        sys_sendfile64),        // 226
 //..
-   LINX_(__NR_io_setup,          sys_io_setup),          // 227
+   LINXY(__NR_io_setup,          sys_io_setup),          // 227
    LINX_(__NR_io_destroy,        sys_io_destroy),        // 228
    LINXY(__NR_io_getevents,      sys_io_getevents),      // 229
    LINX_(__NR_io_submit,         sys_io_submit),         // 230
@@ -954,6 +954,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_pselect6,          sys_pselect6),          // 280
    LINXY(__NR_ppoll,             sys_ppoll),             // 281
 
+   LINX_(__NR_splice,            sys_splice),            // 283
+
    LINXY(__NR_openat,            sys_openat),            // 286
    LINX_(__NR_mkdirat,           sys_mkdirat),           // 287
    LINX_(__NR_mknodat,           sys_mknodat),           // 288
@@ -992,6 +994,7 @@ static SyscallTableEntry syscall_table[] = {
    LINX_(__NR_pwritev,           sys_pwritev),          // 321
    LINXY(__NR_rt_tgsigqueueinfo, sys_rt_tgsigqueueinfo),// 322
 
+   LINXY(__NR_prlimit64,         sys_prlimit64),        // 325
    LINXY(__NR_socket,            sys_socket),           // 326
    LINX_(__NR_bind,              sys_bind),             // 327
    LINX_(__NR_connect,           sys_connect),          // 328
@@ -1010,7 +1013,7 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_recvmmsg,          sys_recvmmsg),         // 343
    LINXY(__NR_accept4,           sys_accept4),          // 344
 
-   LINX_(__NR_clock_adjtime,     sys_clock_adjtime),    // 347
+   LINXY(__NR_clock_adjtime,     sys_clock_adjtime),    // 347
    LINX_(__NR_syncfs,            sys_syncfs),           // 348
    LINXY(__NR_sendmmsg,          sys_sendmmsg),         // 349
 
@@ -1019,7 +1022,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 355
    LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 356
-   LINX_(__NR_renameat2,         sys_renameat2),        // 357
+   GENX_(__NR_renameat2,         sys_renameat2),        // 357
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 359
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 360
@@ -1027,9 +1030,11 @@ static SyscallTableEntry syscall_table[] = {
    LINX_ (__NR_execveat,         sys_execveat),         // 362
 
    LINXY(__NR_userfaultfd,       sys_userfaultfd),      // 364
+   LINX_(__NR_membarrier,        sys_membarrier),       // 365
+
    GENX_(__NR_mlock2,            sys_mlock2),           // 378
    LINX_(__NR_copy_file_range,   sys_copy_file_range),  // 379
-   LINX_(__NR_preadv2,           sys_preadv2),          // 380
+   LINXY(__NR_preadv2,           sys_preadv2),          // 380
    LINX_(__NR_pwritev2,          sys_pwritev2),         // 381
 
    LINXY(__NR_statx,             sys_statx),            // 383
@@ -1076,7 +1081,7 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY (__NR_epoll_pwait2,     sys_epoll_pwait2),      // 441
    LINX_ (__NR_mount_setattr,    sys_mount_setattr),     // 442
-   LINX_ (__NR_quotactl_fd,      sys_quotactl_fd),       // 443
+   LINXY (__NR_quotactl_fd,      sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
@@ -1087,7 +1092,12 @@ static SyscallTableEntry syscall_table[] = {
    LINX_ (__NR_fchmodat2,        sys_fchmodat2),         // 452
    LINXY (__NR_statmount,        sys_statmount),         // 457
    LINXY (__NR_listmount,        sys_listmount),         // 458
+   LINXY (__NR_lsm_get_self_attr,sys_lsm_get_self_attr), // 459
+   LINX_ (__NR_lsm_set_self_attr,sys_lsm_set_self_attr), // 460
+   LINXY (__NR_lsm_list_modules, sys_lsm_list_modules),  // 461
    LINX_ (__NR_mseal,            sys_mseal),             // 462
+   LINXY (__NR_file_getattr,     sys_file_getattr),      // 468
+   LINX_ (__NR_file_setattr,     sys_file_setattr),      // 469
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

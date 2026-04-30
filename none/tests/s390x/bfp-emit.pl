@@ -13,7 +13,7 @@
 # operators and condition code computation. This is done elsewhere.
 #
 # Here we do the following:
-# Craft a tiny program using insns X. Run valgrind on it, trace IR
+# Craft a tiny program using insn X. Run valgrind on it, trace IR
 # generation and assembly. Check the output making sure that insn X
 # appears once in the "Frontend" section and once in the "Assembly"
 # section.

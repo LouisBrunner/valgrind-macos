@@ -80,9 +80,9 @@ typedef
       /* 176 */ ULong  guest_DFLAG;
       /* 184 */ ULong  guest_RIP;
       /* Bit 18 (AC) of eflags stored here, as either 0 or 1. */
-      /* ... */ ULong  guest_ACFLAG;
+      /* 192 */ ULong  guest_ACFLAG;
       /* Bit 21 (ID) of eflags stored here, as either 0 or 1. */
-      /* 192 */ ULong guest_IDFLAG;
+      /* 200 */ ULong guest_IDFLAG;
       /* Probably a lot more stuff too. 
          D,ID flags
          16  128-bit SSE registers
@@ -99,8 +99,8 @@ typedef
          consecutively in order that the SSE4.2 PCMP{E,I}STR{I,M}
          helpers can treat them as an array.  YMM16 is a fake reg used
          as an intermediary in handling aforementioned insns. */
-      /* 208 */ULong guest_SSEROUND;
-      /* 216 */U256  guest_YMM0;
+      /* 216 */ULong guest_SSEROUND;
+      /* 224 */U256  guest_YMM0;
       U256  guest_YMM1;
       U256  guest_YMM2;
       U256  guest_YMM3;
@@ -161,20 +161,20 @@ typedef
          of the %fs-const hack for amd64-linux/solaris). */
       ULong guest_GS_CONST;
 
-      /* Needed for Darwin (but mandated for all guest architectures):
-         RIP at the last syscall insn (int 0x80/81/82, sysenter,
-         syscall).  Used when backing up to restart a syscall that has
-         been interrupted by a signal. */
-      ULong guest_IP_AT_SYSCALL;
-
       /* Used on FreeBSD as part of a mechanism to allow signal handlers
            to use TLS. */
       ULong guest_TLSBASE;
+
+      UInt padding1;
+      UInt padding2;
 
       /* Add padding here to make it have an 16-aligned size */
    }
    VexGuestAMD64State;
 
+#if defined(__LP64__)
+_Static_assert(sizeof(VexGuestAMD64State)%16 == 0, "sizeof VexGuestAMD64State is not a multiple of 16");
+#endif
 
 
 /*---------------------------------------------------------------*/

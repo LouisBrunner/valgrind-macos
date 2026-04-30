@@ -335,14 +335,16 @@ typedef struct vki_kcf_door_arg_s {
    } vki_da_u;
 } vki_kcf_door_arg_t;
 
-
+// https://bugs.kde.org/show_bug.cgi?id=512291
+// crypto ioctl removed from Solaris late 2025
+#if defined(HAVE_SYS_CRYPTO_IOCTL_H)
 #include <sys/crypto/ioctl.h>
 #define VKI_CRYPTO_SUCCESS CRYPTO_SUCCESS
 #define VKI_CRYPTO_GET_PROVIDER_LIST CRYPTO_GET_PROVIDER_LIST
 #define vki_crypto_provider_id_t crypto_provider_id_t
 #define vki_crypto_provider_entry_t crypto_provider_entry_t
 #define vki_crypto_get_provider_list_t crypto_get_provider_list_t
-
+#endif
 
 #include <sys/dditypes.h>
 #include <sys/devinfo_impl.h>
@@ -1527,6 +1529,14 @@ struct sysv_ucontext {
 #define VKI_SETCONTEXT SETCONTEXT
 #define VKI_GETUSTACK GETUSTACK
 #define VKI_SETUSTACK SETUSTACK
+#ifdef CLRSSONSTACK
+/* New in Oracle Solaris 11.4 SRU 30 */
+#define VKI_CLRSSONSTACK CLRSSONSTACK
+#endif
+#ifdef SETUJMPBUF
+/* New in Oracle Solaris 11.4 SRU 81 */
+#define VKI_SETUJMPBUF SETUJMPBUF
+#endif
 
 #define VKI_UC_SIGMASK UC_SIGMASK
 #define VKI_UC_STACK UC_STACK

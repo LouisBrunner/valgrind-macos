@@ -1365,6 +1365,13 @@ struct  vki_seminfo {
 #define VKI_MREMAP_FIXED	2
 
 //----------------------------------------------------------------------
+// Common madvise flags mman-common.h
+//----------------------------------------------------------------------
+
+#define VKI_MADV_GUARD_INSTALL 102
+#define VKI_MADV_GUARD_REMOVE  103
+
+//----------------------------------------------------------------------
 // From linux-2.6.31-rc4/include/linux/futex.h
 //----------------------------------------------------------------------
 
@@ -3900,6 +3907,30 @@ struct vki_ion_custom_data {
 #define VKI_ION_IOC_CUSTOM \
    _VKI_IOWR(VKI_ION_IOC_MAGIC, 6, struct vki_ion_custom_data)
 
+struct vki_procmap_query {
+    __vki_u64 size;
+    __vki_u64 query_flags;              /* in */
+    __vki_u64 query_addr;               /* in */
+    __vki_u64 vma_start;                /* out */
+    __vki_u64 vma_end;                  /* out */
+    __vki_u64 vma_flags;                /* out */
+    __vki_u64 vma_page_size;            /* out */
+    __vki_u64 vma_offset;               /* out */
+    __vki_u64 inode;                    /* out */
+    __vki_u32 dev_major;                /* out */
+    __vki_u32 dev_minor;                /* out */
+    __vki_u32 vma_name_size;            /* in/out */
+    __vki_u32 build_id_size;            /* in/out */
+    __vki_u64 vma_name_addr;            /* in */
+    __vki_u64 build_id_addr;            /* in */
+};
+
+// linux/fs.h
+#define VKI_PROCFS_IOCTL_MAGIC 'f'
+
+#define VKI_PROCMAP_QUERY \
+   _VKI_IOWR(VKI_PROCFS_IOCTL_MAGIC, 17, struct vki_procmap_query)
+
 //----------------------------------------------------------------------
 // From include/uapi/linux/sync_file.h 6.10.3
 //----------------------------------------------------------------------
@@ -5573,6 +5604,174 @@ struct vki_statmount {
 	__vki_u64 __spare2[49];
 	char str[];		/* Variable size part containing strings */
 };
+
+//----------------------------------------------------------------------
+// From uapi/linux/fs.h
+//----------------------------------------------------------------------
+
+struct vki_file_attr {
+	__vki_u64 fa_xflags;	/* xflags field value (get/set) */
+	__vki_u32 fa_extsize;	/* extsize field value (get/set)*/
+	__vki_u32 fa_nextents;	/* nextents field value (get)   */
+	__vki_u32 fa_projid;	/* project identifier (get/set) */
+	__vki_u32 fa_cowextsize;	/* CoW extsize field value (get/set) */
+};
+
+//----------------------------------------------------------------------
+// From uapi/linux/mount.h
+//----------------------------------------------------------------------
+
+#define VKI_SUBCMDMASK  0x00ff
+#define VKI_SUBCMDSHIFT 8
+
+#define VKI_Q_SYNC     0x800001	/* sync disk copy of a filesystems quotas */
+#define VKI_Q_QUOTAON  0x800002	/* turn quotas on */
+#define VKI_Q_QUOTAOFF 0x800003	/* turn quotas off */
+#define VKI_Q_GETFMT   0x800004	/* get quota format used on given filesystem */
+#define VKI_Q_GETINFO  0x800005	/* get information about quota files */
+#define VKI_Q_SETINFO  0x800006	/* set information about quota files */
+#define VKI_Q_GETQUOTA 0x800007	/* get user quota structure */
+#define VKI_Q_SETQUOTA 0x800008	/* set user quota structure */
+#define VKI_Q_GETNEXTQUOTA 0x800009	/* get disk limits and usage >= ID */
+
+struct vki_dqblk
+  {
+    __vki_u64 dqb_bhardlimit;	/* absolute limit on disk quota blocks alloc */
+    __vki_u64 dqb_bsoftlimit;	/* preferred limit on disk quota blocks */
+    __vki_u64 dqb_curspace;	/* current quota block count */
+    __vki_u64 dqb_ihardlimit;	/* maximum # allocated inodes */
+    __vki_u64 dqb_isoftlimit;	/* preferred inode limit */
+    __vki_u64 dqb_curinodes;	/* current # allocated inodes */
+    __vki_u64 dqb_btime;	/* time limit for excessive disk use */
+    __vki_u64 dqb_itime;	/* time limit for excessive files */
+    __vki_u32 dqb_valid;	/* bitmask of QIF_* constants */
+  };
+
+
+struct vki_nextdqblk {
+	__vki_u64 dqb_bhardlimit;
+	__vki_u64 dqb_bsoftlimit;
+	__vki_u64 dqb_curspace;
+	__vki_u64 dqb_ihardlimit;
+	__vki_u64 dqb_isoftlimit;
+	__vki_u64 dqb_curinodes;
+	__vki_u64 dqb_btime;
+	__vki_u64 dqb_itime;
+	__vki_u32 dqb_valid;
+	__vki_u32 dqb_id;
+};
+
+struct vki_dqinfo {
+	__vki_u64 dqi_bgrace;
+	__vki_u64 dqi_igrace;
+	__vki_u32 dqi_flags;	/* DFQ_* */
+	__vki_u32 dqi_valid;
+};
+
+//----------------------------------------------------------------------
+// From uapi/linux/lsm.h
+//----------------------------------------------------------------------
+
+struct vki_lsm_ctx {
+	__vki_u64 id;
+	__vki_u64 flags;
+	__vki_u64 len;
+	__vki_u64 ctx_len;
+	__vki_u8 ctx[]; /* __counted_by(ctx_len); */
+};
+
+//----------------------------------------------------------------------
+// From include/uapi/linux/userfaultfd.h
+//----------------------------------------------------------------------
+
+struct vki_uffdio_api {
+   __vki_u64 api;
+   __vki_u64 features;
+   __vki_u64 ioctls;
+};
+
+struct vki_uffdio_range {
+   __vki_u64 start;
+   __vki_u64 len;
+};
+
+struct vki_uffdio_register {
+   struct vki_uffdio_range range;
+   __vki_u64 mode;
+   __vki_u64 ioctls;
+};
+
+struct vki_uffdio_copy {
+   __vki_u64 dst;
+   __vki_u64 src;
+   __vki_u64 len;
+   __vki_u64 mode;
+   __vki_s64 copy;
+};
+
+struct vki_uffdio_zeropage {
+   struct vki_uffdio_range range;
+   __vki_u64 mode;
+   __vki_s64 zeropage;
+};
+
+struct vki_uffdio_move {
+   __vki_u64 dst;
+   __vki_u64 src;
+   __vki_u64 len;
+   __vki_u64 mode;
+   __vki_s64 move;
+};
+
+struct vki_uffdio_writeprotect {
+   struct vki_uffdio_range range;
+   __vki_u64 mode;
+};
+
+struct vki_uffdio_continue {
+   struct vki_uffdio_range range;
+   __vki_u64 mode;
+   __vki_s64 mapped;
+};
+
+struct vki_uffdio_poison {
+   struct vki_uffdio_range range;
+   __vki_u64 mode;
+   __vki_s64 updated;
+};
+
+#define _UFFDIO_REGISTER                (0x00)
+#define _UFFDIO_UNREGISTER              (0x01)
+#define _UFFDIO_WAKE                    (0x02)
+#define _UFFDIO_COPY                    (0x03)
+#define _UFFDIO_ZEROPAGE                (0x04)
+#define _UFFDIO_MOVE                    (0x05)
+#define _UFFDIO_WRITEPROTECT            (0x06)
+#define _UFFDIO_CONTINUE                (0x07)
+#define _UFFDIO_POISON                  (0x08)
+#define _UFFDIO_API                     (0x3F)
+
+#define VKI_UFFDIO 0xAA
+#define VKI_UFFDIO_API              _VKI_IOWR(VKI_UFFDIO, _UFFDIO_API,      \
+                                      struct vki_uffdio_api)
+#define VKI_UFFDIO_REGISTER         _VKI_IOWR(VKI_UFFDIO, _UFFDIO_REGISTER, \
+                                      struct vki_uffdio_register)
+#define VKI_UFFDIO_UNREGISTER       _VKI_IOR(VKI_UFFDIO, _UFFDIO_UNREGISTER,        \
+                                     struct vki_uffdio_range)
+#define VKI_UFFDIO_WAKE             _VKI_IOR(VKI_UFFDIO, _UFFDIO_WAKE,      \
+                                     struct vki_uffdio_range)
+#define VKI_UFFDIO_COPY             _VKI_IOWR(VKI_UFFDIO, _UFFDIO_COPY,     \
+                                      struct vki_uffdio_copy)
+#define VKI_UFFDIO_ZEROPAGE         _VKI_IOWR(VKI_UFFDIO, _UFFDIO_ZEROPAGE, \
+                                      struct vki_uffdio_zeropage)
+#define VKI_UFFDIO_MOVE             _VKI_IOWR(VKI_UFFDIO, _UFFDIO_MOVE,     \
+                                      struct vki_uffdio_move)
+#define VKI_UFFDIO_WRITEPROTECT     _VKI_IOWR(VKI_UFFDIO, _UFFDIO_WRITEPROTECT, \
+                                      struct vki_uffdio_writeprotect)
+#define VKI_UFFDIO_CONTINUE         _VKI_IOWR(VKI_UFFDIO, _UFFDIO_CONTINUE, \
+                                      struct vki_uffdio_continue)
+#define VKI_UFFDIO_POISON           _VKI_IOWR(VKI_UFFDIO, _UFFDIO_POISON, \
+                                      struct vki_uffdio_poison)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/

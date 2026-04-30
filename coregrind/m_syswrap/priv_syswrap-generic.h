@@ -102,6 +102,9 @@ extern void
 ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot );
 
 extern void
+ML_(notify_core_and_tool_of_madv_guard) ( Addr a, SizeT len, Bool install );
+
+extern void
 ML_(pre_mem_read_sockaddr) ( ThreadId tid, const HChar *description,
                              struct vki_sockaddr *sa, UInt salen );
 extern void
@@ -119,14 +122,6 @@ void ML_(POST_unknown_ioctl)(ThreadId tid, UInt res, UWord request, UWord arg);
 
 extern
 void ML_(pre_argv_envp)(Addr a, ThreadId tid, const HChar *s1, const HChar *s2);
-
-extern Bool
-ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
-                      int flags);
-
-extern Bool
-ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
-                          int flags);
 
 /* Helper function for generic mprotect and linux pkey_mprotect. */
 extern void handle_sys_mprotect (ThreadId tid, SyscallStatus *status,
@@ -276,6 +271,7 @@ DECL_TEMPLATE(generic, sys_getdents64);            // * (SVr4,SVID?)
 DECL_TEMPLATE(generic, sys_statfs64);              // * (?)
 DECL_TEMPLATE(generic, sys_fstatfs64);             // * (?)
 DECL_TEMPLATE(generic, sys_mlock2);                // * L
+DECL_TEMPLATE(generic, sys_renameat2);             // * L, F
 
 
 /* ---------------------------------------------------------------------

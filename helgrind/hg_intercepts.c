@@ -119,6 +119,12 @@
 #include <osreldate.h>
 #endif
 
+#if defined(VGO_darwin)
+#define LIBC_FUNC(ret_ty, f, args...) \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBSYSTEM_KERNEL_SONAME,f)(args); \
+   ret_ty I_WRAP_SONAME_FNNAME_ZZ(VG_Z_LIBSYSTEM_KERNEL_SONAME,f)(args)
+#endif
+
 // Do a client request.  These are macros rather than a functions so
 // as to avoid having an extra frame in stack traces.
 
@@ -2309,6 +2315,33 @@ static int pthread_spin_trylock_WRK(pthread_spinlock_t *lock)
 // darwin:  pthread_rwlock_init$UNIX2003
 // Solaris: rwlock_init (pthread_rwlock_init is built atop of rwlock_init)
 // FreeBSD: pthread_rwlock_init
+#if defined(VGO_solaris)
+__attribute__((noinline))
+static int pthread_rwlock_init_WRK(rwlock_t *rwlock,
+                                   int type, void *arg)
+{
+   int    ret;
+   OrigFn fn;
+   VALGRIND_GET_ORIG_FN(fn);
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, "<< rwl_init %p", rwlock); fflush(stderr);
+   }
+
+   CALL_FN_W_WWW(ret, fn, rwlock, type, arg);
+
+   if (ret == 0 /*success*/) {
+      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,
+                  rwlock_t *, rwlock);
+   } else {
+      DO_PthAPIerror("rwlock_init", ret);
+   }
+
+   if (TRACE_PTH_FNS) {
+      fprintf(stderr, " :: rwl_init -> %d >>\n", ret);
+   }
+   return ret;
+}
+#else
 __attribute__((noinline))
 static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
                                    pthread_rwlockattr_t* attr)
@@ -2334,6 +2367,7 @@ static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
    }
    return ret;
 }
+#endif
 #if defined(VGO_linux)
    PTH_FUNC(int, pthreadZurwlockZuinit, // pthread_rwlock_init
                  pthread_rwlock_t *rwl,
@@ -2353,41 +2387,13 @@ static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
       return pthread_rwlock_init_WRK(rwl, attr);
    }
 #elif defined(VGO_solaris)
-static int pthread_rwlock_init_WRK(pthread_rwlock_t *rwl,
-                                   pthread_rwlockattr_t* attr)
-                                   __attribute__((unused));
+   PTH_FUNC(int, rwlockZuinit, // rwlock_init
+            rwlock_t *rwlock, int type, void *arg) {
+      return pthread_rwlock_init_WRK(rwlock, type, arg);
+   }
 #else
 #  error "Unsupported OS"
 #endif
-
-#if defined(VGO_solaris)
-PTH_FUNC(int, rwlockZuinit, // rwlock_init
-              rwlock_t *rwlock,
-              int type,
-              void *arg)
-{
-   int    ret;
-   OrigFn fn;
-   VALGRIND_GET_ORIG_FN(fn);
-   if (TRACE_PTH_FNS) {
-      fprintf(stderr, "<< rwl_init %p", rwlock); fflush(stderr);
-   }
-
-   CALL_FN_W_WWW(ret, fn, rwlock, type, arg);
-
-   if (ret == 0 /*success*/) {
-      DO_CREQ_v_W(_VG_USERREQ__HG_PTHREAD_RWLOCK_INIT_POST,
-                  rwlock_t *, rwlock);
-   } else {
-      DO_PthAPIerror("rwlock_init", ret);
-   }
-
-   if (TRACE_PTH_FNS) {
-      fprintf(stderr, " :: rwl_init -> %d >>\n", ret);
-   }
-   return ret;
-}
-#endif /* VGO_solaris */
 
 
 //-----------------------------------------------------------
@@ -2650,7 +2656,19 @@ static int pthread_rwlock_trywrlock_WRK(pthread_rwlock_t* rwlock)
                  pthread_rwlock_t*,rwlock, long,1/*isW*/,
                  long, (ret == 0) ? True : False);
    if (ret != 0) {
+      Bool api_error = False;
+#if defined(VGO_darwin)
+      // When rwlock is locked and there is an attempt to trylock it on the
+      // same thread POSIX says that it may return EADADLK. Darwin is the
+      // only one to do this, Linux, FreeBSD and Solaris all return EBUSY.
+      if (ret != EBUSY && ret != EDEADLK)
+         api_error = True;
+#else
       if (ret != EBUSY)
+         api_error = True;
+#endif
+
+      if (api_error)
          DO_PthAPIerror( "pthread_rwlock_trywrlock", ret );
    }
 
@@ -3112,7 +3130,8 @@ static int sem_init_WRK(sem_t* sem, int pshared, unsigned long value)
       return sem_init_WRK(sem, pshared, value);
    }
 #elif defined(VGO_darwin)
-   PTH_FUNC(int, semZuinit, // sem_init
+// exists but fails with ENOSYS function not implemented
+   LIBC_FUNC(int, semZuinit, // sem_init
                  sem_t* sem, int pshared, unsigned long value) {
       return sem_init_WRK(sem, pshared, value);
    }
@@ -3200,7 +3219,8 @@ static int sem_destroy_WRK(sem_t* sem)
       return sem_destroy_WRK(sem);
    }
 #elif defined(VGO_darwin)
-   PTH_FUNC(int, semZudestroy,  // sem_destroy
+// exists but fails with ENOSYS function not implemented
+   LIBC_FUNC(int, semZudestroy,  // sem_destroy
                  sem_t* sem) {
       return sem_destroy_WRK(sem);
    }
@@ -3268,10 +3288,11 @@ static int sem_wait_WRK(sem_t* sem)
       return sem_wait_WRK(sem);
    }
 #elif defined(VGO_darwin)
-   PTH_FUNC(int, semZuwait, sem_t* sem) { /* sem_wait */
+// exists but fails with EBADF bad file number
+   LIBC_FUNC(int, semZuwait, sem_t* sem) { /* sem_wait */
       return sem_wait_WRK(sem);
    }
-   PTH_FUNC(int, semZuwaitZDZa, sem_t* sem) { /* sem_wait$* */
+   LIBC_FUNC(int, semZuwaitZDZa, sem_t* sem) { /* sem_wait$* */
       return sem_wait_WRK(sem);
    }
 #elif defined(VGO_freebsd)
@@ -3334,7 +3355,7 @@ PTH_FUNC(int, semZutrywaitZAZa, sem_t* sem) { /* sem_trywait@* */
    return sem_trywait_WRK(sem);
 }
 #elif defined(VGO_darwin)
-PTH_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */
+LIBC_FUNC(int, semZutrywait, sem_t* sem) { /* sem_trywait */
    return sem_trywait_WRK(sem);
 }
 #elif defined(VGO_freebsd)
@@ -3511,7 +3532,7 @@ static int sem_post_WRK(sem_t* sem)
       return sem_post_WRK(sem);
    }
 #elif defined(VGO_darwin)
-   PTH_FUNC(int, semZupost, sem_t* sem) { /* sem_post */
+   LIBC_FUNC(int, semZupost, sem_t* sem) { /* sem_post */
       return sem_post_WRK(sem);
    }
 #elif defined(VGO_freebsd)
@@ -3533,7 +3554,7 @@ static int sem_post_WRK(sem_t* sem)
 // Solaris: sem_open
 // FreeBSD: sem_open
 //
-#if defined(VGO_freebsd)
+#if defined(VGO_freebsd) || defined(VGO_DARWIN)
 LIBC_FUNC(sem_t*, semZuopen,
                  const char* name, long oflag,
                  long mode, unsigned long value)
@@ -3578,7 +3599,7 @@ PTH_FUNC(sem_t*, semZuopen,
 // darwin:  sem_close
 // Solaris: sem_close
 // FreeBSD: sem_close
-#if defined (VGO_freebsd)
+#if defined (VGO_freebsd) || defined(VGO_darwin)
 LIBC_FUNC(int, sem_close, sem_t* sem)
 #else
 PTH_FUNC(int, sem_close, sem_t* sem)

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <errno.h>
 
 // from stack overflow
 // https://stackoverflow.com/questions/6326290/about-the-ambiguous-description-of-sigwait
@@ -62,6 +63,14 @@ int main(void)
   raise(SIGUSR1);
 
   result = sigwait(psigset, &sig);
+
+  result = sigwait(NULL, &sig);
+  assert(result == EFAULT);
+
+  raise(SIGUSR1);
+
+  result = sigwait(psigset, NULL);
+  assert(result == EFAULT);
 
   return 0;
 }

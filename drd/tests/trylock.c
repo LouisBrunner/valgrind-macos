@@ -57,7 +57,12 @@ int main(int argc, char** argv)
 #endif
   fprintf(stderr, "Attempt to lock for writing recursively (not allowed).\n");
   r = pthread_rwlock_wrlock(&rwlock); assert(r == 0);
-  r = pthread_rwlock_trywrlock(&rwlock); assert(r == EBUSY);
+  r = pthread_rwlock_trywrlock(&rwlock);
+#if defined(__APPLE__)
+ assert(r == EDEADLK);
+#else
+ assert(r == EBUSY);
+#endif
   r = pthread_rwlock_unlock(&rwlock); assert(r == 0);
   r = pthread_rwlock_destroy(&rwlock); assert(r == 0);
 

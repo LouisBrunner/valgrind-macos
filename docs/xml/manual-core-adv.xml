@@ -114,6 +114,32 @@ tool-specific macros).</para>
   </varlistentry>
 
   <varlistentry>
+   <term><command><computeroutput>VALGRIND_REPLACES_MALLOC</computeroutput></command>:</term>
+   <listitem>
+    <para>Returns 1 if the tool replaces malloc (e.g., memcheck).
+    Returns 0 if the tool does not replace malloc (e.g., cachegrind
+    and callgrind) or if the executable is not running under VALGRIND.
+    </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
+   <term><command><computeroutput>VALGRIND_GET_TOOLNAME</computeroutput></command>:</term>
+   <listitem>
+    <para>Get the running tool name as a string. Takes two arguments,
+    an input buffer pointer and the length of that buffer. Returns the
+    required length (including terminating nul) for the tool
+    name. Returns 0 and the contents supplied buffer are not modified
+    if not running under Valgrind. The provided buffer may be NULL,
+    which can be used to query the required buffer length before
+    making a real request for the tool name. The returned string in
+    the input buffer will be nul terminated. If given length is too
+    small to contain the tool name then the name will be truncated.
+    </para>
+   </listitem>
+  </varlistentry>
+
+  <varlistentry>
    <term><command><computeroutput>VALGRIND_COUNT_ERRORS</computeroutput>:</command></term>
    <listitem>
     <para>Returns the number of errors found so far by Valgrind.  Can be

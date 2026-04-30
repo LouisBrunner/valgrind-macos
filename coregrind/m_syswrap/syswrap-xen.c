@@ -2519,7 +2519,7 @@ static void bad_before ( ThreadId              tid,
                          /*OUT*/UWord*         flags )
 {
    VG_(dmsg)("WARNING: unhandled hypercall: %s\n",
-      VG_SYSNUM_STRING(args->sysno));
+      VG_SYSNUM_STRING(args->canonical_sysno));
    if (VG_(clo_verbosity) > 1) {
       VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
    }

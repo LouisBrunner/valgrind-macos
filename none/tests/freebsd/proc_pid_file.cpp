@@ -18,6 +18,12 @@ int main()
    //std::cout << "resolvedPath2: " << resolvedPath2 << '\n';
    std::string rp(resolvedPath);
    assert(rp == resolvedPath2);
+
+   std::string ppf = std::string("/proc/") + std::to_string(getpid()) + "/file";
+   count = readlink(ppf.c_str(), resolvedPath, PATH_MAX);
+   resolvedPath[count] = '\0';
+   rp = resolvedPath;
+   assert(rp == resolvedPath2);
    
    auto n = rp.rfind("proc_pid_file");
    

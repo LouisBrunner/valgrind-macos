@@ -82,9 +82,7 @@
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
-   obj:*
-   fun:call_init
-   fun:_dl_init
+   ...
    fun:_dl_start_user
 }
 {

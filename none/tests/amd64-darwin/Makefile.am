@@ -6,7 +6,7 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = \
 	bug341419.vgtest bug341419.stderr.exp \
-	cet_nops_gs.stderr.exp cet_nops_gs.stdout.exp cet_nops_gs.vgtest
+	cet_nops_gs.stdout.exp cet_nops_gs.vgtest
 
 check_PROGRAMS = \
 	bug341419 \

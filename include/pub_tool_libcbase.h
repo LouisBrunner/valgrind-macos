@@ -72,9 +72,9 @@ extern double VG_(strtod)  ( const HChar* str, HChar** endptr );
    ------------------------------------------------------------------ */
 
 /* Use this for normal null-termination-style string comparison. */
-#define VG_STREQ(s1,s2) ( (s1 != NULL && s2 != NULL \
+#define VG_STREQ(s1,s2) ( ((s1) != NULL && (s2) != NULL \
                            && VG_(strcmp)((s1),(s2))==0) ? True : False )
-#define VG_STREQN(n,s1,s2) ( (s1 != NULL && s2 != NULL \
+#define VG_STREQN(n,s1,s2) ( ((s1) != NULL && (s2) != NULL \
                              && VG_(strncmp)((s1),(s2),(n))==0) ? True : False )
 
 extern SizeT  VG_(strlen)         ( const HChar* str );

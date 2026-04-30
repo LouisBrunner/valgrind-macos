@@ -8,7 +8,7 @@ s/pthread_cond_timedwait \(hg_intercepts.c:/pthread_cond_timedwait@* \(hg_interc
 # We need to remove stack frames containing redundant function
 # names from libc, for example
 #     by 0x........: pthread_mutex_init (in /...libc...)
-my $check = join "|", ('pthread_mutex_init', 'pthread_cond_wait', 'pthread_cond_timedwait');
+my $check = join "|", ('pthread_mutex_init', 'pthread_cond_wait', 'pthread_cond_timedwait', 'pthread_rwlock_init');
 s/^\s*by 0x........: (?:$check) \(in \/...libc...\)\s*//;
 
 # We also need to replace Solaris threading and sychronization function

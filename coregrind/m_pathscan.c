@@ -102,12 +102,12 @@ static Bool match_executable(const HChar *entry)
    // matching executable later in the path.
    if (VG_(access)(buf, True/*r*/, False/*w*/, True/*x*/) == 0) {
       VG_(free)(executable_name_out);
-      executable_name_out = VG_(strdup)("match_executable", buf);
+      executable_name_out = VG_(strdup)("match_executable.1", buf);
       return True;      // Stop looking
    } else if (VG_(access)(buf, True/*r*/, False/*w*/, False/*x*/) == 0 
               && executable_name_out == NULL)
    {
-      executable_name_out = VG_(strdup)("match_executable", buf);
+      executable_name_out = VG_(strdup)("match_executable.2", buf);
       return False;     // Keep looking
    } else { 
       return False;     // Keep looking

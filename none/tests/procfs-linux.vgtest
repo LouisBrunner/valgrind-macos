@@ -1,4 +1,0 @@
-prereq: [ $(uname) = Linux ]
-prog: procfs-cmdline-exe
-args: arg1 "arg 2" arg3
-stderr_filter: filter_stderr

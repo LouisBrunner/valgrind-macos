@@ -4,10 +4,10 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
-	power_ISA2_05.stderr.exp power_ISA2_05.stdout.exp power_ISA2_05.vgtest \
+	power_ISA2_05.stdout.exp power_ISA2_05.vgtest \
 	power_ISA2_05.stdout.exp_Without_FPPO power_ISA2_05.stdout.exp_Without_FPPO_2 \
 	power_ISA2_07.stdout.exp  power_ISA2_07.stdout.exp-LE \
-	power_ISA2_07.stderr.exp power_ISA2_07.vgtest
+	power_ISA2_07.vgtest
 
 
 check_PROGRAMS = \

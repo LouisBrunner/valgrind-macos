@@ -144,12 +144,6 @@ typedef
          replace-style ones. */
       ULong guest_NRADDR;
 
-      /* Needed for Darwin (but mandated for all guest architectures):
-         program counter at the last syscall insn (int 0x80/81/82,
-         sysenter, syscall, svc).  Used when backing up to restart a
-         syscall that has been interrupted by a signal. */
-      ULong guest_IP_AT_SYSCALL;
-
       /* The complete FPCR.  Default value seems to be zero.  We
          ignore all bits except 23 and 22, which are the rounding
          mode.  The guest is unconstrained in what values it can write
@@ -169,10 +163,15 @@ typedef
       /* Used for Darwin/FreeBSD syscall dispatching. */
       ULong guest_SC_CLASS;
       /* Padding to make it have an 16-aligned size */
-      ULong pad_end_1;
+      //UInt pad_end_1;
 
    }
    VexGuestARM64State;
+
+#if defined(__LP64__)
+_Static_assert((sizeof(VexGuestARM64State)%16)== 0, "sizeof VexGuestARM64State is not a multiple of 16");
+#endif
+
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for ARM64 guest stuff.                ---*/

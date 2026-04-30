@@ -1,0 +1,14 @@
+
+pthread_mutex_init called on address 0x........ which already has a live lock record
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (lock_destroy_report.c:10)
+
+2 lock(s) were not destroyed before exit.
+Undestroyed rwlock at address 0x........, first observed at:
+   at 0x........: pthread_rwlock_init_WRK (hg_intercepts.c:...)
+   by 0x........: pthread_rwlock_init (hg_intercepts.c:...)
+   by 0x........: main (lock_destroy_report.c:11)
+Undestroyed mutex at address 0x........, first observed at:
+   at 0x........: pthread_mutex_init (hg_intercepts.c:...)
+   by 0x........: main (lock_destroy_report.c:10)
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

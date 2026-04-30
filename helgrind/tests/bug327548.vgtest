@@ -1,2 +1,3 @@
+prereq: ../../drd/tests/supported_sem_init
 vgopts: -q
 prog: bug327548

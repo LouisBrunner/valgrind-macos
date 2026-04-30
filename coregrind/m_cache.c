@@ -614,11 +614,6 @@ get_cache_info(VexArchInfo *vai)
 
    ci->icaches_maintain_coherence = True;
 
-   if (! (vai->hwcaps & VEX_HWCAPS_S390X_GIE)) {
-      // ECAG is not available
-      return False;
-   }
-
    UInt level, cache_kind, info, i;
    ULong topology = ecag(0, 0, 0);   // get summary
 

@@ -2014,7 +2014,7 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
 {
    Int      i, j;
    HReg     hreg, hregHI;
-   ISelEnv* env;
+   ISelEnv *env, envmem;
 
    /* Do some sanity checks. */
    vassert(arch_host == VexArchRISCV64);
@@ -2026,7 +2026,7 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    vassert(sizeof(RISCV64Instr) <= 32);
 
    /* Make up an initial environment to use. */
-   env           = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env           = &envmem;
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

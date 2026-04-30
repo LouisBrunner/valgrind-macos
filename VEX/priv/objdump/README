@@ -1,0 +1,16 @@
+Files imported from binutils distribution: 2.45
+
+<binutils>/include/dis-asm.h        -> dis-asm.h        modified
+<binutils>/include/opcode/s390.h    -> s390.h           unchanged
+<binutils>/opcodes/dis-init.c       -> dis-init.c       modified
+<binutils>/opcodes/s390-dis.c       -> s390-dis.c       modified
+<binutils>/opcodes/s390-opc.c       -> s390-opc.c       modified
+
+s390-opc.tab generated from
+<binutils>/opcodes/s390-opc.txt via
+<binutils>/opcodes/mkopc.c
+
+gcc mkopc.c
+./a.out < s390-opc.txt > s390-opc.tab
+
+Might not be worth the trouble to write an update-objdump script.

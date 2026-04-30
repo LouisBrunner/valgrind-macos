@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -26,7 +26,7 @@
 #define OBJDUMP_H
 
 /* An opcode which marks the begin and end of a sequence of insns
-   in a testcase whose disassembly should be verified. */
+   in a testcase. */
 #define MARK "csch"
 
 /* Name of the C function containing the generated insns. */

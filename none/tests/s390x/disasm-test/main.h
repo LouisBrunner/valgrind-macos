@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -66,22 +66,22 @@ typedef struct {
 } opcode;
 
 typedef struct {
-   unsigned num_verified;
-   unsigned num_mismatch;
+   unsigned num_generated;
    unsigned num_spec_exc;
-} verify_stats;
+} test_stats;
 
 __attribute__((format(printf, 1, 2)))
 void error(const char *, ...);
 __attribute__((noreturn)) __attribute__((format(printf, 1, 2)))
 void fatal(const char *, ...);
 
-verify_stats verify_disassembly(const char *);
-unsigned generate_tests(const opcode *);
+test_stats verify_spec_exceptions(const opcode *, int);
+unsigned generate_tests(const opcode *, int);
 opcode  *get_opcode_by_name(const char *);
 opcode  *get_opcode_by_index(unsigned);
 void     release_opcode(opcode *);
 void     run_unit_tests(void);
+int      asm_detects_spec_exc(const opnd *);
 
 void *mallock(unsigned);
 char *strsave(const char *);
@@ -89,8 +89,6 @@ char *strnsave(const char *, unsigned);
 
 extern int verbose;
 extern int debug;
-extern int show_spec_exc;
-extern int show_miscompares;
 extern unsigned num_opcodes;
 extern const char *gcc;
 extern const char *gcc_flags;

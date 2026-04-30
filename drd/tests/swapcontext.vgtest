@@ -1,4 +1,4 @@
-prereq: test -e swapcontext && ./supported_libpthread
+prereq: test -e swapcontext && ./supported_libpthread && ! ../../tests/os_test darwin
 vgopts: --read-var-info=yes --check-stack-var=yes --show-confl-seg=no --num-callers=2
 prog: swapcontext
 stderr_filter: filter_stderr

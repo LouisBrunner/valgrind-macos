@@ -379,10 +379,14 @@ static void instr_trace_mem_store(IRSB* const bb, IRExpr* const addr_expr,
    HWord size;
 
    tl_assert(sizeof(HWord) == 4 || sizeof(HWord) == 8);
-   tl_assert(!data_expr_hi || typeOfIRExpr(bb->tyenv, data_expr_hi) == Ity_I32);
+   tl_assert(!data_expr_hi
+             || typeOfIRExpr(bb->tyenv, data_expr_hi) == Ity_I32
+             || typeOfIRExpr(bb->tyenv, data_expr_hi) == Ity_I64);
 
    ty_data_expr = typeOfIRExpr(bb->tyenv, data_expr_lo);
    size = sizeofIRType(ty_data_expr);
+   if (data_expr_hi)
+      size *= 2;
 
 #if 0
    // Test code

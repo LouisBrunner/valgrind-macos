@@ -608,7 +608,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_close,             sys_close),             // 57
    LINX_(__NR_vhangup,           sys_vhangup),           // 58
    LINXY(__NR_pipe2,             sys_pipe2),             // 59
-   LINX_(__NR_quotactl,          sys_quotactl),          // 60
+   LINXY(__NR_quotactl,          sys_quotactl),          // 60
    GENXY(__NR_getdents64,        sys_getdents64),        // 61
    LINX_(__NR_lseek,             sys_lseek),             // 62
    GENXY(__NR_read,              sys_read),              // 63
@@ -679,7 +679,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //   (__NR_restart_syscall,   sys_ni_syscall),        // 128
    GENX_(__NR_kill,              sys_kill),              // 129
    LINXY(__NR_tkill,             sys_tkill),             // 130
-   LINX_(__NR_tgkill,            sys_tgkill),            // 131
+   LINXY(__NR_tgkill,            sys_tgkill),            // 131
    GENXY(__NR_sigaltstack,       sys_sigaltstack),       // 132
    LINX_(__NR_rt_sigsuspend,     sys_rt_sigsuspend),     // 133
    LINXY(__NR_rt_sigaction,      sys_rt_sigaction),      // 134
@@ -781,7 +781,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_mlockall,          sys_mlockall),          // 230
    LINX_(__NR_munlockall,        sys_munlockall),        // 231
    GENXY(__NR_mincore,           sys_mincore),           // 232
-   GENX_(__NR_madvise,           sys_madvise),           // 233
+   GENXY(__NR_madvise,           sys_madvise),           // 233
    LINX_(__NR_remap_file_pages,  sys_remap_file_pages),  // 234
    LINX_(__NR_mbind,             sys_mbind),             // 235
    LINXY(__NR_get_mempolicy,     sys_get_mempolicy),     // 236
@@ -808,7 +808,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_finit_module,      sys_finit_module),      // 273
    LINX_(__NR_sched_setattr,     sys_sched_setattr),     // 274
    LINXY(__NR_sched_getattr,     sys_sched_getattr),     // 275
-   LINX_(__NR_renameat2,         sys_renameat2),         // 276
+   GENX_(__NR_renameat2,         sys_renameat2),         // 276
    //   (__NR_seccomp,           sys_ni_syscall),        // 277
    LINXY(__NR_getrandom,         sys_getrandom),         // 278
    LINXY(__NR_memfd_create,      sys_memfd_create),      // 279
@@ -824,7 +824,7 @@ static SyscallTableEntry syscall_main_table[] = {
    //   (__NR_pkey_alloc,        sys_ni_syscall),        // 289
    //   (__NR_pkey_free,         sys_ni_syscall),        // 290
    LINXY(__NR_statx,             sys_statx),             // 291
-   LINX_(__NR_io_pgetevents,     sys_io_pgetevents),     // 292
+   LINXY(__NR_io_pgetevents,     sys_io_pgetevents),     // 292
 
 
    GENX_(__NR_rseq,              sys_ni_syscall),        // 293
@@ -847,7 +847,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
    LINX_(__NR_mount_setattr,     sys_mount_setattr),     // 442
-   LINX_(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
+   LINXY(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
@@ -860,7 +860,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
    LINXY(__NR_statmount,         sys_statmount),         // 457
    LINXY(__NR_listmount,         sys_listmount),         // 458
+   LINXY(__NR_lsm_get_self_attr, sys_lsm_get_self_attr), // 459
+   LINX_(__NR_lsm_set_self_attr, sys_lsm_set_self_attr), // 460
+   LINXY(__NR_lsm_list_modules,  sys_lsm_list_modules),  // 461
    LINX_(__NR_mseal,             sys_mseal),             // 462
+   LINXY(__NR_file_getattr,      sys_file_getattr),      // 468
+   LINX_(__NR_file_setattr,      sys_file_setattr),      // 469
 };
 
 

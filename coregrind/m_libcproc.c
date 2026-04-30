@@ -1049,7 +1049,7 @@ UInt VG_(read_millisecond_timer) ( void )
      struct vki_timeval tv_now = { 0, 0 };
      res = VG_(do_syscall2)(__NR_gettimeofday, (UWord)&tv_now, (UWord)NULL);
      vg_assert(! sr_isError(res));
-#   if DARWIN_VERS >= DARWIN_11_00
+#   if DARWIN_VERS >= DARWIN_10_13
      now = tv_now.tv_sec * 1000000ULL + tv_now.tv_usec;
 #   else
      // Weird: it seems that gettimeofday() doesn't fill in the timeval, but

@@ -160,6 +160,10 @@ int main(int argc, const char** argv)
 
    if (sigaction (SIGSEGV, &sa, NULL) != 0)
       perror("sigaction");
+#if defined(__APPLE__)
+   if (sigaction (SIGBUS, &sa, NULL) != 0)
+      perror("sigaction");
+#endif
 
    grow_the_stack();
    bad_things_below_sp();

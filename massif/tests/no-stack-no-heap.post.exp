@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Command:            ./basic
-Massif arguments:   --stacks=no --heap=no --time-unit=B --massif-out-file=massif.out --ignore-fn=__part_load_locale --ignore-fn=__time_load_locale --ignore-fn=dwarf2_unwind_dyld_add_image_hook --ignore-fn=get_or_create_key_element
+Massif arguments:   --stacks=no --heap=no --time-unit=B --massif-out-file=massif.out
 ms_print arguments: massif.out
 --------------------------------------------------------------------------------
 

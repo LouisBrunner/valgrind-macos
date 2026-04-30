@@ -42,6 +42,7 @@
 #include "guest_generic_bb_to_IR.h"
 #include "guest_amd64_defs.h"
 #include "guest_generic_x87.h"
+#include "guest_generic_helpers.h"
 
 
 /* This file contains helper functions for amd64 guest code.
@@ -1988,6 +1989,14 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       //   /* SHLL, then NS --> (ULong) ~ result[31] */
       //   vassert(0);
       //}
+
+      /*---------------- SHLB ----------------*/
+      if (isU64(cc_op, AMD64G_CC_OP_SHLB) && isU64(cond, AMD64CondZ)) {
+         /* SHLB, then Z --> test dep1 == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ8, unop(Iop_64to8, cc_dep1),
+                           mkU8(0)));
+      }
 
       /*---------------- COPY ----------------*/
       /* This can happen, as a result of amd64 FP compares: "comisd ... ;
@@ -4028,10 +4037,6 @@ ULong amd64g_dirtyhelper_RDSEED ( void ) {
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/
 /*---------------------------------------------------------------*/
 
-static inline UChar abdU8 ( UChar xx, UChar yy ) {
-   return toUChar(xx>yy ? xx-yy : yy-xx);
-}
-
 static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
 }
@@ -4051,39 +4056,6 @@ static inline UShort sel16x4_1 ( ULong w64 ) {
 static inline UShort sel16x4_0 ( ULong w64 ) {
    UInt lo32 = toUInt(w64);
    return toUShort(lo32);
-}
-
-static inline UChar sel8x8_7 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 24);
-}
-static inline UChar sel8x8_6 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 16);
-}
-static inline UChar sel8x8_5 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 8);
-}
-static inline UChar sel8x8_4 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 0);
-}
-static inline UChar sel8x8_3 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 24);
-}
-static inline UChar sel8x8_2 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 16);
-}
-static inline UChar sel8x8_1 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 8);
-}
-static inline UChar sel8x8_0 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 0);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -4165,60 +4137,6 @@ ULong amd64g_calc_crc32q ( ULong crcIn, ULong q )
 {
    ULong crc = amd64g_calc_crc32l(crcIn, q);
    return amd64g_calc_crc32l(crc, q >> 32);
-}
-
-
-/* .. helper for next fn .. */
-static inline ULong sad_8x4 ( ULong xx, ULong yy )
-{
-   UInt t = 0;
-   t += (UInt)abdU8( sel8x8_3(xx), sel8x8_3(yy) );
-   t += (UInt)abdU8( sel8x8_2(xx), sel8x8_2(yy) );
-   t += (UInt)abdU8( sel8x8_1(xx), sel8x8_1(yy) );
-   t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
-   return (ULong)t;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
-                            ULong dHi, ULong dLo,
-                            ULong imm_and_return_control_bit )
-{
-   UInt imm8     = imm_and_return_control_bit & 7;
-   Bool calcHi   = (imm_and_return_control_bit >> 7) & 1;
-   UInt srcOffsL = imm8 & 3; /* src offs in 32-bit (L) chunks */
-   UInt dstOffsL = (imm8 >> 2) & 1; /* dst offs in ditto chunks */
-   /* For src we only need 32 bits, so get them into the
-      lower half of a 64 bit word. */
-   ULong src = ((srcOffsL & 2) ? sHi : sLo) >> (32 * (srcOffsL & 1));
-   /* For dst we need to get hold of 56 bits (7 bytes) from a total of
-      11 bytes.  If calculating the low part of the result, need bytes
-      dstOffsL * 4 + (0 .. 6); if calculating the high part,
-      dstOffsL * 4 + (4 .. 10). */
-   ULong dst;
-   /* dstOffL = 0, Lo  ->  0 .. 6
-      dstOffL = 1, Lo  ->  4 .. 10
-      dstOffL = 0, Hi  ->  4 .. 10
-      dstOffL = 1, Hi  ->  8 .. 14
-   */
-   if (calcHi && dstOffsL) {
-      /* 8 .. 14 */
-      dst = dHi & 0x00FFFFFFFFFFFFFFULL;
-   }
-   else if (!calcHi && !dstOffsL) {
-      /* 0 .. 6 */
-      dst = dLo & 0x00FFFFFFFFFFFFFFULL;
-   } 
-   else {
-      /* 4 .. 10 */
-      dst = (dLo >> 32) | ((dHi & 0x00FFFFFFULL) << 32);
-   }
-   ULong r0  = sad_8x4( dst >>  0, src );
-   ULong r1  = sad_8x4( dst >>  8, src );
-   ULong r2  = sad_8x4( dst >> 16, src );
-   ULong r3  = sad_8x4( dst >> 24, src );
-   ULong res = (r3 << 48) | (r2 << 32) | (r1 << 16) | r0;
-   return res;
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -4829,7 +4747,6 @@ void LibVEX_GuestAMD64_initialise ( /*OUT*/VexGuestAMD64State* vex_state )
    vex_state->guest_SC_CLASS = 0;
    vex_state->guest_GS_CONST = 0;
 
-   vex_state->guest_IP_AT_SYSCALL = 0;
    vex_state->guest_TLSBASE = 0;
 }
 
@@ -4903,7 +4820,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 16,
+          .n_alwaysDefd = 15,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -4931,8 +4848,7 @@ VexGuestLayout
                  /* 11 */ ALWAYSDEFD(guest_SSEROUND),
                  /* 12 */ ALWAYSDEFD(guest_CMSTART),
                  /* 13 */ ALWAYSDEFD(guest_CMLEN),
-                 /* 14 */ ALWAYSDEFD(guest_SC_CLASS),
-                 /* 15 */ ALWAYSDEFD(guest_IP_AT_SYSCALL)
+                 /* 14 */ ALWAYSDEFD(guest_SC_CLASS)
                }
         };
 

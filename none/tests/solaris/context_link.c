@@ -28,7 +28,7 @@ int main(void)
    uc.uc_stack.ss_size = sizeof(stack);
 
    /* Call print_value(). */
-   makecontext(&uc, print_value, 1, 42);
+   makecontext(&uc, (void(*)())print_value, 1, 42);
    setcontext(&uc);
 
    /* This code should not be reached. */

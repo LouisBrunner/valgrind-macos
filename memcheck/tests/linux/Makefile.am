@@ -1,48 +1,51 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr \
+	filter_madv_guard \
+	filter_ioctl_procmap_query
 
 EXTRA_DIST = \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
 		aligned_alloc.stderr.exp-musl \
 		aligned_alloc.stderr.exp-glibc238 \
 	brk.stderr.exp brk.vgtest \
-	bug480706.stderr.exp bug480706.vgtest \
-	bug420682_1.stderr.exp bug420682_1.vgtest \
+	bug480706.vgtest \
+	bug420682_1.vgtest \
 	bug420682_2.stderr.exp bug420682_2.vgtest \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	capget.stderr.exp4 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
 	debuginfod-check.pl \
-	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.stdout.exp \
-	    dlclose_leak-no-keep.vgtest \
-	dlclose_leak.stderr.exp dlclose_leak.stdout.exp \
-	    dlclose_leak.vgtest \
-	ioctl-tiocsig.vgtest ioctl-tiocsig.stderr.exp \
-	lsframe1.vgtest lsframe1.stdout.exp lsframe1.stderr.exp \
-	lsframe2.vgtest lsframe2.stdout.exp lsframe2.stderr.exp \
+	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.vgtest \
+	dlclose_leak.stderr.exp dlclose_leak.vgtest \
+	ioctl_procmap_query.stdout.exp ioctl_procmap_query.vgtest \
+	ioctl-tiocsig.vgtest \
+	lsframe1.vgtest lsframe1.stderr.exp \
+	lsframe2.vgtest lsframe2.stderr.exp \
+	madv_guard.stdout.exp madv_guard.vgtest \
 	memfd_create.vgtest memfd_create.stderr.exp \
 		memfd_create.stderr.exp-fcntl64 \
 	rfcomm.vgtest rfcomm.stderr.exp \
+		rfcomm.stderr.exp-ppc64le \
 	sigqueue.vgtest sigqueue.stderr.exp \
-	stack_changes.stderr.exp stack_changes.stdout.exp \
+	stack_changes.stdout.exp \
 	    stack_changes.stdout.exp2 stack_changes.vgtest \
-	stack_switch.stderr.exp stack_switch.vgtest \
+	stack_switch.vgtest \
 	syscalls-2007.vgtest syscalls-2007.stderr.exp \
 	syslog-syscall.vgtest syslog-syscall.stderr.exp \
 	sys-copy_file_range.vgtest sys-copy_file_range.stderr.exp \
-	sys-openat.vgtest sys-openat.stderr.exp sys-openat.stdout.exp \
+	sys-openat.vgtest sys-openat.stderr.exp \
 	sys-statx.vgtest sys-statx.stderr.exp \
 	timerfd-syscall.vgtest timerfd-syscall.stderr.exp \
 	with-space.stderr.exp with-space.stdout.exp with-space.vgtest \
 	proc-auxv.vgtest proc-auxv.stderr.exp getregset.vgtest \
-	getregset.stderr.exp getregset.stdout.exp \
+	getregset.stdout.exp \
 	strlcat_strlcpy.vgtest strlcat_strlcpy.stderr.exp \
 	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
-	enomem.vgtest enomem.stderr.exp enomem.stdout.exp \
+	enomem.vgtest enomem.stdout.exp \
 	memalign.vgtest memalign.stderr.exp \
 		memalign.stderr.exp-musl
 
@@ -69,6 +72,10 @@ check_PROGRAMS = \
 	check_execveat \
 	enomem \
 	memalign
+
+if HAVE_PROCMAP_QUERY
+check_PROGRAMS += ioctl_procmap_query
+endif
 
 if HAVE_OPENSSL
 check_PROGRAMS += bug480706
@@ -107,6 +114,10 @@ if HAVE_LIBAIO
 if HAVE_NR_IO_PGETEVENTS
         check_PROGRAMS += bug420682_2
 endif
+endif
+
+if HAVE_MADV_GUARD_INSTALL
+        check_PROGRAMS += madv_guard
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

@@ -191,6 +191,7 @@ typedef
       UShort guest_FS;
       UShort guest_GS;
       UShort guest_SS;
+      UInt paddingSeg;
       /* LDT/GDT stuff. */
       ULong  guest_LDT; /* host addr, a VexGuestX86SegDescr* */
       ULong  guest_GDT; /* host addr, a VexGuestX86SegDescr* */
@@ -213,11 +214,6 @@ typedef
       /* Used for Darwin syscall dispatching. */
       UInt guest_SC_CLASS;
 
-      /* Needed for Darwin (but mandated for all guest architectures):
-         EIP at the last syscall insn (int 0x80/81/82, sysenter,
-         syscall).  Used when backing up to restart a syscall that has
-         been interrupted by a signal. */
-      UInt guest_IP_AT_SYSCALL;
 
       /* Padding to make it have an 16-aligned size */
       UInt padding1;
@@ -225,6 +221,8 @@ typedef
       UInt padding3;
    }
    VexGuestX86State;
+
+_Static_assert(sizeof(VexGuestX86State)%16 == 0, "sizeof VexGuestX86State is not a multiple of 16");
 
 #define VEX_GUEST_X86_LDT_NENT /*64*/ 8192 /* use complete LDT */
 #define VEX_GUEST_X86_GDT_NENT /*16*/ 8192 /* use complete GDT */

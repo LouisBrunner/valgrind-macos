@@ -770,7 +770,7 @@ static UInt local_sys_write_stderr ( const HChar* buf, Int n )
          "1: "
          : "=a" (res), "=d" (err)
          : "S" (buf), "d" (n)
-         : "cc");
+         : "rdi", "rcx", "r11", "cc");
       restart = err && (res == VKI_EINTR || res == VKI_ERESTART);
    } while (restart);
 

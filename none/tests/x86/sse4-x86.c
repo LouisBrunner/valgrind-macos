@@ -1,170 +1,9 @@
 
-/* A program to test SSE4.1/SSE4.2 instructions. 
+/* A program to test SSE4.1/SSE4.2 instructions.
    Copied from amd64 version.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "tests/malloc.h"
-#include <string.h>
-
-
-typedef  unsigned char           V128[16];
-typedef  unsigned int            UInt;
-typedef  signed int              Int;
-typedef  unsigned char           UChar;
-typedef  unsigned long long int  ULong;
-
-typedef  unsigned char           Bool;
-#define False ((Bool)0)
-#define True  ((Bool)1)
-
-
-typedef
-   struct {
-      V128 arg1;
-      V128 arg2;
-      V128 res;
-   }
-   RRArgs;
-
-typedef
-   struct {
-      V128 arg1;
-      V128 res;
-   }
-   RMArgs;
-
-
-static UChar randUChar ( void )
-{
-   static UInt seed = 80021;
-   seed = 1103515245 * seed + 12345;
-   return (seed >> 17) & 0xFF;
-}
-
-
-static ULong randULong ( void )
-{
-   Int i;
-   ULong r = 0;
-   for (i = 0; i < 8; i++) {
-      r = (r << 8) | (ULong)(0xFF & randUChar());
-   }
-   return r;
-}
-
-
-static void showV128 ( V128* v )
-{
-   Int i;
-   for (i = 15; i >= 0; i--)
-      printf("%02x", (Int)(*v)[i]);
-}
-
-
-static void showIGVV( char* rOrM, char* op, Int imm,
-                      ULong src64, V128* dst, V128* res )
-{
-   printf("%s %10s $%d ", rOrM, op, imm);
-   printf("%016llx", src64);
-   printf(" ");
-   showV128(dst);
-   printf(" ");
-   showV128(res);
-   printf("\n");
-}
-
-static V128 fives    = { 0x55,0x55,0x55,0x55, 0x55,0x55,0x55,0x55,
-                         0x55,0x55,0x55,0x55, 0x55,0x55,0x55,0x55 };
-
-static V128 zeroes   = { 0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,
-                         0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00 };
-
-#define DO_imm_r_r(_opname, _imm, _src, _dst)  \
-   {  \
-      V128 _tmp;  \
-      __asm__ __volatile__(  \
-         "movupd (%0), %%xmm2"    "\n\t"  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " $" #_imm ", %%xmm2, %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
-         : /*out*/ : /*in*/ "r"(&(_src)), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm2", "xmm11"                            \
-      );  \
-      RRArgs rra;  \
-      memcpy(&rra.arg1, &(_src), sizeof(V128));  \
-      memcpy(&rra.arg2, &(_dst), sizeof(V128));  \
-      memcpy(&rra.res,  &(_tmp), sizeof(V128));  \
-      showIAA("r", (_opname), (_imm), &rra, &AllMask);  \
-   }
-
-#define DO_imm_m_r(_opname, _imm, _src, _dst)  \
-   {  \
-      V128 _tmp;  \
-      V128* _srcM = memalign16(sizeof(V128));  \
-      memcpy(_srcM, &(_src), sizeof(V128));  \
-      __asm__ __volatile__(  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " $" #_imm ", (%0), %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
-         : /*out*/ : /*in*/ "r"(_srcM), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm11"  \
-      );  \
-      RRArgs rra;  \
-      memcpy(&rra.arg1, &(_src), sizeof(V128));  \
-      memcpy(&rra.arg2, &(_dst), sizeof(V128));  \
-      memcpy(&rra.res,  &(_tmp), sizeof(V128));  \
-      showIAA("m", (_opname), (_imm), &rra, &AllMask);  \
-      free(_srcM);  \
-   }
-
-#define DO_imm_mandr_r(_opname, _imm, _src, _dst)  \
-      DO_imm_r_r( _opname, _imm, _src, _dst ) \
-      DO_imm_m_r( _opname, _imm, _src, _dst )
-
-#define DO_r_r(_opname, _src, _dst)  \
-   {  \
-      V128 _tmp;  \
-      __asm__ __volatile__(  \
-         "movupd (%0), %%xmm2"    "\n\t"  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " %%xmm2, %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
-         : /*out*/ : /*in*/ "r"(&(_src)), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm2", "xmm11"  \
-      );  \
-      RRArgs rra;  \
-      memcpy(&rra.arg1, &(_src), sizeof(V128));  \
-      memcpy(&rra.arg2, &(_dst), sizeof(V128));  \
-      memcpy(&rra.res,  &(_tmp), sizeof(V128));  \
-      showAA("r", (_opname), &rra, &AllMask);  \
-   }
-
-#define DO_m_r(_opname, _src, _dst)  \
-   {  \
-      V128 _tmp;  \
-      V128* _srcM = memalign16(sizeof(V128));  \
-      memcpy(_srcM, &(_src), sizeof(V128));  \
-      __asm__ __volatile__(  \
-         "movupd (%1), %%xmm11"   "\n\t"  \
-         _opname " (%0), %%xmm11"  "\n\t"  \
-         "movupd %%xmm11, (%2)" "\n"  \
-         : /*out*/ : /*in*/ "r"(_srcM), "r"(&(_dst)), "r"(&(_tmp))  \
-         : "cc", "memory", "xmm11"  \
-      );  \
-      RRArgs rra;  \
-      memcpy(&rra.arg1, &(_src), sizeof(V128));  \
-      memcpy(&rra.arg2, &(_dst), sizeof(V128));  \
-      memcpy(&rra.res,  &(_tmp), sizeof(V128));  \
-      showAA("m", (_opname), &rra, &AllMask);  \
-      free(_srcM);  \
-   }
-
-#define DO_mandr_r(_opname, _src, _dst)  \
-      DO_r_r(_opname, _src, _dst) \
-      DO_m_r(_opname, _src, _dst)
+#include "../sse4-common.h"
 
 #define DO_imm_r_to_rscalar(_opname, _imm, _src)       \
    {  \
@@ -259,12 +98,74 @@ void test_PINSRD ( void )
    DO_imm_mandrscalar_to_r("pinsrd", 3, src);
 }
 
+/* ------------ PTEST ------------ */
+
+/* Same test vectors as amd64 variant. Same flag results.  */
+void test_PTEST ( void )
+{
+   const Int ntests = 8;
+   V128 spec[ntests];
+   do64HLtoV128( &spec[0], 0x0000000000000000ULL, 0x0000000000000000ULL );
+   do64HLtoV128( &spec[1], 0x0000000000000000ULL, 0x0000000000000001ULL );
+   do64HLtoV128( &spec[2], 0x0000000000000001ULL, 0x0000000000000000ULL );
+   do64HLtoV128( &spec[3], 0x0000000000000001ULL, 0x0000000000000001ULL );
+   do64HLtoV128( &spec[4], 0xffffffffffffffffULL, 0xffffffffffffffffULL );
+   do64HLtoV128( &spec[5], 0xffffffffffffffffULL, 0xfffffffffffffffeULL );
+   do64HLtoV128( &spec[6], 0xfffffffffffffffeULL, 0xffffffffffffffffULL );
+   do64HLtoV128( &spec[7], 0xfffffffffffffffeULL, 0xfffffffffffffffeULL );
+   __attribute__ ( (aligned (16))) V128 block[2];
+   Int i, j;
+   UInt flags;
+   for (i = 0; i < ntests; i++) {
+      for (j = 0; j < ntests; j++) {
+         memcpy(&block[0], &spec[i], 16);
+         memcpy(&block[1], &spec[j], 16);
+
+         __asm__ __volatile__(            \
+            "sub $256, %%esp"      "\n\t" \
+            "movaps 0(%1), %%xmm2" "\n\t" \
+            "ptest 16(%1), %%xmm2" "\n\t" \
+            "pushf"                "\n\t" \
+            "pop %0"               "\n\t" \
+            "add $256, %%esp"      "\n\t" \
+            : /*out*/ "=r"(flags)
+            : /*in*/ "r"(&block[0])
+            : "xmm2", "memory", "cc");
+
+         printf("r   ptest ");
+         showV128(&block[0]);
+         printf(" ");
+         showV128(&block[1]);
+         printf(" -> flags %04x\n", flags & 0x8D5);
+      }
+   }
+}
+
 /* ------------ main ------------ */
 
 int main(void)
 {
    // ------ SSE 4.1 ------
    test_PINSRD();
+   test_PMAXSB();
+   test_PMAXSD();
+   test_PMAXUD();
+   test_PMAXUW();
+   test_PMINSB();
+   test_PMINSD();
+   test_PMINUD();
+   test_PMINUW();
+   test_PMULLD();
+   test_BLENDPD();
+   test_BLENDPS();
+   test_PBLENDW();
+   test_PBLENDVB();
+   test_BLENDVPD();
+   test_BLENDVPS();
+   test_PTEST();
+   test_PCMPEQQ();
+   test_MPSADBW();
+   test_MOVNTDQA();
 
    return 0;
 }

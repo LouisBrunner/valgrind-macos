@@ -251,7 +251,7 @@ DECL_TEMPLATE(darwin, kdebug_trace);            // 180
 DECL_TEMPLATE(darwin, setegid);                 // 182
 DECL_TEMPLATE(darwin, seteuid);                 // 183
 DECL_TEMPLATE(darwin, sigreturn);               // 184
-DECL_TEMPLATE(darwin, FAKE_SIGRETURN);
+DECL_TEMPLATE(darwin, fake_sigreturn);          // 1000
 // NYI chud 185
 #if DARWIN_VERS >= DARWIN_10_13
 // NYI thread_selfcounts                        // 186
@@ -285,7 +285,7 @@ DECL_TEMPLATE(darwin, __sysctl);                // 202
 // 213  Reserved for AppleTalk
 // NYI kqueue_from_portset_np 214
 // NYI kqueue_portset_np 215
-// NYI mkcomplex 216
+DECL_TEMPLATE(darwin, open_dprotected_np)       // 216
 // NYI statv 217
 // NYI lstatv 218
 // NYI fstatv 219
@@ -620,7 +620,7 @@ DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
 // NYI stack_snapshot_with_config                   // 491
 // NYI microstackshot                               // 492
 // NYI grab_pgo_data                                // 493
-// NYI persona                                      // 494
+DECL_TEMPLATE(darwin, persona);                     // 494
 // 495
 // 496
 // 497
@@ -777,11 +777,13 @@ DECL_TEMPLATE(darwin, mach_msg_bootstrap);
 DECL_TEMPLATE(darwin, mach_msg_host);
 DECL_TEMPLATE(darwin, mach_msg_task);
 DECL_TEMPLATE(darwin, mach_msg_thread);
+DECL_TEMPLATE(darwin, mach_voucher_extract_attr_recipe_trap); // MACH 72
 
 // Mach traps
 #if DARWIN_VERS >= DARWIN_10_8
-DECL_TEMPLATE(darwin, kernelrpc_mach_vm_allocate_trap);
-DECL_TEMPLATE(darwin, kernelrpc_mach_vm_deallocate_trap);
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_allocate_trap); // MACH 10
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_purgable_control_trap); // MACH 11
+DECL_TEMPLATE(darwin, kernelrpc_mach_vm_deallocate_trap); // MACH 12
 DECL_TEMPLATE(darwin, kernelrpc_mach_vm_protect_trap);
 DECL_TEMPLATE(darwin, kernelrpc_mach_vm_map_trap);
 DECL_TEMPLATE(darwin, kernelrpc_mach_port_allocate_trap);
@@ -816,6 +818,7 @@ DECL_TEMPLATE(darwin, semaphore_timedwait);
 DECL_TEMPLATE(darwin, semaphore_timedwait_signal);
 DECL_TEMPLATE(darwin, task_name_for_pid);
 DECL_TEMPLATE(darwin, task_for_pid);
+DECL_TEMPLATE(darwin, task_name_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
 
 #if DARWIN_VERS >= DARWIN_10_13

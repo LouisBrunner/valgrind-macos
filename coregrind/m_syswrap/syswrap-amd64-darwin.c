@@ -430,7 +430,7 @@ asm(
     To handle this in valgrind, we create and destroy a valgrind
     thread for every work item.
 */
-void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
+void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem, 
                      UInt reuse, Int kevent_count, Addr sp)
 {
    ThreadState *tst;

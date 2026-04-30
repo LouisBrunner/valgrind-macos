@@ -513,10 +513,10 @@ Int VG_(machine_arm_archlevel) = 4;
 #endif
 
 
-/* For hwcaps detection on ppc32/64, s390x, and arm we'll need to do SIGILL
+/* For hwcaps detection on ppc32/64, mips and arm we'll need to do SIGILL
    testing, so we need a VG_MINIMAL_JMP_BUF. */
 #if defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
-    || defined(VGA_arm) || defined(VGA_s390x) || defined(VGA_mips32) \
+    || defined(VGA_arm) || defined(VGA_mips32) \
     || defined(VGA_mips64) || defined(VGA_arm64)
 #include "pub_core_libcsetjmp.h"
 static VG_MINIMAL_JMP_BUF(env_unsup_insn);
@@ -602,7 +602,7 @@ static UInt VG_(get_machine_model)(void)
 {
    static struct model_map {
       const HChar name[5];
-      UInt  id;
+      const UInt  id;
    } model_map[] = {
       { "2064", VEX_S390X_MODEL_Z900 },
       { "2066", VEX_S390X_MODEL_Z800 },
@@ -1525,114 +1525,56 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_s390x)
 
-#  include "libvex_s390x_common.h"
-
    {
-     /* Instruction set detection code borrowed from ppc above. */
-     vki_sigset_t          saved_set, tmp_set;
-     vki_sigaction_fromK_t saved_sigill_act;
-     vki_sigaction_toK_t     tmp_sigill_act;
-
-     volatile Bool have_LDISP, have_STFLE;
-     Int i, r, model;
+     Int i, model;
 
      /* If the model is "unknown" don't treat this as an error. Assume
         this is a brand-new machine model for which we don't have the
         identification yet. Keeping fingers crossed. */
      model = VG_(get_machine_model)();
 
-     /* Unblock SIGILL and stash away the old action for that signal */
-     VG_(sigemptyset)(&tmp_set);
-     VG_(sigaddset)(&tmp_set, VKI_SIGILL);
-
-     r = VG_(sigprocmask)(VKI_SIG_UNBLOCK, &tmp_set, &saved_set);
-     vg_assert(r == 0);
-
-     r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
-     vg_assert(r == 0);
-     tmp_sigill_act = saved_sigill_act;
-
-     /* NODEFER: signal handler does not return (from the kernel's point of
-        view), hence if it is to successfully catch a signal more than once,
-        we need the NODEFER flag. */
-     tmp_sigill_act.sa_flags &= ~VKI_SA_RESETHAND;
-     tmp_sigill_act.sa_flags &= ~VKI_SA_SIGINFO;
-     tmp_sigill_act.sa_flags |=  VKI_SA_NODEFER;
-     tmp_sigill_act.ksa_handler = handler_unsup_insn;
-     VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
-
-     /* Determine hwcaps. Note, we cannot use the stfle insn because it
-        is not supported on z900. */
-
-     have_LDISP = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_LDISP = False;
-     } else {
-       /* BASR loads the address of the next insn into r1. Needed to avoid
-          a segfault in XY. */
-        __asm__ __volatile__("basr %%r1,%%r0\n\t"
-                             ".long  0xe3001000\n\t"  /* XY  0,0(%r1) */
-                             ".short 0x0057" : : : "r0", "r1", "cc", "memory");
+     /* When upgrading the minimum machine model do not forget to adjust
+        VEX_HWCAPS_S390X_MMM below and in main_main.c */
+     if (model < VEX_S390X_MODEL_Z196) {
+        VG_(message)(Vg_FailMsg, "Your machine is too old. "
+                     "You need at least a z196 to run valgrind.\n");
+        VG_(exit)(1);
      }
 
-     /* Check availability of STFLE. If available store facility bits
-        in hoststfle. */
-     ULong hoststfle[S390_NUM_FACILITY_DW];
+     /* Get number of double words to store all facilities */
+     unsigned long long dummy[1];
 
-     for (i = 0; i < S390_NUM_FACILITY_DW; ++i)
+     register ULong r0 asm("0") = 0;
+     asm volatile(".insn s,0xb2b00000,%0\n" /* stfle */
+                  : "=Q" (dummy), "+d"(r0)
+                  :
+                  : "cc", "memory");
+     UInt num_dw = r0 + 1;
+
+     /* Get the facility bits */
+     ULong hoststfle[num_dw];
+
+     for (i = 0; i < num_dw; ++i)
         hoststfle[i] = 0;
 
-     have_STFLE = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_STFLE = False;
-     } else {
-         register ULong reg0 asm("0") = S390_NUM_FACILITY_DW - 1;
-
-         __asm__(".insn s,0xb2b00000,%0" /* stfle */
-                 : "=Q"(hoststfle), "+d"(reg0)
+     __asm__(".insn s,0xb2b00000,%0" /* stfle */
+                 : "=Q"(hoststfle), "+d"(r0)
                  :
                  : "cc");
-     }
 
-     /* Restore signals */
-     r = VG_(sigaction)(VKI_SIGILL, &saved_sigill_act, NULL);
-     vg_assert(r == 0);
-     r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
-     vg_assert(r == 0);
      va = VexArchS390X;
      vai.endness = VexEndnessBE;
 
      vai.hwcaps = model;
-     if (have_STFLE) vai.hwcaps |= VEX_HWCAPS_S390X_STFLE;
-     if (have_LDISP) {
-        /* Use long displacement only on machines >= z990. For all other
-           machines it is millicoded and therefore slow. */
-        if (model >= VEX_S390X_MODEL_Z990)
-           vai.hwcaps |= VEX_HWCAPS_S390X_LDISP;
-     }
 
-     /* Detect presence of certain facilities using the STFLE insn.
-        Note, that these facilities were introduced at the same time or later
-        as STFLE, so the absence of STLFE implies the absence of the facility
-        we're trying to detect. */
+     /* Detect presence of certain facilities using the STFLE insn. */
      struct fac_hwcaps_map {
         UInt installed;
-        UInt facility_bit;
-        UInt hwcaps_bit;
+        const UInt facility_bit;
+        const UInt hwcaps_bit;
         const HChar name[6];   // may need adjustment for new facility names
      } fac_hwcaps[] = {
-        { False,  18,  VEX_HWCAPS_S390X_LDISP, "LDISP" },
-        { False,  21,  VEX_HWCAPS_S390X_EIMM,  "EIMM"  },
-        { False,  34,  VEX_HWCAPS_S390X_GIE,   "GIE"   },
-        { False,  42,  VEX_HWCAPS_S390X_DFP,   "DFP"   },
-        { False,  41,  VEX_HWCAPS_S390X_FGX,   "FGX"   },
-        { False,  24,  VEX_HWCAPS_S390X_ETF2,  "ETF2"  },
-        { False,   7,  VEX_HWCAPS_S390X_STFLE, "STFLE" },
-        { False,  30,  VEX_HWCAPS_S390X_ETF3,  "ETF3"  },
-        { False,  25,  VEX_HWCAPS_S390X_STCKF, "STCKF" },
-        { False,  37,  VEX_HWCAPS_S390X_FPEXT, "FPEXT" },
-        { False,  45,  VEX_HWCAPS_S390X_LSC,   "LSC"   },
-        { False,  44,  VEX_HWCAPS_S390X_PFPO,  "PFPO"  },
+        { True,    0,  VEX_HWCAPS_S390X_MRMM,  "Z196"  }, /* always first */
         { False, 129,  VEX_HWCAPS_S390X_VX,    "VX"    },
         { False,  57,  VEX_HWCAPS_S390X_MSA5,  "MSA5"  },
         { False,  58,  VEX_HWCAPS_S390X_MI2,   "MI2"   },
@@ -1642,17 +1584,17 @@ Bool VG_(machine_get_hwcaps)( void )
         { False, 165,  VEX_HWCAPS_S390X_NNPA,  "NNPA"  },
         { False, 148,  VEX_HWCAPS_S390X_VXE2,  "VXE2"  },
         { False, 134,  VEX_HWCAPS_S390X_VXD,   "VXD"   },
-        { False,  17,  VEX_HWCAPS_S390X_MSA,   "MSA"   },
-        { False,  77,  VEX_HWCAPS_S390X_MSA4,  "MSA4"  },
         { False, 146,  VEX_HWCAPS_S390X_MSA8,  "MSA8"  },
         { False, 155,  VEX_HWCAPS_S390X_MSA9,  "MSA9"  },
+        { False,  61,  VEX_HWCAPS_S390X_MI3,   "MI3"   },
+        { False, 198,  VEX_HWCAPS_S390X_VXE3,  "VXE3"  },
+        { False,  86,  VEX_HWCAPS_S390X_MSA12, "MSA12" },
      };
 
      /* Set hwcaps according to the detected facilities */
      UChar dw_number = 0;
      UChar fac_bit = 0;
      for (i=0; i < sizeof fac_hwcaps / sizeof fac_hwcaps[0]; ++i) {
-        vg_assert(fac_hwcaps[i].facility_bit <= 191);  // for now
         dw_number = fac_hwcaps[i].facility_bit / 64;
         fac_bit = fac_hwcaps[i].facility_bit % 64;
         if (hoststfle[dw_number] & (1ULL << (63 - fac_bit))) {
@@ -2529,7 +2471,7 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
    return 8;
 
 #  elif defined(VGA_s390x)
-   return 8;
+   return (vai.hwcaps & VEX_HWCAPS_S390X_VX) ? 16 : 8;
 
 #  elif defined(VGA_arm)
    /* Really it depends whether or not we have NEON, but let's just

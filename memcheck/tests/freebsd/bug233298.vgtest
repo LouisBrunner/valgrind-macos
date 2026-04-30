@@ -1,0 +1,3 @@
+prog: ../mempool2
+vgopts: --leak-check=yes
+stderr_filter: filter_heap_usage

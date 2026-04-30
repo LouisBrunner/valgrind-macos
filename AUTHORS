@@ -86,8 +86,12 @@ s390.
 
 Rhys Kidd updated and maintains the macOS port.
 
-Paul Floyd maintains the FreeBSD port and occasionally fixes Solaris
-and macOS issues.
+Paul Floyd maintains the FreeBSD and illumos ports and generally
+tries to deal with issues related to threading, C++, ELF reading
+and the Darwin port.
+
+Louis Brunner updated and maintains the macOS port from
+macOS 10.12 onwards.
 
 Many, many people sent bug reports, patches, and helpful feedback.
 

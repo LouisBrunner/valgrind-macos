@@ -5,6 +5,8 @@
 int func_six(int x)
 {
     char b[32];
+    for (int i = 0; i < sizeof(b); ++i)
+       b[i] /= 256;
     int r = write(1, b, sizeof(b));
     return x;
 }

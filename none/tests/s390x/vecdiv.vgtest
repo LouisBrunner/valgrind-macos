@@ -1,0 +1,2 @@
+prog: vecdiv
+prereq: test -e vecdiv && ../../../tests/s390x_features s390x-vxe3

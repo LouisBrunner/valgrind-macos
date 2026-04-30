@@ -68,7 +68,8 @@ files.  These are listed, and non-passing tests detailed, in the
 test-suite-overall.log file.  (Token *.trs and test-suite.log files
 are also created, for emulating automake-style testsuites, as expected
 by tools such as bunsen.)
-
+Generation of those files can be suppressed by specifying "BUNSEN=no" when
+invoking make.
 
 Platform-specific setup for regression tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

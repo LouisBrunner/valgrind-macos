@@ -9,7 +9,7 @@
 
    Copyright (C) 2000-2008 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2018-2021 Paul Floyd
+   Copyright (C) 2018-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -50,7 +50,7 @@ DECL_TEMPLATE(freebsd, sys_exit) // 1
 DECL_TEMPLATE(freebsd, sys_fork) // 2
 // generic read 3
 // generic write 4
-// generic open 5
+DECL_TEMPLATE(freebsd, sys_open) // 5
 // generic close 6
 // generic wait4 7
 // generic link 9
@@ -84,7 +84,7 @@ DECL_TEMPLATE(freebsd, sys_fchflags) // 35
 DECL_TEMPLATE(freebsd, sys_freebsd10_pipe) // 42
 // generic getegid 43
 // generic profil redirect to ni_syscall 44
-// sys_ktrace refirect to ni_syscall 45
+// sys_ktrace redirect to ni_syscall 45
 // generic getgid 47
 DECL_TEMPLATE(freebsd, sys_getlogin) // 49
 DECL_TEMPLATE(freebsd, sys_setlogin) // 50
@@ -552,6 +552,10 @@ DECL_TEMPLATE(freebsd, sys_inotify_rm_watch) // 594
 
 DECL_TEMPLATE(freebsd, sys_jail_attach_jd) // 597
 DECL_TEMPLATE(freebsd, sys_jail_remove_jd) // 598
+DECL_TEMPLATE(freebsd, sys_kexec_load) // 599
+// generic sys_pdrfork redirect to ni_syscall 600
+DECL_TEMPLATE(freebsd, sys_pdwait) // 601
+// generic renameat2 602
 
 DECL_TEMPLATE(freebsd, sys_fake_sigreturn)
 

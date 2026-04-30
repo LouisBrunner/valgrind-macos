@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) IBM Corp. 2024
+   Copyright (C) IBM Corp. 2024-2026
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -37,10 +37,14 @@
 
 #undef SYSNO
 
-#define READ_FUNCTION_CODE(tst, extname)                                       \
+/* Divide by 4 and assure zero remainder (else force div. by zero) */
+#define S390_WORD_LEN(len) ((len) / ((len) % 4 ? 0 : 4))
+
+#define READ_FUNCTION_CODE(tst, extname, ty)                                   \
    ({                                                                          \
-      PRE_REG_READ(tst, extname "(func_code)", r0, 7, sizeof(UChar));          \
-      tst->arch.vex.guest_r0 & 0xff;                                           \
+      PRE_REG_READ(tst, extname "(func_code)", r0, 8 - sizeof(ty),             \
+                   sizeof(ty));                                                \
+      (ty) tst->arch.vex.guest_r0;                                             \
    })
 
 #define READ_GPR(tst, name, regno)                                             \
@@ -107,7 +111,7 @@ union reg_pair {
       return cc >> 28;                                                         \
    }
 
-#define S390_DEFINE_DO_RR_INSN(fname, opc)                                     \
+#define S390_DEFINE_DO_RR_INSN(fname, opc, m3)                                 \
    static Int fname(ULong func, ULong parms, ULong* addr1, ULong* len1,        \
                     ULong* addr2, ULong* len2)                                 \
    {                                                                           \
@@ -117,7 +121,7 @@ union reg_pair {
       register void* reg1 asm("1") = (void*)parms;                             \
       UInt           cc;                                                       \
                                                                                \
-      asm volatile(".insn rre, " #opc "0000, %[op1], %[op2]\n"                 \
+      asm volatile(".insn rre, " #opc m3 "000, %[op1], %[op2]\n"               \
                    "ipm %[cc]\n"                                               \
                    : [cc] "=d"(cc), [op1] "+a"(op1.pair), [op2] "+a"(op2.pair) \
                    : "d"(reg0), "d"(reg1)                                      \
@@ -129,7 +133,7 @@ union reg_pair {
       return cc >> 28;                                                         \
    }
 
-#define S390_DEFINE_DO_0R_INSN(fname, opc)                                     \
+#define S390_DEFINE_DO_0R_INSN(fname, opc, m3)                                 \
    static Int fname(ULong func, ULong parms, ULong* addr2, ULong* len2)        \
    {                                                                           \
       union reg_pair op2           = {{*addr2, *len2}};                        \
@@ -137,7 +141,7 @@ union reg_pair {
       register void* reg1 asm("1") = (void*)parms;                             \
       UInt           cc;                                                       \
                                                                                \
-      asm volatile(".insn rre, " #opc "0000, 0, %[op2]\n"                      \
+      asm volatile(".insn rre, " #opc m3 "000, 0, %[op2]\n"                    \
                    "ipm %[cc]\n"                                               \
                    : [cc] "=d"(cc), [op2] "+a"(op2.pair)                       \
                    : "d"(reg0), "d"(reg1)                                      \
@@ -187,21 +191,22 @@ static void s390_filter_functions(ULong*       fc,
 /*--- PRNO (perform random number operation)                  ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_RR_INSN(do_PRNO_insn, 0xb93c)
+S390_DEFINE_DO_RR_INSN(do_PRNO_insn, 0xb93c, "0")
 
 /* PRNO functions that we support if the hardware does. */
 static const ULong PRNO_functions[] = {
    (S390_SETBIT(0)       // Query
     | S390_SETBIT(3)),   // SHA-512-DRNG
    (S390_SETBIT(112)     // TRNG-Query-Raw-to-Conditioned-Ratio
-    | S390_SETBIT(114)), // TRNG
+    | S390_SETBIT(114)   // TRNG
+    | S390_SETBIT(127)), // PRNO-Query-Authentication-Information
 };
 
 static enum ExtensionError do_extension_PRNO(ThreadState* tst, ULong variant)
 {
    UChar r1    = variant & 0xf;
    UChar r2    = (variant >> 4) & 0xf;
-   UChar func  = READ_FUNCTION_CODE(tst, "PRNO");
+   UChar func  = READ_FUNCTION_CODE(tst, "PRNO", UChar);
    UChar fc    = func & 0x7f;
    UChar mflag = func & 128;
    ULong parms = READ_GPR(tst, "PRNO(r1)", 1);
@@ -262,6 +267,12 @@ static enum ExtensionError do_extension_PRNO(ThreadState* tst, ULong variant)
       WRITE_GPR(tst, r2 + 1, len2);
       POST_MEM_WRITE(tst, orig_addr1, orig_len1 - len1);
       POST_MEM_WRITE(tst, orig_addr2, orig_len2 - len2);
+      break;
+   case 127: // Query authentication information
+      parms_len = 256;
+      PRE_MEM_WRITE(tst, "PRNO(parms)", parms, parms_len);
+      cc = do_PRNO_insn(func, parms, &addr1, &len1, &addr2, &len2);
+      POST_MEM_WRITE(tst, parms, parms_len);
       break;
    default:
       return INSN_ERR("PRNO: unknown function code\n");
@@ -809,7 +820,7 @@ static UWord do_extension_DFLTCC(ThreadState* tst, ULong variant)
    UChar r1    = variant & 0xf;
    UChar r2    = (variant >> 4) & 0xf;
    UChar r3    = (variant >> 8) & 0xf;
-   UChar func  = READ_FUNCTION_CODE(tst, "DFLTCC");
+   UInt  func  = READ_FUNCTION_CODE(tst, "DFLTCC", UInt);
    UChar fc    = func & 0x7f;
    Bool  hbt   = (func & 128) != 0;
    ULong parms = READ_GPR(tst, "DFLTCC(r1)", 1);
@@ -956,7 +967,13 @@ static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
        /* 80: DFP packed-conversion, not supported */
        /* 81: PPA-in-order, not supported */
        | S390_SETBITS(82, 82)
-       /* 83-127: unassigned */),
+       /* 83: unassigned */
+       | S390_SETBITS(84, 84)
+       /* 85: sequential-instruction, not supported */
+       | S390_SETBITS(86, 86)
+       /* 87: PLO-extension, not supported */
+       /* 88-127: unassigned */
+       ),
 
       /* ===  128 .. 191  === */
       (S390_SETBITS(128, 131)
@@ -984,7 +1001,9 @@ static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
       /* 192: vector-packed-decimal, not supported */
       (S390_SETBITS(193, 194)
        /* 195: unassigned */
-       | S390_SETBITS(196, 197)),
+       | S390_SETBITS(196, 198)
+       /* 199: vector-packed-decimal-enhancment 3, not supported */
+       /* 200-255: unassigned */),
    };
 
    cc = do_STFLE_insn((void*)addr, last_dw + 1, &gpr0);
@@ -1004,7 +1023,7 @@ static enum ExtensionError do_extension_STFLE(ThreadState* tst, ULong variant)
 /*--- KM (cypher message)                                     ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_RR_INSN(do_KM_insn, 0xb92e)
+S390_DEFINE_DO_RR_INSN(do_KM_insn, 0xb92e, "0")
 
 /* List all the functions supported.  This list provides the parameter block
    sizes and will also be used for filtering the supported functions.  The
@@ -1029,21 +1048,30 @@ S390_DEFINE_DO_RR_INSN(do_KM_insn, 0xb92e)
    S390_DO_FUNC(58, S390_KM_XTS_Encrypted_AES_128, 64)                         \
    S390_DO_FUNC(60, S390_KM_XTS_Encrypted_AES_256, 80)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
-static const UChar S390_KM_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(82, S390_KM_Full_XTS_AES_128, 64)                              \
+   S390_DO_FUNC(84, S390_KM_Full_XTS_AES_256, 96)                              \
+   S390_DO_FUNC(90, S390_KM_Full_XTS_Encrypted_AES_128, 96)                    \
+   S390_DO_FUNC(92, S390_KM_Full_XTS_Encrypted_AES_256, 128)                   \
+   S390_DO_FUNC(127, S390_KM_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KM_parms_len[] = {S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KM_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KM_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                             0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
+#undef S390_DO_FUNCTIONS1
 
 static enum ExtensionError do_extension_KM(ThreadState* tst, ULong variant)
 {
    UChar r1        = variant & 0xf;
    UChar r2        = (variant >> 4) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KM");
+   UInt  func      = READ_FUNCTION_CODE(tst, "KM", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KM(r1)", 1);
    ULong parms_len = 0;
@@ -1052,7 +1080,7 @@ static enum ExtensionError do_extension_KM(ThreadState* tst, ULong variant)
    ULong addr1 = 0, len1 = 0, addr2 = 0, len2 = 0;
 
    if (fc < sizeof(S390_KM_parms_len) / sizeof(S390_KM_parms_len[0]))
-      parms_len = S390_KM_parms_len[fc];
+      parms_len = S390_KM_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KM: unknown function code\n");
 
@@ -1061,6 +1089,10 @@ static enum ExtensionError do_extension_KM(ThreadState* tst, ULong variant)
       cc = do_KM_insn(func, parms, &addr1, &len1, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KM_supported_fc,
                             sizeof(S390_KM_supported_fc));
+      POST_MEM_WRITE(tst, parms, parms_len);
+   } else if (fc == 127) { // Query authentication information
+      PRE_MEM_WRITE(tst, "KM(parms)", parms, parms_len);
+      cc = do_KM_insn(func, parms, &addr1, &len1, &addr2, &len2);
       POST_MEM_WRITE(tst, parms, parms_len);
    } else {
       addr1 = orig_addr1 = READ_GPR(tst, "KM(op1_addr)", r1);
@@ -1083,7 +1115,7 @@ static enum ExtensionError do_extension_KM(ThreadState* tst, ULong variant)
 /*--- KMC (cypher message with chaining)                      ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_RR_INSN(do_KMC_insn, 0xb92f)
+S390_DEFINE_DO_RR_INSN(do_KMC_insn, 0xb92f, "0")
 
 #define S390_DO_FUNCTIONS                                                      \
    S390_DO_FUNC(0, S390_KMC_Query, 16)                                         \
@@ -1100,9 +1132,11 @@ S390_DEFINE_DO_RR_INSN(do_KMC_insn, 0xb92f)
    S390_DO_FUNC(27, S390_KMC_Encrypted_AES_192, 72)                            \
    S390_DO_FUNC(28, S390_KMC_Encrypted_AES_256, 80)
 
-#define S390_DO_FUNCTIONS1 S390_DO_FUNC(67, S390_KMC_PRNG, 32)
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(67, S390_KMC_PRNG, 32)                                         \
+   S390_DO_FUNC(127, S390_KMC_Query_Authentication_Information, 256)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
 static const UChar S390_KMC_parms_len[] = {
    S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
@@ -1119,7 +1153,7 @@ static enum ExtensionError do_extension_KMC(ThreadState* tst, ULong variant)
 {
    UChar r1        = variant & 0xf;
    UChar r2        = (variant >> 4) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KMC");
+   UInt  func      = READ_FUNCTION_CODE(tst, "KMC", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KMC(r1)", 1);
    ULong parms_len = 0;
@@ -1128,7 +1162,7 @@ static enum ExtensionError do_extension_KMC(ThreadState* tst, ULong variant)
    ULong addr1 = 0, len1 = 0, addr2 = 0, len2 = 0;
 
    if (fc < sizeof(S390_KMC_parms_len) / sizeof(S390_KMC_parms_len[0]))
-      parms_len = S390_KMC_parms_len[fc];
+      parms_len = S390_KMC_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KMC: unknown function code\n");
 
@@ -1137,6 +1171,9 @@ static enum ExtensionError do_extension_KMC(ThreadState* tst, ULong variant)
       cc = do_KMC_insn(func, parms, &addr1, &len1, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KMC_supported_fc,
                             sizeof(S390_KMC_supported_fc));
+   } else if (fc == 127) { // Query authentication information
+      PRE_MEM_WRITE(tst, "KMC(parms)", parms, parms_len);
+      cc = do_KMC_insn(func, parms, &addr1, &len1, &addr2, &len2);
    } else {
       addr1 = orig_addr1 = READ_GPR(tst, "KMC(op1_addr)", r1);
       addr2              = READ_GPR(tst, "KMC(op2_addr)", r2);
@@ -1159,7 +1196,8 @@ static enum ExtensionError do_extension_KMC(ThreadState* tst, ULong variant)
 /*--- KIMD (compute intermediate message digest)              ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_0R_INSN(do_KIMD_insn, 0xb93e)
+S390_DEFINE_DO_0R_INSN(do_KIMD_insn, 0xb93e, "0")
+S390_DEFINE_DO_0R_INSN(do_KIMD8_insn, 0xb93e, "8")
 
 #define S390_DO_FUNCTIONS                                                      \
    S390_DO_FUNC(0, S390_KIMD_Query, 16)                                        \
@@ -1171,23 +1209,30 @@ S390_DEFINE_DO_0R_INSN(do_KIMD_insn, 0xb93e)
    S390_DO_FUNC(34, S390_KIMD_SHA3_384, 200)                                   \
    S390_DO_FUNC(35, S390_KIMD_SHA3_512, 200)                                   \
    S390_DO_FUNC(36, S390_KIMD_SHAKE_128, 200)                                  \
-   S390_DO_FUNC(37, S390_KIMD_SHAKE_256, 200)                                  \
-   S390_DO_FUNC(65, S390_KIMD_GHASH, 32)
+   S390_DO_FUNC(37, S390_KIMD_SHAKE_256, 200)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
-static const UChar S390_KIMD_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(65, S390_KIMD_GHASH, 32)                                       \
+   S390_DO_FUNC(127, S390_KIMD_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KIMD_parms_len[] = {
+   S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KIMD_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KIMD_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                               0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
+#undef S390_DO_FUNCTIONS1
 
 static enum ExtensionError do_extension_KIMD(ThreadState* tst, ULong variant)
 {
    UChar r2        = (variant >> 4) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KIMD");
+   UChar m3        = (variant >> 8) & 0xf;
+   UInt  func      = READ_FUNCTION_CODE(tst, "KIMD", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KIMD(r1)", 1);
    ULong parms_len = 0;
@@ -1195,7 +1240,7 @@ static enum ExtensionError do_extension_KIMD(ThreadState* tst, ULong variant)
    ULong addr2 = 0, len2 = 0;
 
    if (fc < sizeof(S390_KIMD_parms_len) / sizeof(S390_KIMD_parms_len[0]))
-      parms_len = S390_KIMD_parms_len[fc];
+      parms_len = S390_KIMD_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KIMD: unknown function code\n");
 
@@ -1205,13 +1250,23 @@ static enum ExtensionError do_extension_KIMD(ThreadState* tst, ULong variant)
       s390_filter_functions((ULong*)parms, parms_len, S390_KIMD_supported_fc,
                             sizeof(S390_KIMD_supported_fc));
       POST_MEM_WRITE(tst, parms, parms_len);
+   } else if (fc == 127) { // Query authentication information
+      parms_len = 256;
+      PRE_MEM_WRITE(tst, "KIMD(parms)", parms, parms_len);
+      cc = do_KIMD_insn(func, parms, &addr2, &len2);
+      POST_MEM_WRITE(tst, parms, parms_len);
    } else {
       addr2 = READ_GPR(tst, "KIMD(op2_addr)", r2);
       len2  = READ_GPR(tst, "KIMD(op2_len)", r2 + 1);
-      PRE_MEM_READ(tst, "KIMD(parms)", parms, parms_len);
+
+      /* The parm block is an input unless the "no-ICV-parameter" applies */
+      if ((m3 & 8) == 0 || (func & 0x8000) == 0 || fc < 32 || fc > 37) {
+         PRE_MEM_READ(tst, "KIMD(parms)", parms, parms_len);
+      }
       PRE_MEM_WRITE(tst, "KIMD(parms)", parms, parms_len);
       PRE_MEM_READ(tst, "KIMD(op2)", addr2, len2);
-      cc = do_KIMD_insn(func, parms, &addr2, &len2);
+      cc = (m3 & 8) == 0 ? do_KIMD_insn(func, parms, &addr2, &len2)
+                         : do_KIMD8_insn(func, parms, &addr2, &len2);
       WRITE_GPR(tst, r2, addr2);
       WRITE_GPR(tst, r2 + 1, len2);
       POST_MEM_WRITE(tst, parms, parms_len);
@@ -1224,7 +1279,8 @@ static enum ExtensionError do_extension_KIMD(ThreadState* tst, ULong variant)
 /*--- KLMD (compute last message digest)                      ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_RR_INSN(do_KLMD_insn, 0xb93f)
+S390_DEFINE_DO_RR_INSN(do_KLMD_insn, 0xb93f, "0")
+S390_DEFINE_DO_RR_INSN(do_KLMDf_insn, 0xb93f, "8")
 
 #define S390_DO_FUNCTIONS                                                      \
    S390_DO_FUNC(0, S390_KLMD_Query, 16)                                        \
@@ -1238,21 +1294,28 @@ S390_DEFINE_DO_RR_INSN(do_KLMD_insn, 0xb93f)
    S390_DO_FUNC(36, S390_KLMD_SHAKE_128, 200)                                  \
    S390_DO_FUNC(37, S390_KLMD_SHAKE_256, 200)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
-static const UChar S390_KLMD_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(127, S390_KLMD_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KLMD_parms_len[] = {
+   S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KLMD_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KLMD_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                               0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
+#undef S390_DO_FUNCTIONS1
 
 static enum ExtensionError do_extension_KLMD(ThreadState* tst, ULong variant)
 {
    UChar r1         = variant & 0xf;
    UChar r2         = (variant >> 4) & 0xf;
-   ULong func       = READ_GPR(tst, "KLMD(r0)", 0);
+   UChar m3         = (variant >> 8) & 0xf;
+   UInt  func       = READ_FUNCTION_CODE(tst, "KLMD", UInt);
    UChar fc         = func & 0x7f;
    ULong parms      = READ_GPR(tst, "KLMD(r1)", 1);
    ULong parms_len  = 0;
@@ -1261,7 +1324,7 @@ static enum ExtensionError do_extension_KLMD(ThreadState* tst, ULong variant)
    ULong addr1 = 0, len1 = 0, addr2 = 0, len2 = 0;
 
    if (fc < sizeof(S390_KLMD_parms_len) / sizeof(S390_KLMD_parms_len[0]))
-      parms_len = S390_KLMD_parms_len[fc];
+      parms_len = S390_KLMD_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KLMD: unknown function code\n");
    PRE_MEM_WRITE(tst, "KLMD(parms)", parms, parms_len);
@@ -1270,11 +1333,16 @@ static enum ExtensionError do_extension_KLMD(ThreadState* tst, ULong variant)
       cc = do_KLMD_insn(func, parms, &addr1, &len1, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KLMD_supported_fc,
                             sizeof(S390_KLMD_supported_fc));
+   } else if (fc == 127) { // Query authentication information
+      cc = do_KLMD_insn(func, parms, &addr1, &len1, &addr2, &len2);
    } else {
       /* The "shake" functions use the first operand */
       Bool have_op1 = fc >= 36 && fc <= 37;
 
-      PRE_MEM_READ(tst, "KLMD(parms)", parms, parms_len);
+      /* The parm block is an input unless the "no-ICV-parameter" applies */
+      if ((m3 & 8) == 0 || (func & 0x8000) == 0 || fc < 32 || fc > 37) {
+         PRE_MEM_READ(tst, "KLMD(parms)", parms, parms_len);
+      }
       if (have_op1) {
          if (r1 == 0 || r1 % 2 != 0)
             return INSN_ERR("KLMD: bad r1 field");
@@ -1285,7 +1353,9 @@ static enum ExtensionError do_extension_KLMD(ThreadState* tst, ULong variant)
       addr2 = READ_GPR(tst, "KLMD(op2_addr)", r2);
       len2  = READ_GPR(tst, "KLMD(op2_len)", r2 + 1);
       PRE_MEM_READ(tst, "KLMD(op2)", addr2, len2);
-      cc = do_KLMD_insn(func, parms, &addr1, &len1, &addr2, &len2);
+      cc = (m3 & 8) == 0
+              ? do_KLMD_insn(func, parms, &addr1, &len1, &addr2, &len2)
+              : do_KLMDf_insn(func, parms, &addr1, &len1, &addr2, &len2);
       if (have_op1) {
          WRITE_GPR(tst, r1, addr1);
          WRITE_GPR(tst, r1 + 1, len1);
@@ -1303,7 +1373,7 @@ static enum ExtensionError do_extension_KLMD(ThreadState* tst, ULong variant)
 /*--- KMAC (compute message authentication code)              ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_0R_INSN(do_KMAC_insn, 0xb91e)
+S390_DEFINE_DO_0R_INSN(do_KMAC_insn, 0xb91e, "0")
 
 #define S390_DO_FUNCTIONS                                                      \
    S390_DO_FUNC(0, S390_KMAC_Query, 16)                                        \
@@ -1320,20 +1390,34 @@ S390_DEFINE_DO_0R_INSN(do_KMAC_insn, 0xb91e)
    S390_DO_FUNC(27, S390_KMAC_Encrypted_AES_192, 72)                           \
    S390_DO_FUNC(28, S390_KMAC_Encrypted_AES_256, 80)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
-static const UChar S390_KMAC_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(112, S390_KMAC_HMAC_SHA_224, 104)                              \
+   S390_DO_FUNC(113, S390_KMAC_HMAC_SHA_256, 104)                              \
+   S390_DO_FUNC(114, S390_KMAC_HMAC_SHA_384, 208)                              \
+   S390_DO_FUNC(115, S390_KMAC_HMAC_SHA_512, 208)                              \
+   S390_DO_FUNC(120, S390_KMAC_HMAC_Encrypted_SHA_224, 136)                    \
+   S390_DO_FUNC(121, S390_KMAC_HMAC_Encrypted_SHA_256, 136)                    \
+   S390_DO_FUNC(122, S390_KMAC_HMAC_Encrypted_SHA_384, 240)                    \
+   S390_DO_FUNC(123, S390_KMAC_HMAC_Encrypted_SHA_512, 240)                    \
+   S390_DO_FUNC(127, S390_KMAC_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KMAC_parms_len[] = {
+   S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KMAC_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KMAC_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                               0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
+#undef S390_DO_FUNCTIONS1
 
 static enum ExtensionError do_extension_KMAC(ThreadState* tst, ULong variant)
 {
    UChar r2        = (variant >> 4) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KMAC");
+   UInt  func      = READ_FUNCTION_CODE(tst, "KMAC", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KMAC(r1)", 1);
    ULong parms_len = 0;
@@ -1341,7 +1425,7 @@ static enum ExtensionError do_extension_KMAC(ThreadState* tst, ULong variant)
    ULong addr2 = 0, len2 = 0;
 
    if (fc < sizeof(S390_KMAC_parms_len) / sizeof(S390_KMAC_parms_len[0]))
-      parms_len = S390_KMAC_parms_len[fc];
+      parms_len = S390_KMAC_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KMAC: unknown function code\n");
 
@@ -1350,6 +1434,10 @@ static enum ExtensionError do_extension_KMAC(ThreadState* tst, ULong variant)
       cc = do_KMAC_insn(func, parms, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KMAC_supported_fc,
                             sizeof(S390_KMAC_supported_fc));
+      POST_MEM_WRITE(tst, parms, parms_len);
+   } else if (fc == 127) { // Query authentication information
+      PRE_MEM_WRITE(tst, "KMAC(parms)", parms, parms_len);
+      cc = do_KMAC_insn(func, parms, &addr2, &len2);
       POST_MEM_WRITE(tst, parms, parms_len);
    } else {
       addr2 = READ_GPR(tst, "KMAC(op2_addr)", r2);
@@ -1379,6 +1467,7 @@ enum PCC_function_class {
    PCC_Compute_Last_Block_CMAC,
    PCC_Compute_XTS_Parameter,
    PCC_Scalar_Multiply,
+   PCC_Query_Authentication_Information,
 };
 
 #define S390_DO_FUNCTIONS                                                      \
@@ -1413,7 +1502,8 @@ enum PCC_function_class {
    S390_DO_FUNC(72, PCC_Scalar_Multiply, Ed25519, 64, 168)                     \
    S390_DO_FUNC(73, PCC_Scalar_Multiply, Ed448, 128, 328)                      \
    S390_DO_FUNC(80, PCC_Scalar_Multiply, X25519, 32, 104)                      \
-   S390_DO_FUNC(81, PCC_Scalar_Multiply, X448, 64, 200)
+   S390_DO_FUNC(81, PCC_Scalar_Multiply, X448, 64, 200)                        \
+   S390_DO_FUNC(127, PCC_Query_Authentication_Information, QAuth, 0, 256)
 
 #define S390_DO_FUNC(fc, class, name, rlen, plen)                              \
    [fc] = {class, rlen / 8, plen / 8},
@@ -1434,7 +1524,7 @@ static const ULong S390_PCC_supported_fc[] = {0 S390_DO_FUNCTIONS,
 
 static enum ExtensionError do_extension_PCC(ThreadState* tst, ULong variant)
 {
-   UChar func      = READ_FUNCTION_CODE(tst, "PCC");
+   UChar func      = READ_FUNCTION_CODE(tst, "PCC", UChar);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "PCC(r1)", 1);
    ULong parms_len = 0;
@@ -1455,6 +1545,12 @@ static enum ExtensionError do_extension_PCC(ThreadState* tst, ULong variant)
       s390_filter_functions((ULong*)parms, parms_len, S390_PCC_supported_fc,
                             sizeof(S390_PCC_supported_fc));
       result_offs = 0;
+      break;
+   case PCC_Query_Authentication_Information:
+      PRE_MEM_WRITE(tst, "PCC(parms)", parms, parms_len);
+      cc          = do_PCC_insn(func, parms);
+      result_offs = 0;
+      result_len  = parms_len;
       break;
    case PCC_Compute_Last_Block_CMAC:
       /* result_len == sizeof(ICV) == sizeof(message) */
@@ -1533,15 +1629,21 @@ S390_DEFINE_DO_RRR_INSN(do_KMCTR_insn, 0xb92d)
    S390_DO_FUNC(27, S390_KMCTR_Encrypted_AES_192, 56)                          \
    S390_DO_FUNC(28, S390_KMCTR_Encrypted_AES_256, 64)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
-static const UChar S390_KMCTR_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(127, S390_KMCTR_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KMCTR_parms_len[] = {
+   S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KMCTR_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KMCTR_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                                0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
+#undef S390_DO_FUNCTIONS1
 
 enum {
    S390_KMCTR_parms_len_n =
@@ -1553,7 +1655,7 @@ static enum ExtensionError do_extension_KMCTR(ThreadState* tst, ULong variant)
    UChar r1        = variant & 0xf;
    UChar r2        = (variant >> 4) & 0xf;
    UChar r3        = (variant >> 8) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KMCTR");
+   UChar func      = READ_FUNCTION_CODE(tst, "KMCTR", UChar);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KMCTR(r1)", 1);
    ULong parms_len = 0;
@@ -1562,7 +1664,7 @@ static enum ExtensionError do_extension_KMCTR(ThreadState* tst, ULong variant)
    ULong addr1 = 0, addr2 = 0, addr3 = 0, len2 = 0, len3 = 0;
 
    if (fc < S390_KMCTR_parms_len_n)
-      parms_len = S390_KMCTR_parms_len[fc];
+      parms_len = S390_KMCTR_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KMCTR: unknown function code\n");
 
@@ -1571,6 +1673,10 @@ static enum ExtensionError do_extension_KMCTR(ThreadState* tst, ULong variant)
       cc = do_KMCTR_insn(func, parms, &addr1, &addr2, &len2, &addr3, &len3);
       s390_filter_functions((ULong*)parms, parms_len, S390_KMCTR_supported_fc,
                             sizeof(S390_KMCTR_supported_fc));
+      POST_MEM_WRITE(tst, parms, parms_len);
+   } else if (fc == 127) { // Query authentication information
+      PRE_MEM_WRITE(tst, "KMCTR(parms)", parms, parms_len);
+      cc = do_KMCTR_insn(func, parms, &addr1, &addr2, &len2, &addr3, &len3);
       POST_MEM_WRITE(tst, parms, parms_len);
    } else {
       addr1 = orig_addr1 = READ_GPR(tst, "KMCTR(op1_addr)", r1);
@@ -1596,7 +1702,7 @@ static enum ExtensionError do_extension_KMCTR(ThreadState* tst, ULong variant)
 /*--- KMO (cypher message with output feedback)               ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_RR_INSN(do_KMO_insn, 0xb92b)
+S390_DEFINE_DO_RR_INSN(do_KMO_insn, 0xb92b, "0")
 
 /* Same functions and parameter block sizes as for KMCTR */
 static const UChar* const S390_KMO_parms_len    = S390_KMCTR_parms_len;
@@ -1607,7 +1713,7 @@ static enum ExtensionError do_extension_KMO(ThreadState* tst, ULong variant)
 {
    UChar r1        = variant & 0xf;
    UChar r2        = (variant >> 4) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KMO");
+   UChar func      = READ_FUNCTION_CODE(tst, "KMO", UChar);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KMO(r1)", 1);
    ULong parms_len = 0;
@@ -1616,7 +1722,7 @@ static enum ExtensionError do_extension_KMO(ThreadState* tst, ULong variant)
    ULong addr1 = 0, len1 = 0, addr2 = 0, len2 = 0;
 
    if (fc < S390_KMO_parms_len_n)
-      parms_len = S390_KMO_parms_len[fc];
+      parms_len = S390_KMO_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KMO: unknown function code\n");
 
@@ -1625,6 +1731,8 @@ static enum ExtensionError do_extension_KMO(ThreadState* tst, ULong variant)
       cc = do_KMO_insn(func, parms, &addr1, &len1, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KMO_supported_fc,
                             sizeof(S390_KMO_supported_fc));
+   } else if (fc == 127) { // Query authentication information
+      cc = do_KMO_insn(func, parms, &addr1, &len1, &addr2, &len2);
    } else {
       addr1 = orig_addr1 = READ_GPR(tst, "KMO(op1_addr)", r1);
       addr2              = READ_GPR(tst, "KMO(op2_addr)", r2);
@@ -1644,10 +1752,10 @@ static enum ExtensionError do_extension_KMO(ThreadState* tst, ULong variant)
 }
 
 /*---------------------------------------------------------------*/
-/*--- KMF (cypher message with output feedback)               ---*/
+/*--- KMF (cypher message with cypher feedback)               ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_RR_INSN(do_KMF_insn, 0xb92a)
+S390_DEFINE_DO_RR_INSN(do_KMF_insn, 0xb92a, "0")
 
 /* Same functions and parameter block sizes as for KMCTR */
 static const UChar* const S390_KMF_parms_len    = S390_KMCTR_parms_len;
@@ -1658,7 +1766,7 @@ static enum ExtensionError do_extension_KMF(ThreadState* tst, ULong variant)
 {
    UChar r1        = variant & 0xf;
    UChar r2        = (variant >> 4) & 0xf;
-   ULong func      = READ_GPR(tst, "KLMD(r0)", 0);
+   UInt  func      = READ_FUNCTION_CODE(tst, "KMF", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KMF(r1)", 1);
    ULong parms_len = 0;
@@ -1667,7 +1775,7 @@ static enum ExtensionError do_extension_KMF(ThreadState* tst, ULong variant)
    ULong addr1 = 0, len1 = 0, addr2 = 0, len2 = 0;
 
    if (fc < S390_KMF_parms_len_n)
-      parms_len = S390_KMF_parms_len[fc];
+      parms_len = S390_KMF_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KMF: unknown function code\n");
 
@@ -1676,6 +1784,8 @@ static enum ExtensionError do_extension_KMF(ThreadState* tst, ULong variant)
       cc = do_KMF_insn(func, parms, &addr1, &len1, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KMF_supported_fc,
                             sizeof(S390_KMF_supported_fc));
+   } else if (fc == 127) { // Query authentication information
+      cc = do_KMF_insn(func, parms, &addr1, &len1, &addr2, &len2);
    } else {
       addr1 = orig_addr1 = READ_GPR(tst, "KMF(op1_addr)", r1);
       addr2              = READ_GPR(tst, "KMF(op2_addr)", r2);
@@ -1709,22 +1819,28 @@ S390_DEFINE_DO_RRR_INSN(do_KMA_insn, 0xb929)
    S390_DO_FUNC(27, S390_KMA_GCM_Encrypted_AES_192, 136)                       \
    S390_DO_FUNC(28, S390_KMA_GCM_Encrypted_AES_256, 144)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen,
-static const UChar S390_KMA_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(127, S390_KMA_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KMA_parms_len[] = {
+   S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KMA_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KMA_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                              0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
+#undef S390_DO_FUNCTIONS1
 
 static enum ExtensionError do_extension_KMA(ThreadState* tst, ULong variant)
 {
    UChar r1        = variant & 0xf;
    UChar r2        = (variant >> 4) & 0xf;
    UChar r3        = (variant >> 8) & 0xf;
-   ULong func      = READ_GPR(tst, "KMA(gpr0)", 0);
+   UInt  func      = READ_FUNCTION_CODE(tst, "KMA(gpr0)", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KMA(r1)", 1);
    ULong parms_len = 0;
@@ -1733,7 +1849,7 @@ static enum ExtensionError do_extension_KMA(ThreadState* tst, ULong variant)
    ULong addr1 = 0, addr2 = 0, addr3 = 0, len2 = 0, len3 = 0;
 
    if (fc < sizeof(S390_KMA_parms_len) / sizeof(S390_KMA_parms_len[0]))
-      parms_len = S390_KMA_parms_len[fc];
+      parms_len = S390_KMA_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KMA: unknown function code\n");
 
@@ -1742,6 +1858,10 @@ static enum ExtensionError do_extension_KMA(ThreadState* tst, ULong variant)
       cc = do_KMA_insn(func, parms, &addr1, &addr2, &len2, &addr3, &len3);
       s390_filter_functions((ULong*)parms, parms_len, S390_KMA_supported_fc,
                             sizeof(S390_KMA_supported_fc));
+      POST_MEM_WRITE(tst, parms, parms_len);
+   } else if (fc == 127) { // Query authentication information
+      PRE_MEM_WRITE(tst, "KMA(parms)", parms, parms_len);
+      cc = do_KMA_insn(func, parms, &addr1, &addr2, &len2, &addr3, &len3);
       POST_MEM_WRITE(tst, parms, parms_len);
    } else {
       addr1 = orig_addr1 = READ_GPR(tst, "KMA(op1_addr)", r1);
@@ -1766,13 +1886,12 @@ static enum ExtensionError do_extension_KMA(ThreadState* tst, ULong variant)
 }
 
 /*---------------------------------------------------------------*/
-/*--- KDSA (compute intermediate message digest)              ---*/
+/*--- KDSA (compute digital signature authentication)         ---*/
 /*---------------------------------------------------------------*/
 
-S390_DEFINE_DO_0R_INSN(do_KDSA_insn, 0xb93a)
+S390_DEFINE_DO_0R_INSN(do_KDSA_insn, 0xb93a, "0")
 
-/* We specify the parameter block size without the CSB here.  Also note that
-   this approach only supports sizes that are a multiple of 8. */
+/* We specify the parameter block size without the CSB here. */
 #define S390_DO_FUNCTIONS                                                      \
    S390_DO_FUNC(0, S390_KDSA_Query, 16)                                        \
    S390_DO_FUNC(1, S390_KDSA_ECDSA_Verify_P256, 168)                           \
@@ -1791,12 +1910,17 @@ S390_DEFINE_DO_0R_INSN(do_KDSA_insn, 0xb93a)
    S390_DO_FUNC(48, S390_KDSA_Encrypted_EdDSA_Sign_Ed25519, 152)               \
    S390_DO_FUNC(52, S390_KDSA_Encrypted_EdDSA_Sign_Ed448, 248)
 
-#define S390_DO_FUNC(fc, name, plen) [fc] = plen / 8,
-static const UChar S390_KDSA_parms_len[] = {S390_DO_FUNCTIONS};
+#define S390_DO_FUNCTIONS1                                                     \
+   S390_DO_FUNC(127, S390_KDSA_Query_Authentication_Information, 256)
+
+#define S390_DO_FUNC(fc, name, plen) [fc] = S390_WORD_LEN(plen),
+static const UChar S390_KDSA_parms_len[] = {
+   S390_DO_FUNCTIONS S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #define S390_DO_FUNC(fc, name, plen) | S390_SETBIT(fc)
-static const ULong S390_KDSA_supported_fc[] = {0 S390_DO_FUNCTIONS};
+static const ULong S390_KDSA_supported_fc[] = {0 S390_DO_FUNCTIONS,
+                                               0 S390_DO_FUNCTIONS1};
 #undef S390_DO_FUNC
 
 #undef S390_DO_FUNCTIONS
@@ -1804,7 +1928,7 @@ static const ULong S390_KDSA_supported_fc[] = {0 S390_DO_FUNCTIONS};
 static enum ExtensionError do_extension_KDSA(ThreadState* tst, ULong variant)
 {
    UChar r2        = (variant >> 4) & 0xf;
-   UChar func      = READ_FUNCTION_CODE(tst, "KDSA");
+   UInt  func      = READ_FUNCTION_CODE(tst, "KDSA", UInt);
    UChar fc        = func & 0x7f;
    ULong parms     = READ_GPR(tst, "KDSA(r1)", 1);
    ULong parms_len = 0;
@@ -1812,7 +1936,7 @@ static enum ExtensionError do_extension_KDSA(ThreadState* tst, ULong variant)
    ULong addr2 = 0, len2 = 0;
 
    if (fc < sizeof(S390_KDSA_parms_len) / sizeof(S390_KDSA_parms_len[0]))
-      parms_len = S390_KDSA_parms_len[fc] * 8;
+      parms_len = S390_KDSA_parms_len[fc] * 4;
    if (parms_len == 0)
       return INSN_ERR("KDSA: unknown function code\n");
 
@@ -1821,6 +1945,10 @@ static enum ExtensionError do_extension_KDSA(ThreadState* tst, ULong variant)
       cc = do_KDSA_insn(func, parms, &addr2, &len2);
       s390_filter_functions((ULong*)parms, parms_len, S390_KDSA_supported_fc,
                             sizeof(S390_KDSA_supported_fc));
+      POST_MEM_WRITE(tst, parms, parms_len);
+   } else if (fc == 127) { // Query authentication information
+      PRE_MEM_WRITE(tst, "KDSA(parms)", parms, parms_len);
+      cc = do_KDSA_insn(func, parms, &addr2, &len2);
       POST_MEM_WRITE(tst, parms, parms_len);
    } else {
       addr2 = READ_GPR(tst, "KDSA(op2_addr)", r2);

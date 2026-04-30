@@ -47,6 +47,7 @@
 #   --loop-till-fail: loops on the test(s) till one fail, then exit
 #              This is useful to obtain detailed trace or --keep-unfiltered
 #              output of a non deterministic test failure
+#   --no-bunsen: do not generate files for bunsen post-processing
 #
 # The easiest way is to run all tests in valgrind/ with (assuming you installed
 # in $PREFIX):
@@ -96,8 +97,8 @@
 #
 # Expected stdout (filtered) is kept in <test>.stdout.exp* (can be more
 # than one expected output).  It can be missing if it would be empty.  Expected
-# stderr (filtered) is kept in <test>.stderr.exp*.   There must be at least
-# one stderr.exp* file.  Any .exp* file that ends in '~' or '#' is ignored;
+# stderr (filtered) is kept in <test>.stderr.exp*.  It can be missing if it
+# would be empty.  Any .exp* file that ends in '~' or '#' is ignored;
 # this is because Emacs creates temporary files of these names.
 #
 # Expected output for progB is handled similarly, except that
@@ -140,7 +141,7 @@ my $usage="\n"
      . "Usage:\n"
      . "   vg_regtest [--all, --valgrind, --valgrind-lib, --keep-unfiltered\n"
      . "                 --outer-valgrind, --outer-tool, --outer-args\n"
-     . "                 --loop-till-fail]\n"
+     . "                 --loop-till-fail --no-bunsen]\n"
      . "   Use EXTRA_REGTEST_OPTS to supply extra args for all tests\n"
      . "\n";
 
@@ -174,6 +175,7 @@ my %num_failures        = (stderr => 0, stdout => 0,
                            stderrB => 0, stdoutB => 0,
                            post => 0);
 my %num_results         = ();
+my $no_bunsen           = 0;
 
 # Default valgrind to use is this build tree's (uninstalled) one
 my $valgrind = "./coregrind/valgrind";
@@ -252,6 +254,8 @@ sub process_command_line()
                 $keepunfiltered = 1;
             } elsif ($arg =~ /^--loop-till-fail$/) {
                 $looptillfail = 1;
+            } elsif ($arg =~ /^--no-bunsen$/) {
+                $no_bunsen = 1;
             } else {
                 die $usage;
             }
@@ -315,10 +319,11 @@ sub read_vgtest_file($)
     ($stdout_filter_args, $stderr_filter_args)   = (undef, undef);
     ($stdoutB_filter_args, $stderrB_filter_args) = (undef, undef);
 
-    # Every test directory must have a "filter_stderr"
-    $stderr_filter = validate_program(".", $default_stderr_filter, 1, 1);
-    $stderrB_filter = validate_program(".", $default_stderr_filter, 1, 1);
-
+    # stderr[B] filters are undefined initially. If they are still undefined
+    # after processing the .vgtest file, the default_stderr_filter will
+    # be used.
+    $stderr_filter  = undef;
+    $stderrB_filter = undef;
 
     open(INPUTFILE, "< $f") || die "File $f not openable\n";
 
@@ -338,7 +343,11 @@ sub read_vgtest_file($)
         } elsif ($line =~ /^\s*stdout_filter:\s*(.*)$/) {
             $stdout_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*stderr_filter:\s*(.*)$/) {
-            $stderr_filter = validate_program(".", $1, 1, 1);
+            if (length $1 != 0) {
+               $stderr_filter = validate_program(".", $1, 1, 1);
+            } else {
+               $stderr_filter = $1;
+            }
         } elsif ($line =~ /^\s*stdout_filter_args:\s*(.*)$/) {
             $stdout_filter_args = $1;
         } elsif ($line =~ /^\s*stderr_filter_args:\s*(.*)$/) {
@@ -352,7 +361,11 @@ sub read_vgtest_file($)
         } elsif ($line =~ /^\s*stdoutB_filter:\s*(.*)$/) {
             $stdoutB_filter = validate_program(".", $1, 1, 1);
         } elsif ($line =~ /^\s*stderrB_filter:\s*(.*)$/) {
-            $stderrB_filter = validate_program(".", $1, 1, 1);
+            if (length $1 != 0) {
+               $stderrB_filter = validate_program(".", $1, 1, 1);
+            } else {
+               $stderrB_filter = $1;
+            }
         } elsif ($line =~ /^\s*stdoutB_filter_args:\s*(.*)$/) {
             $stdoutB_filter_args = $1;
         } elsif ($line =~ /^\s*stderrB_filter_args:\s*(.*)$/) {
@@ -375,6 +388,20 @@ sub read_vgtest_file($)
 
     if (!defined $prog) {
         $prog = "";     # allow no prog for testing error and --help cases
+    }
+
+    if (!defined $stderr_filter) {
+        # No filter was specified use the default one.
+        $stderr_filter = validate_program(".", $default_stderr_filter, 1, 1);
+    } elsif (length $stderr_filter == 0) {
+        # Encountered a line  stderr_filter:
+        # with no filter name specified. This means filtering is not wanted.
+        $stderr_filter = undef;
+    }
+    if (!defined $stderrB_filter) {
+        $stderrB_filter = validate_program(".", $default_stderr_filter, 1, 1);
+    } elsif (length $stderrB_filter == 0) {
+        $stderrB_filter = undef;
     }
 }
 
@@ -488,6 +515,7 @@ sub do_one_test($$)
             printf("%-16s (skipping, prereq failed: $prereq)\n", "$name:");
             print VGTESTLOG scalar localtime, " skipping, prereq failed\n";
             close(VGTESTLOG);
+            unlink("$vgtest.log") if ($no_bunsen);
             return "SKIP";
         } else {
             # Bad prereq; abort.
@@ -579,13 +607,15 @@ sub do_one_test($$)
     if (defined $diffrc) { $rc = $diffrc; }
 
     # Filter stderr
-    $stderr_filter_args = $name if (! defined $stderr_filter_args);
-    mysystem(*VGTESTLOG,
-             "$stderr_filter $stderr_filter_args < $name.stderr.out > $tmp");
-    filtered_rename($tmp, "$name.stderr.out", *VGTESTLOG);
-    # Find all the .stderr.exp files.  At least one must exist.
+    if (defined $stderr_filter) {
+        $stderr_filter_args = $name if (! defined $stderr_filter_args);
+        mysystem(*VGTESTLOG,
+                 "$stderr_filter $stderr_filter_args < $name.stderr.out > $tmp");
+        filtered_rename($tmp, "$name.stderr.out", *VGTESTLOG);
+    }
+    # Find all the .stderr.exp files.  If none, use /dev/null.
     my @stderr_exps = <$name.stderr.exp*>;
-    (0 != scalar @stderr_exps) or die "Could not find `$name.stderr.exp*'\n";
+    @stderr_exps = ( "/dev/null" ) if (0 == scalar @stderr_exps);
     $diffrc = do_diffs($fullname, $name, "stderr", *VGTESTLOG, \@stderr_exps);
     if (defined $diffrc) { $rc = $diffrc; }
 
@@ -627,13 +657,15 @@ sub do_one_test($$)
         if (defined $diffrc) { $rc = $diffrc; }
 
         # Filter stderr
-        $stderrB_filter_args = $name if (! defined $stderrB_filter_args);
-        mysystem(*VGTESTLOG,
-                 "$stderrB_filter $stderrB_filter_args < $name.stderrB.out > $tmp");
-        filtered_rename($tmp, "$name.stderrB.out", *VGTESTLOG);
-        # Find all the .stderrB.exp files.  At least one must exist.
+        if (defined $stderrB_filter) {
+            $stderrB_filter_args = $name if (! defined $stderrB_filter_args);
+            mysystem(*VGTESTLOG,
+                     "$stderrB_filter $stderrB_filter_args < $name.stderrB.out > $tmp");
+            filtered_rename($tmp, "$name.stderrB.out", *VGTESTLOG);
+        }
+        # Find all the .stderrB.exp files.  If none, use /dev/null.
         my @stderrB_exps = <$name.stderrB.exp*>;
-        (0 != scalar @stderrB_exps) or die "Could not find `$name.stderrB.exp*'\n";
+        @stderrB_exps = ( "/dev/null" ) if (0 == scalar @stderrB_exps);
         $diffrc = do_diffs($fullname, $name, "stderrB", *VGTESTLOG, \@stderrB_exps);
         if (defined $diffrc) { $rc = $diffrc; }
     }
@@ -665,6 +697,7 @@ sub do_one_test($$)
 
     close(VGTESTLOG);
     $num_tests_done++;
+    unlink("$vgtest.log") if ($no_bunsen);
     return $rc;
 }
 
@@ -689,8 +722,8 @@ sub test_one_dir($$)
     # ppc/ directories ('arch_test' returns 1 for this case).  Likewise for
     # the OS and platform.
     # Nb: weird Perl-ism -- exit code of '1' is seen by Perl as 256...
-    if (256 == system("$tests_dir/tests/arch_test $dir"))  { return; }
-    if (256 == system("$tests_dir/tests/os_test   $dir"))  { return; }
+    if (256 == system("$tests_dir/tests/arch_test '$dir'"))  { return; }
+    if (256 == system("$tests_dir/tests/os_test   '$dir'"))  { return; }
     if ($dir =~ /(\w+)-(\w+)/ &&
         256 == system("$tests_dir/tests/platform_test $1 $2")) { return; }
     if ($dir =~ "dSYM") { return; }
@@ -721,10 +754,11 @@ sub test_one_dir($$)
             print TSDIRLOG "See $tests_dir/test-suite-overall.log\n";
             print TSDIRLOG "    for overall results, including all non-PASS .log contents.\n";
             close(TSDIRLOG);
+            unlink("test-suite.log") if ($no_bunsen);
             my $result = do_one_test($full_dir, $f);
             print TSLOG scalar localtime, " result: $result $full_dir/$f.log\n";
             $num_results{$result} ++;
-            if ($result ne "PASS") {
+            if ($result ne "PASS" && $no_bunsen == 0) {
                # transcribe .log file into the overall log.
                open(LOGFILE, "< $f.log") || die "Cannot open $f.log";
                while (<LOGFILE>) { print TSLOG "|\t$_"; }
@@ -736,6 +770,7 @@ sub test_one_dir($$)
             print VGTESTTRS ":recheck: no\n"; # ?
             print VGTESTTRS ":copy-in-global-log: no\n"; # ?
             close(VGTESTTRS);
+            unlink ("$f.trs") if ($no_bunsen);
         }
     }
     if ($found_tests) {
@@ -839,6 +874,7 @@ while (1) { # we will exit after one loop, unless looptillfail
             print VGTESTTRS ":recheck: no\n"; # ?
             print VGTESTTRS ":copy-in-global-log: no\n"; # ?
             close(VGTESTTRS);
+            unlink ("$f.trs") if ($no_bunsen);
         }
         chdir($tests_dir);
     }
@@ -851,6 +887,8 @@ summarise_results();
 if ($ENV{"EXTRA_REGTEST_OPTS"}) {
     warn_about_EXTRA_REGTEST_OPTS();
 }
+
+unlink("test-suite-overall.log") if ($no_bunsen);
 
 if (0 == $num_failures{"stdout"} &&
     0 == $num_failures{"stderr"} &&

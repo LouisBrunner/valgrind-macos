@@ -1,9 +1,9 @@
 include $(top_srcdir)/Makefile.all.am
 
-EXTRA_DIST = vbit-test.vgtest vbit-test.stderr.exp \
-             vbit-test-sec.vgtest vbit-test-sec.stderr.exp
+EXTRA_DIST = vbit-test.vgtest \
+             vbit-test-sec.vgtest 
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS =
 
 #----------------------------------------------------------------------------
 # Headers

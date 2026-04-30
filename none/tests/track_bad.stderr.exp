@@ -8,7 +8,7 @@ File descriptor was closed already
  Originally opened
    at 0x........: dup (in /...libc...)
    by 0x........: main
-File descriptor 7 was never created
+File descriptor 10 was never created
    at 0x........: write (in /...libc...)
    by 0x........: main
 File descriptor -7 Invalid file descriptor

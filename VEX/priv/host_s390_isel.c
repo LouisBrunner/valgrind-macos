@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2020
+   Copyright IBM Corp. 2010-2026
    Copyright (C) 2012-2017  Florian Krohm   (britzel@acm.org)
 
    This program is free software; you can redistribute it and/or
@@ -167,6 +167,16 @@ get_guest_reg(Int offset)
    }
 
    return GUEST_UNKNOWN;
+}
+
+
+static inline Bool
+is_IRExpr_Not(const IRExpr* e)
+{
+   IROp op;
+   return e->tag == Iex_Unop &&
+          ((op = e->Iex.Unop.op) == Iop_Not8 || op == Iop_Not16 ||
+           op == Iop_Not32 || op == Iop_Not64);
 }
 
 /* Add an instruction */
@@ -1277,13 +1287,21 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          goto do_multiply;
 
       do_multiply: {
-            HReg r10, r11;
-            UInt arg_size = is_single_multiply ? size : size / 2;
-
             order_commutative_operands(arg1, arg2);
 
             h1   = s390_isel_int_expr(env, arg1);       /* Process 1st operand */
             op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
+            res  = newVRegI(env);
+
+            if (is_single_multiply) {
+               /* No register pair needed */
+               addInstr(env, s390_insn_move(size, res, h1));
+               addInstr(env, s390_insn_alu(size, S390_ALU_MUL, res, op2));
+               return res;
+            }
+
+            HReg r10, r11;
+            UInt arg_size = size / 2;
 
             /* We use non-virtual registers r10 and r11 as pair */
             r10  = make_gpr(10);
@@ -1295,16 +1313,9 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
             /* Multiply */
             addInstr(env, s390_insn_mul(arg_size, r10, r11, op2, is_signed_multiply));
 
-            res  = newVRegI(env);
             if (arg_size == 1 || arg_size == 2) {
                /* For 8-bit and 16-bit multiplication the result is in
                   r11[32:63] */
-               addInstr(env, s390_insn_move(size, res, r11));
-               return res;
-            }
-
-            /* For Iop_Mul64 the result is in r11[0:63] */
-            if (expr->Iex.Binop.op == Iop_Mul64) {
                addInstr(env, s390_insn_move(size, res, r11));
                return res;
             }
@@ -1680,10 +1691,46 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       if (is_commutative) {
          order_commutative_operands(arg1, arg2);
       }
+      res  = newVRegI(env);
+
+      /* Pattern match: "arg1 and/or not(x)"  -->  and/or with complement */
+      if ((env->hwcaps & VEX_HWCAPS_S390X_MI3) &&
+          (opkind == S390_ALU_OR || opkind == S390_ALU_AND)) {
+         if (is_IRExpr_Not(arg1)) { // swap
+            IRExpr* tmp = arg2;
+            arg2        = arg1;
+            arg1        = tmp;
+         }
+         if (is_IRExpr_Not(arg2)) {
+            HReg h2;
+            h1 = s390_isel_int_expr(env, arg1);
+            h2 = s390_isel_int_expr(env, arg2->Iex.Unop.arg);
+            addInstr(env, s390_insn_alu3(size <= 4 ? 4 : 8,
+                                         opkind == S390_ALU_OR ? S390_ALU3_ORC
+                                                               : S390_ALU3_ANDC,
+                                         res, h1, h2));
+            return res;
+         }
+      }
+
+      /* Is this a match for "load address"? */
+      if (expr->Iex.Binop.op == Iop_Add64 && arg2->tag == Iex_Const) {
+         ULong disp = arg2->Iex.Const.con->Ico.U64;
+         if (ulong_fits_signed_20bit(disp)) {
+            h1 = s390_isel_int_expr(env, arg1);
+            opnd.tag = S390_OPND_AMODE;
+            if (ulong_fits_unsigned_12bit(disp)) {
+               opnd.variant.am = s390_amode_b12(disp, h1);
+            } else {
+               opnd.variant.am = s390_amode_b20((Int)disp, h1);
+            }
+            addInstr(env, s390_insn_unop(size, S390_LOAD_ADDRESS, res, opnd));
+            return res;
+         }
+      }
 
       h1   = s390_isel_int_expr(env, arg1);       /* Process 1st operand */
       op2  = s390_isel_int_expr_RMI(env, arg2);   /* Process 2nd operand */
-      res  = newVRegI(env);
 
       /* As right shifts of one/two byte opreands are implemented using a
          4-byte shift op, we first need to zero/sign-extend the shiftee. */
@@ -1833,8 +1880,6 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
-      /* Regular processing */
-
       if (unop == Iop_128to64) {
          HReg dst_hi, dst_lo;
 
@@ -1873,6 +1918,38 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
                                              dst, vec, am));
          return dst;
       }
+
+      /* NAND or NOR */
+      if ((env->hwcaps & VEX_HWCAPS_S390X_MI3) && is_IRExpr_Not(expr) &&
+          arg->tag == Iex_Binop) {
+         s390_alu3_t bitop;
+
+         switch (binop) {
+         case Iop_And8:
+         case Iop_And16:
+         case Iop_And32:
+         case Iop_And64:
+            bitop = S390_ALU3_NAND;
+            goto do_nand_nor;
+         case Iop_Or8:
+         case Iop_Or16:
+         case Iop_Or32:
+         case Iop_Or64:
+            bitop = S390_ALU3_NOR;
+         do_nand_nor: {
+            HReg h2;
+            dst = newVRegI(env);
+            h1  = s390_isel_int_expr(env, arg->Iex.Binop.arg1);
+            h2  = s390_isel_int_expr(env, arg->Iex.Binop.arg2);
+            addInstr(env,
+                     s390_insn_alu3(size <= 4 ? 4 : 8, bitop, dst, h1, h2));
+            return dst;
+         }
+         default:;
+         }
+      }
+
+      /* Regular processing */
 
       dst  = newVRegI(env);     /* Result goes into a new register */
       opnd = s390_isel_int_expr_RMI(env, arg);     /* Process the operand */
@@ -1943,10 +2020,16 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_Not16:
       case Iop_Not32:
       case Iop_Not64:
-         /* XOR with ffff... */
-         mask.variant.imm = ~(ULong)0;
-         addInstr(env, s390_opnd_copy(size, dst, opnd));
-         insn = s390_insn_alu(size, S390_ALU_XOR, dst, mask);
+         if ((env->hwcaps & VEX_HWCAPS_S390X_MI3) &&
+             opnd.tag == S390_OPND_REG) {
+            insn = s390_insn_alu3(size <= 4 ? 4 : 8, S390_ALU3_NOR, dst,
+                                  opnd.variant.reg, opnd.variant.reg);
+         } else {
+            /* XOR with ffff... */
+            addInstr(env, s390_opnd_copy(size, dst, opnd));
+            mask.variant.imm = ~(ULong)0;
+            insn             = s390_insn_alu(size, S390_ALU_XOR, dst, mask);
+         }
          break;
 
       case Iop_Left8:
@@ -1980,6 +2063,11 @@ s390_isel_int_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          addInstr(env, s390_insn_clz(8, r10, r11, opnd));
          addInstr(env, s390_insn_move(8, dst, r10));
+         return dst;
+      }
+
+      case Iop_PopCount64: {
+         addInstr(env, s390_insn_unop(8, S390_POPCNT, dst, opnd));
          return dst;
       }
 
@@ -2392,12 +2480,7 @@ s390_isel_float128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          irrm = expr->Iex.Binop.arg1;
          left = expr->Iex.Binop.arg2;
          
-         if (s390_host_has_fpext) {
-            rm = get_bfp_rounding_mode(env, irrm);
-         } else {
-            set_bfp_rounding_mode_in_fpc(env, irrm);
-            rm = S390_BFP_ROUND_PER_FPC;
-         }
+         rm = get_bfp_rounding_mode(env, irrm);
 
          s390_isel_float128_expr(&op_hi, &op_lo, env, left);
          /* operand --> (f4, f6) */
@@ -2677,12 +2760,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
          /* convert-from-fixed and load-rounded have a rounding mode field
             when the floating point extension facility is installed. */
          dst = newVRegF(env);
-         if (s390_host_has_fpext) {
-            rounding_mode = get_bfp_rounding_mode(env, irrm);
-         } else {
-            set_bfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_BFP_ROUND_PER_FPC;
-         }
+         rounding_mode = get_bfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_bfp_convert(size, conv, dst, h1,
                                              rounding_mode));
          return dst;
@@ -2753,14 +2831,7 @@ s390_isel_float_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          /* result --> (f12, f14) */
 
-         /* load-rounded has a rounding mode field when the floating point
-            extension facility is installed. */
-         if (s390_host_has_fpext) {
-            rounding_mode = get_bfp_rounding_mode(env, irrm);
-         } else {
-            set_bfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_BFP_ROUND_PER_FPC;
-         }
+         rounding_mode = get_bfp_rounding_mode(env, irrm);
 
          addInstr(env, s390_insn_bfp128_convert_from(size, conv, f12, f14,
                                                      f13, f15, rounding_mode));
@@ -2974,15 +3045,7 @@ s390_isel_dfp128_expr_wrk(HReg *dst_hi, HReg *dst_lo, ISelEnv *env,
          addInstr(env, s390_insn_move(8, f12, op2_hi));
          addInstr(env, s390_insn_move(8, f14, op2_lo));
 
-         /* DFP arithmetic ops take rounding mode only when fpext is
-            installed. But, DFP quantize operation takes rm irrespective
-            of fpext facility . */
-         if (s390_host_has_fpext || op == Iop_QuantizeD128) {
-            rounding_mode = get_dfp_rounding_mode(env, irrm);
-         } else {
-            set_dfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-         }
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_dfp128_binop(16, dfpop, f13, f15, f9, f11,
                                               f12, f14, rounding_mode));
          /* Move result to virtual destination register */
@@ -3294,15 +3357,9 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
       convert: {
             s390_dfp_round_t rounding_mode;
-            /* convert-from-fixed and load-rounded have a rounding mode field
-               when the floating point extension facility is installed. */
+
             dst = newVRegF(env);
-            if (s390_host_has_fpext) {
-               rounding_mode = get_dfp_rounding_mode(env, irrm);
-            } else {
-               set_dfp_rounding_mode_in_fpc(env, irrm);
-               rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-            }
+            rounding_mode = get_dfp_rounding_mode(env, irrm);
             addInstr(env, s390_insn_dfp_convert(size, conv, dst, h1,
                                                 rounding_mode));
             return dst;
@@ -3368,14 +3425,7 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
 
          /* result --> (f12, f14) */
  
-         /* load-rounded has a rounding mode field when the floating point
-            extension facility is installed. */
-         if (s390_host_has_fpext) {
-            rounding_mode = get_dfp_rounding_mode(env, irrm);
-         } else {
-            set_dfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-         }
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_dfp128_convert_from(size, conv, f12, f14,
                                                      f13, f15, rounding_mode));
          dst = newVRegF(env);
@@ -3495,15 +3545,7 @@ s390_isel_dfp_expr_wrk(ISelEnv *env, IRExpr *expr)
          op2  = s390_isel_dfp_expr(env, left);  /* Process 1st operand */
          op3  = s390_isel_dfp_expr(env, right); /* Process 2nd operand */
          dst  = newVRegF(env);
-         /* DFP arithmetic ops take rounding mode only when fpext is
-            installed. But, DFP quantize operation takes rm irrespective
-            of fpext facility . */
-         if (s390_host_has_fpext || dfpop == S390_DFP_QUANTIZE) {
-            rounding_mode = get_dfp_rounding_mode(env, irrm);
-         } else {
-            set_dfp_rounding_mode_in_fpc(env, irrm);
-            rounding_mode = S390_DFP_ROUND_PER_FPC_0;
-         }
+         rounding_mode = get_dfp_rounding_mode(env, irrm);
          addInstr(env, s390_insn_dfp_binop(size, dfpop, dst, op2, op3,
                                            rounding_mode));
          return dst;
@@ -4116,6 +4158,15 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
          return dst;
       }
 
+      case Iop_ReinterpI128asV128: {
+         HReg reg2 = INVALID_HREG;
+         dst = newVRegV(env);
+         s390_isel_int128_expr(&reg1, &reg2, env, arg);
+         addInstr(env, s390_insn_vec_binop(size, S390_VEC_INIT_FROM_GPRS,
+                                           dst, reg1, reg2));
+         return dst;
+      }
+
       default:
          goto irreducible;
       }
@@ -4524,6 +4575,23 @@ s390_isel_vec_expr_wrk(ISelEnv *env, IRExpr *expr)
       case Iop_MullEven32Ux4:
          size = 4;
          vec_binop = S390_VEC_INT_MUL_ODDU;
+         goto Iop_VV_wrk;
+
+      case Iop_DivU128:
+         size = 16;
+         vec_binop = S390_VEC_INT_DIVU;
+         goto Iop_VV_wrk;
+      case Iop_DivS128:
+         size = 16;
+         vec_binop = S390_VEC_INT_DIVS;
+         goto Iop_VV_wrk;
+      case Iop_ModU128:
+         size = 16;
+         vec_binop = S390_VEC_INT_MODU;
+         goto Iop_VV_wrk;
+      case Iop_ModS128:
+         size = 16;
+         vec_binop = S390_VEC_INT_MODS;
          goto Iop_VV_wrk;
 
       case Iop_Shl8x16:
@@ -5052,7 +5120,7 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
          we can use a memory-to-memory insn */
       difference = new_value - old_value;
 
-      if (s390_host_has_gie && ulong_fits_signed_8bit(difference)) {
+      if (ulong_fits_signed_8bit(difference)) {
          am = s390_amode_for_guest_state(offset);
          addInstr(env, s390_insn_madd(sizeofIRType(tyd), am,
                                       (difference & 0xFF), new_value));
@@ -5542,7 +5610,7 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
 {
    UInt     i, j;
    HReg     hreg, hregHI;
-   ISelEnv *env;
+   ISelEnv *env, envmem;
    UInt     hwcaps_host = archinfo_host->hwcaps;
 
    /* Do some sanity checks */
@@ -5552,7 +5620,7 @@ iselSB_S390(const IRSB *bb, VexArch arch_host, const VexArchInfo *archinfo_host,
    vassert(archinfo_host->endness == VexEndnessBE);
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

@@ -9,7 +9,7 @@
 
    Copyright (C) 2000-2008 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2018-2021 Paul Floyd
+   Copyright (C) 2018-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -1258,7 +1258,7 @@ PRE(sys_posix_fallocate)
                  vki_uint32_t, MERGE64_FIRST(len),
                  vki_uint32_t, MERGE64_SECOND(len));
    if (!ML_(fd_allowed)(ARG1, "posix_fallocate", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+      SET_STATUS_FailureErrorCode(VKI_EBADF);
 }
 
 // SYS_posix_fadvise 531
@@ -1274,7 +1274,7 @@ PRE(sys_posix_fadvise)
                  vki_uint32_t, MERGE64_SECOND(len),
                  int, advice);
    if (!ML_(fd_allowed)(ARG1, "posix_fadvise", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+      SET_STATUS_FailureErrorCode(VKI_EBADF);
 }
 
 // SYS_wait6   532
@@ -1432,6 +1432,18 @@ PRE(sys_cpuset_setdomain)
                  size_t, setsize, vki_domainset_t *, mask, int, policy);
    // man page says that setsize (ARG4) "is usually provided by calling sizeof(mask)"
    PRE_MEM_READ( "cpuset_getdomain(mask)", ARG6, ARG5 );
+}
+
+// SYS_kexec_load  599
+// int kexec_load(uint64_t entry, unsigned long count,
+//                struct kexec_segment *segments, unsigned long flags);
+PRE(sys_kexec_load)
+{
+   PRINT("sys_kexec_load (  %llx, %" FMT_REGWORD "u, %" FMT_REGWORD "x, %" FMT_REGWORD "u )", MERGE64(ARG1, ARG2), ARG3, ARG4, ARG5);
+   PRE_REG_READ5(int, "kexec_load", vki_uint32_t, MERGE64_FIRST(entry), vki_uint32_t, MERMERGE64_SECOND(entry),
+                 unsigned long, count, struct kexec_segment*, segments, unsigned long, flag);
+   PRE_MEM_READ("kexec_load(segments)", ARG4, ARG3*(sizeof(struct vki_kexec_segment)));
+   // FIXME PJF should check the buf and bufsz fields
 }
 
 PRE(sys_fake_sigreturn)

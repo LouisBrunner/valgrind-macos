@@ -184,10 +184,12 @@ typedef
       /* 1144 */ UInt guest_MSACSR;
 
       /* 1148 */ UInt _padding2;
-      /* 1152 */ ULong guest_IP_AT_SYSCALL;
-      /* 1160 */ ULong _padding3;
 
 } VexGuestMIPS64State;
+
+#if defined(__LP64__)
+_Static_assert(sizeof(VexGuestMIPS64State)%16 == 0, "sizeof VexGuestMIPS64State is not a multiple of 16");
+#endif
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for MIPS64 guest stuff.               ---*/

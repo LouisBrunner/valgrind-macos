@@ -53,6 +53,7 @@ static int    MetaPoolFlags = 0;
 static int    CleanupBeforeExit = 0;
 static int    GenerateNoise = 0;
 static int    NoiseCounter = 0;
+static int    CleanupMoreBeforeExit = 0;
 
 static struct cell *cells_plain[2 * N];
 static struct cell *cells_meta[2 * N];
@@ -192,6 +193,14 @@ static void set_flags ( int n )
         GenerateNoise     = 1;
         break;
 
+        // Same as case 2, but enable freeing blocks from PlainPool so that
+        // we can check that malloc count == free count
+     case 7:
+        MetaPoolFlags = VALGRIND_MEMPOOL_METAPOOL | VALGRIND_MEMPOOL_AUTO_FREE;
+        CleanupBeforeExit = 1;
+        CleanupMoreBeforeExit = 1;
+        break;
+
      default:
         assert(0);
   }
@@ -255,8 +264,10 @@ int main( int argc, char** argv )
    }
 
    // Leak the memory from the pools by losing the pointers.
-   for (i = 0; i < N; ++i) {
-      cells_plain[i] = NULL;
+   if (!CleanupMoreBeforeExit) {
+      for (i = 0; i < N; ++i) {
+         cells_plain[i] = NULL;
+      }
    }
 
    for (i = 0; i < 2 * N; ++i) {
@@ -284,6 +295,11 @@ int main( int argc, char** argv )
    }
 
    // Cleanup.
+   if (CleanupMoreBeforeExit) {
+      for (i = 0; i < N; ++i) {
+         VALGRIND_MEMPOOL_FREE(PlainPool, cells_plain[i]);
+      }
+   }
    VALGRIND_DESTROY_MEMPOOL(PlainPool);
 
    if (GenerateNoise)

@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 #include <stddef.h>           // NULL
 #include <stdlib.h>           // exit, malloc
 #include <stdio.h>            // vfprintf
-#include <ctype.h>            // isdigit
+#include <ctype.h>            // isalpha
 #include <stdarg.h>           // va_list
 #include <string.h>           // strchr
 #include <assert.h>           // assert
@@ -33,61 +33,63 @@
 #include "vex.h"              // vex_init
 #include "main.h"
 
-int verbose, debug, show_spec_exc, show_miscompares;
+int verbose, debug;
 
 const char *gcc = "gcc";          // path to GCC
 const char *objdump = "objdump";  // path to objdump
 const char *gcc_flags = "-march=arch14";
 
-#define MIN_OBJDUMP_VERSION 2044000  /* 2.44 */
-
 #define CHECK_CLO(x, s) (strncmp(x, s, sizeof s - 1) == 0)
 
 static const char usage[] =
    "Usage:\n\n"
-   "disasm-test --generate OPCODES\n"
-   "    Generate testcases for the given opcodes and prepare objdump files.\n\n"
-   "disasm-test --verify FILES\n"
-   "    Read specified objdump files and compare with VEX disassembly.\n\n"
    "disasm-test --run OPCODES\n"
-   "    Generate testcases for the given opcodes and compare the disassembly.\n\n"
+   "    Generate testcases for the given opcodes and check for missed and unexpected specification exceptions.\n\n"
    "disasm-test --all\n"
-   "    For all opcodes generate testcases and compare the disassembly.\n\n"
+   "    For all opcodes generate testcases and check for missed and unexpected specification exceptions.\n\n"
    "disasm-test --unit-test\n"
    "    Run unit tests. All other command line options are ignored.\n\n"
    "Additional options:\n"
    "    --verbose\n"
    "    --debug\n"
+   "    --spec-exc        - Only generate testcases causing spec. exceptions\n"
+   "    --no-spec-exc     - Do not generate testcases causing spec. exceptions\n"
+   "    --exclude OPCODES - Do not generate testcases for named opcodes\n"
    "    --gcc=/path/to/gcc\n"
    "    --gcc-flags=FLAGS\n"
    "    --objdump=/path/to/objdump\n"
    "    --keep-temp - Do not remove temporary files\n"
    "    --summary   - Output test generation summary (with --all)\n"
    "    --unit-test - Run unit tests\n"
-   "    --show-spec-exc - Show insns causing specification exceptions\n"
-   "    --no-show-miscompares - Do not show disassembly miscompares\n"
-   "    --check-prereq - Check prerequisites (e.g. objdump version)\n"
+   "    --check-march=ARCH - Check whether GCC supports -march=ARCH\n"
    ;
 
-static void remove_temp_files(const char *);
+static int  check_march_level(const char *);
+static void remove_temp_files(const char *, int);
 static int  opcode_has_errors(const opcode *);
-static int  check_objdump(void);
+static int  is_excluded_opcode(const opcode *);
+static int  skip_opcode(const opcode *, int);
+static test_stats run_opcode(opcode *, int);
 
 static int keep_temp = 0;
 static int summary = 0;
+static const char **excluded_opcodes;
+static unsigned num_excluded_opcodes;
+
+#define GEN_SPEC_EXC    1
+#define GEN_NO_SPEC_EXC 2
 
 
-/* Return code: 0  no disassembly mismatches
-   Return code: 1  at least one disassembly mismatch
-
-   Specification exceptions do not influence the return code. */
+/* Return code: 0  No missed or unexpected specification exceptions
+   Return code: 1  False missed and/or unexpected specification exceptions found */
 int
 main(int argc, char *argv[])
 {
-   int all = 0, verify = 0, generate = 0, unit_test = 0;
-   int num_clargs = 0;
-   int run = 0, check_prereq = 0;
-   const char *clargs[argc];
+   int all = 0, unit_test = 0, run = 0;
+   int num_to_run = 0, check_march = 0;
+   int mode = 0;
+   const char *to_run[argc];
+   const char *arch;
 
    assert(sizeof(long long) == 8);
 
@@ -95,36 +97,29 @@ main(int argc, char *argv[])
    setlinebuf(stdout);
    setlinebuf(stderr);
 
-   show_miscompares = 1;
-
    /* Collect options and arguments */
    for (int i = 1; i < argc; ++i) {
       const char *clo = argv[i];
 
-      if (CHECK_CLO(clo, "--verify")) {
-         verify = 1;
-      } else if (CHECK_CLO(clo, "--generate")) {
-         generate = 1;
-      } else if (CHECK_CLO(clo, "--all")) {
+      if (CHECK_CLO(clo, "--all")) {
          all = 1;
       } else if (CHECK_CLO(clo, "--verbose")) {
          verbose = 1;
       } else if (CHECK_CLO(clo, "--debug")) {
          debug = 1;
+      } else if (CHECK_CLO(clo, "--spec-exc")) {
+         mode |= GEN_SPEC_EXC;
+      } else if (CHECK_CLO(clo, "--no-spec-exc")) {
+         mode |= GEN_NO_SPEC_EXC;
       } else if (CHECK_CLO(clo, "--summary")) {
          summary = 1;
       } else if (CHECK_CLO(clo, "--unit-test")) {
          unit_test = 1;
-      } else if (CHECK_CLO(clo, "--show-spec-exc")) {
-         show_spec_exc = 1;
-      } else if (CHECK_CLO(clo, "--no-show-miscompares")) {
-         show_miscompares = 0;
       } else if (CHECK_CLO(clo, "--keep-temp")) {
          keep_temp = 1;
-      } else if (CHECK_CLO(clo, "--run")) {
-         run = 1;
-      } else if (CHECK_CLO(clo, "--check-prereq")) {
-         check_prereq = 1;
+      } else if (CHECK_CLO(clo, "--check-march=")) {
+         check_march = 1;
+         arch = strchr(clo, '=') + 1;
       } else if (CHECK_CLO(clo, "--help")) {
          printf("%s\n", usage);
          return 0;
@@ -134,129 +129,131 @@ main(int argc, char *argv[])
          gcc_flags = strchr(clo, '=') + 1;
       } else if (CHECK_CLO(clo, "--objdump=")) {
          objdump = strchr(clo, '=') + 1;
+      } else if (CHECK_CLO(clo, "--run")) {
+         run = 1;
+         num_to_run = 0;
+         int j;
+         for (j = i + 1; j < argc; ++j) {
+            if (! isalpha(argv[j][0]))
+               break;
+            if (get_opcode_by_name(argv[j]) == NULL)
+               error("'%s' is not a recognised opcode\n", argv[j]);
+            else
+               to_run[num_to_run++] = argv[j];
+         }
+         if (num_to_run == 0)
+            error("Missing opcode(s) for --run\n");
+         i = j - 1;
+      } else if (CHECK_CLO(clo, "--exclude")) {
+         num_excluded_opcodes = 0;
+         excluded_opcodes = mallock(argc * sizeof(char *));
+         int j;
+         for (j = i + 1; j < argc; ++j) {
+            if (argv[j][0] == '-')
+               break;
+            excluded_opcodes[num_excluded_opcodes++] = argv[j];
+         }
+         if (num_excluded_opcodes == 0)
+            error("Missing opcode(s) for --exclude\n");
+         i = j - 1;
       } else {
          if (strncmp(clo, "--", 2) == 0)
             fatal("Invalid command line option '%s'\n", clo);
-         clargs[num_clargs++] = clo;
+         else
+            fatal("Excess arguments on command line\n");
       }
    }
 
-   if (check_prereq)
-      return check_objdump();
+   if (check_march)
+      return check_march_level(arch);
 
    /* Check consistency of command line options */
-   if (verify + generate + run + all + unit_test == 0)
-      fatal("One of --verify, --generate, --run, --all, or --unit-test "
-            "is required\n");
-   if (verify + generate + run + all + unit_test != 1)
-      fatal("At most one of --verify, --generate, --run, --all, or "
-            " --unit-test can be given\n");
+   if (run + all + unit_test == 0)
+      fatal("One of --run, --all, or --unit-test is required\n");
+   if (run + all + unit_test != 1)
+      fatal("At most one of --run, --all, or  --unit-test can be given\n");
+
+   /* Nothing specified: look for both false positives and false negatives */
+   if (mode == 0)
+      mode = GEN_SPEC_EXC | GEN_NO_SPEC_EXC;
 
    vex_init();
 
-   if (generate) {
-      if (num_clargs == 0)
-         fatal("Missing opcode name[s]\n");
-
-      for (int i = 0; i < num_clargs; ++i) {
-         const char *name = clargs[i];
-
-         opcode *opc = get_opcode_by_name(name);
-
-         if (opc == NULL) {
-            error("'%s' is not a recognised opcode\n", name);
-         } else if (opcode_has_errors(opc)) {
-            error("Opcode '%s' ignored due to syntax errors\n", name);
-         } else {
-            generate_tests(opc);
-            release_opcode(opc);
-         }
-      }
-      return 0;
-   }
-
-   if (verify) {
-      if (num_clargs == 0)
-         fatal("Missing file name[s]\n");
-
-      int num_mismatch = 0;
-
-      for (int i = 0; i < num_clargs; ++i) {
-         verify_stats stats = verify_disassembly(clargs[i]);
-         num_mismatch += stats.num_mismatch;
-      }
-      return num_mismatch != 0;
-   }
-
    if (run) {
-      if (num_clargs == 0)
-         fatal("Missing opcode name[s]\n");
+      int rc = 0;
 
-      unsigned num_mismatch = 0;
+      if (mode & GEN_SPEC_EXC) {
+         unsigned num_tests = 0, num_spec_exc = 0;
+         if (verbose)
+            printf("Looking for missed specification exceptions\n");
 
-      for (int i = 0; i < num_clargs; ++i) {
-         const char *name = clargs[i];
+         for (int i = 0; i < num_to_run; ++i) {
+            const char *name = to_run[i];
 
-         opcode *opc = get_opcode_by_name(name);
+            opcode *opc = get_opcode_by_name(name);  // never NULL
 
-         if (opc == NULL) {
-            error("'%s' is not a recognised opcode\n", name);
-         } else if (opcode_has_errors(opc)) {
-            error("Opcode '%s' ignored due to syntax errors\n", name);
-         } else {
-            generate_tests(opc);
-
-            char file[strlen(name) + 10];    // large enough
-            sprintf(file, "%s.dump", name);
-
-            verify_stats stats = verify_disassembly(file);
-            num_mismatch += stats.num_mismatch;
-
-            if (! keep_temp)
-               remove_temp_files(name);
-            release_opcode(opc);
+            test_stats stats = run_opcode(opc, /* gen-spec-exc-tests */ 1);
+            num_tests    += stats.num_generated;
+            num_spec_exc += stats.num_spec_exc;
          }
+         rc += num_tests != num_spec_exc;
       }
-      return num_mismatch != 0;
+      if (mode & GEN_NO_SPEC_EXC) {
+         unsigned num_spec_exc = 0;
+         if (verbose)
+            printf("Looking for unexpected specification exceptions\n");
+
+         for (int i = 0; i < num_to_run; ++i) {
+            const char *name = to_run[i];
+
+            opcode *opc = get_opcode_by_name(name);  // never NULL
+
+            test_stats stats = run_opcode(opc, /* gen-spec-exc-tests */ 0);
+            num_spec_exc += stats.num_spec_exc;
+         }
+         rc += num_spec_exc != 0;
+      }
+      return rc;
    }
 
    if (all) {
-      if (num_clargs != 0)
-         fatal("Excess arguments on command line\n");
+      int rc = 0;
 
-      unsigned num_tests, num_verified, num_mismatch, num_spec_exc;
-      num_tests = num_verified = num_mismatch = num_spec_exc = 0;
+      if (mode & GEN_SPEC_EXC) {
+         unsigned num_tests = 0, num_spec_exc = 0;
+         if (verbose || summary)
+            printf("Looking for missed specification exceptions\n");
+         for (int i = 0; i < num_opcodes; ++i) {
+            opcode *opc = get_opcode_by_index(i); // never NULL
 
-      for (int i = 0; i < num_opcodes; ++i) {
-         opcode *opc = get_opcode_by_index(i); // never NULL
-
-         if (opcode_has_errors(opc)) {
-            error("Opcode '%s' ignored due to syntax errors\n",
-                  opc->name);
-            continue;
+            test_stats stats = run_opcode(opc, /* gen-spec-exc-tests */ 1);
+            num_tests    += stats.num_generated;
+            num_spec_exc += stats.num_spec_exc;
          }
-         num_tests += generate_tests(opc);
-
-         char file[strlen(opc->name) + 10];
-         sprintf(file, "%s.dump", opc->name);
-
-         verify_stats stats = verify_disassembly(file);
-
-         num_verified += stats.num_verified;
-         num_mismatch += stats.num_mismatch;
-         num_spec_exc += stats.num_spec_exc;
-
-         if (! keep_temp)
-            remove_temp_files(opc->name);
-         release_opcode(opc);
+         if (verbose || summary) {
+            printf("Total: %6u tests generated\n", num_tests);
+            printf("Total: %6u specification exceptions\n", num_spec_exc);
+         }
+         rc += num_tests != num_spec_exc;
       }
-      if (verbose || summary) {
-         printf("Total: %6u tests generated\n", num_tests);
-         printf("Total: %6u insns verified\n", num_verified);
-         printf("Total: %6u disassembly mismatches\n", num_mismatch);
-         printf("Total: %6u specification exceptions\n", num_spec_exc);
+      if (mode & GEN_NO_SPEC_EXC) {
+         unsigned num_tests = 0, num_spec_exc = 0;
+         if (verbose || summary)
+            printf("Looking for unexpected specification exceptions\n");
+         for (int i = 0; i < num_opcodes; ++i) {
+            opcode *opc = get_opcode_by_index(i); // never NULL
+
+            test_stats stats = run_opcode(opc, /* gen-spec-exc-tests */ 0);
+            num_tests    += stats.num_generated;
+            num_spec_exc += stats.num_spec_exc;
+         }
+         if (verbose || summary) {
+            printf("Total: %6u tests generated\n", num_tests);
+            printf("Total: %6u specification exceptions\n", num_spec_exc);
+         }
+         rc += num_spec_exc != 0;
       }
-      return num_mismatch != 0;
+      return rc != 0;
    }
 
    if (unit_test)
@@ -266,16 +263,135 @@ main(int argc, char *argv[])
 }
 
 
-static void
-remove_temp_files(const char *op)
+static test_stats
+run_opcode(opcode *opc, int gen_spec_exc_tests)
 {
-   char file[strlen(op) + 10];    // large enough
-   static const char *suffix[] = { ".c", ".o", ".dump", ".vex" };
+   test_stats stats = { 0, 0 };  // return value
+
+   if (opcode_has_errors(opc)) {
+      error("Opcode '%s' ignored due to syntax errors\n", opc->name);
+   } else if (skip_opcode(opc, gen_spec_exc_tests)) {
+      if (verbose)
+         printf("Opcode '%s' skipped\n", opc->name);
+   } else if (is_excluded_opcode(opc)) {
+      if (verbose)
+         printf("Opcode '%s' excluded via command line\n", opc->name);
+   } else {
+      unsigned num_generated = generate_tests(opc, gen_spec_exc_tests);
+
+      stats = verify_spec_exceptions(opc, gen_spec_exc_tests);
+      stats.num_generated = num_generated;
+
+      if (! keep_temp)
+         remove_temp_files(opc->name, gen_spec_exc_tests);
+      release_opcode(opc);
+   }
+   return stats;
+}
+
+
+/* The GNU assembler detects certain insns that would cause a
+   specification exception, namely:
+   - an invalid register identifying a GPR pair is used
+   - an invalid register identifying a FPR pair is used
+   We do not want the assembler to complain and therefore need
+   to construct testcases accordingly. */
+int
+asm_detects_spec_exc(const opnd *operand)
+{
+   assert(operand->allowed_values);
+
+   if (operand->kind == OPND_GPR) {
+      /* Check for constraint on a GPR pair. */
+      int expected[8] = { 0,2,4,6,8,10,12,14 };
+      if (operand->allowed_values[0] != 8) return 0;
+
+      for (int i = 1; i <= 8; ++i) {
+         if (operand->allowed_values[i] != expected[i - 1])
+            return 0;
+      }
+      return 1;
+   }
+
+   if (operand->kind == OPND_FPR) {
+      /* Check for constraint on an FPR pair. */
+      int expected[8] = { 0,1,4,5,8,9,12,13 };
+      if (operand->allowed_values[0] != 8) return 0;
+
+      for (int i = 1; i <= 8; ++i) {
+         if (operand->allowed_values[i] != expected[i - 1])
+            return 0;
+      }
+      return 1;
+   }
+
+   return 0;
+}
+
+
+static int
+skip_opcode(const opcode *opc, int gen_spec_exc_tests)
+{
+   if (gen_spec_exc_tests) {
+      /* Looking for false negatives. I.e. insns that cause spec. exception.
+         That means:
+         a) opcode must have at least one constraint (necessary condition)
+         b) at least one of those constraints is such that a constraint
+            violation is not detected by the assembler (sufficient condition)
+      */
+      for (int i = 0; i < opc->num_opnds; ++i) {
+         const opnd *operand = opc->opnds + i;
+
+         if (operand->allowed_values)
+            if (! asm_detects_spec_exc(operand))
+               return 0;
+      }
+      return 1;
+   } else {
+      /* Looking for false positives. I.e. opcodes that should not cause
+         a spec. exception. That is:
+         a) opcodes without constraints
+         b) opcodes with satisfied constraints */
+      return 0;
+   }
+}
+
+
+static int
+check_march_level(const char *arch)
+{
+   const char *cmd = "%s -c -march=%s /dev/null 2> /dev/null";
+   char buf[strlen(gcc) + strlen(cmd) + strlen(arch) + 10];
+   sprintf(buf, cmd, gcc, arch);
+
+   int rc = system(buf);
+   return rc == 0 ? 0 : 1;
+}
+
+
+static void
+remove_temp_files(const char *op, int gen_spec_exc_tests)
+{
+   char file[strlen(op) + 20];    // large enough
+   static const char *suffix[] = { ".c", ".o", ".dump", ".spec-exc" };
 
    for (int i = 0; i < sizeof suffix / sizeof *suffix; ++i) {
-      sprintf(file, "%s%s", op, suffix[i]);
+      sprintf(file, "%s-%s%s", op, gen_spec_exc_tests ? "se" : "no-se",
+              suffix[i]);
       unlink(file);
    }
+}
+
+
+static int
+is_excluded_opcode(const opcode *opc)
+{
+   if (excluded_opcodes) {
+      for (int i = 0; i < num_excluded_opcodes; ++i)
+         if (strcmp(opc->name, excluded_opcodes[i]) == 0)
+            return 1;
+   }
+   return 0;
 }
 
 
@@ -342,54 +458,4 @@ opcode_has_errors(const opcode *opc)
          return 1;
    }
    return 0;
-}
-
-
-/* Objdump version 2.44 or later is required, Return 0, if that's
-   the case. */
-static int
-check_objdump(void)
-{
-   unsigned need = strlen(objdump) + 3 + 1;
-   char *cmd = mallock(need);
-
-   sprintf(cmd, "%s -V", objdump);
-   FILE *fp = popen(cmd, "r");
-
-   /* The version number is expected on the first line and its
-      format ought to be one of X or X.Y or X.Y.Z where X,Y,Z are
-      positive integers. */
-   int c, rc = 1;
-   while ((c = fgetc(fp)) != EOF) {
-      if (c == '\n') break;
-      if (! isdigit(c)) continue;
-
-      /* Version number is expected to be X or X.Y or X.Y.Z */
-      char buf[32];  // assumed large enough
-      int ix = 0;
-      do {
-         buf[ix++] = c;
-         c = fgetc(fp);
-      } while (isdigit(c) || c == '.');
-      buf[ix] = '\0';
-
-      unsigned version = 0, v1, v2, v3;
-      if (sscanf(buf, "%u.%u.%u", &v1,&v2,&v3) == 3) {
-         version = v1*1000000 + v2*1000 + v3;
-      } else if (sscanf(buf, "%u.%u", &v1,&v2) == 2) {
-         version = v1*1000000 + v2*1000;
-      } else if (sscanf(buf, "%u", &v1) == 1) {
-         version = v1*1000000;
-      } else {
-         error("Could not determine objdump version\n");
-         break;
-      }
-      if (version >= MIN_OBJDUMP_VERSION)
-         rc = 0;
-      break;
-   }
-   pclose(fp);
-   free(cmd);
-
-   return rc;
 }

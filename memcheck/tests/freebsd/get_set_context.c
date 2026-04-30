@@ -69,7 +69,7 @@ int main(void)
       if (-1 == swapcontext(ucp2, ucp)) {
          perror("swapcontext failed: ");
       }
-      fprintf(stderr, "should never see swapcontest return\n");
+      fprintf(stderr, "should never see swapcontext return\n");
    }
 
    assert(flag == 5);

@@ -277,9 +277,6 @@ static IRSB* irsb;
 #define OFFB_CMLEN     offsetof(VexGuestX86State,guest_CMLEN)
 #define OFFB_NRADDR    offsetof(VexGuestX86State,guest_NRADDR)
 
-#define OFFB_IP_AT_SYSCALL offsetof(VexGuestX86State,guest_IP_AT_SYSCALL)
-
-
 /*------------------------------------------------------------*/
 /*--- Helper bits and pieces for deconstructing the        ---*/
 /*--- x86 insn stream.                                     ---*/
@@ -694,6 +691,8 @@ static IRExpr* mkV128 ( UShort mask )
 {
    return IRExpr_Const(IRConst_V128(mask));
 }
+
+#include "guest_generic_sse.h"
 
 static IRExpr* loadLE ( IRType ty, IRExpr* addr )
 {
@@ -4202,6 +4201,10 @@ UInt dis_FPU ( Bool* decode_ok, UChar sorb, Int delta )
                assign(t2, get_ST(r_src));
                put_ST_UNCHECKED(0, mkexpr(t2));
                put_ST_UNCHECKED(r_src, mkexpr(t1));
+               break;
+
+            case 0xD0: /* FNOP */
+               DIP("fnop\n");
                break;
 
             case 0xE0: /* FCHS */
@@ -8045,6 +8048,206 @@ static IRTemp math_BSWAP ( IRTemp t1, IRType ty )
    vassert(0);
    /*NOTREACHED*/
    return IRTemp_INVALID;
+}
+
+/*------------------------------------------------------------*/
+/*--- SSE4.1 BLEND instruction helpers                     ---*/
+/*------------------------------------------------------------*/
+
+/* decode_sse4_blend_imm: Helper for decoding BLEND instructions
+   (BLENDPS, BLENDPD, PBLENDW).  */
+static void decode_sse4_blend_imm (Int* delta_inout, const UChar*  insn,
+                                   const HChar*  insn_name,
+                                   IRTemp (*math_fn)(IRTemp, IRTemp, UInt),
+                                   UChar sorb)
+{
+     Int imm8, alen;
+     UChar modrm;
+     IRTemp addr;
+     HChar dis_buf[50];
+     Int delta = *delta_inout;
+     IRTemp dst_vec = newTemp(Ity_V128);
+     IRTemp src_vec = newTemp(Ity_V128);
+
+     //no REX prefix on 32bit
+     modrm = insn[3];
+     assign( dst_vec, getXMMReg( gregOfRM(modrm) ) );
+
+     if ( epartIsReg(modrm) ) {
+       imm8 = insn[4];
+       assign( src_vec, getXMMReg( eregOfRM(modrm) ) );
+       //skip opcode bytes: +3
+       delta += 1 + 1 + 3;
+       DIP( "%s $%d, %s,%s\n", insn_name, imm8,
+           nameXMMReg( eregOfRM(modrm) ),
+           nameXMMReg( gregOfRM(modrm) ) );
+     } else {
+       //delta + 3 skips the opcode bytes
+       addr = disAMode( &alen, sorb, delta + 3, dis_buf);
+       assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+       imm8 = insn[3 + alen];
+       //skip opcode bytes: +3
+       delta += alen + 1 + 3;
+       DIP( "%s $%d, %s,%s\n", insn_name,
+           imm8, dis_buf, nameXMMReg( gregOfRM(modrm) ) );
+     }
+
+     putXMMReg( gregOfRM(modrm),
+         mkexpr( math_fn( src_vec, dst_vec, imm8) ) );
+
+     *delta_inout = delta;
+}
+
+/* decode_sse4_blend: Helper for decoding BLEND instructions
+   (PBLENDVB, BLENDVPS, BLENDVPD) .  */
+static void decode_sse4_blend (Int* delta_inout, const UChar*  insn,
+                               const HChar*  insn_name, UInt gran,
+                               UChar sorb, IROp opSAR)
+{
+  Int alen;
+  IRTemp addr;
+  HChar dis_buf[50];
+  Int delta = *delta_inout;
+  IRTemp vecE = newTemp(Ity_V128);
+  IRTemp vecG = newTemp(Ity_V128);
+  IRTemp vec0 = newTemp(Ity_V128);
+  UChar modrm = insn[3];
+
+  if ( epartIsReg(modrm) ) {
+    assign(vecE, getXMMReg(eregOfRM(modrm)));
+    delta += 1 + 3;
+    DIP( "%s %s,%s\n", insn_name,
+        nameXMMReg( eregOfRM(modrm) ),
+        nameXMMReg( gregOfRM(modrm) ) );
+  } else {
+    addr = disAMode( &alen, sorb, delta + 3, dis_buf );
+    gen_SEGV_if_not_16_aligned( addr );
+    assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
+    delta += alen + 3;
+    DIP( "%s %s,%s\n", insn_name,
+        dis_buf, nameXMMReg( gregOfRM(modrm) ) );
+  }
+
+  assign(vecG, getXMMReg(gregOfRM(modrm)));
+  assign(vec0, getXMMReg(0));
+
+  IRTemp res = math_PBLENDVB_128( vecE, vecG, vec0, gran, opSAR );
+  putXMMReg(gregOfRM(modrm), mkexpr(res));
+
+  *delta_inout = delta;
+}
+
+/*------------------------------------------------------------*/
+/*--- SSE4.1 PTEST instruction helpers                     ---*/
+/* Taken from amd64, but only for 128 bit, sse4 PTEST         */
+/*------------------------------------------------------------*/
+
+static void finish_xTESTy ( IRTemp andV, IRTemp andnV )
+{
+   /* Set Z=1 iff (vecE & vecG) == 0--(128)--0
+      Set C=1 iff (vecE & not vecG) == 0--(128)--0
+
+      Be careful to use only IROps that can be instrumented exactly
+      by memcheck.
+      This is because PTEST is used for __builtin_strcmp in gcc14.  See
+      https://bugzilla.redhat.com/show_bug.cgi?id=2257546
+   */
+
+   /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
+
+   /* andV resp. andnV, are reduced to 64-bit values by or-ing the top
+      and bottom 64-bits together.  It relies on this trick:
+
+      InterleaveLO64x2([a,b],[c,d]) == [b,d]    hence
+
+      InterleaveLO64x2([a,b],[a,b]) == [b,b]    and similarly
+      InterleaveHI64x2([a,b],[a,b]) == [a,a]
+
+      and so the OR of the above 2 exprs produces
+      [a OR b, a OR b], from which we simply take the lower half.
+   */
+   IRTemp and64  = newTemp(Ity_I64);
+   IRTemp andn64 = newTemp(Ity_I64);
+
+   assign(and64,
+          unop(Iop_V128to64,
+               binop(Iop_OrV128,
+                     binop(Iop_InterleaveLO64x2,
+                           mkexpr(andV), mkexpr(andV)),
+                     binop(Iop_InterleaveHI64x2,
+                           mkexpr(andV), mkexpr(andV)))));
+
+   assign(andn64,
+          unop(Iop_V128to64,
+               binop(Iop_OrV128,
+                     binop(Iop_InterleaveLO64x2,
+                           mkexpr(andnV), mkexpr(andnV)),
+                     binop(Iop_InterleaveHI64x2,
+                           mkexpr(andnV), mkexpr(andnV)))));
+
+   // Make z64 and c64 be either all-0s or all-1s
+   IRTemp z64 = newTemp(Ity_I64);
+   IRTemp c64 = newTemp(Ity_I64);
+
+   assign(z64, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(and64), mkU64(0)),
+                          mkU64(~0ULL), mkU64(0ULL)));
+   assign(c64, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(andn64), mkU64(0)),
+                          mkU64(~0ULL), mkU64(0ULL)));
+
+   /* And finally, slice out the Z and C flags and set the flags
+      thunk to COPY for them.  OSAP are set to zero. */
+   IRTemp newOSZACP = newTemp(Ity_I64);
+   assign(newOSZACP,
+          binop(Iop_Or64,
+                binop(Iop_And64, mkexpr(z64), mkU64(X86G_CC_MASK_Z)),
+                binop(Iop_And64, mkexpr(c64), mkU64(X86G_CC_MASK_C))));
+
+   stmt( IRStmt_Put( OFFB_CC_DEP1, unop(Iop_64to32, mkexpr(newOSZACP)) ));
+   stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+   stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+   stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+}
+
+
+/* Handles 128 bit PTEST. */
+static Long dis_xTESTy_128 ( const VexAbiInfo* vbi, UChar sorb, Long delta )
+{
+   IRTemp addr   = IRTemp_INVALID;
+   Int    alen   = 0;
+   HChar  dis_buf[50];
+   UChar  modrm  = getUChar(delta);
+   UInt   rG     = gregOfRM(modrm);
+   IRTemp vecE = newTemp(Ity_V128);
+   IRTemp vecG = newTemp(Ity_V128);
+
+   if ( epartIsReg(modrm) ) {
+      UInt rE = eregOfRM(modrm);
+      assign(vecE, getXMMReg(rE));
+      delta += 1;
+      DIP( "ptest %s,%s\n", nameXMMReg(rE), nameXMMReg(rG) );
+   } else {
+      addr = disAMode( &alen, sorb, delta, dis_buf );
+      gen_SEGV_if_not_16_aligned( addr );
+      assign(vecE, loadLE( Ity_V128, mkexpr(addr) ));
+      delta += alen;
+      DIP( "ptest %s,%s\n", dis_buf, nameXMMReg(rG) );
+   }
+
+   assign(vecG, getXMMReg(rG));
+
+   /* Set Z=1 iff (vecE & vecG) == 0
+      Set C=1 iff (vecE & not vecG) == 0
+   */
+
+   /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
+   IRTemp andV  = newTemp(Ity_V128);
+   IRTemp andnV = newTemp(Ity_V128);
+   assign(andV,  binop(Iop_AndV128, mkexpr(vecE), mkexpr(vecG)));
+   assign(andnV, binop(Iop_AndV128,
+                       mkexpr(vecE), unop(Iop_NotV128, mkexpr(vecG))));
+
+   finish_xTESTy ( andV, andnV );
+   return delta;
 }
 
 /*------------------------------------------------------------*/
@@ -12939,6 +13142,31 @@ DisResult disInstr_X86_WRK (
    /* --- start of the SSE4 decoder                    --- */
    /* ---------------------------------------------------- */
 
+   /* 66 0F 38 17 /r = PTEST xmm1, xmm2/m128
+      Logical compare (set ZF and CF from AND/ANDN of the operands) */
+   if ( sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x17) {
+         delta = dis_xTESTy_128( vbi, sorb, delta + 3 );
+         goto decode_success;
+   }
+
+   /* 66 0F 38 2A /r MOVNTDQA xmm1, m128
+      "non-temporal" "streaming" load
+      Handle like MOVDQA but only memory operand is allowed */
+   if ( sz == 2
+	&& insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x2A ) {
+      modrm = insn[3];
+      if ( !epartIsReg( modrm ) ) {
+	 addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         gen_SEGV_if_not_16_aligned( addr );
+         putXMMReg( gregOfRM(modrm),
+                    loadLE(Ity_V128, mkexpr(addr)) );
+         DIP("movntdqa %s,%s\n", dis_buf, nameXMMReg(gregOfRM(modrm)));
+         delta += 3 + alen;
+         goto decode_success;
+      }
+   }
+
    /* 66 0F 3A 22 /r ib = PINSRD xmm1, r/m32, imm8
       Extract Doubleword int from gen.reg/mem32 and insert into xmm1 */
    if ( sz == 2
@@ -12991,6 +13219,190 @@ DisResult disInstr_X86_WRK (
                         binop( Iop_AndV128, 
                                getXMMReg( gregOfRM(modrm) ),
                                mkV128(mask) ) ) );
+
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 42 /r ib MPSADBW xmm1, xmm2/m128, imm8
+      Multiple Packed Sums of Absolute Difference */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x42) {
+       Int    imm8;
+       IRTemp src_vec = newTemp(Ity_V128);
+       IRTemp dst_vec = newTemp(Ity_V128);
+       modrm          = insn[3];
+       UInt   rG      = gregOfRM(modrm);
+
+       assign( dst_vec, getXMMReg(rG) );
+
+       /* in a case of delta + 3, +3 skips the three opcode bytes (0F 3A 42)
+          that insn[] already matched */
+       if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM(modrm);
+
+         imm8 = (Int)(insn[3+1]);
+         assign( src_vec, getXMMReg(rE) );
+         delta += 3+1+1;
+         DIP( "mpsadbw $%d, %s,%s\n", imm8,
+             nameXMMReg(rE), nameXMMReg(rG) );
+       } else {
+         addr = disAMode( &alen, sorb, delta + 3, dis_buf);
+         gen_SEGV_if_not_16_aligned( addr );
+         assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)(insn[3+alen]);
+         delta += 3+alen+1;
+         DIP( "mpsadbw $%d, %s,%s\n", imm8, dis_buf, nameXMMReg(rG) );
+       }
+
+       putXMMReg( rG, mkexpr( math_MPSADBW_128(dst_vec, src_vec, imm8) ) );
+       goto decode_success;
+     }
+
+   /* 66 0F 3A 0D /r ib = BLENDPD */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x0D) {
+     decode_sse4_blend_imm(&delta, insn, "blendpd", math_BLENDPD_128, sorb);
+     goto decode_success;
+   }
+
+   /* 66 0F 3A 0C /r ib = BLENDPS */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x0C) {
+     decode_sse4_blend_imm(&delta, insn, "blendps", math_BLENDPS_128, sorb);
+     goto decode_success;
+   }
+
+   /* 66 0F 3A 0E /r ib = PBLENDW */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x0E) {
+     decode_sse4_blend_imm(&delta, insn, "pblendw", math_PBLENDW_128, sorb);
+     goto decode_success;
+   }
+
+   /* 66 0F 38 10 /r = PBLENDVB xmm1, xmm2/m128 */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x10) {
+     decode_sse4_blend(&delta, insn, "pblendvb", 1, sorb, Iop_SarN8x16);
+     goto decode_success;
+   }
+
+   /* 66 0F 38 14 /r = BLENDVPS xmm1, xmm2/m128  */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x14) {
+     decode_sse4_blend(&delta, insn, "blendvps", 4, sorb, Iop_SarN32x4);
+     goto decode_success;
+   }
+
+   /* 66 0F 38 15 /r = BLENDVPD xmm1, xmm2/m128  */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x15) {
+     decode_sse4_blend(&delta, insn, "blendvpd", 8, sorb, Iop_SarN64x2);
+     goto decode_success;
+   }
+
+   /* 66 0F 38 29 = PCMPEQQ
+      64x2 equality comparison */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x29) {
+      delta = dis_SSEint_E_to_G( sorb, delta+3, "pcmpeqq",
+                                 Iop_CmpEQ64x2, False);
+      goto decode_success;
+   }
+
+   /* 66 0F 38 38 /r  - PMINSB xmm1, xmm2/m128
+      66 0F 38 3C /r  - PMAXSB xmm1, xmm2/m128
+      Minimum/Maximum of Packed Signed Byte Integers (XMM)
+   */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x38 || insn[2] == 0x3C)) {
+     /* FIXME: this needs an alignment check */
+     Bool isMAX = insn[2] == 0x3C;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxsb" : "pminsb",
+         isMAX ? Iop_Max8Sx16 : Iop_Min8Sx16,
+         False
+         );
+     goto decode_success;
+   }
+
+   /* 66 0F 38 39 /r  - PMINSD xmm1, xmm2/m128
+      66 0F 38 3D /r  - PMAXSD xmm1, xmm2/m128
+      66 prefix (sz == 2): SSE2/SSE4 XMM instructions (128-bit)
+      0F 38 is the secondary escape used for SSSE3, SSE4, and later extensions
+      39 = PMINSD (minimum of packed signed 32-bit integers)
+      3D = PMAXSD (maximum of packed signed 32-bit integers)
+      reference: Intel Software Developer Manual (Volume 2: Instruction Set Reference)  */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x39 || insn[2] == 0x3D)) {
+     Bool isMAX = insn[2] == 0x3D;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxsd" : "pminsd",
+         isMAX ? Iop_Max32Sx4 : Iop_Min32Sx4,
+         False
+         );
+     goto decode_success;
+   }
+
+   /* 66 0F 38 3A /r  - PMINUW xmm1, xmm2/m128
+      66 0F 38 3E /r  - PMAXUW xmm1, xmm2/m128
+      Minimum/Maximum of Packed Unsigned Word Integers (XMM)
+   */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x3A || insn[2] == 0x3E)) {
+     /* FIXME: this needs an alignment check */
+     Bool isMAX = insn[2] == 0x3E;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxuw" : "pminuw",
+         isMAX ? Iop_Max16Ux8 : Iop_Min16Ux8,
+         False
+         );
+     goto decode_success;
+   }
+
+   /* 66 0F 38 3B /r  - PMINUD xmm1, xmm2/m128
+      66 0F 38 3F /r  - PMAXUD xmm1, xmm2/m128
+      Minimum/Maximum of Packed Unsigned Doubleword Integers (XMM)
+   */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && (insn[2] == 0x3B || insn[2] == 0x3F)) {
+     /* FIXME: this needs an alignment check */
+     Bool isMAX = insn[2] == 0x3F;
+     delta = dis_SSEint_E_to_G(
+         sorb, delta+3,
+         isMAX ? "pmaxud" : "pminud",
+         isMAX ? Iop_Max32Ux4 : Iop_Min32Ux4,
+         False
+         );
+     goto decode_success;
+   }
+
+   /* 66 0F 38 40 /r  - PMULLD xmm1, xmm2/m128
+      32x4 integer multiply from xmm2/m128 to xmm1 */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38 && insn[2] == 0x40) {
+
+      modrm = insn[3];
+
+      IRTemp argL = newTemp(Ity_V128);
+      IRTemp argR = newTemp(Ity_V128);
+
+      if (epartIsReg(modrm)) {
+         assign( argL, getXMMReg( eregOfRM(modrm) ) );
+         delta += 3+1;
+         DIP( "pmulld %s,%s\n",
+              nameXMMReg( eregOfRM(modrm) ),
+              nameXMMReg( gregOfRM(modrm) ) );
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         assign( argL, loadLE( Ity_V128, mkexpr(addr) ));
+         delta += 3+alen;
+         DIP( "pmulld %s,%s\n",
+              dis_buf, nameXMMReg( gregOfRM(modrm) ) );
+      }
+
+      assign(argR, getXMMReg( gregOfRM(modrm) ));
+
+      putXMMReg( gregOfRM(modrm),
+                 binop( Iop_Mul32x4, mkexpr(argL), mkexpr(argR)) );
 
       goto decode_success;
    }
@@ -13071,6 +13483,8 @@ DisResult disInstr_X86_WRK (
          DIP("lzcnt%c %s, %s\n", nameISize(sz), dis_buf,
              nameIReg(sz, gregOfRM(modrm)));
       }
+
+
 
       IRTemp res = gen_LZCNT(ty, src);
       putIReg(sz, gregOfRM(modrm), mkexpr(res));
@@ -13509,8 +13923,6 @@ DisResult disInstr_X86_WRK (
          goto decode_failure;
       }
 
-      stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
-                        mkU32(guest_EIP_curr_instr) ) );
       jmp_lit(&dres, jump_kind, ((Addr32)guest_EIP_bbstart)+delta);
       vassert(dres.whatNext == Dis_StopHere);
       DIP("int $0x%x\n", d32);
@@ -15212,11 +15624,6 @@ DisResult disInstr_X86_WRK (
             thread will jump to address zero, which is probably
             fatal. 
          */
-
-         /* Note where we are, so we can back up the guest to this
-            point if the syscall needs to be restarted. */
-         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
-                           mkU32(guest_EIP_curr_instr) ) );
          jmp_lit(&dres, Ijk_Sys_sysenter, 0/*bogus next EIP value*/);
          vassert(dres.whatNext == Dis_StopHere);
          DIP("sysenter");
@@ -15369,8 +15776,6 @@ DisResult disInstr_X86_WRK (
       }
 
       case 0x05: /* AMD's syscall */
-         stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
-                           mkU32(guest_EIP_curr_instr) ) );
          jmp_lit(&dres, Ijk_Sys_syscall, ((Addr32)guest_EIP_bbstart)+delta);
          vassert(dres.whatNext == Dis_StopHere);
          DIP("syscall\n");

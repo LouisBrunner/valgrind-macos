@@ -1,10 +1,10 @@
 include $(top_srcdir)/Makefile.all.am
 
-EXTRA_DIST = iropt-test.vgtest iropt-test.stderr.exp \
-             iropt-test-sec.vgtest iropt-test-sec.stderr.exp \
+EXTRA_DIST = iropt-test.vgtest \
+             iropt-test-sec.vgtest \
              irops.tab
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS =
 
 #----------------------------------------------------------------------------
 # Headers

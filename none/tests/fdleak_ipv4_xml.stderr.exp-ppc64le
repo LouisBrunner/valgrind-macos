@@ -90,14 +90,6 @@
       <file>fdleak_ipv4.c</file>
       <line>68</line>
     </frame>
-    <frame>
-      <ip>0x........</ip>
-      <obj>...</obj>
-      <fn>main</fn>
-      <dir>...</dir>
-      <file>fdleak_ipv4.c</file>
-      <line>90</line>
-    </frame>
   </stack>
 </error>
 

@@ -91,9 +91,9 @@ static Int count_rw_loads(const struct load_command* macho_load_commands, unsign
   for (unsigned int i = 0U; i < ncmds; ++i) {
       if (lc->cmd == LC_SEGMENT_CMD) {
         const struct SEGMENT_COMMAND* sc = (const struct SEGMENT_COMMAND*)lc;
-        if (sc->initprot == 3
-#if DARWIN_VERS >= DARWIN_13_00
-// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 13 and later (not sure when that started)
+        if (sc->initprot == 3 && sc->filesize
+#if DARWIN_VERS >= DARWIN_10_15
+// FIXME: somehow __DATA_CONST appears as rw- in most binaries in macOS 10.15
 // so we ignore it otherwise some binaries don't get symbols
             && VG_(strcmp)(sc->segname, "__DATA_CONST") != 0
 #endif
@@ -215,7 +215,9 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
      // unfortunately, all the data needed for parsing from the DSC is spread across many places in memory
      // and there is no way to know for sure the size of the DSC perfectly, so this is the best method at the moment
      // and it's _very_ unsafe
+#if (DARWIN_VERS >= DARWIN_10_15)
      mimg = ML_(img_from_memory)(rx_map->avma, MACH_DSC_END - rx_map->avma, filename);
+#endif
    } else {
      mimg = ML_(img_from_local_file)(filename);
    }
@@ -432,7 +434,7 @@ void add_symbol( /*OUT*/XArray* /* DiSym */ syms,
                       di->text_avma+di->text_size - sym_addr;
   disym.isText     = inside_text;
   disym.isIFunc    = False;
-  disym.isGlobal   = inside_data || inside_d_data;
+  disym.isGlobal   = (nl->n_type & N_EXT) != 0;
   // Lots of user function names get prepended with an underscore.  Eg. the
   // function 'f' becomes the symbol '_f'.  And the "below main"
   // function is called "start".  So we skip the leading underscore, and
@@ -1008,7 +1010,7 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                di->data_present = True;
                di->data_svma = (Addr)seg.vmaddr;
                di->data_avma = rw_map->avma;
-#if defined(VGA_arm64)
+#if defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_10_15)
                // FIXME: the same mmap contains both __DATA_CONST, __DATA and __DATA_DIRTY
                // this means that symbols in __DATA/__DATA_DIRTY are offset by the size of __DATA_CONST
                // not sure when this started to be an issue so I am going to gate this under arm64 for now
@@ -1338,7 +1340,9 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
      VG_(strcat)(cmd, "\"");
      VG_(strcat)(cmd, di->fsm.filename);
      VG_(strcat)(cmd, "\"");
-     VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
+     if (VG_(clo_verbosity) > 0) {
+        VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
+     }
      r = VG_(system)( cmd );
      if (r)
         VG_(message)(Vg_DebugMsg, "run: %s FAILED\n", dsymutil);

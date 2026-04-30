@@ -1,0 +1,4 @@
+prog: ioctl_procmap_query
+vgopts: -q
+stdout_filter: filter_ioctl_procmap_query
+prereq: test -x ioctl_procmap_query

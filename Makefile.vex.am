@@ -41,6 +41,8 @@ noinst_HEADERS = \
 	priv/ir_opt.h \
 	priv/guest_generic_bb_to_IR.h \
 	priv/guest_generic_x87.h \
+	priv/guest_generic_sse.h \
+	priv/guest_generic_helpers.h \
 	priv/guest_x86_defs.h \
 	priv/guest_amd64_defs.h \
 	priv/guest_ppc_defs.h \
@@ -68,7 +70,10 @@ noinst_HEADERS = \
 	priv/host_mips_defs.h \
 	priv/host_nanomips_defs.h \
 	priv/common_nanomips_defs.h \
-	priv/host_riscv64_defs.h
+	priv/host_riscv64_defs.h \
+	priv/objdump/dis-asm.h \
+	priv/objdump/s390.h \
+	priv/objdump/stubs.h
 
 BUILT_SOURCES = pub/libvex_guest_offsets.h
 CLEANFILES    = pub/libvex_guest_offsets.h
@@ -178,13 +183,16 @@ LIBVEX_SOURCES_COMMON = \
 	priv/host_arm64_isel.c \
 	priv/host_s390_defs.c \
 	priv/host_s390_isel.c \
-	priv/s390_disasm.c \
 	priv/host_mips_defs.c \
 	priv/host_nanomips_defs.c \
 	priv/host_mips_isel.c \
 	priv/host_nanomips_isel.c \
 	priv/host_riscv64_defs.c \
-	priv/host_riscv64_isel.c
+	priv/host_riscv64_isel.c \
+	priv/objdump/dis-init.c \
+	priv/objdump/s390-dis.c \
+	priv/objdump/s390-opc.c \
+	priv/objdump/s390-opc.tab
 
 LIBVEXMULTIARCH_SOURCES = priv/multiarch_main_main.c
 
@@ -197,13 +205,13 @@ LIBVEX_CFLAGS = ${LTO_CFLAGS} \
 
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES  = $(LIBVEX_SOURCES_COMMON)
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
-        $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) -Ipriv
+        $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) -I$(srcdir)/priv
 libvex_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS   = \
         $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(LIBVEX_CFLAGS)
 if VGCONF_HAVE_PLATFORM_SEC
 libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES  = $(LIBVEX_SOURCES_COMMON)
 libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
-        $(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) -Ipriv
+        $(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) -I$(srcdir)/priv
 libvex_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS   = \
         $(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(LIBVEX_CFLAGS)
 endif
@@ -211,14 +219,14 @@ endif
 libvexmultiarch_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_SOURCES  = \
 	$(LIBVEXMULTIARCH_SOURCES)
 libvexmultiarch_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CPPFLAGS = \
-        $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) -Ipriv
+        $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) -I$(srcdir)/priv
 libvexmultiarch_@VGCONF_ARCH_PRI@_@VGCONF_OS@_a_CFLAGS   = \
         $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@) $(LIBVEX_CFLAGS)
 if VGCONF_HAVE_PLATFORM_SEC
 libvexmultiarch_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_SOURCES  = \
 	$(LIBVEXMULTIARCH_SOURCES)
 libvexmultiarch_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CPPFLAGS = \
-        $(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) -Ipriv
+        $(AM_CPPFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) -I$(srcdir)/priv
 libvexmultiarch_@VGCONF_ARCH_SEC@_@VGCONF_OS@_a_CFLAGS   = \
         $(AM_CFLAGS_@VGCONF_PLATFORM_SEC_CAPS@) $(LIBVEX_CFLAGS)
 endif

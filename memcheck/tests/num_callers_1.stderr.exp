@@ -1,0 +1,3 @@
+valgrind: Bad option: --num-callers=1
+valgrind: '--num-callers' argument must be between 2 and 500
+valgrind: Use --help for more information or consult the user manual.

@@ -841,7 +841,7 @@ asm(
  * Arguments a1 to a7 are in registers x0 to x6.
  * Which is just what we want for a syscall.
  *
- * The syscall number is in x9
+ * The syscall number is in x7
  * The flags are at the top of the stack, sp and
  * second return value at sp+8.
  */
@@ -856,7 +856,7 @@ asm(
    ".text\n"
    ".globl do_syscall_WRK\n"
    "do_syscall_WRK:\n"
-   "        mov x8, x9\n"             // get the syscall number from x9
+   "        mov x8, x7\n"             // get the syscall number from x7
    "        svc  0x0\n"               // do the syscall
    "        mov  x9, 1\n"             // flags for error will be 1 or 0
    "        csel x9, x9, xzr, cs\n"   // conditionally select 1 or 0 into x9

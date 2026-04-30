@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -71,12 +71,14 @@
 
    If a set of allowed values is specified for an operand this
    implies that any other value would cause a specification exception.
-   UNLESS otherwise noted.
 */
 
-/* List of for hardware facilities.
+/* List of hardware facilities.
    The abbreviated name appears as structured comment in below opcode list to
-   indicate that the opcode is only available when the facility is installed.
+   indicate that
+   a) the opcode is only available when the facility is installed OR
+   b) the opcode semantics depend on the presence of the facility. E.g. a
+      certain opcode field is ignored when the facility is not present.
 
    dflt  --> deflate-conversion facility
    dfp   --> decimal floating point facility
@@ -101,6 +103,7 @@
    mi1   --> miscellaneous-instruction-extensions facility 1
    mi2   --> miscellaneous-instruction-extensions facility 2
    mi3   --> miscellaneous-instruction-extensions facility 3
+   mi4   --> miscellaneous-instruction-extensions facility 4
    msa4  --> message-security-assist extension 4
    msa5  --> message-security-assist extension 5
    msa8  --> message-security-assist extension 8
@@ -113,12 +116,13 @@
    stfle --> STFLE facility
    vx    --> vector facility
    vxe   --> vector enhancements facility 1
-   vxe2  --> vector enhancements facility 2   implies vxe and vx
+   vxe2  --> vector enhancements facility 2
+   vxe3  --> vector enhancements facility 3
    vxd   --> vector packed decimal facility
 */
 
 /* List of all supported opcodes in the order as defined in
-   Principles of Operations. */
+   Principles of Operations -- Fourteenth Edition (May, 2022). */
 
 static const char *opcodes[] = {
    // Chapter 7:  General Instructions
@@ -201,6 +205,9 @@ static const char *opcodes[] = {
 
    "ncrk    r1,r2,r3",          // mi3
    "ncgrk   r1,r2,r3",          // mi3
+
+   "bdepg   r1,r2,r3",          // mi4
+   "bextg   r1,r2,r3",          // mi4
 
    // balr   not implemented
    // bal    not implemented
@@ -396,18 +403,21 @@ static const char *opcodes[] = {
    "cvdy   r1,d20(x2,b2)",
    // cvdg not implemented
 
-   "cu24   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // extr3  no spec exc for m3
+   "cu24   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3",  // extr3
 
-   "cu21   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // no spec exc for m3
+   "cu21   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3",  // extr3
 
-   "cu42   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14}",           // extr3
-   "cu41   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14}",           // extr3
+   "cu42   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14}",     // extr3
+   "cu41   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14}",     // extr3
 
-   "cu12   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // no spec exc for m3
+   "cu12   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3",  // extr3
 
-   "cu14   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3:{0,1}",  // extr3  no spec exc for m3
+   "cu14   r1:{0,2,4,6,8,10,12,14},r2:{0,2,4,6,8,10,12,14},m3",  // extr3
 
    "cpya   a1,a2",
+
+   "clzg   r1,r2",     // mi4
+   "ctzg   r1,r2",     // mi4
 
    "dr     r1:{0,2,4,6,8,10,12,14},r2",
    "d      r1:{0,2,4,6,8,10,12,14},d12(x2,b2)",
@@ -558,6 +568,12 @@ static const char *opcodes[] = {
 
    "lfhat  r1,d20(x2,b2)",      // lat
 
+   "lxab   r1,d20(x2,b2)",      // mi4
+   "lxah   r1,d20(x2,b2)",      // mi4
+   "lxaf   r1,d20(x2,b2)",      // mi4
+   "lxag   r1,d20(x2,b2)",      // mi4
+   "lxaq   r1,d20(x2,b2)",      // mi4
+
    "llgfr  r1,r2",
    "llgf   r1,d20(x2,b2)",
 
@@ -590,6 +606,12 @@ static const char *opcodes[] = {
    "llilf  r1,i2:u32",          // eimm
    "llilh  r1,i2:u16",
    "llill  r1,i2:u16",
+
+   "llxab   r1,d20(x2,b2)",     // mi4
+   "llxah   r1,d20(x2,b2)",     // mi4
+   "llxaf   r1,d20(x2,b2)",     // mi4
+   "llxag   r1,d20(x2,b2)",     // mi4
+   "llxaq   r1,d20(x2,b2)",     // mi4
 
    "llgtr  r1,r2",
    "llgt   r1,d20(x2,b2)",
@@ -692,7 +714,7 @@ static const char *opcodes[] = {
    "nnrk   r1,r2,r3",           // mi3
    "nngrk  r1,r2,r3",           // mi3
 
-   "niai   i1:u4{0..3},i2:u4{0..3}",  // exhi   no spec exc for i1,i2
+   "niai   i1:u4,i2:u4",        // exhi
 
    // ntstg not implemented
 
@@ -730,12 +752,12 @@ static const char *opcodes[] = {
    "pcc",                       // msa4
 
    // plo   not implemented
-   "ppa    r1,r2,m3:{1,15}",    // ppa     no spec exception for m3
+   "ppa    r1,r2,m3",           // ppa
 
    "ppno   r1,r2",              // msa5
    "prno   r1,r2",              // msa5
 
-   "popcnt r1,r2,m3:{0,8}",     // popc    no spec exception for m3
+   "popcnt r1,r2,m3",           // popc
 
    "pfd    m1,d20(x2,b2)",      // gie
    "pfdrl  m1,ri2:s32",         // gie
@@ -743,29 +765,15 @@ static const char *opcodes[] = {
    "rll    r1,r3,d20(b2)",
    "rllg   r1,r3,d20(b2)",
 
-   // Rotate and .... opcodes require special handling
-   //
-   // For rosbg and friends
-   // - Bit #0 of i3 is the T-bit and bit #1 of i3 ought to be 0.
-   // - i5 is optional and will not be written when 0
-   //
-   // For risbg and friends
-   // - Bit #0 of i4 is the Z-bit and bit #1 of i4 ought to be 0.
-   // - i5 is optional and will not be written when 0
-   //
-   // This implies that we need to model i3, i4 and i5 as masks so
-   // we can manipulate their value when disassembling or suppress
-   // the mask altogether. Note that we limit the set of allowed values
-   // for those masks to avoid excessively large numbers of testcases.
-   "rnsbg  r1,r2,m3:u8{0,1,2,63,128,129,191},m4:u6{0,1,2,63},m5:u6{0,1,2,63}",  // gie
-   "rxsbg  r1,r2,m3:u8{0,1,2,63,128,129,191},m4:u6{0,1,2,63},m5:u6{0,1,2,63}",  // gie
-   "rosbg  r1,r2,m3:u8{0,1,2,63,128,129,191},m4:u6{0,1,2,63},m5:u6{0,1,2,63}",  // gie
+   "rnsbg  r1,r2,i3:u8,i4:u6,i5:u6",  // gie
+   "rxsbg  r1,r2,i3:u8,i4:u6,i5:u6",  // gie
+   "rosbg  r1,r2,i3:u8,i4:u6,i5:u6",  // gie
 
-   "risbg  r1,r2,m3:u6{0,1,2,63},m4:u8{0,1,2,63,128,129,191},m5:u6{0,1,2,63}",  // gie
-   "risbgn r1,r2,m3:u6{0,1,2,63},m4:u8{0,1,2,63,128,129,191},m5:u6{0,1,2,63}",  // mi1
+   "risbg  r1,r2,i3:u6,i4:u8,i5:u6",  // gie
+   "risbgn r1,r2,i3:u6,i4:u8,i5:u6",  // mi1
 
-   "risbhg r1,r2,m3:u5{0,1,2,31},m4:u8{0,1,2,31,128,129,159},m5:u6{0,1,2,63}",  // hiwo
-   "risblg r1,r2,m3:u5{0,1,2,31},m4:u8{0,1,2,31,128,129,159},m5:u6{0,1,2,63}",  // hiwo
+   "risbhg r1,r2,i3:u5,i4:u8,i5:u6",  // hiwo
+   "risblg r1,r2,i3:u5,i4:u8,i5:u6",  // hiwo
 
    "srst   r1,r2",
 
@@ -924,10 +932,10 @@ static const char *opcodes[] = {
 
    "tre    r1:{0,2,4,6,8,10,12,14},r2",
 
-   "troo   r1:{0,2,4,6,8,10,12,14},r2,m3:{0,1}",  // extr2 no spec exception on m3
-   "trot   r1:{0,2,4,6,8,10,12,14},r2,m3:{0,1}",  // extr2 no spec exception on m3
-   "trto   r1:{0,2,4,6,8,10,12,14},r2,m3:{0,1}",  // extr2 no spec exception on m3
-   "trtt   r1:{0,2,4,6,8,10,12,14},r2,m3:{0,1}",  // extr2 no spec exception on m3
+   "troo   r1:{0,2,4,6,8,10,12,14},r2,m3",  // extr2
+   "trot   r1:{0,2,4,6,8,10,12,14},r2,m3",  // extr2
+   "trto   r1:{0,2,4,6,8,10,12,14},r2,m3",  // extr2
+   "trtt   r1:{0,2,4,6,8,10,12,14},r2,m3",  // extr2
 
    // unpk  not implemented
    // unpka not implemented
@@ -1199,11 +1207,13 @@ static const char *opcodes[] = {
    // all opcodes require VX facility
 
    "vbperm  v1,v2,v3",                          // vxe
+   "vblend  v1,v2,v3,v4,m5:{0..4}",             // vxe3
    "vgef    v1,d12(v2,b2),m3:{0,1,2,3}",
    "vgeg    v1,d12(v2,b2),m3:{0,1}",
    "vgbm    v1,i2:u16",
+   "vgem    v1,v2,m3:{0..4}",                   // vxe3
    "vgm     v1,i2:u8,i3:u8,m4:{0..3}",
-   "vl      v1,d12(x2,b2),m3:{0,3,4}",    // no spec. exc
+   "vl      v1,d12(x2,b2),m3",
    "vlr     v1,v2",
    "vlrep   v1,d12(x2,b2),m3:{0..3}",
    "vlebrh  v1,d12(x2,b2),m3:{0..7}",           // vxe2
@@ -1233,11 +1243,11 @@ static const char *opcodes[] = {
    "vmrh    v1,v2,v3,m4:{0..3}",
    "vmrl    v1,v2,v3,m4:{0..3}",
    "vpk     v1,v2,v3,m4:{1..3}",
-   "vpks    v1,v2,v3,m4:{1..3},m5:{0,1}", // no spec. exception for m5
-   "vpkls   v1,v2,v3,m4:{1..3},m5:{0,1}", // no spec. exception for m5
+   "vpks    v1,v2,v3,m4:{1..3},m5",
+   "vpkls   v1,v2,v3,m4:{1..3},m5",
    "vperm   v1,v2,v3,v4",
    "vpdi    v1,v2,v3,m4",
-//   "vrep    v1,v3,i2:u16,m4:{0..3}",
+//   "vrep    v1,v3,i2:u16,m4:{0..3}",  // cannot express constraint
    "vrepi   v1,i2:s16,m3:{0..3}",
    "vscef   v1,d12(v2,b2),m3:{0..3}",
    "vsceg   v1,d12(v2,b2),m3:{0,1}",
@@ -1257,10 +1267,10 @@ static const char *opcodes[] = {
    "vstrlr  v1,r3,d12(b2)",                      // vxd
    "vstrl   v1,d12(b2),i3:u8{0..15}",            // vxd
    "vstl    v1,r3,d12(b2)",
-   "vuph    v1,v2,m3:{0..2}",
-   "vuplh   v1,v2,m3:{0..2}",
-   "vupl    v1,v2,m3:{0..2}",
-   "vupll   v1,v2,m3:{0..2}",
+   "vuph    v1,v2,m3:{0..3}",
+   "vuplh   v1,v2,m3:{0..3}",
+   "vupl    v1,v2,m3:{0..3}",
+   "vupll   v1,v2,m3:{0..3}",
 
    // Chapter 22: Vector Integer Instructions
    "va      v1,v2,v3,m4:{0..4}",
@@ -1269,45 +1279,50 @@ static const char *opcodes[] = {
    "vaccc   v1,v2,v3,v4,m5:{4}",
    "vn      v1,v2,v3",
    "vnc     v1,v2,v3",
-   "vavg    v1,v2,v3,m4:{0..3}",
-   "vavgl   v1,v2,v3,m4:{0..3}",
+   "vavg    v1,v2,v3,m4:{0..4}",
+   "vavgl   v1,v2,v3,m4:{0..4}",
    "vcksm   v1,v2,v3",
-   "vec     v1,v2,m3:{0..3}",
-   "vecl    v1,v2,m3:{0..3}",
-   "vceq    v1,v2,v3,m4:{0..3},m5:{0,1}",  // no spec. exception for m5
-   "vch     v1,v2,v3,m4:{0..3},m5:{0,1}",  // no spec. exception for m5
-   "vchl    v1,v2,v3,m4:{0..3},m5:{0,1}",  // no spec. exception for m5
-   "vclz    v1,v2,m3:{0..3}",
-   "vctz    v1,v2,m3:{0..3}",
+   "vec     v1,v2,m3:{0..4}",
+   "vecl    v1,v2,m3:{0..4}",
+   "vceq    v1,v2,v3,m4:{0..4},m5",
+   "vch     v1,v2,v3,m4:{0..4},m5",
+   "vchl    v1,v2,v3,m4:{0..4},m5",
+   "vclz    v1,v2,m3:{0..4}",
+   "vctz    v1,v2,m3:{0..4}",
+   "vd      v1,v2,v3,m4:{2,3,4},m5",             // vxe3
+   "vdl     v1,v2,v3,m4:{2,3,4},m5",             // vxe3
+   "veval   v1,v2,v3,v4,i5:u8",                  // vxe3
    "vx      v1,v2,v3",
    "vgfm    v1,v2,v3,m4:{0..3}",
    "vgfma   v1,v2,v3,v4,m5:{0..3}",
-   "vlc     v1,v2,m3:{0..3}",
-   "vlp     v1,v2,m3:{0..3}",
-   "vmx     v1,v2,v3,m4:{0..3}",
-   "vmxl    v1,v2,v3,m4:{0..3}",
-   "vmn     v1,v2,v3,m4:{0..3}",
-   "vmnl    v1,v2,v3,m4:{0..3}",
-   "vmal    v1,v2,v3,v4,m5:{0..2}",
-   "vmah    v1,v2,v3,v4,m5:{0..2}",
-   "vmalh   v1,v2,v3,v4,m5:{0..2}",
-   "vmae    v1,v2,v3,v4,m5:{0..2}",
-   "vmale   v1,v2,v3,v4,m5:{0..2}",
-   "vmao    v1,v2,v3,v4,m5:{0..2}",
-   "vmalo   v1,v2,v3,v4,m5:{0..2}",
-   "vmh     v1,v2,v3,m4:{0..2}",
-   "vmlh    v1,v2,v3,m4:{0..2}",
-   "vml     v1,v2,v3,m4:{0..2}",
-   "vme     v1,v2,v3,m4:{0..2}",
-   "vmle    v1,v2,v3,m4:{0..2}",
-   "vmo     v1,v2,v3,m4:{0..2}",
-   "vmlo    v1,v2,v3,m4:{0..2}",
-   "vmsl    v1,v2,v3,v4,m5:{3},m6:{0,4,8,12}",   // vxe  no spec. exception for m6
+   "vlc     v1,v2,m3:{0..4}",
+   "vlp     v1,v2,m3:{0..4}",
+   "vmx     v1,v2,v3,m4:{0..4}",
+   "vmxl    v1,v2,v3,m4:{0..4}",
+   "vmn     v1,v2,v3,m4:{0..4}",
+   "vmnl    v1,v2,v3,m4:{0..4}",
+   "vmal    v1,v2,v3,v4,m5:{0..4}",
+   "vmah    v1,v2,v3,v4,m5:{0..4}",
+   "vmalh   v1,v2,v3,v4,m5:{0..4}",
+   "vmae    v1,v2,v3,v4,m5:{0..3}",
+   "vmale   v1,v2,v3,v4,m5:{0..3}",
+   "vmao    v1,v2,v3,v4,m5:{0..3}",
+   "vmalo   v1,v2,v3,v4,m5:{0..3}",
+   "vmh     v1,v2,v3,m4:{0..4}",
+   "vmlh    v1,v2,v3,m4:{0..4}",
+   "vml     v1,v2,v3,m4:{0..4}",
+   "vme     v1,v2,v3,m4:{0..3}",
+   "vmle    v1,v2,v3,m4:{0..3}",
+   "vmo     v1,v2,v3,m4:{0..3}",
+   "vmlo    v1,v2,v3,m4:{0..3}",
+   "vmsl    v1,v2,v3,v4,m5:{3},m6",              // vxe
    "vnn     v1,v2,v3",                           // vxe
    "vno     v1,v2,v3",
    "vnx     v1,v2,v3",                           // vxe
    "vo      v1,v2,v3",
    "voc     v1,v2,v3",                           // vxe
+   "vr      v1,v2,v3,m4:{2,3,4},m5",             // vxe3
+   "vrl     v1,v2,v3,m4:{2,3,4},m5",             // vxe3
    "vpopct  v1,v2,m3:{0..3}",
    "verllv  v1,v2,v3,m4:{0..3}",
    "verll   v1,v3,d12(b2),m4:{0..3}",
@@ -1320,8 +1335,8 @@ static const char *opcodes[] = {
    "vesrl   v1,v3,d12(b2),m4:{0..3}",
    "vsl     v1,v2,v3",
    "vslb    v1,v2,v3",
-   "vsld    v1,v2,v3,i4:u8{0..7}",   // vxe2  spec exc.
-   "vsldb   v1,v2,v3,i4:u8{0..15}",  // no spec. exception - otherwise unpredictable
+   "vsld    v1,v2,v3,i4:u8{0..7}",   // vxe2
+   "vsldb   v1,v2,v3,i4:u8",
    "vsra    v1,v2,v3",
    "vsrab   v1,v2,v3",
    "vsrd    v1,v2,v3,i4:u8{0..7}",   // vxe2
@@ -1384,11 +1399,11 @@ static const char *opcodes[] = {
    //   "nnpa",            // cannot express constraint   // nnpa
 
    // sortl   not implemented
-   "vclfnh  v1,v2,m3:{3},m4:{0}",    // nnpa  no spec exc. for m3, m4 but IEEE exc.
-   "vclfnl  v1,v2,m3:{3},m4:{0}",    // nnpa  no spec exc. for m3, m4 but IEEE exc.
-   "vcrnf   v1,v2,v3,m4:{0},m5:{2}", // nnpa  no spec exc. for m4, m5 but IEEE exc.
-   "vcfn    v1,v2,m3:{1},m4:{0}",    // nnpa  no spec exc. for m3, m4 but IEEE exc.
-   "vcnf    v1,v2,m3:{0},m4:{1}",    // nnpa  no spec exc. for m3, m4 but IEEE exc.
+   "vclfnh  v1,v2,m3,m4",    // nnpa
+   "vclfnl  v1,v2,m3,m4",    // nnpa
+   "vcrnf   v1,v2,v3,m4,m5", // nnpa
+   "vcfn    v1,v2,m3,m4",    // nnpa
+   "vcnf    v1,v2,m3,m4",    // nnpa
 };
 
 unsigned num_opcodes = sizeof opcodes / sizeof *opcodes;

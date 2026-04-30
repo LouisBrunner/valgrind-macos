@@ -6540,7 +6540,7 @@ HInstrArray* iselSB_ARM ( const IRSB* bb,
 {
    Int       i, j;
    HReg      hreg, hregHI;
-   ISelEnv*  env;
+   ISelEnv  *env, envmem;
    UInt      hwcaps_host = archinfo_host->hwcaps;
    ARMAMode1 *amCounter, *amFailAddr;
 
@@ -6553,11 +6553,8 @@ HInstrArray* iselSB_ARM ( const IRSB* bb,
    /* guard against unexpected space regressions */
    vassert(sizeof(ARMInstr) <= 28);
 
-   /* hwcaps should not change from one ISEL call to another. */
-   arm_hwcaps = hwcaps_host; // JRS 2012 Mar 31: FIXME (RM)
-
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

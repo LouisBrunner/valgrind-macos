@@ -148,7 +148,7 @@ int main (int argc, char** argv)
          dummy_link_map[off] = off;
       if (dlinfo ((void*)dummy_link_map, RTLD_DI_TLS_MODID, 
                   &modid_offset) == 0) {
-         assert(modid_offset >= 0 && modid_offset < MAX_LINKMAP_WORDS);
+         assert(modid_offset < MAX_LINKMAP_WORDS);
          fprintf(outputfile,
                  "lm_modid_offset 0x%zx\n", modid_offset*sizeof(size_t));
       } else {

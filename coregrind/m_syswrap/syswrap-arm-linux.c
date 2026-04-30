@@ -285,7 +285,6 @@ PRE(sys_fstatat64)
    PRE_REG_READ3(long, "fstatat64",
                  int, dfd, char *, file_name, struct stat64 *, buf);
    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "fstatat64", tid, status);
-      SET_STATUS_Failure( VKI_EBADF );
    PRE_MEM_RASCIIZ( "fstatat64(file_name)", ARG2 );
    PRE_MEM_WRITE( "fstatat64(buf)", ARG3, sizeof(struct vki_stat64) );
 }
@@ -708,7 +707,7 @@ static SyscallTableEntry syscall_main_table[] = {
 //zz
 //zz    // Nb: get_kernel_syms() was removed 2.4-->2.6
 //   GENX_(__NR_get_kernel_syms,   sys_ni_syscall),     // 130
-   LINX_(__NR_quotactl,          sys_quotactl),       // 131
+   LINXY(__NR_quotactl,          sys_quotactl),       // 131
    GENX_(__NR_getpgid,           sys_getpgid),        // 132
    GENX_(__NR_fchdir,            sys_fchdir),         // 133
 //zz    //   (__NR_bdflush,           sys_bdflush),        // 134 */Linux
@@ -814,7 +813,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_setfsgid32,        sys_setfsgid),       // 216
    LINX_(__NR_pivot_root,        sys_pivot_root),     // 217
    GENXY(__NR_mincore,           sys_mincore),        // 218
-   GENX_(__NR_madvise,           sys_madvise),        // 219
+   GENXY(__NR_madvise,           sys_madvise),        // 219
 
    GENXY(__NR_getdents64,        sys_getdents64),     // 220
    LINXY(__NR_fcntl64,           sys_fcntl64),        // 221
@@ -876,7 +875,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_statfs64,          sys_statfs64),       // 268
    GENXY(__NR_fstatfs64,         sys_fstatfs64),      // 269
 
-   LINX_(__NR_tgkill,            sys_tgkill),         // 270 */Linux
+   LINXY(__NR_tgkill,            sys_tgkill),         // 270 */Linux
    GENX_(__NR_utimes,            sys_utimes),         // 271
    GENX_(__NR_vserver,           sys_ni_syscall),     // 273
    LINX_(__NR_mbind,             sys_mbind),          // 274 ?/?
@@ -1012,7 +1011,7 @@ static SyscallTableEntry syscall_main_table[] = {
 
    LINX_(__NR_sched_setattr,     sys_sched_setattr),    // 380
    LINXY(__NR_sched_getattr,     sys_sched_getattr),    // 381
-   LINX_(__NR_renameat2,         sys_renameat2),        // 382
+   GENX_(__NR_renameat2,         sys_renameat2),        // 382
 
    LINXY(__NR_getrandom,         sys_getrandom),        // 384
    LINXY(__NR_memfd_create,      sys_memfd_create),     // 385
@@ -1068,7 +1067,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_faccessat2,        sys_faccessat2),        // 439
    LINXY(__NR_epoll_pwait2,      sys_epoll_pwait2),      // 441
    LINX_(__NR_mount_setattr,     sys_mount_setattr),     // 442
-   LINX_(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
+   LINXY(__NR_quotactl_fd,       sys_quotactl_fd),       // 443
 
    LINXY(__NR_landlock_create_ruleset, sys_landlock_create_ruleset), // 444
    LINX_(__NR_landlock_add_rule,       sys_landlock_add_rule),       // 445
@@ -1079,7 +1078,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_fchmodat2,         sys_fchmodat2),         // 452
    LINXY(__NR_statmount,         sys_statmount),         // 457
    LINXY(__NR_listmount,         sys_listmount),         // 458
+   LINXY(__NR_lsm_get_self_attr, sys_lsm_get_self_attr), // 459
+   LINX_(__NR_lsm_set_self_attr, sys_lsm_set_self_attr), // 460
+   LINXY(__NR_lsm_list_modules,  sys_lsm_list_modules),  // 461
    LINX_(__NR_mseal,             sys_mseal),             // 462
+   LINXY(__NR_file_getattr,      sys_file_getattr),      // 468
+   LINX_(__NR_file_setattr,      sys_file_setattr),      // 469
 };
 
 

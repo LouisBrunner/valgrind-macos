@@ -1207,9 +1207,9 @@ void test_string(void)
    TEST_STRING(scas, "");
    // REINSTATE: TEST_STRING(scas, "repz ");
    TEST_STRING(scas, "repnz ");
-   // REINSTATE: TEST_STRING(cmps, "");
+   TEST_STRING(cmps, "");
    TEST_STRING(cmps, "repz ");
-   // REINSTATE: TEST_STRING(cmps, "repnz ");
+   TEST_STRING(cmps, "repnz ");
 }
 
 /* VM86 test */

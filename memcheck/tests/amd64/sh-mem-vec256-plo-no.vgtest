@@ -1,4 +1,5 @@
 prog: sh-mem-vec256
 prereq: ../../../tests/x86_amd64_features amd64-avx
 args: -q
-vgopts: --partial-loads-ok=no
+vgopts: --partial-loads-ok=no -q
+stderr_filter: filter_malloc_zone

@@ -59,4 +59,9 @@ DYLD_SHARED_REGION gets set to "avoid" (but note that for macOS 11
 Big Sur and later "avoid" is no longer an option).
 
 The Darwin callstack is a bit simpler to synthesise than the ones on
-ELF platforms. There is no auxiliary vector (auxv) to construct.
+ELF platforms. There is no auxiliary vector (auxv) to construct. However,
+there is the "apple pointer area". At present we do not pass anything
+that we get from the loader (and this is something of an omission).
+Instead we just synthesise the small number of entries that we need.
+Mostly these values are only used by dyld and for initialising the
+system libs when they load.

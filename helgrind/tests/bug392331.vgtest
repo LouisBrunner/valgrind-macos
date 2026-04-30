@@ -1,4 +1,4 @@
-prereq: test -e bug392331
+prereq: test -e bug392331 && ! ../../tests/os_test darwin
 vgopts: -q --check-cond-signal-mutex=yes
 prog: bug392331
 stderr_filter: filter_bug392331

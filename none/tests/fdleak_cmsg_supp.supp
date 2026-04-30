@@ -102,3 +102,12 @@
    fun:server
    fun:main
 }
+
+{
+   sup11
+   CoreError:FdNotClosed
+   fun:__recvmsg64
+   fun:client
+   fun:main
+}
+

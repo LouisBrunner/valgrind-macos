@@ -7410,7 +7410,7 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
 {
    Int      i, j;
    HReg     hreg, hregHI;
-   ISelEnv* env;
+   ISelEnv  *env, envmem;
    MIPSAMode *amCounter, *amFailAddr;
 
    hwcaps_host = archinfo_host->hwcaps;
@@ -7433,7 +7433,7 @@ HInstrArray *iselSB_MIPS ( const IRSB* bb,
    has_msa = VEX_MIPS_PROC_MSA(archinfo_host->hwcaps);
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
    env->mode64 = mode64;
    env->fp_mode64 = fp_mode64;

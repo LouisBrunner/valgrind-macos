@@ -1,4 +1,4 @@
 prereq: test -e execx
 env: LC_ALL=C
 prog: execx
-vgopts: -q --trace-children=yes --num-callers=1
+vgopts: -q --trace-children=yes --num-callers=2

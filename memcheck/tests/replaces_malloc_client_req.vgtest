@@ -1,0 +1,2 @@
+prog: replaces_malloc_client_req
+vgopts: -q

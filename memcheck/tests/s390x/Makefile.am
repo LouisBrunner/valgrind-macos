@@ -2,14 +2,15 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
-INSN_TESTS = cdsg cli cu21 cu42 ltgjhe tmxx vstrc vfae vistr vstrs vme
+INSN_TESTS = cdsg cli cu21 cu42 vstrc vfae vistr vstrs vme
 
-check_PROGRAMS = $(INSN_TESTS) 
+check_PROGRAMS = $(INSN_TESTS) tmxx ltgjhe
 
 EXTRA_DIST = \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
-	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
-	$(addsuffix .vgtest,$(INSN_TESTS))
+	$(addsuffix .vgtest,$(INSN_TESTS)) \
+	tmxx.vgtest tmxx.stdout.exp \
+	ltgjhe.vgtest
 
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
@@ -19,3 +20,5 @@ vstrc_CFLAGS  = $(AM_CFLAGS) -march=z13
 vfae_CFLAGS   = $(AM_CFLAGS) -march=z13
 vistr_CFLAGS  = $(AM_CFLAGS) -march=z13
 vstrs_CFLAGS  = $(AM_CFLAGS) -march=z13
+vme_CFLAGS    = $(AM_CFLAGS) -march=z13
+tmxx_CFLAGS   = $(AM_CFLAGS) -march=arch9

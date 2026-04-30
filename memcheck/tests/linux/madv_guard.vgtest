@@ -1,0 +1,4 @@
+prog: madv_guard
+vgopts: -q --sanity-level=3
+stdout_filter: filter_madv_guard
+prereq: test -e ./madv_guard

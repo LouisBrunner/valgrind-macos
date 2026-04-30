@@ -1,0 +1,2 @@
+prog: lock_destroy_report
+vgopts: --track-destroy=all

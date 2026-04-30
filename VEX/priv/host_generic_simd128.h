@@ -66,9 +66,9 @@ extern VEX_REGPARM(3)
 extern VEX_REGPARM(3)
        void h_generic_calc_CmpGT64Sx2 ( /*OUT*/V128*, V128*, V128* );
 
-extern /*not-regparm*/
+extern VEX_REGPARM(3)
        void h_generic_calc_SarN64x2   ( /*OUT*/V128*, V128*, UInt );
-extern /*not-regparm*/
+extern VEX_REGPARM(3)
        void h_generic_calc_SarN8x16   ( /*OUT*/V128*, V128*, UInt );
 
 extern VEX_REGPARM(3)

@@ -1,0 +1,10 @@
+force page-in by printing this: 0
+page 0x..., is guardpage: 0, present: 1
+Installing guard page, addr=0x...
+page 0x..., is guardpage: 1, present: 0
+Removing guard page, addr=0x...
+force page-in by printing this: 0
+page 0x..., is guardpage: 0, present: 1
+Installing guard page, addr=0x...
+page 0x..., is guardpage: 1, present: 0
+page 0x..., is guardpage: 0, present: 0

@@ -38,8 +38,6 @@ struct hb_info;
 void DRD_(hb_set_trace)(const Bool trace_hb);
 struct hb_info* DRD_(hb_get)(const Addr hb);
 struct hb_info* DRD_(hb_get_or_allocate)(const Addr hb);
-void DRD_(hb_init)(const Addr hb);
-void DRD_(hb_destroy)(const Addr hb);
 void DRD_(hb_happens_after)(const DrdThreadId tid, const Addr hb);
 void DRD_(hb_happens_before)(const DrdThreadId tid, const Addr hb);
 void DRD_(hb_happens_done)(const DrdThreadId tid, const Addr hb);

@@ -117,7 +117,7 @@
 #include <mach-o/fat.h>
 #include <mach/i386/thread_status.h>
 
-/* Get hold of DARWIN_VERS, and check it has a sane value. */
+/* Check that DARWIN_VERS is defined */
 #include "config.h"
 #if DARWIN_VERS != DARWIN_10_5 && DARWIN_VERS != DARWIN_10_6 \
     && DARWIN_VERS != DARWIN_10_7 && DARWIN_VERS != DARWIN_10_8 \

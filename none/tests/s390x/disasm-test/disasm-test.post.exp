@@ -1,4 +1,6 @@
-Total: 148776 tests generated
-Total: 148684 insns verified
-Total:      0 disassembly mismatches
-Total:     92 specification exceptions
+Looking for missed specification exceptions
+Total:  43957 tests generated
+Total:  43957 specification exceptions
+Looking for unexpected specification exceptions
+Total: 154451 tests generated
+Total:      0 specification exceptions

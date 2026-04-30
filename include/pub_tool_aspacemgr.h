@@ -114,6 +114,9 @@ typedef
       Bool    isFF;     // True --> is a fixed file mapping
       Bool    ignore_offset; // True --> we can't work out segment offset
 #endif
+#if defined(VGO_linux)
+      Bool    hasGuardPages; // True --> contains guard page (bug 514297)
+#endif
    }
    NSegment;
 

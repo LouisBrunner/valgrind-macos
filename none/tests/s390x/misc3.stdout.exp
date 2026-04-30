@@ -78,12 +78,6 @@ ocgrk
 	0012345678abcdef 0000000000000000 -> ffffffffffffffff cc=1
 	0012345678abcdef ffffffffffffffff -> 0012345678abcdef cc=1
 	55555555aaaaaaaa aaaaaaaa55555555 -> 55555555aaaaaaaa cc=1
-popcnt
-	0000000000000000 ->  0 cc=0
-	0000000000000001 ->  1 cc=1
-	8000000000000000 ->  1 cc=1
-	ffffffffffffffff -> 64 cc=1
-	ff427e3800556bcd -> 33 cc=1
 selr
 	ffffffffffffffff 0000000000000000 -> 0cafebadffffffff 0badcafe00000000
 	0000000000000000 ffffffffffffffff -> 0cafebad00000000 0badcafeffffffff

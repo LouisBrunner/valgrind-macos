@@ -1,0 +1,2 @@
+prog: procfs-cmdline-exe
+stderr_filter: filter_stderr

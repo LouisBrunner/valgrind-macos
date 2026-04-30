@@ -158,14 +158,12 @@ EXTRA_DIST =                                        \
 	hold_lock_1.vgtest                          \
 	hold_lock_2.stderr.exp                      \
 	hold_lock_2.vgtest                          \
-	getaddrinfo.stderr.exp                      \
 	getaddrinfo.vgtest                          \
 	linuxthreads_det.stderr.exp                 \
 	linuxthreads_det.stderr.exp-linuxthreads    \
 	linuxthreads_det.stdout.exp                 \
 	linuxthreads_det.stdout.exp-linuxthreads    \
 	linuxthreads_det.vgtest                     \
-	local_static.stderr.exp                     \
 	local_static.vgtest                         \
 	matinv.stderr.exp                           \
 	matinv.stdout.exp                           \
@@ -220,17 +218,14 @@ EXTRA_DIST =                                        \
 	pth_create_glibc_2_0.stderr.exp             \
 	pth_create_glibc_2_0.vgtest                 \
 	pth_detached.stderr.exp                     \
-	pth_detached.stdout.exp                     \
 	pth_detached.vgtest                         \
 	pth_detached2.stderr.exp                    \
-	pth_detached2.stdout.exp                    \
 	pth_detached2.vgtest                        \
 	pth_detached3.stderr.exp1                   \
 	pth_detached3.stderr.exp2                   \
 	pth_detached3.stderr.exp-freebsd            \
 	pth_detached3.vgtest                        \
 	pth_detached_sem.stderr.exp                 \
-	pth_detached_sem.stdout.exp                 \
 	pth_detached_sem.vgtest                     \
 	pth_inconsistent_cond_wait.stderr.exp1      \
 	pth_inconsistent_cond_wait.stderr.exp2      \
@@ -271,7 +266,6 @@ EXTRA_DIST =                                        \
 	sem_as_mutex3.stderr.exp-mips32-be          \
 	sem_as_mutex3.stderr.exp-mips32-le          \
 	sem_as_mutex3.vgtest                        \
-	sem_clockwait_np.stderr.exp                 \
 	sem_clockwait_np.stdout.exp                 \
 	sem_clockwait_np.vgtest                     \
 	sem_open.stderr.exp                         \
@@ -364,8 +358,9 @@ EXTRA_DIST =                                        \
 	tc21_pthonce.stderr.exp                     \
 	tc21_pthonce.stdout.exp                     \
 	tc21_pthonce.vgtest                         \
-	tc22_exit_w_lock.stderr.exp-32bit	    \
-	tc22_exit_w_lock.stderr.exp-64bit           \
+	tc22_exit_w_lock.stderr.exp                 \
+	tc22_exit_w_lock.stderr.exp-darwin          \
+	tc22_exit_w_lock.stderr.exp-solaris         \
 	tc22_exit_w_lock.vgtest                     \
 	tc23_bogus_condwait.stderr.exp-linux-x86    \
 	tc23_bogus_condwait.stderr.exp-linux-ppc    \

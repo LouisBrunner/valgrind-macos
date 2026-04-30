@@ -1774,16 +1774,17 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                 DBY (MC_(bytes_reachable), old_bytes_reachable), 
                 MC_(blocks_reachable),
                 DBL (MC_(blocks_reachable), old_blocks_reachable));
-      for (i = 0; i < N_LEAK_CHECK_HEURISTICS; i++)
+      for (i = 0; i < N_LEAK_CHECK_HEURISTICS; i++) {
          if (old_blocks_heuristically_reachable[i] > 0 
              || MC_(blocks_heuristically_reachable)[i] > 0) {
             umsg_or_xml(VG_(clo_xml) ? "" : "                      of which "
                       "reachable via heuristic:\n");
             break;
          }
-      for (i = 0; i < N_LEAK_CHECK_HEURISTICS; i++)
-         if (old_blocks_heuristically_reachable[i] > 0 
-             || MC_(blocks_heuristically_reachable)[i] > 0)
+      }
+      for (i = 0; i < N_LEAK_CHECK_HEURISTICS; i++) {
+         if (old_blocks_heuristically_reachable[i] > 0
+             || MC_(blocks_heuristically_reachable)[i] > 0) {
             umsg_or_xml(VG_(clo_xml) ?
                         "    <reachable_heuristic>\n"
                         "      <kind>%ls</kind>\n"
@@ -1799,7 +1800,9 @@ static void print_results(ThreadId tid, LeakCheckParams* lcp)
                       MC_(blocks_heuristically_reachable)[i],
                       DBL (MC_(blocks_heuristically_reachable)[i],
                            old_blocks_heuristically_reachable[i]));
-      if (VG_(clo_xml) && MC_(bytes_reachable)) {
+         }
+      }
+      if (VG_(clo_xml)) {
          umsg_or_xml("  </still_reachable>\n");
       }
       umsg_or_xml(VG_(clo_xml) ?

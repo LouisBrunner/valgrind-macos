@@ -137,6 +137,21 @@ extern UWord HG_(clo_vts_pruning);
    the stack, which speeds things up a bit.  Default: True. */
 extern Bool HG_(clo_check_stack_refs); 
 
+/* Controls which internal Helgrind events to trace:
+
+   0: No trace is printed (default).
+
+   1: Trace Helgrind's synchronization, threading and memory events.
+
+   2: Trace additional memory events. */
+extern UWord HG_(clo_show_events);
+
+/* Controls the reporting of undestroyed locks at guest exit.  Also
+   detects when a lock is initialized at the same start address as an
+   undestroyed lock. Defaults to 0 since undestroyed locks aren't
+   necessarily a bug.  */
+extern UWord HG_(clo_track_destroy);
+
 #endif /* ! __HG_BASICS_H */
 
 /*--------------------------------------------------------------------*/

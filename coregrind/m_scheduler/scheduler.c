@@ -2041,6 +2041,28 @@ void do_client_request ( ThreadId tid )
          SET_CLREQ_RETVAL(tid, RUNNING_ON_VALGRIND+1);
          break;
 
+      case VG_USERREQ__VALGRIND_REPLACES_MALLOC:
+         SET_CLREQ_RETVAL(tid, VG_(needs).malloc_replacement);
+         break;
+
+      case VG_USERREQ__VALGRIND_GET_TOOLNAME: {
+         HChar* buf = (HChar *)arg[1];
+         SizeT len_needed = VG_(strlen)(VG_(clo_toolname)) + 1;
+         SizeT buflen = (SizeT)arg[2];
+         if (buflen > 0) {
+            if (buf != NULL) {
+               VG_(strncpy)(buf, VG_(clo_toolname), buflen);
+               if (len_needed > buflen) {
+                  buf[buflen-1] = '\0';
+               }
+               VG_TRACK( post_mem_write, Vg_CoreClientReq, tid,
+                        (Addr)buf, VG_MIN(len_needed, buflen));
+            }
+         }
+         SET_CLREQ_RETVAL(tid, len_needed);
+         break;
+      }
+
       case VG_USERREQ__PRINTF: {
          const HChar* format = (HChar *)arg[1];
          /* JRS 2010-Jan-28: this is DEPRECATED; use the

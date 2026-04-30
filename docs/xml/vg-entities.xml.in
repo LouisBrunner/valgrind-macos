@@ -2,7 +2,7 @@
 <!ENTITY vg-jemail     "julian@valgrind.org">
 <!ENTITY vg-vemail     "valgrind@valgrind.org">
 <!ENTITY cl-email      "Josef.Weidendorfer@gmx.de">
-<!ENTITY vg-lifespan   "2000-2025">
+<!ENTITY vg-lifespan   "2000-2026">
 
 <!-- valgrind release + version stuff -->
 <!ENTITY rel-type    "Release">

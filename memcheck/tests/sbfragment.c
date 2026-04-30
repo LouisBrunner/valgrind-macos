@@ -19,16 +19,16 @@ void stats(char *msg)
   printf("%s\n", msg);
 
 #if defined(HAVE_MALLINFO)
-  printf("%10d int arena;    /* non-mmapped space allocated from system */\n", mallinfo_result.arena);
-  printf("%10d int ordblks;  /* number of free chunks */\n", mallinfo_result.ordblks);
-  printf("%10d int smblks;   /* number of fastbin blocks */\n", mallinfo_result.smblks);
-  printf("%10d int hblks;    /* number of mmapped regions */\n", mallinfo_result.hblks);
-  printf("%10d int hblkhd;   /* space in mmapped regions */\n", mallinfo_result.hblkhd);
-  printf("%10d int usmblks;  /* maximum total allocated space */\n", mallinfo_result.usmblks);
-  printf("%10d int fsmblks;  /* space available in freed fastbin blocks */\n", mallinfo_result.fsmblks);
-  printf("%10d int uordblks; /* total allocated space */\n", mallinfo_result.uordblks);
-  printf("%10d int fordblks; /* total free space */\n", mallinfo_result.fordblks);
-  printf("%10d int keepcost; /* top-most, releasable (via malloc_trim) space */\n", mallinfo_result.keepcost);
+  printf("%10lu int arena;    /* non-mmapped space allocated from system */\n", (unsigned long int)mallinfo_result.arena);
+  printf("%10lu int ordblks;  /* number of free chunks */\n", (unsigned long int)mallinfo_result.ordblks);
+  printf("%10lu int smblks;   /* number of fastbin blocks */\n", (unsigned long int)mallinfo_result.smblks);
+  printf("%10lu int hblks;    /* number of mmapped regions */\n", (unsigned long int)mallinfo_result.hblks);
+  printf("%10lu int hblkhd;   /* space in mmapped regions */\n", (unsigned long int)mallinfo_result.hblkhd);
+  printf("%10lu int usmblks;  /* maximum total allocated space */\n", (unsigned long int)mallinfo_result.usmblks);
+  printf("%10lu int fsmblks;  /* space available in freed fastbin blocks */\n", (unsigned long int)mallinfo_result.fsmblks);
+  printf("%10lu int uordblks; /* total allocated space */\n", (unsigned long int)mallinfo_result.uordblks);
+  printf("%10lu int fordblks; /* total free space */\n", (unsigned long int)mallinfo_result.fordblks);
+  printf("%10lu int keepcost; /* top-most, releasable (via malloc_trim) space */\n", (unsigned long int)mallinfo_result.keepcost);
   printf("\n");
 #endif
 }

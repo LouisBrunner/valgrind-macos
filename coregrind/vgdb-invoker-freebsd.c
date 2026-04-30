@@ -7,7 +7,7 @@
    framework.
 
    Copyright (C) 2011-2017 Philippe Waroquiers
-   Copyright (C) 2021-2022 Paul Floyd
+   Copyright (C) 2021-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -203,10 +203,10 @@ Bool waitstopped (pid_t pid, int signal_expected, const char *msg)
             msg, signal_expected);
       p = waitpid(pid, &status, 0); /* PJF options was __WALL */
       DEBUG(1, "after waitpid pid %d p %d status 0x%x %s\n", pid, p,
-            status, status_image (status));
+            (unsigned)status, status_image (status));
       if (p != pid) {
          ERROR(errno, "%s waitpid pid %d in waitstopped %d status 0x%x %s\n",
-               msg, pid, p, status, status_image (status));
+               msg, pid, p, (unsigned)status, status_image (status));
          return False;
       }
 
@@ -468,7 +468,7 @@ Bool invoker_invoke_gdbserver (pid_t pid)
         e.g. http://sourceware.org/ml/gdb-patches/2009-11/msg00592.html */
      *(long *)&reg_save.r_rax = *(int*)&reg_save.r_rax;
      DEBUG(1, "Sign extending %8.8lx to %8.8lx\n",
-           reg_mod.r_rax, reg_save.r_rax);
+           (unsigned long)reg_mod.r_rax, (unsigned long)reg_save.r_rax);
    }
 #elif defined(VGA_arm64)
    sp = reg_mod.sp;

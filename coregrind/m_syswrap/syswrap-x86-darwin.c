@@ -195,7 +195,7 @@ ThreadState *build_thread(const thread_state_t state,
 // Edit the thread state to send to the real kernel.
 // The real thread will run start_thread_NORETURN(tst)
 // on a separate non-client stack.
-void hijack_thread_state(thread_state_t mach_generic, 
+void hijack_thread_state(thread_state_t mach_generic,
                          thread_state_flavor_t flavor, 
                          mach_msg_type_number_t count, 
                          ThreadState *tst)
@@ -271,7 +271,7 @@ asm(
 
 
 
-void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, 
+void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg,
                     Addr stacksize, Addr flags, Addr sp)
 {
    vki_sigset_t blockall;

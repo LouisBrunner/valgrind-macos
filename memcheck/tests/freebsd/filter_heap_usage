@@ -1,0 +1,9 @@
+#! /bin/sh
+
+../filter_stderr "$@" |
+grep "total heap usage:" |
+gsed 's/ [^ ]* bytes allocated/ XXX bytes allocated/'
+
+
+
+

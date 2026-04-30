@@ -711,11 +711,15 @@ struct vki_stat buf;
    res = VG_(do_syscall4)(__NR_fstatat, VKI_AT_FDCWD, (UWord)file_name, (UWord)&buf, VKI_AT_SYMLINK_NOFOLLOW);
 #endif
 
-#else
+#elif defined(VGO_darwin)
 
    /* check this on Darwin */
    struct vki_stat buf;
    res = VG_(do_syscall2)(__NR_lstat, (UWord)file_name, (UWord)&buf);
+
+#else
+
+#error Unknown OS
 
 #endif
 
@@ -804,7 +808,6 @@ Int VG_(fcntl) ( Int fd, Int cmd, Addr arg )
 #    error "Unknown OS"
 #  endif
    if (sr_isError(res)) {
-      VG_(debugLog)(1, "VG_(fcntl)", "fcntl error %lu %s\n", sr_Err(res), VG_(strerror)(sr_Err(res)));
       return -1;
    }
    return (Int)sr_Res(res);
@@ -1460,12 +1463,10 @@ Int VG_(socket) ( Int domain, Int type, Int protocol )
    if (!sr_isError(res)) {
        // Set SO_NOSIGPIPE so write() returns EPIPE instead of raising SIGPIPE
        Int optval = 1;
-       SysRes res2;
-       res2 = VG_(do_syscall5)(__NR_setsockopt, sr_Res(res), VKI_SOL_SOCKET,
-                               VKI_SO_NOSIGPIPE, (UWord)&optval,
-                               sizeof(optval));
+       (void)VG_(do_syscall5)(__NR_setsockopt, sr_Res(res), VKI_SOL_SOCKET, 
+                              VKI_SO_NOSIGPIPE, (UWord)&optval, 
+                              sizeof(optval));
        // ignore setsockopt() error
-       (void) res2;
    }
    return sr_isError(res) ? -1 : sr_Res(res);
 
@@ -1864,7 +1865,9 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
    }
 
    if (VKI_S_ISLNK(statbuf.mode)) {
-      SizeT link_len = VG_(readlink)(path, tmp, VKI_PATH_MAX);
+      SSizeT link_len = VG_(readlink)(path, tmp, VKI_PATH_MAX);
+      if (link_len < 0)
+         return False;
       tmp[link_len] = '\0';
       resolved_name = tmp;
    } else {
@@ -1883,6 +1886,9 @@ Bool VG_(realpath)(const HChar *path, HChar *resolved)
 #elif defined(VGO_freebsd)
       res = VG_(do_syscall2)(__NR___getcwd, (UWord)wd, VKI_PATH_MAX);
 #endif
+      if (sr_isError(res)) {
+         return False;
+      }
       VG_(snprintf)(resolved, VKI_PATH_MAX, "%s/%s", wd, resolved_name);
    } else {
       VG_(snprintf)(resolved, VKI_PATH_MAX, "%s", resolved_name);

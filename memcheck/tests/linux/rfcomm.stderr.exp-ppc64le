@@ -1,0 +1,64 @@
+Syscall param socketcall.bind(my_addr.sa_family) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:53)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:45)
+
+Syscall param socketcall.bind(my_addr.rc_bdaddr) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:53)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:45)
+
+Syscall param socketcall.bind(my_addr.rc_channel) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:53)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:45)
+
+Syscall param socketcall.bind(my_addr.sa_family) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:59)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:58)
+
+Syscall param socketcall.bind(my_addr.sa_data) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:59)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:58)
+
+Syscall param socketcall.bind(my_addr.rc_bdaddr) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:63)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:58)
+
+Syscall param socketcall.bind(my_addr.rc_channel) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:63)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:58)
+
+Syscall param socketcall.bind(my_addr.rc_channel) points to uninitialised byte(s)
+   ...
+   by 0x........: main (rfcomm.c:67)
+ Address 0x........ is on thread 1's stack
+ in frame #0, created by bind (???:)
+ Uninitialised value was created by a client request
+   at 0x........: main (rfcomm.c:58)
+

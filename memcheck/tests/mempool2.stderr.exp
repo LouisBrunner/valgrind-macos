@@ -3,119 +3,119 @@
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:135)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 1 bytes before a block of size 10 client-defined
    at 0x........: allocate (mempool2.c:108)
    by 0x........: test (mempool2.c:130)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:136)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 0 bytes after a block of size 10 client-defined
    at 0x........: allocate (mempool2.c:108)
    by 0x........: test (mempool2.c:130)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ out of range reads in mmap-backed pool ------
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:140)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 1 bytes before a block of size 20 client-defined
    at 0x........: allocate (mempool2.c:108)
    by 0x........: test (mempool2.c:131)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:141)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 0 bytes after a block of size 20 client-defined
    at 0x........: allocate (mempool2.c:108)
    by 0x........: test (mempool2.c:131)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ Illegal memory pool address  ------
 
 Illegal memory pool address
    at 0x........: test (mempool2.c:145)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 0 bytes inside a block of size 32 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: make_pool (mempool2.c:46)
    by 0x........: test (mempool2.c:122)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ read free in malloc-backed pool ------
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:150)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 13 bytes inside a recently re-allocated block of size 100,000 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: make_pool (mempool2.c:47)
    by 0x........: test (mempool2.c:122)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ read free in mmap-backed pool ------
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:155)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 11 bytes inside a block of size 20 free'd
    at 0x........: test (mempool2.c:154)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Block was alloc'd at
    at 0x........: allocate (mempool2.c:108)
    by 0x........: test (mempool2.c:131)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ double free in malloc-backed pool ------
 
 Invalid free() / delete / delete[] / realloc()
    at 0x........: test (mempool2.c:159)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 8 bytes inside a recently re-allocated block of size 100,000 alloc'd
    at 0x........: malloc (vg_replace_malloc.c:...)
    by 0x........: make_pool (mempool2.c:47)
    by 0x........: test (mempool2.c:122)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ double free in mmap-backed pool ------
 
 Invalid free() / delete / delete[] / realloc()
    at 0x........: test (mempool2.c:163)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 0 bytes inside a block of size 20 free'd
    at 0x........: test (mempool2.c:154)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Block was alloc'd at
    at 0x........: allocate (mempool2.c:108)
    by 0x........: test (mempool2.c:131)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ 2 invalid access in 'no no-access superblock' ---
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:182)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 1 bytes before a block of size 10 client-defined
    at 0x........: test (mempool2.c:175)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 Invalid read of size 1
    at 0x........: test (mempool2.c:183)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
  Address 0x........ is 0 bytes after a block of size 10 client-defined
    at 0x........: test (mempool2.c:175)
-   by 0x........: main (mempool2.c:200)
+   by 0x........: main (mempool2.c:202)
 
 
 ------ done ------

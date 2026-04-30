@@ -1,20 +1,20 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr
+dist_noinst_SCRIPTS = filter_stderr filter_scalar
 
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
 	aio.stderr.exp aio.vgtest \
-	aligned_alloc.stderr.exp aligned_alloc.vgtest \
-	bug437790.vgtest bug437790.stdout.exp bug437790.stderr.exp \
+	aligned_alloc.vgtest \
+	bug437790.vgtest bug437790.stdout.exp \
 	deep_badparam.stderr.exp deep_badparam.stdout.exp deep_badparam.vgtest \
-	env.stderr.exp env.vgtest \
-	ioctl-tiocsbrk.stderr.exp ioctl-tiocsbrk.vgtest \
-	pth-supp.stderr.exp pth-supp.vgtest \
-	pth-undocumented.stderr.exp pth-undocumented.stdout.exp pth-undocumented.vgtest \
-	mkfifo.stderr.exp mkfifo.vgtest \
+	env.vgtest \
+	ioctl-tiocsbrk.vgtest \
+	pth-supp.vgtest \
+	pth-undocumented.vgtest \
+	mkfifo.vgtest \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_nocancel.stderr.exp scalar_nocancel.vgtest \

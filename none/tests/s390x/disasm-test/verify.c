@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -29,14 +29,30 @@
 #include "main.h"           // verbose
 #include "vex.h"            // vex_disasm
 
-static int disasm_same(const char *, const char *, unsigned);
 
-
-/* Return number of disassembly mismatches. */
-verify_stats
-verify_disassembly(const char *file)
+/* Watch out: returned string is allocated in a static buffer which will
+   be overwritten in the next invocation. */
+static const char *
+insn_bytes_as_string(const unsigned char *bytes, unsigned num_bytes)
 {
-   verify_stats stats = { 0, 0, 0 };  // return value
+   static char buf[4 + 1 + 4 + 1 + 4 + 1];
+
+   char *p = buf;
+   for (int j = 0; j < num_bytes; j += 2)
+      p += sprintf(p, "%02X%02X ", bytes[j], bytes[j + 1]);
+   *--p = '\0';
+
+   return buf;
+}
+
+
+test_stats
+verify_spec_exceptions(const opcode *opc, int gen_spec_exc_tests)
+{
+   test_stats stats = { 0, 0 };  // return value
+
+   char file[strlen(opc->name) + 15];    // large enough
+   sprintf(file, "%s-%s.dump", opc->name, gen_spec_exc_tests ? "se" : "no-se");
 
    objdump_file *ofile = read_objdump(file);
    if (ofile == NULL)
@@ -45,139 +61,45 @@ verify_disassembly(const char *file)
    if (verbose)
       printf("...verifying %u insns in '%s'\n", ofile->num_lines, file);
 
-   const char *p = strchr(file, '.');
-   char vex_file[strlen(file) + 5];
+   char se_file[strlen(opc->name) + 15];  // large enough
+   sprintf(se_file, "%s-%s.spec-exc", opc->name,
+           gen_spec_exc_tests ? "se" : "no-se");
 
-   if (p == NULL) {
-      sprintf(vex_file, "%s.vex", file);
-   } else {
-      int len = p - file;
-      strncpy(vex_file, file, len);
-      strcpy(vex_file + len, ".vex");
-   }
-   FILE *fpvex = fopen(vex_file, "w");
-   if (fpvex == NULL)
-      error("%s: fopen failed\n", vex_file);
+   FILE *fpse = fopen(se_file, "w");
+   if (fpse == NULL)
+      error("%s: fopen failed\n", se_file);
 
    for (int i = 0; i < ofile->num_lines; ++i) {
       const objdump_line *oline = ofile->lines + i;
       int spec_exc = 0;
       const char *disassembly_from_vex =
          vex_disasm(oline->insn_bytes, &spec_exc);
+      const char *insn_bytes =
+         insn_bytes_as_string(oline->insn_bytes, oline->insn_len);
+
+      if (disassembly_from_vex == NULL) {
+         error("Disasm failed for %s\n", insn_bytes);
+         continue;
+      }
 
       if (spec_exc) {
          ++stats.num_spec_exc;
 
-         if (show_spec_exc) {
-            fprintf(stderr, "*** specification exception for insn ");
-            for (int j = 0; j < oline->insn_len; ++j)
-               fprintf(stderr, "%02X", oline->insn_bytes[j]);
-            fprintf(stderr, " in %s\n", file);
-         }
-         /* Instructions causing specification exceptions are not
-            compared */
-         continue;
-      }
-
-      if (disassembly_from_vex == NULL)
-         disassembly_from_vex = "MISSING disassembly from VEX";
-      if (fpvex)
-         fprintf(fpvex, "%s\n", disassembly_from_vex);
-
-      /* Compare disassembled insns */
-      ++stats.num_verified;
-      if (! disasm_same(oline->disassembled_insn, disassembly_from_vex,
-                        oline->address)) {
-         ++stats.num_mismatch;
-         if (show_miscompares) {
-            int n = fprintf(stderr, "*** mismatch VEX: |%s|",
-                            disassembly_from_vex);
-            fprintf(stderr, "%*c", 50 - n, ' ');
-            fprintf(stderr, "objdump: |%s|\n", oline->disassembled_insn);
-         }
+         if (fpse)
+            fprintf(fpse, "%s   %s\n", insn_bytes, disassembly_from_vex);
+         if (! gen_spec_exc_tests)
+            error("Unexpected spec. exc. detected for %s   %s\n", insn_bytes,
+                  disassembly_from_vex);
+      } else {
+         if (gen_spec_exc_tests)
+            error("Spec. exc. not detected for %s   %s\n", insn_bytes,
+                  disassembly_from_vex);
       }
    }
-   if (fpvex)
-      fclose(fpvex);
+
+   if (fpse)
+      fclose(fpse);
    release_objdump(ofile);
 
-   if (verbose) {
-      printf("...%u insns verified\n", stats.num_verified);
-      printf("...%u disassembly mismatches\n", stats.num_mismatch);
-      printf("...%u specification exceptions\n", stats.num_spec_exc);
-   }
-
    return stats;
-}
-
-
-/* Compare two disassembled insns ignoring white space. Return 1 if
-   equal. */
-static int
-disasm_same(const char *from_objdump, const char *from_vex,
-            unsigned address)
-{
-   const char *p1 = from_objdump;
-   const char *p2 = from_vex;
-
-   while (42) {
-      while (isspace(*p1))
-         ++p1;
-      while (isspace(*p2))
-         ++p2;
-      if (*p1 == '\0' && *p2 == '\0')
-         return 1;
-      if (*p1 == '\0' || *p2 == '\0')
-         return 0;
-
-      if (*p1 == *p2) {
-         ++p1;
-         ++p2;
-         continue;
-      }
-
-      /* Consider the case where the VEX disassembly has ".+integer"
-         or ".-integer" and the objdump disassembly has an hex address
-         possibly followed by a symbolic address, e.g. <main+0xe>. */
-      if (*p2++ != '.') return 0;
-
-      long long offset_in_bytes = 0;
-      unsigned long long target_address = 0;
-
-      while (isxdigit(*p1)) {
-         target_address *= 16;
-         if (isdigit(*p1))
-            target_address += *p1 - '0';
-         else {
-            int c = tolower(*p1);
-            if (c >= 'a' && c <= 'f')
-               target_address += 10 + c - 'a';
-            else
-               return 0;  // error
-         }
-         ++p1;
-      }
-      while (isspace(*p1))
-         ++p1;
-      if (*p1 == '<') {
-         while (*p1++ != '>')
-            ;
-      }
-
-      int is_negative = 0;
-      if (*p2 == '-') {
-         is_negative = 1;
-         ++p2;
-      } else if (*p2 == '+')
-         ++p2;
-      while (isdigit(*p2)) {
-         offset_in_bytes *= 10;
-         offset_in_bytes += *p2 - '0';
-         ++p2;
-      }
-      if (is_negative)
-         offset_in_bytes *= -1;
-
-      if (address + offset_in_bytes != target_address) return 0;
-   }
 }

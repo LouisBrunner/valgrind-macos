@@ -50,7 +50,14 @@
 /* Arguments for a syscall. */
 typedef
    struct SyscallArgs {
-      Word sysno;
+      Word canonical_sysno;
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+      /*
+        * This may be the same as canonical_sysno (normal syscalls)
+       * Or it may be __NR_syscall or __NR___syscall
+       */
+      Word original_sysno;
+#endif
       RegWord arg1;
       RegWord arg2;
       RegWord arg3;
@@ -62,9 +69,6 @@ typedef
 #if defined(VGO_darwin)
       RegWord arg9;
       Bool is_syscall;
-#endif
-#if defined(VGO_freebsd)
-      Word klass;
 #endif
    }
    SyscallArgs;
@@ -263,6 +267,7 @@ extern
 SyscallTableEntry* ML_(get_linux_syscall_entry)( UInt sysno );
 
 #elif defined(VGO_darwin)
+
 extern
 const SyscallTableEntry* ML_(get_darwin_syscall_entry)( UInt sysno );
 
@@ -382,7 +387,7 @@ const SyscallTableEntry* ML_(get_freebsd_syscall_entry)( UInt sysno );
 
 /* Reference to the syscall's arguments -- the ones which the
    pre-wrapper may have modified, not the original copy. */
-#define SYSNO  (arrghs->sysno)
+#define SYSNO  (arrghs->canonical_sysno)
 #define ARG1   (arrghs->arg1)
 #define ARG2   (arrghs->arg2)
 #define ARG3   (arrghs->arg3)
@@ -432,6 +437,18 @@ static inline UWord getERR ( SyscallStatus* st ) {
    return sr_Err(st->sres);
 }
 
+/*
+ * On FreeBSD, syscalls can return an error code directly rather than
+ * setting the carry flag and returning the error code (with the
+ * syscall wrapper putting the error code into errno and returning -1).
+ *
+ * It is the carry flag that triggers using errno and returning -1.
+ * So we want a macro that sets the return value but does not set
+ * the error flag. Normally that's the job of SET_STATUS_Success.
+ * Since using a "Success" macro for a failure error code would
+ * be misleading this macro is used as an alias to make it more readable.
+ */
+#define SET_STATUS_FailureErrorCode SET_STATUS_Success
 
 /* Set the current result status/value in various ways. */
 #define SET_STATUS_Success(zzz)                      \

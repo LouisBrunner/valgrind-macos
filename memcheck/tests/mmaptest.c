@@ -4,12 +4,13 @@
 #include <unistd.h>
 #include "tests/sys_mman.h"
 
-int main()
+int main(void)
 {
     int fd;
 
     mkdir("dir", 0777);
     fd = open("dir", O_RDONLY);
     mmap(NULL, 4711, PROT_READ, MAP_PRIVATE, fd, 0);
+    rmdir("dir");
     return 0;
 }

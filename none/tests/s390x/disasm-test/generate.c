@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -108,11 +108,6 @@ random_reg(opnd_t reg_kind, int r0_allowed)
 }
 
 
-#if 0
-/* These functions are currently unused. But may become useful in
-   alternate test generation strategies that use random values instead
-   of hardwired interesting ones. */
-
 static unsigned
 random_uint(unsigned num_bits)
 {
@@ -142,20 +137,6 @@ random_sint(unsigned num_bits)
 
 
 static unsigned
-d12_value(void)
-{
-   return random_uint(12);
-}
-
-
-static int
-d20_value(void)
-{
-   return random_sint(20);
-}
-
-
-static unsigned
 uint_value(unsigned num_bits)
 {
    if (num_bits > 32)
@@ -171,7 +152,7 @@ sint_value(unsigned num_bits)
       fatal("integer operand > 32 bits not supported\n");
    return random_sint(num_bits);
 }
-#endif
+
 
 /* MASK is a bitvector. For an e.g. GPR rk the k'th bit will be set. The
    function returns a register number which has not been used and
@@ -193,6 +174,20 @@ unique_reg(opnd_t reg_kind, unsigned regno, unsigned *mask)
 }
 
 
+/* Is VALUE an allowed value for OPERAND (which has a constraint) */
+static int
+is_allowed_value(long long value, const opnd *operand)
+{
+   int num_val = operand->allowed_values[0];
+
+   for (int i = 1; i <= num_val; ++i)
+      if (value == operand->allowed_values[i])
+         return 1;
+
+   return 0;
+}
+
+
 /* Field */
 typedef struct {
    const opnd *operand;  // the operand to which this field belongs
@@ -203,11 +198,15 @@ typedef struct {
 } field;
 
 static void choose_reg_and_iterate(FILE *, const opcode *, const opnd *,
-                                   field [], unsigned);
+                                   field [], unsigned, int);
+static void choose_int_and_iterate(FILE *, const opcode *, const opnd *,
+                                   field [], unsigned, const long long *,
+                                   unsigned, int);
 
 /* Write out a single ASM statement for OPC. */
 static void
-write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
+write_asm_stmt(FILE *fp, const opcode *opc, const field fields[],
+               int gen_spec_exc_tests)
 {
    fprintf(fp, "  asm volatile(\"%s ", opc->name);
 
@@ -293,7 +292,8 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
          assert(0);
       }
    }
-   fprintf(fp, "\");\n");
+   fprintf(fp, "\");");
+   fprintf(fp, "   // %s spec. exception\n", gen_spec_exc_tests ? " " : "no");
 
    ++num_tests;
 }
@@ -302,11 +302,12 @@ write_asm_stmt(FILE *fp, const opcode *opc, const field fields[])
 /* IX identifies the element of the FIELDS array to which a value
    will be assigned in this iteration. */
 static void
-iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
+iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix,
+        int gen_spec_exc_tests)
 {
    /* All fields are assigned. Write out the asm stmt */
    if (ix == opc->num_fields) {
-      write_asm_stmt(fp, opc, fields);
+      write_asm_stmt(fp, opc, fields, gen_spec_exc_tests);
       return;
    }
 
@@ -318,19 +319,19 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
       if (operand->name[0] == 'b' || operand->name[0] == 'x') {
          /* Choose r0 */
          f->assigned_value = 0;
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          /* Choose any GPR other than r0 */
          f->assigned_value = random_reg(operand->kind, /* r0_allowed */ 0);
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
       } else {
-         choose_reg_and_iterate(fp, opc, operand, fields, ix);
+         choose_reg_and_iterate(fp, opc, operand, fields, ix, gen_spec_exc_tests);
       }
       break;
 
    case OPND_AR:
    case OPND_FPR:
    case OPND_VR:
-      choose_reg_and_iterate(fp, opc, operand, fields, ix);
+      choose_reg_and_iterate(fp, opc, operand, fields, ix, gen_spec_exc_tests);
       break;
 
    case OPND_D12B:
@@ -343,7 +344,7 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
 
          for (int i = 0; i < sizeof values / sizeof *values; ++i) {
             f->assigned_value = values[i];
-            iterate(fp, opc, fields, ix + 1);
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          }
       } else if (f->is_length) {
          /* Choose these interesting values */
@@ -351,20 +352,20 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
 
          for (int i = 0; i < sizeof values / sizeof *values; ++i) {
             f->assigned_value = values[i];
-            iterate(fp, opc, fields, ix + 1);
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          }
       } else if (f->is_vr) {
          /* v0 is not special AFAICT */
          f->assigned_value = random_reg(OPND_VR, /* r0_allowed */ 11);
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
       } else {
          /* Base or index register */
          /* Choose r0 */
          f->assigned_value = 0;
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          /* Choose any GPR other than r0 */
          f->assigned_value = random_reg(OPND_GPR, /* r0_allowed */ 0);
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
       }
       break;
 
@@ -378,60 +379,36 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
 
          for (int i = 0; i < sizeof values / sizeof *values; ++i) {
             f->assigned_value = values[i];
-            iterate(fp, opc, fields, ix + 1);
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          }
       } else {
          /* base or index register */
          f->assigned_value = 0;
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          f->assigned_value = random_reg(OPND_GPR, /* r0_allowed */ 0);
-         iterate(fp, opc, fields, ix + 1);
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
       }
       break;
 
    case OPND_SINT:
-   case OPND_PCREL:
-      if (operand->allowed_values == NULL) {
-         /* No constraint: Choose these interesting values */
-         const long long values[] = {
-            0, 1, 2, -1, -2, (1LL << (operand->num_bits - 1)) - 1,
-            -(1LL << (operand->num_bits - 1))
-         };
-
-         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-            f->assigned_value = values[i];
-            iterate(fp, opc, fields, ix + 1);
-         }
-      } else {
-         /* Constraint. Choose only allowed values */
-         unsigned num_val = operand->allowed_values[0];
-         for (int i = 1; i <= num_val; ++i) {
-            f->assigned_value = operand->allowed_values[i];
-            iterate(fp, opc, fields, ix + 1);
-         }
-      }
+   case OPND_PCREL: {
+      const long long values[] = {
+         0, 1, 2, -1, -2, (1LL << (operand->num_bits - 1)) - 1,
+         -(1LL << (operand->num_bits - 1))
+      };
+      choose_int_and_iterate(fp, opc, operand, fields, ix, values,
+                             sizeof values / sizeof *values, gen_spec_exc_tests);
       break;
+   }
 
-   case OPND_UINT:
-      if (operand->allowed_values == NULL) {
-         /* No constraint: Choose these interesting values */
-         const long long values[] = {
-            0, 1, 2, (1LL << operand->num_bits) - 1
-         };
-
-         for (int i = 0; i < sizeof values / sizeof *values; ++i) {
-            f->assigned_value = values[i];
-            iterate(fp, opc, fields, ix + 1);
-         }
-      } else {
-         /* Constraint. Choose only allowed values */
-         unsigned num_val = operand->allowed_values[0];
-         for (int i = 1; i <= num_val; ++i) {
-            f->assigned_value = operand->allowed_values[i];
-            iterate(fp, opc, fields, ix + 1);
-         }
-      }
+   case OPND_UINT: {
+      const long long values[] = {
+         0, 1, 2, (1LL << operand->num_bits) - 1
+      };
+      choose_int_and_iterate(fp, opc, operand, fields, ix, values,
+                             sizeof values / sizeof *values, gen_spec_exc_tests);
       break;
+   }
 
    case OPND_MASK:
       if (operand->allowed_values == NULL) {
@@ -439,14 +416,32 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
          unsigned maxval = (1u << operand->num_bits) - 1;
          for (int val = 0; val <= maxval; ++val) {
             f->assigned_value = val;
-            iterate(fp, opc, fields, ix + 1);
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
          }
       } else {
-         /* Constraint. Choose only allowed values */
-         unsigned num_val = operand->allowed_values[0];
-         for (int i = 1; i <= num_val; ++i) {
-            f->assigned_value = operand->allowed_values[i];
-            iterate(fp, opc, fields, ix + 1);
+         if (gen_spec_exc_tests) {
+            /* Choose only disallowed values */
+            if (asm_detects_spec_exc(operand)) {
+               /* Pick an allowed value to avoid an asm error message */
+               f->assigned_value = operand->allowed_values[1];
+               iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+            } else {
+               unsigned maxval = (1 << operand->num_bits) - 1;
+               /* Enumerate all possible disallowed values for the operand */
+               for (int val = 0; val <= maxval; ++val) {
+                  if (! is_allowed_value(val, operand)) {
+                     f->assigned_value = val;
+                     iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+                  }
+               }
+            }
+         } else {
+            /* Constraint. Choose only allowed values */
+            unsigned num_val = operand->allowed_values[0];
+            for (int i = 1; i <= num_val; ++i) {
+               f->assigned_value = operand->allowed_values[i];
+               iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+            }
          }
       }
       break;
@@ -459,7 +454,7 @@ iterate(FILE *fp, const opcode *opc, field fields[], unsigned ix)
 
 
 static void
-generate(FILE *fp, const opcode *opc)
+generate(FILE *fp, const opcode *opc, int gen_spec_exc_tests)
 {
    /* Array of opcode fields to which we need to assign values. */
    field fields[opc->num_fields];
@@ -531,12 +526,12 @@ generate(FILE *fp, const opcode *opc)
    }
    assert(ix == opc->num_fields);
 
-   iterate(fp, opc, fields, 0);
+   iterate(fp, opc, fields, 0, gen_spec_exc_tests);
 }
 
 
 unsigned
-generate_tests(const opcode *opc)
+generate_tests(const opcode *opc, int gen_spec_exc_tests)
 {
    srand(42);
 
@@ -545,8 +540,8 @@ generate_tests(const opcode *opc)
 
    num_tests = 0;
 
-   char file[strlen(opc->name) + 3];
-   sprintf(file, "%s.c", opc->name);
+   char file[strlen(opc->name) + 10];  // large enough
+   sprintf(file, "%s-%s.c", opc->name, gen_spec_exc_tests ? "se" : "no-se");
 
    FILE *fp = fopen(file, "w");
    if (fp == NULL) {
@@ -558,18 +553,18 @@ generate_tests(const opcode *opc)
    fprintf(fp, "main(void)\n");
    fprintf(fp, "{\n");
    fprintf(fp, "  asm volatile(\"%s\");\n", MARK);
-   generate(fp, opc);
+   generate(fp, opc, gen_spec_exc_tests);
    fprintf(fp, "  asm volatile(\"%s\");\n", MARK);
    fprintf(fp, "}\n");
    fclose(fp);
 
    if (verbose)
-      printf("...%u testcases generated for '%s'\n", num_tests,
-             opc->name);
+      printf("...%u testcases generated for '%s'\n", num_tests, opc->name);
 
-   run_cmd("%s -c %s %s.c", gcc, gcc_flags, opc->name);
-   run_cmd("%s --disassemble=%s %s.o > %s.dump", objdump, FUNCTION,
-           opc->name, opc->name);
+   const char *ext = gen_spec_exc_tests ? "se" : "no-se";
+   run_cmd("%s -c %s %s", gcc, gcc_flags, file);
+   run_cmd("%s --disassemble=%s %s-%s.o > %s-%s.dump", objdump, FUNCTION,
+           opc->name, ext, opc->name, ext);
 
    return num_tests;
 }
@@ -577,20 +572,87 @@ generate_tests(const opcode *opc)
 
 static void
 choose_reg_and_iterate(FILE *fp, const opcode *opc, const opnd *operand,
-                       field fields[], unsigned ix)
+                       field fields[], unsigned ix, int gen_spec_exc_tests)
 {
    field *f = fields + ix;
 
    if (operand->allowed_values == NULL) {
       /* No constraint. Pick register at random. */
       f->assigned_value = random_reg(operand->kind, /* r0_allowed */ 1);
-      iterate(fp, opc, fields, ix + 1);
+      iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
    } else {
-      /* Constraint. Choose only allowed values */
-      unsigned num_val = operand->allowed_values[0];
-      for (int i = 1; i <= num_val; ++i) {
-         f->assigned_value = operand->allowed_values[i];
-         iterate(fp, opc, fields, ix + 1);
+      if (gen_spec_exc_tests) {
+         /* Choose only disallowed values */
+         if (asm_detects_spec_exc(operand)) {
+            /* Pick an allowed value to avoid an asm error message */
+            f->assigned_value = operand->allowed_values[1];
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+         } else {
+            unsigned maxval = (1 << operand->num_bits) - 1;
+            /* Enumerate all possible disallowed values for the operand */
+            for (int val = 0; val <= maxval; ++val) {
+               if (! is_allowed_value(val, operand)) {
+                  f->assigned_value = val;
+                  iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+               }
+            }
+         }
+     } else {
+         /* Choose only allowed values */
+         unsigned num_val = operand->allowed_values[0];
+         for (int i = 1; i <= num_val; ++i) {
+            f->assigned_value = operand->allowed_values[i];
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+         }
+      }
+   }
+}
+
+
+static void
+choose_int_and_iterate(FILE *fp, const opcode *opc, const opnd *operand,
+                       field fields[], unsigned ix, const long long *values,
+                       unsigned num_values, int gen_spec_exc_tests)
+{
+   field *f = fields + ix;
+
+   if (operand->allowed_values == NULL) {
+      /* No constraint: Choose the passed-in interesting values */
+      for (int i = 0; i < num_values; ++i) {
+         f->assigned_value = values[i];
+         iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+      }
+   } else {
+      if (gen_spec_exc_tests) {
+         /* Choose only disallowed values */
+         if (operand->num_bits <= 4) {
+            unsigned maxval = (1 << operand->num_bits) - 1;
+            /* Enumerate all possible disallowed values for the operand */
+            for (int val = 0; val <= maxval; ++val) {
+               if (! is_allowed_value(val, operand)) {
+                  f->assigned_value = val;
+                  iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+               }
+            }
+         } else {
+            /* Choose 4 random values */
+            for (int count = 0; count < 4; ) {
+               long long val =
+                  operand->is_unsigned ? uint_value(operand->num_bits)
+                                       : sint_value(operand->num_bits);
+               if (is_allowed_value(val, operand)) continue;
+               ++count;
+               f->assigned_value = val;
+               iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+            }
+         }
+      } else {
+         /* Choose only allowed values */
+         unsigned num_val = operand->allowed_values[0];
+         for (int i = 1; i <= num_val; ++i) {
+            f->assigned_value = operand->allowed_values[i];
+            iterate(fp, opc, fields, ix + 1, gen_spec_exc_tests);
+         }
       }
    }
 }

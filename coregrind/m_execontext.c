@@ -611,6 +611,17 @@ ExeContext* VG_(null_ExeContext) (void)
    return null_ExeContext;
 }
 
+const HChar* VG_(get_ExeContext_first_fnname)(ExeContext* ec)
+{
+   const HChar* fn_name;
+   vg_assert(ec->n_ips > 0);
+   Bool found_fn = VG_(get_fnname)(VG_(get_ExeContext_epoch)(ec), ec->ips[0], &fn_name);
+   if (found_fn) {
+      return fn_name;
+   }
+   return NULL;
+}
+
 /*--------------------------------------------------------------------*/
 /*--- end                                           m_execontext.c ---*/
 /*--------------------------------------------------------------------*/

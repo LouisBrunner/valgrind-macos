@@ -54,7 +54,7 @@ v5877     fixed   126217  increase # threads
 v5880     fixed   n-i-bz  vectorise copy_address_range_state
                   n-i-bz  mpicc -fpic bug (Goedeken Richard, inbox)
 vx1611    fixed   126243  vex x86->IR: popw mem
-          low     125265  vex x86->IR: 0xD9 0xD0 (fnop)
+          low     126256  vex x86->IR: 0xD9 0xD0 (fnop)
           low     126257  vex x86->IR: 0xF2 0x0F 0xF0 0x40 (lddqu) (sse3)
           low     126258  vex x86->IR: 0xDF 0x4D (fisttp) (sse3)
                   126384  rdpmc

@@ -358,6 +358,12 @@ Int ML_(am_fcntl) ( Int fd, Int cmd, Addr arg )
    return sr_isError(res) ? -1 : sr_Res(res);
 }
 
+Int ML_(am_lseek) ( Int fd, vki_off_t off, Int whence )
+{
+   SysRes res = VG_(do_syscall3)(__NR_lseek, fd, off, whence);
+   return sr_isError(res) ? -1 : sr_Res(res);
+}
+
 /* Get the dev, inode and mode info for a file descriptor, if
    possible.  Returns True on success. */
 Bool ML_(am_get_fd_d_i_m)( Int fd, 

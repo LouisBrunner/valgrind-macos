@@ -1,4 +1,4 @@
-prereq: test -e annotate_sem && ./supported_libpthread
+prereq: test -e annotate_sem && ./supported_libpthread && ! ../../tests/os_test darwin
 vgopts: --fair-sched=try --read-var-info=yes --check-stack-var=yes --show-confl-seg=no
 prog: annotate_sem
 stderr_filter: filter_stderr_and_thread_no

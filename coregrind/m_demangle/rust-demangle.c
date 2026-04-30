@@ -1,5 +1,5 @@
 /* Demangler for the Rust programming language
-   Copyright (C) 2016-2025 Free Software Foundation, Inc.
+   Copyright (C) 2016-2026 Free Software Foundation, Inc.
    Written by David Tolnay (dtolnay@gmail.com).
    Rewritten by Eduard-Mihai Burtescu (eddyb@lyken.rs) for v0 support.
 
@@ -678,10 +678,17 @@ demangle_binder (struct rust_demangler *rdm)
     return;
 
   bound_lifetimes = parse_opt_integer_62 (rdm, 'G');
+  /* Reject implausibly large lifetime counts to prevent
+     resource exhaustion from crafted symbols (PR demangler/106641).  */
+  if (bound_lifetimes > 1024)
+    {
+      rdm->errored = 1;
+      return;
+    }
   if (bound_lifetimes > 0)
     {
       PRINT ("for<");
-      for (i = 0; i < bound_lifetimes; i++)
+      for (i = 0; i < bound_lifetimes && !rdm->errored; i++)
         {
           if (i > 0)
             PRINT (", ");

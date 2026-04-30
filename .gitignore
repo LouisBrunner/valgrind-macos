@@ -80,6 +80,7 @@ configure~
 
 # /cachegrind/
 /cachegrind/*.so
+/cachegrind/*.dSYM
 /cachegrind/.deps
 /cachegrind/cachegrind-*-darwin
 /cachegrind/cachegrind-*-linux
@@ -130,6 +131,7 @@ configure~
 
 # /callgrind/
 /callgrind/*.so
+/callgrind/*.dSYM
 /callgrind/.deps
 /callgrind/callgrind-*-darwin
 /callgrind/callgrind-*-linux
@@ -681,6 +683,7 @@ configure~
 /helgrind/tests/bug327548
 /helgrind/tests/bug392331
 /helgrind/tests/bug484480
+/helgrind/tests/bug513598
 /helgrind/tests/cond_init_destroy
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test
@@ -696,6 +699,7 @@ configure~
 /helgrind/tests/locked_vs_unlocked1
 /helgrind/tests/locked_vs_unlocked2
 /helgrind/tests/locked_vs_unlocked3
+/helgrind/tests/lock_destroy_report
 /helgrind/tests/Makefile
 /helgrind/tests/Makefile.in
 /helgrind/tests/pth_barrier
@@ -747,6 +751,7 @@ configure~
 
 # /lackey/
 /lackey/*.so
+/lackey/*.dSYM
 /lackey/.deps
 /lackey/lackey-*-darwin
 /lackey/lackey-*-linux
@@ -896,7 +901,6 @@ configure~
 /memcheck/tests/demangle-rust
 /memcheck/tests/describe-block
 /memcheck/tests/descr_belowsp
-/memcheck/tests/dir
 /memcheck/tests/doublefree
 /memcheck/tests/duplicate_align_size_errors
 /memcheck/tests/dw4
@@ -943,6 +947,7 @@ configure~
 /memcheck/tests/lsframe2
 /memcheck/tests/Makefile
 /memcheck/tests/Makefile.in
+/memcheck/tests/linux/madv_guard
 /memcheck/tests/mallinfo
 /memcheck/tests/mallinfo2
 /memcheck/tests/malloc1
@@ -973,6 +978,7 @@ configure~
 /memcheck/tests/new_nothrow
 /memcheck/tests/new_override
 /memcheck/tests/noisy_child
+/memcheck/tests/nothing
 /memcheck/tests/null_socket
 /memcheck/tests/origin1-yes
 /memcheck/tests/origin2-not-quite
@@ -997,6 +1003,7 @@ configure~
 /memcheck/tests/realloc1
 /memcheck/tests/realloc2
 /memcheck/tests/realloc3
+/memcheck/tests/replaces_malloc_client_req
 /memcheck/tests/recursive-merge
 /memcheck/tests/resvn_stack
 /memcheck/tests/sbfragment
@@ -1008,6 +1015,8 @@ configure~
 /memcheck/tests/sendmsg
 /memcheck/tests/sh-mem
 /memcheck/tests/sh-mem-random
+/memcheck/tests/simple_leak
+/memcheck/tests/simple_reachable
 /memcheck/tests/sized_aligned_new_delete_args
 /memcheck/tests/sized_aligned_new_delete_misaligned1
 /memcheck/tests/sized_aligned_new_delete_misaligned2
@@ -1066,6 +1075,7 @@ configure~
 /memcheck/tests/wrapmalloc
 /memcheck/tests/wrapmallocstatic
 /memcheck/tests/writev1
+/memcheck/tests/xmas_tree
 /memcheck/tests/xml1
 /memcheck/tests/zeropage
 
@@ -1077,6 +1087,7 @@ configure~
 /memcheck/tests/amd64/bt_everything
 /memcheck/tests/amd64/bug132146
 /memcheck/tests/amd64/bug279698
+/memcheck/tests/amd64/bug406674
 /memcheck/tests/amd64/bug492210
 /memcheck/tests/amd64/defcfaexpr
 /memcheck/tests/amd64/fxsave-amd64
@@ -1194,6 +1205,7 @@ configure~
 /memcheck/tests/linux/dlclose_leak_so.so
 /memcheck/tests/linux/getregset
 /memcheck/tests/linux/ioctl-tiocsig
+/memcheck/tests/linux/ioctl_procmap_query
 /memcheck/tests/linux/lsframe1
 /memcheck/tests/linux/lsframe2
 /memcheck/tests/linux/Makefile
@@ -1307,6 +1319,7 @@ configure~
 /memcheck/tests/solaris/pkcs11
 /memcheck/tests/solaris/scalar
 /memcheck/tests/solaris/scalar_auditon_stat
+/memcheck/tests/solaris/scalar_crypto
 /memcheck/tests/solaris/scalar_frealpathat
 /memcheck/tests/solaris/scalar_getrandom
 /memcheck/tests/solaris/scalar_ioctl
@@ -1432,7 +1445,8 @@ configure~
 /memcheck/tests/freebsd/capsicum
 /memcheck/tests/freebsd/chflags
 /memcheck/tests/freebsd/chmod_chown
-/memcheck/tests/freebsd/clock_nanosleep_interrupt
+/memcheck/tests/freebsd/clock_nanosleep1
+/memcheck/tests/freebsd/clock_nanosleep2
 /memcheck/tests/freebsd/delete_sized_mismatch
 /memcheck/tests/freebsd/errno_aligned_allocs
 /memcheck/tests/freebsd/eventfd1
@@ -1454,6 +1468,8 @@ configure~
 /memcheck/tests/freebsd/kqueue
 /memcheck/tests/freebsd/kqueuex
 /memcheck/tests/freebsd/linkat
+/memcheck/tests/freebsd/lsframe1
+/memcheck/tests/freebsd/lsframe2
 /memcheck/tests/freebsd/memalign
 /memcheck/tests/freebsd/misc
 /memcheck/tests/freebsd/openpty
@@ -1541,6 +1557,7 @@ configure~
 /nightly/valgrind-old
 
 # /none/
+/none/*.dSYM
 /none/*.so
 /none/.deps
 /none/Makefile
@@ -1576,6 +1593,7 @@ configure~
 /none/tests/bug290061
 /none/tests/bug491394
 /none/tests/bug492678
+/none/tests/bug514094
 /none/tests/closeall
 /none/tests/coolo_sigaction
 /none/tests/coolo_strlen
@@ -1637,7 +1655,6 @@ configure~
 /none/tests/pluto
 /none/tests/ppoll_alarm
 /none/tests/process_vm_readv_writev
-/none/tests/procfs-cmdline-exe
 /none/tests/pselect_alarm
 /none/tests/pselect_sigmask_null
 /none/tests/pth_2sig
@@ -1895,6 +1912,7 @@ configure~
 /none/tests/darwin/bug254164
 /none/tests/darwin/bug390269
 /none/tests/darwin/bug411369
+/none/tests/darwin/procfs-cmdline-exe
 /none/tests/darwin/rlimit
 
 # /none/tests/linux/
@@ -1917,7 +1935,9 @@ configure~
 /none/tests/linux/mremap5
 /none/tests/linux/mremap6
 /none/tests/linux/open_client
+/none/tests/linux/procfs-cmdline-exe
 /none/tests/linux/pthread-stack
+/none/tests/linux/readlinkat_self
 /none/tests/linux/stack-overflow
 /none/tests/linux/getdents_filter
 
@@ -2186,8 +2206,6 @@ configure~
 /none/tests/s390x/cu14_1
 /none/tests/s390x/cu41
 /none/tests/s390x/ecag
-/none/tests/s390x/fpext_warn
-/none/tests/s390x/fpext_fail
 /none/tests/s390x/bfp-306054
 /none/tests/s390x/bfp-arith
 /none/tests/s390x/bfp-load
@@ -2232,6 +2250,7 @@ configure~
 /none/tests/s390x/pfpo
 /none/tests/s390x/rxsbg
 /none/tests/s390x/popcnt
+/none/tests/s390x/popcnt-mi3
 /none/tests/s390x/vector
 /none/tests/s390x/lsc2
 /none/tests/s390x/ppno
@@ -2241,8 +2260,11 @@ configure~
 /none/tests/s390x/high-word
 /none/tests/s390x/vector_float
 /none/tests/s390x/misc3
+/none/tests/s390x/misc4
 /none/tests/s390x/vec2
 /none/tests/s390x/vec2_float
+/none/tests/s390x/vec3
+/none/tests/s390x/vecdiv
 
 # /none/tests/riscv64/
 /none/tests/riscv64/*.stderr.diff
@@ -2319,7 +2341,9 @@ configure~
 /none/tests/solaris/proc_auxv
 /none/tests/solaris/proc_auxv_multiple
 /none/tests/solaris/proc_psinfo
+/none/tests/solaris/procfs-cmdline-exe
 /none/tests/solaris/pthread-stack
+/none/tests/solaris/readlinkat_self
 /none/tests/solaris/reserve_sysstat_addr
 /none/tests/solaris/reserve_sysstat_zone_addr
 /none/tests/solaris/resolv
@@ -2348,6 +2372,7 @@ none/tests/freebsd/bug499212
 /none/tests/freebsd/hello_world
 /none/tests/freebsd/open_client
 /none/tests/freebsd/proc_pid_file
+/none/tests/freebsd/procfs-cmdline-exe
 /none/tests/freebsd/sanity_level_thread
 /none/tests/freebsd/usrstack
 /none/tests/freebsd/umtx_shm_creat
@@ -2537,6 +2562,10 @@ none/tests/freebsd/bug499212
 # /VEX/priv/
 /VEX/priv/.deps
 /VEX/priv/.dirstamp
+
+# /VEX/priv/objdump
+/VEX/priv/objdump/.deps
+/VEX/priv/objdump/.dirstamp
 
 # /VEX/pub/
 /VEX/pub/libvex_guest_offsets.h

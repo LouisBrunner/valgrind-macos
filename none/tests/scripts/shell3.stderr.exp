@@ -1,0 +1,6 @@
+./shell: ./x86/: is a directory
+./shell: ./shell.vgtest: Permission denied
+valgrind: ./shell_badinterp: bad interpreter: No such file or directory
+./shell: ./shell_binaryfile: cannot execute binary file
+./shell: ./shell_nosuchfile: No such file or directory
+./shell: shell_nosuchfile: command not found

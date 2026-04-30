@@ -1,4 +1,3 @@
-
 sh-mem-vec256: config: little-endian, 64-bit word size
 
 19543   109   126    31   206    54   112    34   102   152   335     1    36     0    23    33 
@@ -820,13 +819,3 @@ Invalid read of size 32
 dddddddddddddddddddddddddddddddd
 
 
-
-HEAP SUMMARY:
-    in use at exit: 0 bytes in 0 blocks
-  total heap usage: 65 allocs, 65 frees, 84,096 bytes allocated
-
-For a detailed leak analysis, rerun with: --leak-check=full
-
-Use --track-origins=yes to see where uninitialised values come from
-For lists of detected and suppressed errors, rerun with: -s
-ERROR SUMMARY: 99 errors from 99 contexts (suppressed: 0 from 0)

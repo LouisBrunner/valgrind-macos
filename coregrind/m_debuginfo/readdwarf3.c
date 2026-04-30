@@ -2977,6 +2977,14 @@ static void parse_var_DIE (
       if (level == 0)
          setup_cu_svma(cc, have_lo, ip_lo, td3);
 
+#if defined(VGO_darwin)
+      // FIXME PJF Darwin LLVM generates this (non-standard?) combination
+      // it only seems to affect DRD
+      if (have_lo && have_range && !have_hi1) {
+         have_lo = False;
+      }
+#endif
+
       /* Do we have something that looks sane? */
       if (have_lo && have_hi1 && (!have_range)) {
          if (ip_lo < ip_hi1)

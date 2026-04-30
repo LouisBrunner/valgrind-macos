@@ -161,7 +161,7 @@ static Bool is_hash_bang_file(const HChar* f)
       HChar buf[3] = {0,0,0};
       Int fd = sr_Res(res);
       Int n  = VG_(read)(fd, buf, 2); 
-      if (n == 2 && VG_STREQ("#!", buf))
+      if (n == 2 && (VG_(strcmp)(buf, "#!")==0))
          return True;
    }
    return False;

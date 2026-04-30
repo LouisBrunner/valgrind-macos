@@ -1,0 +1,2 @@
+prog: clock_nanosleep1
+vgopts: -q

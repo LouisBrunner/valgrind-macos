@@ -1,5 +1,5 @@
 This directory contains LTP patches that are not included in the official LTP
 tarball. After a new version of LTP is adopted for Valgrind testing, this patch
 set should be reviewed and cleaned up. Patch filenames are expected to have the
-.patch suffix.
+.patch suffix.  Patches are also listed in ../Makefile.am.
 

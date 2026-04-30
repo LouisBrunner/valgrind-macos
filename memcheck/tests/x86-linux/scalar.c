@@ -5,9 +5,11 @@
 #include <unistd.h>
 #include <sched.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/mman.h> // MREMAP_FIXED
 #include <sys/prctl.h>
 #include <sys/resource.h>
+#include <sys/utsname.h>
 
 // Here we are trying to trigger every syscall error (scalar errors and
 // memory errors) for every syscall.  We do this by passing a lot of bogus
@@ -36,6 +38,12 @@ int main(void)
    int in_docker = 0;
    if (access("/.dockerenv", F_OK) == 0) {
       in_docker = 1;
+   }
+   int in_WSL = 0;
+   struct utsname u;
+   uname(&u);
+   if (strstr(u.release, "microsoft") || strstr(u.release, "WSL")) {
+      in_WSL = 1;
    }
 
    // All __NR_xxx numbers are taken from x86
@@ -155,7 +163,7 @@ int main(void)
 
    // __NR_getuid 24
    GO(__NR_getuid, "0s 0m");
-   SY(__NR_getuid); SUCC;
+   SY(__NR_getuid); SUCC_OR_WSL_FAIL;
 
    // __NR_stime 25
    GO(__NR_stime, "n/a");
@@ -253,7 +261,7 @@ int main(void)
 
    // __NR_getgid 47
    GO(__NR_getgid, "0s 0m");
-   SY(__NR_getgid); SUCC;
+   SY(__NR_getgid); SUCC_OR_WSL_FAIL;
 
    // __NR_signal 48
    GO(__NR_signal, "n/a");
@@ -261,11 +269,11 @@ int main(void)
 
    // __NR_geteuid 49
    GO(__NR_geteuid, "0s 0m");
-   SY(__NR_geteuid); SUCC;
+   SY(__NR_geteuid); SUCC_OR_WSL_FAIL;
 
    // __NR_getegid 50
    GO(__NR_getegid, "0s 0m");
-   SY(__NR_getegid); SUCC;
+   SY(__NR_getegid); SUCC_OR_WSL_FAIL;
 
    // __NR_acct 51
    GO(__NR_acct, "1s 1m");
@@ -360,11 +368,11 @@ int main(void)
 
    // __NR_setreuid 70
    GO(__NR_setreuid, "2s 0m");
-   SY(__NR_setreuid, x0-1, x0-1); SUCC;
+   SY(__NR_setreuid, x0-1, x0-1); SUCC_OR_WSL_FAIL;
 
    // __NR_setregid 71
    GO(__NR_setregid, "2s 0m");
-   SY(__NR_setregid, x0-1, x0-1); SUCC;
+   SY(__NR_setregid, x0-1, x0-1); SUCC_OR_WSL_FAIL;
 
    // __NR_sigsuspend 72
    // XXX: how do you use this function?
@@ -649,11 +657,11 @@ int main(void)
 
    // __NR_setfsuid 138
    GO(__NR_setfsuid, "1s 0m");
-   SY(__NR_setfsuid, x0); SUCC;  // This syscall has a stupid return value
+   SY(__NR_setfsuid, x0); SUCC_OR_WSL_FAIL;
 
    // __NR_setfsgid 139
    GO(__NR_setfsgid, "1s 0m");
-   SY(__NR_setfsgid, x0); SUCC;  // This syscall has a stupid return value
+   SY(__NR_setfsgid, x0); SUCC_OR_WSL_FAIL;
 
    // __NR__llseek 140
    GO(__NR__llseek, "5s 1m");
@@ -753,7 +761,7 @@ int main(void)
 
    // __NR_setresuid 164
    GO(__NR_setresuid, "3s 0m");
-   SY(__NR_setresuid, x0-1, x0-1, x0-1); SUCC;
+   SY(__NR_setresuid, x0-1, x0-1, x0-1); SUCC_OR_WSL_FAIL;
 
    // __NR_getresuid 165
    GO(__NR_getresuid, "3s 3m");
@@ -777,7 +785,7 @@ int main(void)
 
    // __NR_setresgid 170
    GO(__NR_setresgid, "3s 0m");
-   SY(__NR_setresgid, x0-1, x0-1, x0-1); SUCC;
+   SY(__NR_setresgid, x0-1, x0-1, x0-1); SUCC_OR_WSL_FAIL;
 
    // __NR_getresgid 171
    GO(__NR_getresgid, "3s 3m");
@@ -823,6 +831,7 @@ int main(void)
 
    // __NR_rt_sigsuspend 179
    GO(__NR_rt_sigsuspend, "2s 1m");
+   // this sets errno to EINVAL running standalone under WSL
    SY(__NR_rt_sigsuspend, x0 + 1, x0 + sizeof(sigset_t)); FAILx(EFAULT);
 
    // __NR_pread64 180
@@ -861,6 +870,7 @@ int main(void)
       ss.ss_size   = 0;
       VALGRIND_MAKE_MEM_NOACCESS(& ss, sizeof(struct our_sigaltstack));
       GO(__NR_sigaltstack, "2s 2m");
+      // This fails under WSL standalone.
       SY(__NR_sigaltstack, x0+&ss, x0+&ss); SUCC;
    }
 

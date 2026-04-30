@@ -1,0 +1,15 @@
+#!/bin/sh
+
+awk '/Massif arguments/ {
+    gsub(/ ?unsigned int/, "uint")
+    gsub(/ ?unsigned long/, "ulong")
+    gsub(/char const/, "char_const")
+    gsub(/void const/, "void_const")
+    gsub(/header_info const/, "header_info_const")
+    gsub(/ objc/, "_objc")
+    gsub(/> >/, ">>")
+    gsub(/, /, ",")
+    gsub(/int slice/, "int_slice")
+    gsub(/ --ignore-fn=[^ ]*/, "")
+}
+{ print }'

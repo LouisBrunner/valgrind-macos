@@ -1098,7 +1098,7 @@ extern void my_sigreturn(void);
    ".text\n" \
    ".globl my_sigreturn\n" \
    "my_sigreturn:\n\t" \
-   "    ldr  x16, =" VG_STRINGIFY(__NR_DARWIN_FAKE_SIGRETURN) "\n\t" \
+   "    ldr  x16, =" VG_STRINGIFY(__NR_darwin_fake_sigreturn) "\n\t" \
    "    svc  0x80\n" \
    ".previous\n"
 

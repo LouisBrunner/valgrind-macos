@@ -1566,12 +1566,30 @@ static __always_inline
 sem_t* sem_open_intercept(const char *name, int oflag, mode_t mode,
                           unsigned int value)
 {
+#if defined(VGP_arm64_darwin)
+   /* On Darwin, sem_open() is variadic and per Apple ARM64 ABI,
+    * variadic arguments are passed on the stack.
+    * So we need to fetch the optional, variadic, arguments `mode` and `value` from the stack.
+    */
+   __asm__ volatile(
+     "ldr %w0, [x29, #16] \n"   /* mode  = [x29+16], first vararg  */
+     "ldr %w1, [x29, #24] \n"   /* value = [x29+24], second vararg */
+     : "=r"(mode), "=r"(value)
+     :
+     :
+   );
+#endif
    sem_t *ret;
    OrigFn fn;
    VALGRIND_GET_ORIG_FN(fn);
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ_DRD_PRE_SEM_OPEN,
                                    name, oflag, mode, value, 0);
+#if defined(VGP_arm64_darwin)
+   // See above, mode and value need to be on the stack.
+   CALL_FN_W_WW_VARARG2(ret, fn, name, oflag, mode, value);
+#else
    CALL_FN_W_WWWW(ret, fn, name, oflag, mode, value);
+#endif
    // To do: figure out why gcc 9.2.1 miscompiles this function if the printf()
    // call below is left out.
 #if defined(__GNUC__) && !defined(__clang__)

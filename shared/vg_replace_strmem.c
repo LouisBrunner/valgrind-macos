@@ -1057,6 +1057,7 @@ static inline void my_exit ( int x )
 #  if DARWIN_VERS >= DARWIN_13_00
   MEMCHR(VG_Z_LIBSYSTEM_PLATFORM_SONAME, _platform_memchr$VARIANT$NoOverread)
 #  endif
+# endif
 
 #elif defined(VGO_solaris)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)
@@ -1994,10 +1995,6 @@ static inline void my_exit ( int x )
 
 #if defined(VGP_s390x_linux)
  MEMMEM(VG_Z_LIBC_SONAME,          memmem)
-#elif defined(VGO_darwin)
-# if defined(VGP_arm64_darwin)
-  MEMMEM(VG_Z_LIBSYSTEM_C_SONAME, memmem)
-# endif
 #endif
 
 #if defined(VGO_darwin)

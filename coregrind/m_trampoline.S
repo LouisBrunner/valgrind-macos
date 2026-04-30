@@ -1422,7 +1422,7 @@ VG_(trampoline_stuff_start):
 
 .global VG_(arm64_darwin_SUBST_FOR_sigreturn)
 VG_(arm64_darwin_SUBST_FOR_sigreturn):
-  ldr x16, =__NR_DARWIN_FAKE_SIGRETURN
+  ldr x16, =__NR_darwin_fake_sigreturn
   svc 0x80
   UD2_4
 

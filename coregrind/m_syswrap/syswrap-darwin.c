@@ -3439,17 +3439,6 @@ POST(stat64)
 #endif
 }
 
-#if DARWIN_VERS >= DARWIN_11_00
-   if (SUCCESS || (FAILURE && ERR == VKI_ENOENT)) {
-     // It failed and `SfPostOnFail` was set, thus this is probably a dylib,
-     // try to load it from cache which will call VG_(di_notify_mmap) like the previous versions did
-     if (VG_(dyld_cache_load_library)((HChar *)ARG1)) {
-       ML_(sync_mappings)("after", "stat64", 0);
-     }
-   }
-#endif
-}
-
 PRE(lstat64)
 {
    PRINT("lstat64 ( %#lx(%s), %#lx )", ARG1, (HChar *)ARG1, ARG2);
@@ -8920,9 +8909,18 @@ PRE(mach_msg_task)
       CALL_PRE(mach_vm_purgable_control);
       return;
 
+#if DARWIN_VERS >= DARWIN_15_00
+   case 4822:
+      CALL_PRE(mach_vm_deferred_reclamation_buffer_allocate);
+      return;
+#endif
+
 #if DARWIN_VERS >= DARWIN_10_15
    case 8000:
       CALL_PRE(task_restartable_ranges_register);
+      return;
+   case 8001:
+      CALL_PRE(task_restartable_ranges_synchronize);
       return;
 #endif
 
@@ -9729,26 +9727,6 @@ PRE(__semwait_signal)
 //
 //   *flags |= SfMayBlock;
 //}
-
-PRE(task_name_for_pid)
-{
-   PRINT("task_name_for_pid(%s, %ld, %#lx)", name_for_port(ARG1), SARG2, ARG3);
-   PRE_REG_READ3(long, "task_name_for_pid",
-                 mach_port_t,"target",
-                 vki_pid_t, "pid", mach_port_t *,"task");
-   PRE_MEM_WRITE("task_name_for_pid(task)", ARG3, sizeof(mach_port_t));
-}
-
-POST(task_name_for_pid)
-{
-   mach_port_t task;
-
-   POST_MEM_WRITE(ARG3, sizeof(mach_port_t));
-
-   task = *(mach_port_t *)ARG3;
-   record_named_port(tid, task, MACH_PORT_RIGHT_SEND, "task-name-%p");
-   PRINT("task-name %#x", task);
-}
 
 PRE(task_name_for_pid)
 {
@@ -11452,7 +11430,7 @@ PRE(host_create_mach_voucher_trap)
 {
     // munge_wwww -- no need to call helper
     PRINT("host_create_mach_voucher_trap"
-        "(host:%s, recipes:%#lx, recipes_size:%ld, voucher:%#lx)",
+        "(host:%s, recipes:%#lx, recipes_size:%lu, voucher:%#lx)",
         name_for_port(ARG1), ARG2, ARG3, ARG4);
     // FIXME PJF PRE_REG_READ?
     PRE_MEM_READ( "host_create_mach_voucher_trap(recipes)", ARG2, ARG3 );
@@ -11704,9 +11682,36 @@ PRE(kernelrpc_mach_port_get_attributes_trap)
 PRE(task_restartable_ranges_register)
 {
    PRINT("task_restartable_ranges_register(%s, %#lx, %ld)", name_for_port(ARG1), ARG2, SARG3);
+
+   AFTER = POST_FN(task_restartable_ranges_register);
 }
 
 POST(task_restartable_ranges_register)
+{
+#pragma pack(4)
+   typedef struct {
+      mach_msg_header_t Head;
+      NDR_record_t NDR;
+      kern_return_t RetCode;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;
+
+   if (!reply->RetCode) {
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
+
+PRE(task_restartable_ranges_synchronize)
+{
+   PRINT("task_restartable_ranges_synchronize(%s)", name_for_port(ARG1));
+
+   AFTER = POST_FN(task_restartable_ranges_synchronize);
+}
+
+POST(task_restartable_ranges_synchronize)
 {
 #pragma pack(4)
    typedef struct {
@@ -11946,6 +11951,54 @@ PRE(kdebug_trace64)
          ARG1, kdebug_debugid(ARG1), ARG2, ARG3, ARG4, ARG5);
   SET_STATUS_Success(0);
 }
+
+PRE(mach_vm_deferred_reclamation_buffer_allocate)
+{
+   Addr deref_address = 0;
+   if (ML_(safe_to_deref)((mach_vm_address_t*) ARG2, sizeof(mach_vm_address_t))) {
+     deref_address = *((mach_vm_address_t*) ARG2);
+   }
+   PRINT("mach_vm_deferred_reclamation_buffer_allocate(%s, %#lx (%#lx), %lu, %lu)", name_for_port(ARG1), ARG2, deref_address, ARG3, ARG4);
+
+   if (ARG2) {
+     PRE_MEM_READ("mach_vm_deferred_reclamation_buffer_allocate(address)", ARG2, sizeof(mach_vm_address_t));
+   }
+
+   AFTER = POST_FN(mach_vm_deferred_reclamation_buffer_allocate);
+}
+
+POST(mach_vm_deferred_reclamation_buffer_allocate)
+{
+#pragma pack(4)
+   typedef struct {
+     mach_msg_header_t Head;
+     NDR_record_t NDR;
+     kern_return_t RetCode;
+     mach_vm_address_t address;
+     uint64_t next_deadline;
+   } Reply;
+#pragma pack()
+
+   Reply *reply = (Reply *)ARG1;
+
+   if (!reply->RetCode) {
+      PRINT("-> %#llx", reply->address);
+      ML_(notify_core_and_tool_of_mmap)(
+         reply->address, VKI_PAGE_SIZE, VKI_PROT_READ|VKI_PROT_WRITE,
+         VKI_MAP_ANON, -1, 0);
+   } else {
+      PRINT("mig return %d", reply->RetCode);
+   }
+}
+
+#endif /* DARWIN_VERS >= DARWIN_15_00 */
+
+
+/* ---------------------------------------------------------------------
+ Added for macOS 26.0 (Tahoe)
+ ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_26_00
 
 #endif /* DARWIN_VERS >= DARWIN_15_00 */
 

@@ -4523,6 +4523,39 @@ typedef
       lval = (__typeof__(lval)) _res;                             \
    } while (0)
 
+/* Like CALL_FN_W_WWWW but passes arg3 and arg4 on the stack instead of in
+ * registers x2/x3.  Required on Darwin ARM64 for variadic functions such as
+ * sem_open. */
+#define CALL_FN_W_WW_VARARG2(lval, orig, arg1,arg2,arg3,arg4)     \
+   do {                                                           \
+      volatile OrigFn        _orig = (orig);                      \
+      volatile unsigned long _argvec[5];                          \
+      volatile unsigned long _res;                                \
+      _argvec[0] = (unsigned long)_orig.nraddr;                   \
+      _argvec[1] = (unsigned long)(arg1);                         \
+      _argvec[2] = (unsigned long)(arg2);                         \
+      _argvec[3] = (unsigned long)(arg3);                         \
+      _argvec[4] = (unsigned long)(arg4);                         \
+      __asm__ volatile(                                           \
+         VALGRIND_ALIGN_STACK                                     \
+         /* Reserve 16 bytes on the stack for the two varargs. */ \
+         "sub sp, sp, #16 \n\t"                                   \
+         "ldr x9, [%1, #24] \n\t"  /* arg3 (mode)  */            \
+         "ldr x10, [%1, #32] \n\t" /* arg4 (value) */            \
+         "stp x9, x10, [sp] \n\t"  /* place on stack at [sp]  */ \
+         "ldr x0, [%1, #8] \n\t"   /* arg1 (name)  -> x0 */     \
+         "ldr x1, [%1, #16] \n\t"  /* arg2 (oflag) -> x1 */     \
+         "ldr x8, [%1] \n\t"       /* target -> x8 */            \
+         VALGRIND_BRANCH_AND_LINK_TO_NOREDIR_X8                   \
+         VALGRIND_RESTORE_STACK                                   \
+         "mov %0, x0"                                             \
+         : /*out*/   "=r" (_res)                                  \
+         : /*in*/    "0" (&_argvec[0])                            \
+         : /*trash*/ "cc", "memory", __CALLER_SAVED_REGS, "x21"   \
+      );                                                          \
+      lval = (__typeof__(lval)) _res;                             \
+   } while (0)
+
 #define CALL_FN_W_5W(lval, orig, arg1,arg2,arg3,arg4,arg5)        \
    do {                                                           \
       volatile OrigFn        _orig = (orig);                      \

@@ -378,6 +378,7 @@ void do_syscall_for_client ( Int syscallno,
 #  endif
 #  elif defined(VGO_darwin)
    UChar cflag;
+   VG_(sigemptyset)(&saved);
    switch (VG_DARWIN_SYSNO_CLASS(syscallno)) {
       case VG_DARWIN_SYSCALL_CLASS_UNIX:
          err = ML_(do_syscall_for_client_unix_WRK)(
@@ -882,18 +883,17 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
 
 #elif defined(VGP_arm64_darwin)
    VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
-   UWord *stack = (UWord *)gst->guest_XSP;
 
    vg_assert(trc == VEX_TRC_JMP_SYS_SYSCALL || trc == VEX_TRC_JMP_SYS_INT128);
 
-   canonical->sysno = gst->guest_X16;
-   if (canonical->sysno != VG_DARWIN_SYSNO_INDEX(__NR_syscall)) {
-      if (canonical->sysno == __SYSNO_thread_set_tsd_base) {
-        canonical->sysno = __NR_thread_set_tsd_base;
-      } else if (canonical->sysno >= 0) {
-        canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->sysno);
+   canonical->canonical_sysno = gst->guest_X16;
+   if (canonical->canonical_sysno != VG_DARWIN_SYSNO_INDEX(__NR_syscall)) {
+      if (canonical->canonical_sysno == __SYSNO_thread_set_tsd_base) {
+        canonical->canonical_sysno = __NR_thread_set_tsd_base;
+      } else if (canonical->canonical_sysno >= 0) {
+        canonical->canonical_sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(canonical->canonical_sysno);
       } else {
-        canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->sysno);
+        canonical->canonical_sysno = VG_DARWIN_SYSCALL_CONSTRUCT_MACH(-canonical->canonical_sysno);
       }
       canonical->arg1  = gst->guest_X0;
       canonical->arg2  = gst->guest_X1;
@@ -907,8 +907,8 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
       canonical->is_syscall = False;
    } else {
      // same issues as for amd64 and x86
-     canonical->sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(gst->guest_X0);
-     vg_assert(canonical->sysno != __NR_syscall);
+     canonical->canonical_sysno = VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(gst->guest_X0);
+     vg_assert(canonical->canonical_sysno != __NR_syscall);
      canonical->arg1  = gst->guest_X1;
      canonical->arg2  = gst->guest_X2;
      canonical->arg3  = gst->guest_X3;
@@ -922,10 +922,10 @@ void getSyscallArgsFromGuestState ( /*OUT*/SyscallArgs*       canonical,
 
      PRINT("SYSCALL[%d,?](0) syscall(%s, ...); please stand by...\n",
            VG_(getpid)(), /*tid,*/
-           VG_SYSNUM_STRING(canonical->sysno));
+           VG_SYSNUM_STRING(canonical->canonical_sysno));
    }
 
-   // no canonical->sysno adjustment needed
+   // no canonical->canonical_sysno adjustment needed
 
 #elif defined(VGP_s390x_linux)
    VexGuestS390XState* gst = (VexGuestS390XState*)gst_vanilla;
@@ -1203,7 +1203,7 @@ void putSyscallArgsIntoGuestState ( /*IN*/ SyscallArgs*       canonical,
 #elif defined(VGP_arm64_darwin)
    VexGuestARM64State* gst = (VexGuestARM64State*)gst_vanilla;
 
-   gst->guest_X16 = VG_DARWIN_SYSNO_FOR_KERNEL(canonical->sysno);
+   gst->guest_X16 = VG_DARWIN_SYSNO_FOR_KERNEL(canonical->canonical_sysno);
    gst->guest_X0 = canonical->arg1;
    gst->guest_X1 = canonical->arg2;
    gst->guest_X2 = canonical->arg3;
@@ -1945,7 +1945,6 @@ static
 void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_syscall )
 {
    VG_(bzero_inline)(layout, sizeof(*layout));
-   (void) is_syscall;
 
 #if defined(VGP_x86_linux)
    layout->o_sysno  = OFFSET_x86_EAX;
@@ -2116,7 +2115,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_s
    layout->o_arg8   = OFFSET_mips64_r11;
 
 #elif defined(VGP_x86_darwin)
-   if (is_syscall) {
+   if (syscall_syscall) {
     // all syscall parameters are on the stack
     layout->s_sysno  = sizeof(UWord) * 1;
     layout->sysno_is_reg = False;
@@ -2143,7 +2142,7 @@ void getSyscallArgLayout ( /*OUT*/SyscallArgLayout* layout, /*IN*/Bool syscall_s
    }
 
 #elif defined(VGP_arm64_darwin)
-   if (is_syscall) {
+   if (syscall_syscall) {
     layout->o_sysno  = OFFSET_arm64_X0;
     layout->o_arg1   = OFFSET_arm64_X1;
     layout->o_arg2   = OFFSET_arm64_X2;

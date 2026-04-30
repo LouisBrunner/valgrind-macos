@@ -1296,6 +1296,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #  if defined(VGO_darwin)
    if (uregs.x30 != 0 && uregs.x30 != uregs.pc && i < max_n_ips
       && fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
+      && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))
       && ((UWord*)uregs.x29)[1] != uregs.x30) {
       DiEpoch ep = VG_(current_DiEpoch)();
       const HChar *previous;
@@ -1338,7 +1339,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       }
 
       /* See amd64 version for details. */
-      if (fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)) {
+      if (fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
+          && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))) {
          /* fp looks sane, so use it. */
          uregs.pc = (((UWord*)uregs.x29)[1]);
          if (0 == uregs.pc || 1 == uregs.pc) break;

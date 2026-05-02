@@ -32,7 +32,8 @@ static void EnableSigprof(Sigaction SignalHandler) {
  }
 }
 
-void *Worker() {
+void *Worker(void *arg) {
+ (void) arg;
  long int i;
  for (i = 0; i < 100000000; i++) {
    void *x = malloc((i % 64) + 1);

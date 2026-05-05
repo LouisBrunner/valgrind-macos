@@ -3,15 +3,15 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr bfp-emit.pl emwarn-gen.pl
 
 INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
-             and or xor insert div srst fold_And16 flogr sub_EI add_EI \
+             and or xor insert div srst fold_And16 sub_EI add_EI \
              and_EI or_EI xor_EI insert_EI mul_GE add_GE condloadstore \
-             op_exception stck stckf stcke stfle cksm mvcl clcl troo \
+             op_exception stck stckf stcke stfle mvcl clcl troo \
              trto trot trtt tr tre cij cgij clij clgij crj cgrj clrj clgrj \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
-             ex_sig ex_clone cu14 cu14_1 cu41 ecag fpext_warn fpext_fail \
+             ex_sig ex_clone cu14 cu14_1 cu41 ecag \
              bfp-fpc bfp-306054 \
              bfp-muldiv comp-1 comp-2 exrl tmll tm stmg \
-	     ex clst mvc test_fork test_sig rxsbg popcnt \
+	     ex clst mvc test_fork test_sig rxsbg popcnt popcnt-mi3 \
 	     high-word traps \
 	     spechelper-alr spechelper-algr \
 	     spechelper-slr spechelper-slgr \
@@ -20,16 +20,23 @@ INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
 	     spechelper-icm-1  spechelper-icm-2 spechelper-tmll \
 	     spechelper-tm laa vector lsc2 ppno vector_string vector_integer \
 	     vector_float add-z14 sub-z14 mul-z14 bic \
-	     misc3 vec2 vec2_float \
+	     misc3 misc4 vec2 vec2_float vec3 vecdiv \
 	     dfp-1 dfp-2 dfp-3 dfp-4 dfpconv dfpext dfptest pfpo srnmt \
 	     hfp
 
+# Include the BFP testcases iff GCC accepts -mlong-souble-128 or clang
+# is your compiler (which has 128-bit wide long doubles by default).
 if HAS_MLONG_DOUBLE_128
+INSN_TESTS += bfp-arith bfp-compare bfp-convert bfp-load bfp-tdc
+endif
+if COMPILER_IS_CLANG
 INSN_TESTS += bfp-arith bfp-compare bfp-convert bfp-load bfp-tdc
 endif
 
 check_PROGRAMS = $(INSN_TESTS) \
 		 allexec \
+		 cksm \
+		 flogr \
 		 op00
 
 noinst_HEADERS = add.h and.h div.h dfp_utils.h insert.h mul.h opcodes.h \
@@ -46,7 +53,9 @@ EXTRA_DIST = \
 	bfp-tdc.vgtest bfp-tdc.stdout.exp bfp-tdc.stderr.exp \
 	bfp-emit.vgtest bfp-emit.stderr.exp bfp-emit.post.exp \
 	bfp-XxC.vgtest bfp-XxC.stderr.exp bfp-XxC.post.exp \
-	ecag.stdout.exp-z10ec ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
+	cksm.vgtest cksm.stderr.exp \
+	flogr.vgtest flogr.stderr.exp \
+	ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 ecag.stdout.exp-z17 \
 	op00.stderr.exp op00.vgtest \
@@ -71,8 +80,13 @@ vector_integer_CFLAGS    = $(AM_CFLAGS) -march=z13 -DS390_TEST_COUNT=4
 vector_float_CFLAGS    = $(AM_CFLAGS) -march=z13 -DS390_TEST_COUNT=4
 vec2_CFLAGS      = $(AM_CFLAGS) -march=z13
 vec2_float_CFLAGS = $(AM_CFLAGS) -march=z13
-bfp_arith_CFLAGS   = $(AM_CFLAGS) -mlong-double-128
-bfp_compare_CFLAGS = $(AM_CFLAGS) -mlong-double-128
-bfp_convert_CFLAGS = $(AM_CFLAGS) -mlong-double-128
-bfp_load_CFLAGS    = $(AM_CFLAGS) -mlong-double-128
-bfp_tdc_CFLAGS     = $(AM_CFLAGS) -mlong-double-128
+vec3_CFLAGS       = $(AM_CFLAGS) -march=z13
+vecdiv_CFLAGS     = $(AM_CFLAGS) -march=z13
+bfp_arith_CFLAGS   = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
+bfp_compare_CFLAGS = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
+bfp_convert_CFLAGS = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
+bfp_load_CFLAGS    = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
+bfp_tdc_CFLAGS     = $(AM_CFLAGS) @FLAG_MLONG_DOUBLE_128@
+bfp_fpc_CFLAGS     = $(AM_CFLAGS) -march=arch9
+ex_CFLAGS          = $(AM_CFLAGS) -march=arch9
+exrl_CFLAGS        = $(AM_CFLAGS) -march=arch9

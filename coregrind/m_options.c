@@ -188,6 +188,9 @@ Bool   VG_(clo_keep_debuginfo) = False;
 Bool   VG_(clo_show_emwarns)   = False;
 Word   VG_(clo_max_stackframe) = 2000000;
 UInt   VG_(clo_max_threads)    = MAX_THREADS_DEFAULT;
+#if defined(VGO_linux)
+UInt   VG_(clo_max_guard_pages) = MAX_GUARDS_DEFAULT;
+#endif
 Word   VG_(clo_main_stacksize) = 0; /* use client's rlimit.stack */
 Word   VG_(clo_valgrind_stacksize) = VG_DEFAULT_STACK_ACTIVE_SZB;
 Bool   VG_(clo_wait_for_gdb)   = False;

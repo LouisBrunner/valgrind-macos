@@ -1,0 +1,1718 @@
+
+# Suppressions for Darwin 17.x / macOS 10.13 High Sierra
+
+############################################
+## Leaks.  For other stuff see below.
+
+{
+   OSX1013:1-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:2-Leak
+   Memcheck:Leak
+   match-leak-kinds: all
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:3-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_?alloc
+   fun:recursive_mutex_init
+   ...
+   fun:_os_object_init
+   fun:libdispatch_init
+   fun:libSystem_initializer
+}
+
+{
+   OSX1013:4-Leak
+   Memcheck:Leak
+   fun:malloc_zone_?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+}
+
+{
+   OSX1013:5-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:dyld_register_image_state_change_handler
+}
+
+{
+   OSX1013:6-Leak
+   Memcheck:Leak
+   match-leak-kinds: all
+   ...
+   fun:map_images_nolock
+}
+
+{
+   OSX1013:8-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+}
+
+{
+   OSX1013:9-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:libSystem_initializer
+}
+
+{
+   OSX1013:10-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+}
+
+#{
+#   OSX1013:11-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: definite
+#   fun:malloc
+#   fun:currentlocale
+#}
+#
+#{
+#   OSX1013:12-Leak
+#   Memcheck:Leak
+#   match-leak-kinds: possible
+#   fun:malloc
+#   fun:tzsetwall_basic
+#   fun:_st_tzset_basic
+#}
+
+{
+   OSX1013:13-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_memalign
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
+}
+
+{
+   OSX1013:14-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:libSystem_atfork_child
+}
+
+{
+   OSX1013:15-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite,reachable
+   fun:malloc
+   fun:__smakebuf
+   ...
+   fun:printf
+}
+
+{
+   OSX1013:16-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:17-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:18-Leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:_read_images
+}
+
+{
+   OSX1013:19-Leak
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:*NX*Map*
+   fun:*NX*Map*
+}
+
+{
+   OSX1013:20-Leak
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:?alloc
+   ...
+   fun:libSystem_initializer
+}
+
+{
+   OSX1013:21-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc_zone_memalign
+   ...
+   fun:_ZN4dyld24initializeMainExecutableEv
+}
+
+{
+   OSX1013:22-Leak
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__smakebuf
+   fun:__swsetup
+   fun:__sfvwrite
+   fun:fwrite
+}
+
+
+############################################
+## Non-leak errors
+
+##{
+##   OSX1013:CoreFoundation-1
+##   Memcheck:Cond
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##}
+
+{
+   OSX1013:CoreFoundation-2
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:CoreFoundation-3
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1013:CoreFoundation-4
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
+
+{
+   OSX1013:CoreFoundation-5
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIServices.framework*HIServices*
+}
+
+{
+   OSX1013:CoreFoundation-6
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+}
+
+{
+   OSX1013:CoreFoundation-7
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*SystemConfiguration.framework*SystemConfiguration*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1013:CoreFoundation-8
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*IOKit.framework*IOKit*
+}
+
+{
+   OSX1013:CoreFoundation-9
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*Foundation.framework*Foundation*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:CoreFoundation-10
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:CoreFoundation-11
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*AE.framework*AE*
+   obj:*AE.framework*AE*
+}
+
+{
+   OSX1013:CoreFoundation-12
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:CoreFoundation-13
+   Memcheck:Cond
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*CoreFoundation.framework*CoreFoundation*
+   obj:*AE.framework*AE*
+}
+
+{
+   OSX1013:AppKit-1
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:AppKit-2
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+}
+
+#{
+#   OSX1013:AppKit-3
+#   Memcheck:Cond
+#   obj:*AppKit.framework*AppKit*
+#   obj:*libdispatch.dylib*
+#   obj:*libdispatch.dylib*
+#}
+
+##{
+##   OSX1013:AppKit-4
+##   Memcheck:Cond
+##   obj:*AppKit.framework*AppKit*
+##   obj:*AppKit.framework*AppKit*
+##   obj:*CoreFoundation.framework*CoreFoundation*
+##}
+
+{
+   OSX1013:AppKit-5
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1013:AppKit-6
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:AppKit-7
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:AppKit-8
+   Memcheck:Cond
+   obj:*AppKit.framework*AppKit*
+   obj:*Foundation.framework*Foundation*
+   obj:*Foundation.framework*Foundation*
+}
+
+{
+   OSX1013:ColorSync-1
+   Memcheck:Cond
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+   obj:*ColorSync.framework*ColorSync*
+}
+
+#{
+#   OSX1013:ColorSync-2
+#   Memcheck:Value8
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#   obj:*ColorSync.framework*ColorSync*
+#}
+
+{
+   OSX1013:CoreGraphics-1
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*CoreGraphics*
+}
+
+#{
+#   OSX1013:CoreGraphics-2
+#   Memcheck:Value8
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+
+{
+   OSX1013:CoreGraphics-3
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*CoreGraphics.framework*libRIP*
+   obj:*CoreGraphics.framework*libRIP*
+}
+
+#{
+#   OSX1013:CoreGraphics-4
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*libRIP*
+#}
+
+{
+   OSX1013:CoreGraphics-5
+   Memcheck:Cond
+   obj:*CoreGraphics.framework*CoreGraphics*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+#{
+#   OSX1013:CoreGraphics-6
+#   Memcheck:Cond
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#   obj:*HIToolbox.framework*HIToolbox*
+#}
+
+{
+   OSX1013:HIServices-1
+   Memcheck:Cond
+   obj:*HIServices.framework*HIServices*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:LaunchServices-1
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*AppKit.framework*AppKit*
+   obj:*AppKit.framework*AppKit*
+}
+
+{
+   OSX1013:LaunchServices-2
+   Memcheck:Cond
+   obj:*LaunchServices.framework*LaunchServices*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:QuartzCore-1
+   Memcheck:Cond
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+   obj:*QuartzCore.framework*QuartzCore
+}
+
+#{
+#   OSX1013:vImage-1
+#   Memcheck:Cond
+#   obj:*vImage.framework*vImage*
+#   obj:*vImage.framework*vImage*
+#   obj:*CoreGraphics.framework*CoreGraphics*
+#}
+
+{
+   OSX1013:zlib-C
+   Memcheck:Cond
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
+{
+   OSX1013:zlib-8
+   Memcheck:Value8
+   obj:/usr/lib/libz.*dylib
+   obj:/usr/lib/libz.*dylib
+}
+
+{
+   OSX1013:32bit:_libxpc_initializer
+   Memcheck:Cond
+   obj:/usr/lib/system/libsystem_c.dylib
+   obj:/usr/lib/system/libsystem_c.dylib
+   fun:_libxpc_initializer
+   obj:/usr/lib/libSystem.B.dylib
+   fun:*ImageLoaderMachO*doModInitFunctions*
+}
+
+{
+   OSX1013:dyld-1
+   Memcheck:Cond
+   fun:*ImageLoader*weakBind*
+   fun:*ImageLoader*link*
+   fun:*dyld*link*
+}
+
+{
+   OSX1013:dyld-2
+   Memcheck:Cond
+   fun:exit
+   obj:*libdyld*dylib*
+}
+
+{
+   OSX1013:dyld-5
+   Memcheck:Cond
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   fun:_ZN26ImageLoaderMachOCompressed19instantiateFromFileEPKciPKhmyyRK4statjjPK21linkedit_data_commandPK23encryption_info_commandRKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO19instantiateFromFileEPKciPKhmyyRK4statRKN11ImageLoader11LinkContextE
+   fun:_ZN4dyldL10loadPhase6EiRK4statPKcRKNS_11LoadContextE
+}
+
+{
+   OSX1013:libsystem_kernel-1
+   Memcheck:Cond
+   obj:*libsystem_kernel*dylib*
+   obj:*libsystem_kernel*dylib*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1013:CoreServicesInternal-1
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+}
+
+{
+   OSX1013:CoreServicesInternal-2
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+}
+
+{
+   OSX1013:CoreServicesInternal-3
+   Memcheck:Cond
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreServicesInternal.framework*CoreServicesInternal*
+   obj:*CoreFoundation.framework*CoreFoundation*
+}
+
+{
+   OSX1013:CoreServices-1
+   Memcheck:Cond
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+   obj:*CoreServices.framework*LaunchServices*
+}
+
+
+{
+   OSX1013:ApplicationServices-1
+   Memcheck:Cond
+   obj:*ApplicationServices.framework*ATS*
+   obj:*libsystem_pthread*dylib*
+   obj:*libsystem_platform*dylib*
+}
+
+{
+   OSX1013:HIToolbox-1
+   Memcheck:Cond
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+   obj:*HIToolbox.framework*HIToolbox*
+}
+
+{
+   OSX1013:RawCamera-1
+   Memcheck:Cond
+   obj:*RawCamera.bundle*RawCamera*
+   obj:*libdispatch.dylib*
+   obj:*libdispatch.dylib*
+}
+
+{
+   OSX1013:pthread_rwlock_init
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+}
+
+{
+   OSX1013:CFBasicHash
+   Memcheck:Value8
+   fun:*CFBasicHash*
+   fun:*CF*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-1-Addr8
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-1-Addr8
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-2-Addr8
+   Memcheck:Addr8
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-2-Addr2
+   Memcheck:Addr2
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-3-Addr8
+   Memcheck:Addr8
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-3-Addr2
+   Memcheck:Addr2
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-3-Addr1
+   Memcheck:Addr1
+   fun:*platform_memmove*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-4
+   Memcheck:Addr8
+   fun:*platform_bzero*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-6-Addr8
+   Memcheck:Addr8
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-6-Addr4
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1013:AppleIntelHD4000GraphicsGLDriver-7
+   Memcheck:Addr4
+   obj:*AppleIntelHD4000GraphicsGLDriver.bundle*AppleIntelHD4000GraphicsGLDriver*
+   obj:*GLEngine.bundle*GLEngine*
+}
+
+{
+   OSX1013:OSAtomicAdd32
+   Memcheck:Addr4
+   fun:*OSAtomicAdd32*
+   obj:*IOAccelerator.framework*IOAccelerator*
+   obj:*GPUSupport.framework*GPUSupportMercury*
+}
+
+{
+   OSX1013:IOAccelerator-1
+   Memcheck:Addr4
+   obj:*IOAccelerator.framework*IOAccelerator*
+   obj:*GPUSupport.framework*GPUSupportMercury*
+}
+
+# See https://bugs.kde.org/show_bug.cgi?id=188572 about this;  it's
+# unavoidable due to BSD setenv() semantics.
+{
+   macos-__setenv-leak-see-our-bug-188572
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_owned_ptr_alloc
+   fun:setenv
+}
+
+# macOS 10.13 mach-o loader at startup
+{
+   OSX1013:map_images-1
+   Memcheck:Leak
+   match-leak-kinds: all
+   fun:*alloc
+   fun:NXCreate*TableFromZone
+}
+
+{
+   OSX1013:map_images-3
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:_ZL12realizeClassP10objc_class
+}
+
+{
+   OSX1013:map_images-5
+   Memcheck:Leak
+   match-leak-kinds: all
+   fun:malloc_zone_calloc
+   fun:*NXHash*
+}
+
+{
+   OSX1013:vng_aes_encrypt_opt
+   Memcheck:Value8
+   fun:vng_aes_encrypt_opt
+}
+
+{
+   OSX1013:ccaes_vng_ctr_crypt
+   Memcheck:Cond
+   fun:ccaes_vng_ctr_crypt
+}
+
+# Suppressions for Darwin 18.x / macOS 10.14 Mojave
+
+{
+   macOS1014:_dyld_start
+   Memcheck:Cond
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1014:libSystem_initializer
+   Memcheck:Addr16
+   ...
+   fun:libSystem_initializer
+}
+
+{
+   macOS1014:_NXHashRehashToCapacity
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_calloc
+   fun:_NXHashRehashToCapacity
+}
+
+{
+   macOS1014:remapClass(objc_class*)
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_calloc
+   fun:_ZL10remapClassP10objc_class
+}
+
+{
+   macOS1014:NXHashGet
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:NXHashGet
+}
+
+{
+   macOS1014:NXHashInsert
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc*
+   fun:NXHashInsert
+}
+
+{
+   macOS1014:isEqualPrototype(void const*, void const*, void const*)
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_malloc
+   fun:_ZL16isEqualPrototypePKvS0_S0_
+}
+
+# I suppose that this is deliberate
+# and that Apple know what they are doing?
+# On macOS 12 at least this seems to have changed name to ___chkstk_darwin
+# this matches both
+{
+   macOS1015:__chkstk_darwin_probe
+   Memcheck:Addr8
+   fun:__*chkstk_darwin*
+}
+
+{
+   macOS1015:_mh_execute_header
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:_mh_execute_header
+}
+
+{
+   macOS1015:_objc_atfork_parent
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:class_setWeakIvarLayout
+   fun:class_setWeakIvarLayout
+   fun:_objc_atfork_parent
+}
+
+# FIXME PJF all these Addr* issues looks like problems with memory mapping
+
+{
+   macOS1100:_dyld_start
+   Memcheck:Addr8
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1100:_dyld_start
+   Memcheck:Addr4
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1100:__chkstk_darwin_probe
+   Memcheck:Addr1
+   fun:__*chkstk_darwin*
+}
+
+{
+   macOS1100:_dyld_start
+   Memcheck:Addr1
+   ...
+   fun:_dyld_start
+}
+
+{
+   macOS1200:#dyld4::ProcessConfig::ProcessConfig(dyld4::KernelArgs const*, dyld4::SyscallDelegate&)
+   Memcheck:Addr1
+   ...
+   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateE
+}
+
+{
+   macOS1200:#dyld4::ProcessConfig::ProcessConfig(dyld4::KernelArgs const*, dyld4::SyscallDelegate&)
+   Memcheck:Addr8
+   ...
+   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateE
+}
+
+{
+   macOS1200:#dyld4::ProcessConfig::ProcessConfig(dyld4::KernelArgs const*, dyld4::SyscallDelegate&)
+   Memcheck:Addr4
+   ...
+   fun:_ZN5dyld413ProcessConfigC2EPKNS_10KernelArgsERNS_15SyscallDelegateE
+}
+
+{
+   macOS1300:xpc_copy_entitlements_for_self
+   Memcheck:Cond
+   ...
+   fun:xpc_copy_entitlements_for_self
+}
+
+{
+   macOS1300:libSystem_initializer
+   Memcheck:Cond
+   ...
+   fun:libSystem_initializer
+}
+
+{
+   macOS13:DyldSharedCache::*
+   Memcheck:Addr4
+   fun:_ZNK15DyldSharedCache*
+}
+
+{
+   macOS1300:dyld* Value8
+   Memcheck:Value8
+   fun:_ZN*5dyld*
+}
+
+{
+   macOS1300:dyld*
+   Memcheck:Cond
+   fun:_ZN*5dyld*
+}
+
+{
+   macOS1300:dyld*
+   Memcheck:Addr1
+   ...
+   fun:_ZN5dyld*
+}
+
+{
+   macOS1300:dyld*
+   Memcheck:Addr4
+   ...
+   fun:_ZN5dyld*
+}
+
+{
+   macOS1300:dyld*
+   Memcheck:Addr8
+   ...
+   fun:_ZN5dyld*
+}
+
+{
+   macOS1300:dyld3::*
+   Memcheck:Addr16
+   ...
+   fun:_ZN5dyld3*
+}
+
+{
+   macOS1300:DyldSharedCache::*
+   Memcheck:Addr8
+   ...
+   fun:_ZNK15DyldSharedCache*
+}
+
+{
+   macOS1300:DyldSharedCache::*
+   Memcheck:Addr16
+   ...
+   fun:_ZNK15DyldSharedCache*
+}
+
+{
+   macOS1300:libSystem_atfork_child
+   Memcheck:Cond
+   ...
+   fun:libSystem_atfork_child
+}
+
+{
+   macOS1300:libSystem_atfork_child
+   Memcheck:Value8
+   ...
+   fun:libSystem_atfork_child
+}
+
+{
+   macOS1300:_fetchInitializingClassList(bool)
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   fun:_ZL27_fetchInitializingClassListb
+}
+
+{
+   macOS1300:libSystem_initializer
+   Memcheck:Param
+   mach_msg2(msg)
+   fun:mach_msg2_trap
+   fun:mach_msg2_internal
+   fun:task_set_special_port
+   fun:_os_trace_create_debug_control_port
+   fun:_libtrace_init
+   fun:libSystem_initializer
+}
+
+{
+   macOS1300:fork
+   Memcheck:Addr4
+   fun:xpc_atfork_child
+   fun:libSystem_atfork_child
+   fun:fork
+}
+
+# fprintf %-16.14f leaks in various ways
+{
+   darwin fprintf_dtoa
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__Balloc_D2A
+   ...
+   fun:__dtoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vfprintf_l
+   fun:fprintf
+}
+{
+   darwin fprintf_dtoa
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:__Balloc_D2A
+   ...
+   fun:__dtoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vfprintf_l
+   fun:fprintf
+}
+{
+   darwin fprintf_dtoa
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:__Balloc_D2A
+   ...
+   fun:__dtoa
+   fun:__vfprintf
+   fun:__v2printf
+   fun:vfprintf_l
+   fun:fprintf
+}
+
+
+# Suppressions for Darwin 18.x / macOS 10.14 Mojave
+
+############################################
+
+{
+   OSX1014:dyld-1
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyld5_mainEPK12macho_headermiPPKcS5_S5_Pm
+   ...
+}
+
+{
+   OSX1014:dyld-2
+   Memcheck:Value8
+   ...
+   fun:_ZN4dyld5_mainEPK12macho_headermiPPKcS5_S5_Pm
+   ...
+}
+
+{
+   OSX1014:dyld-3
+   Memcheck:Cond
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1014:dyld-4
+   Memcheck:Cond
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+}
+
+{
+   OSX1014:dyld-5
+   Memcheck:Cond
+   ...
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+}
+
+{
+   OSX1014:dyld-6
+   Memcheck:Value8
+   ...
+   fun:_ZN4dyldL14libraryLocatorEPKcbS1_PKN11ImageLoader10RPathChainEbRj
+}
+
+{
+   OSX1014:dyld-7
+   Memcheck:Cond
+   ...
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjPKcRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+
+{
+   OSX1014:dyld-8
+   Memcheck:Value8
+   ...
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjPKcRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+}
+
+{
+   OSX1014:si
+   Memcheck:Cond
+   ...
+   fun:__si_module_static_ds_block_invoke
+}
+
+{
+   OSX1014:xpc
+   Memcheck:Cond
+   ...
+   fun:bootstrap_look_up2
+   ...
+}
+
+{
+   OSX1014:CFPrefsPlistSource
+   Memcheck:Cond
+   ...
+   fun:*CFGetCachedUnsandboxedHomeDirectoryForUser_block_invoke*
+   ...
+}
+
+# Suppressions for Darwin 19.x / macOS 10.15 Catalina
+
+############################################
+
+{
+   OSX1015:dyld-1
+   Memcheck:Cond
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:dyld-2
+   Memcheck:Cond
+   fun:bcmp
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:dyld-3
+   Memcheck:Value8
+   fun:bcmp
+   ...
+   fun:_ZN16ImageLoaderMachO18validateFirstPagesEPK21linkedit_data_commandiPKhmxRKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:dyld-4
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc_zone_?alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-5
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-6
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc_zone_?alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-7
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:*alloc
+   ...
+   fun:_ZN4dyldL18notifyBatchPartialE17dyld_image_statesbPFPKcS0_jPK15dyld_image_infoEbb
+   ...
+}
+
+{
+   OSX1015:dyld-8
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:?alloc
+   ...
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+   ...
+}
+
+{
+   OSX1015:Leak01-printf
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__smakebuf
+   ...
+   fun:printf
+   ...
+}
+
+{
+   OSX1015:Leak02-objc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:class_setWeakIvarLayout
+   fun:class_setWeakIvarLayout
+   fun:_objc_atfork_parent
+   fun:property_copyAttributeList
+   fun:NXMapRemove
+   fun:_ZL16attachCategoriesP10objc_classPK21locstamped_category_tji
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZN10objc_class11mangledNameEv
+   fun:_ZNK8objc_opt17objc_stringhash_t8getIndexEPKc
+}
+
+{
+   OSX1015:Leak03-objc
+   Memcheck:Leak
+   fun:?alloc
+   ...
+   fun:bootstrap_look_up3
+   ...
+}
+
+{
+   OSX1015:Leak04-libsystem_c
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:tzsetwall_basic
+   ...
+}
+
+{
+   OSX1015:Leak05-libsystem_c
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:?alloc
+   ...
+   fun:lookUpImpOrForward
+   ...
+}
+
+# Suppressions for Darwin 21.x / macOS 12.0 Monterey
+
+############################################
+
+{
+   OSX1200:chkstk
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+}
+
+# Suppressions for Darwin 22.x / macOS 13.0 Ventura
+
+############################################
+
+# I don't understand how chkstk works so no clue how to properly handle it
+{
+   OSX1300:chkstk1
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+   fun:_ZN5dyld*
+}
+
+{
+   OSX1300:chkstk2
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+   fun:(below main)
+}
+
+# Due to accessing options.useHaswell, whose value comes from a call to host_info, the options themselves are stack-allocated
+# See https://github.com/apple-oss-distributions/dyld/blob/dyld-1042.1/dyld/SharedCacheRuntime.cpp#L251
+{
+   OSX1300:validMagic
+   Memcheck:Cond
+   ...
+   fun:_ZN5dyld3L10validMagicERKNS_18SharedCacheOptionsEPK15DyldSharedCache
+   ...
+}
+
+# Due to reading GradedArchs::_orderedCpuTypes, which are statically allocated,
+# but GradedArchs::forCurrentOS returns the right one based on isHaswell (which also calls host_info)
+{
+   OSX1300:GradedArchs::checksOSBinary1
+   Memcheck:Value8
+   ...
+   fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
+   ...
+}
+
+{
+   OSX1300:GradedArchs::checksOSBinary2
+   Memcheck:Cond
+   ...
+   fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
+   ...
+}
+
+# Probably (didn't investigate) from getArchNames which uses GradedArchs::forEachArch, which uses GradedArchs::_orderedCpuTypes
+{
+   OSX1300:MachOFile::compatibleSlice
+   Memcheck:Value8
+   ...
+   fun:_ZN5dyld39MachOFile15compatibleSliceER11DiagnosticsPKvmPKcNS_8PlatformEbRKNS_11GradedArchsE
+   ...
+}
+
+# No clue
+{
+   OSX1300:BadBlockInvoke
+   Memcheck:Cond
+   ...
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX1300:libSystemInitializer
+   Memcheck:Cond
+   ...
+   fun:libSystem_initializer
+   fun:___ZZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateEENK3$_0clEv_block_invoke
+   fun:___ZNK5dyld313MachOAnalyzer18forEachInitializerER11DiagnosticsRKNS0_15VMAddrConverterEU13block_pointerFvjEPKv_block_invoke.180
+   fun:___ZNK5dyld39MachOFile14forEachSectionEU13block_pointerFvRKNS0_11SectionInfoEbRbE_block_invoke
+   fun:_ZNK5dyld39MachOFile18forEachLoadCommandER11DiagnosticsU13block_pointerFvPK12load_commandRbE
+   ...
+}
+
+{
+   OSX1300:dyld_setUpPageInLinkingRegions_map_with_linking
+   Memcheck:Param
+   map_with_linking_np(link_info)
+   fun:__map_with_linking_np
+   fun:_ZN5dyld4L25setUpPageInLinkingRegionsERNS_12RuntimeStateEPKNS_6LoaderEmttbRKN5dyld35ArrayINS_18PageInLinkingRangeEEERKNS6_IPKvEE
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+   fun:(below main)
+}
+
+# Suppressions for Darwin 23.x / macOS 14.0 Sonoma
+
+############################################
+
+# I don't understand how chkstk works so no clue how to properly handle it
+
+{
+   OSX1400:chkstk1
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+   fun:(below main)
+}
+
+{
+   OSX1400:chkstk2
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+   fun:_ZNK5dyld4*
+}
+
+{
+   OSX1400:fetch_self_token
+   Memcheck:Cond
+   fun:_fetch_self_token
+   ...
+   fun:_ZNK5dyld*
+}
+
+{
+   OSX1400:system_init1
+   Memcheck:Cond
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1400:system_init2
+   Memcheck:Addr1
+   ...
+   fun:libSystem_initializer
+   ...
+}
+
+{
+   OSX1400:graded_archs
+   Memcheck:Value8
+   fun:_ZNK5dyld311GradedArchs*
+   ...
+}
+
+{
+   OSX1400:validMagic
+   Memcheck:Cond
+   fun:_ZN5dyld3L10validMagicERKNS_18SharedCacheOptionsEPK15DyldSharedCache
+   ...
+}
+
+{
+   OSX1400:stat64
+   Memcheck:Param
+   stat64(path)
+   ...
+   fun:_ZN5dyld4*
+}
+
+{
+   OSX1400:sendto
+   Memcheck:Param
+   socketcall.sendto(msg)
+   ...
+   fun:_libxpc_initializer
+}
+
+# Suppressions for Darwin 24.x / macOS 15.0 Sequoia
+
+############################################
+
+# I don't understand how chkstk works so no clue how to properly handle it
+
+{
+   OSX1500:chkstk
+   Memcheck:Addr1
+   fun:__chkstk_darwin_probe
+   ...
+}
+
+# Related to DSC and other dyld memory access
+
+{
+   OSX1500:dyld_validMagic
+   Memcheck:Cond
+   fun:_ZN5dyld3L10validMagicERKNS_18SharedCacheOptionsEPK15DyldSharedCache
+   ...
+   fun:(below main)
+}
+
+{
+   OSX1500:dyld_checksOSBinary
+   Memcheck:Value8
+   fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+}
+
+{
+   OSX1500:dyld_GradedArchs_grade
+   Memcheck:Value8
+   fun:_ZNK5dyld311GradedArchs5gradeEjjb
+   ...
+   fun:___ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE_block_invoke
+}
+
+{
+   OSX1500:dyld_FileRecord_stat64
+   Memcheck:Param
+   stat64(path)
+   fun:stat$INODE64
+   fun:_ZNK5dyld410FileRecord4statEv
+   ...
+   fun:_ZZN5dyld45startEPNS_10KernelArgsEPvS2_ENK3$_0clEv
+   fun:(below main)
+}
+
+# New in 15.0
+
+{
+   OSX1500:dyld_CRC32cSW
+   Memcheck:Value8
+   fun:_ZN3lsl8CRC32cSW8checksumEjNSt3__14spanISt4byteLm18446744073709551615EEE
+   ...
+   fun:_ZZN5dyld45startEPNS_10KernelArgsEPvS2_ENK3$_0clEv
+   fun:(below main)
+}
+
+{
+   OSX1500:dyld_CRC32cSW_2
+   Memcheck:Value8
+   fun:_ZN3lsl8CRC32cSW8checksumEjNSt3__14spanISt4byteLm18446744073709551615EEE
+   ...
+   fun:_ZN5dyld4L7prepareERNS_4APIsEPKN5dyld313MachOAnalyzerE
+}
+
+{
+   OSX1500:dyld_setUpPageInLinkingRegions_map_with_linking
+   Memcheck:Param
+   map_with_linking_np(link_info)
+   fun:__map_with_linking_np
+   fun:_ZN5dyld4L25setUpPageInLinkingRegionsERNS_12RuntimeStateEPKNS_6LoaderEmttbRKN5dyld35ArrayINS_18PageInLinkingRangeEEERKNS6_IPKvEE
+   ...
+   fun:_ZZN5dyld45startEPNS_10KernelArgsEPvS2_ENK3$_0clEv
+   fun:(below main)
+}
+
+{
+   OSX1500:libc_clock_port
+   Memcheck:Cond
+   obj:*
+   fun:_init_clock_port
+   fun:_libc_initializer
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX1500:libxpc_init
+   Memcheck:Cond
+   obj:*
+   fun:_libxpc_initializer
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX:libsecinit_fetch_self_token
+   Memcheck:Cond
+   fun:_fetch_self_token
+   ...
+   fun:_libsecinit_initializer
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+   OSX1500:libtrace_create_debug_control_port
+   Memcheck:Cond
+   obj:*
+   fun:_os_trace_create_debug_control_port
+   fun:_libtrace_init
+   fun:libSystem_initializer
+   fun:___ZNK5dyld46Loader25findAndRunAllInitializersERNS_12RuntimeStateE_block_invoke
+   ...
+}
+
+{
+  OSX1500:dyld_GradedArchs_checksOSBinary
+  Memcheck:Value8
+  fun:_ZNK5dyld311GradedArchs14checksOSBinaryEv
+  ...
+  fun:_ZN5dyld412RuntimeState21loadInsertedLibrariesERN5dyld317OverflowSafeArrayIPNS_6LoaderELy4294967295EEEPKS3_
+  ...
+}
+
+{
+  OSX1500:dyld_MachOFile_compatibleSlice
+  Memcheck:Value8
+  fun:_ZN5dyld39MachOFile15compatibleSliceER11DiagnosticsRyS3_PKvmPKcN6mach_o8PlatformEbRKNS_11GradedArchsEb
+  ...
+  fun:_ZN5dyld412RuntimeState21loadInsertedLibrariesERN5dyld317OverflowSafeArrayIPNS_6LoaderELy4294967295EEEPKS3_
+  ...
+}
+
+{
+  OSX1500:dyld_mach_msg
+  Memcheck:Param
+  mach_msg2(msg)
+  fun:mach_msg2_trap
+  ...
+  fun:_ZNK5dyld313MachOAnalyzer18forEachInitializerER11DiagnosticsRKNS0_15VMAddrConverterEU13block_pointerFvjEPKv
+  ...
+}
+
+# Happens during a fork
+
+{
+   OSX1500:fork_xpc_cond
+   Memcheck:Cond
+   ...
+   fun:bootstrap_look_up2
+   ...
+}
+
+{
+   OSX1500:fork_xpc_addr16
+   Memcheck:Addr16
+   ...
+   fun:bootstrap_look_up2
+   ...
+}
+
+{
+   OSX1500:ns_initialize_platform_cond
+   Memcheck:Cond
+   ...
+   fun:_NSInitializePlatform
+   ...
+}
+
+{
+   OSX1500:ns_initialize_platform_value8
+   Memcheck:Value8
+   obj:*
+   ...
+   fun:_NSInitializePlatform
+   ...
+}
+
+{
+   OSX1500:ns_initialize_platform_param
+   Memcheck:Param
+   open(filename)
+   obj:*
+   obj:*
+   ...
+   fun:_NSInitializePlatform
+   ...
+}
+
+# Unclear, most likely because of fork
+
+{
+   OSX1500:notify_register_check
+   Memcheck:Cond
+   ...
+   fun:notify_register_check
+   ...
+   fun:si_module_config_modules_for_category
+   ...
+}
+
+{
+   OSX1500:getpwuid_r_addr16
+   Memcheck:Addr16
+   obj:*
+   ...
+   fun:search_user_byuid
+   fun:getpwuid_r
+}
+
+{
+   OSX1500:getpwuid_r_value8
+   Memcheck:Value8
+   obj:*
+   ...
+   fun:search_user_byuid
+   ...
+}
+
+{
+   OSX1500:getpwuid_r_cond
+   Memcheck:Cond
+   ...
+   fun:search_user_byuid
+}
+
+{
+   OSX1500:getpwuid_r_cond_2
+   Memcheck:Cond
+   obj:*
+   obj:*
+   ...
+   fun:ds_user_byuid
+}
+
+{
+   OSX1500:getpwuid_r_value8_2
+   Memcheck:Value8
+   obj:*
+   ...
+   fun:ds_user_byuid
+}
+
+{
+   OSX1500:firehose_param_mach_msg2_1
+   Memcheck:Param
+   mach_msg2(msgh_bits_and_send_size)
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:firehose_drain_notifications_once
+   ...
+   fun:___ZN5dyld44APIs33_dyld_register_func_for_add_imageEPFvPK11mach_headerlE_block_invoke
+   ...
+}
+
+{
+   OSX1500:firehose_param_mach_msg2_1
+   Memcheck:Param
+   mach_msg2(msgh_voucher_and_id)
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:firehose_drain_notifications_once
+   ...
+   fun:___ZN5dyld44APIs33_dyld_register_func_for_add_imageEPFvPK11mach_headerlE_block_invoke
+   ...
+}
+
+# Suppressions for Darwin 25.x / macOS 26.0 Tahoe (amd64)
+
+############################################

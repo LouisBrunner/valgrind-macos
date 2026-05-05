@@ -1,0 +1,27 @@
+Invalid alignment value: 0 (should be non-zero and a power of 2)
+   at 0x........: operator new(unsigned long, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (duplicate_align_size_errors.cpp:19)
+
+Invalid alignment value: 0 (should be non-zero and a power of 2)
+   at 0x........: operator delete(void*, std::align_val_t, std::nothrow_t const&) (vg_replace_malloc.c:...)
+   by 0x........: main (duplicate_align_size_errors.cpp:20)
+
+Unsafe allocation with size of zero is implementation-defined
+   at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
+   ...
+   by 0x........: main (duplicate_align_size_errors.cpp:33)
+
+Mismatched new/delete size value: 33
+   at 0x........: operator delete(void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (duplicate_align_size_errors.cpp:43)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new(unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (duplicate_align_size_errors.cpp:42)
+
+Mismatched new[]/delete[] alignment alloc value: 64 dealloc value: 128
+   at 0x........: operator delete[](void*, unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (duplicate_align_size_errors.cpp:48)
+ Address 0x........ is 0 bytes inside a block of size 32 alloc'd
+   at 0x........: operator new[](unsigned long, std::align_val_t) (vg_replace_malloc.c:...)
+   by 0x........: main (duplicate_align_size_errors.cpp:47)
+

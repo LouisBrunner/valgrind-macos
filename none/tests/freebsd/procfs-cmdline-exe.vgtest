@@ -1,0 +1,4 @@
+prereq: test -d /proc
+args:arg1 "arg 2" arg3
+prog: procfs-cmdline-exe
+stderr_filter: filter_stderr

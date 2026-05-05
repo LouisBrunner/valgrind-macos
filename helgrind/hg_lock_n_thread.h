@@ -163,6 +163,9 @@ typedef
       Addr          guestaddr; /* Guest address of lock */
       LockKind      kind;      /* what kind of lock this is */
       /* USEFUL-DYNAMIC */
+      /* True if pthread_*_init was seen.  Avoids spurious reporting
+         of static/inferred locks with --track-destroy.  */
+      Bool          explicit_init;
       Bool          heldW; 
       WordBag*      heldBy; /* bag of threads that hold this lock */
       /* .heldBy is NULL: lock is unheld, and .heldW is meaningless

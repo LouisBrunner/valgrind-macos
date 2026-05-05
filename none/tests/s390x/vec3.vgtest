@@ -1,0 +1,2 @@
+prog: vec3
+prereq: test -e vec3 && ../../../tests/s390x_features s390x-vx

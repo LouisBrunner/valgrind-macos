@@ -34,6 +34,9 @@ extern long int syscall (long int __sysno, ...) __THROW;
 #define FAIL  assert(-1 == res);
 #define SUCC  assert(-1 != res);
 #define SUCC_OR_FAIL    /* no test */
+// WSL does not implement several syscalls that normally always
+// succeed, mostly the get/set user/group id syscalls
+#define SUCC_OR_WSL_FAIL  if (in_WSL) { FAIL; } else { SUCC; }
 
 #define FAILx(E) \
    do { \

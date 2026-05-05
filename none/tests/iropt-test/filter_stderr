@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# Nothing to filter.
-sed 's/BLA/BLA/'

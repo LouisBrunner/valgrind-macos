@@ -1,0 +1,2 @@
+prereq: ../../../tests/s390x_features s390x-mi3
+prog: popcnt-mi3

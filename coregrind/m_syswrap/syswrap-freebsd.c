@@ -8,7 +8,7 @@
 
    Copyright (C) 2000-2008 Nicholas Nethercote
       njn@valgrind.org
-   Copyright (C) 2018-2021 Paul Floyd
+   Copyright (C) 2018-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -526,6 +526,102 @@ PRE(sys_fork)
 
 // SYS_open 5
 // generic
+// int open(const char *path, int flags, mode_t mode);
+PRE(sys_open)
+{
+   HChar  name[30];   // large enough
+   Bool   proc_curproc_file = False;
+
+   /* Check for /proc/curproc/file or /proc/<pid>/file case
+    * first so that we can then use the later checks. */
+   VG_(sprintf)(name, "/proc/%d/file", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG1, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG1, name) == 0
+           || VG_(strcmp)((HChar *)(Addr)ARG1, "/proc/curproc/file") == 0)) {
+      proc_curproc_file = True;
+   }
+
+   if (ARG2 & VKI_O_CREAT) {
+      // 3-arg version
+      PRINT("sys_open ( %#" FMT_REGWORD "x(%s), %ld, %ld )",ARG1,
+            (HChar*)(Addr)ARG1, SARG2, SARG3);
+      PRE_REG_READ3(long, "open",
+                    const char *, filename, int, flags, int, mode);
+   } else {
+      // 2-arg version
+      PRINT("sys_open ( %#" FMT_REGWORD "x(%s), %ld )",ARG1,
+            (HChar*)(Addr)ARG1, SARG2);
+      PRE_REG_READ2(long, "open",
+                    const char *, filename, int, flags);
+   }
+   PRE_MEM_RASCIIZ( "open(filename)", ARG1 );
+
+   // check that we are not trying to open the client exe for writing
+   if ((ARG2 & VKI_O_WRONLY) ||
+       (ARG2 & VKI_O_RDWR)) {
+      if (proc_curproc_file) {
+         SET_STATUS_Failure( VKI_ETXTBSY );
+         return;
+      } else {
+         vg_assert(VG_(resolved_exename));
+         const HChar* path = (const HChar*)ARG1;
+         if (ML_(safe_to_deref)(path, 1)) {
+            // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
+            HChar tmp[VKI_PATH_MAX];
+            if (VG_(realpath)(path, tmp)) {
+               if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                  SET_STATUS_Failure( VKI_ETXTBSY );
+                  return;
+               }
+            }
+         }
+      }
+   }
+
+   /* Handle the case where the open is of /proc/self/cmdline or
+      /proc/<pid>/cmdline, and just give it a copy of the fd for the
+      fake file we cooked up at startup (in m_main).  Also, seek the
+      cloned fd back to the start. */
+   {
+      HChar* arg1s = (HChar*) (Addr)ARG1;
+      SysRes sres;
+
+      VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
+      if (ML_(safe_to_deref)( arg1s, 1 )
+          && (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/curproc/cmdline"))) {
+         sres = VG_(dup)( VG_(cl_cmdline_fd) );
+         SET_STATUS_from_SysRes( sres );
+         if (!sr_isError(sres)) {
+            OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+            if (off < 0)
+               SET_STATUS_Failure( VKI_EMFILE );
+         }
+         return;
+      }
+   }
+
+   if (proc_curproc_file) {
+      // do the syscall with VG_(resolved_exename)
+      ARG1 = (Word)VG_(resolved_exename);
+   }
+
+   /* Otherwise handle normally */
+   *flags |= SfMayBlock;
+}
+
+POST(sys_open)
+{
+   vg_assert(SUCCESS);
+   POST_newFd_RES;
+   if (!ML_(fd_allowed)(RES, "open", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG1);
+   }
+}
+
 
 // SYS_close   6
 // generic
@@ -1510,7 +1606,7 @@ PRE(sys_getsockopt)
    PRINT("sys_getsockopt ( %" FMT_REGWORD "u, %" FMT_REGWORD "u, %" FMT_REGWORD "u, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",ARG1,ARG2,ARG3,ARG4,ARG5);
    PRE_REG_READ5(int, "getsockopt",
                  int, s, int, level, int, optname,
-                 void *, optval, int, *optlen);
+                 void *, optval, vki_socklen_t, *optlen);
    if (optval_p != (Addr)NULL) {
       ML_(buf_and_len_pre_check) ( tid, optval_p, optlen_p,
                                    "getsockopt(optval)",
@@ -2517,7 +2613,7 @@ PRE(sys_clock_nanosleep)
 
 POST(sys_clock_nanosleep)
 {
-   if (ARG4 != 0 && FAILURE && ERR == VKI_EINTR) {
+   if (ARG4 != 0 && RES == VKI_EINTR) {
       POST_MEM_WRITE( ARG4, sizeof(struct vki_timespec) );
    }
 }
@@ -2736,7 +2832,7 @@ PRE(sys_lutimes)
 // int fhopen(const fhandle_t *fhp, int flags);
 PRE(sys_fhopen)
 {
-   PRINT("sys_open ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",ARG1,ARG2);
+   PRINT("sys_fhopen ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u )",ARG1,ARG2);
    PRE_REG_READ2(int, "fhopen",
                  struct fhandle_t *, fhp, int, flags);
    PRE_MEM_READ( "fhopen(fhp)", ARG1, sizeof(struct vki_fhandle) );
@@ -4115,11 +4211,8 @@ PRE(sys_sigwait)
    PRE_REG_READ2(int, "sigwait",
                  const vki_sigset_t *, set, int *, sig);
    PRE_MEM_READ(  "sigwait(set)",  ARG1, sizeof(vki_sigset_t));
-   vki_sigset_t* set = (vki_sigset_t*)ARG1;
-   if (ML_(safe_to_deref)(set, sizeof(vki_sigset_t))) {
-      *flags |= SfMayBlock;
-   }
    PRE_MEM_WRITE( "sigwait(sig)", ARG2, sizeof(int));
+   *flags |= SfMayBlock;
 }
 
 // sigwait doesn't follow the norm of returning -1 on error
@@ -5111,9 +5204,9 @@ PRE(sys_shm_open)
    PRE_REG_READ3(int, "shm_open",
                  const char *, path, int, flags, vki_mode_t, mode);
    if (ARG1 == VKI_SHM_ANON) {
-      PRINT("sys_shm_open(%#" FMT_REGWORD "x(SHM_ANON), %" FMT_REGWORD "u, %hu)", ARG1, ARG2, (vki_mode_t)ARG3);
+      PRINT("sys_shm_open(%#" FMT_REGWORD "x(SHM_ANON), %" FMT_REGWORD "d, %hu)", ARG1, SARG2, (vki_mode_t)ARG3);
    } else {
-      PRINT("sys_shm_open(%#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %hu)", ARG1, (HChar *)ARG1, ARG2, (vki_mode_t)ARG3);
+      PRINT("sys_shm_open(%#" FMT_REGWORD "x(%s), %" FMT_REGWORD "d, %hu)", ARG1, (HChar *)ARG1, SARG2, (vki_mode_t)ARG3);
       PRE_MEM_RASCIIZ( "shm_open(path)", ARG1 );
    }
    *flags |= SfMayBlock;
@@ -5176,9 +5269,10 @@ POST(sys_cpuset)
 // int faccessat(int fd, const char *path, int mode, int flag);
 PRE(sys_faccessat)
 {
-   PRINT("sys_faccessat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u )", ARG1,ARG2,(char*)ARG2,ARG3);
-   PRE_REG_READ3(int, "faccessat",
-                 int, fd, const char *, path, int, flag);
+   PRINT("sys_faccessat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "d, %" FMT_REGWORD "d )",
+         ARG1, ARG2,(char*)ARG2, SARG3, SARG4);
+   PRE_REG_READ4(int, "faccessat",
+                 int, fd, const char *, path, int, mode, int, flag);
    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "faccessat", tid, status);
    PRE_MEM_RASCIIZ( "faccessat(path)", ARG2 );
 }
@@ -5372,39 +5466,9 @@ PRE(sys_freebsd11_mknodat)
 // int openat(int fd, const char *path, int flags, ...);
 PRE(sys_openat)
 {
-   // check that we are not trying to open the client exe for writing
-   if ((ARG3 & VKI_O_WRONLY) ||
-       (ARG3 & VKI_O_RDWR)) {
-      vg_assert(VG_(resolved_exename) && VG_(resolved_exename)[0] == '/');
-      Int fd = ARG1;
-      const HChar* path = (const HChar*)ARG2;
-      if (ML_(safe_to_deref)(path, 1)) { // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
-         if (fd  == VKI_AT_FDCWD) {
-            HChar tmp[VKI_PATH_MAX];
-            if (VG_(realpath)(path, tmp)) {
-               if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
-                     SET_STATUS_Failure( VKI_ETXTBSY );
-               }
-            }
-         } else {
-            const HChar* dirname;
-            if (VG_(resolve_filename)(fd, &dirname) == False) {
-               goto no_client_write; // let the OS do the error handling
-            }
-            HChar tmp1[VKI_PATH_MAX];
-            VG_(snprintf)(tmp1, VKI_PATH_MAX, "%s/%s", dirname, path);
-            tmp1[VKI_PATH_MAX - 1] = '\0';
-            //VG_(free)((void*)dirname);
-            HChar tmp2[VKI_PATH_MAX];
-            if (VG_(realpath)(tmp1, tmp2)) {
-               if (!VG_(strcmp)(tmp2, VG_(resolved_exename))) {
-                     SET_STATUS_Failure( VKI_ETXTBSY );
-               }
-            }
-         }
-      }
-   }
-no_client_write:
+   HChar  name[30];   // large enough
+   Bool   proc_curproc_file = False;
+
    if (ARG3 & VKI_O_CREAT) {
       // 4-arg version
       PRINT("sys_openat ( %" FMT_REGWORD "u, %#" FMT_REGWORD "x(%s), %" FMT_REGWORD "u, %" FMT_REGWORD "u )",ARG1,ARG2,(char*)ARG2,ARG3,ARG4);
@@ -5418,6 +5482,81 @@ no_client_write:
    }
    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "openat", tid, status);
    PRE_MEM_RASCIIZ("openat(path)", ARG2);
+
+   /* Check for /proc/curproc/file or /proc/<pid>/file case
+    * first so that we can then use the later checks. */
+   VG_(sprintf)(name, "/proc/%d/file", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG1, 1 )
+      && (VG_(strcmp)((HChar *)(Addr)ARG1, name) == 0
+         || VG_(strcmp)((HChar *)(Addr)ARG1, "/proc/curproc/file") == 0)) {
+      proc_curproc_file = True;
+   }
+
+   // check that we are not trying to open the client exe for writing
+   if ((ARG3 & VKI_O_WRONLY) ||
+       (ARG3 & VKI_O_RDWR)) {
+       if (proc_curproc_file) {
+         SET_STATUS_Failure( VKI_ETXTBSY );
+         return;
+      }
+      vg_assert(VG_(resolved_exename) && VG_(resolved_exename)[0] == '/');
+      Int fd = ARG1;
+      const HChar* path = (const HChar*)ARG2;
+      if (ML_(safe_to_deref)(path, 1)) { // we need something like a "ML_(safe_to_deref_path)" that does a binary search for the addressable length, and maybe nul
+         if (fd  == VKI_AT_FDCWD) {
+            HChar tmp[VKI_PATH_MAX];
+            if (VG_(realpath)(path, tmp)) {
+               if (!VG_(strcmp)(tmp, VG_(resolved_exename))) {
+                  SET_STATUS_Failure( VKI_ETXTBSY );
+                  return;
+               }
+            }
+         } else {
+            const HChar* dirname;
+            if (VG_(resolve_filename)(fd, &dirname) == True) {
+               HChar tmp1[VKI_PATH_MAX];
+               VG_(snprintf)(tmp1, VKI_PATH_MAX, "%s/%s", dirname, path);
+               tmp1[VKI_PATH_MAX - 1] = '\0';
+               //VG_(free)((void*)dirname);
+               HChar tmp2[VKI_PATH_MAX];
+               if (VG_(realpath)(tmp1, tmp2)) {
+                  if (!VG_(strcmp)(tmp2, VG_(resolved_exename))) {
+                     SET_STATUS_Failure( VKI_ETXTBSY );
+                     return;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   /* Handle the case where the open is of /proc/curproc/cmdline or
+      /proc/<pid>/cmdline, and just give it a copy of the fd for the
+      fake file we cooked up at startup (in m_main).  Also, seek the
+      cloned fd back to the start. */
+   {
+      HChar* arg2s = (HChar*) (Addr)ARG2;
+      SysRes sres;
+
+      VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
+      if (ML_(safe_to_deref)( arg2s, 1 )
+          && (VG_STREQ(arg2s, name) || VG_STREQ(arg2s, "/proc/curproc/cmdline"))) {
+
+         sres = VG_(dup)( VG_(cl_cmdline_fd) );
+         SET_STATUS_from_SysRes( sres );
+         if (!sr_isError(sres)) {
+            OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+            if (off < 0)
+               SET_STATUS_Failure( VKI_EMFILE );
+         }
+         return;
+      }
+   }
+
+   if (proc_curproc_file) {
+      // do the syscall with VG_(resolved_exename)
+      ARG2 = (Word)VG_(resolved_exename);
+   }
 
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
@@ -6026,13 +6165,13 @@ POST(sys_rctl_remove_rule)
 }
 
 // SYS_posix_fallocate  530
-// x86/amd64
+// x86/amd64/arm64
 
 // SYS_posix_fadvise 531
-// x86/amd64
+// x86/amd64/arm64
 
 // SYS_wait6   532
-// amd64 / x86
+// x86/amd64/arm64
 
 // SYS_cap_rights_limit 533
 //int cap_rights_limit(int fd, const cap_rights_t *rights);
@@ -6281,7 +6420,8 @@ PRE(sys_utimensat)
                  int, flag);
    ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "utimensat", tid, status);
    PRE_MEM_RASCIIZ("utimensat(path)", ARG2);
-   PRE_MEM_READ("utimensat(times)", ARG3, 2*sizeof(struct vki_timespec));
+   if (ARG3)
+      PRE_MEM_READ("utimensat(times)", ARG3, 2*sizeof(struct vki_timespec));
 }
 
 // SYS_fdatasync  550
@@ -6581,7 +6721,7 @@ PRE(sys_copy_file_range)
       valgrind itself uses some, so make sure someone didn't
       put in one of our own...  */
    if (!ML_(fd_allowed)(ARG1, "copy_file_range(infd)", tid, False) ||
-       !ML_(fd_allowed)(ARG3, "copy_file_range(infd)", tid, False))
+       !ML_(fd_allowed)(ARG3, "copy_file_range(outfd)", tid, False))
       SET_STATUS_Failure( VKI_EBADF );
 
    /* Now see if the offsets are defined. PRE_MEM_READ will
@@ -6852,16 +6992,10 @@ PRE(sys_aio_writev)
          // by the members of the iocb->aio_iov array
          // FreeBSD headers #define define this to aio_iovcnt
          SizeT vec_count = (SizeT)iocb->aio_nbytes;
-#if defined(__clang__)
-#pragma clang diagnostic push
-         // yes, I know it is volatile
-#pragma clang diagnostic ignored "-Wcast-qual"
-#endif
-         struct vki_iovec* p_iovec  = (struct vki_iovec*)iocb->aio_buf;
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
-         PRE_MEM_READ("aio_writev(iocb->aio_iov)", (Addr)p_iovec, vec_count*sizeof(struct vki_iovec));
+         uintptr_t uint_aio_buf  = (uintptr_t)iocb->aio_buf;
+         struct vki_iovec* p_iovec = (struct vki_iovec*)uint_aio_buf;
+
+         PRE_MEM_READ("aio_writev(iocb->aio_iov)", uint_aio_buf, vec_count*sizeof(struct vki_iovec));
          // and this to aio_iov
 
          if (ML_(safe_to_deref)(p_iovec, vec_count*sizeof(struct vki_iovec))) {
@@ -6889,15 +7023,7 @@ PRE(sys_aio_readv)
          SET_STATUS_Failure( VKI_EBADF );
       } else {
          SizeT vec_count = (SizeT)iocb->aio_nbytes;
-#if defined(__clang__)
-#pragma clang diagnostic push
-         // yes, I know it is volatile
-#pragma clang diagnostic ignored "-Wcast-qual"
-#endif
-         struct vki_iovec* p_iovec  = (struct vki_iovec*)iocb->aio_buf;
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
+         struct vki_iovec* p_iovec  = (struct vki_iovec*)(uintptr_t)iocb->aio_buf;
          PRE_MEM_READ("aio_readv(iocb->aio_iov)", (Addr)p_iovec,  vec_count*sizeof(struct vki_iovec));
          if (ML_(safe_to_deref)(p_iovec, vec_count*sizeof(struct vki_iovec))) {
             for (SizeT i = 0U; i < vec_count; ++i) {
@@ -7243,6 +7369,39 @@ PRE(sys_jail_remove_jd)
        SET_STATUS_Failure(VKI_EBADF);
 }
 
+// SYS_pdwait   601
+// pid_t pdwait(int fd, int *status, int options,
+//              struct __wrusage *wrusage, siginfo_t *infop);
+PRE(sys_pdwait)
+{
+   PRINT("sys_pdwait ( %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %#" FMT_REGWORD "x )",
+         SARG1, ARG2, SARG3, ARG4, ARG5);
+   PRE_REG_READ5(pid_t, "pdwait", int, fd, int *, status, int, options,
+                 struct vki___wrusage *, wrusage, vki_siginfo_t *,infop);
+   PRE_MEM_WRITE("pdwait(status)", ARG2, sizeof(int));
+   if (ARG5) {
+      PRE_MEM_WRITE("pdwait(wrusage)", ARG4, sizeof(struct vki___wrusage));
+   }
+   if (ARG6) {
+      PRE_MEM_WRITE("pdwait(infop)", ARG5, sizeof(vki_siginfo_t));
+   }
+   if (!ML_(fd_allowed)(ARG1, "pdwait", tid, False)) {
+      SET_STATUS_Failure(VKI_EBADF);
+   }
+}
+
+POST(sys_pdwait)
+{
+   POST_MEM_WRITE(ARG2, sizeof(int));
+   if (ARG5) {
+      POST_MEM_WRITE(ARG4, sizeof(struct vki___wrusage));
+   }
+
+   if (ARG6) {
+      POST_MEM_WRITE(ARG5, sizeof(vki_siginfo_t));
+   }
+}
+
 #undef PRE
 #undef POST
 
@@ -7253,7 +7412,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_read,             sys_read),              // 3
 
    GENX_(__NR_write,            sys_write),             // 4
-   GENXY(__NR_open,             sys_open),              // 5
+   BSDXY(__NR_open,             sys_open),              // 5
    GENX_(__NR_close,            sys_close),             // 6
    GENXY(__NR_wait4,            sys_wait4),             // 7
 
@@ -7629,7 +7788,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_mlockall,         sys_mlockall),          // 324
    BSDX_(__NR_munlockall,       sys_munlockall),        // 325
    BSDXY(__NR___getcwd,         sys___getcwd),          // 326
-   BSDX_(__NR_sched_setparam,   sys_sched_setparam),    // 327
+   BSDXY(__NR_sched_setparam,   sys_sched_setparam),    // 327
    BSDXY(__NR_sched_getparam,   sys_sched_getparam),    // 328
    BSDX_(__NR_sched_setscheduler, sys_sched_setscheduler), // 329
    BSDX_(__NR_sched_getscheduler, sys_sched_getscheduler), // 330
@@ -7957,10 +8116,16 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_getgroups,        sys_getgroups),         // 596
 #endif
 
-    BSDX_(__NR_jail_attach_jd,  sys_jail_attach_jd),    // 597
-    BSDX_(__NR_jail_remove_jd,  sys_jail_remove_jd),    // 598
+   BSDX_(__NR_jail_attach_jd,  sys_jail_attach_jd),    // 597
+   BSDX_(__NR_jail_remove_jd,  sys_jail_remove_jd),    // 598
+   BSDX_(__NR_kexec_load,      sys_kexec_load),        // 599
+   // we only have partial support for rfork, so mark pdrfork
+   // as not implemented for the moment
+   GENX_(__NR_pdrfork,         sys_ni_syscall),        // 600
+   BSDXY(__NR_pdwait,          sys_pdwait),            // 601
+   GENX_(__NR_renameat2,       sys_renameat2),         // 602
 
-   BSDX_(__NR_fake_sigreturn,   sys_fake_sigreturn),    // 1000, fake sigreturn
+   BSDX_(__NR_freebsd_fake_sigreturn,   sys_fake_sigreturn), // 1000, fake sigreturn
 
 };
 

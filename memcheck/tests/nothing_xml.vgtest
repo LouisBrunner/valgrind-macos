@@ -1,0 +1,4 @@
+prereq: [ -x "$(command -v xmllint)" ]
+prog: nothing
+args: | xmllint --noout -
+vgopts: --xml=yes --xml-fd=1

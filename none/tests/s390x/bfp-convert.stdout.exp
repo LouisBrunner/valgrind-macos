@@ -562,37 +562,37 @@ clgxbr inf	cc = 3
 ...setting FPC rounding mode to [-> prepare-short]
 ......f32 -> u32
 clfebr 0.000000	cc = 0
-clfebr -0.250000	cc = 1
+clfebr -0.250000	cc = 3
 clfebr 2.000000	cc = 2
 clfebr nan	cc = 3
 clfebr inf	cc = 3
 ......f32 -> u64
 clgebr 0.000000	cc = 0
-clgebr -0.250000	cc = 1
+clgebr -0.250000	cc = 3
 clgebr 2.000000	cc = 2
 clgebr nan	cc = 3
 clgebr inf	cc = 3
 ......f64 -> u32
 clfdbr 0.000000	cc = 0
-clfdbr -0.250000	cc = 1
+clfdbr -0.250000	cc = 3
 clfdbr 2.000000	cc = 2
 clfdbr nan	cc = 3
 clfdbr inf	cc = 3
 ......f64 -> u64
 clgdbr 0.000000	cc = 0
-clgdbr -0.250000	cc = 1
+clgdbr -0.250000	cc = 3
 clgdbr 2.000000	cc = 2
 clgdbr nan	cc = 3
 clgdbr inf	cc = 3
 ......f128 -> u32
 clfxbr 0.000000	cc = 0
-clfxbr -0.250000	cc = 1
+clfxbr -0.250000	cc = 3
 clfxbr 2.000000	cc = 2
 clfxbr nan	cc = 3
 clfxbr inf	cc = 3
 ......f128 -> u64
 clgxbr 0.000000	cc = 0
-clgxbr -0.250000	cc = 1
+clgxbr -0.250000	cc = 3
 clgxbr 2.000000	cc = 2
 clgxbr nan	cc = 3
 clgxbr inf	cc = 3

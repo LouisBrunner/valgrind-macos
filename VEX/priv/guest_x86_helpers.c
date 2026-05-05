@@ -42,6 +42,7 @@
 #include "guest_generic_bb_to_IR.h"
 #include "guest_x86_defs.h"
 #include "guest_generic_x87.h"
+#include "guest_generic_helpers.h"
 
 
 /* This file contains helper functions for x86 guest code.
@@ -2651,10 +2652,6 @@ void x86g_dirtyhelper_SxDT ( void *address, UInt op ) {
 /*--- Helpers for MMX/SSE/SSE2.                               ---*/
 /*---------------------------------------------------------------*/
 
-static inline UChar abdU8 ( UChar xx, UChar yy ) {
-   return toUChar(xx>yy ? xx-yy : yy-xx);
-}
-
 static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
 }
@@ -2674,39 +2671,6 @@ static inline UShort sel16x4_1 ( ULong w64 ) {
 static inline UShort sel16x4_0 ( ULong w64 ) {
    UInt lo32 = toUInt(w64);
    return toUShort(lo32);
-}
-
-static inline UChar sel8x8_7 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 24);
-}
-static inline UChar sel8x8_6 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 16);
-}
-static inline UChar sel8x8_5 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 8);
-}
-static inline UChar sel8x8_4 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUChar(hi32 >> 0);
-}
-static inline UChar sel8x8_3 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 24);
-}
-static inline UChar sel8x8_2 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 16);
-}
-static inline UChar sel8x8_1 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 8);
-}
-static inline UChar sel8x8_0 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUChar(lo32 >> 0);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
@@ -2912,10 +2876,6 @@ void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state )
 
    vex_state->guest_NRADDR   = 0;
    vex_state->guest_SC_CLASS = 0;
-   vex_state->guest_IP_AT_SYSCALL = 0;
-
-   vex_state->padding1 = 0;
-   vex_state->padding2 = 0;
 }
 
 
@@ -2988,7 +2948,7 @@ VexGuestLayout
 
           /* Describe any sections to be regarded by Memcheck as
              'always-defined'. */
-          .n_alwaysDefd = 24,
+          .n_alwaysDefd = 23,
 
           /* flags thunk: OP and NDEP are always defd, whereas DEP1
              and DEP2 have to be tracked.  See detailed comment in
@@ -3016,8 +2976,7 @@ VexGuestLayout
                  /* 19 */ ALWAYSDEFD(guest_SSEROUND),
                  /* 20 */ ALWAYSDEFD(guest_CMSTART),
                  /* 21 */ ALWAYSDEFD(guest_CMLEN),
-                 /* 22 */ ALWAYSDEFD(guest_SC_CLASS),
-                 /* 23 */ ALWAYSDEFD(guest_IP_AT_SYSCALL)
+                 /* 22 */ ALWAYSDEFD(guest_SC_CLASS)
                }
         };
 

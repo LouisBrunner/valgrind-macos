@@ -157,26 +157,22 @@ typedef struct {
    /*  776 */  ULong guest_CMSTART;
    /*  784 */  ULong guest_CMLEN;
 
-   /* Used when backing up to restart a syscall that has
-      been interrupted by a signal. See also comment in
-      libvex_ir.h */
-   /*  792 */  ULong guest_IP_AT_SYSCALL;
-
    /* Emulation notes; see comments in libvex_emnote.h */
-   /*  800 */  UInt guest_EMNOTE;
+   /*  792 */  UInt guest_EMNOTE;
 
    /* For translation chaining */
-   /*  804 */  UInt  host_EvC_COUNTER;
-   /*  808 */  ULong host_EvC_FAILADDR;
+   /*  796 */  UInt  host_EvC_COUNTER;
+   /*  800 */  ULong host_EvC_FAILADDR;
 
 /*------------------------------------------------------------*/
 /*--- Force alignment to 16 bytes                          ---*/
 /*------------------------------------------------------------*/
-   /*  816 */  UChar padding[0];
+   /*  808 */  ULong padding;
 
    /*  816 */  /* This is the size of the guest state */
 } VexGuestS390XState;
 
+_Static_assert((sizeof(VexGuestS390XState)%16)== 0, "sizeof VexGuestS390XState is not a multiple of 16");
 
 /*------------------------------------------------------------*/
 /*--- Function prototypes                                  ---*/

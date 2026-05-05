@@ -94,6 +94,17 @@
    obj:*/lib*/libthr.so.3
    fun:pthread_create
 }
+
+{
+   HELGRIND-PTHREAD-CREATE3
+   Helgrind:Race
+   fun:free
+   obj:*/lib*/libthr.so.3
+   fun:_pthread_exit_mask
+   fun:_Tthr_exit
+   obj:*/lib*/libthr.so.3
+}
+
 # PJF again a pthread_self() hazard
 {
    HELGRIND-PTHREAD-SELF1
@@ -244,3 +255,10 @@
    Helgrind:Race
    fun:malloc
 }
+
+{
+   FREEBSD16-ARM64-std::__1::ostreambuf_iterator<char, std::__1::char_traits<char>> std::__1::__pad_and_output[abi:se190107]<char, std::__1::char_traits<char>>(std::__1::ostreambuf_iterator<char, std::__1::char_traits<char>>, char const*, char const*, char const*, std::__1::ios_base&, char)
+   Helgrind:Race
+   fun:_ZNSt3__116__pad_and_outputB8se190107IcNS_11char_traitsIcEEEENS_19ostreambuf_iteratorIT_T0_EES6_PKS4_S8_S8_RNS_8ios_baseES4_
+}
+

@@ -106,9 +106,7 @@ s/\(#0  0x........ in do_burn ()\) at sleepers.c:41/\1/
 
 
 #       delete Reading symbols file lines
-#       Note: The 'done.' in "Reading symbols from <exe>...done."
-#         is optional (bugzilla 406357).
-/^Reading symbols from .*\.\.\.\(done\.\)\?/d
+/^Reading symbols from /d
 
 #       delete Loaded symbols file lines
 /^Loaded symbols for .*$/d

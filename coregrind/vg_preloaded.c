@@ -192,8 +192,7 @@ static void env_unsetenv ( HChar **env, const HChar *varname )
    /* fix the 4th "char* apple" pointer (aka. executable path pointer) */
    *(to++) = *(from++);
 
-// FIXME: probably wrong, most likely should be 10.14.6
-#if DARWIN_VERS < DARWIN_14_00
+#if DARWIN_VERS < DARWIN_12_00
    /* We only do this on older versions of darwin because dyld changed
       and by the point we do this changes, the apple env ptr is already set,
       so if we move values around, we'll end up with a pointer pointing inside
@@ -245,15 +244,20 @@ static void env_unsetenv ( HChar **env, const HChar *varname )
 #endif
 }
 
+// FIXME PJF to we really need this?
+// We already do env cleanup before any exec
 static void vg_cleanup_env(void)  __attribute__((constructor));
 static void vg_cleanup_env(void)
 {
     HChar **envp = (HChar**)*_NSGetEnviron();
-    env_unsetenv(envp, "VALGRIND_LAUNCHER");
+#if DARWIN_VERS < DARWIN_11_00
     env_unsetenv(envp, "DYLD_SHARED_REGION");
+#endif
     // GrP fixme should be more like mash_colon_env()
     env_unsetenv(envp, "DYLD_INSERT_LIBRARIES");
-}
+    // FIXME PJF on macOS >= 10.15 we also insert PTHREAD_PTR_MUNGE_TOKEN
+    // should we remove it here?
+}   
 
 /* ---------------------------------------------------------------------
    Darwin arc4random (rdar://6166275)

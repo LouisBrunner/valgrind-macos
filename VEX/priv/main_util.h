@@ -34,6 +34,9 @@
 #ifndef __VEX_MAIN_UTIL_H
 #define __VEX_MAIN_UTIL_H
 
+/* This should be the only <...> include in the entire VEX library. */
+#include <stdarg.h>
+
 #include "libvex_basictypes.h"
 
 #include "libvex_inner.h"
@@ -91,6 +94,9 @@ extern UInt vex_printf ( const HChar *format, ... );
 
 __attribute__ ((format (printf, 2, 3)))
 extern UInt vex_sprintf ( HChar* buf, const HChar *format, ... );
+
+__attribute__ ((format (printf, 2, 0)))
+extern UInt vex_vsprintf ( HChar* buf, const HChar* format, va_list vargs );
 
 
 /* String ops */

@@ -292,6 +292,13 @@ static IRExpr* mkU ( IRType ty, ULong i )
    }
 }
 
+static IRExpr* mkV128 ( UShort mask )
+{
+   return IRExpr_Const(IRConst_V128(mask));
+}
+
+#include "guest_generic_sse.h"
+
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
    stmt( IRStmt_Store(Iend_LE, addr, data) );
@@ -441,8 +448,6 @@ static void unimplemented ( const HChar* str )
 #define OFFB_CMLEN     offsetof(VexGuestAMD64State,guest_CMLEN)
 
 #define OFFB_NRADDR    offsetof(VexGuestAMD64State,guest_NRADDR)
-
-#define OFFB_IP_AT_SYSCALL offsetof(VexGuestAMD64State,guest_IP_AT_SYSCALL)
 
 
 /*------------------------------------------------------------*/
@@ -1668,11 +1673,6 @@ static void putYMMRegLane32 ( UInt ymmreg, Int laneno, IRExpr* e )
 {
    vassert(typeOfIRExpr(irsb->tyenv,e) == Ity_I32);
    stmt( IRStmt_Put( ymmGuestRegLane32offset(ymmreg,laneno), e ) );
-}
-
-static IRExpr* mkV128 ( UShort mask )
-{
-   return IRExpr_Const(IRConst_V128(mask));
 }
 
 /* Write the low half of a YMM reg and zero out the upper half. */
@@ -5967,6 +5967,10 @@ ULong dis_FPU ( /*OUT*/Bool* decode_ok,
                assign(t2, get_ST(r_src));
                put_ST_UNCHECKED(0, mkexpr(t2));
                put_ST_UNCHECKED(r_src, mkexpr(t1));
+               break;
+
+            case 0xD0: /* FNOP */
+               DIP("fnop\n");
                break;
 
             case 0xE0: /* FCHS */
@@ -11231,30 +11235,6 @@ static IRTemp math_SHUFPD_256 ( IRTemp sV, IRTemp dV, UInt imm8 )
 }
 
 
-static IRTemp math_BLENDPD_128 ( IRTemp sV, IRTemp dV, UInt imm8 )
-{
-   UShort imm8_mask_16;
-   IRTemp imm8_mask = newTemp(Ity_V128);
-
-   switch( imm8 & 3 ) {
-      case 0:  imm8_mask_16 = 0x0000; break;
-      case 1:  imm8_mask_16 = 0x00FF; break;
-      case 2:  imm8_mask_16 = 0xFF00; break;
-      case 3:  imm8_mask_16 = 0xFFFF; break;
-      default: vassert(0);            break;
-   }
-   assign( imm8_mask, mkV128( imm8_mask_16 ) );
-
-   IRTemp res = newTemp(Ity_V128);
-   assign ( res, binop( Iop_OrV128, 
-                        binop( Iop_AndV128, mkexpr(sV),
-                                            mkexpr(imm8_mask) ), 
-                        binop( Iop_AndV128, mkexpr(dV), 
-                               unop( Iop_NotV128, mkexpr(imm8_mask) ) ) ) );
-   return res;
-}
-
-
 static IRTemp math_BLENDPD_256 ( IRTemp sV, IRTemp dV, UInt imm8 )
 {
    IRTemp sVhi = IRTemp_INVALID, sVlo = IRTemp_INVALID;
@@ -11268,26 +11248,6 @@ static IRTemp math_BLENDPD_256 ( IRTemp sV, IRTemp dV, UInt imm8 )
    return rV;
 }
 
-
-static IRTemp math_BLENDPS_128 ( IRTemp sV, IRTemp dV, UInt imm8 )
-{
-   UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00,
-                             0x0F0F, 0x0FF0, 0x0FFF, 0xF000, 0xF00F,
-                             0xF0F0, 0xF0FF, 0xFF00, 0xFF0F, 0xFFF0,
-                             0xFFFF };
-   IRTemp imm8_mask = newTemp(Ity_V128);
-   assign( imm8_mask, mkV128( imm8_perms[ (imm8 & 15) ] ) );
-
-   IRTemp res = newTemp(Ity_V128);
-   assign ( res, binop( Iop_OrV128,
-                        binop( Iop_AndV128, mkexpr(sV), 
-                                            mkexpr(imm8_mask) ),
-                        binop( Iop_AndV128, mkexpr(dV),
-                               unop( Iop_NotV128, mkexpr(imm8_mask) ) ) ) );
-   return res;
-}
-
-
 static IRTemp math_BLENDPS_256 ( IRTemp sV, IRTemp dV, UInt imm8 )
 {
    IRTemp sVhi = IRTemp_INVALID, sVlo = IRTemp_INVALID;
@@ -11299,29 +11259,6 @@ static IRTemp math_BLENDPS_256 ( IRTemp sV, IRTemp dV, UInt imm8 )
    IRTemp rV   = newTemp(Ity_V256);
    assign(rV, binop(Iop_V128HLtoV256, mkexpr(rVhi), mkexpr(rVlo)));
    return rV;
-}
-
-
-static IRTemp math_PBLENDW_128 ( IRTemp sV, IRTemp dV, UInt imm8 )
-{
-   /* Make w be a 16-bit version of imm8, formed by duplicating each
-      bit in imm8. */
-   Int i;
-   UShort imm16 = 0;
-   for (i = 0; i < 8; i++) {
-      if (imm8 & (1 << i))
-         imm16 |= (3 << (2*i));
-   }
-   IRTemp imm16_mask = newTemp(Ity_V128);
-   assign( imm16_mask, mkV128( imm16 ));
-
-   IRTemp res = newTemp(Ity_V128);
-   assign ( res, binop( Iop_OrV128,
-                        binop( Iop_AndV128, mkexpr(sV), 
-                                            mkexpr(imm16_mask) ),
-                        binop( Iop_AndV128, mkexpr(dV),
-                               unop( Iop_NotV128, mkexpr(imm16_mask) ) ) ) );
-   return res;
 }
 
 
@@ -16694,29 +16631,6 @@ Long dis_ESC_0F__SSE4 ( Bool* decode_OK,
 /*---                                                      ---*/
 /*------------------------------------------------------------*/
 
-static IRTemp math_PBLENDVB_128 ( IRTemp vecE, IRTemp vecG,
-                                  IRTemp vec0/*controlling mask*/,
-                                  UInt gran, IROp opSAR )
-{
-   /* The tricky bit is to convert vec0 into a suitable mask, by
-      copying the most significant bit of each lane into all positions
-      in the lane. */
-   IRTemp sh = newTemp(Ity_I8);
-   assign(sh, mkU8(8 * gran - 1));
-
-   IRTemp mask = newTemp(Ity_V128);
-   assign(mask, binop(opSAR, mkexpr(vec0), mkexpr(sh)));
-
-   IRTemp notmask = newTemp(Ity_V128);
-   assign(notmask, unop(Iop_NotV128, mkexpr(mask)));
-
-   IRTemp res = newTemp(Ity_V128);
-   assign(res,  binop(Iop_OrV128,
-                      binop(Iop_AndV128, mkexpr(vecE), mkexpr(mask)),
-                      binop(Iop_AndV128, mkexpr(vecG), mkexpr(notmask))));
-   return res;
-}
-
 static IRTemp math_PBLENDVB_256 ( IRTemp vecE, IRTemp vecG,
                                   IRTemp vec0/*controlling mask*/,
                                   UInt gran, IROp opSAR128 )
@@ -19113,60 +19027,6 @@ static IRTemp math_DPPS_128 ( IRTemp src_vec, IRTemp dst_vec, UInt imm8 )
    return res;
 }
 
-
-static IRTemp math_MPSADBW_128 ( IRTemp dst_vec, IRTemp src_vec, UInt imm8 )
-{
-   /* Mask out bits of the operands we don't need.  This isn't
-      strictly necessary, but it does ensure Memcheck doesn't
-      give us any false uninitialised value errors as a
-      result. */
-   UShort src_mask[4] = { 0x000F, 0x00F0, 0x0F00, 0xF000 };
-   UShort dst_mask[2] = { 0x07FF, 0x7FF0 };
-
-   IRTemp src_maskV = newTemp(Ity_V128);
-   IRTemp dst_maskV = newTemp(Ity_V128);
-   assign(src_maskV, mkV128( src_mask[ imm8 & 3 ] ));
-   assign(dst_maskV, mkV128( dst_mask[ (imm8 >> 2) & 1 ] ));
-
-   IRTemp src_masked = newTemp(Ity_V128);
-   IRTemp dst_masked = newTemp(Ity_V128);
-   assign(src_masked, binop(Iop_AndV128, mkexpr(src_vec), mkexpr(src_maskV)));
-   assign(dst_masked, binop(Iop_AndV128, mkexpr(dst_vec), mkexpr(dst_maskV)));
-
-   /* Generate 4 64 bit values that we can hand to a clean helper */
-   IRTemp sHi = newTemp(Ity_I64);
-   IRTemp sLo = newTemp(Ity_I64);
-   assign( sHi, unop(Iop_V128HIto64, mkexpr(src_masked)) );
-   assign( sLo, unop(Iop_V128to64,   mkexpr(src_masked)) );
-
-   IRTemp dHi = newTemp(Ity_I64);
-   IRTemp dLo = newTemp(Ity_I64);
-   assign( dHi, unop(Iop_V128HIto64, mkexpr(dst_masked)) );
-   assign( dLo, unop(Iop_V128to64,   mkexpr(dst_masked)) );
-
-   /* Compute halves of the result separately */
-   IRTemp resHi = newTemp(Ity_I64);
-   IRTemp resLo = newTemp(Ity_I64);
-
-   IRExpr** argsHi
-      = mkIRExprVec_5( mkexpr(sHi), mkexpr(sLo), mkexpr(dHi), mkexpr(dLo),
-                       mkU64( 0x80 | (imm8 & 7) ));
-   IRExpr** argsLo
-      = mkIRExprVec_5( mkexpr(sHi), mkexpr(sLo), mkexpr(dHi), mkexpr(dLo),
-                       mkU64( 0x00 | (imm8 & 7) ));
-
-   assign(resHi, mkIRExprCCall( Ity_I64, 0/*regparm*/,
-                                "amd64g_calc_mpsadbw",
-                                &amd64g_calc_mpsadbw, argsHi ));
-   assign(resLo, mkIRExprCCall( Ity_I64, 0/*regparm*/,
-                                "amd64g_calc_mpsadbw",
-                                &amd64g_calc_mpsadbw, argsLo ));
-
-   IRTemp res = newTemp(Ity_V128);
-   assign(res, binop(Iop_64HLtoV128, mkexpr(resHi), mkexpr(resLo)));
-   return res;
-}
-
 static Long dis_EXTRACTPS ( const VexAbiInfo* vbi, Prefix pfx,
                             Long delta, Bool isAvx )
 {
@@ -20788,8 +20648,8 @@ Long dis_ESC_NONE (
          dis_REP_op ( dres, AMD64CondAlways, dis_MOVS, sz,
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "rep movs", pfx );
-        dres->whatNext = Dis_StopHere;
-        return delta;
+         vassert(dres->whatNext == Dis_StopHere);
+         return delta;
       }
       /* A4: movsb */
       if (!haveF3(pfx) && !haveF2(pfx)) {
@@ -20802,14 +20662,31 @@ Long dis_ESC_NONE (
 
    case 0xA6:
    case 0xA7:
-      /* F3 A6/A7: repe cmps/rep cmps{w,l,q} */
-      if (haveF3(pfx) && !haveF2(pfx)) {
+      /* F2 A6/A7: repne cmpsb/repne cmps{w,l,q} */
+      if (haveF2(pfx) && !haveF3(pfx)) {
+         if (opc == 0xA6)
+            sz = 1;
+         dis_REP_op ( dres, AMD64CondNZ, dis_CMPS, sz, 
+                      guest_RIP_curr_instr,
+                      guest_RIP_bbstart+delta, "repne cmps", pfx );
+         vassert(dres->whatNext == Dis_StopHere);
+         return delta;
+      }
+      /* F3 A6/A7: repe cmpsb/repe cmps{w,l,q} */
+      if (!haveF2(pfx) && haveF3(pfx)) {
          if (opc == 0xA6)
             sz = 1;
          dis_REP_op ( dres, AMD64CondZ, dis_CMPS, sz, 
                       guest_RIP_curr_instr,
                       guest_RIP_bbstart+delta, "repe cmps", pfx );
-         dres->whatNext = Dis_StopHere;
+         vassert(dres->whatNext == Dis_StopHere);
+         return delta;
+      }
+      /* A6/A7: cmpsb/cmps{w,l,q} */
+      if (!haveF2(pfx) && !haveF3(pfx)) {
+         if (opc == 0xA6)
+            sz = 1;
+         dis_string_op ( dis_CMPS, sz, "cmps", pfx );
          return delta;
       }
       goto decode_failure;
@@ -21820,8 +21697,9 @@ Long dis_ESC_0F (
       /* It's important that all guest state is up-to-date
          at this point.  So we declare an end-of-block here, which
          forces any cached guest state to be flushed. */
-      stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
-                        mkU64(guest_RIP_curr_instr) ) );
+      // TODO: LB, needed for macOS
+      // stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL,
+      //                   mkU64(guest_RIP_curr_instr) ) );
       jmp_lit(dres, Ijk_Sys_syscall, guest_RIP_next_assumed);
       vassert(dres->whatNext == Dis_StopHere);
       DIP("syscall\n");

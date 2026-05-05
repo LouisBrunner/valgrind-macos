@@ -276,21 +276,17 @@ typedef
       /* 1380 */ ULong guest_REDIR_SP;
       /* 1388 */ ULong guest_REDIR_STACK[VEX_GUEST_PPC64_REDIR_STACK_SIZE];
 
-      /* Needed for Darwin: CIA at the last SC insn.  Used when backing up
-         to restart a syscall that has been interrupted by a signal. */
-      /* 1648 */ ULong guest_IP_AT_SYSCALL;
-
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
-      /* 1656 */ ULong guest_SPRG3_RO;
+      /* 1648 */ ULong guest_SPRG3_RO;
 
-      /* 1664 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
-      /* 1672 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
-      /* 1680 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
-      /* 1688 */ ULong guest_PPR;       // Program Priority register
-      /* 1696 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
-      /* 1700 */ UInt  guest_PSPB;      // Problem State Priority Boost register
-      /* 1704 */ ULong guest_DSCR;      // Data Stream Control register
+      /* 1656 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
+      /* 1664 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1672 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
+      /* 1680 */ ULong guest_PPR;       // Program Priority register
+      /* 1688 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1692 */ UInt  guest_PSPB;      // Problem State Priority Boost register
+      /* 1696 */ ULong guest_DSCR;      // Data Stream Control register
 
       /* Historical note, Initial ACC support was implemented to use a separate
          register file, but in practice (ISA 3.1) the hardware implementation
@@ -302,48 +298,47 @@ typedef
       /* The guest_ACC_entries must be in order and sequential.  The helper
          routines get_ACC_entry(), write_ACC_entry() calculate the offset of
          the ACC entry based on a address of guest_ACC_0_r0.  */
-      /* 1712 */   U128  guest_ACC_0_r0;
-      /* 1728 */   U128  guest_ACC_0_r1;
-      /* 1744 */   U128  guest_ACC_0_r2;
-      /* 1760 */   U128  guest_ACC_0_r3;
-      /* 1776 */   U128  guest_ACC_1_r0;
-      /* 1792 */   U128  guest_ACC_1_r1;
-      /* 1808 */   U128  guest_ACC_1_r2;
-      /* 1824 */   U128  guest_ACC_1_r3;
-      /* 1840 */   U128  guest_ACC_2_r0;
-      /* 1856 */   U128  guest_ACC_2_r1;
-      /* 1872 */   U128  guest_ACC_2_r2;
-      /* 1888 */   U128  guest_ACC_2_r3;
-      /* 1904 */   U128  guest_ACC_3_r0;
-      /* 1920 */   U128  guest_ACC_3_r1;
-      /* 1936 */   U128  guest_ACC_3_r2;
-      /* 1952 */   U128  guest_ACC_3_r3;
-      /* 1968 */   U128  guest_ACC_4_r0;
-      /* 1984 */   U128  guest_ACC_4_r1;
-      /* 2000 */   U128  guest_ACC_4_r2;
-      /* 2016 */   U128  guest_ACC_4_r3;
-      /* 2032 */   U128  guest_ACC_5_r0;
-      /* 2048 */   U128  guest_ACC_5_r1;
-      /* 2064 */   U128  guest_ACC_5_r2;
-      /* 2080 */   U128  guest_ACC_5_r3;
-      /* 2096 */   U128  guest_ACC_6_r0;
-      /* 2112 */   U128  guest_ACC_6_r1;
-      /* 2128 */   U128  guest_ACC_6_r2;
-      /* 2144 */   U128  guest_ACC_6_r3;
-      /* 2160 */   U128  guest_ACC_7_r0;
-      /* 2176 */   U128  guest_ACC_7_r1;
-      /* 2192 */   U128  guest_ACC_7_r2;
-      /* 2208 */   U128  guest_ACC_7_r3;
+      /* 1704 */   U128  guest_ACC_0_r0;
+      /* 1720 */   U128  guest_ACC_0_r1;
+      /* 1736 */   U128  guest_ACC_0_r2;
+      /* 1752 */   U128  guest_ACC_0_r3;
+      /* 1768 */   U128  guest_ACC_1_r0;
+      /* 1784 */   U128  guest_ACC_1_r1;
+      /* 1800 */   U128  guest_ACC_1_r2;
+      /* 1816 */   U128  guest_ACC_1_r3;
+      /* 1832 */   U128  guest_ACC_2_r0;
+      /* 1848 */   U128  guest_ACC_2_r1;
+      /* 1864 */   U128  guest_ACC_2_r2;
+      /* 1880 */   U128  guest_ACC_2_r3;
+      /* 1896 */   U128  guest_ACC_3_r0;
+      /* 1912 */   U128  guest_ACC_3_r1;
+      /* 1928 */   U128  guest_ACC_3_r2;
+      /* 1944 */   U128  guest_ACC_3_r3;
+      /* 1960 */   U128  guest_ACC_4_r0;
+      /* 1976 */   U128  guest_ACC_4_r1;
+      /* 1992 */   U128  guest_ACC_4_r2;
+      /* 2008 */   U128  guest_ACC_4_r3;
+      /* 2024 */   U128  guest_ACC_5_r0;
+      /* 2040 */   U128  guest_ACC_5_r1;
+      /* 2056 */   U128  guest_ACC_5_r2;
+      /* 2072 */   U128  guest_ACC_5_r3;
+      /* 2088 */   U128  guest_ACC_6_r0;
+      /* 2104 */   U128  guest_ACC_6_r1;
+      /* 2120 */   U128  guest_ACC_6_r2;
+      /* 2136 */   U128  guest_ACC_6_r3;
+      /* 2152 */   U128  guest_ACC_7_r0;
+      /* 2168 */   U128  guest_ACC_7_r1;
+      /* 2184 */   U128  guest_ACC_7_r2;
+      /* 2200 */   U128  guest_ACC_7_r3;
 
-      /* 2224 */   UInt guest_syscall_flag;
-      /* 2228 */   UInt padding1;
-      /* 2232 */   UInt padding2;
-      /* 2236 */   UInt padding3;
+      /* 2216 */   UInt guest_syscall_flag;
       /* Padding to make it have an 16-aligned size */
-      /* 2222    UInt  padding0; */
    }
    VexGuestPPC64State;
 
+#if defined(__LP64__)
+_Static_assert((sizeof(VexGuestPPC64State)%16)== 0, "sizeof VexGuestPPC64State is not a multiple of 16");
+#endif
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for PPC64 guest stuff.                ---*/

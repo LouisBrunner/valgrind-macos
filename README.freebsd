@@ -186,6 +186,76 @@ git history. You can also look at
 
 https://docs.freebsd.org/en/books/porters-handbook/versions/
 
+More about syscalls
+-------------------
+
+One thing that is specific to FreeBSD (and Darwin) is how the "syscall()"
+libc function is implemented. On Linux this function shuffles the arguments
+so that "syscall(__NR_write, 1, data, len)" will result in syscall
+__NR_write (4) with arguments 1, data, len. On FreeBSD (and Darwin) this
+shuffling is not done in libc, it is done in the kernel. FreeBSD has two
+special "syscall syscalls". These are syscalls 0 and 198, which take
+the target syscall number and its arguments as parameters.
+"syscall(SYS_write, 1, data, len)" on FreeBSD will result in
+syscall SYS_syscall (0) with arguments 4 (SYS_write), 1, data, len. The
+kernel will then call kern_write with arguments 1, data, len.
+
+The way that syscall arguments are passed on FreeBSD depends on the
+architecture. On x86 they are all on the stack. On arm64 they are
+all in registers. On amd64 the syscall number and the first six arguments
+are in registers and any further arguments are on the stack.
+
+There are two ways that Valgrind makes syscalls.
+a) for its own use as the host
+b) on behalf of the guest.
+
+The first category are fairly straightforward. These are called via a
+series of macros from VG_(do_syscall0) to VG_(do_syscall8). The number
+indicates the argument count. The macros expand to VG_(do_syscall) which
+uses do_syscall_WRK to do the job in assembler.
+
+The second category can be much more complicated. It is all done in
+VG_(client_syscall). There are extensive explanations in the same file,
+syswrap-main.c. The main things that this function does are
+
+i.    Get the syscall arguments with getSyscallArgsFromGuestState. This function
+      has special handling for "syscall syscall". Since we want to validate
+      the arguments of the final syscall getSyscallArgsFromGuestState will shuffle
+      the arguments to be in the order of the final syscall (canonical order).
+      In order to be able to distinguish between "syscall syscall" and other syscalls
+      two syscall numbers may be stored, original_sysno and canonical_sysno.
+      Usually they are the same, only differing for "syscall syscall".
+ii.   Call getSyscallArgLayout. This is always in canonical form. The layout
+      indicates whether arguments are in registers or on the stack. On FreeBSD
+      with "syscall syscall" the arguments are effectively bumped up one slot.
+      That means that there is special handling for argument 6 on amd64,
+      which can either be in a register or on the stack depending on whether
+      it is a regular syscall or "syscall syscall".
+iii.  Call a pre-syscall tool hook (mainly used for syscall timing by callgrind
+      and cachegrind). This uses the args from step i.
+iv.   Call the PRE handler. That uses the arguments fetched in step i and the layout
+      obtained in step ii. The PRE_REG_READX macros use the layout and
+      the PRE_MEM_READ/WRITE and ARGX macros use the canonical arguments.
+
+Several things are possible at this point. The PRE may have performed the
+syscall or marked it as complete. The syscall may be marked as blocking.
+If the syscall is not blocking then Valgrind just makes the syscall and stores
+the result. Blocking system calls are more complicated and continue as follows.
+
+v.    Put back the syscall arguments with putSyscallArgsIntoGuestState()
+      (they may have changed in the PRE). On FreeBSD the original_sysno is checked
+      to see which form of unshuffling needs to be done.
+vi.   Call the syscall via ML_(do_syscall_for_client_WRK). This is preceded
+      by releasing the global lock and restoring the client signal mask, and
+      followed by blocking signals and acquiring the global lock. 
+vii.  Get the syscall arguments again with getSyscallArgsFromGuestState.
+      This is only required to match the non-blocking flow.
+
+The final two steps are for both blocking and non-blocking system calls.
+
+viii. Put the syscall result into the guest state.
+ix.   Call the post handler.
+
 Capsicum enabled applications
 -----------------------------
 Valgrind will not work well with Capsicum enabled applications. As an example,

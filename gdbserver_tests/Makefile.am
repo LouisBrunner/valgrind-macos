@@ -32,17 +32,13 @@ EXTRA_DIST = \
 	hginfo.stdinB.gdb \
 	hginfo.stdoutB.exp \
 	hginfo.vgtest \
-	hgtls.stderrB.exp \
-	hgtls.stderr.exp \
 	hgtls.stdinB.gdb \
 	hgtls.stdoutB.exp \
 	hgtls.vgtest \
-	mcblocklistsearch.stderr.exp \
 	mcblocklistsearch.stdinB.gdb \
 	mcblocklistsearch.vgtest \
 	mcblocklistsearch.stderrB.exp \
 	mcbreak.stderrB.exp \
-	mcbreak.stderr.exp \
 	mcbreak.stdinB.gdb \
 	mcbreak.stdoutB.exp \
 	mcbreak.stdout.exp \
@@ -53,10 +49,8 @@ EXTRA_DIST = \
 	mcclean_after_fork.stdoutB.exp \
 	mcclean_after_fork.vgtest \
 	mchelp.stderrB.exp \
-	mchelp.stderr.exp \
 	mchelp.stdoutB.exp \
 	mchelp.vgtest \
-	mcinfcallRU.stderrB.exp \
 	mcinfcallRU.stderr.exp \
 	mcinfcallRU.stdinB.gdb \
 	mcinfcallRU.vgtest \
@@ -65,11 +59,9 @@ EXTRA_DIST = \
 	mcinfcallWSRU.stdinB.gdb \
 	mcinfcallWSRU.vgtest \
 	mcinvokeRU.stderrB.exp \
-	mcinvokeRU.stderr.exp \
 	mcinvokeRU.stdoutB.exp \
 	mcinvokeRU.vgtest \
 	mcinvokeWS.stderrB.exp \
-	mcinvokeWS.stderr.exp \
 	mcinvokeWS.stdoutB.exp \
 	mcinvokeWS.vgtest \
 	mcleak.stderrB.exp \
@@ -89,34 +81,28 @@ EXTRA_DIST = \
 	mcmain_pic.stdinB.gdb \
 	mcmain_pic.stdoutB.exp \
 	mcmain_pic.stdout.exp \
-	mcsignopass.stderrB.exp \
 	mcsignopass.stderr.exp \
 	mcsignopass.stdinB.gdb \
 	mcsignopass.stdoutB.exp \
 	mcsignopass.stdoutB.exp-freebsd \
 	mcsignopass.vgtest \
-	mcsigpass.stderrB.exp \
 	mcsigpass.stderr.exp \
 	mcsigpass.stdinB.gdb \
 	mcsigpass.stdoutB.exp \
 	mcsigpass.stdoutB.exp-freebsd \
 	mcsigpass.vgtest \
 	mcvabits.stderrB.exp \
-	mcvabits.stderr.exp \
 	mcvabits.stdinB.gdb \
 	mcvabits.stdoutB.exp \
 	mcvabits.vgtest \
-	mcwatchpoints.stderrB.exp \
 	mcwatchpoints.stderr.exp \
 	mcwatchpoints.stdinB.gdb \
 	mcwatchpoints.stdoutB.exp \
 	mcwatchpoints.vgtest \
 	mssnapshot.stderrB.exp \
-	mssnapshot.stderr.exp \
 	mssnapshot.stdinB.gdb \
 	mssnapshot.stdoutB.exp \
 	mssnapshot.vgtest \
-	nlcontrolc.stderrB.exp \
 	nlcontrolc.stderr.exp \
 	nlcontrolc.stdinB.gdb \
 	nlcontrolc.stdoutB.exp \
@@ -126,17 +112,14 @@ EXTRA_DIST = \
 	nlfork_chain.stdout.exp \
 	nlfork_chain.vgtest \
 	nlgone_abrt.stderr.exp \
-	nlgone_abrt.stderrB.exp \
 	nlgone_abrt.stdinB.gdb \
 	nlgone_abrt.stdoutB.exp \
 	nlgone_abrt.vgtest \
 	nlgone_exit.stderr.exp \
-	nlgone_exit.stderrB.exp \
 	nlgone_exit.stdinB.gdb \
 	nlgone_exit.stdoutB.exp \
 	nlgone_exit.vgtest \
 	nlgone_return.stderr.exp \
-	nlgone_return.stderrB.exp \
 	nlgone_return.stdinB.gdb \
 	nlgone_return.stdoutB.exp \
 	nlgone_return.vgtest \
@@ -145,7 +128,6 @@ EXTRA_DIST = \
 	nlpasssigalrm.stderr.exp \
 	nlpasssigalrm.stdinB.gdb \
 	nlpasssigalrm.stdoutB.exp \
-	nlself_invalidate.stderrB.exp \
 	nlself_invalidate.stderr.exp \
 	nlself_invalidate.stdinB.gdb \
 	nlself_invalidate.vgtest \
@@ -154,7 +136,6 @@ EXTRA_DIST = \
 	nlsigvgdb.stderrB.exp \
 	nlsigvgdb.stdinB.gdb \
 	nlvgdbsigqueue.vgtest \
-	nlvgdbsigqueue.stderrB.exp \
 	nlvgdbsigqueue.stderr.exp \
 	nlvgdbsigqueue.stdinB.gdb \
 	nlvgdbsigqueue.stdoutB.exp \

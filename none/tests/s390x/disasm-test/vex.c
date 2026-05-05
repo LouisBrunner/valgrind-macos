@@ -4,7 +4,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024-2025  Florian Krohm
+   Copyright (C) 2024-2026  Florian Krohm
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -26,7 +26,8 @@
 #include "libvex.h"           // LibVEX_Init
 #include "guest_s390_defs.h"  // disInstr_S390
 #include "host_s390_defs.h"   // s390_host_hwcaps
-#include "main_globals.h"     // vex_traceflags
+#include "main_globals.h"     // vex_init_done
+#include "s390_disasm.h"
 
 /* Some VEX header defines this. Need to get rid of it before
    including standard headers. */
@@ -98,9 +99,6 @@ vex_init(void)
    LibVEX_default_VexControl(&vcon);
    LibVEX_Init(vex_exit, vex_put_string, 0, &vcon);
 
-   /* Enable disassembly. */
-   vex_traceflags = VEX_TRACE_FE;
-
    /* Pretend all hardware extensions are available to avoid running
       into an emulation failure */
    s390_host_hwcaps = VEX_HWCAPS_S390X_ALL;
@@ -119,8 +117,9 @@ vex_reset(void)
       dis_irsb = emptyIRSB();
    }
 
-   /* Otherwise we won't make it through s390_irgen_EXRL. */
-   last_execute_target = 42;
+   /* Otherwise we won't make it through s390_irgen_EX. */
+#define Invalid_execute_target 1
+   last_execute_target = Invalid_execute_target;
 }
 
 
@@ -146,5 +145,5 @@ vex_disasm(const unsigned char *codebuf, int *spec_exc)
       *spec_exc = 1;
    }
 
-   return last_vex_string;
+   return s390_disasm(codebuf, /* padmnm */ 0);
 }

@@ -267,6 +267,7 @@
 /* Not tested on systems older than OSX 10.13 */
 #define VG_Z_LIBSYSTEM_C_SONAME libsystemZucZddylib
 #define VG_Z_LIBSYSTEM_PLATFORM_SONAME libsystemZuplatformZddylib
+#define VG_Z_LIBSYSTEM_KERNEL_SONAME libsystemZukernelZddylib
 
 #else
 #  error "Unknown platform"
@@ -289,7 +290,8 @@
 #elif defined(VGO_freebsd)
 #  define  VG_Z_LIBPTHREAD_SONAME  libthrZdsoZa          // libthr.so*
 #elif defined(VGO_darwin)
-#  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
+//#  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
+#  define  VG_Z_LIBPTHREAD_SONAME  libsystemZupthreadZddylib  // libSystem.*.dylib
 #elif defined(VGO_solaris)
 #  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd1     // libpthread.so.1
 #else

@@ -182,6 +182,8 @@ void test(void)
       res += superblock[29]; // invalid
       res += superblock[40]; // invalid
 
+      VALGRIND_MEMPOOL_FREE(superblock, superblock+30);
+
       VALGRIND_DESTROY_MEMPOOL(superblock);
    }
    // claim res is used, so gcc can't nuke this all

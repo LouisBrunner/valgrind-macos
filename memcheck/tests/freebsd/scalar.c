@@ -26,7 +26,7 @@ int main(void)
 {
    /* Uninitialised, but we know px[0] is 0x0. */
    long *px = malloc(2*sizeof(long));
-   x0 = px[0];
+   x0 = px[0]; x0 -= x0;
    const char* running_in_vgtest = getenv("RUNNING_IN_VGTEST");
 
    /* SYS_syscall                 0 */
@@ -450,8 +450,8 @@ int main(void)
    SY(SYS_bind, x0, x0, x0); FAIL;
 
    /* SYS_setsockopt              105 */
-   GO(SYS_setsockopt, "5s 0m");
-   SY(SYS_setsockopt, x0, x0, x0, x0, x0); FAIL;
+   GO(SYS_setsockopt, "5s 1m");
+   SY(SYS_setsockopt, x0, x0, x0, px+x0, sizeof(socklen_t)+x0); FAIL;
 
    /* SYS_listen                  106 */
    GO(SYS_listen, "2s 0m");
@@ -483,9 +483,18 @@ int main(void)
    GO(SYS_getrusage, "2s 1m");
    SY(SYS_getrusage, x0, x0); FAIL;
 
+   socklen_t *len = malloc(sizeof(socklen_t));
+   *len = 2*sizeof(long)+x0;
+   free(len);
+   /*
+    * Should be 2m but it is hard to trigger an optval
+    * error in the scalar, len needs to be safe to deref
+    * and the syscall needs to succeed to trigger a write
+    * error to optval
+    */
    /* SYS_getsockopt              118 */
-   GO(SYS_setsockopt, "5s 1m");
-   SY(SYS_setsockopt, x0, x0, x0, x0, x0); FAIL;
+   GO(SYS_getsockopt, "5s 1m");
+   SY(SYS_getsockopt, x0, x0, x0, px+x0, len+x0); FAIL;
 
    /* unimpl resuba               119 */
 
@@ -1818,8 +1827,8 @@ int main(void)
    SY(SYS_cpuset_setaffinity, x0+100, x0+100, x0+200, x0+500, x0+1); FAIL;
 
    /* SYS_faccessat               489 */
-   GO(SYS_faccessat, "3s 1m");
-   SY(SYS_faccessat, x0+1, x0, x0); FAIL;
+   GO(SYS_faccessat, "4s 1m");
+   SY(SYS_faccessat, x0+1, x0, x0, x0); FAIL;
 
    /* SYS_fchmodat                490 */
    GO(SYS_fchmodat, "4s 1m");
@@ -1997,17 +2006,15 @@ int main(void)
     /* SYS_posix_fallocate        530 */
 #if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
     GO(SYS_posix_fallocate, "3s 0m");
-    SY(SYS_posix_fallocate, x0+99999, x0+10, x0+20); SUCC;
+    SY(SYS_posix_fallocate, x0+99999, x0+10, x0+20); FAIL_ERRORCODE(EBADF);
 #else
     GO(SYS_posix_fallocate, "5s 0m");
-    SY(SYS_posix_fallocate, x0+9999, x0, x0+10, x0, x0+20); SUCC;
+    SY(SYS_posix_fallocate, x0+9999, x0, x0+10, x0, x0+20); FAIL_ERRORCODE(EBADF);
 #endif
-    assert(res == EBADF);
 
     /* SYS_posix_fadvise          531 */
     GO(SYS_posix_fadvise, "4s 0m");
-    SY(SYS_posix_fadvise, x0+9999, x0+10, x0+20, x0); SUCC;
-    assert(res == EBADF);
+    SY(SYS_posix_fadvise, x0+9999, x0+10, x0+20, x0); FAIL_ERRORCODE(EBADF);
 
     /* SYS_wait6                  532 */
     GO(SYS_wait6, "6s 3m");
@@ -2177,6 +2184,10 @@ int main(void)
    /* SYS_fhreadlink              567 */
    GO(SYS_fhreadlink, "3s 2m");
    SY(SYS_fhreadlink, x0+1, x0+1, x0+10);
+
+   /* SYS_copy_file_range         569 */
+   GO(SYS_copy_file_range, "6s 2m");
+   SY(SYS_copy_file_range, x0-1, x0+1, x0-1, x0+1, x0+2, x0+12345);
 
    // __FreeBSD_version 1201522
    // __FreeBSD_version 1300045
@@ -2593,6 +2604,97 @@ int main(void)
    FAKE_SY("   ...\n");
    FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
    FAKE_SY("\n");
+#endif
+
+   /* SYS_kexec_load              599 */
+#if defined(SYS_kexec_load)
+   GO(SYS_kexec_load, "4s 1m");
+   SY(SYS_kexec_load, x0+1, x0+1, x0+1, x0+1); FAIL;
+#else
+   FAKE_GO("599:          SYS_kexec_load 4s 1m");
+   FAKE_SY("Syscall param kexec_load(entry) contains uninitialised byte(s)\n")
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kexec_load(count) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kexec_load(segments) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kexec_load(flag) contains uninitialised byte(s)\n")
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param kexec_load(segments) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+   /* SYS_pdwait                  601 */
+#if defined(SYS_pdwait)
+   GO(SYS_pdwait, "5s 3m");
+   SY(SYS_pdwait, x0+10000000, x0+1, x0, x0+1, x0+1); FAIL;
+#else
+   FAKE_GO("601:              SYS_pdwait 5s 3m");
+   FAKE_SY("Syscall param pdwait(fd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(status) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(options) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(wrusage) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(infop) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(status) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(wrusage) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param pdwait(infop) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+#endif
+
+   /* SYS_renameat2               602 */
+#if defined(SYS_renameat2)
+   GO(SYS_renameat2, "5s 2m");
+   SY(SYS_renameat2, x0+9999, x0+1, x0+9998, x0+1, x0+123456); FAIL;
+#else
+   FAKE_GO("602:           SYS_renameat2 5s 2m");
+   FAKE_SY("Syscall param renameat2(olddfd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param renameat2(oldpath) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param renameat2(newdfd) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param renameat2(newpath) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param renameat2(flags) contains uninitialised byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param renameat2(oldpath) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+   FAKE_SY("Syscall param renameat2(newpath) points to unaddressable byte(s)\n");
+   FAKE_SY("   ...\n");
+   FAKE_SY(" Address 0x........ is not stack'd, malloc'd or (recently) free'd\n");
+   FAKE_SY("\n");
+
 #endif
 
    // no such syscall...

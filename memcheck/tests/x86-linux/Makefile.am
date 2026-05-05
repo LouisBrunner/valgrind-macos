@@ -9,8 +9,8 @@ dist_noinst_SCRIPTS = \
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
-	bug133694.vgtest bug133694.stderr.exp bug133694.stdout.exp \
-	int3-x86.vgtest int3-x86.stderr.exp int3-x86.stdout.exp \
+	bug133694.vgtest bug133694.stdout.exp \
+	int3-x86.vgtest int3-x86.stdout.exp \
 	scalar.stderr.exp scalar.vgtest \
 	scalar_fork.stderr.exp scalar_fork.vgtest \
 	scalar_exit_group.stderr.exp \
@@ -44,4 +44,4 @@ scalar_supp_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNINITIALIZED@
 shm_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 
 # Avoid linker warnings
-int3_x86_LDFLAGS = @FLAG_NO_PIE@
+int3_x86_LDFLAGS = @LDFLAG_NO_PIE@

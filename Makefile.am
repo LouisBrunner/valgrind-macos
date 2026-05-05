@@ -47,14 +47,9 @@ SUPP_FILES = \
 	glibc-2.X-helgrind.supp \
 	glibc-2.2-LinuxThreads-helgrind.supp \
 	glibc-2.X-drd.supp \
-	darwin9.supp darwin9-drd.supp \
 	freebsd.supp freebsd-helgrind.supp freebsd-drd.supp \
-	darwin10.supp darwin10-drd.supp \
-	darwin11.supp darwin12.supp darwin13.supp darwin14.supp darwin15.supp \
-	darwin16.supp darwin17.supp darwin18.supp darwin19.supp \
-	darwin21-amd64.supp darwin22-amd64.supp darwin23-amd64.supp \
-	darwin23-arm64.supp darwin24-amd64.supp darwin24-arm64.supp \
-	darwin25-amd64.supp darwin25-arm64.supp \
+	darwin-legacy.supp darwin-amd64.supp darwin-arm64.supp \
+	darwin-drd.supp darwin-helgrind.supp \
 	bionic.supp \
 	solaris11.supp solaris12.supp \
 	musl.supp
@@ -73,16 +68,22 @@ pkgconfig_DATA = valgrind.pc
 BUILT_SOURCES  = default.supp include/vgversion.h valgrind.pc
 CLEANFILES     = default.supp
 
+BUNSEN ?= yes
+ ifeq "$(BUNSEN)" "no"
+  VG_REGTEST_ARG ?= "--no-bunsen"
+ else
+  VG_REGTEST_ARG ?=
+ endif
+
 default.supp: $(DEFAULT_SUPP_FILES)
 	echo "# This is a generated file, composed of the following suppression rules:" > default.supp
 	echo "# " $(DEFAULT_SUPP_FILES) >> default.supp
 	cat $^ >> default.supp
 
-## Preprend @PERL@ because tests/vg_regtest isn't executable
-## Ensure make exits with error if PERL fails or post_regtest_checks fails.
+## Ensure make exits with error if vg_regtest fails or post_regtest_checks fails.
 regtest: check
 	$(top_srcdir)/gdbserver_tests/make_local_links $(GDB)
-	if @PERL@ tests/vg_regtest gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \
+	if tests/vg_regtest $(VG_REGTEST_ARG) gdbserver_tests $(TOOLS) $(EXP_TOOLS) ; then \
 	   tests/post_regtest_checks $(abs_top_srcdir) gdbserver_tests $(TOOLS) $(EXP_TOOLS); \
 	else \
 	   tests/post_regtest_checks $(abs_top_srcdir) gdbserver_tests $(TOOLS) $(EXP_TOOLS); \
@@ -91,16 +92,15 @@ regtest: check
 post-regtest-checks:
 	tests/post_regtest_checks $(abs_top_srcdir) gdbserver_tests $(TOOLS) $(EXP_TOOLS)
 nonexp-regtest: check
-	@PERL@ tests/vg_regtest $(TOOLS)
+	tests/vg_regtest $(VG_REGTEST_ARG) $(TOOLS)
 exp-regtest: check
-	@PERL@ tests/vg_regtest gdbserver_tests $(EXP_TOOLS)
+	tests/vg_regtest $(VG_REGTEST_ARG) gdbserver_tests $(EXP_TOOLS)
 # Nb: gdbserver_tests are put in exp-regtest rather than nonexp-regtest
 # because they are tested with various valgrind tools, so might be using
 # an experimental tool.
 
-## Preprend @PERL@ because tests/vg_perf isn't executable
 perf: check
-	@PERL@ perf/vg_perf perf
+	perf/vg_perf perf
 
 # Auxiliary test suites run under valgrind
 auxchecks: all

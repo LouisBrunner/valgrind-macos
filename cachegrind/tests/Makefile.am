@@ -36,12 +36,13 @@ EXTRA_DIST = \
 		ann2-basic.rs ann2-more-recent-than-cgout.rs \
 		ann2-negatives.rs ann2-past-the-end.rs \
 	chdir.vgtest chdir.stderr.exp \
-	clreq.vgtest clreq.stderr.exp \
+	clreq.vgtest \
 	clreq2a.vgtest clreq2a.stderr.exp \
 	clreq2b.vgtest clreq2b.stderr.exp \
 	clreq3.vgtest clreq3.stderr.exp \
 	dlclose.vgtest dlclose.stderr.exp dlclose.stdout.exp \
 	notpower2.vgtest notpower2.stderr.exp \
+	replaces_malloc_client_req.vgtest replaces_malloc_client_req.stdout.exp \
 	test.c a.c \
 	wrap5.vgtest wrap5.stderr.exp wrap5.stdout.exp
 

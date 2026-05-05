@@ -1,12 +1,22 @@
 #include <stdio.h>
+#include <assert.h>
 
-/* Number of double words needed to store all facility bits. */
-#define S390_NUM_FACILITY_DW 4
+/* Return the number of double words needed to store all facility bits */
+static unsigned get_num_facility_dw(void)
+{
+   unsigned long long dummy[1];
 
+   register unsigned long long r0 asm("0") = 0;
+   asm volatile(".insn s,0xb2b00000,%0\n" /* stfle */
+                : "=Q" (dummy), "+d"(r0)
+                :
+                : "cc", "memory");
+   return r0 + 1;
+}
 
 unsigned long long stfle(unsigned long dw, unsigned bit_to_test)
 {
-  unsigned long long hoststfle[S390_NUM_FACILITY_DW];
+  unsigned long long hoststfle[dw];
   register unsigned long long __nr asm("0") = dw - 1;
   int cc;
 
@@ -16,20 +26,19 @@ unsigned long long stfle(unsigned long dw, unsigned bit_to_test)
                : "=Q" (*hoststfle), "+d" (__nr), "=d" (cc) : : "cc", "memory");
 
   printf("the value of cc is %d and #double words is %llu\n", cc, __nr + 1);
-  if (bit_to_test < 64)
-    return (hoststfle[0] & (1ULL << (63 - bit_to_test)));
-  else if (bit_to_test < 128)
-    return (hoststfle[1] & (1ULL << (63 - bit_to_test)));
-  else if (bit_to_test < 192)
-    return (hoststfle[2] & (1ULL << (63 - bit_to_test)));
 
-  printf("code needs to be updated\n");
-  return 0;
+  for (unsigned i = 0; i < dw; ++i) {
+     if (bit_to_test < (i + 1) * 64) {
+        bit_to_test -= i * 64;
+        return (hoststfle[i] & (1ULL << (63 - bit_to_test)));
+     }
+  }
+  assert(0);
 }
 
-int main()
+int main(void)
 {
-  int dw = S390_NUM_FACILITY_DW;
+  int dw = get_num_facility_dw();
 
   /* Test #1: Make sure STFLE returns sensible values. z/Arch facilities
               must be present. */
@@ -43,6 +52,12 @@ int main()
     printf("STFLE facility is installed\n");
   else
     printf("STFLE facility is not installed\n");
+
+  /* Test #2.1: Test facility 77 which is installed for z196 and later */
+  if (stfle(dw, 77))
+    printf("Facility 77 is installed\n");
+  else
+    printf("Facility 77 is not installed\n");
 
   /* Test #3: Tell STFLE to only write 1 DW of facility bits. Expected condition
               code should be 3 because this test is run on those machines only

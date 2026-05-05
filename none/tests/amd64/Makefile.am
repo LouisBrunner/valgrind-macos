@@ -24,84 +24,80 @@ endif
 # which failed the BUILD_SSE3_TESTS test in configure.in.
 
 EXTRA_DIST = \
-	aes.vgtest aes.stdout.exp aes.stderr.exp \
+	aes.vgtest aes.stdout.exp \
 	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
-	avx-1.vgtest avx-1.stdout.exp avx-1.stderr.exp \
-	avx_estimate_insn.vgtest avx_estimate_insn.stderr.exp \
+	avx-1.vgtest avx-1.stdout.exp \
+	avx_estimate_insn.vgtest \
 	avx_estimate_insn.stdout.exp avx_estimate_insn.stdout.exp-amd \
-	avx-vmovq.vgtest avx-vmovq.stdout.exp avx-vmovq.stderr.exp \
-	avx2-1.vgtest avx2-1.stdout.exp avx2-1.stderr.exp \
-	asorep.stderr.exp asorep.stdout.exp asorep.vgtest \
-	bmi.stderr.exp bmi.stdout.exp bmi.vgtest \
+	avx-vmovq.vgtest avx-vmovq.stdout.exp \
+	avx2-1.vgtest avx2-1.stdout.exp \
+	asorep.stderr.exp asorep.vgtest \
+	bmi.stdout.exp bmi.vgtest \
 	bt_flags.stderr.exp bt_flags.stdout.exp bt_flags.vgtest \
-	fma.stderr.exp fma.stdout.exp fma.vgtest \
+	fma.stdout.exp fma.vgtest \
 	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
 	bug132813-amd64.stderr.exp \
 	bug137714-amd64.vgtest bug137714-amd64.stdout.exp \
-	bug137714-amd64.stderr.exp \
 	bug132918.vgtest bug132918.stderr.exp bug132918.stdout.exp \
 	bug132918.stdout.exp-older-glibc \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
-	bug485148.vgtest bug485148.stdout.exp bug485148.stderr.exp \
-	bug487439.vgtest bug487439.stdout.exp bug487439.stderr.exp \
-	cet_nops.vgtest cet_nops.stdout.exp cet_nops.stderr.exp \
+	bug485148.vgtest bug485148.stdout.exp \
+	bug487439.vgtest bug487439.stdout.exp \
+	cet_nops.vgtest cet_nops.stdout.exp \
 	clc.vgtest clc.stdout.exp clc.stderr.exp \
-	crc32.vgtest crc32.stdout.exp crc32.stderr.exp \
+	crc32.vgtest crc32.stdout.exp \
 	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
-	f16c.vgtest f16c.stderr.exp f16c.stdout.exp \
+	f16c.vgtest f16c.stdout.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fb_test_amd64.vgtest \
 	fb_test_amd64.stderr.exp fb_test_amd64.stdout.exp \
 	fb_test_amd64.h fb_test_amd64_muldiv.h fb_test_amd64_shift.h \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
-	fma4.vgtest fma4.stdout.exp fma4.stderr.exp \
+	fma4.vgtest fma4.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
 	fxtract.stdout.exp-older-glibc \
-	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
-	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	getseg.stdout.exp getseg.vgtest \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	insn_pclmulqdq.vgtest insn_pclmulqdq.stdout.exp \
-	insn_pclmulqdq.stderr.exp \
-	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
-	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
+	insn_sse3.stdout.exp insn_sse3.vgtest \
+	insn_ssse3.stdout.exp insn_ssse3.vgtest \
 	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
 	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
-	lzcnt64.stderr.exp lzcnt64.stdout.exp lzcnt64.vgtest \
-	movbe.stderr.exp movbe.stdout.exp movbe.vgtest \
-	mpx.stderr.exp mpx.stdout.exp mpx.vgtest \
+	lzcnt64.stdout.exp lzcnt64.vgtest \
+	movbe.stdout.exp movbe.vgtest \
+	mpx.vgtest \
 	nan80and64.stderr.exp nan80and64.stdout.exp nan80and64.vgtest \
 	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
-	pcmpstr64.stderr.exp pcmpstr64.stdout.exp \
+	pcmpstr64.stdout.exp \
 	pcmpstr64.vgtest \
-	pcmpstr64w.stderr.exp pcmpstr64w.stdout.exp \
+	pcmpstr64w.stdout.exp \
 	pcmpstr64w.vgtest \
-	pcmpxstrx64.stderr.exp pcmpxstrx64.stdout.exp \
+	pcmpxstrx64.stdout.exp \
 	pcmpxstrx64.vgtest \
-	pcmpxstrx64w.stderr.exp pcmpxstrx64w.stdout.exp \
+	pcmpxstrx64w.stdout.exp \
 	pcmpxstrx64w.vgtest \
-	rcl-amd64.vgtest rcl-amd64.stdout.exp rcl-amd64.stderr.exp \
-	rdrand.vgtest rdrand.stdout.exp rdrand.stderr.exp \
-	rdseed.vgtest rdseed.stdout.exp rdseed.stderr.exp \
+	rcl-amd64.vgtest rcl-amd64.stdout.exp \
+	rdrand.vgtest rdrand.stdout.exp \
+	rdseed.vgtest rdseed.stdout.exp \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
 	redundantRexW.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
-	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
-	ssse3_misaligned.vgtest \
-	sse4-64.stderr.exp sse4-64.stdout.exp sse4-64.vgtest \
+	ssse3_misaligned.stderr.exp ssse3_misaligned.vgtest \
+	sse4-64.stdout.exp sse4-64.vgtest \
 	sse4-64.stdout.exp-older-glibc \
-	slahf-amd64.stderr.exp slahf-amd64.stdout.exp \
+	slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
 	x87trigOOR.vgtest x87trigOOR.stderr.exp x87trigOOR.stdout.exp \
 	xacq_xrel.stderr.exp xacq_xrel.stdout.exp xacq_xrel.vgtest \
-	xadd.stderr.exp xadd.stdout.exp xadd.vgtest \
+	xadd.stdout.exp xadd.vgtest \
 	sse4-64.stdout.exp.freebsd sse4-64.stdout.exp-freebsd-clang
 
 check_PROGRAMS = \
@@ -209,11 +205,12 @@ bug132918_LDADD		= -lm
 bug485148_CXXFLAGS      = ${AM_CXXFLAGS} -mfma
 bug485148_SOURCES       = bug485148.cpp
 bug487439_SOURCES	= bug487439.cpp
-cmpxchg_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+cmpxchg_LDFLAGS		= @LDFLAG_NO_PIE@
 fb_test_amd64_CFLAGS	= $(AM_CFLAGS) -O -fno-strict-aliasing
 fb_test_amd64_LDADD	= -lm
-fcmovnu_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
-fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@ @FLAG_NO_PIE@
+fcmovnu_LDFLAGS		= @LDFLAG_NO_PIE@
+fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@
+fxtract_LDFLAGS		= @LDFLAG_NO_PIE@
 insn_basic_SOURCES	= insn_basic.def
 insn_basic_LDADD	= -lm
 insn_mmx_SOURCES	= insn_mmx.def
@@ -235,10 +232,10 @@ if VGCONF_OS_IS_SOLARIS
 fma4_CFLAGS		+= -D__EXTENSIONS__
 endif
 fma4_LDADD		= -lm
-jrcxz_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
-looper_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
-sbbmisc_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
-shrld_CFLAGS		= $(AM_CFLAGS) @FLAG_NO_PIE@
+jrcxz_LDFLAGS		= @LDFLAG_NO_PIE@
+looper_LDFLAGS		= @LDFLAG_NO_PIE@
+sbbmisc_LDFLAGS		= @LDFLAG_NO_PIE@
+shrld_LDFLAGS		= @LDFLAG_NO_PIE@
 
 .def.c:
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

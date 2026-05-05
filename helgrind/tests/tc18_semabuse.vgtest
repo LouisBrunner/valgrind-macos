@@ -1,1 +1,2 @@
+prereq: ../../drd/tests/supported_sem_init
 prog: tc18_semabuse

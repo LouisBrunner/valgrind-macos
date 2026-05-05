@@ -301,7 +301,7 @@ typedef uint32_t vki_u32;
 #define vki_cmsghdr cmsghdr
 
 
-#define VKI_CMSG_ALIGN(a) 	ALIGN(a)
+#define VKI_CMSG_ALIGN(a) 	__DARWIN_ALIGN32(a)
 #define	VKI_CMSG_DATA(cmsg)	CMSG_DATA(cmsg)
 #define	VKI_CMSG_FIRSTHDR(mhdr)	CMSG_FIRSTHDR(mhdr)
 #define	VKI_CMSG_NXTHDR(mhdr, cmsg)	CMSG_NXTHDR(mhdr, cmsg)
@@ -420,7 +420,6 @@ typedef uint32_t vki_u32;
 # define VKI_F_SPECULATIVE_READ          F_SPECULATIVE_READ
 #endif
 #if DARWIN_VERS >= DARWIN_14_00
-# define VKI_F_GETPROTECTIONCLASS        F_GETPROTECTIONCLASS
 # define VKI_F_OFD_SETLK                 F_OFD_SETLK
 # define VKI_F_OFD_GETLK                 F_OFD_GETLK
 # define VKI_F_OFD_SETLKWTIMEOUT         F_OFD_SETLKWTIMEOUT
@@ -431,6 +430,9 @@ typedef uint32_t vki_u32;
 #define VKI_F_FREEZE_FS	F_FREEZE_FS
 #define VKI_F_THAW_FS	F_THAW_FS
 #define	VKI_F_GLOBAL_NOCACHE	F_GLOBAL_NOCACHE
+#if defined(F_GETPROTECTIONCLASS)
+#define VKI_F_GETPROTECTIONCLASS F_GETPROTECTIONCLASS
+#endif
 
 #define VKI_FD_CLOEXEC	FD_CLOEXEC
 
@@ -547,7 +549,6 @@ typedef struct {
 
 //typedef  struct __sigaction  vki_sigaction_toK_t;
 //typedef  struct sigaction    vki_sigaction_fromK_t;
-
 
 #define VKI_UC_TRAD        1
 #define VKI_UC_FLAVOR     30
@@ -1430,5 +1431,42 @@ struct vki_necp_agent_use_parameters {
 #define VKI_NECP_STAT_COUNTS_SIZE 68
 
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
+
+#include <spawn.h>
+
+typedef posix_spawn_file_actions_t vki_posix_spawn_file_actions_t;
+typedef posix_spawnattr_t vki_posix_spawnattr_t;
+
+// from sys/persona.h, not public
+#define VKI_PERSONA_INFO_V1       1
+#define VKI_PERSONA_INFO_V2       2
+#define VKI_PERSONA_OP_ALLOC    1
+#define VKI_PERSONA_OP_PALLOC   2
+#define VKI_PERSONA_OP_DEALLOC  3
+#define VKI_PERSONA_OP_GET      4
+#define VKI_PERSONA_OP_INFO     5
+#define VKI_PERSONA_OP_PIDINFO  6
+#define VKI_PERSONA_OP_FIND     7
+#define VKI_PERSONA_OP_GETPATH  8
+#define VKI_PERSONA_OP_FIND_BY_TYPE  9
+
+#define VKI_MAXLOGNAME      255
+
+struct vki_kpersona_info {
+   /* v1 fields */
+   vki_uint32_t persona_info_version;
+
+   uid_t    persona_id;
+   Int      persona_type;
+   vki_gid_t    persona_gid; /* unused */
+   vki_uint32_t persona_ngroups; /* unused */
+   vki_gid_t    persona_groups[NGROUPS]; /* unused */
+   vki_uid_t    persona_gmuid; /* unused */
+   HChar     persona_name[VKI_MAXLOGNAME + 1];
+
+   /* v2 fields */
+   vki_uid_t    persona_uid;
+} __attribute__((packed));
+
 
 #endif

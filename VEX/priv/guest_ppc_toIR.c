@@ -316,7 +316,6 @@ static Bool OV32_CA32_supported = False;
              offsetof(VexGuestPPC32State, _x))
 
 #define OFFB_CIA         offsetofPPCGuestState(guest_CIA)
-#define OFFB_IP_AT_SYSCALL offsetofPPCGuestState(guest_IP_AT_SYSCALL)
 #define OFFB_SPRG3_RO    offsetofPPCGuestState(guest_SPRG3_RO)
 #define OFFB_LR          offsetofPPCGuestState(guest_LR)
 #define OFFB_CTR         offsetofPPCGuestState(guest_CTR)
@@ -520,7 +519,6 @@ typedef enum {
     PPC_GST_EMWARN, // Emulation warnings
     PPC_GST_CMSTART,// For icbi: start of area to invalidate
     PPC_GST_CMLEN,  // For icbi: length of area to invalidate
-    PPC_GST_IP_AT_SYSCALL, // the CIA of the most recently executed SC insn
     PPC_GST_SPRG3_RO, // SPRG3
     PPC_GST_TFHAR,  // Transactional Failure Handler Address Register
     PPC_GST_TFIAR,  // Transactional Failure Instruction Address Register
@@ -3659,10 +3657,6 @@ static void putGST ( PPC_GST reg, IRExpr* src )
    IRType ty_src = typeOfIRExpr(irsb->tyenv,src );
    vassert( reg < PPC_GST_MAX );
    switch (reg) {
-   case PPC_GST_IP_AT_SYSCALL: 
-      vassert( ty_src == ty );
-      stmt( IRStmt_Put( OFFB_IP_AT_SYSCALL, src ) );
-      break;
    case PPC_GST_CIA: 
       vassert( ty_src == ty );
       stmt( IRStmt_Put( OFFB_CIA, src ) );
@@ -10789,11 +10783,6 @@ static Bool dis_syslink ( UInt prefix, UInt theInstr,
       /* Unknown instruction */
       return False;
    }
-
-   /* Copy CIA into the IP_AT_SYSCALL pseudo-register, so that on Darwin
-      Valgrind can back the guest up to this instruction if it needs
-      to restart the syscall. */
-   putGST( PPC_GST_IP_AT_SYSCALL, getGST( PPC_GST_CIA ) );
 
    /* It's important that all ArchRegs carry their up-to-date value
       at this point.  So we declare an end-of-block here, which
@@ -31513,14 +31502,14 @@ static Bool dis_VSR_byte_mask ( UInt prefix, UInt theInstr,
          immediate16_hi = (immediate16 >> 8) & 0xFF;
          immediate16_lo = immediate16 & 0xFF;
 
-         immediate64_hi = ((immediate16_hi << 32) | (immediate16_hi << 56) |
+         immediate64_hi = ((immediate16_hi << 56) |
                            (immediate16_hi << 48) | (immediate16_hi << 40) |
-                           (immediate16_hi << 32) | (immediate16_hi << 16) |
+                           (immediate16_hi << 32) | (immediate16_hi << 24) | (immediate16_hi << 16) |
                            (immediate16_hi << 8) | immediate16_hi);
 
-         immediate64_lo = ((immediate16_lo << 32) | (immediate16_lo << 56) |
+         immediate64_lo = ((immediate16_lo << 56) |
                            (immediate16_lo << 48) | (immediate16_lo << 40) |
-                           (immediate16_lo << 32) | (immediate16_lo << 16) |
+                           (immediate16_lo << 32) | (immediate16_lo << 24) | (immediate16_lo << 16) |
                            (immediate16_lo << 8) | immediate16_lo);
 
          /* Shift the bits in each element so the bit corresponding to the

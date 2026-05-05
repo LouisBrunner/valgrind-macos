@@ -16,10 +16,10 @@ AC_PREREQ(2.69)
 # Also set the (expected/last) release date here.
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
-m4_define([v_minor_ver], [27])
+m4_define([v_minor_ver], [28])
 m4_define([v_micro_ver], [0])
 m4_define([v_suffix_ver], [GIT-lbmacos])
-m4_define([v_rel_date], ["?? Apr 2026"])
+m4_define([v_rel_date], ["?? Oct 2026"])
 m4_define([v_version],
 	  m4_if(v_suffix_ver, [],
 		[v_major_ver.v_minor_ver.v_micro_ver],
@@ -91,7 +91,9 @@ AC_ARG_VAR([LTO_AR],[Archiver command for link time optimisation])
 AC_PATH_PROG(PERL, perl)
 
 # figure out where gdb lives
-AC_PATH_PROG(GDB, gdb, "/no/gdb/was/found/at/configure/time")
+# MacPorts uses ggdb
+AC_ARG_VAR([GDB], [Path to the GNU Debugger])
+AC_PATH_PROGS([GDB], [gdb ggdb], ["/no/gdb/was/found/at/configure/time"])
 AC_DEFINE_UNQUOTED(GDB_PATH, "$GDB", [path to GDB])
 
 # figure out how to compile assembler sources
@@ -199,29 +201,6 @@ esac
 # We don't want gcc < 3.0
 AC_MSG_CHECKING([for a supported version of gcc])
 
-# Obtain the compiler version.
-#
-# A few examples of how the ${CC} --version output looks like:
-#
-# ######## gcc variants ########
-# Arch Linux: i686-pc-linux-gnu-gcc (GCC) 4.6.2
-# Debian Linux: gcc (Debian 4.3.2-1.1) 4.3.2
-# openSUSE: gcc (SUSE Linux) 4.5.1 20101208 [gcc-4_5-branch revision 167585]
-# Exherbo Linux: x86_64-pc-linux-gnu-gcc (Exherbo gcc-4.6.2) 4.6.2
-# MontaVista Linux for ARM: arm-none-linux-gnueabi-gcc (Sourcery G++ Lite 2009q1-203) 4.3.3
-# OS/X 10.6: i686-apple-darwin10-gcc-4.2.1 (GCC) 4.2.1 (Apple Inc. build 5666) (dot 3)
-# OS/X 10.7: i686-apple-darwin11-llvm-gcc-4.2 (GCC) 4.2.1 (Based on Apple Inc. build 5658) (LLVM build 2335.15.00)
-#
-# ######## clang variants ########
-# Clang: clang version 2.9 (tags/RELEASE_29/final)
-# Apple clang: Apple clang version 3.1 (tags/Apple/clang-318.0.58) (based on LLVM 3.1svn)
-# FreeBSD clang: FreeBSD clang version 3.1 (branches/release_31 156863) 20120523
-#
-# ######## Apple LLVM variants ########
-# Apple LLVM version 5.1 (clang-503.0.40) (based on LLVM 3.4svn)
-# Apple LLVM version 6.0 (clang-600.0.51) (based on LLVM 3.5svn)
-# Apple clang version 11.0.0 (clang-1100.0.33.17) (since macOS 10.15)
-#
 [
 if test "x`${CC} --version | $SED -n -e 's/.*\Apple \(LLVM\) version.*clang.*/\1/p'`" = "xLLVM" ;
 then
@@ -250,6 +229,82 @@ fi
 ]
 AM_CONDITIONAL(COMPILER_IS_CLANG, test $is_clang = clang -o $is_clang = applellvm)
 AM_CONDITIONAL(COMPILER_IS_ICC, test $is_clang = icc)
+
+AC_CANONICAL_HOST
+
+# macOS: Detect the Xcode SDK path and inject it in different tools
+case $host_os in
+    *darwin*)
+      AC_ARG_WITH([darwin-platform],
+      [  --with-darwin-platform=PLAT  Specify which Darwin platform we are compiling for (macOS, iOS, etc)],
+      [
+          # TODO: some kind of case-insensitive check?
+          if test "x$withval" = "xmacOS"; then
+            darwin_platform="macosx"
+          elif test "x$withval" = "xmacos"; then
+            darwin_platform="macosx"
+          elif test "x$withval" = "xiOS"; then
+            darwin_platform="iphoneos"
+          elif test "x$withval" = "xios"; then
+            darwin_platform="iphoneos"
+          else
+            darwin_platform="$withval"
+          fi
+      ],
+      [
+          darwin_platform="macosx"
+      ])
+
+      AC_ARG_WITH([darwin-version],
+      [  --with-darwin-version=VERS Specify which version of Darwin you are targetting (useful for cross-compilation, depends on the darwin-platform)],
+      [
+          darwin_version="$withval"
+      ],
+      [
+          darwin_version=""
+      ])
+
+      AC_ARG_VAR([DEVELOPER_DIR],[Overrides the active developer directory (used in gcc, xcrun, etc)])
+      AC_CHECK_PROG([XCRUN], [xcrun], [yes], [no])
+
+      AC_MSG_CHECKING([for Xcode SDK])
+      AC_ARG_WITH([xcode-path],
+      [  --with-xcode-path=PATH      Specify path for Xcode SDK],
+      [
+          # Set defaults in case `xcrun` fails
+          xcodedir="$withval"
+          xcodedir_inc="$xcodedir/usr/include"
+          xcodedir_lib="$xcodedir/usr/lib"
+          # Defining DEVELOPER_DIR will override which version of gcc, xcrun, etc is being used
+          export DEVELOPER_DIR="$xcodedir"
+      ],
+      [
+          # Use system defaults, in case `xcrun` fails
+          xcodedir="active developer directory"
+          xcodedir_inc="/usr/include"
+          xcodedir_lib="/usr/lib"
+      ])
+
+      darwin_sdk="$darwin_platform$darwin_version"
+      if test "x$XCRUN" != "xno"; then
+        if test "x$darwin_version" != "x"; then
+            if test x`xcrun --sdk $darwin_sdk --show-sdk-version` != x$darwin_version; then
+                AC_MSG_ERROR([Couldn't find SDK for $darwin_sdk version $darwin_version (check 'xcodebuild -showsdks' for available ones)])
+            fi
+        fi
+
+        xcrundir=`xcrun --sdk $darwin_sdk --show-sdk-path`
+        if test ! -z "$xcrundir"; then
+            xcodedir="$xcrundir"
+            xcodedir_inc="$xcodedir/usr/include"
+            xcodedir_lib="$xcodedir/usr/lib"
+        fi
+      else
+        AC_MSG_WARN([Couldn't find xcrun, most Xcode-related autodetection will be disabled and the build might fail])
+      fi
+      AC_MSG_RESULT([$xcodedir])
+    ;;
+esac
 
 # Note: m4 arguments are quoted with [ and ] so square brackets in shell
 # statements have to be quoted.
@@ -470,8 +525,8 @@ case "${host_os}" in
         ;;
 
      *darwin*)
-      AC_MSG_RESULT([ok (${host_os})])
-      VGCONF_OS="darwin"
+        AC_MSG_RESULT([ok (${host_os})])
+        VGCONF_OS="darwin"
 
       AC_DEFUN([AC_ADD_DARWIN_VERS],[
         $1=$2
@@ -534,114 +589,90 @@ case "${host_os}" in
           kernel=`uname -r`
       fi
 
-      # Nb: for Darwin we set DEFAULT_SUPP here.  That's because Darwin
-      # has only one relevant version, the OS version. The `uname` check
-      # is a good way to get that version (i.e. "Darwin 9.6.0" is Mac OS
-      # X 10.5.6, and "Darwin 10.x" is Mac OS X 10.6.x Snow Leopard,
-      # and possibly "Darwin 11.x" is Mac OS X 10.7.x Lion),
-      # and we don't know of an macros similar to __GLIBC__ to get that info.
-      #
-      # XXX: `uname -r` won't do the right thing for cross-compiles, but
-      # that's not a problem yet.
-      #
-      # jseward 21 Sept 2011: I seriously doubt whether V 3.7.0 will work
-      # on OS X 10.5.x; I haven't tested yet, and only plan to test 3.7.0
-      # on 10.6.8 and 10.7.1.  Although tempted to delete the configure
-      # time support for 10.5 (the 9.* pattern just below), I'll leave it
-      # in for now, just in case anybody wants to give it a try.  But I'm
-      # assuming that 3.7.0 is a Snow Leopard and Lion-only release.
-      DARWIN_DRD_SUPP="darwin10-drd.supp"
+        DARWIN_DRD_SUPP="darwin-drd.supp"
+
+	case "${kernel}" in
+	     1[2-6].*)
+		  DEFAULT_SUPP="$srcdir/darwin-legacy.supp ${DEFAULT_SUPP}"
+		  ;;
+	     *)
+		  DEFAULT_SUPP="$srcdir/darwin-${ARCH_MAX}.supp ${DEFAULT_SUPP}"
+		  ;;
+	esac
+
+
       case "${darwin_platform}-${kernel}" in
         macosx-9.*)
           AC_MSG_RESULT([Darwin 9.x (${kernel}) / Mac OS X 10.5 Leopard])
           DARWIN_VERS=$DARWIN_10_5
-          DARWIN_KERNEL_VERS=9
-          DARWIN_DRD_SUPP="darwin9-drd.supp"
           ;;
         macosx-10.*|iphoneos-4.*)
           AC_MSG_RESULT([Darwin 10.x (${kernel}) / Mac OS X 10.6 Snow Leopard / iOS 4])
           DARWIN_VERS=$DARWIN_10_6
-          DARWIN_KERNEL_VERS=10
           ;;
         macosx-11.*|iphoneos-5.*)
           AC_MSG_RESULT([Darwin 11.x (${kernel}) / Mac OS X 10.7 Lion / iOS 5])
           DARWIN_VERS=$DARWIN_10_7
-          DARWIN_KERNEL_VERS=11
           ;;
         macosx-12.*|iphoneos-6.*)
           AC_MSG_RESULT([Darwin 12.x (${kernel}) / Mac OS X 10.8 Mountain Lion / iOS 6])
           DARWIN_VERS=$DARWIN_10_8
-          DARWIN_KERNEL_VERS=12
           ;;
         macosx-13.*|iphoneos-7.*)
           AC_MSG_RESULT([Darwin 13.x (${kernel}) / Mac OS X 10.9 Mavericks / iOS 7])
           DARWIN_VERS=$DARWIN_10_9
-          DARWIN_KERNEL_VERS=13
           ;;
         macosx-14.*|iphoneos-8.*)
           AC_MSG_RESULT([Darwin 14.x (${kernel}) / Mac OS X 10.10 Yosemite / iOS 8])
           DARWIN_VERS=$DARWIN_10_10
-          DARWIN_KERNEL_VERS=14
           ;;
         macosx-15.*|iphoneos-9.*)
           AC_MSG_RESULT([Darwin 15.x (${kernel}) / Mac OS X 10.11 El Capitan / iOS 9])
           DARWIN_VERS=$DARWIN_10_11
-          DARWIN_KERNEL_VERS=15
           ;;
         macosx-16.*|iphoneos-10.*)
           AC_MSG_RESULT([Darwin 16.x (${kernel}) / macOS 10.12 Sierra / iOS 10])
           DARWIN_VERS=$DARWIN_10_12
-          DARWIN_KERNEL_VERS=16
           ;;
         macosx-17.*|iphoneos-11.*)
           AC_MSG_RESULT([Darwin 17.x (${kernel}) / macOS 10.13 High Sierra / iOS 11])
           DARWIN_VERS=$DARWIN_10_13
-          DARWIN_KERNEL_VERS=17
           ;;
         macosx-18.*|iphoneos-12.*)
           AC_MSG_RESULT([Darwin 18.x (${kernel}) / macOS 10.14 Mojave / iOS 12])
           DARWIN_VERS=$DARWIN_10_14
-          DARWIN_KERNEL_VERS=18
           ;;
         macosx-19.*|iphoneos-13.*)
           AC_MSG_RESULT([Darwin 19.x (${kernel}) / macOS 10.15 Catalina / iOS 13])
           DARWIN_VERS=$DARWIN_10_15
-          DARWIN_KERNEL_VERS=19
           ;;
         macosx-20.*|iphoneos-14.*)
           AC_MSG_RESULT([Darwin 20.x (${kernel}) / macOS 11 Big Sur / iOS 14])
           DARWIN_VERS=$DARWIN_11_00
-          DARWIN_KERNEL_VERS=20
           ;;
         macosx-21.*|iphoneos-15.*)
           AC_MSG_RESULT([Darwin 21.x (${kernel}) / macOS 12 Monterey / iOS 15])
           DARWIN_VERS=$DARWIN_12_00
-          DARWIN_KERNEL_VERS=21
           ;;
         macosx-22.*|iphoneos-16.*)
           AC_MSG_RESULT([Darwin 22.x (${kernel}) / macOS 13 Ventura / iOS 16])
           DARWIN_VERS=$DARWIN_13_00
-          DARWIN_KERNEL_VERS=22
           ;;
         macosx-23.*|iphoneos-17.*)
           AC_MSG_RESULT([Darwin 23.x (${kernel}) / macOS 14 Sonoma / iOS 17])
           DARWIN_VERS=$DARWIN_14_00
-          DARWIN_KERNEL_VERS=23
           ;;
         macosx-24.0.*|macosx-24.1.*|macosx-24.2.*|macosx-24.3.*|iphoneos-18.*)
           AC_MSG_RESULT([Darwin 24.x (${kernel}) / macOS 15.0/1/2/3 Sequoia / iOS 18])
           DARWIN_VERS=$DARWIN_15_00
-          DARWIN_KERNEL_VERS=24
           ;;
         macosx-24.*)
           AC_MSG_RESULT([Darwin 24.4 (${kernel}) / macOS 15.4+ Sequoia])
           DARWIN_VERS=$DARWIN_15_04
-          DARWIN_KERNEL_VERS=24
           ;;
         macosx-25.*|iphoneos-26.*)
           AC_MSG_RESULT([Darwin 25.x (${kernel}) / macOS & iOS 26 (Tahoe)])
           DARWIN_VERS=$DARWIN_26_00
-          DARWIN_KERNEL_VERS=25
           ;;
         *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
@@ -649,16 +680,9 @@ case "${host_os}" in
           ;;
       esac
 
-      if test -f "$srcdir/darwin${DARWIN_KERNEL_VERS}.supp"; then
-        DEFAULT_SUPP="$srcdir/darwin${DARWIN_KERNEL_VERS}.supp ${DEFAULT_SUPP}"
-      fi
-      if test -f "$srcdir/darwin${DARWIN_KERNEL_VERS}-${ARCH_MAX}.supp"; then
-        DEFAULT_SUPP="$srcdir/darwin${DARWIN_KERNEL_VERS}-${ARCH_MAX}.supp ${DEFAULT_SUPP}"
-      fi
-
       AC_DEFINE_UNQUOTED([DARWIN_VERS], $DARWIN_VERS, [Darwin / Mac OS X / macOS / iOS version])
       AC_SUBST(DARWIN_VERS)
-      DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP}"
+      DEFAULT_SUPP="$srcdir/${DARWIN_DRD_SUPP} ${DEFAULT_SUPP} $srcdir/darwin-helgrind.supp"
 
       AC_MSG_CHECKING([for the the minimum macOS SDK version])
       case "${darwin_platform}" in
@@ -782,18 +806,20 @@ esac
 # does not support building 32 bit programs
 
 case "$ARCH_MAX-$VGCONF_OS" in
-     amd64-linux|ppc64be-linux|arm64-linux|amd64-solaris)
-        AC_MSG_CHECKING([for 32 bit build support])
+     amd64-linux|ppc64be-linux|arm64-linux|amd64-solaris|amd64-darwin|amd64-freebsd)
+        AC_MSG_CHECKING([for 32 bit build and execution support])
         safe_CFLAGS=$CFLAGS
         CFLAGS="-m32"
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+        AC_RUN_IFELSE([AC_LANG_PROGRAM([[]], [[
           return 0;
         ]])], [
         AC_MSG_RESULT([yes])
         ], [
         vg_cv_only64bit="yes"
         AC_MSG_RESULT([no])
-        ])
+        ] , [
+        AC_MSG_RESULT([cross compiling, assuming no])
+        vg_cv_only64bit="yes"])
         CFLAGS=$safe_CFLAGS;;
     mips64-linux)
         AC_MSG_CHECKING([for 32 bit build support])
@@ -882,83 +908,83 @@ case "$ARCH_MAX-$VGCONF_OS" in
      x86-linux)
         VGCONF_ARCH_PRI="x86"
         VGCONF_ARCH_SEC=""
-	VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
-	VGCONF_PLATFORM_SEC_CAPS=""
+        VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_pri_norml="0x58000000"
         valt_load_address_pri_inner="0x38000000"
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
-	;;
+        ;;
      amd64-linux)
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
-	if test x$vg_cv_only64bit = xyes; then
+        if test x$vg_cv_only64bit = xyes; then
            VGCONF_ARCH_PRI="amd64"
            VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
-	   VGCONF_PLATFORM_SEC_CAPS=""
+           VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
+           VGCONF_PLATFORM_SEC_CAPS=""
            valt_load_address_pri_norml="0x58000000"
            valt_load_address_pri_inner="0x38000000"
-	elif test x$vg_cv_only32bit = xyes; then
-	   VGCONF_ARCH_PRI="x86"
+       elif test x$vg_cv_only32bit = xyes; then
+           VGCONF_ARCH_PRI="x86"
            VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
-	   VGCONF_PLATFORM_SEC_CAPS=""
+           VGCONF_PLATFORM_PRI_CAPS="X86_LINUX"
+           VGCONF_PLATFORM_SEC_CAPS=""
            valt_load_address_pri_norml="0x58000000"
            valt_load_address_pri_inner="0x38000000"
-	else
+       else
            VGCONF_ARCH_PRI="amd64"
            VGCONF_ARCH_SEC="x86"
-	   VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
-	   VGCONF_PLATFORM_SEC_CAPS="X86_LINUX"
+           VGCONF_PLATFORM_PRI_CAPS="AMD64_LINUX"
+           VGCONF_PLATFORM_SEC_CAPS="X86_LINUX"
            valt_load_address_pri_norml="0x58000000"
            valt_load_address_pri_inner="0x38000000"
            valt_load_address_sec_norml="0x58000000"
            valt_load_address_sec_inner="0x38000000"
-	fi
+        fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
-	;;
+        ;;
      ppc32-linux)
         VGCONF_ARCH_PRI="ppc32"
         VGCONF_ARCH_SEC=""
-	VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
-	VGCONF_PLATFORM_SEC_CAPS=""
+        VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
         valt_load_address_pri_norml="0x58000000"
         valt_load_address_pri_inner="0x38000000"
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
-	;;
+        ;;
      ppc64be-linux)
         valt_load_address_sec_norml="0xUNSET"
         valt_load_address_sec_inner="0xUNSET"
-	if test x$vg_cv_only64bit = xyes; then
-	   VGCONF_ARCH_PRI="ppc64be"
+        if test x$vg_cv_only64bit = xyes; then
+           VGCONF_ARCH_PRI="ppc64be"
            VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="PPC64BE_LINUX"
-	   VGCONF_PLATFORM_SEC_CAPS=""
+           VGCONF_PLATFORM_PRI_CAPS="PPC64BE_LINUX"
+           VGCONF_PLATFORM_SEC_CAPS=""
            valt_load_address_pri_norml="0x58000000"
            valt_load_address_pri_inner="0x38000000"
-	elif test x$vg_cv_only32bit = xyes; then
-	   VGCONF_ARCH_PRI="ppc32"
+        elif test x$vg_cv_only32bit = xyes; then
+           VGCONF_ARCH_PRI="ppc32"
            VGCONF_ARCH_SEC=""
-	   VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
-	   VGCONF_PLATFORM_SEC_CAPS=""
+           VGCONF_PLATFORM_PRI_CAPS="PPC32_LINUX"
+           VGCONF_PLATFORM_SEC_CAPS=""
            valt_load_address_pri_norml="0x58000000"
            valt_load_address_pri_inner="0x38000000"
-	else
-	   VGCONF_ARCH_PRI="ppc64be"
+        else
+           VGCONF_ARCH_PRI="ppc64be"
            VGCONF_ARCH_SEC="ppc32"
-	   VGCONF_PLATFORM_PRI_CAPS="PPC64BE_LINUX"
-	   VGCONF_PLATFORM_SEC_CAPS="PPC32_LINUX"
+           VGCONF_PLATFORM_PRI_CAPS="PPC64BE_LINUX"
+           VGCONF_PLATFORM_SEC_CAPS="PPC32_LINUX"
            valt_load_address_pri_norml="0x58000000"
            valt_load_address_pri_inner="0x38000000"
            valt_load_address_sec_norml="0x58000000"
            valt_load_address_sec_inner="0x38000000"
-	fi
+        fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
-	;;
+        ;;
      ppc64le-linux)
         # Little Endian is only supported on PPC64
         valt_load_address_sec_norml="0xUNSET"
@@ -1697,6 +1723,25 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL([HAVE_AT_FDCWD], [test x$ac_have_at_fdcwd = xyes])
 
+
+# Check for MADV_GUARD_INSTALL
+
+AC_MSG_CHECKING([for MADV_GUARD_INSTALL])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/mman.h>
+]], [[
+  int a = MADV_GUARD_INSTALL;
+]])], [
+ac_have_madv_guard_install=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_madv_guard_install=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL([HAVE_MADV_GUARD_INSTALL], [test x$ac_have_madv_guard_install = xyes])
+
+
 # Check for stpncpy function definition in string.h
 # This explicitly checks with _GNU_SOURCE defined since that is also
 # used in the test case (some systems might define it without anyway
@@ -2262,8 +2307,14 @@ AC_MSG_RESULT([no])
 # clang 3.3 cannot process <thread> from e.g.
 # gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
 
+#----------------------------------------------------------------------------
+# C++ checks
+#----------------------------------------------------------------------------
+
+
+AC_LANG_PUSH(C++)
+
 AC_MSG_CHECKING([that C++ compiler can compile C++17 code])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS=-std=c++17
 
@@ -2278,14 +2329,12 @@ ac_have_cxx_17=no
 AC_MSG_RESULT([no])
 ])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(HAVE_CXX17, test x$ac_have_cxx_17 = xyes)
 
 # Compiler may announce C++17 support as above but may lack
 # some features
 AC_MSG_CHECKING([that C++ compiler supports constexpr if])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS=-std=c++17
 
@@ -2304,12 +2353,10 @@ ac_have_constexpr_if=no
 AC_MSG_RESULT([no])
 			])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(HAVE_CONSTEXPR_IF, test x$ac_have_constexpr_if = xyes)
 
 AC_MSG_CHECKING([that C++ compiler supports std::align_val_t])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS=-std=c++17
 
@@ -2325,13 +2372,11 @@ ac_have_align_val_t=no
 AC_MSG_RESULT([no])
 			])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(HAVE_ALIGN_VAL_T, test x$ac_have_align_val_t = xyes)
 
 
 AC_MSG_CHECKING([that C++ compiler can include <thread> header file])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS=-std=c++0x
 
@@ -2346,14 +2391,12 @@ ac_cxx_can_include_thread_header=no
 AC_MSG_RESULT([no])
 ])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_INCLUDE_THREAD_HEADER, test x$ac_cxx_can_include_thread_header = xyes)
 
 # Check whether compiler can process #include <condition_variable> without errors
 
 AC_MSG_CHECKING([that C++ compiler can include <condition_variable> header file])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS=-std=c++0x
 
@@ -2368,14 +2411,12 @@ ac_cxx_can_include_condition_variable_header=no
 AC_MSG_RESULT([no])
 ])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_INCLUDE_CONDITION_VARIABLE_HEADER, test x$ac_cxx_can_include_condition_variable_header = xyes)
 
 # check for std::shared_timed_mutex, this is a C++ 14 feature
 
 AC_MSG_CHECKING([that C++ compiler can use std::shared_timed_mutex])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="-std=c++1y -pthread"
 
@@ -2391,14 +2432,12 @@ ac_cxx_can_use_shared_timed_mutex=no
 AC_MSG_RESULT([no])
 ])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_USE_SHARED_TIMED_MUTEX, test x$ac_cxx_can_use_shared_timed_mutex = xyes)
 
 # check for std::shared_mutex, this is a C++ 11 feature
 
 AC_MSG_CHECKING([that C++ compiler can use std::timed_mutex])
-AC_LANG(C++)
 safe_CXXFLAGS=$CXXFLAGS
 CXXFLAGS="-std=c++0x -pthread"
 
@@ -2414,9 +2453,145 @@ ac_cxx_can_use_timed_mutex=no
 AC_MSG_RESULT([no])
 ])
 CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
 
 AM_CONDITIONAL(CXX_CAN_USE_TIMED_MUTEX, test x$ac_cxx_can_use_timed_mutex = xyes)
+
+# does this compiler support -faligned-new ?
+AC_MSG_CHECKING([if g++ accepts -faligned-new])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-faligned-new -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_FALIGNED_NEW="-faligned-new"
+AC_MSG_RESULT([yes])
+], [
+FLAG_FALIGNED_NEW=""
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+
+AC_SUBST(FLAG_FALIGNED_NEW)
+
+# does this compiler support -fsized-deallocation ?
+AC_MSG_CHECKING([if g++ accepts -fsized-deallocation])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-fsized-deallocation -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+FLAG_FSIZED_DEALLOCATION="-fsized-deallocation"
+ac_have_sized_deallocation=yes
+AC_MSG_RESULT([yes])
+], [
+FLAG_FSIZED_DEALLOCATION=""
+ac_have_sized_deallocation=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+
+AC_SUBST(FLAG_FSIZED_DEALLOCATION)
+AM_CONDITIONAL([HAVE_FSIZED_DEALLOCATION], [test x$ac_have_sized_deallocation = xyes])
+
+# does this compiler support C++17 aligned new/delete?
+AC_MSG_CHECKING([if g++ supports aligned new and delete])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-std=c++17"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <cstdlib>
+#include <new>
+]], [[
+  operator delete(nullptr, std::align_val_t(64U));
+]])], [
+ac_have_aligned_cxx_alloc=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_aligned_cxx_alloc=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+
+AM_CONDITIONAL([HAVE_ALIGNED_CXX_ALLOC], [test x$ac_have_aligned_cxx_alloc = xyes])
+
+# does g++ have built-in functions for atomic memory access ?
+AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="$mflag_primary"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
+  int variable = 1;
+  return (__sync_bool_compare_and_swap(&variable, 1, 2)
+          && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
+]])], [
+  ac_have_builtin_atomic_cxx=yes
+  AC_MSG_RESULT([yes])
+  AC_DEFINE(HAVE_BUILTIN_ATOMIC_CXX, 1, [Define to 1 if g++ supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
+], [
+  ac_have_builtin_atomic_cxx=no
+  AC_MSG_RESULT([no])
+])
+
+CXXFLAGS=$safe_CXXFLAGS
+
+AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_CXX], [test x$ac_have_builtin_atomic_cxx = xyes])
+
+
+# does libstdc++ support annotating shared pointers ?
+AC_MSG_CHECKING([if libstdc++ supports annotating shared pointers])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-std=c++0x"
+
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+  #include <memory>
+]], [[
+  std::shared_ptr<int> p
+]])], [
+  ac_have_shared_ptr=yes
+], [
+  ac_have_shared_ptr=no
+])
+if test x$ac_have_shared_ptr = xyes; then
+  # If compilation of the program below fails because of a syntax error
+  # triggered by substituting one of the annotation macros then that
+  # means that libstdc++ supports these macros.
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(a) (a)----
+    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(a) (a)----
+    #include <memory>
+  ]], [[
+    std::shared_ptr<int> p
+  ]])], [
+    ac_have_shared_pointer_annotation=no
+    AC_MSG_RESULT([no])
+  ], [
+    ac_have_shared_pointer_annotation=yes
+    AC_MSG_RESULT([yes])
+    AC_DEFINE(HAVE_SHARED_POINTER_ANNOTATION, 1,
+              [Define to 1 if libstd++ supports annotating shared pointers])
+  ])
+else
+  ac_have_shared_pointer_annotation=no
+  AC_MSG_RESULT([no])
+fi
+
+CXXFLAGS=$safe_CXXFLAGS
+
+AM_CONDITIONAL([HAVE_SHARED_POINTER_ANNOTATION],
+               [test x$ac_have_shared_pointer_annotation = xyes])
+
+AC_LANG_POP()
+
+#----------------------------------------------------------------------------
+# End of C++ checks
+#----------------------------------------------------------------------------
 
 # On aarch64 before glibc 2.20 we would get the kernel user_pt_regs instead
 # of the user_regs_struct from sys/user.h. They are structurally the same
@@ -2461,6 +2636,21 @@ AC_MSG_RESULT([no])
 ])
 
 AM_CONDITIONAL(HAVE_NR_IO_PGETEVENTS, [test x$ac_have_nr_io_pgetevents = xyes])
+
+AC_MSG_CHECKING([for PROCMAP_QUERY])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <linux/fs.h>
+]], [[
+return PROCMAP_QUERY
+]])], [
+ac_have_procmap_query=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_procmap_query=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(HAVE_PROCMAP_QUERY, [test x$ac_have_procmap_query = xyes])
 
 #----------------------------------------------------------------------------
 # Checking for supported compiler flags.
@@ -2760,13 +2950,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 ]])], [
 ac_compiler_supports_mlong_double_128=yes
 AC_MSG_RESULT([yes])
+FLAG_MLONG_DOUBLE_128="-mlong-double-128"
 ], [
 ac_compiler_supports_mlong_double_128=no
 AC_MSG_RESULT([no])
+FLAG_MLONG_DOUBLE_128=""
 ])
 CFLAGS=$safe_CFLAGS
 AM_CONDITIONAL(HAS_MLONG_DOUBLE_128, test x$ac_compiler_supports_mlong_double_128 = xyes)
-FLAG_MLONG_DOUBLE_128="-mlong-double-128"
 AC_SUBST(FLAG_MLONG_DOUBLE_128)
 
 # does this toolchain support lto ?
@@ -2827,7 +3018,7 @@ fi
 AC_DEFUN([AC_GCC_WARNING_SUBST_NO],[
   AC_MSG_CHECKING([if gcc accepts -W$1])
   safe_CFLAGS=$CFLAGS
-  CFLAGS="-W$1 -Werror"
+  CFLAGS="-W$1 -Wno-$1 -Werror"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
   AC_SUBST([$2], [-Wno-$1])
   AC_MSG_RESULT([yes])], [
@@ -2880,9 +3071,9 @@ AC_GCC_WARNING_SUBST_NO([unused-result], [FLAG_W_NO_UNUSED_RESULT])
 AC_GCC_WARNING_SUBST_NO([infinite-recursion], [FLAG_W_NO_INFINITE_RECURSION])
 AC_GCC_WARNING_SUBST_NO([deprecated], [FLAG_W_NO_DEPRECATED])
 # OK for 32 and 64 bit
-AC_GCC_WARNING_SUBST_NO([alloc-size-larger-than=18446744073709551615], [FLAG_W_NO_ALLOC_SIZE_LARGER_THAN])
 AC_GCC_WARNING_SUBST_NO([alloc-size], [FLAG_W_NO_ALLOC_SIZE])
 AC_GCC_WARNING_SUBST_NO([deprecated-declarations], [FLAG_W_NO_DEPRECATED_DECLARATIONS])
+AC_GCC_WARNING_SUBST_NO([nullability-completeness], [FLAG_W_NO_NULLABILITY_COMPLETENESS])
 
 AC_GCC_WARNING_SUBST([write-strings], [FLAG_W_WRITE_STRINGS])
 AC_GCC_WARNING_SUBST([empty-body], [FLAG_W_EMPTY_BODY])
@@ -2895,24 +3086,25 @@ AC_GCC_WARNING_SUBST([missing-parameter-type], [FLAG_W_MISSING_PARAMETER_TYPE])
 AC_GCC_WARNING_SUBST([logical-op], [FLAG_W_LOGICAL_OP])
 AC_GCC_WARNING_SUBST([enum-conversion], [FLAG_W_ENUM_CONVERSION])
 AC_GCC_WARNING_SUBST([implicit-fallthrough=2], [FLAG_W_IMPLICIT_FALLTHROUGH])
+AC_GCC_WARNING_SUBST([alloc-size-larger-than=18446744073709551616], [FLAG_W_ALLOC_SIZE_LARGER_THAN])
 
 # as above, C++ flags
 AC_DEFUN([AC_GXX_WARNING_SUBST_NO],[
   AC_MSG_CHECKING([if g++ accepts -W$1])
   safe_CXXFLAGS=$CXXFLAGS
   CXXFLAGS="-W$1 -Werror"
-  AC_LANG_PUSH(C++)
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[;]])], [
                     AC_SUBST([$2], [-Wno-$1])
-  AC_LANG_POP()
   AC_MSG_RESULT([yes])], [
                 AC_SUBST([$2], [])
                 AC_MSG_RESULT([no])])
   CXXFLAGS=$safe_CXXFLAGS
 ])
 
+AC_LANG_PUSH(C++)
 AC_GXX_WARNING_SUBST_NO([missing-exception-spec], [FLAG_W_NO_MISSING_EXCEPTION_SPEC])
 AC_GXX_WARNING_SUBST_NO([implicit-exception-spec-mismatch], [FLAG_W_NO_IMPLICIT_EXCEPTION_SPEC_MISMATCH])
+AC_LANG_POP()
 
 # Does this compiler support -Wformat-security ?
 # Special handling is needed, because certain GCC versions require -Wformat
@@ -2965,75 +3157,6 @@ else
   AC_SUBST([FLAG_W_CAST_ALIGN], [-Wcast-align])
 fi
 
-# does this compiler support -faligned-new ?
-AC_MSG_CHECKING([if g++ accepts -faligned-new])
-
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-faligned-new -Werror"
-
-AC_LANG(C++)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_FALIGNED_NEW="-faligned-new"
-AC_MSG_RESULT([yes])
-], [
-FLAG_FALIGNED_NEW=""
-AC_MSG_RESULT([no])
-])
-CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
-
-AC_SUBST(FLAG_FALIGNED_NEW)
-
-# does this compiler support -fsized-deallocation ?
-AC_MSG_CHECKING([if g++ accepts -fsized-deallocation])
-
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-fsized-deallocation -Werror"
-
-AC_LANG(C++)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
-  return 0;
-]])], [
-FLAG_FSIZED_DEALLOCATION="-fsized-deallocation"
-ac_have_sized_deallocation=yes
-AC_MSG_RESULT([yes])
-], [
-FLAG_FSIZED_DEALLOCATION=""
-ac_have_sized_deallocation=no
-AC_MSG_RESULT([no])
-])
-CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
-
-AC_SUBST(FLAG_FSIZED_DEALLOCATION)
-AM_CONDITIONAL([HAVE_FSIZED_DEALLOCATION], [test x$ac_have_sized_deallocation = xyes])
-
-# does this compiler support C++17 aligned new/delete?
-AC_MSG_CHECKING([if g++ supports aligned new and delete])
-
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-std=c++17"
-
-AC_LANG(C++)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <cstdlib>
-#include <new>
-]], [[
-  operator delete(nullptr, std::align_val_t(64U));
-]])], [
-ac_have_aligned_cxx_alloc=yes
-AC_MSG_RESULT([yes])
-], [
-ac_have_aligned_cxx_alloc=no
-AC_MSG_RESULT([no])
-])
-CXXFLAGS=$safe_CXXFLAGS
-AC_LANG(C)
-
-AM_CONDITIONAL([HAVE_ALIGNED_CXX_ALLOC], [test x$ac_have_aligned_cxx_alloc = xyes])
-
 # does this compiler support -fno-stack-protector ?
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
 
@@ -3075,6 +3198,48 @@ AC_MSG_RESULT([no])
 CFLAGS=$safe_CFLAGS
 
 AC_SUBST(FLAG_FINLINE_FUNCTIONS)
+
+# does this compiler support -fno-diagnostics-show-caret ?
+AC_MSG_CHECKING([if gcc accepts -fno-diagnostics-show-caret])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-fno-diagnostics-show-caret -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+no_diagnostics_show_caret=yes
+FLAG_FNO_DIAGNOSTICS_SHOW_CARET="-fno-diagnostics-show-caret"
+AC_MSG_RESULT([yes])
+], [
+no_diagnostics_show_caret=no
+FLAG_FNO_DIAGNOSTICS_SHOW_CARET=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_FNO_DIAGNOSTICS_SHOW_CARET)
+
+# does this compiler support -ftrack-macro-expansion=0 ?
+AC_MSG_CHECKING([if gcc accepts -ftrack-macro-expansion=0])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-ftrack-macro-expansion=0 -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  return 0;
+]])], [
+track_macro_expansion=yes
+FLAG_FTRACK_MACRO_EXPANSION="-ftrack-macro-expansion=0"
+AC_MSG_RESULT([yes])
+], [
+track_macro_expansion=no
+FLAG_FTRACK_MACRO_EXPANSION=""
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AC_SUBST(FLAG_FTRACK_MACRO_EXPANSION)
 
 # Does GCC support disabling Identical Code Folding?
 # We want to disabled Identical Code Folding for the
@@ -3314,26 +3479,25 @@ AM_CONDITIONAL([HAVE_ANSI], [test x$ac_have_ansi = xyes])
 CFLAGS=$safe_CFLAGS
 
 
-# Does this compiler support -no-pie?
+# Does this linker support -no-pie?
 # On Ubuntu 16.10+, gcc produces position independent executables (PIE) by
 # default. However this gets in the way with some tests, we use -no-pie
 # for these.
-
 AC_MSG_CHECKING([if gcc accepts -no-pie])
 
-safe_CFLAGS=$CFLAGS
-CFLAGS="-no-pie -Werror"
+safe_LDFLAGS=$LDFLAGS
+LDFLAGS="-Wl,-no-pie"
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ ]], [[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[ ]], [[
   return 0;
 ]])], [
-AC_SUBST([FLAG_NO_PIE], ["-no-pie"])
+AC_SUBST([LDFLAG_NO_PIE], ["-Wl,-no-pie"])
 AC_MSG_RESULT([yes])
 ], [
-AC_SUBST([FLAG_NO_PIE], [""])
+AC_SUBST([LDFLAG_NO_PIE], [""])
 AC_MSG_RESULT([no])
 ])
-CFLAGS=$safe_CFLAGS
+LDFLAGS=$safe_LDFLAGS
 
 
 # We want to use use the -Ttext-segment option to the linker.
@@ -4124,6 +4288,14 @@ fi
 
 if test "$VGCONF_OS" = "solaris" ; then
 AC_CHECK_HEADERS([sys/lgrp_user_impl.h])
+
+AC_CHECK_HEADER([sys/crypto/ioctl.h], [
+    AC_DEFINE([HAVE_SYS_CRYPTO_IOCTL_H], [1], [Define to 1 if sys/crypto/ioctl.h is available.])
+    ac_have_sys_crypto_ioctl_h=yes
+], [
+    ac_have_sys_crypto_ioctl_h=no
+])
+AM_CONDITIONAL(SOLARIS_HAVE_SYS_CRYPTO_IOCTL_H, test x$ac_have_sys_crypto_ioctl_h = xyes )
 
 # Solaris-specific check determining if the Sun Studio Assembler is used to
 # build Valgrind.  The test checks if the x86/amd64 assembler understands the
@@ -5091,6 +5263,7 @@ AC_MSG_RESULT([no])
 ])
 
 else
+AM_CONDITIONAL(SOLARIS_HAVE_SYS_CRYPTO_IOCTL_H, false)
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)
 AM_CONDITIONAL(SOLARIS_XPG_SYMBOLS_PRESENT, false)
 AM_CONDITIONAL(SOLARIS_PROC_CMDLINE, false)
@@ -5238,6 +5411,21 @@ ac_have_usable_linux_futex_h=no
 AC_MSG_RESULT([no])
 ])
 CFLAGS="$save_CFLAGS"
+
+if test x$ac_have_usable_linux_futex_h = xyes \
+        -a x$ac_have_builtin_atomic_primary = xyes; then
+  ac_enable_linux_ticket_lock_primary=yes
+fi
+AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_PRIMARY],
+               [test x$ac_enable_linux_ticket_lock_primary = xyes])
+
+if test x$VGCONF_PLATFORM_SEC_CAPS != x \
+        -a x$ac_have_usable_linux_futex_h = xyes \
+        -a x$ac_have_builtin_atomic_secondary = xyes; then
+  ac_enable_linux_ticket_lock_secondary=yes
+fi
+AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_SECONDARY],
+               [test x$ac_enable_linux_ticket_lock_secondary = xyes])
 
 
 #----------------------------------------------------------------------------
@@ -5899,94 +6087,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 AM_CONDITIONAL([HAVE_AIO_READV],
                [test x$ac_have_aio_readv = xyes])
 
-# does g++ have built-in functions for atomic memory access ?
-AC_MSG_CHECKING([if g++ supports __sync_add_and_fetch])
-
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="$mflag_primary"
-
-AC_LANG_PUSH(C++)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
-  int variable = 1;
-  return (__sync_bool_compare_and_swap(&variable, 1, 2)
-          && __sync_add_and_fetch(&variable, 1) ? 1 : 0)
-]])], [
-  ac_have_builtin_atomic_cxx=yes
-  AC_MSG_RESULT([yes])
-  AC_DEFINE(HAVE_BUILTIN_ATOMIC_CXX, 1, [Define to 1 if g++ supports __sync_bool_compare_and_swap() and __sync_add_and_fetch()])
-], [
-  ac_have_builtin_atomic_cxx=no
-  AC_MSG_RESULT([no])
-])
-AC_LANG_POP(C++)
-
-CXXFLAGS=$safe_CXXFLAGS
-
-AM_CONDITIONAL([HAVE_BUILTIN_ATOMIC_CXX], [test x$ac_have_builtin_atomic_cxx = xyes])
-
-
-if test x$ac_have_usable_linux_futex_h = xyes \
-        -a x$ac_have_builtin_atomic_primary = xyes; then
-  ac_enable_linux_ticket_lock_primary=yes
-fi
-AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_PRIMARY],
-               [test x$ac_enable_linux_ticket_lock_primary = xyes])
-
-if test x$VGCONF_PLATFORM_SEC_CAPS != x \
-        -a x$ac_have_usable_linux_futex_h = xyes \
-        -a x$ac_have_builtin_atomic_secondary = xyes; then
-  ac_enable_linux_ticket_lock_secondary=yes
-fi
-AM_CONDITIONAL([ENABLE_LINUX_TICKET_LOCK_SECONDARY],
-               [test x$ac_enable_linux_ticket_lock_secondary = xyes])
-
-
-# does libstdc++ support annotating shared pointers ?
-AC_MSG_CHECKING([if libstdc++ supports annotating shared pointers])
-
-safe_CXXFLAGS=$CXXFLAGS
-CXXFLAGS="-std=c++0x"
-
-AC_LANG_PUSH(C++)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-  #include <memory>
-]], [[
-  std::shared_ptr<int> p
-]])], [
-  ac_have_shared_ptr=yes
-], [
-  ac_have_shared_ptr=no
-])
-if test x$ac_have_shared_ptr = xyes; then
-  # If compilation of the program below fails because of a syntax error
-  # triggered by substituting one of the annotation macros then that
-  # means that libstdc++ supports these macros.
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_BEFORE(a) (a)----
-    #define _GLIBCXX_SYNCHRONIZATION_HAPPENS_AFTER(a) (a)----
-    #include <memory>
-  ]], [[
-    std::shared_ptr<int> p
-  ]])], [
-    ac_have_shared_pointer_annotation=no
-    AC_MSG_RESULT([no])
-  ], [
-    ac_have_shared_pointer_annotation=yes
-    AC_MSG_RESULT([yes])
-    AC_DEFINE(HAVE_SHARED_POINTER_ANNOTATION, 1,
-              [Define to 1 if libstd++ supports annotating shared pointers])
-  ])
-else
-  ac_have_shared_pointer_annotation=no
-  AC_MSG_RESULT([no])
-fi
-AC_LANG_POP(C++)
-
-CXXFLAGS=$safe_CXXFLAGS
-
-AM_CONDITIONAL([HAVE_SHARED_POINTER_ANNOTATION],
-               [test x$ac_have_shared_pointer_annotation = xyes])
-
 # checking for GNU libc C17 aligned_alloc
 # just check glibc version rather than trying to muck around
 # checking the runtime behaviour or seeing if it is a weak alias
@@ -6013,14 +6113,14 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
 int thrd_entry(void *arg) { return 0; }
 ], [[thrd_t thr; return thrd_create(&thr, thrd_entry, NULL);]])],
 [
-ac_cxx_have_thrd_create=yes
+ac_have_thrd_create=yes
 AC_MSG_RESULT([yes])
 ], [
-ac_cxx_have_thrd_create=no
+ac_have_thrd_create=no
 AC_MSG_RESULT([no])
 ])
 
-AM_CONDITIONAL(HAVE_THRD_CREATE, test x$ac_cxx_have_thrd_create = xyes)
+AM_CONDITIONAL(HAVE_THRD_CREATE, test x$ac_have_thrd_create = xyes)
 
 
 # Check arm64 sha3

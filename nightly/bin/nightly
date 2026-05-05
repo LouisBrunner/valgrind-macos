@@ -215,7 +215,7 @@ fi
 uname_stuff="`uname -mrs`"
 if [ -r /etc/os-release ]; then
   vendor_stuff="`. /etc/os-release; echo ${NAME} ${VERSION}`"
-elif which lsb_release >/dev/null 2>&1; then
+elif command -v lsb_release >/dev/null 2>&1; then
   vendor_stuff="`lsb_release -sicr | xargs echo`"
 elif [ -e "/etc/issue.net" -a -r "/etc/issue.net" ]; then
   vendor_stuff="`cat /etc/issue.net | head -1`"

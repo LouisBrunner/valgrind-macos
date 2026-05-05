@@ -58,6 +58,57 @@ storage.c to choose between symbol table names vs. Dwarf3 names.  So this
 machinery was removed in r10155.
 
 
+Mac OS X / macOS supported platforms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since January 2025 (and thus Valgrind 3.25) we have required a compiler
+that supports C11. See 42eb19c0da3bb280de88b7f8fc9b7caaa44aedfem for
+details. We also need an xcrun that supports --show-sdk-path (since
+December 2025). I'm not sure when both of those became supported.
+Definitely neither are on Mac OS 10.7 with XCode 4.6.3. And equally
+definitely both are supported on macOS 10.13 with XCode 10.1. That
+means that I don't know which is the oldest version of macOS that
+will build Valgrind (as of December 2025). Somewhere between 10.8 (Darwin 12)
+and 10.12 (Darwin 16).
+
+Massif on Darwin
+~~~~~~~~~~~~~~~~
+
+There is one fundamental difference in the architecture of Darwin
+compared to the other ELF based systems. To start an ELF executable
+ld.so is used. This is a minimalistic binary that just does the
+loading and runtime link-editing of dependent shared libraries.
+Darwin dyld does roughly the same thing except that it triggers
+much more initialisation. Darwin does not have separate libraries
+for the C and C++ standard libraries. Instead it has libSystem.
+That is more like libc and libstdc++ and the Objective-C lib and
+libcrypto and networking libs and about 30 other libs all bundled
+into one. The result is that even before reaching "main()" a
+Darwin guest will have performed vastly more allocations than
+on an ELF system. For comparison, C++ Hello World on FreeBSD
+does one allocation. On Darwin 22 it does 178 allocations. As
+an aside, many of those are not deallocated, which also makes
+a mess of all of the memcheck leak tests.
+
+All this means that the massif tests need very extensive use
+of --ignore-fn for Darwin. There are hundreds of allocations
+and the allocator functions seem to change frequently between
+Darwin versions. For larger allocations, getting the name
+of the allocation function is just a question of looking at
+the failure diff. For small allocations the function may not
+appear in the detailed reports but still cause a diff in
+the allocation totals. In that case consider trying
+- use --threshold=0.0 --detailed-freq=1
+- rerun the test outside of regtest (you can use the
+  .vgtest.log to get the full command line)
+- if all else fails, run with --trace-malloc=yes to try to
+  find out which allocation function (malloc, calloc etc)
+  corresponds to the unaccounted size and then use gdb
+  and put a breakpoint on that allocation function.
+
+DHAT has similar issues but no --ignore-fn option (yet).
+
+
 Valgrind-developer notes, todos re the MacOSX port
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

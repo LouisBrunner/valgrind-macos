@@ -272,7 +272,7 @@ void VEX_REGPARM(3)
    semantics of these primops (Sar64x2, etc) it is an error if in
    fact we are ever given an out-of-range shift amount. 
 */
-void /*not-regparm*/
+void VEX_REGPARM(3)
      h_generic_calc_SarN64x2 ( /*OUT*/V128* res,
                                V128* argL, UInt nn)
 {
@@ -282,7 +282,7 @@ void /*not-regparm*/
    res->w64[1] = sar64(argL->w64[1], nn);
 }
 
-void /*not-regparm*/
+void VEX_REGPARM(3)
      h_generic_calc_SarN8x16 ( /*OUT*/V128* res,
                               V128* argL, UInt nn)
 {

@@ -90,6 +90,10 @@ UWord HG_(clo_vts_pruning) = 1;
 
 Bool  HG_(clo_check_stack_refs) = True;
 
+UWord HG_(clo_show_events) = 0;
+
+UWord HG_(clo_track_destroy) = 0;
+
 /*--------------------------------------------------------------------*/
 /*--- end                                              hg_basics.c ---*/
 /*--------------------------------------------------------------------*/

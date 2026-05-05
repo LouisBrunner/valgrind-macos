@@ -1,2 +1,4 @@
 prog: vbit-test
 vgopts: -q --expensive-definedness-checks=yes --vex-guest-chase=no
+stderr_filter:
+stderrB_filter:

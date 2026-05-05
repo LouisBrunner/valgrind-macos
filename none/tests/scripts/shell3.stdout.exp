@@ -1,0 +1,12 @@
+Execute a directory
+Execute a non-executable file
+Execute a script with a bad interpreter name
+Execute a binary file
+Execute a non-existent file
+Execute a non-existent file (2)
+Execute a valid script with a #! line
+Execute a valid script without a #! line
+tata
+Execute a valid script with #! but no interpname
+no space after #!
+Execute a zero-length file

@@ -658,7 +658,6 @@ Int VG_(load_ELF)(Int fd, const HChar* name, /*MOD*/ExeInfo* info)
          if (sr_isError(sres))
 #endif
          sres = VG_(open)(buf, VKI_O_RDONLY, 0);
-         //sres = VG_(open)("/usr/home/paulf/build/src/obj/usr/home/paulf/build/src/amd64.amd64/libexec/rtld-elf/ld-elf.so.1.full", VKI_O_RDONLY, 0);
          if (sr_isError(sres)) {
             VG_(printf)("valgrind: m_ume.c: can't open interpreter\n");
             VG_(exit)(1);

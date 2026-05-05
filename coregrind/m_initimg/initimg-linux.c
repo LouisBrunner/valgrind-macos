@@ -960,8 +960,13 @@ Addr setup_client_stack( void*  init_sp,
          exe_name = interp_name;
       }
       HChar resolved_name[VKI_PATH_MAX];
-      VG_(realpath)(exe_name, resolved_name);
-      VG_(resolved_exename) = VG_(strdup)("initimg-linux.sre.1", resolved_name);
+      if (VG_(realpath)(exe_name, resolved_name)) {
+         VG_(resolved_exename) = VG_(strdup)("initimg-linux.scs.1", resolved_name);
+      } else {
+         /* This should not really happen. realpath tried and failed.
+            So lets just continue with the exe_name as is. */
+         VG_(resolved_exename) = VG_(strdup)("initimg-linux.scs.2", exe_name);
+      }
    }
 
    /* client_SP is pointing at client's argc/argv */

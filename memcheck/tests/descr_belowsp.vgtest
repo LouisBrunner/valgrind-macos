@@ -1,2 +1,3 @@
+prereq: ./run_descr_belowsp_test
 prog: descr_belowsp
 vgopts: -q

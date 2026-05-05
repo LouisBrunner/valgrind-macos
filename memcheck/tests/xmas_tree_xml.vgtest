@@ -1,0 +1,4 @@
+prereq: test -e xmas_tree && [ -x "$(command -v xmllint)" ]
+prog: xmas_tree
+args: | xmllint --noout -
+vgopts: --xml=yes --xml-fd=1 --leak-check=full --suppressions=xmas_tree_xml.supp --leak-check-heuristics=multipleinheritance

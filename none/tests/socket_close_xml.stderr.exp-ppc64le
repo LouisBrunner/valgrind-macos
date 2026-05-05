@@ -80,7 +80,6 @@ and close the socket again 3
   </stack>
 </error>
 
-
 <status>
   <state>FINISHED</state>
   <time>...</time>
@@ -93,6 +92,4 @@ and close the socket again 3
   </pair>
 </errorcounts>
 
-
 </valgrindoutput>
-

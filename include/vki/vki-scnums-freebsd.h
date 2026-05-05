@@ -5,7 +5,7 @@
 
    Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
-   Copyright (C) 2018-2021 Paul Floyd
+   Copyright (C) 2018-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -29,19 +29,6 @@
 
 #include "config.h"
 #include <sys/syscall.h>
-
-// this is the syscall format used by e.g., libc functions like 'write'
-// this is the one used 99.999% of the time
-// the two others are only for experimental or testing use
-// (but we use them in the scalar tests).
-#define VG_FREEBSD_SYSCALL_STD 0
-// this is the syscall format used by 'syscall'
-#define VG_FREEBSD_SYSCALL0    1
-// this is the syscall format used by '__syscall'
-// it is the same as VG_FREEBSD_SYSCALL0 except that
-// it ensures that 64bit argument alignment is correct
-// that makes no difference for amd64, x86 not sure
-#define VG_FREEBSD_SYSCALL198  2
 
 // From sys/syscall.h
 
@@ -653,7 +640,12 @@
 
 #define __NR_jail_attach_jd      597
 #define __NR_jail_remove_jd      598
+#define __NR_kexec_load          599
+#define __NR_pdrfork             600
+#define __NR_pdwait              601
+#define __NR_renameat2           602
 
-#define __NR_fake_sigreturn      1000
+
+#define __NR_freebsd_fake_sigreturn 1000
 
 #endif /* VKI_UNISTD_FREEBSD_H */

@@ -60,13 +60,13 @@ int main(void)
    
    errno = 0;
    // bad flag
-   close_range(fd1, fd3, 2);
-   assert(errno = EINVAL);
+   close_range(fd1, fd3, 231);
+   assert(errno == EINVAL);
    
    errno = 0;
    // wrong order
    close_range(fd3, fd1, 0);
-   assert(errno = EINVAL);
+   assert(errno == EINVAL);
    
    errno = 0;
    getrlimit(RLIMIT_NOFILE, &rl);

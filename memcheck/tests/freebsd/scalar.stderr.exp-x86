@@ -856,7 +856,7 @@ Syscall param bind(addrlen) contains uninitialised byte(s)
    ...
 
 ---------------------------------------------------------
-105:          SYS_setsockopt 5s 0m
+105:          SYS_setsockopt 5s 1m
 ---------------------------------------------------------
 Syscall param setsockopt(s) contains uninitialised byte(s)
    ...
@@ -871,6 +871,12 @@ Syscall param setsockopt(optval) contains uninitialised byte(s)
    ...
 
 Syscall param setsockopt(optlen) contains uninitialised byte(s)
+   ...
+
+Syscall param socketcall.setsockopt(optval) points to uninitialised byte(s)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 16 alloc'd
+   at 0x........: malloc (vg_replace_malloc.c:...)
    ...
 
 ---------------------------------------------------------
@@ -913,21 +919,30 @@ Syscall param getrusage(usage) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
-105:          SYS_setsockopt 5s 1m
+118:          SYS_getsockopt 5s 1m
 ---------------------------------------------------------
-Syscall param setsockopt(s) contains uninitialised byte(s)
+Syscall param getsockopt(s) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(level) contains uninitialised byte(s)
+Syscall param getsockopt(level) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(optname) contains uninitialised byte(s)
+Syscall param getsockopt(optname) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(optval) contains uninitialised byte(s)
+Syscall param getsockopt(optval) contains uninitialised byte(s)
    ...
 
-Syscall param setsockopt(optlen) contains uninitialised byte(s)
+Syscall param getsockopt(*optlen) contains uninitialised byte(s)
+   ...
+
+Syscall param getsockopt(optlen) points to unaddressable byte(s)
+   ...
+ Address 0x........ is 0 bytes inside a block of size 4 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   ...
+ Block was alloc'd at
+   at 0x........: malloc (vg_replace_malloc.c:...)
    ...
 
 ---------------------------------------------------------
@@ -4153,12 +4168,15 @@ Syscall param cpuset_setaffinity points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
-489:           SYS_faccessat 3s 1m
+489:           SYS_faccessat 4s 1m
 ---------------------------------------------------------
 Syscall param faccessat(fd) contains uninitialised byte(s)
    ...
 
 Syscall param faccessat(path) contains uninitialised byte(s)
+   ...
+
+Syscall param faccessat(mode) contains uninitialised byte(s)
    ...
 
 Syscall param faccessat(flag) contains uninitialised byte(s)
@@ -5543,6 +5561,35 @@ Syscall param fhreadlink(buf) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+569:     SYS_copy_file_range 6s 2m
+---------------------------------------------------------
+Syscall param copy_file_range("infd") contains uninitialised byte(s)
+   ...
+
+Syscall param copy_file_range("inoffp") contains uninitialised byte(s)
+   ...
+
+Syscall param copy_file_range("outfd") contains uninitialised byte(s)
+   ...
+
+Syscall param copy_file_range("outoffp") contains uninitialised byte(s)
+   ...
+
+Syscall param copy_file_range("len") contains uninitialised byte(s)
+   ...
+
+Syscall param copy_file_range("flags") contains uninitialised byte(s)
+   ...
+
+Syscall param copy_file_range(inoffp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param copy_file_range(outoffp) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 570:      SYS___sysctlbyname (getoldlen) 3s 2m
 ---------------------------------------------------------
 Syscall param __sysctlbyname(name) contains uninitialised byte(s)
@@ -5923,6 +5970,81 @@ Syscall param setgroups(list) contains uninitialised byte(s)
    ...
 
 Syscall param setgroups(list) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+599:          SYS_kexec_load 4s 1m
+---------------------------------------------------------
+Syscall param kexec_load(entry) contains uninitialised byte(s)
+   ...
+
+Syscall param kexec_load(count) contains uninitialised byte(s)
+   ...
+
+Syscall param kexec_load(segments) contains uninitialised byte(s)
+   ...
+
+Syscall param kexec_load(flag) contains uninitialised byte(s)
+   ...
+
+Syscall param kexec_load(segments) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+601:              SYS_pdwait 5s 3m
+---------------------------------------------------------
+Syscall param pdwait(fd) contains uninitialised byte(s)
+   ...
+
+Syscall param pdwait(status) contains uninitialised byte(s)
+   ...
+
+Syscall param pdwait(options) contains uninitialised byte(s)
+   ...
+
+Syscall param pdwait(wrusage) contains uninitialised byte(s)
+   ...
+
+Syscall param pdwait(infop) contains uninitialised byte(s)
+   ...
+
+Syscall param pdwait(status) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pdwait(wrusage) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param pdwait(infop) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
+602:           SYS_renameat2 5s 2m
+---------------------------------------------------------
+Syscall param renameat2(olddfd) contains uninitialised byte(s)
+   ...
+
+Syscall param renameat2(oldpath) contains uninitialised byte(s)
+   ...
+
+Syscall param renameat2(newdfd) contains uninitialised byte(s)
+   ...
+
+Syscall param renameat2(newpath) contains uninitialised byte(s)
+   ...
+
+Syscall param renameat2(flags) contains uninitialised byte(s)
+   ...
+
+Syscall param renameat2(oldpath) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+Syscall param renameat2(newpath) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 

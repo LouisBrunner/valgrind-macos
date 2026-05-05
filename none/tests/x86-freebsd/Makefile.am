@@ -3,8 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
-	bug445032.vgtest \
-	bug445032.stderr.exp
+	bug445032.vgtest
 
 check_PROGRAMS = \
 	bug445032

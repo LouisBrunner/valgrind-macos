@@ -10,7 +10,7 @@ LEAK SUMMARY:
 Reachable blocks (those to which a pointer was found) are not shown.
 To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
-realloc() with size 0
+reallocarray() with size 0
    at 0x........: reallocarray (vg_replace_malloc.c:...)
    by 0x........: main (reallocarray.c:13)
  Address 0x........ is 0 bytes inside a block of size 40 alloc'd
@@ -26,7 +26,7 @@ LEAK SUMMARY:
 Reachable blocks (those to which a pointer was found) are not shown.
 To see them, rerun with: --leak-check=full --show-leak-kinds=all
 
-realloc() with size 0
+reallocarray() with size 0
    at 0x........: reallocarray (vg_replace_malloc.c:...)
    by 0x........: main (reallocarray.c:15)
  Address 0x........ is 0 bytes inside a block of size 1 alloc'd

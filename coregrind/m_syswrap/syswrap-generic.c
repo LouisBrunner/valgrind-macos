@@ -270,7 +270,20 @@ ML_(notify_core_and_tool_of_mprotect) ( Addr a, SizeT len, Int prot )
                                  "ML_(notify_core_and_tool_of_mprotect)" );
 }
 
-
+#if defined(VGO_linux)
+void
+ML_(notify_core_and_tool_of_madv_guard) ( Addr a, SizeT len, Bool install )
+{
+   page_align_addr_and_len(&a, &len);
+   if (install) {
+      if (VG_(am_notify_madv_guard)( a, len, True ))
+         VG_(discard_translations)( a, (ULong)len,
+                                    "ML_(notify_core_and_tool_of_madv_guard)" );
+   } else {
+      VG_(am_notify_madv_guard)(a, len, False);
+   }
+}
+#endif
 
 #if HAVE_MREMAP
 /* Expand (or shrink) an existing mapping, potentially moving it at
@@ -3113,6 +3126,22 @@ PRE(sys_madvise)
                  unsigned long, start, vki_size_t, length, int, advice);
 }
 
+#if defined(VGO_linux)
+POST(sys_madvise)
+{
+   if (ARG3 == VKI_MADV_GUARD_INSTALL) {
+      Addr a    = ARG1;
+      SizeT len = ARG2;
+      ML_(notify_core_and_tool_of_madv_guard)(a, len, True);
+   }
+   if (ARG3 == VKI_MADV_GUARD_REMOVE) {
+      Addr a    = ARG1;
+      SizeT len = ARG2;
+      ML_(notify_core_and_tool_of_madv_guard)(a, len, False);
+   }
+}
+#endif
+
 #if HAVE_MREMAP
 PRE(sys_mremap)
 {
@@ -4762,14 +4791,14 @@ POST(sys_nanosleep)
       POST_MEM_WRITE( ARG2, sizeof(struct vki_timespec) );
 }
 
-#if defined(VGO_linux) || defined(VGO_solaris)
+#if defined(VGO_linux)
 /* Handles the case where the open is of /proc/self/auxv or
    /proc/<pid>/auxv, and just gives out a copy of the fd for the
    fake file we cooked up at startup (in m_main).  Also, seeks the
    cloned fd back to the start.
    Returns True if auxv open was handled (status is set). */
-Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
-                           int flags)
+static Bool handle_auxv_open(SyscallStatus *status, const HChar *filename,
+                             int flags)
 {
    HChar  name[30];   // large enough
 
@@ -4778,7 +4807,7 @@ Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
 
    /* Opening /proc/<pid>/auxv or /proc/self/auxv? */
    VG_(sprintf)(name, "/proc/%d/auxv", VG_(getpid)());
-   if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/auxv"))
+   if ((VG_(strcmp)(filename, name)!=0) && (VG_(strcmp)(filename, "/proc/self/auxv")!=0))
       return False;
 
    /* Allow to open the file only for reading. */
@@ -4787,11 +4816,6 @@ Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
       return True;
    }
 
-#  if defined(VGO_solaris)
-   VG_(sprintf)(name, "/proc/self/fd/%d", VG_(cl_auxv_fd));
-   SysRes sres = VG_(open)(name, flags, 0);
-   SET_STATUS_from_SysRes(sres);
-#  else
    SysRes sres = VG_(dup)(VG_(cl_auxv_fd));
    SET_STATUS_from_SysRes(sres);
    if (!sr_isError(sres)) {
@@ -4799,15 +4823,12 @@ Bool ML_(handle_auxv_open)(SyscallStatus *status, const HChar *filename,
       if (off < 0)
          SET_STATUS_Failure(VKI_EMFILE);
    }
-#  endif
 
    return True;
 }
-#endif // defined(VGO_linux) || defined(VGO_solaris)
 
-#if defined(VGO_linux)
-Bool ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
-                               int flags)
+static Bool handle_self_exe_open(SyscallStatus *status, const HChar *filename,
+                                 int flags)
 {
    HChar  name[30];   // large enough for /proc/<int>/exe
 
@@ -4816,7 +4837,7 @@ Bool ML_(handle_self_exe_open)(SyscallStatus *status, const HChar *filename,
 
    /* Opening /proc/<pid>/exe or /proc/self/exe? */
    VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
-   if (!VG_STREQ(filename, name) && !VG_STREQ(filename, "/proc/self/exe"))
+   if ((VG_(strcmp)(filename, name)!=0) && (VG_(strcmp)(filename, "/proc/self/exe")!=0))
       return False;
 
    /* Allow to open the file only for reading. */
@@ -4907,7 +4928,7 @@ PRE(sys_open)
 
       VG_(sprintf)(name, "/proc/%d/cmdline", VG_(getpid)());
       if (ML_(safe_to_deref)( arg1s, 1 )
-          && (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, "/proc/self/cmdline"))) {
+          && (VG_(strcmp)(arg1s, name)==0 || VG_(strcmp)(arg1s, "/proc/self/cmdline")==0)) {
          sres = VG_(dup)( VG_(cl_cmdline_fd) );
          SET_STATUS_from_SysRes( sres );
          if (!sr_isError(sres)) {
@@ -4921,8 +4942,8 @@ PRE(sys_open)
 
    /* Handle also the case of /proc/self/auxv or /proc/<pid>/auxv
       or /proc/self/exe or /proc/<pid>/exe. */
-   if (ML_(handle_auxv_open)(status, (const HChar *)(Addr)ARG1, ARG2)
-       || ML_(handle_self_exe_open)(status, (const HChar *)(Addr)ARG1, ARG2))
+   if (handle_auxv_open(status, (const HChar *)(Addr)ARG1, ARG2)
+       || handle_self_exe_open(status, (const HChar *)(Addr)ARG1, ARG2))
       return;
 
    if (proc_self_exe) {
@@ -5029,8 +5050,13 @@ PRE(sys_poll)
    *flags |= SfMayBlock;
    PRINT("sys_poll ( %#" FMT_REGWORD "x, %" FMT_REGWORD "u, %ld )\n",
          ARG1, ARG2, SARG3);
+#if defined(VGO_darwin)
+   PRE_REG_READ3(long, "poll",
+                 struct vki_pollfd *, ufds, unsigned int, nfds, int, timeout);
+#else
    PRE_REG_READ3(long, "poll",
                  struct vki_pollfd *, ufds, unsigned int, nfds, long, timeout);
+#endif
 
    for (i = 0; i < ARG2; i++) {
       PRE_MEM_READ( "poll(ufds.fd)",
@@ -5059,20 +5085,16 @@ POST(sys_poll)
 
 PRE(sys_readlink)
 {
-   FUSE_COMPATIBLE_MAY_BLOCK();
    PRINT("sys_readlink ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x, %llu )",
          ARG1, (char*)(Addr)ARG1, ARG2, (ULong)ARG3);
    PRE_REG_READ3(long, "readlink",
                  const char *, path, char *, buf, int, bufsiz);
    PRE_MEM_RASCIIZ( "readlink(path)", ARG1 );
    PRE_MEM_WRITE( "readlink(buf)", ARG2,ARG3 );
-}
 
-POST(sys_readlink)
-{
+   Bool fuse_may_block = True;
 #if defined(VGO_linux) || defined(VGO_solaris)
    {
-      Word saved = SYSNO;
 #if defined(VGO_linux)
 #define PID_EXEPATH  "/proc/%d/exe"
 #define SELF_EXEPATH "/proc/self/exe"
@@ -5090,15 +5112,28 @@ POST(sys_readlink)
       HChar* arg1s = (HChar*) (Addr)ARG1;
       VG_(sprintf)(name, PID_EXEPATH, VG_(getpid)());
       if (ML_(safe_to_deref)(arg1s, 1)
-          && (VG_STREQ(arg1s, name) || VG_STREQ(arg1s, SELF_EXEPATH))) {
-         VG_(sprintf)(name, SELF_EXEFD, VG_(cl_exec_fd));
-         SET_STATUS_from_SysRes( VG_(do_syscall3)(saved, (UWord)name,
-                                                  ARG2, ARG3));
+          && (VG_(strcmp)(arg1s, name)==0 || VG_(strcmp)(arg1s, SELF_EXEPATH)==0)) {
+         HChar* out_name = (HChar*)ARG2;
+         SizeT res = VG_(strlen)(VG_(resolved_exename));
+         res = VG_MIN(res, ARG3);
+         if (ML_(safe_to_deref)(out_name, res)) {
+            VG_(strncpy)(out_name, VG_(resolved_exename), res);
+            SET_STATUS_Success(res);
+         } else {
+            SET_STATUS_Failure(VKI_EFAULT);
+         }
+         fuse_may_block = False;
       }
    }
 #endif
-   if (SUCCESS && RES > 0)
-      POST_MEM_WRITE( ARG2, RES );
+
+   if (fuse_may_block)
+       FUSE_COMPATIBLE_MAY_BLOCK();
+}
+
+POST(sys_readlink)
+{
+   POST_MEM_WRITE( ARG2, RES );
 }
 
 PRE(sys_readv)
@@ -5562,6 +5597,22 @@ PRE(sys_sethostname)
    PRINT("sys_sethostname ( %#" FMT_REGWORD "x, %ld )", ARG1, SARG2);
    PRE_REG_READ2(long, "sethostname", char *, name, int, len);
    PRE_MEM_READ( "sethostname(name)", ARG1, ARG2 );
+}
+
+PRE(sys_renameat2)
+{
+   FUSE_COMPATIBLE_MAY_BLOCK();
+   PRINT("sys_renameat2 ( %ld, %#" FMT_REGWORD "x(%s), %ld, %#" FMT_REGWORD
+         "x(%s), %" FMT_REGWORD "u )", SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3,
+         ARG4, (HChar*)(Addr)ARG4, ARG5);
+   PRE_REG_READ5(long, "renameat2",
+                 int, olddfd, const char *, oldpath,
+                 int, newdfd, const char *, newpath,
+                 unsigned int, flags);
+   ML_(fd_at_check_allowed)(SARG1, (const HChar*)ARG2, "renameat2(olddirfd)", tid, status);
+   ML_(fd_at_check_allowed)(SARG3, (const HChar*)ARG4, "renameat2(newdirfd)", tid, status);
+   PRE_MEM_RASCIIZ( "renameat2(oldpath)", ARG2 );
+   PRE_MEM_RASCIIZ( "renameat2(newpath)", ARG4 );
 }
 
 #undef PRE

@@ -4,31 +4,29 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 	filter_scalar filter_realpathat filter_fstat filter_eventfd2 \
 	toucher1 toucher2 filter_getfsstat filter_context filter_frame \
-	filter_supp filter_kenv
+	filter_supp filter_kenv filter_heap_usage
 
 EXTRA_DIST = \
 	access.vgtest \
 	access.stderr.exp \
 	aio.vgtest aio.stderr.exp \
 	aiov.vgtest aiov.stderr.exp \
-	aio_read.vgtest aio_read.stderr.exp aio_read.stdout.exp \
+	aio_read.vgtest aio_read.stdout.exp \
 	aio_read.in \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
 	aligned_alloc_xml.vgtest aligned_alloc_xml.stderr.exp \
 	aligned_allocs_supp.vgtest \
 	aligned_allocs_supp.stderr.exp \
 	aligned_allocs_supp.supp \
+	bug233298.vgtest \
+	bug233298.stderr.exp \
 	bug464476.vgtest \
-	bug464476.stderr.exp \
 	bug464476.stdout.exp \
 	bug464476_abs_symlink.vgtest \
-	bug464476_abs_symlink.stderr.exp \
 	bug464476_abs_symlink.stdout.exp \
 	bug464476_rel_symlink.vgtest \
-	bug464476_rel_symlink.stderr.exp \
 	bug464476_rel_symlink.stdout.exp \
-	bug470713.vgtest bug470713.stderr.exp \
-		bug470713.stdout.exp \
+	bug470713.vgtest bug470713.stdout.exp \
 	bug483786.vgtest bug483786.stderr.exp \
 	capsicum.vgtest \
 	capsicum.stderr.exp \
@@ -37,8 +35,9 @@ EXTRA_DIST = \
 		chflags.stderr.exp-x86 \
 	chmod_chown.vgtest \
 	chmod_chown.stderr.exp \
-	clock_nanosleep_interrupt.vgtest \
-	clock_nanosleep_interrupt.stderr.exp \
+	clock_nanosleep1.vgtest \
+	clock_nanosleep1.stderr.exp \
+	clock_nanosleep2.vgtest \
 	delete_sized_mismatch.vgtest \
 	delete_sized_mismatch.stderr.exp \
 	delete_sized_mismatch_xml.vgtest \
@@ -46,7 +45,7 @@ EXTRA_DIST = \
 	errno_aligned_allocs.vgtest \
 	errno_aligned_allocs.stderr.exp \
 	eventfd1.vgtest \
-	eventfd1.stderr.exp eventfd1.stdout.exp \
+	eventfd1.stdout.exp \
 	eventfd2.vgtest \
 	eventfd2.stderr.exp \
 	extattr.vgtest \
@@ -54,7 +53,6 @@ EXTRA_DIST = \
 	exterrctl.vgtest \
 	exterrctl.stderr.exp \
 	fbsd278566.vgtest \
-	fbsd278566.stderr.exp \
 	fchroot.vgtest \
 	fchroot.stderr.exp \
 	fexecve.vgtest \
@@ -75,25 +73,27 @@ EXTRA_DIST = \
 	kenv.vgtest \
 	kenv.stderr.exp \
 	kqueue.vgtest \
-	kqueue.stderr.exp \
 	kqueue.stdout.exp \
 	kqueuex.vgtest \
-	kqueuex.stderr.exp \
 	kqueuex.stdout.exp \
+	leak-autofreepool-7.vgtest \
+	leak-autofreepool-7.stderr.exp \
 	linkat.vgtest \
 	linkat.stderr.exp \
+	lsframe1.vgtest lsframe1.stderr.exp \
+	lsframe2.vgtest lsframe2.stderr.exp \
         memalign.vgtest memalign.stderr.exp \
 	memalign_supp.vgtest memalign_supp.stderr.exp \
 	memalign_supp.supp \
 	misc.vgtest \
 	misc.stderr.exp \
 	openpty.vgtest \
-	openpty.stderr.exp \
 	pdfork_pdkill.vgtest \
 	pdfork_pdkill.stderr.exp \
 	pdfork_pdkill.supp \
 	realpathat.vgtest \
 	realpathat.stderr.exp \
+	realpathat.stderr.exp2 \
 	revoke.vgtest \
 	revoke.stderr.exp \
 	scalar.h scalar.vgtest \
@@ -113,15 +113,12 @@ EXTRA_DIST = \
 	scalar_vfork.vgtest \
 	scalar_vfork.stderr.exp \
 	sctp.vgtest \
-	sctp.stderr.exp \
 	sctp.stdout.exp \
 	sctp2.vgtest \
 	sctp2.stderr.exp \
-	sctp2.stdout.exp \
 	setcred.vgtest \
 	setcred.stderr.exp \
 	setproctitle.vgtest \
-	setproctitle.stderr.exp \
 	setproctitle.stdout.exp \
 	sigwait.vgtest \
 	sigwait.stdout.exp \
@@ -150,22 +147,21 @@ EXTRA_DIST = \
 	utimes.vgtest \
 	utimes.stderr.exp-x86 \
 	utimes.stderr.exp \
-	utrace.vgtest \
-	utrace.stderr.exp
+	utrace.vgtest
 
 
 check_PROGRAMS = \
 	access aio aio_read aligned_alloc bug464476 bug470713 \
 	bug483786 \
 	capsicum chflags \
-	chmod_chown clock_nanosleep_interrupt \
+	chmod_chown clock_nanosleep1 clock_nanosleep2 \
 	delete_sized_mismatch errno_aligned_allocs \
 	extattr fbsd278566 \
 	fexecve \
 	file_locking_wait6 \
 	get_set_context get_set_login getfh \
 	kenv \
-	kqueue linkat memalign misc \
+	kqueue linkat lsframe1 lsframe2 memalign misc \
 	openpty \
 	pdfork_pdkill getfsstat inlinfo inlinfo_nested.so \
 	revoke scalar \
@@ -241,7 +237,7 @@ endif
 access_CFLAGS 			= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 aligned_alloc_CFLAGS 		= ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
 capsicum_CFLAGS 		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
-clock_nanosleep_interrupt_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE@
+clock_nanosleep1_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_ALLOC_SIZE@
 chflags_CFLAGS 			= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 chmod_chown_CFLAGS 		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 delete_sized_mismatch_CXXFLAGS	= ${AM_CXXFLAGS} --std=c++14
@@ -263,14 +259,14 @@ openpty_LDFLAGS			= ${AM_LDFLAGS} -lutil
 pdfork_pdkill_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 realpathat_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_ALLOC_SIZE@
 revoke_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
-scalar_CFLAGS			= ${AM_CFLAGS} -g @FLAG_W_NO_UNINITIALIZED@
+scalar_CFLAGS			= ${AM_CFLAGS} -g @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 scalar_abort2_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 scalar_fork_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_VARIABLE@
 scalar_pdfork_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 scalar_thr_exit_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 scalar_vfork_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_VARIABLE@
 sctp2_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
-sigwait_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@
+sigwait_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_NONNULL@
 stat_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_MAYBE_UNINITIALIZED@ @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@
 statfs_CFLAGS			= ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@ @FLAG_W_NO_USE_AFTER_FREE@ @FLAG_W_NO_ALLOC_SIZE@
 timing_safe_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_USE_AFTER_FREE@

@@ -1,0 +1,5 @@
+prereq: test -e scalar_crypto
+prog: scalar_crypto
+vgopts: -q --error-limit=no
+stderr_filter: filter_scalar
+stderr_filter_args: libc

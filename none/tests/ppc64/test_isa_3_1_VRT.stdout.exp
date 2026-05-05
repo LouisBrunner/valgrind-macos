@@ -592,6 +592,8 @@ mtvsrbmi 3 =>                0,000000000000ffff
 
 mtvsrbmi 7 =>                0,0000000000ffffff
 
+mtvsrbmi 8 =>                0,00000000ff000000
+
 mtvsrbm 0 =>                0,0000000000000000
 mtvsrbm ffffffff => ffffffffffffffff,ffffffffffffffff
 mtvsrbm ffffffff55555555 =>   ff00ff00ff00ff,00ff00ff00ff00ff
@@ -12119,4 +12121,4 @@ xsmincqp 8000000000000000,7f800000ff800000 ffff000180000001,0000000000000000 => 
 xsmincqp 8000000000000000,7f800000ff800000 0000000000000000,8000000000000000 => 8000000000000000,0000000000000000
 xsmincqp 8000000000000000,7f800000ff800000 8000000000000000,7f800000ff800000 => 7f800000ff800000,8000000000000000
 
-All done. Tested 110 different instruction groups
+All done. Tested 111 different instruction groups

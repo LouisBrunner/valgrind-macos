@@ -1,15 +1,18 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdalign.h>
+#include <stdint.h>
 
 int main(void)
 {
-   char* s1 = "the the the";
-   char* s2 = "the cat zat";
+   alignas(16) char s1[] = "the the the";
+   char s2[] = "the cat zat";
    char* d1;
    double undef1;
    double undef2;
    int res;
+   assert((uintptr_t)s1%16 == 0);
    
    res = timingsafe_bcmp(s1, s2, 3);
    assert(res == 0);
@@ -30,7 +33,9 @@ int main(void)
    timingsafe_bcmp(&undef1, &undef2, 8);
    timingsafe_memcmp(&undef1, &undef2, 8);
    
-   d1 = strdup(s1);
+   d1 = aligned_alloc(16, 16);
+   memcpy(d1, s1, strlen(s1)+1);
+   assert((uintptr_t)d1%16 == 0);
    
    timingsafe_bcmp(s1, d1, 13);
    timingsafe_memcmp(s1, d1, 13);

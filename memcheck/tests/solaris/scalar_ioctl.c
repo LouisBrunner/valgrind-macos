@@ -5,7 +5,6 @@
 #include "scalar.h"
 
 #include <net/if.h>
-#include <sys/crypto/ioctl.h>
 #include <sys/dditypes.h>
 #include <sys/devinfo_impl.h>
 #include <sys/dtrace.h>
@@ -459,25 +458,6 @@ static void sys_ioctl_FIOGETOWN(void)
    SY(SYS_ioctl, x0 - 1, x0 + FIOGETOWN, x0 + 1); FAIL;
 }
 
-/* crypto */
-__attribute__((noinline))
-static void sys_ioctl_CRYPTO_GET_PROVIDER_LIST(void)
-{
-   GO(SYS_ioctl, "(CRYPTO_GET_PROVIDER_LIST) 3s 1m");
-   SY(SYS_ioctl, x0 - 1, x0 + CRYPTO_GET_PROVIDER_LIST, x0 + 1); FAIL;
-}
-
-__attribute__((noinline))
-static void sys_ioctl_CRYPTO_GET_PROVIDER_LIST_2(void)
-{
-   crypto_get_provider_list_t pl;
-
-   pl.pl_count = x0 + 1;
-
-   GO(SYS_ioctl, "(CRYPTO_GET_PROVIDER_LIST) 4s 0m");
-   SY(SYS_ioctl, x0 - 1, x0 + CRYPTO_GET_PROVIDER_LIST, &pl + x0); FAIL;
-}
-
 /* dtrace */
 __attribute__((noinline))
 static void sys_ioctl_DTRACEHIOC_REMOVE(void)
@@ -577,10 +557,6 @@ int main(void)
    /* filio */
    sys_ioctl_FIOSETOWN();
    sys_ioctl_FIOGETOWN();
-
-   /* crypto */
-   sys_ioctl_CRYPTO_GET_PROVIDER_LIST();
-   sys_ioctl_CRYPTO_GET_PROVIDER_LIST_2();
 
    /* dtrace */
    sys_ioctl_DTRACEHIOC_REMOVE();

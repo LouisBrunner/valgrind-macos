@@ -458,6 +458,9 @@ static void test_mtvsrbmi_3 (void) {
 static void test_mtvsrbmi_7 (void) {
   __asm__ __volatile__ ("mtvsrbmi %0, 7" : "=v" (vrt) );
 }
+static void test_mtvsrbmi_8 (void) {
+  __asm__ __volatile__ ("mtvsrbmi %0, 8" : "=v" (vrt) );
+}
 static void test_vexpandbm (void) {
   __asm__ __volatile__ ("vexpandbm %0, %1 " : "=v" (vrt) : "v" (vrb) );
 }
@@ -487,6 +490,7 @@ static test_list_t testgroup_generic[] = {
   { &test_mtvsrbmi_0, "mtvsrbmi 0", "VRT,bm"}, /* bcwp */
   { &test_mtvsrbmi_3, "mtvsrbmi 3", "VRT,bm"}, /* bcwp */
   { &test_mtvsrbmi_7, "mtvsrbmi 7", "VRT,bm"}, /* bcwp */
+  { &test_mtvsrbmi_8, "mtvsrbmi 8", "VRT,bm"}, /* bcwp */
   { &test_mtvsrbm, "mtvsrbm", "VRT,RB"}, /* bcs */
   { &test_mtvsrdm, "mtvsrdm", "VRT,RB"}, /* bcs */
   { &test_mtvsrhm, "mtvsrhm", "VRT,RB"}, /* bcs */

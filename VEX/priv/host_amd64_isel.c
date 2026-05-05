@@ -5405,7 +5405,7 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
 {
    Int        i, j;
    HReg       hreg, hregHI;
-   ISelEnv*   env;
+   ISelEnv    *env, envmem;
    UInt       hwcaps_host = archinfo_host->hwcaps;
    AMD64AMode *amCounter, *amFailAddr;
 
@@ -5430,7 +5430,7 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
    vassert(archinfo_host->endness == VexEndnessLE);
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env = &envmem;
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

@@ -473,8 +473,10 @@ as "silly arguments" and no back-trace was included.
 
 <para>The (ab)use or realloc to also do the job of <function>free</function>
 has been poorly understood for a long time. In the C17 standard
-ISO/IEC 9899:2017] the behaviour of realloc when the size argument
-is zero is specified as implementation defined. Memcheck warns about
+[ISO/IEC 9899:2017] the behaviour of realloc when the size argument
+is zero is specified as implementation defined. The C23 standard
+[ISO/IEC 9899:2024] has further tightened the requirement on the size
+argument, making it undefined behaviour if it is zero. Memcheck warns about
 the non-portable use or realloc.</para>
 
 <para>For example:</para>
@@ -486,6 +488,10 @@ the non-portable use or realloc.</para>
 ==77609==    at 0x484CBB4: malloc (vg_replace_malloc.c:397)
 ==77609==    by 0x201978: main (realloczero.c:7)
 ]]></programlisting>
+
+<para>The same check on the size argument is performed for other
+realloc-style allocation functions, namely <function>reallocarray</function>,
+<function>reallocf</function> and <function>malloc_zone_realloc</function>.</para>
 
 </sect2>
 

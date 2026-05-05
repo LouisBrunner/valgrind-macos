@@ -1,3 +1,5 @@
 prog: vbit-test-sec
 prereq: test -x vbit-test-sec
 vgopts: -q --expensive-definedness-checks=yes --vex-guest-chase=no
+stderr_filter:
+stderrB_filter:

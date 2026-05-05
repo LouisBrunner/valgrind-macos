@@ -15,7 +15,11 @@ __asm__ __volatile__
     "dec %%eax\n\t"
     "cmp    $0x0,%%eax\n\t"
     "jne top\n\t"
-    "mov $60, %%eax\n\t"
+#if defined(__APPLE__)
+    "mov $0x02000001, %%eax\n\t" /* macOS exit */
+#else
+    "mov $60, %%eax\n\t" /* Linux exit, FreeBSD and Solaris umask. umask works by accident. */
+#endif
     "mov $0, %%rdi\n\t"
     "syscall\n\t"
     : : : "eax", "ebx", "rdi"

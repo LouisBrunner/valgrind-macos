@@ -1188,6 +1188,14 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       will make Valgrind run a bit more slowly and take a bit more
       memory, but can be useful when working with programs with
       deeply-nested call chains.</para>
+
+      <para>The minimum value for this is 2. A value of 1 is not allowed
+      for two reasons. Firstly, some of the default suppressions use
+      "<computeroutput>...</computeroutput>" which is forbidden with
+      <computeroutput>--num-callers=1</computeroutput>. Secondly, it would
+      make leak suppressions match all allocations using the allocation
+      function (e.g., <computeroutput>malloc</computeroutput>).</para>
+
     </listitem>
   </varlistentry>
 
@@ -1814,6 +1822,23 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       Occasionally, that number is too small. Use this option to
       provide a different limit. E.g.
       <computeroutput>--max-threads=3000</computeroutput>.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.max-guard-pages" xreflabel="--max-guard-pages">
+    <term>
+      <option><![CDATA[--max-guard-pages=<number> [default: 500] ]]></option>
+    </term>
+    <listitem>
+      <para>By default, Valgrind can handle to up to 500 madvise
+      guard pages.  With thread heavy workloads the default value
+      might not be sufficient. Use this option to provide a different
+      limit. E.g.
+      <computeroutput>--max-guard-pages=3000</computeroutput>.
+      If <computeroutput>--max-guard-pages</computeroutput> is not
+      set explicitly, then it will default to the 
+      <computeroutput>--max-threads</computeroutput> setting.
       </para>
     </listitem>
   </varlistentry>

@@ -29,22 +29,22 @@ endif
 ## FIXME: move lzcnt32 to SSE4 conditionalisation, when that happens.
 
 EXTRA_DIST = \
-	aad_aam.stdout.exp aad_aam.stderr.exp aad_aam.vgtest \
+	aad_aam.stdout.exp aad_aam.vgtest \
 	badseg.stderr.exp badseg.stdout.exp badseg.stdout.exp-solaris \
 	badseg.vgtest \
-	bswapw.stderr.exp bswapw.stdout.exp bswapw.vgtest \
+	bswapw.stdout.exp bswapw.vgtest \
 	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
 	bt_literal.stderr.exp bt_literal.stdout.exp bt_literal.vgtest \
 	bug125959-x86.stderr.exp bug125959-x86.stdout.exp bug125959-x86.vgtest \
 	bug126147-x86.stderr.exp bug126147-x86.stdout.exp bug126147-x86.vgtest \
 	bug132813-x86.stderr.exp bug132813-x86.stdout.exp bug132813-x86.vgtest \
 	bug135421-x86.stderr.exp bug135421-x86.stdout.exp bug135421-x86.vgtest \
-	bug137714-x86.stderr.exp bug137714-x86.stdout.exp bug137714-x86.vgtest \
+	bug137714-x86.stdout.exp bug137714-x86.vgtest \
 	bug152818-x86.stderr.exp bug152818-x86.stdout.exp bug152818-x86.vgtest \
-	cet_nops.stderr.exp cet_nops.stdout.exp cet_nops.vgtest \
+	cet_nops.stdout.exp cet_nops.vgtest \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
-	cse_fail.stderr.exp cse_fail.stdout.exp cse_fail.vgtest \
+	cse_fail.stdout.exp cse_fail.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
@@ -52,34 +52,31 @@ EXTRA_DIST = \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
 	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
-	gnu_binutils_nop.stderr.exp gnu_binutils_nop.vgtest \
+	gnu_binutils_nop.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
-	int.stderr.exp int.stdout.exp int.disabled \
-	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
+	int.stderr.exp int.disabled \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
-	insn_fpu.stdout.exp insn_fpu.stderr.exp insn_fpu.vgtest \
-	insn_sse.stdout.exp insn_sse.stderr.exp insn_sse.vgtest \
-	insn_sse2.stdout.exp insn_sse2.stderr.exp insn_sse2.vgtest \
-	insn_sse3.stdout.exp insn_sse3.stderr.exp insn_sse3.vgtest \
-	insn_ssse3.stdout.exp insn_ssse3.stderr.exp insn_ssse3.vgtest \
-	jcxz.stdout.exp jcxz.stderr.exp jcxz.vgtest \
+	insn_fpu.stdout.exp insn_fpu.vgtest \
+	insn_sse3.stdout.exp insn_sse3.vgtest \
+	insn_ssse3.stdout.exp insn_ssse3.vgtest \
+	jcxz.stdout.exp jcxz.vgtest \
 	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
 	looper.stderr.exp looper.stdout.exp looper.vgtest \
-	lzcnt32.stderr.exp lzcnt32.stdout.exp lzcnt32.vgtest \
+	lzcnt32.stdout.exp lzcnt32.vgtest \
 	movx.stderr.exp movx.stdout.exp movx.vgtest \
-	movbe.stderr.exp movbe.stdout.exp movbe.vgtest \
+	movbe.stdout.exp movbe.vgtest \
 	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
 	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
 	shift_ndep.stderr.exp shift_ndep.stdout.exp shift_ndep.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
-	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
+	ssse3_misaligned.stderr.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
-	sse4-x86.stdout.exp sse4-x86.stderr.exp sse4-x86.vgtest \
+	sse4-x86.stdout.exp sse4-x86.vgtest \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
 	x87trigOOR.vgtest x87trigOOR.stdout.exp x87trigOOR.stderr.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \
-	xadd.stdout.exp xadd.stderr.exp xadd.vgtest
+	xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \
 	aad_aam \
@@ -183,16 +180,17 @@ insn_sse3_SOURCES	= insn_sse3.def
 insn_sse3_LDADD		= -lm
 insn_ssse3_SOURCES	= insn_ssse3.def
 insn_ssse3_LDADD	= -lm
+sse4_x86_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_FUNCTION@
 x86locked_CFLAGS	= $(AM_CFLAGS) -O
 yield_LDADD		= -lpthread
 
 # Avoid linker warnings
-cmpxchg8b_LDFLAGS  = @FLAG_NO_PIE@
-fcmovnu_LDFLAGS    = @FLAG_NO_PIE@
-fxtract_LDFLAGS    = @FLAG_NO_PIE@
-incdec_alt_LDFLAGS = @FLAG_NO_PIE@
-looper_LDFLAGS     = @FLAG_NO_PIE@
-sbbmisc_LDFLAGS    = @FLAG_NO_PIE@
+cmpxchg8b_LDFLAGS  = @LDFLAG_NO_PIE@
+fcmovnu_LDFLAGS    = @LDFLAG_NO_PIE@
+fxtract_LDFLAGS    = @LDFLAG_NO_PIE@
+incdec_alt_LDFLAGS = @LDFLAG_NO_PIE@
+looper_LDFLAGS     = @LDFLAG_NO_PIE@
+sbbmisc_LDFLAGS    = @LDFLAG_NO_PIE@
 
 .def.c:
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

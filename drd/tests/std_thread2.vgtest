@@ -1,4 +1,4 @@
 prereq: test -e std_thread2 && ./supported_libpthread
-vgopts: --check-stack-var=yes --show-confl-seg=no --num-callers=1 --default-suppressions=no --suppressions=std_thread2.supp
+vgopts: --check-stack-var=yes --show-confl-seg=no --num-callers=2 --default-suppressions=no --suppressions=std_thread2.supp
 prog: std_thread2
 stderr_filter: filter_lambda

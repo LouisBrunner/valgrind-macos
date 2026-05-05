@@ -144,8 +144,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------------- amd64-linux ----------------------*/
-#else
-#if defined(VGP_amd64_linux)
+#elif defined(VGP_amd64_linux)
 
 #	define UD2_16     ud2 ; ud2 ; ud2 ; ud2 ;ud2 ; ud2 ; ud2 ; ud2
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
@@ -356,8 +355,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- ppc32-linux ----------------*/
-#else
-#if defined(VGP_ppc32_linux)
+#elif defined(VGP_ppc32_linux)
 
 #	define UD2_16     trap ; trap ; trap; trap
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
@@ -479,8 +477,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- ppc64-linux ----------------*/
-#else
-#if defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
+#elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
 
 #	define UD2_16     trap ; trap ; trap; trap
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
@@ -662,8 +659,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- arm-linux ----------------*/
-#else
-#if defined(VGP_arm_linux)
+#elif defined(VGP_arm_linux)
 
 #       define UD2_4      .word 0xFFFFFFFF
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
@@ -839,8 +835,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- arm64-linux ----------------*/
-#else
-#if defined(VGP_arm64_linux)
+#elif defined(VGP_arm64_linux)
 
 #       define UD2_4      .word 0xFFFFFFFF
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
@@ -939,8 +934,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- x86-freebsd ----------------*/
-#else
-#if defined(VGP_x86_freebsd)
+#elif defined(VGP_x86_freebsd)
 
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
@@ -960,15 +954,14 @@ VG_(x86_freebsd_SUBST_FOR_sigreturn):
 	pushl	%eax
 	pushl	%eax			/* fake return addr */
 /*	movl	0x44(%eax), %gs	; restore %gs, not done by sigreturn */
-        movl    $__NR_fake_sigreturn, %eax
+        movl    $__NR_freebsd_fake_sigreturn, %eax
         int     $0x80
         ud2
 
 .global VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
-#else
-#if defined(VGP_amd64_freebsd)
+#elif defined(VGP_amd64_freebsd)
 
 #	define UD2_16     ud2 ; ud2 ; ud2 ; ud2 ;ud2 ; ud2 ; ud2 ; ud2
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
@@ -987,7 +980,7 @@ VG_(amd64_freebsd_SUBST_FOR_sigreturn):
         /* This is a very specific sequence which GDB uses to
            recognize signal handler frames. */
 
-        movq    $__NR_fake_sigreturn, %rax
+        movq    $__NR_freebsd_fake_sigreturn, %rax
 
         /* running the preprocessor on
          * src/amd64.amd64/lib/libc/sigreturn.S
@@ -1027,8 +1020,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- arm64-freebsd ----------------*/
-#else
-#if defined(VGP_arm64_freebsd)
+#elif defined(VGP_arm64_freebsd)
 
 #       define UD2_4      .word 0xFFFFFFFF
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
@@ -1046,7 +1038,7 @@ VG_(trampoline_stuff_start):
 .global VG_(arm64_freebsd_SUBST_FOR_sigreturn)
 .type   VG_(arm64_freebsd_SUBST_FOR_sigreturn),#function
 VG_(arm64_freebsd_SUBST_FOR_sigreturn):
-	mov x8, # __NR_fake_sigreturn
+	mov x8, # __NR_freebsd_fake_sigreturn
         mov x0, sp
         svc #0
         .long 0xFFFFFFFF /*illegal insn*/
@@ -1069,8 +1061,7 @@ VG_(trampoline_stuff_end):
 
 
 /*---------------- x86-darwin ----------------*/
-#else
-#if defined(VGP_x86_darwin)
+#elif defined(VGP_x86_darwin)
 
         /* a leading page of unexecutable code */
 .fill 2048, 2, 0x0b0f /* `ud2` */
@@ -1082,7 +1073,7 @@ VG_(trampoline_stuff_start):
 VG_(x86_darwin_SUBST_FOR_sigreturn):
         /* XXX does this need to have any special form? (cf x86-linux
 	version) */
-        movl    $ __NR_DARWIN_FAKE_SIGRETURN, %eax
+        movl    $ __NR_darwin_fake_sigreturn, %eax
         int     $0x80
         ud2
 
@@ -1229,8 +1220,7 @@ VG_(trampoline_stuff_end):
 
 
 /*---------------- amd64-darwin ----------------*/
-#else
-#if defined(VGP_amd64_darwin)
+#elif defined(VGP_amd64_darwin)
 
         /* a leading page of unexecutable code */
 .fill 2048, 2, 0x0b0f /* `ud2` */
@@ -1242,7 +1232,7 @@ VG_(trampoline_stuff_start):
 VG_(amd64_darwin_SUBST_FOR_sigreturn):
         /* XXX does this need to have any special form? (cf x86-linux
 	version) */
-        movq    $ __NR_DARWIN_FAKE_SIGRETURN, %rax
+        movq    $ __NR_darwin_fake_sigreturn, %rax
         syscall
         ud2
 
@@ -1392,6 +1382,21 @@ VG_(amd64_darwin_REDIR_FOR_strchr):
         popq    %rbp
         ret
 
+.globl VG_(amd64_darwin_REDIR_FOR_bcmp)
+VG_(amd64_darwin_REDIR_FOR_bcmp):
+        xorl    %eax, %eax
+        xorl    %ecx, %ecx
+1:
+        cmpq    %rcx, %rdx
+        je      2f
+        movzbl  (%rdi,%rcx), %r8d
+        cmpb    (%rsi,%rcx), %r8b
+        leaq    1(%rcx), %rcx
+        je      1b
+        movl    $1, %eax
+2:
+        ret
+        
 .globl VG_(trampoline_stuff_end)
 VG_(trampoline_stuff_end):
 
@@ -1400,8 +1405,7 @@ VG_(trampoline_stuff_end):
 
 
 /*---------------- arm64-darwin ----------------*/
-#else
-#if defined(VGP_arm64_darwin)
+#elif defined(VGP_arm64_darwin)
 
 #       define UD2_4      .word 0xFFFFFFFF
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
@@ -1418,7 +1422,7 @@ VG_(trampoline_stuff_start):
 
 .global VG_(arm64_darwin_SUBST_FOR_sigreturn)
 VG_(arm64_darwin_SUBST_FOR_sigreturn):
-  ldr x16, =__NR_DARWIN_FAKE_SIGRETURN
+  ldr x16, =__NR_darwin_fake_sigreturn
   svc 0x80
   UD2_4
 
@@ -1573,8 +1577,7 @@ VG_(trampoline_stuff_end):
 
 
 /*---------------- s390x-linux ----------------*/
-#else
-#if defined(VGP_s390x_linux)
+#elif defined(VGP_s390x_linux)
 
         /* a leading page of unexecutable code */
 	.fill 2048, 2, 0x0000
@@ -1628,8 +1631,7 @@ VG_(trampoline_stuff_end):
 	.fill 2048, 2, 0x0000
 
 /*---------------------- mips32-linux ----------------------*/
-#else
-#if defined(VGP_mips32_linux)
+#elif defined(VGP_mips32_linux)
 
 #	define UD2_16     trap ; trap ; trap; trap
 #	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
@@ -1705,8 +1707,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------------- nanomips-linux --------------------*/
-#else
-#if defined(VGP_nanomips_linux)
+#elif defined(VGP_nanomips_linux)
 
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
@@ -1754,8 +1755,7 @@ VG_(trampoline_stuff_end):
 
 
 /*---------------------- mips64-linux ----------------------*/
-#else
-#if defined(VGP_mips64_linux)
+#elif defined(VGP_mips64_linux)
 
 #       define UD2_16     trap ; trap ; trap; trap
 #       define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
@@ -1823,8 +1823,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- riscv64-linux ----------------*/
-#else
-#if defined(VGP_riscv64_linux)
+#elif defined(VGP_riscv64_linux)
 
 #	define UD2_4      .word 0
 #	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
@@ -1915,8 +1914,7 @@ VG_(trampoline_stuff_end):
 #	undef UD2_PAGE
 
 /*---------------- x86-solaris ----------------*/
-#else
-#if defined(VGP_x86_solaris)
+#elif defined(VGP_x86_solaris)
 
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
@@ -1969,8 +1967,7 @@ VG_(x86_solaris_REDIR_FOR_strlen):
 VG_(trampoline_stuff_end):
 
 /*---------------- amd64-solaris ----------------*/
-#else
-#if defined(VGP_amd64_solaris)
+#elif defined(VGP_amd64_solaris)
 
 .global VG_(trampoline_stuff_start)
 VG_(trampoline_stuff_start):
@@ -2097,24 +2094,6 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
 #endif
 
 /* Let the linker know we don't need an executable stack */

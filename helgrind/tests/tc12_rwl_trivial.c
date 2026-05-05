@@ -27,7 +27,7 @@ int main ( void )
 
   /* this should fail - lock is unowned now */
   r = pthread_rwlock_unlock( &rwl );
-#if defined(VGO_darwin) || defined(VGO_solaris) || defined(VGO_freebsd)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
   assert(r != 0);
 #else
   assert(r == 0);

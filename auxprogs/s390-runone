@@ -79,7 +79,7 @@ sub main {
     GetOptions("template|t" => sub { $template = 1; $build = 0; },
                "build|b"    => sub { $template = 0; $build = 1; },
                "help|h"     => \$help,
-               "insn|i=s"   => \$insn,
+               "insn|i=s"   => sub { $template = 1; $insn = $_[1]; },
                "arch|a=s"   => \$arch,
                "cc=s"       => \$cc
         ) or usage();

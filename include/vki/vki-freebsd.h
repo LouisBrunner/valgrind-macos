@@ -9,7 +9,7 @@
 
    Copyright (C) 2000-2005 Julian Seward
       jseward@acm.org
-   Copyright (C) 2018-2021 Paul Floyd
+   Copyright (C) 2018-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -2235,6 +2235,18 @@ struct vki_kinfo_file {
 #define VKI_KENV_DUMP        3
 #define VKI_KENV_DUMP_LOADER 4
 #define VKI_KENV_DUMP_STATIC 5
+
+//----------------------------------------------------------------------
+// From sys/kexec.h
+//----------------------------------------------------------------------
+
+struct vki_kexec_segment {
+   void *buf;
+   vki_size_t bufsz;
+   vki_vm_paddr_t mem;
+   vki_vm_size_t memsz;
+};
+
 
 //----------------------------------------------------------------------
 // From sys/sysctl.h (and related)

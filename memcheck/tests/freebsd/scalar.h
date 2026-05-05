@@ -14,6 +14,7 @@
 #define SY res = syscall
 
 #define FAIL assert(res == -1);
+#define FAIL_ERRORCODE(ec) assert(res == ec);
 #define SUCC assert(res != -1);
 #define FAILx(E) \
    do { \

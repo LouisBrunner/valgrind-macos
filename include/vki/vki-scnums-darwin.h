@@ -153,6 +153,7 @@
 
 #define __NR_kernelrpc_mach_vm_allocate_trap         VG_DARWIN_SYSCALL_CONSTRUCT_MACH(10)
 #define __NR_kernelrpc_mach_vm_purgable_control_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(11)
+
 #define __NR_kernelrpc_mach_vm_deallocate_trap       VG_DARWIN_SYSCALL_CONSTRUCT_MACH(12)
 
 #define __NR_kernelrpc_mach_vm_protect_trap          VG_DARWIN_SYSCALL_CONSTRUCT_MACH(14)
@@ -231,6 +232,8 @@
 #if DARWIN_VERS >= DARWIN_10_12
 #define __NR_host_create_mach_voucher_trap    VG_DARWIN_SYSCALL_CONSTRUCT_MACH(70)
 #endif
+
+#define __NR_mach_voucher_extract_attr_recipe_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(72)
 
 #if DARWIN_VERS >= DARWIN_10_15
 #define __NR_kernelrpc_mach_port_type_trap VG_DARWIN_SYSCALL_CONSTRUCT_MACH(76)
@@ -495,7 +498,7 @@
 #define __NR_kqueue_from_portset_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(214)
 #define __NR_kqueue_portset_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(215)
 #endif
-#define	__NR_mkcomplex      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(216)
+#define	__NR_open_dprotected_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(216)
 #define	__NR_statv          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(217)
 #define	__NR_lstatv         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(218)
 #define	__NR_fstatv         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(219)
@@ -924,40 +927,6 @@
 #define __NR_sys_coalition_policy_get VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(557)
 #endif
 
-#if DARWIN_VERS < DARWIN_10_6
-#define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(427)
-#elif DARWIN_VERS < DARWIN_10_7
-#define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(430)
-#elif DARWIN_VERS < DARWIN_10_9
-#define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(430)
-#elif DARWIN_VERS == DARWIN_10_9
-#define	__NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(456)
-#elif DARWIN_VERS == DARWIN_10_10
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(490)
-#elif DARWIN_VERS == DARWIN_10_11
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(500)
-#elif DARWIN_VERS == DARWIN_10_12
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(522)
-#elif DARWIN_VERS == DARWIN_10_13
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(530)
-#elif DARWIN_VERS == DARWIN_10_14
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(532)
-#elif DARWIN_VERS == DARWIN_10_15
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(534)
-#elif DARWIN_VERS == DARWIN_11_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(545)
-#elif DARWIN_VERS == DARWIN_12_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(551)
-#elif DARWIN_VERS == DARWIN_13_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
-#elif DARWIN_VERS == DARWIN_14_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(555)
-#elif DARWIN_VERS == DARWIN_15_00 || DARWIN_VERS == DARWIN_15_04 || DARWIN_VERS == DARWIN_26_00
-#define __NR_MAXSYSCALL             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(557)
-#else
-#error unknown darwin version
-#endif
-
-#define __NR_DARWIN_FAKE_SIGRETURN (1 + __NR_MAXSYSCALL)
+#define __NR_darwin_fake_sigreturn  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(1000)
 
 #endif

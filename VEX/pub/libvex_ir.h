@@ -2502,18 +2502,6 @@ extern Bool eqIRAtom ( const IRExpr*, const IRExpr* );
 
    In the case of Ijk_EmFail, the exit is fatal (Vex-generated code
    cannot continue) and so the jump destination can be anything.
-
-   Re Ijk_Sys_ (syscall jumps): the guest state must have a
-   pseudo-register guest_IP_AT_SYSCALL, which is the size of a guest
-   word.  Front ends should set this to be the IP at the most recently
-   executed kernel-entering (system call) instruction.  This makes it
-   very much easier (viz, actually possible at all) to back up the
-   guest to restart a syscall that has been interrupted by a signal.
-
-   Re Ijk_Extension: the guest state must have the pseudo-register
-   guest_IP_AT_SYSCALL, which is also used for Ijk_Sys_*.  Front ends
-   must set this to the current instruction address before jumping to
-   an extension handler.
 */
 typedef
    enum {

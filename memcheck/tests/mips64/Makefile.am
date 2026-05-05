@@ -6,7 +6,7 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = $(noinst_SCRIPTS) \
 	bad_sioc.stderr.exp bad_sioc.stdout.exp bad_sioc.vgtest \
-	fadvise64.stderr.exp fadvise64.stdout.exp fadvise64.vgtest
+	fadvise64.stderr.exp fadvise64.vgtest
 
 check_PROGRAMS = \
 	bad_sioc \

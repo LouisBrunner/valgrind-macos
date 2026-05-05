@@ -1,54 +1,64 @@
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:30)
+   by 0x........: main (timing_safe.c:33)
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:30)
+   by 0x........: main (timing_safe.c:33)
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:31)
+   by 0x........: main (timing_safe.c:34)
 
 Conditional jump or move depends on uninitialised value(s)
    at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:31)
+   by 0x........: main (timing_safe.c:34)
 
-Invalid read of size 1
-   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:35)
- Address 0x........ is 0 bytes after a block of size 12 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   ...
-   by 0x........: main (timing_safe.c:33)
-
-Invalid read of size 1
-   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:36)
- Address 0x........ is 0 bytes after a block of size 12 alloc'd
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   ...
-   by 0x........: main (timing_safe.c:33)
-
-Invalid read of size 1
+Conditional jump or move depends on uninitialised value(s)
    at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
    by 0x........: main (timing_safe.c:40)
- Address 0x........ is 0 bytes inside a block of size 12 free'd
+
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:41)
+
+Invalid read of size 8
+   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:45)
+ Address 0x........ is 0 bytes inside a block of size 16 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (timing_safe.c:38)
+   by 0x........: main (timing_safe.c:43)
  Block was alloc'd at
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   ...
-   by 0x........: main (timing_safe.c:33)
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:36)
+
+Invalid read of size 1
+   at 0x........: timingsafe_bcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:45)
+ Address 0x........ is 8 bytes inside a block of size 16 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:43)
+ Block was alloc'd at
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:36)
+
+Invalid read of size 8
+   at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
+   by 0x........: main (timing_safe.c:46)
+ Address 0x........ is 0 bytes inside a block of size 16 free'd
+   at 0x........: free (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:43)
+ Block was alloc'd at
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:36)
 
 Invalid read of size 1
    at 0x........: timingsafe_memcmp (vg_replace_strmem.c:...)
-   by 0x........: main (timing_safe.c:41)
- Address 0x........ is 0 bytes inside a block of size 12 free'd
+   by 0x........: main (timing_safe.c:46)
+ Address 0x........ is 8 bytes inside a block of size 16 free'd
    at 0x........: free (vg_replace_malloc.c:...)
-   by 0x........: main (timing_safe.c:38)
+   by 0x........: main (timing_safe.c:43)
  Block was alloc'd at
-   at 0x........: malloc (vg_replace_malloc.c:...)
-   ...
-   by 0x........: main (timing_safe.c:33)
+   at 0x........: aligned_alloc (vg_replace_malloc.c:...)
+   by 0x........: main (timing_safe.c:36)
 

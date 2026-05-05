@@ -146,10 +146,6 @@ extern ULong amd64g_calc_crc32w ( ULong crcIn, ULong w );
 extern ULong amd64g_calc_crc32l ( ULong crcIn, ULong l );
 extern ULong amd64g_calc_crc32q ( ULong crcIn, ULong q );
 
-extern ULong amd64g_calc_mpsadbw ( ULong sHi, ULong sLo,
-                                   ULong dHi, ULong dLo,
-                                   ULong imm_and_return_control_bit );
-
 extern ULong amd64g_calculate_pext  ( ULong, ULong );
 extern ULong amd64g_calculate_pdep  ( ULong, ULong );
 

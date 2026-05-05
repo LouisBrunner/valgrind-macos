@@ -173,7 +173,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CTR) && sz == 8) return o;
 
    if (o == GOF(CIA)       && sz == 8) return -1;
-   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1; /* slot unused */
    if (o == GOF(FPROUND)   && sz == 1) return -1;
    if (o == GOF(DFPROUND)  && sz == 1) return -1;
    if (o == GOF(C_FPCC)    && sz == 1) return -1;
@@ -452,7 +451,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CTR) && sz == 4) return o;
 
    if (o == GOF(CIA)       && sz == 4) return -1;
-   if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
    if (o == GOF(FPROUND)   && sz == 1) return -1;
    if (o == GOF(DFPROUND)  && sz == 1) return -1;
    if (o == GOF(C_FPCC)    && sz == 1) return -1;
@@ -646,7 +644,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CC_NDEP) && sz == 8) return -1; /* slot used for %BH */
    if (o == GOF(DFLAG)   && sz == 8) return -1; /* slot used for %CH */
    if (o == GOF(RIP)     && sz == 8) return -1; /* slot unused */
-   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1; /* slot unused */
    if (o == GOF(TLSBASE) && sz == 8) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 8) return -1; /* slot used for %DH */
    if (o == GOF(ACFLAG)  && sz == 8) return -1; /* slot unused */
@@ -762,7 +759,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CC_NDEP) && sz == 4) return -1; /* slot used for %BH */
    if (o == GOF(DFLAG)   && sz == 4) return -1; /* slot used for %CH */
    if (o == GOF(EIP)     && sz == 4) return -1; /* slot unused */
-   if (o == GOF(IP_AT_SYSCALL) && sz == 4) return -1; /* slot unused */
    if (o == GOF(IDFLAG)  && sz == 4) return -1; /* slot used for %DH */
    if (o == GOF(ACFLAG)  && sz == 4) return -1; /* slot unused */
    if (o == GOF(CMSTART) && sz == 4) return -1; /* slot unused */
@@ -887,7 +883,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CMSTART)  && sz == 8) return -1;
    if (o == GOF(CMLEN)    && sz == 8) return -1;
    if (o == GOF(NRADDR)   && sz == 8) return -1;
-   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
    if (o == GOF(fpc)      && sz == 4) return -1;
    if (o == GOF(IA)       && sz == 8) return -1;
    if (o == (GOF(IA) + 4) && sz == 4) return -1;

@@ -11,7 +11,7 @@
       jseward@acm.org
    Copyright (C) 2009 Stanislav Sedov
       <stas@FreeBSD.org>
-   Copyright (C) 2018-2021 Paul Floyd
+   Copyright (C) 2018-2022 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or

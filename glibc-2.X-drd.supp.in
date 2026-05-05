@@ -369,3 +369,9 @@
    fun:_dl_exception_create_format
 }
 
+{
+   drd-libc-__is_decorate_maps_enabled
+   drd:ConflictingAccess
+   fun:__is_decorate_maps_enabled
+}
+

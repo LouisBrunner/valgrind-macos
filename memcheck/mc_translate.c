@@ -558,6 +558,7 @@ void assign ( HChar cat, MCEnv* mce, IRTemp tmp, IRExpr* expr ) {
 #define mkU32(_n)                IRExpr_Const(IRConst_U32(_n))
 #define mkU64(_n)                IRExpr_Const(IRConst_U64(_n))
 #define mkV128(_n)               IRExpr_Const(IRConst_V128(_n))
+#define mkV256(_n)               IRExpr_Const(IRConst_V256(_n))
 #define mkexpr(_tmp)             IRExpr_RdTmp((_tmp))
 
 /* Bind the given expression to a new temporary, and return the
@@ -921,6 +922,134 @@ static IRAtom* mkImproveORV256 ( MCEnv* mce, IRAtom* data, IRAtom* vbits )
              binop(Iop_OrV256, 
                    assignNew('V', mce, Ity_V256, unop(Iop_NotV256, data)), 
                    vbits) );
+}
+
+/* --------- 'WithConst' functions for AND/OR. --------- */
+
+/* WithConstAND(data, vatom) = data AND vatom.
+   The general formula for the resulting vbits of `a1 AND a2' is:
+       (v1 | v2) & (a1 | v1) & (a2 | v2)
+   If a2 is a constant, then v2 == 0 (defined), and the formula reduces to:
+          v1     & (a1 | v1) & a2
+   ==     v1                 & a2
+*/
+
+static IRAtom* mkWithConstAND1 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I1, binop(Iop_And1, data, vatom));
+}
+
+static IRAtom* mkWithConstAND8 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I8, binop(Iop_And8, data, vatom));
+}
+
+static IRAtom* mkWithConstAND16 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I16, binop(Iop_And16, data, vatom));
+}
+
+static IRAtom* mkWithConstAND32 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I32, binop(Iop_And32, data, vatom));
+}
+
+static IRAtom* mkWithConstAND64 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I64, binop(Iop_And64, data, vatom));
+}
+
+static IRAtom* mkWithConstANDV128 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_V128, binop(Iop_AndV128, data, vatom));
+}
+
+static IRAtom* mkWithConstANDV256 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_V256, binop(Iop_AndV256, data, vatom));
+}
+
+/* WithConstOR(data, vatom) = ~data AND vatom.
+   The general formula for the resulting vbits of `a1 OR a2' is:
+       (v1 | v2) & (~a1 | v1) & (~a2 | v2)
+   If a2 is a constant, then v2 == 0 (defined), and the formula reduces to:
+          v1     & (~a1 | v1) & ~a2
+   ==     v1                  & ~a2
+ */
+
+static IRAtom* mkWithConstOR1 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I1,
+                    binop(Iop_And1, vatom, mkU1(!data->Iex.Const.con->Ico.U1)));
+}
+
+static IRAtom* mkWithConstOR8 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew('V', mce, Ity_I8,
+                    binop(Iop_And8, vatom, mkU8(~data->Iex.Const.con->Ico.U8)));
+}
+
+static IRAtom* mkWithConstOR16 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew(
+      'V', mce, Ity_I16,
+      binop(Iop_And16, vatom, mkU16(~data->Iex.Const.con->Ico.U16)));
+}
+
+static IRAtom* mkWithConstOR32 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew(
+      'V', mce, Ity_I32,
+      binop(Iop_And32, vatom, mkU32(~data->Iex.Const.con->Ico.U32)));
+}
+
+static IRAtom* mkWithConstOR64 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew(
+      'V', mce, Ity_I64,
+      binop(Iop_And64, vatom, mkU64(~data->Iex.Const.con->Ico.U64)));
+}
+
+static IRAtom* mkWithConstORV128 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew(
+      'V', mce, Ity_V128,
+      binop(Iop_AndV128, vatom, mkV128(~data->Iex.Const.con->Ico.V128)));
+}
+
+static IRAtom* mkWithConstORV256 ( MCEnv* mce, IRAtom* data, IRAtom* vatom )
+{
+   tl_assert(data->tag == Iex_Const);
+   tl_assert(isShadowAtom(mce, vatom));
+   return assignNew(
+      'V', mce, Ity_V256,
+      binop(Iop_AndV256, vatom, mkV256(~data->Iex.Const.con->Ico.V256)));
 }
 
 /* --------- Pessimising casts. --------- */
@@ -1733,10 +1862,8 @@ static void complainIfUndefined ( MCEnv* mce, IRAtom* atom, IRExpr *guard )
    /* If the complaint is to be issued under a guard condition, AND
       that into the guard condition for the helper call. */
    if (guard) {
-      IRAtom *g1 = assignNew('V', mce, Ity_I32, unop(Iop_1Uto32, di->guard));
-      IRAtom *g2 = assignNew('V', mce, Ity_I32, unop(Iop_1Uto32, guard));
-      IRAtom *e  = assignNew('V', mce, Ity_I32, binop(Iop_And32, g1, g2));
-      di->guard  = assignNew('V', mce, Ity_I1,  unop(Iop_32to1, e));
+      di->guard =
+         assignNew('V', mce, Ity_I1, binop(Iop_And1, di->guard, guard));
    }
 
    setHelperAnns( mce, di );
@@ -3630,6 +3757,7 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
    IRAtom* (*uifu)    (MCEnv*, IRAtom*, IRAtom*) = NULL;
    IRAtom* (*difd)    (MCEnv*, IRAtom*, IRAtom*) = NULL;
    IRAtom* (*improve) (MCEnv*, IRAtom*, IRAtom*) = NULL;
+   IRAtom* (*wconst)  (MCEnv*, IRAtom*, IRAtom*) = NULL;
 
    IRAtom* vatom1 = expr2vbits( mce, atom1, HuOth );
    IRAtom* vatom2 = expr2vbits( mce, atom2, HuOth );
@@ -4904,50 +5032,57 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
          return scalarShift( mce, Ity_I8, op, vatom1,vatom2, atom1,atom2 );
 
       case Iop_AndV256:
-         uifu = mkUifUV256; difd = mkDifDV256; 
+         uifu = mkUifUV256; difd = mkDifDV256; wconst = mkWithConstANDV256;
          and_or_ty = Ity_V256; improve = mkImproveANDV256; goto do_And_Or;
       case Iop_AndV128:
-         uifu = mkUifUV128; difd = mkDifDV128; 
+         uifu = mkUifUV128; difd = mkDifDV128; wconst = mkWithConstANDV128;
          and_or_ty = Ity_V128; improve = mkImproveANDV128; goto do_And_Or;
       case Iop_And64:
-         uifu = mkUifU64; difd = mkDifD64; 
+         uifu = mkUifU64; difd = mkDifD64; wconst = mkWithConstAND64;
          and_or_ty = Ity_I64; improve = mkImproveAND64; goto do_And_Or;
       case Iop_And32:
-         uifu = mkUifU32; difd = mkDifD32; 
+         uifu = mkUifU32; difd = mkDifD32; wconst = mkWithConstAND32;
          and_or_ty = Ity_I32; improve = mkImproveAND32; goto do_And_Or;
       case Iop_And16:
-         uifu = mkUifU16; difd = mkDifD16; 
+         uifu = mkUifU16; difd = mkDifD16; wconst = mkWithConstAND16;
          and_or_ty = Ity_I16; improve = mkImproveAND16; goto do_And_Or;
       case Iop_And8:
-         uifu = mkUifU8; difd = mkDifD8; 
+         uifu = mkUifU8; difd = mkDifD8; wconst = mkWithConstAND8;
          and_or_ty = Ity_I8; improve = mkImproveAND8; goto do_And_Or;
       case Iop_And1:
-         uifu = mkUifU1; difd = mkDifD1; 
+         uifu = mkUifU1; difd = mkDifD1; wconst = mkWithConstAND1;
          and_or_ty = Ity_I1; improve = mkImproveAND1; goto do_And_Or;
 
       case Iop_OrV256:
-         uifu = mkUifUV256; difd = mkDifDV256; 
+         uifu = mkUifUV256; difd = mkDifDV256; wconst = mkWithConstORV256;
          and_or_ty = Ity_V256; improve = mkImproveORV256; goto do_And_Or;
       case Iop_OrV128:
-         uifu = mkUifUV128; difd = mkDifDV128; 
+         uifu = mkUifUV128; difd = mkDifDV128; wconst = mkWithConstORV128;
          and_or_ty = Ity_V128; improve = mkImproveORV128; goto do_And_Or;
       case Iop_Or64:
-         uifu = mkUifU64; difd = mkDifD64; 
+         uifu = mkUifU64; difd = mkDifD64; wconst = mkWithConstOR64;
          and_or_ty = Ity_I64; improve = mkImproveOR64; goto do_And_Or;
       case Iop_Or32:
-         uifu = mkUifU32; difd = mkDifD32; 
+         uifu = mkUifU32; difd = mkDifD32; wconst = mkWithConstOR32;
          and_or_ty = Ity_I32; improve = mkImproveOR32; goto do_And_Or;
       case Iop_Or16:
-         uifu = mkUifU16; difd = mkDifD16; 
+         uifu = mkUifU16; difd = mkDifD16; wconst = mkWithConstOR16;
          and_or_ty = Ity_I16; improve = mkImproveOR16; goto do_And_Or;
       case Iop_Or8:
-         uifu = mkUifU8; difd = mkDifD8; 
+         uifu = mkUifU8; difd = mkDifD8; wconst = mkWithConstOR8;
          and_or_ty = Ity_I8; improve = mkImproveOR8; goto do_And_Or;
       case Iop_Or1:
-         uifu = mkUifU1; difd = mkDifD1; 
+         uifu = mkUifU1; difd = mkDifD1; wconst = mkWithConstOR1;
          and_or_ty = Ity_I1; improve = mkImproveOR1; goto do_And_Or;
 
       do_And_Or:
+         /* Yield simpler IR when one of the operands is a constant */
+         if (atom1->tag == Iex_Const) {
+            return wconst(mce, atom1, vatom2);
+         }
+         if (atom2->tag == Iex_Const) {
+            return wconst(mce, atom2, vatom1);
+         }
          return assignNew('V', mce, and_or_ty,
             difd(mce, uifu(mce, vatom1, vatom2),
                       difd(mce, improve(mce, atom1, vatom1),

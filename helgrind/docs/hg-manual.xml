@@ -1318,6 +1318,49 @@ unlock(mx)                             unlock(mx)
     </listitem>
   </varlistentry>
 
+  <varlistentry id="opt.show-events"
+                xreflabel="--show-events">
+    <term>
+      <option><![CDATA[--show-events=0|1|2
+      [default: 0]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Controls tracing of internal Helgrind synchronization, threading
+        and memory events.  At level 1, Helgrind prints a trace of its
+        synchronization, threading and memory events.  At level 2,
+        additional memory events are also traced.  The default value of
+        0 disables tracing.
+      </para>
+    </listitem>
+  </varlistentry>
+
+  <varlistentry id="opt.track-destroy"
+                xreflabel="--track-destroy">
+    <term>
+      <option><![CDATA[--track-destroy=no|yes|all
+      [default: no]]]></option>
+    </term>
+    <listitem>
+      <para>
+        Controls checking for missing
+        <computeroutput>pthread_mutex_destroy</computeroutput> and
+        <computeroutput>pthread_rwlock_destroy</computeroutput> calls.
+        With <computeroutput>yes</computeroutput>, Helgrind warns that a
+        destroy call is missing when
+        <computeroutput>pthread_mutex_init</computeroutput> or
+        <computeroutput>pthread_rwlock_init</computeroutput> is called on
+        an address that already has a live lock record. With
+        <computeroutput>all</computeroutput>, Helgrind reports at process
+        exit all mutexes and rwlocks that were explicitly initialized
+        but never destroyed.  Locks that were not explicitly initialized
+        (such as those using static initializers like
+        <computeroutput>PTHREAD_MUTEX_INITIALIZER</computeroutput>) are
+        not reported.  The default value of no disables tracking.
+      </para>
+    </listitem>
+  </varlistentry>
+
 
 </variablelist>
 <!-- end of xi:include in the manpage -->

@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2020
+   Copyright IBM Corp. 2010-2026
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -267,13 +267,8 @@ typedef enum {
    S390_VEC_OP_INVALID = 0,
    S390_VEC_OP_VPKS,
    S390_VEC_OP_VPKLS,
-   S390_VEC_OP_VCEQ,
    S390_VEC_OP_VGFM,
    S390_VEC_OP_VGFMA,
-   S390_VEC_OP_VMAH,
-   S390_VEC_OP_VMALH,
-   S390_VEC_OP_VCH,
-   S390_VEC_OP_VCHL,
    S390_VEC_OP_VFTCI,
    S390_VEC_OP_VFMIN,
    S390_VEC_OP_VFMAX,

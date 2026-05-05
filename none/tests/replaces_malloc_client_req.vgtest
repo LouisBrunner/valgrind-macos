@@ -1,0 +1,2 @@
+prog: ../../memcheck/tests/replaces_malloc_client_req
+vgopts: -q

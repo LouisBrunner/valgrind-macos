@@ -8,7 +8,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright IBM Corp. 2010-2020
+   Copyright IBM Corp. 2010-2026
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -120,7 +120,7 @@ VexGuestLayout s390xGuest_layout = {
 
    /* Describe any sections to be regarded by Memcheck as
       'always-defined'. */
-   .n_alwaysDefd = 9,
+   .n_alwaysDefd = 8,
 
    /* Flags thunk: OP and NDEP are always defined, whereas DEP1
       and DEP2 have to be tracked.  See detailed comment in
@@ -131,10 +131,9 @@ VexGuestLayout s390xGuest_layout = {
       /*  2 */ ALWAYSDEFD(guest_EMNOTE),    /* generic */
       /*  3 */ ALWAYSDEFD(guest_CMSTART),   /* generic */
       /*  4 */ ALWAYSDEFD(guest_CMLEN),     /* generic */
-      /*  5 */ ALWAYSDEFD(guest_IP_AT_SYSCALL), /* generic */
-      /*  6 */ ALWAYSDEFD(guest_IA),        /* control reg */
-      /*  7 */ ALWAYSDEFD(guest_fpc),       /* control reg */
-      /*  8 */ ALWAYSDEFD(guest_counter),   /* internal usage register */
+      /*  5 */ ALWAYSDEFD(guest_IA),        /* control reg */
+      /*  6 */ ALWAYSDEFD(guest_fpc),       /* control reg */
+      /*  7 */ ALWAYSDEFD(guest_counter),   /* internal usage register */
    }
 };
 
@@ -784,6 +783,10 @@ decode_bfp_rounding_mode(UInt irrm)
    case Irrm_ZERO:    return S390_BFP_ROUND_ZERO;
    case Irrm_NEAREST_TIE_AWAY_0: return S390_BFP_ROUND_NEAREST_AWAY;
    case Irrm_PREPARE_SHORTER:    return S390_BFP_ROUND_PREPARE_SHORT;
+   case Irrm_AWAY_FROM_ZERO:
+   case Irrm_NEAREST_TIE_TOWARD_0:
+      /* These cannot occur as they are DFP specific */
+      break;
    }
    vpanic("decode_bfp_rounding_mode");
 }
@@ -1013,7 +1016,6 @@ decode_bfp_rounding_mode(UInt irrm)
       break;                                                          \
    case S390_BFP_ROUND_PREPARE_SHORT:                                 \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,3); \
-      cc = S390_CC_FOR_BFP_UCONVERT_AUX(opcode,cc_dep1,3);            \
       break;                                                          \
    case S390_BFP_ROUND_NEAREST_EVEN:                                  \
       cc = S390_CC_FOR_BFP128_UCONVERT_AUX(opcode,cc_dep1,cc_dep2,4); \
@@ -2402,13 +2404,8 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       {0x00, 0x00}, /* invalid */
       [S390_VEC_OP_VPKS]  = {0xe7, 0x97},
       [S390_VEC_OP_VPKLS] = {0xe7, 0x95},
-      [S390_VEC_OP_VCEQ]  = {0xe7, 0xf8},
       [S390_VEC_OP_VGFM]  = {0xe7, 0xb4},
       [S390_VEC_OP_VGFMA] = {0xe7, 0xbc},
-      [S390_VEC_OP_VMAH]  = {0xe7, 0xab},
-      [S390_VEC_OP_VMALH] = {0xe7, 0xa9},
-      [S390_VEC_OP_VCH]   = {0xe7, 0xfb},
-      [S390_VEC_OP_VCHL]  = {0xe7, 0xf9},
       [S390_VEC_OP_VFTCI] = {0xe7, 0x4a},
       [S390_VEC_OP_VFMIN] = {0xe7, 0xee},
       [S390_VEC_OP_VFMAX] = {0xe7, 0xef},
@@ -2489,10 +2486,7 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
    switch(d->op) {
    case S390_VEC_OP_VPKS:
    case S390_VEC_OP_VPKLS:
-   case S390_VEC_OP_VCEQ:
    case S390_VEC_OP_VGFM:
-   case S390_VEC_OP_VCH:
-   case S390_VEC_OP_VCHL:
       the_insn.VRR.v1 = 1;
       the_insn.VRR.v2 = 2;
       the_insn.VRR.v3 = 3;
@@ -2502,8 +2496,6 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
       break;
 
    case S390_VEC_OP_VGFMA:
-   case S390_VEC_OP_VMAH:
-   case S390_VEC_OP_VMALH:
    case S390_VEC_OP_VMSL:
       the_insn.VRRd.v1 = 1;
       the_insn.VRRd.v2 = 2;

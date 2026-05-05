@@ -3158,7 +3158,6 @@ static void vts_tab__do_GC ( Bool show_stats )
       tl_assert(old_te->u.remap == VtsID_INVALID);
       tl_assert(old_vts != NULL);
       tl_assert(old_vts->id == i);
-      tl_assert(old_vts->ts != NULL);
 
       /* It is in use. Make a pruned version. */
       nBeforePruning++;

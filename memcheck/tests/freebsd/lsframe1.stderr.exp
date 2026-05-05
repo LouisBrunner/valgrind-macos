@@ -1,0 +1,12 @@
+
+lsframe1: start
+lsframe1: done, result is -8388608
+
+HEAP SUMMARY:
+    in use at exit: ... bytes in ... blocks
+  total heap usage: ... allocs, ... frees, ... bytes allocated
+
+For a detailed leak analysis, rerun with: --leak-check=full
+
+For lists of detected and suppressed errors, rerun with: -s
+ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)

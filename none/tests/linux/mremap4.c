@@ -19,5 +19,8 @@ int main()
   addr = mremap(addr, 100 * 4096, 40 * 4096, 0);
   assert(addr != (void *)-1);
 
+  int rmid = shmctl(shmid, IPC_RMID, NULL);
+  assert(rmid == 0);
+
   return 0;
 }

@@ -6,8 +6,8 @@ dist_noinst_SCRIPTS = \
 
 EXTRA_DIST = \
 	bug345887.stderr.exp bug345887.vgtest \
-	cet_nops_fs.stderr.exp cet_nops_fs.stdout.exp cet_nops_fs.vgtest \
-	cet_nops_gs.stderr.exp cet_nops_gs.stdout.exp cet_nops_gs.vgtest \
+	cet_nops_fs.stdout.exp cet_nops_fs.vgtest \
+	cet_nops_gs.stdout.exp cet_nops_gs.vgtest \
 	map_32bits.stderr.exp map_32bits.vgtest
 
 check_PROGRAMS = \

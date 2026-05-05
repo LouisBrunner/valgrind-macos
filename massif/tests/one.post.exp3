@@ -1,0 +1,39 @@
+--------------------------------------------------------------------------------
+Command:            ./one
+Massif arguments:   --stacks=no --time-unit=B --heap-admin=0 --massif-out-file=massif.out --alloc-fn=_xpc_malloc --alloc-fn=strdup --alloc-fn=_xpc_calloc --alloc-fn=_xpc_alloc_typed const*,bool) (*)(),_objc_object*) --alloc-fn=_malloc_zone_malloc_with_options_np_outlined --alloc-fn=malloc_type_zone_malloc_with_options
+ms_print arguments: massif.out
+--------------------------------------------------------------------------------
+
+
+     B
+   32^                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+     |                                                                       :
+   0 +----------------------------------------------------------------------->B
+     0                                                                      32
+
+Number of snapshots: 2
+ Detailed snapshots: []
+
+--------------------------------------------------------------------------------
+  n        time(B)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
+--------------------------------------------------------------------------------
+  0              0                0                0             0            0
+  1             32               32                1            31            0

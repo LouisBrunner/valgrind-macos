@@ -240,7 +240,7 @@ Int VG_(sigprocmask)( Int how, const vki_sigset_t* set, vki_sigset_t* oldset)
 
 #if defined(VGO_darwin)
 /* A helper function for sigaction on Darwin. */
-static 
+static
 void darwin_signal_demux(void* catcher, UWord infostyle, UWord sig, void* sinfo, void* uctx
 # if defined(VGA_arm64)
 , void* token

@@ -754,20 +754,24 @@ void MC_(pp_Error) ( const Error* err )
          }
          break;
 
-      case Err_ReallocSizeZero:
+      case Err_ReallocSizeZero: {
+         const HChar* fn_name = VG_(get_ExeContext_first_fnname)(VG_(get_error_where)(err));
+         if (fn_name == NULL)
+            fn_name = "realloc"; // just in case
          if (xml) {
             emit( "  <kind>ReallocSizeZero</kind>\n" );
-            emit( "  <what>realloc() with size 0</what>\n" );
+            emit( "  <what>%s() with size 0</what>\n", fn_name );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
                                 &extra->Err.ReallocSizeZero.ai, False);
          } else {
-            emit( "realloc() with size 0\n" );
+            emit( "%s() with size 0\n", fn_name );
             VG_(pp_ExeContext)( VG_(get_error_where)(err) );
             VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
                                 &extra->Err.ReallocSizeZero.ai, False);
          }
          break;
+      }
 
       case Err_BadAlign:
          if (extra->Err.BadAlign.size) {
@@ -1010,6 +1014,15 @@ void MC_(record_realloc_size_zero) ( ThreadId tid, Addr a )
 {
    MC_Error extra;
    tl_assert(VG_INVALID_THREADID != tid);
+   /*
+    * We can't fill the Block as in freemismatch above.
+    * That's because if realloc size zero frees we literally do that
+    * and transform the call into a free before bothering to get the
+    * old MC_Chunk.
+    *
+    * See VG_(maybe_record_error) for a description of how this gets
+    * filled on demand.
+    */
    extra.Err.ReallocSizeZero.ai.tag = Addr_Undescribed;
    VG_(maybe_record_error)( tid, Err_ReallocSizeZero, a, /*s*/NULL, &extra );
 }

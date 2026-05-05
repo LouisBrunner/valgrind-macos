@@ -1,0 +1,4 @@
+prog: ../leak-autofreepool
+vgopts: --leak-check=full
+args: 7
+stderr_filter: filter_heap_usage

@@ -13,7 +13,7 @@
    So the only thing to test for here is the condition code.
 
    Note, no testing for "convert from ..." insns here, as they are
-   covered in bfd-emit.pl and do not set the condition code.
+   covered in bfp-emit.pl and do not set the condition code.
 */
 #include <stdio.h>
 #include <stdint.h>

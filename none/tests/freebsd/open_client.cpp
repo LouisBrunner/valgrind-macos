@@ -7,41 +7,56 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <sys/mount.h>
+#include <iostream>
 
 int main(int argc, char** argv)
 {
     std::vector<int> flags{O_WRONLY|O_CREAT|O_TRUNC, O_WRONLY, O_RDWR};
+    std::string ppf = std::string("/proc/") + std::to_string(getpid()) + "/file";
+    std::vector<std::string> paths{argv[0]};
+    struct statfs sfs;
 
-    // On FreeBSD libc open uses syscall openat (at least on 14.2)
-    for (auto f : flags)
-    {
-        int res = open(argv[0], f, 0666);
-        if (-1 != res)
-        {
-            throw std::runtime_error("open should have failed");
-        }
-        else
-        {
-            if (errno != ETXTBSY)
-            {
-                throw std::runtime_error("errno should be ETXTBSY");
-            }
+    if (statfs("/proc", &sfs) == 0) {
+        if (std::string(sfs.f_fstypename) == "procfs") {
+            paths.emplace_back(ppf);
+            paths.emplace_back("/proc/curproc/file");
         }
     }
 
-    // repeat the above, but with syscall SYS_open
-    for (auto f : flags)
+    for (const auto& p : paths)
     {
-        int res = syscall(SYS_open, argv[0], f, 0666);
-        if (-1 != res)
+        // On FreeBSD libc open uses syscall openat (at least on 14.2)
+        for (auto f : flags)
         {
-            throw std::runtime_error("open should have failed");
-        }
-        else
-        {
-            if (errno != ETXTBSY)
+            int res = open(p.c_str(), f, 0666);
+            if (-1 != res)
             {
-                throw std::runtime_error("errno should be ETXTBSY");
+                throw std::runtime_error("open should have failed");
+            }
+            else
+            {
+                if (errno != ETXTBSY)
+                {
+                    throw std::runtime_error("errno should be ETXTBSY");
+                }
+            }
+        }
+
+        // repeat the above, but with syscall SYS_open
+        for (auto f : flags)
+        {
+            int res = syscall(SYS_open, p.c_str(), f, 0666);
+            if (-1 != res)
+            {
+                throw std::runtime_error("open should have failed");
+            }
+            else
+            {
+                if (errno != ETXTBSY)
+                {
+                    throw std::runtime_error("errno should be ETXTBSY");
+                }
             }
         }
     }

@@ -1,8 +1,0 @@
-Mutex still locked at thread exit: mutex 0x........, recursion count 1, owner 3.
-   at 0x........: pthread_join (drd_pthread_intercepts.c:?)
-   by 0x........: main (tc22_exit_w_lock.c:43)
-mutex 0x........ was first observed at:
-   at 0x........: pthread_mutex_lock (drd_pthread_intercepts.c:?)
-   by 0x........: child_fn1 (tc22_exit_w_lock.c:18)
-   by 0x........: vgDrd_thread_wrapper (drd_pthread_intercepts.c:?)
-

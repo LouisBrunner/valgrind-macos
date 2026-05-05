@@ -1,8 +1,7 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
-EXTRA_DIST = disasm-test.vgtest disasm-test.stderr.exp \
-             disasm-test.post.exp
-dist_noinst_SCRIPTS = filter_stderr
+EXTRA_DIST = disasm-test.vgtest disasm-test.post.exp
+dist_noinst_SCRIPTS =
 
 #----------------------------------------------------------------------------
 # Headers

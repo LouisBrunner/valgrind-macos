@@ -15,7 +15,7 @@ static int sleepms = 1000; // in each loop, will sleep "sleepms" milliseconds
 static int burn = 0; // after each sleep, will burn cpu in a tight 'burn' loop 
 static void setup_sigusr_handler(void); // sigusr1 and 2 sigaction setup.
 
-static pid_t gettid_sys()
+static pid_t gettid_sys(void)
 {
 #ifdef __NR_gettid
    return syscall(__NR_gettid);
@@ -32,7 +32,7 @@ void whoami(char *msg)
 }
 
 
-static void do_burn ()
+static void do_burn(void)
 {
    int i;
    int loopnr = 0;
@@ -124,13 +124,29 @@ static void wait_ready(void)
 // threads wanting to burn cpu.
 static void setaffinity(void)
 {
-#ifdef VGO_linux
+#if defined(VGO_linux)
    cpu_set_t single_cpu;
    CPU_ZERO(&single_cpu);
    CPU_SET(1, &single_cpu);
    (void) sched_setaffinity(0, sizeof(single_cpu), &single_cpu);
 #endif
-   // GDBTD: equivalent for Darwin ?
+
+#if defined(VGO_freebsd)
+   /*
+    * FreeBSD has something similar but it needs privileges
+    * somethinmg like this
+    */
+   /*
+   cpuset_t cpuset;
+   CPU_ZERO(&cpuset);
+   CPU_SET(0, &cpuset);
+   if (cpuset_setaffinity(CPU_LEVEL_CPUSET, CPU_WHICH_PID, -1, sizeof(cpuset), &cpuset) != 0) {
+      perror("cpuset_setaffinity");
+   }
+   */
+#endif
+
+   // FIXME: equivalent for Darwin and Solaris ?
 }
 
 int main (int argc, char *argv[])

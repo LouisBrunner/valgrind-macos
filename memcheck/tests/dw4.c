@@ -82,6 +82,7 @@ int main ( void )
   croak( q);
   unlink(filename);
 
+#if !defined(__APPLE__)
   /* Describe memory in or past the heap end. */
   void *addr = sbrk(0);
   croak(addr); // in the first brk page, after brk_limit
@@ -91,6 +92,7 @@ int main ( void )
   croak(addr); // Must still be inside.
   sbrk(-3*1024);
   croak(addr); // Must now be after.
+#endif
   
   return 0;
 }

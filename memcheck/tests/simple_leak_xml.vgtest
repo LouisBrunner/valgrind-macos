@@ -1,0 +1,4 @@
+prereq: [ -x "$(command -v xmllint)" ]
+prog: simple_leak
+args: | xmllint --noout -
+vgopts: --xml=yes --xml-fd=1

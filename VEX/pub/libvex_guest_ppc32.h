@@ -235,66 +235,65 @@ typedef
       /* 1220 */ UInt guest_REDIR_SP;
       /* 1224 */ UInt guest_REDIR_STACK[VEX_GUEST_PPC32_REDIR_STACK_SIZE];
 
-      /* Needed for Darwin (but mandated for all guest architectures):
-         CIA at the last SC insn.  Used when backing up to restart a
-         syscall that has been interrupted by a signal. */
-      /* 134C */ UInt guest_IP_AT_SYSCALL;
-
       /* SPRG3, which AIUI is readonly in user space.  Needed for
          threading on AIX. */
-      /* 1356 */ UInt guest_SPRG3_RO;
-      /* 1360 */ UInt  padding1;
-      /* 1364 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
-      /* 1372 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
-      /* 1380 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
-      /* 1388 */ ULong guest_PPR;       // Program Priority register
-      /* 1396 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
-      /* 1400 */ UInt  guest_PSPB;      // Problem State Priority Boost register
-      /* 1404 */ ULong guest_DSCR;      // Data Stream Control register
+      /* 1352 */ UInt guest_SPRG3_RO;
+      /* 1356 */ UInt  padding1;
+      /* 1360 */ ULong guest_TFHAR;     // Transaction Failure Handler Address Register
+      /* 1368 */ ULong guest_TEXASR;    // Transaction EXception And Summary Register
+      /* 1376 */ ULong guest_TFIAR;     // Transaction Failure Instruction Address Register
+      /* 1384 */ ULong guest_PPR;       // Program Priority register
+      /* 1392 */ UInt  guest_TEXASRU;   // Transaction EXception And Summary Register Upper
+      /* 1396 */ UInt  guest_PSPB;      // Problem State Priority Boost register
+      /* 1400 */ ULong guest_DSCR;      // Data Stream Control register
 
       /* ISA 3.1 Accumulators.  There are eight accumulators each contains four
          128-bit rows.  Declare each acculator and row explicitly, then use a
          helper to map ACC[i][row] to the explicitly declared entry.
          Technically not supported in 32-bit mode but needs to be defined. */
-      /* 1412 */   U128  guest_ACC_0_r0;
-      /* 1428 */   U128  guest_ACC_0_r1;
-      /* 1444 */   U128  guest_ACC_0_r2;
-      /* 1460 */   U128  guest_ACC_0_r3;
-      /* 1476 */   U128  guest_ACC_1_r0;
-      /* 1492 */   U128  guest_ACC_1_r1;
-      /* 1508 */   U128  guest_ACC_1_r2;
-      /* 1524 */   U128  guest_ACC_1_r3;
-      /* 1540 */   U128  guest_ACC_2_r0;
-      /* 1556 */   U128  guest_ACC_2_r1;
-      /* 1572 */   U128  guest_ACC_2_r2;
-      /* 1588 */   U128  guest_ACC_2_r3;
-      /* 1604 */   U128  guest_ACC_3_r0;
-      /* 1620 */   U128  guest_ACC_3_r1;
-      /* 1636 */   U128  guest_ACC_3_r2;
-      /* 1652 */   U128  guest_ACC_3_r3;
-      /* 1668 */   U128  guest_ACC_4_r0;
-      /* 1684 */   U128  guest_ACC_4_r1;
-      /* 1700 */   U128  guest_ACC_4_r2;
-      /* 1716 */   U128  guest_ACC_4_r3;
-      /* 1732 */   U128  guest_ACC_5_r0;
-      /* 1748 */   U128  guest_ACC_5_r1;
-      /* 1780 */   U128  guest_ACC_5_r2;
-      /* 1796 */   U128  guest_ACC_5_r3;
-      /* 1812 */   U128  guest_ACC_6_r0;
-      /* 1828 */   U128  guest_ACC_6_r1;
-      /* 1844 */   U128  guest_ACC_6_r2;
-      /* 1860 */   U128  guest_ACC_6_r3;
-      /* 1876 */   U128  guest_ACC_7_r0;
-      /* 1892 */   U128  guest_ACC_7_r1;
-      /* 1908 */   U128  guest_ACC_7_r2;
-      /* 1924 */   U128  guest_ACC_7_r3;
+      /* 1408 */   U128  guest_ACC_0_r0;
+      /* 1424 */   U128  guest_ACC_0_r1;
+      /* 1440 */   U128  guest_ACC_0_r2;
+      /* 1456 */   U128  guest_ACC_0_r3;
+      /* 1474 */   U128  guest_ACC_1_r0;
+      /* 1488 */   U128  guest_ACC_1_r1;
+      /* 1504 */   U128  guest_ACC_1_r2;
+      /* 1520 */   U128  guest_ACC_1_r3;
+      /* 1536 */   U128  guest_ACC_2_r0;
+      /* 1552 */   U128  guest_ACC_2_r1;
+      /* 1568 */   U128  guest_ACC_2_r2;
+      /* 1584 */   U128  guest_ACC_2_r3;
+      /* 1600 */   U128  guest_ACC_3_r0;
+      /* 1616 */   U128  guest_ACC_3_r1;
+      /* 1632 */   U128  guest_ACC_3_r2;
+      /* 1648 */   U128  guest_ACC_3_r3;
+      /* 1664 */   U128  guest_ACC_4_r0;
+      /* 1680 */   U128  guest_ACC_4_r1;
+      /* 1696 */   U128  guest_ACC_4_r2;
+      /* 1712 */   U128  guest_ACC_4_r3;
+      /* 1728 */   U128  guest_ACC_5_r0;
+      /* 1744 */   U128  guest_ACC_5_r1;
+      /* 1776 */   U128  guest_ACC_5_r2;
+      /* 1792 */   U128  guest_ACC_5_r3;
+      /* 1808 */   U128  guest_ACC_6_r0;
+      /* 1824 */   U128  guest_ACC_6_r1;
+      /* 1840 */   U128  guest_ACC_6_r2;
+      /* 1856 */   U128  guest_ACC_6_r3;
+      /* 1872 */   U128  guest_ACC_7_r0;
+      /* 1888 */   U128  guest_ACC_7_r1;
+      /* 1904 */   U128  guest_ACC_7_r2;
+      /* 1920 */   U128  guest_ACC_7_r3;
 
    /* Padding to make it have an 16-aligned size */
-      /* 1940 */   UInt guest_syscall_flag;
-      /* 1944 *    UInt  padding2; */
+      /* 1936 */   UInt guest_syscall_flag;
+      /* 1940 */   UInt padding2;
+      /* 1944 */   UInt padding3;
+      /* 1948 */   UInt padding4;
+
    }
    VexGuestPPC32State;
 
+_Static_assert(sizeof(VexGuestPPC32State)%16 == 0, "sizeof VexGuesPPC32State is not a multiple of 16");
 
 /*---------------------------------------------------------------*/
 /*--- Utility functions for PPC32 guest stuff.                ---*/

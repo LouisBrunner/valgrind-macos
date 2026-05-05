@@ -17,7 +17,7 @@ int main(void)
    write(fd, string, 4);
 
    /* Never created. */
-   write(7, string, 4);
+   write(10, string, 4);
 
    /* Invalid. */
    write(-7, string, 4);

@@ -60,12 +60,11 @@
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
 # include "priv_readelf.h"
 # include "priv_readdwarf3.h"
-# include "priv_readpdb.h"
 #elif defined(VGO_darwin)
 # include "priv_readmacho.h"
-# include "priv_readpdb.h"
 # include "pub_core_mach.h"
 #endif
+# include "priv_readpdb.h"
 #if defined(VGO_freebsd)
 #include "pub_core_clientstate.h"
 #endif
@@ -1191,6 +1190,13 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
       return 0;
 
    /* If the file doesn't have a name, we're hosed.  Give up. */
+  /*
+    * Maybe not.  Since bug 280965 we may have the fd, and if we
+    * do have the fd we use that rather than the filename to
+    * get ELF info. The filename is used in several places but I think
+    * that it is not obligatory and when we have just the fd we could
+   * get by.
+    */
    filename = VG_(am_get_filename)( seg );
    if (!filename)
       return 0;
@@ -1200,8 +1206,11 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
     * --20208-- WARNING: Serious error when reading debug info
     * --20208-- When reading debug info from /proc/xen/privcmd:
     * --20208-- can't read file to inspect ELF header
+    *
+    * Also PCI devices, see bug 514206
     */
-   if (VG_(strncmp)(filename, "/proc/xen/", 10) == 0)
+   if (VG_(strncmp)(filename, "/proc/xen/", 10) == 0 ||
+       VG_(strncmp)(filename, "/sys/devices/pci", 16) == 0)
       return 0;
 
    if (debug)
@@ -3602,8 +3611,6 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGA_arm64)
    ipHere = uregsHere->pc;
-#  elif defined(VGP_arm64_freebsd)
-   ipHere = uregsHere->pc;
 #  elif defined(VGP_riscv64_linux)
    ipHere = uregsHere->pc;
 #  else
@@ -5232,12 +5239,14 @@ void VG_(load_all_debuginfo) (void)
 
 SizeT VG_(data_size)(void)
 {
-   HChar resolved[1000];
-   VG_(realpath)( VG_(args_the_exename), resolved);
-
-   for (DebugInfo* di = debugInfo_list; di; di = di->next) {
-      if (di->data_size  && VG_(strcmp)(di->soname, "NONE") == 0 && VG_(strcmp)(resolved, di->fsm.filename) == 0) {
-         return VG_PGROUNDUP(di->data_size);
+   HChar resolved[VKI_PATH_MAX];
+   if (VG_(realpath)( VG_(args_the_exename), resolved)) {
+      for (DebugInfo* di = debugInfo_list; di; di = di->next) {
+         if (di->data_size
+             && VG_(strcmp)(di->soname, "NONE") == 0
+             && VG_(strcmp)(resolved, di->fsm.filename) == 0) {
+            return VG_PGROUNDUP(di->data_size);
+         }
       }
    }
    return 0U;

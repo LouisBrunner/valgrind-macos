@@ -5,7 +5,7 @@ dist_noinst_SCRIPTS = filter_stderr
 
 
 EXTRA_DIST = \
-	bug484935.stderr.exp bug484935.vgtest
+	bug484935.vgtest
 
 check_PROGRAMS = \
 	bug484935

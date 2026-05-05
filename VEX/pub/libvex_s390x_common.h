@@ -99,9 +99,6 @@
 /* Number of arguments that can be passed in registers */
 #define S390_NUM_GPRPARMS 5
 
-/* Number of double words needed to store all facility bits. */
-#define S390_NUM_FACILITY_DW 4
-
 #endif /* __LIBVEX_PUB_S390X_H */
 
 /*--------------------------------------------------------------------*/

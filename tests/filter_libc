@@ -14,6 +14,9 @@ while (<>)
     s/\(in \/.*(libc|libSystem|libsystem|libsocket|libsys).*\)$/(in \/...libc...)/;
     s/\(within \/.*(libc|libSystem|libsystem|libsocket).*\)$/(within \/...libc...)/;
 
+    # From assembler functions
+    s/\(syscall-template.S:.*\)$/(in \/...libc...)/;
+
     # Filter out dynamic loader
     s/ \(in \/.*ld-.*so\)$//;
 
@@ -25,6 +28,16 @@ while (<>)
     # libc on x86 FreeBSD
     s#_start1 \(src/lib/csu/i386/crt1_c.c.*#(below main)#;
     s#__libc_start1 \(in /...libc...\)#(below main)#;
+
+    # FreeBSD when installed from source rather than binary packages
+    # generated assembler results in things like
+    # write (write.S:4)
+    s#: (\w+) \(\1\.S:\d+\)#: $1 (in /...libc...)#;
+    # not all follow that pattern so need to be done explicitly
+    s#(?:__mac_get_file|syscall|_open)\.S:\d+#in /...libc...#;
+    s#\(.*/lib/libsys/libsys_.*\)#(in /...libc...)#;
+    s#\(.*/lib/libc/sys/.*\.c:\d+\)#(in /...libc...)#;
+    s#__libc_start1 \(.*lib/libc/csu/libc_start1\.c:\d+\)#(below main)#;
 
     # on Illumos
     s#_start_crt \(in .*#(below main)#;

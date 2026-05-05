@@ -258,10 +258,6 @@ void vpanic ( const HChar* str )
 /*--- vex_printf                                        ---*/
 /*---------------------------------------------------------*/
 
-/* This should be the only <...> include in the entire VEX library.
-   New code for vex_util.c should go above this point. */
-#include <stdarg.h>
-
 SizeT vex_strlen ( const HChar* str )
 {
    SizeT i = 0;
@@ -466,6 +462,7 @@ UInt vprintf_wrk ( void(*sink)(HChar),
             PAD(len1); PUTSTR(str); PAD(len3);
             break;
          }
+         case 'i':
          case 'd': {
             Long l;
             vassert(is_sizet == False); // %zd is obscure; we don't allow it
@@ -609,18 +606,25 @@ static void add_to_vg_sprintf_buf ( HChar c )
    *vg_sprintf_ptr++ = c;
 }
 
-UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
+UInt vex_vsprintf ( HChar* buf, const HChar* format, va_list vargs )
 {
-   Int ret;
-   va_list vargs;
+   UInt ret;
 
    vg_sprintf_ptr = buf;
+   ret = vprintf_wrk(add_to_vg_sprintf_buf, format, vargs);
+   add_to_vg_sprintf_buf('\0');
+
+   vassert(vex_strlen(buf) == ret);
+   return ret;
+}
+
+UInt vex_sprintf ( HChar* buf, const HChar *format, ... )
+{
+   UInt ret;
+   va_list vargs;
 
    va_start(vargs,format);
-
-   ret = vprintf_wrk ( add_to_vg_sprintf_buf, format, vargs );
-   add_to_vg_sprintf_buf(0);
-
+   ret = vex_vsprintf(buf, format, vargs);
    va_end(vargs);
 
    vassert(vex_strlen(buf) == ret);

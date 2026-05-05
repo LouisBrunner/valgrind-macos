@@ -2,6 +2,14 @@
 # We do not want disasm-test to be run under the auspices of valgrind.
 # Therefore the real test here is run in the "post" command.
 #
-prereq: ./disasm-test --check-prereq
+# Excluded opcodes:
+# exrl  - Offset is expected to denote a decodable insn; no such scaffolding
+# kma   - Cannot express constraint that r3 must be different from r1 and r2
+# srnmb - The compile-time checkable constraint cannot be expressed in opcode.c
+#
+prereq: ./disasm-test --check-march=arch15
 prog: /bin/true
-post: ./disasm-test --all --summary
+post: ./disasm-test --gcc-flags=-march=arch15 --all --exclude exrl kma srnmb --summary
+vgopts: -q
+stderr_filter:
+stderrB_filter:

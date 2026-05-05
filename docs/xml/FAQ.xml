@@ -497,9 +497,9 @@ int main(void)
 
     <para>First, check if you are using an optimized build of Google
       tcmalloc (part of Google perftools). This library uses a single
-      alias for free/scalar delete/array delete as an unmeasurable
-      micro-optimization. There is simply no way for Memcheck to tell
-      which of these was originally used. There are a few possible
+      alias for free/scalar delete/array delete as a micro-optimization.
+      There is simply no way for Memcheck to tell which of these was
+      originally used. There are a few possible
       workarounds.
       <itemizedlist>
         <listitem>
@@ -517,7 +517,18 @@ int main(void)
       </itemizedlist>
     </para>
 
-    <para>Second, if you are replacing operator new or operator delete
+    <para>Second, check that you are not using "Identical Code Folding".
+      The options look like "--icf=all" (or, if you are using a
+      C or C++ compiler as the linker driver "-Wl,--icf=all").
+      This is a feature present in the gold, lld and mold linkers. When this
+      option is used, the linker will compare the code emitted for functions
+      and may emit only one function for duplicates. If any of the
+      C++ "operator new" and "operator delete" overloads are treated in this
+      manner Memcheck may generate mismatch errors. The solution to this is
+      not to use identical code folding for builds that you will use for
+      testing with Valgrind.</para>
+
+    <para>Third, if you are replacing operator new or operator delete
       make sure that the compiler does not perform optimizations such as
       inlining on calls to these functions. Such optimizations can
       prevent Memcheck from correctly identifying the allocator or
@@ -546,15 +557,18 @@ int main(void)
     <para>Why does Valgrind hang when using tcmalloc?</para>
   </question>
   <answer id="a-hangss">
-    <para>This is because tcmalloc makes a recursive call in its initialisation code.
+    <para>This is because tcmalloc versions 2.16-2.17 make a recursive call in its initialisation code.
       Under Valgrind that becomes either an infinite loop with optimised builds of tcmalloc
-      or a stack overflow crash with debug builds of it.</para>
+      or a stack overflow crash with debug builds.</para>
 
     <para>Your options are:
       <itemizedlist>
         <listitem><para>Do not use tcmalloc in the builds that you test with Valgrind.</para></listitem>
         <listitem><para>Use an older version of tcmalloc. This problem started on 2024-03-24.
           If you use gperftools 2.15 or older you should not have this problem.</para></listitem>
+        <listitem><para>Use a more recent version of tcmalloc. This problem was fixed on 2025-10-07.
+          If you use gperftools 2.18 or later you should also not have this problem.</para></listitem>
+
       </itemizedlist>
     </para>
 

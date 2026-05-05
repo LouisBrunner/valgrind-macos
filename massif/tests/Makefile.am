@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr filter_verbose filter_new_aligned
+dist_noinst_SCRIPTS = filter_stderr filter_verbose filter_new_aligned filter_ignore_fn
 
 EXTRA_DIST = \
 	alloc-fns-A.post.exp alloc-fns-A.stderr.exp alloc-fns-A.vgtest \
@@ -21,13 +21,13 @@ EXTRA_DIST = \
 	custom_alloc.post.exp custom_alloc.stderr.exp custom_alloc.vgtest \
 	ignored.post.exp ignored.stderr.exp ignored.vgtest \
 	ignoring.post.exp ignoring.stderr.exp ignoring.vgtest \
-	inlinfomalloc.post.exp inlinfomalloc.stderr.exp inlinfomalloc.vgtest \
+	inlinfomalloc.post.exp inlinfomalloc.vgtest \
 	insig.post.exp insig.stderr.exp insig.vgtest \
 	long-names.post.exp long-names.stderr.exp long-names.vgtest \
 	long-time.post.exp long-time.stderr.exp long-time.vgtest \
-	malloc_usable.stderr.exp malloc_usable.vgtest \
+	malloc_usable.vgtest \
 	mmapunmap.post.exp mmapunmap.post.exp-ppc64 \
-	mmapunmap.stderr.exp mmapunmap.vgtest \
+	mmapunmap.vgtest \
 	new-cpp.post.exp new-cpp.stderr.exp new-cpp.vgtest \
 	no-stack-no-heap.post.exp no-stack-no-heap.stderr.exp no-stack-no-heap.vgtest \
 	null.post.exp null.stderr.exp null.vgtest \
@@ -114,4 +114,3 @@ one_CFLAGS		= $(AM_CFLAGS) -Wno-unused-result
 pages_as_heap_CFLAGS	= ${AM_CFLAGS} @FLAG_W_NO_DEPRECATED_DECLARATIONS@
 realloc_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_FREE_NONHEAP_OBJECT@
 thresholds_CFLAGS	= $(AM_CFLAGS) -Wno-unused-result
-

@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (C) 2024 Paul Floyd
+   Copyright (C) 2024-2026 Paul Floyd
       pjfloyd@wanadoo.fr
 
    This program is free software; you can redistribute it and/or
@@ -816,7 +816,7 @@ PRE(sys_posix_fallocate)
    PRE_REG_READ3(long, "posix_fallocate", int, fd, vki_off_t, offset, vki_off_t,
                  len);
    if (!ML_(fd_allowed)(ARG1, "posix_fallocate", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+      SET_STATUS_FailureErrorCode(VKI_EBADF);
 }
 
 // SYS_posix_fadvise 531
@@ -829,7 +829,7 @@ PRE(sys_posix_fadvise)
    PRE_REG_READ4(long, "posix_fadvise", int, fd, off_t, offset, off_t, len, int,
                  advice);
    if (!ML_(fd_allowed)(ARG1, "posix_faadvise", tid, False))
-      SET_STATUS_Failure(VKI_EBADF);
+      SET_STATUS_FailureErrorCode(VKI_EBADF);
 }
 
 // SYS_wait6   532
@@ -997,6 +997,18 @@ PRE(sys_cpuset_setdomain)
    // man page says that setsize (ARG4) "is usually provided by calling
    // sizeof(mask)"
    PRE_MEM_READ("cpuset_getdomain(mask)", ARG5, ARG4);
+}
+
+// SYS_kexec_load  599
+// int kexec_load(uint64_t entry, unsigned long count,
+//                struct kexec_segment *segments, unsigned long flags);
+PRE(sys_kexec_load)
+{
+   PRINT("sys_kexec_load (  %" FMT_REGWORD "x, %" FMT_REGWORD "u, %" FMT_REGWORD "x, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3, ARG4);
+   PRE_REG_READ4(int, "kexec_load", vki_uint64_t, entry,
+                 unsigned long, count, struct kexec_segment*, segments, unsigned long, flag);
+   PRE_MEM_READ("kexec_load(segments)", ARG3, ARG2*(sizeof(struct vki_kexec_segment)));
+   // FIXME PJF should check the buf and bufsz fields
 }
 
 PRE(sys_fake_sigreturn)

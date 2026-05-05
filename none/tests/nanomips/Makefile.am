@@ -3,12 +3,12 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
-   arithmetic.vgtest arithmetic.stderr.exp arithmetic.stdout.exp \
-   bits.vgtest bits.stderr.exp bits.stdout.exp \
-   branches.vgtest branches.stderr.exp branches.stdout.exp \
-   load_store.vgtest load_store.stderr.exp load_store.stdout.exp \
-   move.vgtest move.stderr.exp move.stdout.exp \
-   pc_instructions.vgtest pc_instructions.stderr.exp pc_instructions.stdout.exp
+   arithmetic.vgtest arithmetic.stdout.exp \
+   bits.vgtest bits.stdout.exp \
+   branches.vgtest branches.stdout.exp \
+   load_store.vgtest load_store.stdout.exp \
+   move.vgtest move.stdout.exp \
+   pc_instructions.vgtest pc_instructions.stdout.exp
 
 check_PROGRAMS = \
    arithmetic \

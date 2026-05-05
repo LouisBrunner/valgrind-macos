@@ -1,0 +1,5 @@
+prereq:  ../../../tests/os_test darwin && rm -rf ./x86 && mkdir x86
+prog: shell
+stderr_filter: filter_shell_output
+vgopts: -q --trace-children=yes
+cleanup: rm -rf x86

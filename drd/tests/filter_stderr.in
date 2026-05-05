@@ -32,12 +32,15 @@ $SED \
 -e "s/(tc20_verifywrap.c:261)/(tc20_verifywrap.c:262)/" \
 -e "/^Copyright (C) 2006-20.., and GNU GPL'd, by Bart Van Assche et al.$/d" \
 -e "s/start_thread ([^)]*)/start_thread/" \
+-e "s/_pthread_start ([^)]*)/start_thread/" \
 -e "s/\([A-Za-z_]*\) (clone.S:[0-9]*)/\1 (in \/...libc...)/" \
 -e "s/\([A-Za-z_]*\) (swapcontext.S:[0-9]*)/\1 (in \/...libc...)/" \
 -e "s/_swapcontext/swapcontext/" \
 -e "s/[A-Za-z_]* (pthread_create.c:[0-9]*)/(within libpthread-?.?.so)/" \
 -e "s/[A-Za-z_]* (in [^ ]*libpthread-[0-9.]*\.so)/(within libpthread-?.?.so)/" \
 -e "s/... (in \/lib\/libthr.so.3)/start_thread/" \
+-e "s#: .*/lib/libthr/thread/thr_create.*#: start_thread#" \
+-e "s/_pthread_body (in \/...libc...)/start_thread/" \
 -e "s:(within /lib[0-9]*/ld-[0-9.]*\.so):(within ld-?.?.so):" \
 -e "s/was held during [0-9][0-9]*/was held during .../" \
 -e "s: BSS section of [^<]*/: BSS section of :g" \
@@ -50,7 +53,8 @@ $SED \
 -e "s/\( name [^ ]*\)-[0-9]*\( oflag \)/\1\2/" \
 -e "s/??? (in \/[A-Za-z0-9_/-]*)/???/" \
 -e '/^   by 0x[0-9a-fA-F]*: process_dl_debug (in \/lib[0-9]*\/ld-[0-9.]*\.so)$/d' \
--e "/^For lists of detected and suppressed errors, rerun with: -s$/d" |
+-e "/^For lists of detected and suppressed errors, rerun with: -s$/d" \
+-e "s/__kill/kill/" |
 
 # Remove the message that more than hundred errors have been detected
 # (consists of two lines) and also the empty line above it.

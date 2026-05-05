@@ -3,8 +3,8 @@
 open(): No such file or directory
 /proc/<pid>/cmdline:
 open(): No such file or directory
-readlink: No such file or directory
-readlink: No such file or directory
-readlinkat: No such file or directory
-readlinkat: No such file or directory
+Result of readlink("/proc/self/path/a.out"): procfs-cmdline-exe
+Result of readlink("/proc/<pid>/path/a.out"): procfs-cmdline-exe
+Result of readlinkat("/proc/self/path/a.out"): procfs-cmdline-exe
+Result of readlinkat("/proc/<pid>/path/a.out"): procfs-cmdline-exe
 

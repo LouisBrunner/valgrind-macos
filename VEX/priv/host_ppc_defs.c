@@ -4154,7 +4154,7 @@ static UChar* mkFormVA ( UChar* p, UInt opc1, UInt r1, UInt r2,
 */
 Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
                     UChar* buf, Int nbuf, const PPCInstr* i, 
-                    Bool mode64, VexEndness endness_host,
+                    Bool mode64, const VexArchInfo* archinfo_host,
                     const void* disp_cp_chain_me_to_slowEP,
                     const void* disp_cp_chain_me_to_fastEP,
                     const void* disp_cp_xindir,
@@ -4167,6 +4167,7 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
       vex_printf("asm  ");ppPPCInstr(i, mode64); vex_printf("\n");
    }
 
+   VexEndness endness_host = archinfo_host->endness;
    switch (i->tag) {
 
    case Pin_LI:

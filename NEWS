@@ -1,20 +1,18 @@
-Release 3.27.0 (?? Apr 2025)
+Release 3.28.0 (?? Oct 2026)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
 PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
 MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
-X86/Android, X86/Solaris, AMD64/Solaris, AMD64/MacOSX 10.12, X86/FreeBSD,
-AMD64/FreeBSD and ARM64/FreeBSD There is also preliminary support for
-X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
+X86/Android, X86/Solaris, AMD64/Solaris, X86/macOS, AMD64/macOS.
+X86/FreeBSD, AMD64/FreeBSD and ARM64/FreeBSD. There is preliminary support
+for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
 * ==================== CORE CHANGES ===================
 
 * ================== PLATFORM CHANGES =================
 
-
 * ==================== TOOL CHANGES ===================
-
 
 * ==================== FIXED BUGS ====================
 
@@ -25,16 +23,196 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
-413369  unhandled amd64-darwin syscall: unix:151 (getpgid)
-487055  memcheck/tests/x86-linux/scalar fails running in Docker
-511329  Darwin and FreeBSD: Move setting of carry flag out of
-        ML_(do_syscall_for_client_WRK)
+519223  Recognize ioctl(UFFDIO_*) operations
+519539  Darwin shm_open mode is optional and depends on oflag
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
-(3.27.0.RC1: ?? Apr 2025)
+(3.28.0.RC1: ?? Oct 2026)
+
+
+Release 3.27.0 (20 Apr 2026)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, X86/macOS, AMD64/macOS. 
+X86/FreeBSD, AMD64/FreeBSD and ARM64/FreeBSD. There is preliminary support
+for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
+
+* ==================== CORE CHANGES ===================
+
+* There are two new client requests
+
+  - VALGRIND_REPLACES_MALLOC Returns 1 if the tool replaces malloc
+    (e.g., memcheck).  Returns 0 if the tool does not replace malloc
+    (e.g., cachegrind and callgrind) or if the executable is not
+    running under VALGRIND.
+
+  - VALGRIND_GET_TOOLNAME Get the running tool name as a string. Takes
+    two arguments, an input buffer pointer and the length of that
+    buffer. Returns the required length (including terminating nul)
+    for the tool name. Returns 0 and the contents supplied buffer are
+    not modified if not running under Valgrind.
+
+  See also the full description in the valgrind.h header file or the
+  in The Client Request mechanism section of the Valgrind User Manual.
+
+* linux lightweight guard pages (madvise MADV_GUARD_INSTALL) supported
+
+  glibc 2.42+ (with linux 6.13+) uses MADV_GUARD_INSTALL to setup
+  stack guard pages. These lightweight guard pages are now supported
+  under valgrind. By default, Valgrind can handle to up to 500 madvise
+  guard pages. With thread heavy workloads the default value might not
+  be sufficient. Use --max-guard-pages=N to provide a different limit.
+  If --max-guard-pages is not set explicitly, then it will default to
+  the --max-threads setting.
+
+* --num-callers now has a minimum value of 2.
+
+  This is a breaking change. See
+  https://bugs.kde.org/show_bug.cgi?id=515183#c13
+  for full details.
+
+* ================== PLATFORM CHANGES =================
+
+* x86: Support for SSE4.1 instructions has been ported from AMD64 to
+  (32bit) x86. This is ongoing work. Currently the following SSE4.1
+  instructions are supported BLENDPD BLENDPS BLENDVPD BLENDVPS
+  MOVNTDQA MPSADBW PBLENDVB PBLENDW PCMPEQQ PINSRD PMAXSB PMAXSD
+  PMAXUD PMAXUW PMINSB PMINSD PMINUD PMINUW PMULLD PTEST.
+  Bug #518222 tracks further progress.
+
+* s390x: Machine models older than z196 are no longer supported.
+
+* s390x: Support new z/Architecture features from the 15th edition.  In
+  particular this enables running binaries compiled with `-march=arch15'
+  or `-march=z17' and exploiting the new MSA extensions 10-13.
+
+* Support for the following macOS versions has been added
+  10.13 High Sierra (bug fixes)
+  10.14 Mojave
+  10.15 Catalina
+  11.0  Big Sur (Intel only)
+  12.0  Monterey (Intel only)
+  13.0  Ventura (Intel only, preliminary)
+
+* The Linux Test Project (LTP) v20260130 was integrated. New linux
+  syscall wrappers for file_getattr, file_setattr, lsm_get_self_attr,
+  lsm_set_self_attr, lsm_list_modules were added.
+
+* ==================== TOOL CHANGES ===================
+
+* Helgrind:
+
+  - New debug option --show-events=0|1|2. Controls tracing of internal
+    Helgrind synchronization, threading and memory events. At level 1,
+    Helgrind prints a trace of its synchronization, threading and memory
+    events. At level 2, additional memory events are also traced. The
+    default value of 0 disables tracing.
+
+  - New option --track-destroy=no|yes|all. Checks for missing
+    pthread_mutex_destroy and pthread_rwlock_destroy calls. With yes,
+    Helgrind warns when pthread_mutex_init or pthread_rwlock_init is called
+    on the address of a live (undestroyed) lock. With all, Helgrind also
+    reports undestroyed locks at process exit. --track-destroy does not track
+    locks that use static initializers.
+
+* ==================== FIXED BUGS ====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+126256  (fnop) vex x86->IR: unhandled instruction bytes: 0xD9 0xD0 0x31 0xC0
+228343  none/tests/darwin/bug228343 fails on OS X
+233298  MEMPOOL_FREE not reflected in heap summary
+253436  vex amd64->IR: unhandled instruction bytes: 0xF2 0xA6 (repne cmps)
+258140  Valgrind on OS X always reports some memory "still reachable"
+390754  unhandled amd64-darwin syscall: unix:216 (open_dprotected_np)
+406674  False positive when reading bitfield value on code compiled with
+        clang 7.0
+413369  unhandled amd64-darwin syscall: unix:151 (getpgid)
+413410  unhandled amd64-darwin syscall: mach:50 (on macOS 10.15)
+487055  memcheck/tests/x86-linux/scalar fails running in Docker
+503238  s390x: Support miscellaneous-instruction-extensions facility 4
+503239  s390x: Support vector-enhancements facility 3
+503240  s390x: Support MSA extensions 10, 11, and 12
+509562  s390x: Define minimum required machine model
+510416  Missing syswraps for file_getattr and file_setattr
+510563  Add missing syswraps for lsm_get_self_attr and lsm_set_self_attr
+510864  Add SSE4.1 PMAXSD and PMINSD instructions support for 32-bit x86
+511329  Darwin and FreeBSD: Move setting of carry flag out of
+        ML_(do_syscall_for_client_WRK)
+511461  Darwin 17 (MacOS X 10.13) memcheck issues
+511713  Refactor syscall argument handling
+511717  gdbserver (valgrind_read_memory) the 'impossible' happened:
+        Killed by fatal signal (SIGSEGV)
+511972  valgrind-3.26.0 tests fail to build on upcomig gcc-16:
+        unrecognized command-line option
+        '-Wno-alloc-size-larger-than=18446744073709551615'
+512030  s390x: bfp-convert testcase fails
+512037  malloc trace does not print free size or alignment
+512291  Valgrind on Solaris should drop support for long gone /dev/crypto
+        framework
+512571  regtest problems with darwin dsymutil
+512873  Add SSE4.1 min/max instructions for x86 32 bit
+513257  Add missing syswraps for lsm_list_modules
+513522  m_libcassert.c: 'ordered comparison of pointer with integer zero'
+        compiler warning
+513475  Add SSE4.1 PMULLD instruction for x86 32 bit
+513598  Helgrind should detect locks without pthread_{rwlock,mutex}_destroy
+        being called - Assertion 'lk->kind == LK_rdwr' failed.
+514094  readlink("/proc/self/exe") overwrites buffer beyond its return value
+514206  Assertion '!sr_isError(sr)' failed - mmap fd points to an open
+        descriptor to a PCI device
+514297  Track madvise MADV_GUARD_INSTALL in address space manager
+514343  Add a valgrind.h macro VALGRIND_REPLACES_MALLOC
+514596  Add SSE4.1 BLENDPD instruction for x86 32 bit
+514613  Unclosed leak_summary/still_reachable tag in xml output
+514659  ltp 20250930 vs linux 6.18.3 doesn't build
+514762  Many "Bad file descriptor" messages when using --track-fds=yes and
+        -d on systems without /proc
+515183  Error occurred while executing the command
+        `valgrind --num-callers=1 ./hello_world`
+515265  Add SSE4.1 BLENDPS and PBLENDW instructions for x86 32 bit
+516223  Add SSE4.1 PBLENDVB, BLENDVPS and BLENDVPD
+        instructions for x86 32 bit
+515612  Sanity check VG_(realpath) and VG_(readlink) return values
+515731  Distinguish between realloc functions in realloc size 0 error messages
+515810  Update the LTP version in valgrind testsuite to 20260130
+515992  Add FreeBSD /proc virtualisation for cmdline and file
+516090  Regression : Linux FreeBSD and Darwin: refactor *at syscall dirfd checks
+516225  Add MOVNTDQA SSE4.1 support for x86
+516289  illumos lsframe2 regtest fails
+516748  Incorrect use of SET_STATUS_Failure for syscall wrappers that return
+        error codes rather than -1 on error
+517455  Add PCMPEQQ SSE4.1 support for x86
+517697  Implement CLRSSONSTACK and SETUJMPBUF handling on Solaris.
+517748  Add ability to redirect global functions to Darwin
+517840  Add PTEST SSE4.1 support for x86
+518216  Add SSE4.1 MPSADBW instruction support for x86 32 bit
+518076  FreeBSD: add syscall wrapper for renameat2
+518078  Configure should accept names for GDB other than "gdb"
+518159  pth_once issues on Darwin
+518482  FreeBSD: assert in parse_procselfmaps when built with GNU binutils
+518609  Setting double verbose interferes with symbol loading (FreeBSD 16)
+518778  Valgrind LTP testsuite fails to compile on Fedora 44+
+518951  LTP testcase fsconfig02 fails under Valgrind
+519223  Recognize ioctl(UFFDIO_*) operations
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed above.
+
+(3.27.0.RC1: 13 Apr 2026)
+(3.27.0.RC2: 17 Apr 2026)
 
 
 Release 3.26.0 (24 Oct 2025)
@@ -55,6 +233,9 @@ X86/macOS 10.13, AMD64/macOS 10.13 and nanoMIPS/Linux.
   Makefile BUILD_DOCS to none, all or html. none, does not build any
   documentation.  all, builds all documentation. html, builds HTML
   docs but skips building PDFs. See also README_DEVELOPERS.
+
+* Control generation of files that are only useful for post-processing
+  with bunsen. make regtest BUNSEN=no inhibits generating those files.
 
 * New VEX API function LibVEX_set_VexControl
 
@@ -226,6 +407,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 508030  Add several missing syscall hooks to ppc64-linux
 508093  VALGRIND_CLO_CHANGE does not update vex_control
 508145  ppc64le needs ld.so hardwire for strcmp
+508328  Memory allegedly uninitialized after ioctl(PROCMAP_QUERY)
 508154  PRE(sys_fchownat) not handling VKI_AT_FDCWD
 508638  Self-hosting not working on FreeBSD
 508777  amd64-linux: add minimal scalar test
@@ -243,6 +425,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 509572  s390x: Overhaul BFP testsuite
 509590  Run the LTP tests with LTP_QUIET
 509567  unhandled amd64-linux syscall: 443 (quotactl_fd)
+509634  Add ARG4 checks for quotactl and quotactl_fd syswraps
 509642  Add missing ppc64-linux syswraps
 509643  Add missing s390x-linux syswraps
 510169  Update the LTP version in valgrind testsuite to 20250930
@@ -1168,6 +1351,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 506211  Constant folding improvements
 506453  Unexpected behaviour with IR injection and vex-guest-chase=yes
 509157  riscv64: Shift instructions can behave wrong
+510840  Use objdump for disassembly in VEX (s390x only)
+517596  VEX/priv/guest_ppc_toIR.c: Two possible cut'n'paste errors
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

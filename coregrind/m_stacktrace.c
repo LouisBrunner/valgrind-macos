@@ -46,6 +46,11 @@
 #include "pub_core_trampoline.h"
 #include "config.h"
 
+#if defined(VGO_darwin)
+// FIXME PJF this is bad (it's a syswrap private function)
+// but the alternative for the moment is crashes when trying to produce stack traces
+extern Bool ML_(safe_to_deref) ( const void *start, SizeT size );
+#endif
 
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
@@ -691,7 +696,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          fact that we are prodding at & ((UWord*)fp)[1] and so need to
          adjust the limit check accordingly.  Omitting this has been
          observed to cause segfaults on rare occasions. */
-      if (fp_min <= uregs.xbp && uregs.xbp <= fp_max - 1 * sizeof(UWord)) {
+      if (fp_min <= uregs.xbp && uregs.xbp <= fp_max - 1 * sizeof(UWord)
+#if defined(VGO_darwin)
+          // FIXME PJF temporary? workaround for segfaults
+          // without this extra check there will be some SIGSEGVs which end stuck
+          // in an infinite loop
+
+          // The faulting address seems to be in a fairly small rw- mapping
+          // (according to lldb)
+          // happens in Helgrind multithread apps, error arises in
+          // sync_signalhandler (called from darwin_signal_demux with signal 11)
+
+          && ML_(safe_to_deref)((void*)uregs.xbp, 2*sizeof(UWord))
+#endif
+                                                                        ) {
          /* fp looks sane, so use it. */
          uregs.xip = (((UWord*)uregs.xbp)[1]);
          if (0 == uregs.xip || 1 == uregs.xip) break;
@@ -1278,6 +1296,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #  if defined(VGO_darwin)
    if (uregs.x30 != 0 && uregs.x30 != uregs.pc && i < max_n_ips
       && fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
+      && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))
       && ((UWord*)uregs.x29)[1] != uregs.x30) {
       DiEpoch ep = VG_(current_DiEpoch)();
       const HChar *previous;
@@ -1320,7 +1339,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       }
 
       /* See amd64 version for details. */
-      if (fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)) {
+      if (fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
+          && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))) {
          /* fp looks sane, so use it. */
          uregs.pc = (((UWord*)uregs.x29)[1]);
          if (0 == uregs.pc || 1 == uregs.pc) break;

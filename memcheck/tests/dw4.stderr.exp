@@ -29,21 +29,21 @@ Uninitialised byte(s) found during client check request
 
 Unaddressable byte(s) found during client check request
    at 0x........: croak (dw4.c:25)
-   by 0x........: main (dw4.c:87)
+   by 0x........: main (dw4.c:88)
  Address 0x........ is 0 bytes after the brk data segment limit 0x........
 
 Uninitialised byte(s) found during client check request
    at 0x........: croak (dw4.c:32)
-   by 0x........: main (dw4.c:89)
+   by 0x........: main (dw4.c:90)
  Address 0x........ is in a rw- mapped file DIRECTORY/dw4 segment
 
 Uninitialised byte(s) found during client check request
    at 0x........: croak (dw4.c:32)
-   by 0x........: main (dw4.c:91)
+   by 0x........: main (dw4.c:92)
  Address 0x........ is in a rw- mapped file DIRECTORY/dw4 segment
 
 Unaddressable byte(s) found during client check request
    at 0x........: croak (dw4.c:25)
-   by 0x........: main (dw4.c:93)
+   by 0x........: main (dw4.c:94)
  Address 0x........ is 1024 bytes after the brk data segment limit 0x........
 

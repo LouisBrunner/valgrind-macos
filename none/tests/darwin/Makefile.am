@@ -5,11 +5,14 @@ dist_noinst_SCRIPTS = filter_stderr
 
 EXTRA_DIST = \
 	access_extended.stderr.exp access_extended.vgtest \
-	apple-main-arg.stderr.exp apple-main-arg.vgtest \
-	bug228343.stderr.exp bug228343.stdout.exp bug228343.vgtest \
-	bug254164.stderr.exp bug254164.vgtest \
-	bug390269.stderr.exp bug390269.vgtest \
-	bug411369.stderr.exp bug411369.vgtest \
+	apple-main-arg.vgtest \
+	bug228343.stdout.exp bug228343.vgtest \
+	bug254164.vgtest \
+	bug390269.vgtest \
+	bug411369.vgtest \
+	procfs-cmdline-exe.stderr.exp-without-readlinkat \
+	procfs-cmdline-exe.stderr.exp-with-readlinkat \
+	procfs-cmdline-exe.vgtest \
 	rlimit.stderr.exp rlimit.vgtest
 
 check_PROGRAMS = \
@@ -19,6 +22,7 @@ check_PROGRAMS = \
 	bug254164 \
 	bug390269 \
 	bug411369 \
+	procfs-cmdline-exe \
 	rlimit
 
 

@@ -50,6 +50,35 @@
 #include "pub_core_pathscan.h"        /* find_executable */
 #include "pub_core_initimg.h"         /* self */
 
+// change this to one to see the env/apple pointer area that Darwin gives us
+// and also the env and apple pointer area that we pass on to the guest
+#define DEBUG_ENV_APPLE 0
+
+#if (DEBUG_ENV_APPLE)
+static void print_env_apple(HChar** envp, const HChar* where)
+{
+   int i;
+   int j;
+   HChar** apple;
+   VG_(printf)("Start env and apple pointer strings at %s\n", where);
+
+   for (i = 0; envp[i]; ++i) {
+      VG_(printf)("initimg-darwin: i %d &envp[i] %p envp[i] %s\n", i, &envp[i], envp[i]);
+   }
+   // should be NULL
+   VG_(printf)("initimg-darwin: i %d &envp[i] %p envp[i] %s\n", i, &envp[i], envp[i]);
+
+   apple = &envp[i];
+   ++apple;
+
+   for (j = 0; apple[j]; ++j) {
+      VG_(printf)("initimg-darwin: j %d &apple[j] %p apple[j] %s\n", j, &apple[j], apple[j]);
+   }
+   VG_(printf)("initimg-darwin: j %d &apple[j] %p apple[j] %s\n", j, &apple[j], apple[j]);
+   VG_(printf)("End env and apple pointer strings at %s\n", where);
+}
+#endif
+
 
 /*====================================================================*/
 /*=== Loading the client                                           ===*/
@@ -64,6 +93,7 @@ static void load_client ( /*OUT*/ExeInfo* info,
    Int    ret;
 
    vg_assert( VG_(args_the_exename) != NULL);
+   vg_assert( VG_(strlen)(VG_(args_the_exename)) >= 1 );
    exe_name = VG_(find_executable)( VG_(args_the_exename) );
 
    if (!exe_name) {
@@ -73,7 +103,10 @@ static void load_client ( /*OUT*/ExeInfo* info,
 
    VG_(memset)(info, 0, sizeof(*info));
    ret = VG_(do_exec)(exe_name, info);
-   (void) ret;
+   if (ret < 0) {
+      VG_(printf)("valgrind: could not execute '%s'\n", exe_name);
+      VG_(exit)(1);
+   }
 
    // The client was successfully loaded!  Continue.
 
@@ -98,9 +131,31 @@ static void load_client ( /*OUT*/ExeInfo* info,
    Also, remove any binding for VALGRIND_LAUNCHER=.  The client should
    not be able to see this.
 
-   Before macOS 11:
-   Also, add DYLD_SHARED_REGION=avoid, because V doesn't know how
-   to process the dyld shared cache file.
+   There are up to three other environment variables that we need to
+   add or modify.
+
+   PTHREAD_PTR_MUNGE_TOKEN: This is used by libc/libpthread to obfuscate
+   some saved context registers.
+   FIXME PJF - if we correctly propagate the apple parameter ptr_munge
+   would we still need this env var?
+
+   DYLD_SHARED_REGION: Darwin switched to dematerialising system libraries.
+   On some versions of Darwin this environment variable can be used
+   with a value of 'avoid' to force using the physical libraries on disk.
+   Later versions removed the physical library files so we can
+   no longer use this option with 'avoid' and we need to start processing
+   the dyld shared cache file. Darwin 20 and 21 seem to work OK
+   without needing DYLD_SHARED_REGION. Darwin 22 does need it to be
+   set explicitly to 'use' even though that is the default.
+
+   DYLD_INSERT_LIBRARIES: V uses this to preload its core and tool
+   shared libraries.
+
+   The following macOS versions have the following requirements
+   All versions: DYLD_INSERT_LIBRARIES
+   DARWIN_VERS >= DARWIN_10_15 PTHREAD_PTR_MUNGE_TOKEN
+   DARWIN_VERS < DARWIN_11_00 DYLD_SHARED_REGION=avoid
+   DARWIN_VERS >= DARWIN_11_00 DYLD_SHARED_REGION=use
 
    Since macOS 11:
    Use DYLD_SHARED_REGION=use because system libraries aren't provided outside the cache anymore.
@@ -116,23 +171,34 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    const HChar* preload_core    = "vgpreload_core";
    const HChar* ld_preload      = "DYLD_INSERT_LIBRARIES=";
    const HChar* dyld_cache      = "DYLD_SHARED_REGION=";
-#if DARWIN_VERS >= DARWIN_11_00
-   const HChar* dyld_cache_value= "use";
-#else
+#if DARWIN_VERS < DARWIN_11_00
    const HChar* dyld_cache_value= "avoid";
+#else
+   const HChar* dyld_cache_value= "use";
+#endif
+   Int    dyld_cache_len  = VG_(strlen)( dyld_cache );
+   Bool   dyld_cache_done = False;
+#if DARWIN_VERS >= DARWIN_10_15
+   Bool   pthread_ptr_munge_token_present = False;
 #endif
    const HChar* v_launcher      = VALGRIND_LAUNCHER "=";
+   Int    extra_env_vars;
    Int    ld_preload_len  = VG_(strlen)( ld_preload );
-   Int    dyld_cache_len  = VG_(strlen)( dyld_cache );
    Int    v_launcher_len  = VG_(strlen)( v_launcher );
    Bool   ld_preload_done = False;
-   Bool   dyld_cache_done = False;
    Int    vglib_len       = VG_(strlen)(VG_(libdir));
 
    HChar** cpp;
    HChar** ret;
    HChar*  preload_tool_path;
    Int     envc, i;
+
+   // number of env vars to add if not already present
+#if DARWIN_VERS < DARWIN_10_15
+   extra_env_vars = 2; // DYLD_INSERT_LIBRARIES and DYLD_SHARED_REGION
+#else
+   extra_env_vars = 3; // DYLD_INSERT_LIBRARIES, DYLD_SHARED_REGION and PTHREAD_PTR_MUNGE_TOKEN
+#endif
 
    /* Alloc space for the vgpreload_core.so path and vgpreload_<tool>.so
       paths.  We might not need the space for vgpreload_<tool>.so, but it
@@ -164,16 +230,28 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
 
    /* Count the original size of the env */
    envc = 0;
-   for (cpp = origenv; cpp && *cpp; cpp++)
+   for (cpp = origenv; cpp && *cpp; cpp++) {
+      if (VG_(memcmp)(*cpp, ld_preload, ld_preload_len) == 0) {
+         --extra_env_vars;
+      }
+      if (VG_(memcmp)(*cpp, dyld_cache, dyld_cache_len) == 0) {
+         --extra_env_vars;
+      }
+#if DARWIN_VERS >= DARWIN_10_15
+      // strictly would should check for presence and that it is not set to zero
+      if (VG_(memcmp)(*cpp, "PTHREAD_PTR_MUNGE_TOKEN=", VG_(strlen)("PTHREAD_PTR_MUNGE_TOKEN=")) == 0) {
+         --extra_env_vars;
+         pthread_ptr_munge_token_present = True;
+      }
+#endif
       envc++;
+   }
+
+   vg_assert(extra_env_vars >= 0);
 
    /* Allocate a new space */
-   ret = VG_(malloc) ("initimg-darwin.sce.3",
-#if DARWIN_VERS >= DARWIN_10_15
-                      sizeof(HChar *) * (envc+3+1)); /* 3 new entries + NULL */
-#else
-                      sizeof(HChar *) * (envc+2+1)); /* 2 new entries + NULL */
-#endif
+   ret = VG_(malloc) ("initimg-darwin.sce.3", 
+                      sizeof(HChar *) * (envc+extra_env_vars+1)); /* 1 to 3 new entries + NULL */
 
    /* copy it over */
    for (cpp = ret; *origenv; )
@@ -226,7 +304,9 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
    }
 #if DARWIN_VERS >= DARWIN_10_15
    // pthread really wants a non-zero value for ptr_munge
-   ret[envc++] = VG_(strdup)("initimg-darwin.sce.6", "PTHREAD_PTR_MUNGE_TOKEN=0x00000001");
+   if (!pthread_ptr_munge_token_present) {
+      ret[envc++] = VG_(strdup)("initimg-darwin.sce.6", "PTHREAD_PTR_MUNGE_TOKEN=0x00000001");
+   }
 #endif
 
    /* ret[0 .. envc-1] is live now. */
@@ -247,7 +327,6 @@ static HChar** setup_client_env ( HChar** origenv, const HChar* toolname)
          ret[i][0] = 'D';
       }
    }
-
 
    VG_(free)(preload_string);
    ret[envc] = NULL;
@@ -316,7 +395,7 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
 static
 Addr setup_client_stack( void*  init_sp,
-                         HChar** orig_envp,
+                         HChar** envp,
                          const ExeInfo* info,
                          Addr   clstack_end,
                          SizeT  clstack_max_size,
@@ -356,6 +435,9 @@ Addr setup_client_stack( void*  init_sp,
       stringsize += VG_(strlen)(info->interp_args) + 1;
    }
 
+   vg_assert( VG_(args_the_exename) );
+   vg_assert( VG_(strlen)( VG_(args_the_exename) ) >= 1 );
+
    /* now scan the args we're given... */
    stringsize += VG_(strlen)( VG_(args_the_exename) ) + 1;
 
@@ -368,13 +450,13 @@ Addr setup_client_stack( void*  init_sp,
 
    /* ...and the environment */
    envc = 0;
-   for (cpp = orig_envp; cpp && *cpp; cpp++) {
+   for (cpp = envp; cpp && *cpp; cpp++) {
       envc++;
       stringsize += VG_(strlen)(*cpp) + 1;
    }
 
-   /* Darwin executable_path + NULL */
-   auxsize += 2 * sizeof(Word);
+   /* NULL separator and executable path */
+   auxsize += 2 * sizeof(HChar **);
    if (info->executable_path) {
        stringsize += 1 + VG_(strlen)(info->executable_path);
 #if SDK_VERS >= SDK_10_14_6
@@ -383,35 +465,45 @@ Addr setup_client_stack( void*  init_sp,
    }
 
 #if defined(VGA_arm64)
-    // This is required so that dyld can load our dylib specified in DYLD_INSERT_LIBRARIES
+   // This is required so that dyld can load our dylib specified in DYLD_INSERT_LIBRARIES
 #define EXTRA_APPLE_ARG "arm64e_abi=all"
-    stringsize += VG_(strlen)(EXTRA_APPLE_ARG) + 1;
-    auxsize += sizeof(Word);
+   stringsize += VG_(strlen)(EXTRA_APPLE_ARG) + 1;
+   auxsize += sizeof(Word);
 #endif
 
    /* Darwin mach_header */
-   if (info->dynamic) auxsize += sizeof(Word);
+   if (info->dynamic)
+       auxsize += sizeof(Word);
 
    /* OK, now we know how big the client stack is */
    stacksize =
       sizeof(Word) +                          /* argc */
-      sizeof(HChar **) +                      /* argc[0] == exename */
-      sizeof(HChar **)*argc +                 /* argv */
+      sizeof(HChar **) +                      /* argv[0] == exename */
+      sizeof(HChar **)*argc +                 /* argv guest args */
       sizeof(HChar **) +                      /* terminal NULL */
       sizeof(HChar **)*envc +                 /* envp */
       sizeof(HChar **) +                      /* terminal NULL */
       auxsize +                               /* auxv */
-      VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (aligned) */
+      VG_ROUNDUP(stringsize, sizeof(Word));   /* strings (Word aligned) */
+
+   /* The stacksize will be rounded to 16. Any rounding could come from a combination of
+      rounding up stringsize to a multiple of sizeof(Word) plus rounding of the whole
+      from a multiple of sizeof(Word) to a multiple of 16. Need to keep both of these
+      in order to calculate stringbase. */
+   size_t pointer_slop = VG_ROUNDUP(stacksize, 16) - stacksize;
+   stacksize = VG_ROUNDUP(stacksize, 16);
 
    if (0) VG_(printf)("stacksize = %u\n", stacksize);
 
    /* client_SP is the client's stack pointer */
+   vg_assert(stacksize % 16 == 0);
+   vg_assert((clstack_end + 1) % 16 == 0);
    client_SP = clstack_end + 1 - stacksize;
-   client_SP = VG_ROUNDDN(client_SP, 32); /* make stack 32 byte aligned */
+   vg_assert(client_SP % 16 == 0);
 
    /* base of the string table (aligned) */
-   stringbase = strtab = (HChar *)clstack_end
-                         - VG_ROUNDUP(stringsize, sizeof(int));
+   stringbase = strtab = (HChar *)clstack_end + 1 - VG_ROUNDUP(stringsize, sizeof(Word)) - pointer_slop;
+   vg_assert((Addr)stringbase % sizeof(Word) == 0);
 
    /* The max stack size */
    clstack_max_size = VG_PGROUNDUP(clstack_max_size);
@@ -440,7 +532,8 @@ Addr setup_client_stack( void*  init_sp,
    ptr = (Addr*)client_SP;
 
    /* --- mach_header --- */
-   if (info->dynamic) *ptr++ = info->text;
+   if (info->dynamic)
+      *ptr++ = info->text;
 
    /* --- client argc --- */
    *ptr++ = (Addr)(argc + 1);
@@ -463,22 +556,21 @@ Addr setup_client_stack( void*  init_sp,
 
    /* --- envp --- */
    VG_(client_envp) = (HChar **)ptr;
-   for (cpp = orig_envp; cpp && *cpp; ptr++, cpp++)
+   for (cpp = envp; cpp && *cpp; ptr++, cpp++)
       *ptr = (Addr)copy_str(&strtab, *cpp);
    *ptr++ = 0;
 
    /* --- executable_path --- */
-   if (info->executable_path) {
+   vg_assert(info->executable_path);
 #if SDK_VERS >= SDK_10_14_6
-       Int executable_path_len = VG_(strlen)(info->executable_path) + 16 + 1;
-       HChar *executable_path = VG_(malloc)("initimg-darwin.scs.1", executable_path_len);
-       VG_(snprintf)(executable_path, executable_path_len, "executable_path=%s", info->executable_path);
-       *ptr++ = (Addr)copy_str(&strtab, executable_path);
-       VG_(free)(executable_path);
+   Int executable_path_len = VG_(strlen)(info->executable_path) + 16 + 1;
+   HChar *executable_path = VG_(malloc)("initimg-darwin.scs.1", executable_path_len);
+   VG_(snprintf)(executable_path, executable_path_len, "executable_path=%s", info->executable_path);
+   *ptr++ = (Addr)copy_str(&strtab, executable_path);
+   VG_(free)(executable_path);
 #else
-       *ptr++ = (Addr)copy_str(&strtab, info->executable_path);
+   *ptr++ = (Addr)copy_str(&strtab, info->executable_path);
 #endif
-   }
 
 #if defined(VGA_arm64)
    *ptr++ = (Addr)copy_str(&strtab, EXTRA_APPLE_ARG);
@@ -488,6 +580,11 @@ Addr setup_client_stack( void*  init_sp,
 
    vg_assert((strtab-stringbase) == stringsize);
 
+#if (DEBUG_ENV_APPLE)
+   VG_(printf)("initimg-darwin: ptr %p stringbase %p\n", ptr, stringbase);
+#endif
+   vg_assert((HChar*)ptr == stringbase);
+
    if (VG_(resolved_exename) == NULL) {
       const HChar *exe_name = VG_(find_executable)(VG_(args_the_exename));
       HChar interp_name[VKI_PATH_MAX];
@@ -495,9 +592,18 @@ Addr setup_client_stack( void*  init_sp,
          exe_name = interp_name;
       }
       HChar resolved_name[VKI_PATH_MAX];
-      VG_(realpath)(exe_name, resolved_name);
-      VG_(resolved_exename) = VG_(strdup)("initimg-darwin.scs.2", resolved_name);
+      if (VG_(realpath)(exe_name, resolved_name)) {
+         VG_(resolved_exename) = VG_(strdup)("initimg-darwin.scs.2", resolved_name);
+      } else {
+         /* This should not really happen. realpath tried and failed.
+            So lets just continue with the exe_name as is. */
+         VG_(resolved_exename) = VG_(strdup)("initimg-darwin.scs.3", exe_name);
+      }
    }
+
+#if (DEBUG_ENV_APPLE)
+   print_env_apple(VG_(client_envp), "final envp");
+#endif
 
    /* client_SP is pointing at client's argc/argv */
 
@@ -606,6 +712,10 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
       VG_(err_missing_prog)();
 
    load_client(&info, &iifii.initial_client_IP);
+
+#if (DEBUG_ENV_APPLE)
+   print_env_apple(iicii.envp, "original envp");
+#endif
 
    //--------------------------------------------------------------
    // Set up client's environment
@@ -724,3 +834,4 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
 /*--------------------------------------------------------------------*/
+

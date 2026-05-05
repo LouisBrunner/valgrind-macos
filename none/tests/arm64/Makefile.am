@@ -4,28 +4,25 @@ include $(top_srcdir)/Makefile.tool-tests.am
 dist_noinst_SCRIPTS = filter_stderr filter_nan
 
 EXTRA_DIST = \
-	bug484426.stdout.exp bug484426.stderr.exp bug484426.vgtest \
-	bug489338.stdout.exp bug489338.stderr.exp bug489338.vgtest \
-	crc32.stdout.exp crc32.stderr.exp crc32.vgtest \
-	cvtf_imm.stdout.exp cvtf_imm.stderr.exp cvtf_imm.vgtest \
-	dc_cvax.vgtest dc_cvax.stderr.exp \
-	fcvta_s_u.vgtest fcvta_s_u.stderr.exp \
-	fp_and_simd.stdout.exp fp_and_simd.stderr.exp fp_and_simd.vgtest \
-	frinta_frintn.stderr.exp frinta_frintn.vgtest \
-	integer.stdout.exp integer.stderr.exp integer.vgtest \
-	memory_test.stdout.exp memory_test.stderr.exp memory_test.vgtest \
+	bug484426.stdout.exp bug484426.vgtest \
+	bug489338.stdout.exp bug489338.vgtest \
+	crc32.stdout.exp crc32.vgtest \
+	cvtf_imm.stdout.exp cvtf_imm.vgtest \
+	dc_cvax.vgtest \
+	fcvta_s_u.vgtest \
+	fp_and_simd.stdout.exp fp_and_simd.vgtest \
+	frinta_frintn.vgtest \
+	integer.stdout.exp integer.vgtest \
+	memory_test.stdout.exp memory_test.vgtest \
 		memory_test.stdout.exp-clang \
-	atomics_v81.stdout.exp atomics_v81.stderr.exp atomics_v81.vgtest \
-	simd_v81.stdout.exp simd_v81.stderr.exp simd_v81.vgtest \
-	simd_dotprod.stdout.exp simd_dotprod.stderr.exp simd_dotprod.vgtest \
-	fmadd_sub.stdout.exp fmadd_sub.stderr.exp fmadd_sub.vgtest \
-	fp_and_simd_v82.stdout.exp fp_and_simd_v82.stderr.exp \
-	fp_and_simd_v82.vgtest \
-	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.stderr.exp \
-	ldxp_stxp_basisimpl.vgtest \
-	ldxp_stxp_fallbackimpl.stdout.exp ldxp_stxp_fallbackimpl.stderr.exp \
-	ldxp_stxp_fallbackimpl.vgtest sha512_v82.stdout.exp sha512_v82.stderr.exp \
-	sha512_v82.vgtest
+	atomics_v81.stdout.exp atomics_v81.vgtest \
+	simd_v81.stdout.exp simd_v81.vgtest \
+	simd_dotprod.stdout.exp simd_dotprod.vgtest \
+	fmadd_sub.stdout.exp fmadd_sub.vgtest \
+	fp_and_simd_v82.stdout.exp fp_and_simd_v82.vgtest \
+	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.vgtest \
+	ldxp_stxp_fallbackimpl.stdout.exp ldxp_stxp_fallbackimpl.vgtest \
+	sha512_v82.stdout.exp sha512_v82.vgtest
 
 check_PROGRAMS = \
 	allexec \

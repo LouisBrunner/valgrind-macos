@@ -402,10 +402,8 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    Bool         isText;
    const HChar* newdi_soname;
    Bool         dehacktivate_pthread_stack_cache_var_search = False;
-   const HChar* const pthread_soname = "libpthread.so.0";
    const HChar* const pthread_stack_cache_actsize_varname
       = "stack_cache_actsize";
-   const HChar* const libc_soname = "libc.so.6";
    const HChar* const libc_gnu_get_libc_version_funcname = "gnu_get_libc_version";
 #if defined(VGO_solaris)
    Bool         vg_vfork_fildes_var_search = False;
@@ -421,11 +419,19 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
    newdi_soname = VG_(DebugInfo_get_soname)(newdi);
    vg_assert(newdi_soname != NULL);
 
+#if defined(VGO_linux)
    /* libc is special, because it contains some of the core redirects.
       Make sure it is fully loaded.  */
+   /* If ever it is needed on other platforms
+    * FreeBSD libc is libc.so.7 libpthread is libthr.so.3
+    * Solaris libc is libc.so.1 libpthread is libpthread.so.1
+    * older Darwin has some system dylib, newer Darwin just has libs in memory */
+   const HChar* const libc_soname = "libc.so.6";
+   const HChar* const pthread_soname = "libpthread.so.0";
    if (0 == VG_(strcmp)(newdi_soname, libc_soname) ||
        0 == VG_(strcmp)(newdi_soname, pthread_soname))
       VG_(di_load_di)(newdi);
+#endif
 
 #ifdef ENABLE_INNER
    {
@@ -512,10 +518,12 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
 
    specList = NULL; /* the spec list we're building up */
 
+#if defined(VGO_linux)
    dehacktivate_pthread_stack_cache_var_search = 
       SimHintiS(SimHint_no_nptl_pthread_stackcache, VG_(clo_sim_hints))
       && (0 == VG_(strcmp)(newdi_soname, pthread_soname) ||
           0 == VG_(strcmp)(newdi_soname, libc_soname));
+#endif
 
 #if defined(VGO_solaris)
    vg_vfork_fildes_var_search =
@@ -539,7 +547,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
           * set a global flag.
           *
           * https://bugs.kde.org/show_bug.cgi?id=497723 but not for
-          * callgrind because demangled overloaded manes get
+          * callgrind because demangled overloaded names get
           * incorrectly counted together.
           */
          if (!isText && VG_(strcmp)(*names, "__gnat_ada_main_program_name") == 0 &&
@@ -685,6 +693,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
       }
       free_symname_array(names_init, &twoslots[0]);
    }
+#if defined(VGO_linux)
    if (dehacktivate_pthread_stack_cache_var_search) {
       VG_(message)(Vg_DebugMsg,
                    "WARNING: could not find symbol for var %s in %s\n",
@@ -692,6 +701,7 @@ void VG_(redir_notify_new_DebugInfo)( DebugInfo* newdi )
       VG_(message)(Vg_DebugMsg,
                    "=> pthread stack cache cannot be disabled!\n");
    }
+#endif
 #if defined(VGO_solaris)
    if (vg_vfork_fildes_var_search) {
       VG_(message)(Vg_DebugMsg,
@@ -925,6 +935,24 @@ void generate_and_add_actives (
          } /* for (sp = specs; sp; sp = sp->next) */
 
       } /* iterating over names[] */
+#if defined(VGO_freebsd)
+      /*
+       * See https://bugs.kde.org/show_bug.cgi?id=518609
+       *
+       * With VG_(clo_verbosity) > 2 the code that gets symbol names
+       * from addesses can trigger reading split .debug files. That
+       * in turn can modify the symtab that this loop is iterating over.
+       * This can cause redirection to fail.
+       *
+       * So set nsyms to the new number of symbols and reset the loop
+       * counter to 0. That may cause a few  "Ignoring duplicate redirection"
+       * messages.
+       */
+      if (nsyms != VG_(DebugInfo_syms_howmany)(di)) {
+         nsyms = VG_(DebugInfo_syms_howmany)(di);
+         i = 0;
+      }
+#endif
       free_symname_array(names_init, &twoslots[0]);
    } /* for (i = 0; i < nsyms; i++)  */
 
@@ -1628,6 +1656,8 @@ void VG_(redir_initialise) ( void )
                          (Addr)&VG_(amd64_darwin_REDIR_FOR_strcpy), NULL);
       add_hardwired_spec("dyld", "strlcat",
                          (Addr)&VG_(amd64_darwin_REDIR_FOR_strlcat), NULL);
+      add_hardwired_spec("dyld", "bcmp",
+                         (Addr)&VG_(amd64_darwin_REDIR_FOR_bcmp), NULL);
       // DDD: #warning fixme rdar://6166275
       add_hardwired_spec("dyld", "arc4random",
                          (Addr)&VG_(amd64_darwin_REDIR_FOR_arc4random), NULL);

@@ -1,3 +1,4 @@
+prereq: ! ../../tests/os_test darwin
 prog: require-text-symbol
 vgopts: -q "--require-text-symbol=:*libc.so*:doesntexist" --vgdb-prefix=./vgdb-prefix-require-text-symbol-2
 cleanup: rm -f ./vgdb-prefix-require-text-symbol-2*

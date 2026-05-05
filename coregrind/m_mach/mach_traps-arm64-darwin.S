@@ -57,7 +57,7 @@ _mach_msg_trap:
 	svc 0x80
 	ret
 
-#if DARWIN_VERS >= DARWIN_13
+#if DARWIN_VERS >= DARWIN_13_00
 	// mach_msg_return_t mach_msg2_trap(...)
 	.text
 	.align 4

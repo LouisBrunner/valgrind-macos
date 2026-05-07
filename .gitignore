@@ -535,8 +535,6 @@
 /exp-bbv/tests/amd64-linux/*.stdout.out
 /exp-bbv/tests/amd64-linux/.deps
 /exp-bbv/tests/amd64-linux/clone_test
-/exp-bbv/tests/amd64-linux/clone_test.out.bb.2
-/exp-bbv/tests/amd64-linux/clone_test.out.pc
 /exp-bbv/tests/amd64-linux/complex_rep
 /exp-bbv/tests/amd64-linux/fldcw_check
 /exp-bbv/tests/amd64-linux/ll
@@ -594,8 +592,6 @@
 /exp-bbv/tests/x86-linux/*.stdout.out
 /exp-bbv/tests/x86-linux/.deps
 /exp-bbv/tests/x86-linux/clone_test
-/exp-bbv/tests/x86-linux/clone_test.out.bb.2
-/exp-bbv/tests/x86-linux/clone_test.out.pc
 /exp-bbv/tests/x86-linux/ll
 /exp-bbv/tests/x86-linux/Makefile
 /exp-bbv/tests/x86-linux/Makefile.in

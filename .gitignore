@@ -1,6 +1,7 @@
 *.o
 .DS_Store
 configure~
+/callgrind.out.*
 
 # /
 /.in_place

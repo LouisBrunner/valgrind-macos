@@ -7884,8 +7884,8 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
    /* ---- Cases for DCZID_EL0 ----
       This is the data cache zero ID register. It controls whether
-      DC ZVA is supported and if so the block size used. Support reads of it
-      only by passing through to the host.
+      DC ZVA is supported and if so the block size used. Use the values
+      read during startup when calling get_cache_info.
       D5 3B 00 111 Rt  MRS rT, dczid_el0
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B00E0) {

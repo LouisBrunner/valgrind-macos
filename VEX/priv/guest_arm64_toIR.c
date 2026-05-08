@@ -7890,19 +7890,12 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B00E0) {
       UInt tt = INSN(4,0);
-      IRTemp   val  = newTemp(Ity_I64);
-      IRExpr** args = mkIRExprVec_0();
-      IRDirty* d    = unsafeIRDirty_1_N (
-                         val,
-                         0/*regparms*/,
-                         "arm64g_dirtyhelper_MRS_DCZID_EL0",
-                         &arm64g_dirtyhelper_MRS_DCZID_EL0,
-                         args
-                      );
-      /* execute the dirty call, dumping the result in val. */
-      stmt( IRStmt_Dirty(d) );
+      ULong val_cached = (archinfo->arm64_data_zero_prohibited ? 0x10 : 0) |
+                         archinfo->arm64_cache_block_size;
+      IRTemp val = newTemp(Ity_I64);
+      assign(val, mkU64(val_cached));
       putIReg64orZR(tt, mkexpr(val));
-      DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
+      DIP("mrs %s, dczid_el0 (cached)\n", nameIReg64orZR(tt));
       return True;
    }
    /* ---- Cases for CTR_EL0 ----
@@ -8009,6 +8002,14 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7420) {
       /* Round the requested address, in rT, down to the start of the
          containing block. */
+      /* Unless DZP is true */
+      if (archinfo->arm64_data_zero_prohibited) {
+         vex_printf("ARM64 front end: DC ZVA instruction encountered with the DCZID_EL0 DZP flag set.\n");
+         putPC(mkU64( guest_PC_curr_instr));
+         dres->jk_StopHere = Ijk_SigILL;
+         dres->whatNext    = Dis_StopHere;
+         return True;
+      }
       UInt   tt      = INSN(4,0);
       ULong  clearszB = 1UL << (archinfo->arm64_cache_block_size + 2);
       IRTemp addr    = newTemp(Ity_I64);

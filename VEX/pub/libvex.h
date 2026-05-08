@@ -372,6 +372,9 @@ typedef
       UInt arm64_dMinLine_lg2_szB;
       UInt arm64_iMinLine_lg2_szB;
       UChar arm64_cache_block_size;
+      /* ARM64 DCZID_EL0 bit 4 (DZP) means that
+       * use of DC ZVA is prohibited and should produce SIGILL */
+      Bool arm64_data_zero_prohibited;
       /* ARM64: does the host require us to use the fallback LLSC
          implementation? */
       Bool arm64_requires_fallback_LLSC;

@@ -152,9 +152,9 @@ static V128 zeroes   = { 0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,
                          0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00 };
 
 /* Helper functions for creating special float values */
-static inline double mkPosInf ( void ) { return 1.0 / 0.0; }
+static inline double mkPosInf ( void ) { return __builtin_inf(); }
 static inline double mkNegInf ( void ) { return -mkPosInf(); }
-static inline double mkPosNan ( void ) { return 0.0 / 0.0; }
+static inline double mkPosNan ( void ) { return __builtin_nan(""); }
 static inline double mkNegNan ( void ) { return -mkPosNan(); }
 
 #ifdef __x86_64__

@@ -2084,22 +2084,22 @@ r roundsd_010  ce16f2bacbea6990fff0000000000000 bb263bb7ac3dd62dfff0000000000000
 m roundsd_010  87bf3870c9d1b026fff0000000000000 2f9b99a465c8ac61fff0000000000000        -inf       -inf
 r roundsd_011  8ed3ed6fa5a46224fff0000000000000 60e0a4508b474b13fff0000000000000        -inf       -inf
 m roundsd_011  409d0d24fbf1bd35fff0000000000000 a9435828b945f0effff0000000000000        -inf       -inf
-r roundsd_000  f76b95fa6844fb06fff8000000000000 650eb2968b4fd6a0fff8000000000000        -nan       -nan
-m roundsd_000  10877f5c87275943fff8000000000000 f28eac089ff03bd3fff8000000000000        -nan       -nan
-r roundsd_001  e73ec9b8f5291397fff8000000000000 aa0f44e98eb45934fff8000000000000        -nan       -nan
-m roundsd_001  d8dc6e794dd364affff8000000000000 ebdd75a5f6276c6efff8000000000000        -nan       -nan
-r roundsd_010  3fad6a0b2cb38936fff8000000000000 0f443ca873d6b22dfff8000000000000        -nan       -nan
-m roundsd_010  78fcbada2d54bed9fff8000000000000 7490935e9f4d651ffff8000000000000        -nan       -nan
-r roundsd_011  df175852ed423e44fff8000000000000 740c78331916c2eefff8000000000000        -nan       -nan
-m roundsd_011  d04842df070a4722fff8000000000000 6d05e6937bbf0446fff8000000000000        -nan       -nan
-r roundsd_000  a7dc73ed183713207ff8000000000000 b9c7d9eb61d469d47ff8000000000000         nan        nan
-m roundsd_000  bf1fe8e9bb56dee97ff8000000000000 b59e4ea568df2b447ff8000000000000         nan        nan
-r roundsd_001  765d9b3d8cf2e62a7ff8000000000000 bed6402f2b6e86417ff8000000000000         nan        nan
-m roundsd_001  27e28a572897658e7ff8000000000000 2ebbabf3470db8787ff8000000000000         nan        nan
-r roundsd_010  2ef9b0a22bd197c37ff8000000000000 62988b5f5746fb947ff8000000000000         nan        nan
-m roundsd_010  e7f00989302dba727ff8000000000000 b6badcdef8a78c427ff8000000000000         nan        nan
-r roundsd_011  ad11927ad336084a7ff8000000000000 876d9bdcc5bca72e7ff8000000000000         nan        nan
-m roundsd_011  dea946e0b179bef57ff8000000000000 2ffdc2c55b0f87037ff8000000000000         nan        nan
+r roundsd_000  f76b95fa6844fb067ff8000000000000 650eb2968b4fd6a07ff8000000000000         nan        nan
+m roundsd_000  10877f5c872759437ff8000000000000 f28eac089ff03bd37ff8000000000000         nan        nan
+r roundsd_001  e73ec9b8f52913977ff8000000000000 aa0f44e98eb459347ff8000000000000         nan        nan
+m roundsd_001  d8dc6e794dd364af7ff8000000000000 ebdd75a5f6276c6e7ff8000000000000         nan        nan
+r roundsd_010  3fad6a0b2cb389367ff8000000000000 0f443ca873d6b22d7ff8000000000000         nan        nan
+m roundsd_010  78fcbada2d54bed97ff8000000000000 7490935e9f4d651f7ff8000000000000         nan        nan
+r roundsd_011  df175852ed423e447ff8000000000000 740c78331916c2ee7ff8000000000000         nan        nan
+m roundsd_011  d04842df070a47227ff8000000000000 6d05e6937bbf04467ff8000000000000         nan        nan
+r roundsd_000  a7dc73ed18371320fff8000000000000 b9c7d9eb61d469d4fff8000000000000        -nan       -nan
+m roundsd_000  bf1fe8e9bb56dee9fff8000000000000 b59e4ea568df2b44fff8000000000000        -nan       -nan
+r roundsd_001  765d9b3d8cf2e62afff8000000000000 bed6402f2b6e8641fff8000000000000        -nan       -nan
+m roundsd_001  27e28a572897658efff8000000000000 2ebbabf3470db878fff8000000000000        -nan       -nan
+r roundsd_010  2ef9b0a22bd197c3fff8000000000000 62988b5f5746fb94fff8000000000000        -nan       -nan
+m roundsd_010  e7f00989302dba72fff8000000000000 b6badcdef8a78c42fff8000000000000        -nan       -nan
+r roundsd_011  ad11927ad336084afff8000000000000 876d9bdcc5bca72efff8000000000000        -nan       -nan
+m roundsd_011  dea946e0b179bef5fff8000000000000 2ffdc2c55b0f8703fff8000000000000        -nan       -nan
 r roundsd_000  d50420276581181fbff4cccccccccccd 0bb64f05552e696ebff0000000000000   -1.300000  -1.000000
 m roundsd_000  ed6e1ebb8cda5175bff4cccccccccccd 77e43d084fa5891abff0000000000000   -1.300000  -1.000000
 r roundsd_001  84323c09c110a7a3bff4cccccccccccd cfd2893ae6ff22b4c000000000000000   -1.300000  -2.000000
@@ -2260,22 +2260,22 @@ r roundss_010  354122d6adbff468fb4f18f4ff800000 3773ae1bcf8ff14a3d3c4e4bff800000
 m roundss_010  e93e3eadfdb2aa1765eac475ff800000 465c83497b47d5b77f61bafeff800000        -inf       -inf
 r roundss_011  2ae60a0d6cd20b6d770c50d4ff800000 51564476d333c3e117b48545ff800000        -inf       -inf
 m roundss_011  5685816295ab54170b8338feff800000 b4adef0e74ddf675df012a0cff800000        -inf       -inf
-r roundss_000  c8679e1814cac1c1ff19f9deffc00000 cbad7f7df9d3ab1fb513253fffc00000        -nan       -nan
-m roundss_000  dbd8609b86ba8d162d9b0d5fffc00000 f2a2f02ffea11e8b73b8f2cbffc00000        -nan       -nan
-r roundss_001  ed24c0578608f5c373d4f26fffc00000 86d73e9120d28a64f7ba0e9affc00000        -nan       -nan
-m roundss_001  5896bbb9b13f3573ab9223f9ffc00000 e19a660dfbf22d561be6f39affc00000        -nan       -nan
-r roundss_010  7a7b4e2ba2eb89d3b39f1de9ffc00000 603563102a8d410ebd081fb5ffc00000        -nan       -nan
-m roundss_010  ad1f741bf6992c8e65c95a2bffc00000 5ff5310749300238b7eb0dd9ffc00000        -nan       -nan
-r roundss_011  4fce29f348d45b519eda58acffc00000 3926cc5df566ae80e65d3af1ffc00000        -nan       -nan
-m roundss_011  bad46a21352852c83b9f9256ffc00000 4c13317dcabb7f91272820e9ffc00000        -nan       -nan
-r roundss_000  4c7d311058224c9e16e484167fc00000 f30a5bd562bcb117541a3dac7fc00000         nan        nan
-m roundss_000  5f147c2c4d4d86800c74abd97fc00000 8a5546d05cf482bf4afd0c297fc00000         nan        nan
-r roundss_001  50e746e1b1353c1af91d81897fc00000 6d42eeda52f02c35e59e09497fc00000         nan        nan
-m roundss_001  7b408c9b2067aa17b9a984147fc00000 f81b4f5fe03bec2401c8b1f97fc00000         nan        nan
-r roundss_010  3d6c48c6356e0b2329e52f657fc00000 862d66cca261fe397b497f257fc00000         nan        nan
-m roundss_010  f0b778ce8cd69cec239dff687fc00000 75c32e8b36ee9d202debefba7fc00000         nan        nan
-r roundss_011  f16c1720c22c991b849d6e097fc00000 202ba309356f0684f47c7da27fc00000         nan        nan
-m roundss_011  9cd9212673fb3d5f28b1fa347fc00000 e2b0c1b33d707512acc6a5cb7fc00000         nan        nan
+r roundss_000  c8679e1814cac1c1ff19f9de7fc00000 cbad7f7df9d3ab1fb513253f7fc00000         nan        nan
+m roundss_000  dbd8609b86ba8d162d9b0d5f7fc00000 f2a2f02ffea11e8b73b8f2cb7fc00000         nan        nan
+r roundss_001  ed24c0578608f5c373d4f26f7fc00000 86d73e9120d28a64f7ba0e9a7fc00000         nan        nan
+m roundss_001  5896bbb9b13f3573ab9223f97fc00000 e19a660dfbf22d561be6f39a7fc00000         nan        nan
+r roundss_010  7a7b4e2ba2eb89d3b39f1de97fc00000 603563102a8d410ebd081fb57fc00000         nan        nan
+m roundss_010  ad1f741bf6992c8e65c95a2b7fc00000 5ff5310749300238b7eb0dd97fc00000         nan        nan
+r roundss_011  4fce29f348d45b519eda58ac7fc00000 3926cc5df566ae80e65d3af17fc00000         nan        nan
+m roundss_011  bad46a21352852c83b9f92567fc00000 4c13317dcabb7f91272820e97fc00000         nan        nan
+r roundss_000  4c7d311058224c9e16e48416ffc00000 f30a5bd562bcb117541a3dacffc00000        -nan       -nan
+m roundss_000  5f147c2c4d4d86800c74abd9ffc00000 8a5546d05cf482bf4afd0c29ffc00000        -nan       -nan
+r roundss_001  50e746e1b1353c1af91d8189ffc00000 6d42eeda52f02c35e59e0949ffc00000        -nan       -nan
+m roundss_001  7b408c9b2067aa17b9a98414ffc00000 f81b4f5fe03bec2401c8b1f9ffc00000        -nan       -nan
+r roundss_010  3d6c48c6356e0b2329e52f65ffc00000 862d66cca261fe397b497f25ffc00000        -nan       -nan
+m roundss_010  f0b778ce8cd69cec239dff68ffc00000 75c32e8b36ee9d202debefbaffc00000        -nan       -nan
+r roundss_011  f16c1720c22c991b849d6e09ffc00000 202ba309356f0684f47c7da2ffc00000        -nan       -nan
+m roundss_011  9cd9212673fb3d5f28b1fa34ffc00000 e2b0c1b33d707512acc6a5cbffc00000        -nan       -nan
 r roundss_000  4d48924e39cfc662eba41ed5bfa66666 199d84f3ea7b26753196e420bf800000   -1.300000  -1.000000
 m roundss_000  61076702b3356dd0a94456d8bfa66666 203fe937d71e545a5fb8b48cbf800000   -1.300000  -1.000000
 r roundss_001  32609bb07bb871573e5b1e29bfa66666 52e2ebeaa1e43c6c12f793fdc0000000   -1.300000  -2.000000
@@ -2436,22 +2436,22 @@ r (rm=2) roundsd_1XX  d483ca4b472b7819fff0000000000000 ebd899d8ab7a043ffff000000
 m (rm=2) roundsd_1XX  82d5bd42ea2a9ce0fff0000000000000 9535e446495ef6e4fff0000000000000        -inf       -inf
 r (rm=3) roundsd_1XX  fe129f02eb97ac8ffff0000000000000 7ae45cf4d3b63387fff0000000000000        -inf       -inf
 m (rm=3) roundsd_1XX  a4856cf8e6fde3d2fff0000000000000 f82ffe4ce70ef4d4fff0000000000000        -inf       -inf
-r (rm=0) roundsd_1XX  d17c208e78e97e54fff8000000000000 6a64c4bc1ef07876fff8000000000000        -nan       -nan
-m (rm=0) roundsd_1XX  df41b8323ce5b9c1fff8000000000000 2bcdacae16eaf91afff8000000000000        -nan       -nan
-r (rm=1) roundsd_1XX  2b212f4fcf7fd0c6fff8000000000000 99b7b1906b87b46cfff8000000000000        -nan       -nan
-m (rm=1) roundsd_1XX  11688150cc43fe0ffff8000000000000 0e6ecfcdb854e517fff8000000000000        -nan       -nan
-r (rm=2) roundsd_1XX  ed62aaa3d0bc8048fff8000000000000 e83e02d199dcc7c7fff8000000000000        -nan       -nan
-m (rm=2) roundsd_1XX  1b5aa7b37676921cfff8000000000000 81724708abab982afff8000000000000        -nan       -nan
-r (rm=3) roundsd_1XX  f79e72ed5bfd7037fff8000000000000 375799de8a4e91eafff8000000000000        -nan       -nan
-m (rm=3) roundsd_1XX  dd7809bb1ade5546fff8000000000000 643af4c0d050f1b3fff8000000000000        -nan       -nan
-r (rm=0) roundsd_1XX  2835678a50a47ef57ff8000000000000 656554181c3df2327ff8000000000000         nan        nan
-m (rm=0) roundsd_1XX  362189c698dc26f07ff8000000000000 9725b55308a2d1137ff8000000000000         nan        nan
-r (rm=1) roundsd_1XX  628869dc8e108be17ff8000000000000 54c514de300aca017ff8000000000000         nan        nan
-m (rm=1) roundsd_1XX  08b60537cfcfe7777ff8000000000000 f9936c23310119a97ff8000000000000         nan        nan
-r (rm=2) roundsd_1XX  84f65842f7a2775c7ff8000000000000 e3d9b990a614f9b67ff8000000000000         nan        nan
-m (rm=2) roundsd_1XX  31965e6ba117763d7ff8000000000000 6ce5f7902ccea7d57ff8000000000000         nan        nan
-r (rm=3) roundsd_1XX  6de0141d69b921c57ff8000000000000 f101238f5ebb5eb27ff8000000000000         nan        nan
-m (rm=3) roundsd_1XX  932174c4ec15b4a17ff8000000000000 ce7a38f9d8685cf87ff8000000000000         nan        nan
+r (rm=0) roundsd_1XX  d17c208e78e97e547ff8000000000000 6a64c4bc1ef078767ff8000000000000         nan        nan
+m (rm=0) roundsd_1XX  df41b8323ce5b9c17ff8000000000000 2bcdacae16eaf91a7ff8000000000000         nan        nan
+r (rm=1) roundsd_1XX  2b212f4fcf7fd0c67ff8000000000000 99b7b1906b87b46c7ff8000000000000         nan        nan
+m (rm=1) roundsd_1XX  11688150cc43fe0f7ff8000000000000 0e6ecfcdb854e5177ff8000000000000         nan        nan
+r (rm=2) roundsd_1XX  ed62aaa3d0bc80487ff8000000000000 e83e02d199dcc7c77ff8000000000000         nan        nan
+m (rm=2) roundsd_1XX  1b5aa7b37676921c7ff8000000000000 81724708abab982a7ff8000000000000         nan        nan
+r (rm=3) roundsd_1XX  f79e72ed5bfd70377ff8000000000000 375799de8a4e91ea7ff8000000000000         nan        nan
+m (rm=3) roundsd_1XX  dd7809bb1ade55467ff8000000000000 643af4c0d050f1b37ff8000000000000         nan        nan
+r (rm=0) roundsd_1XX  2835678a50a47ef5fff8000000000000 656554181c3df232fff8000000000000        -nan       -nan
+m (rm=0) roundsd_1XX  362189c698dc26f0fff8000000000000 9725b55308a2d113fff8000000000000        -nan       -nan
+r (rm=1) roundsd_1XX  628869dc8e108be1fff8000000000000 54c514de300aca01fff8000000000000        -nan       -nan
+m (rm=1) roundsd_1XX  08b60537cfcfe777fff8000000000000 f9936c23310119a9fff8000000000000        -nan       -nan
+r (rm=2) roundsd_1XX  84f65842f7a2775cfff8000000000000 e3d9b990a614f9b6fff8000000000000        -nan       -nan
+m (rm=2) roundsd_1XX  31965e6ba117763dfff8000000000000 6ce5f7902ccea7d5fff8000000000000        -nan       -nan
+r (rm=3) roundsd_1XX  6de0141d69b921c5fff8000000000000 f101238f5ebb5eb2fff8000000000000        -nan       -nan
+m (rm=3) roundsd_1XX  932174c4ec15b4a1fff8000000000000 ce7a38f9d8685cf8fff8000000000000        -nan       -nan
 r (rm=0) roundsd_1XX  fea57cccc6b66b7dbff4cccccccccccd 5f9c323a3760db54bff0000000000000   -1.300000  -1.000000
 m (rm=0) roundsd_1XX  0cb827a191288204bff4cccccccccccd 00b20dbe172f1771bff0000000000000   -1.300000  -1.000000
 r (rm=1) roundsd_1XX  18a572afecf734e2bff4cccccccccccd 0d0ac5f213624efcc000000000000000   -1.300000  -2.000000
@@ -2612,22 +2612,22 @@ r (rm=2) roundss_1XX  abdeea179a30f3a2b7169958ff800000 d754fdec3efd0f0c543805b0f
 m (rm=2) roundss_1XX  5384b32f8f3b8682773a52faff800000 1b27be9bcf0e10ea2b26bec4ff800000        -inf       -inf
 r (rm=3) roundss_1XX  0a55ac5022f544895d656bfbff800000 db8aecc98cd29a05d8c156ecff800000        -inf       -inf
 m (rm=3) roundss_1XX  2b9dcfe6f0e76a6447646045ff800000 74ca84e211d6eb0a36d74814ff800000        -inf       -inf
-r (rm=0) roundss_1XX  11a81a5d949f34be0f03adc6ffc00000 40338152fca53da520331028ffc00000        -nan       -nan
-m (rm=0) roundss_1XX  1ac28821aba8dd45930ecf69ffc00000 9c10df85e6cbcd8274a02a15ffc00000        -nan       -nan
-r (rm=1) roundss_1XX  a137169ed08fa2a2ad51411affc00000 e4af9be86dd5d64c0ceb13c5ffc00000        -nan       -nan
-m (rm=1) roundss_1XX  0152be40a0dfbf843b987fc5ffc00000 745aafe52d4e95afc5e04526ffc00000        -nan       -nan
-r (rm=2) roundss_1XX  98607e74b624709417ae0556ffc00000 a85e19eac1c246587c4b3e22ffc00000        -nan       -nan
-m (rm=2) roundss_1XX  c0ad51a4afebf0811f6050b9ffc00000 dc07d461c5be25f30bf879a7ffc00000        -nan       -nan
-r (rm=3) roundss_1XX  d785333e26bf7cf52d7adbdaffc00000 6ca1ddb8d6cd6d2c4fb273a0ffc00000        -nan       -nan
-m (rm=3) roundss_1XX  373421adb82c509d1ec822a5ffc00000 b4782e5a8f7c5bae2547a6f8ffc00000        -nan       -nan
-r (rm=0) roundss_1XX  3d06155c00bfa724ce16a1077fc00000 10d7c5b28d562b256781909d7fc00000         nan        nan
-m (rm=0) roundss_1XX  46460db99b03be371a30d4ea7fc00000 db0c9d2e6be7193ef22dac7a7fc00000         nan        nan
-r (rm=1) roundss_1XX  ac42042f2484d181dce1383c7fc00000 7361b239c6bb60a5a217767c7fc00000         nan        nan
-m (rm=1) roundss_1XX  cc44f62a37cf1caff1f748e77fc00000 332300403a5f3d05540b6b8d7fc00000         nan        nan
-r (rm=2) roundss_1XX  0399e017716fda6d353c80d97fc00000 779e84ad615eec0be2d4069a7fc00000         nan        nan
-m (rm=2) roundss_1XX  ab8dbd606ef04866847d5cfd7fc00000 9a1e39edd945a8632940c3907fc00000         nan        nan
-r (rm=3) roundss_1XX  216b8972c8dfa247ba86593f7fc00000 faef1b6d3e9faeb805191e597fc00000         nan        nan
-m (rm=3) roundss_1XX  c18140ba1ec724bbb323f18b7fc00000 f25c26972bf83ab7522c93e37fc00000         nan        nan
+r (rm=0) roundss_1XX  11a81a5d949f34be0f03adc67fc00000 40338152fca53da5203310287fc00000         nan        nan
+m (rm=0) roundss_1XX  1ac28821aba8dd45930ecf697fc00000 9c10df85e6cbcd8274a02a157fc00000         nan        nan
+r (rm=1) roundss_1XX  a137169ed08fa2a2ad51411a7fc00000 e4af9be86dd5d64c0ceb13c57fc00000         nan        nan
+m (rm=1) roundss_1XX  0152be40a0dfbf843b987fc57fc00000 745aafe52d4e95afc5e045267fc00000         nan        nan
+r (rm=2) roundss_1XX  98607e74b624709417ae05567fc00000 a85e19eac1c246587c4b3e227fc00000         nan        nan
+m (rm=2) roundss_1XX  c0ad51a4afebf0811f6050b97fc00000 dc07d461c5be25f30bf879a77fc00000         nan        nan
+r (rm=3) roundss_1XX  d785333e26bf7cf52d7adbda7fc00000 6ca1ddb8d6cd6d2c4fb273a07fc00000         nan        nan
+m (rm=3) roundss_1XX  373421adb82c509d1ec822a57fc00000 b4782e5a8f7c5bae2547a6f87fc00000         nan        nan
+r (rm=0) roundss_1XX  3d06155c00bfa724ce16a107ffc00000 10d7c5b28d562b256781909dffc00000        -nan       -nan
+m (rm=0) roundss_1XX  46460db99b03be371a30d4eaffc00000 db0c9d2e6be7193ef22dac7affc00000        -nan       -nan
+r (rm=1) roundss_1XX  ac42042f2484d181dce1383cffc00000 7361b239c6bb60a5a217767cffc00000        -nan       -nan
+m (rm=1) roundss_1XX  cc44f62a37cf1caff1f748e7ffc00000 332300403a5f3d05540b6b8dffc00000        -nan       -nan
+r (rm=2) roundss_1XX  0399e017716fda6d353c80d9ffc00000 779e84ad615eec0be2d4069affc00000        -nan       -nan
+m (rm=2) roundss_1XX  ab8dbd606ef04866847d5cfdffc00000 9a1e39edd945a8632940c390ffc00000        -nan       -nan
+r (rm=3) roundss_1XX  216b8972c8dfa247ba86593fffc00000 faef1b6d3e9faeb805191e59ffc00000        -nan       -nan
+m (rm=3) roundss_1XX  c18140ba1ec724bbb323f18bffc00000 f25c26972bf83ab7522c93e3ffc00000        -nan       -nan
 r (rm=0) roundss_1XX  e719dea20a34096f4b1fa2cdbfa66666 ddb257d93ddc870bec459f18bf800000   -1.300000  -1.000000
 m (rm=0) roundss_1XX  ef81609828b38e0f5e48e7f2bfa66666 193ea89d0fd8d361af30bce6bf800000   -1.300000  -1.000000
 r (rm=1) roundss_1XX  3603c00715cfee46c8683de4bfa66666 014a17513d78586477b96838c0000000   -1.300000  -2.000000

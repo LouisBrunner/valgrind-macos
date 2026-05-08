@@ -73,6 +73,7 @@ EXTRA_DIST = \
 	ssse3_misaligned.stderr.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
 	sse4-x86.stdout.exp sse4-x86.vgtest \
+	sse4-x86.stdout.exp-freebsd \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
 	x87trigOOR.vgtest x87trigOOR.stdout.exp x87trigOOR.stderr.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \

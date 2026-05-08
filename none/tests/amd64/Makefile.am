@@ -92,13 +92,13 @@ EXTRA_DIST = \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.vgtest \
 	sse4-64.stdout.exp sse4-64.vgtest \
 	sse4-64.stdout.exp-older-glibc \
+	sse4-64.stdout.exp-freebsd \
 	slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
 	x87trigOOR.vgtest x87trigOOR.stderr.exp x87trigOOR.stdout.exp \
 	xacq_xrel.stderr.exp xacq_xrel.stdout.exp xacq_xrel.vgtest \
-	xadd.stdout.exp xadd.vgtest \
-	sse4-64.stdout.exp.freebsd sse4-64.stdout.exp-freebsd-clang
+	xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \
 	allexec \

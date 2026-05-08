@@ -388,7 +388,8 @@ void switchback ( void )
   assert(offsetof(VexGuestARM64State, guest_X30) == 16 + 8*30);
   assert(offsetof(VexGuestARM64State, guest_SP)  == 16 + 8*31);
   assert(offsetof(VexGuestARM64State, guest_TPIDR_EL0) == 16 + 8*37);
-  assert(offsetof(VexGuestARM64State, guest_Q0)  == 16 + 8*38 + 16*0);
+  assert(offsetof(VexGuestARM64State, guest_TPIDRRO_EL0) == 16 + 8*38);
+  assert(offsetof(VexGuestARM64State, guest_Q0)  == 16 + 8*40 + 16*0);
 
   HWord arg0 = (HWord)&gst;
   HWord arg1 = LibVEX_GuestARM64_get_nzcv(&gst);

@@ -409,7 +409,7 @@ void pthread_hijack(Addr self, Addr kport, Addr func, Addr func_arg, Addr stacks
    vex->guest_X4 = stacksize;
    vex->guest_X5 = flags;
    vex->guest_XSP = sp;
-   vex->guest_TPIDR_EL0 = self + pthread_tsd_offset;
+   vex->guest_TPIDRRO_EL0 = self + pthread_tsd_offset;
 
    // Record thread's stack and Mach port and pthread struct
    tst->os_state.pthread = self;
@@ -549,7 +549,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr kevent_list,
    vex->guest_X4 = upcall_flags;
    vex->guest_X5 = kevent_count;
    vex->guest_XSP = sp;
-   vex->guest_TPIDR_EL0 = self + pthread_tsd_offset;
+   vex->guest_TPIDRRO_EL0 = self + pthread_tsd_offset;
 
    stacksize = 512*1024;  // wq stacks are always DEFAULT_STACK_SIZE
    stack = VG_PGROUNDUP(sp) - stacksize;

@@ -84,8 +84,14 @@ typedef
       ULong guest_CC_DEP2;
       ULong guest_CC_NDEP;
 
-      /* User-space thread register? */
+      /* User-space thread register?
+         On Apple arm64 these are NOT aliases — the kernel manages
+         TPIDRRO_EL0 (set via __pthread_set_self) while userspace runtimes
+         may freely write TPIDR_EL0. libsystem_malloc reads both and gets
+         very different values. */
       ULong guest_TPIDR_EL0;
+      ULong guest_TPIDRRO_EL0;
+      ULong guest_pad1;   /* keep guest_Q0 16-byte aligned */
 
       /* FP/SIMD state */
       U128 guest_Q0;

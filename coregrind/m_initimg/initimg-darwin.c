@@ -866,6 +866,21 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_XSP = iifii.initial_client_SP;
    arch->vex.guest_PC = iifii.initial_client_IP;
 
+   /* Seed the per-thread system registers from the host. The kernel set
+      TPIDRRO_EL0 to the main thread's pthread/thread-self pointer; libpthread
+      and libsystem_malloc both read it before our pthread_set_self syswrap
+      gets a chance to fire. TPIDR_EL0 is a small kernel-managed scratch on
+      Apple arm64 (it is NOT the TLS pointer the way Linux uses it); we still
+      seed it so reads early in dyld init see what the host had. */
+   {
+      ULong host_tpidr_el0 = 0;
+      ULong host_tpidrro_el0 = 0;
+      __asm__ __volatile__("mrs %0, tpidr_el0"   : "=r"(host_tpidr_el0));
+      __asm__ __volatile__("mrs %0, tpidrro_el0" : "=r"(host_tpidrro_el0));
+      arch->vex.guest_TPIDR_EL0   = host_tpidr_el0;
+      arch->vex.guest_TPIDRRO_EL0 = host_tpidrro_el0;
+   }
+
 #  else
 #    error Unknown platform
 #  endif

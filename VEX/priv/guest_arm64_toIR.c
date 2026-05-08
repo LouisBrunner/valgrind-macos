@@ -1146,6 +1146,7 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 #define OFFB_CC_NDEP  offsetof(VexGuestARM64State,guest_CC_NDEP)
 
 #define OFFB_TPIDR_EL0 offsetof(VexGuestARM64State,guest_TPIDR_EL0)
+#define OFFB_TPIDRRO_EL0 offsetof(VexGuestARM64State,guest_TPIDRRO_EL0)
 #define OFFB_NRADDR   offsetof(VexGuestARM64State,guest_NRADDR)
 
 #define OFFB_Q0       offsetof(VexGuestARM64State,guest_Q0)
@@ -8038,12 +8039,16 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
        || (INSN(31,0) & 0xFFFFFFE0) == 0xD53BD060 /*MRS RO*/) {
       Bool toSys = INSN(21,21) == 0;
       UInt tt    = INSN(4,0);
-      Bool isRO  = INSN(21,21) == 1;
+      /* bit 5 of the encoding selects op2: 010 = TPIDR_EL0 (rw),
+         011 = TPIDRRO_EL0 (ro). bit 21 selects MSR vs MRS, NOT
+         the rw/ro register choice. */
+      Bool isRO  = INSN(5,5) == 1;
       if (toSys) {
          stmt( IRStmt_Put( OFFB_TPIDR_EL0, getIReg64orZR(tt)) );
          DIP("msr tpidr_el0, %s\n", nameIReg64orZR(tt));
       } else {
-         putIReg64orZR(tt, IRExpr_Get( OFFB_TPIDR_EL0, Ity_I64 ));
+         Int srcOff = isRO ? OFFB_TPIDRRO_EL0 : OFFB_TPIDR_EL0;
+         putIReg64orZR(tt, IRExpr_Get( srcOff, Ity_I64 ));
          if (isRO) {
             DIP("mrs %s, tpidrro_el0\n", nameIReg64orZR(tt));
          } else {

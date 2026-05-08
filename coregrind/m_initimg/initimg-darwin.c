@@ -393,9 +393,31 @@ static HChar *copy_str(HChar **tab, const HChar *str)
 
    ---------------------------------------------------------------- */
 
+/* Returns True if the host's apple[] entry must NOT be forwarded to the
+   client. Skipped keys are tied to the launcher binary's identity (a
+   different image with a different stack from the client) — Valgrind
+   emits its own values for these. */
+static Bool skip_apple_entry(const HChar* entry)
+{
+   static const struct { const HChar* p; SizeT len; } skip_keys[] = {
+      { "executable_path=",     16 },
+      { "executable_cdhash=",   18 },
+      { "executable_boothash=", 20 },
+      { "executable_file=",     16 },
+      { "arm64e_abi=",          11 },
+   };
+   UInt i;
+   for (i = 0; i < sizeof(skip_keys)/sizeof(skip_keys[0]); i++) {
+      if (VG_(strncmp)(entry, skip_keys[i].p, skip_keys[i].len) == 0)
+         return True;
+   }
+   return False;
+}
+
 static
 Addr setup_client_stack( void*  init_sp,
                          HChar** envp,
+                         HChar** host_apple,
                          const ExeInfo* info,
                          Addr   clstack_end,
                          SizeT  clstack_max_size,
@@ -470,6 +492,16 @@ Addr setup_client_stack( void*  init_sp,
    stringsize += VG_(strlen)(EXTRA_APPLE_ARG) + 1;
    auxsize += sizeof(Word);
 #endif
+
+   /* Forward most of the host's apple[] block to the client so dyld and
+      libsystem_malloc see real per-process tokens (malloc_entropy, ptr_munge,
+      stack_guard, ...). Without these, the xzone allocator reads zero/garbage
+      and crashes during dyld init for tools that don't redirect malloc. */
+   for (cpp = host_apple; cpp && *cpp; cpp++) {
+      if (skip_apple_entry(*cpp)) continue;
+      stringsize += VG_(strlen)(*cpp) + 1;
+      auxsize += sizeof(Word);
+   }
 
    /* Darwin mach_header */
    if (info->dynamic)
@@ -575,6 +607,12 @@ Addr setup_client_stack( void*  init_sp,
 #if defined(VGA_arm64)
    *ptr++ = (Addr)copy_str(&strtab, EXTRA_APPLE_ARG);
 #endif
+
+   /* Forward filtered host apple[] entries (must match the sizing pass above). */
+   for (cpp = host_apple; cpp && *cpp; cpp++) {
+      if (skip_apple_entry(*cpp)) continue;
+      *ptr++ = (Addr)copy_str(&strtab, *cpp);
+   }
 
    *ptr++ = 0;
 
@@ -733,10 +771,18 @@ IIFinaliseImageInfo VG_(ii_create_image)( IICreateImageInfo iicii,
    iicii.clstack_end = info.stack_end;
    iifii.clstack_max_size = info.stack_end - info.stack_start + 1;
 
-   iifii.initial_client_SP =
-       setup_client_stack( iicii.argv - 1, env, &info,
-                           iicii.clstack_end, iifii.clstack_max_size,
-                           vex_archinfo );
+   /* Locate host's apple[] block: it sits immediately after envp's NULL. */
+   {
+      HChar** cpp;
+      HChar** host_apple = NULL;
+      for (cpp = iicii.envp; cpp && *cpp; cpp++) ;
+      if (cpp) host_apple = cpp + 1;
+
+      iifii.initial_client_SP =
+          setup_client_stack( iicii.argv - 1, env, host_apple, &info,
+                              iicii.clstack_end, iifii.clstack_max_size,
+                              vex_archinfo );
+   }
    iifii.dynamic = info.dynamic;
 
    VG_(free)(env);

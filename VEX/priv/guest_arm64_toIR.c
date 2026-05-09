@@ -8372,6 +8372,16 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* ---- Case for MRS APGAKEYLO_EL1 ----
+      Pointer Authentication Generic A Key
+      D5 1B 42 A0
+    */
+   if ((INSN(31, 0) & 0xFFFFFFE0) == 0xD51B42A0) {
+      UInt     tt   = INSN(4,0);
+      DIP("mrs %s, apgakeyl0_el1 (ignored)\n", nameIReg64orZR(tt));
+      return True;
+   }
+
    /* ------------------ ISB, DMB, DSB ------------------ */
    /* 31          21            11  7 6  4
       11010 10100 0 00 011 0011 CRm 1 01 11111  DMB opt

@@ -48,9 +48,6 @@ Bool ML_(sync_mappings)(const HChar *when, const HChar *where, UWord num);
 // NYI = wrapper not yet implemented in Valgrind
 // NOC = the non-"_nocancel" wrapper is used
 // old = the syscall no longer exists in Darwin
-#if defined(VGA_arm64)
-DECL_TEMPLATE(darwin, syscall);                 // 0
-#endif
 DECL_TEMPLATE(darwin, exit);                    // 1
 // GEN fork 2
 // GEN read 3
@@ -816,7 +813,6 @@ DECL_TEMPLATE(darwin, semaphore_wait);
 DECL_TEMPLATE(darwin, semaphore_wait_signal);
 DECL_TEMPLATE(darwin, semaphore_timedwait);
 DECL_TEMPLATE(darwin, semaphore_timedwait_signal);
-DECL_TEMPLATE(darwin, task_name_for_pid);
 DECL_TEMPLATE(darwin, task_for_pid);
 DECL_TEMPLATE(darwin, task_name_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);

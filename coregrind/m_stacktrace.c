@@ -1267,7 +1267,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    ips[0] = uregs.pc;
    i = 1;
 
-#  if defined(VGO_darwin) || (defined(VGO_freebsd) && (FREEBSD_VERS < FREEBSD_13_0))
+#  if defined(VGO_darwin)
    if (VG_(is_valid_tid)(tid_if_known) &&
       VG_(is_in_syscall)(tid_if_known) &&
       i < max_n_ips) {
@@ -1284,7 +1284,6 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       if (fps) fps[i] = uregs.x29;
       i++;
    }
-#  endif
 
    /* If we are recording a stack trace, we most likely failed,
     * this will usually happen inside a syscall/platform func,
@@ -1293,7 +1292,6 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
     * So it's messy but the easiest way to get a somewhat sane stack trace is to force x30 in there.
     * This will probably create a lot of false positives but isn't that better that no stack trace at all?
     */
-#  if defined(VGO_darwin)
    if (uregs.x30 != 0 && uregs.x30 != uregs.pc && i < max_n_ips
       && fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
       && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))
@@ -1338,6 +1336,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          continue;
       }
 
+#if defined(VGO_darwin)
       /* See amd64 version for details. */
       if (fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
           && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))) {
@@ -1363,6 +1362,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          RECURSIVE_MERGE(cmrf,ips,i);
          continue;
       }
+#endif
 
       /* No luck.  We have to give up. */
       break;

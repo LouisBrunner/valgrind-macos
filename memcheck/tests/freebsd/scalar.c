@@ -311,7 +311,6 @@ int main(void)
 
    /* obsol vwrite                68 */
 
-#if defined(SYS_sbrk)
    /* SYS_sbrk                    69 */
 #if defined(SYS_sbrk)
    GO(SYS_sbrk, "1s 1m");

@@ -98,8 +98,6 @@ EXTRA_DIST = \
 	revoke.stderr.exp \
 	scalar.h scalar.vgtest \
 	scalar.stderr.exp \
-		scalar.stderr.exp-arm64 \
-		scalar.stderr.exp-arm64_2 \
 		scalar.stderr.exp-x86 \
 		scalar.supp \
 	scalar_abort2.vgtest \

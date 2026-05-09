@@ -7078,26 +7078,6 @@ POST(sys_fspacectl)
    }
 }
 
-// SYS_fspacectl 580
-// int fspacectl(int fd, int cmd, const struct spacectl_range *rqsr, int flags,
-//     struct spacectl_range *rmsr);
-PRE(sys_fspacectl)
-{
-   PRINT("fspacectl ( %" FMT_REGWORD "d, %" FMT_REGWORD "d, %#" FMT_REGWORD "x, %" FMT_REGWORD "d, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3, SARG4, ARG5);
-   PRE_REG_READ5(int, "fspacectl", int, fd, int, cmd, const struct spacectl_range *, rqsr, int, flags, struct spacectl_range *, rmsr);
-   PRE_MEM_READ("fspacectl(rqsr)", (Addr)ARG3, sizeof(struct vki_spacectl_range));
-   if (ARG5) {
-      PRE_MEM_WRITE("fspacectl(rmsr)", (Addr)ARG5, sizeof(struct vki_spacectl_range));
-   }
-}
-
-POST(sys_fspacectl)
-{
-   if (ARG5) {
-      POST_MEM_WRITE((Addr)ARG5, sizeof(struct vki_spacectl_range));
-   }
-}
-
 // SYS_swapoff 582
 // int swapoff(const char *special, u_int flags);
 PRE(sys_swapoff)
@@ -7672,6 +7652,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_setrlimit,        sys_setrlimit),         // 195
    // __FreeBSD_version 1200031
    BSDXY(__NR_freebsd11_getdirentries, sys_freebsd11_getdirentries), // 196
+
    //BSDX_(__NR_freebsd6_mmap,    sys_freebsd6_mmap),     // 197
    // __syscall (handled specially)                     // 198
    //BSDX_(__NR_freebsd6_lseek,   sys_freebsd6_lseek),   // 199

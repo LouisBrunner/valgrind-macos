@@ -4098,6 +4098,26 @@ CFLAGS="$save_CFLAGS"
 
 AM_CONDITIONAL(BUILD_ARMV82_DOTPROD_TESTS, test x$ac_have_armv82_dotprod_feature = xyes)
 
+# check if crypto is supported
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -march=armv8-a+crypto"
+AC_MSG_CHECKING([if armv8-a+crypto is supported for tests])
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main(void) {
+   __asm__ __volatile__("aesd v6.16b, v27.16b" ::: "v6");
+   return 0;
+}
+]])], [
+ac_have_armv8_crypto=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_armv8_crypto=no
+AC_MSG_RESULT([no])
+])
+CFLAGS="$save_CFLAGS"
+
+AM_CONDITIONAL(BUILD_ARMV8_CRYPTO_TESTS, test x$ac_have_armv8_crypto = xyes)
+
 
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
 # when building the tool executables.  I think we should get rid of it.

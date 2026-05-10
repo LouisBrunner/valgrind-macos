@@ -30,7 +30,6 @@ check_PROGRAMS = \
 	bug489338 \
         cvtf_imm \
         dc_cvax \
-	fp_and_simd \
 	integer \
 	memory_test \
 	fmadd_sub \
@@ -42,6 +41,13 @@ endif
 
 if BUILD_ARMV81_TESTS
   check_PROGRAMS += atomics_v81 simd_v81
+endif
+
+# FIXME PJF split the crypto parts out of this test like arm v8crypto
+# keeping this confugure test for the new part and having the remaining
+# non-crypto fp_and_simd part unconditional
+if BUILD_ARMV8_CRYPTO_TESTS
+  check_PROGRAMS += fp_and_simd
 endif
 
 if BUILD_ARMV82_TESTS

@@ -12,3 +12,4 @@ argsB: 10 --vgdb-prefix=./vgdb-prefix-mcinvokeRU --max-invoke-ms=0 --wait=60 -c 
 # if the --wait is not enough, the test will fail or block.
 stdoutB_filter: filter_memcheck_monitor
 stderrB_filter: filter_vgdb
+cleanup: rm -f garbage.filtered.out

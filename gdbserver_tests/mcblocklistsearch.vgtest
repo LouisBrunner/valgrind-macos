@@ -11,3 +11,4 @@ stdinB: mcblocklistsearch.stdinB.gdb
 stdoutB_filter: filter_make_empty
 stderrB_filter: filter_gdb
 stderrB_filter_args: leak-tree.c
+cleanup: rm -f garbage.filtered.out

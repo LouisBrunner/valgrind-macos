@@ -13,3 +13,4 @@ argsB:  --quiet -l 60 --nx ./sleepers
 stdinB: mcinfcallRU.stdinB.gdb
 stdoutB_filter: filter_make_empty
 stderrB_filter: filter_make_empty
+cleanup: rm -f garbage.filtered.out

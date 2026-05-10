@@ -10,3 +10,4 @@ argsB: --quiet -l 60 --nx ../none/tests/tls
 stdinB: hgtls.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_make_empty
+cleanup: rm -f garbage.filtered.out

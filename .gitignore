@@ -682,7 +682,6 @@
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test
 /helgrind/tests/free_is_write
-/helgrind/tests/garbage.filtered.out
 /helgrind/tests/getaddrinfo
 /helgrind/tests/hg01_all_ok
 /helgrind/tests/hg02_deadlock
@@ -1613,7 +1612,6 @@
 /none/tests/floored
 /none/tests/fork
 /none/tests/fucomip
-/none/tests/garbage.filtered.out
 /none/tests/gxx304
 /none/tests/ifunc
 /none/tests/insn_basic

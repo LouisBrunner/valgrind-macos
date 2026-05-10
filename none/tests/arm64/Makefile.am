@@ -22,7 +22,8 @@ EXTRA_DIST = \
 	fp_and_simd_v82.stdout.exp fp_and_simd_v82.vgtest \
 	ldxp_stxp_basisimpl.stdout.exp ldxp_stxp_basisimpl.vgtest \
 	ldxp_stxp_fallbackimpl.stdout.exp ldxp_stxp_fallbackimpl.vgtest \
-	sha512_v82.stdout.exp sha512_v82.vgtest
+	sha512_v82.stdout.exp sha512_v82.vgtest \
+	v8crypto.stdout.exp v8crypto.vgtest
 
 check_PROGRAMS = \
 	allexec \
@@ -30,6 +31,7 @@ check_PROGRAMS = \
 	bug489338 \
         cvtf_imm \
         dc_cvax \
+	fp_and_simd \
 	integer \
 	memory_test \
 	fmadd_sub \
@@ -43,11 +45,8 @@ if BUILD_ARMV81_TESTS
   check_PROGRAMS += atomics_v81 simd_v81
 endif
 
-# FIXME PJF split the crypto parts out of this test like arm v8crypto
-# keeping this confugure test for the new part and having the remaining
-# non-crypto fp_and_simd part unconditional
 if BUILD_ARMV8_CRYPTO_TESTS
-  check_PROGRAMS += fp_and_simd
+  check_PROGRAMS += v8crypto
 endif
 
 if BUILD_ARMV82_TESTS
@@ -79,7 +78,6 @@ crc32_CFLAGS       = $(AM_CFLAGS) -march=armv8-a+crc
 atomics_v81_CFLAGS = $(AM_CFLAGS) -march=armv8.1-a
 simd_v81_CFLAGS    = $(AM_CFLAGS) -march=armv8.1-a+crypto
 simd_dotprod_CFLAGS    = $(AM_CFLAGS) -march=armv8.2-a+dotprod
-fp_and_simd_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 fp_and_simd_v82_CFLAGS = $(AM_CFLAGS) -march=armv8.2-a+fp16+crypto
 # SHA-512 is not part of SHA-3, either as an algorithm or in Arm features, but
 # GCC lumps SHA-512 and SHA-3 extensions together as "sha3".
@@ -89,13 +87,16 @@ fcvta_s_u_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 frinta_frintn_SOURCES  = frinta_frintn.cpp
 frinta_frintn_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
+v8crypto_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 
 fp_and_simd_SOURCES     = fp_and_simd.c simd.h simd.c
 fp_and_simd_v82_SOURCES = fp_and_simd_v82.c simd.h simd.c
 sha512_v82_SOURCES      = sha512_v82.c simd.h simd.c
+v8crypto_SOURCES        = v8crypto.c simd.h simd.c
 
 bug489338_LDADD    = -lm
 fp_and_simd_LDADD  = -lm
 simd_v81_LDADD     = -lm
 fp_and_simd_v82_LDADD  = -lm
-sha512_v82_LDADD  = -lm
+sha512_v82_LDADD   = -lm
+v8crypto_LDADD     = -lm

@@ -84,8 +84,14 @@ typedef
       ULong guest_CC_DEP2;
       ULong guest_CC_NDEP;
 
-      /* User-space thread register? */
+      /* User-space thread registers */
       ULong guest_TPIDR_EL0;
+      /* Used by Darwin TLS instead of TPIDR_EL0 (which is a CPU/cluster ID).
+       * See https://github.com/apple-oss-distributions/xnu/blob/main/osfmk/arm64/machine_machdep.h#L37-L46
+       */
+      ULong guest_TPIDRRO_EL0;
+      /* Align FP/SIMD */
+      ULong pad_tls_1;
 
       /* FP/SIMD state */
       U128 guest_Q0;

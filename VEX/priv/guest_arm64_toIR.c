@@ -1145,7 +1145,9 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 #define OFFB_CC_DEP2  offsetof(VexGuestARM64State,guest_CC_DEP2)
 #define OFFB_CC_NDEP  offsetof(VexGuestARM64State,guest_CC_NDEP)
 
-#define OFFB_TPIDR_EL0 offsetof(VexGuestARM64State,guest_TPIDR_EL0)
+#define OFFB_TPIDR_EL0   offsetof(VexGuestARM64State,guest_TPIDR_EL0)
+#define OFFB_TPIDRRO_EL0 offsetof(VexGuestARM64State,guest_TPIDRRO_EL0)
+
 #define OFFB_NRADDR   offsetof(VexGuestARM64State,guest_NRADDR)
 
 #define OFFB_Q0       offsetof(VexGuestARM64State,guest_Q0)
@@ -8027,28 +8029,25 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       DIP("mrs %s, id_aa64mmfr2_el1 (FAKED)\n", nameIReg64orZR(tt));
       return True;
    }
-   /* ---- Cases for TPIDR_EL0 ----
-      0xD51BD0 010 Rt   MSR tpidr_el0, rT
-      0xD53BD0 010 Rt   MRS rT, tpidr_el0
-      ---- Cases for TPIDRRO_EL0 ----
-      0xD53BD0 011 Rt   MRS rT, tpidrro_el0
+   /* ---- Cases for TPIDR(RO)_EL0 ---
+       31  23  21 20  19  7  5 4
+       D5  00  0  1   BD0 01 0 Rt   MSR tpidr_el0, Rt
+       D5  00  1  1   BD0 01 0 Rt   MRS Rt, tpidr_el0
+       D5  00  0  1   BD0 01 1 Rt   MSR tpidrro_el0, Rt
+       D5  00  1  1   BD0 01 1 Rt   MRS Rt, tpidrro_el0
+               mrs           RO
    */
-   if (   (INSN(31,0) & 0xFFFFFFE0) == 0xD51BD040 /*MSR*/
-       || (INSN(31,0) & 0xFFFFFFE0) == 0xD53BD040 /*MRS*/
-       || (INSN(31,0) & 0xFFFFFFE0) == 0xD53BD060 /*MRS RO*/) {
-      Bool toSys = INSN(21,21) == 0;
+   if ((INSN(31,0) & 0xFFDFFFC0) == 0xD51BD040) {
+      Bool mrs   = INSN(21,21) == 1;
+      Bool isRO  = INSN(5,5) == 1;
       UInt tt    = INSN(4,0);
-      Bool isRO  = INSN(21,21) == 1;
-      if (toSys) {
-         stmt( IRStmt_Put( OFFB_TPIDR_EL0, getIReg64orZR(tt)) );
-         DIP("msr tpidr_el0, %s\n", nameIReg64orZR(tt));
+      Int offset = isRO ? OFFB_TPIDRRO_EL0 : OFFB_TPIDR_EL0;
+      if (mrs) {
+        putIReg64orZR(tt, IRExpr_Get( offset, Ity_I64 ));
+        DIP("mrs %s, tpidr%s_el0\n", nameIReg64orZR(tt), isRO ? "ro" : "");
       } else {
-         putIReg64orZR(tt, IRExpr_Get( OFFB_TPIDR_EL0, Ity_I64 ));
-         if (isRO) {
-            DIP("mrs %s, tpidrro_el0\n", nameIReg64orZR(tt));
-         } else {
-         DIP("mrs %s, tpidr_el0\n", nameIReg64orZR(tt));
-      }
+        stmt( IRStmt_Put( offset, getIReg64orZR(tt)) );
+        DIP("msr tpidr%s_el0, %s\n", nameIReg64orZR(tt), isRO ? "ro" : "");
       }
       return True;
    }

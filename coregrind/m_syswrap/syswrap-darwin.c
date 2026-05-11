@@ -10031,7 +10031,8 @@ PRE(thread_set_tsd_base)
   {
     ThreadState *tst = VG_(get_ThreadState)(tid);
     tst->os_state.pthread = ARG1;
-    tst->arch.vex.guest_TPIDR_EL0 = ARG1;
+    tst->arch.vex.guest_TPIDR_EL0 = 0;
+    tst->arch.vex.guest_TPIDRRO_EL0 = ARG1;
     // SET_STATUS_Success(0x60);
     // see comments on x86 case just below
     SET_STATUS_from_SysRes(

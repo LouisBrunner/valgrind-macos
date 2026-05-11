@@ -2544,9 +2544,8 @@ none/tests/freebsd/bug499212
 
 # /VEX/
 /VEX/libvex*.a
-/VEX/TAG_*
-/VEX/.deps
 /VEX/Makefile
+/VEX/Makefile.in
 
 # /VEX/auxprogs/
 /VEX/auxprogs/genoffsets
@@ -2564,9 +2563,6 @@ none/tests/freebsd/bug499212
 
 # /VEX/switchback/
 /VEX/switchback/switchback
-
-# /VEX/useful/
-/VEX/useful/vex
 
 *.vgtest*.trs
 *.vgtest*.log

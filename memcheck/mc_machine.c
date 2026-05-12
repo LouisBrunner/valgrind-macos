@@ -1069,9 +1069,10 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CC_DEP1) && sz == 8) return o;
    if (o == GOF(CC_DEP2) && sz == 8) return o;
 
-   if (o == GOF(CC_OP)     && sz == 8) return -1; // untracked
-   if (o == GOF(CC_NDEP)   && sz == 8) return -1; // untracked
-   if (o == GOF(TPIDR_EL0) && sz == 8) return -1; // untracked
+   if (o == GOF(CC_OP)       && sz == 8) return -1; // untracked
+   if (o == GOF(CC_NDEP)     && sz == 8) return -1; // untracked
+   if (o == GOF(TPIDR_EL0)   && sz == 8) return -1; // untracked
+   if (o == GOF(TPIDRRO_EL0) && sz == 8) return -1; // untracked
 
    if (o >= GOF(Q0)   && o+sz <= GOF(Q0) +SZB(Q0))  return GOF(Q0);
    if (o >= GOF(Q1)   && o+sz <= GOF(Q1) +SZB(Q1))  return GOF(Q1);

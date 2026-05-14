@@ -2561,9 +2561,6 @@ none/tests/freebsd/bug499212
 # /VEX/pub/
 /VEX/pub/libvex_guest_offsets.h
 
-# /VEX/switchback/
-/VEX/switchback/switchback
-
 *.vgtest*.trs
 *.vgtest*.log
 /test-suite-overall.log

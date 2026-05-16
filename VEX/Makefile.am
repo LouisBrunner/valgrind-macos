@@ -23,6 +23,7 @@ pkginclude_HEADERS = \
 	pub/libvex_guest_ppc64.h \
 	pub/libvex_guest_arm.h \
 	pub/libvex_guest_arm64.h \
+	pub/libvex_guest_arm64_sysregs.h \
 	pub/libvex_guest_s390x.h \
 	pub/libvex_guest_mips32.h \
 	pub/libvex_guest_mips64.h \

@@ -13,7 +13,7 @@ void glue(glue(test_, OP), b)(int op0, int op1)
          "popl %1\n\t"
          : "=a" (res), "=g" (flags)
          : "q" (s1), "0" (res), "1" (flags));
-    printf("%-10s A=%08x B=%08x R=%08x CC=%04x\n",
+    xxprintf("%-10s A=%08x B=%08x R=%08x CC=%04x\n",
            stringify(OP) "b", s0, s1, res, flags & CC_MASK);
 }
 
@@ -31,7 +31,7 @@ void glue(glue(test_, OP), w)(int op0h, int op0, int op1)
          "popl %1\n\t"
          : "=a" (res), "=g" (flags), "=d" (resh)
          : "q" (s1), "0" (res), "1" (flags), "2" (resh));
-    printf("%-10s AH=%08x AL=%08x B=%08x RH=%08x RL=%08x CC=%04x\n",
+    xxprintf("%-10s AH=%08x AL=%08x B=%08x RH=%08x RL=%08x CC=%04x\n",
            stringify(OP) "w", op0h, op0, s1, resh, res, flags & CC_MASK);
 }
 
@@ -49,7 +49,7 @@ void glue(glue(test_, OP), l)(int op0h, int op0, int op1)
          "popl %1\n\t"
          : "=a" (res), "=g" (flags), "=d" (resh)
          : "q" (s1), "0" (res), "1" (flags), "2" (resh));
-    printf("%-10s AH=%08x AL=%08x B=%08x RH=%08x RL=%08x CC=%04x\n",
+    xxprintf("%-10s AH=%08x AL=%08x B=%08x RH=%08x RL=%08x CC=%04x\n",
            stringify(OP) "l", op0h, op0, s1, resh, res, flags & CC_MASK);
 }
 

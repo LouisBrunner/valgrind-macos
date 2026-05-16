@@ -2394,6 +2394,7 @@ none/tests/freebsd/bug499212
 /none/tests/x86/cse_fail
 /none/tests/x86/dastest
 /none/tests/x86/faultstatus
+/none/tests/x86/fb_test_i386
 /none/tests/x86/fcmovnu
 /none/tests/x86/fpu_lazy_eflags
 /none/tests/x86/fxtract

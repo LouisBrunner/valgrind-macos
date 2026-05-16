@@ -35,7 +35,7 @@ void exec_opl(int s2, int s0, int s1, int iflags)
     /* overflow is undefined if count != 1 */
     if (s1 != 1)
       flags &= ~CC_O;
-    printf("%-10s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
+    xxprintf("%-10s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
            stringify(OP) "l", s0, s1, res, iflags, flags & CC_MASK);
 }
 
@@ -48,7 +48,7 @@ void exec_opw(int s2, int s0, int s1, int iflags)
     /* overflow is undefined if count != 1 */
     if (s1 != 1)
       flags &= ~CC_O;
-    printf("%-10s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
+    xxprintf("%-10s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
            stringify(OP) "w", s0, s1, res, iflags, flags & CC_MASK);
 }
 
@@ -71,7 +71,7 @@ void exec_opl(int s2, int s0, int s1, int iflags)
     /* overflow is undefined if count != 1 */
     if (s1 != 1)
       flags &= ~CC_O;
-    printf("%-10s A=%08x B=%08x C=%08x R=%08x CCIN=%04x CC=%04x\n",
+    xxprintf("%-10s A=%08x B=%08x C=%08x R=%08x CCIN=%04x CC=%04x\n",
            stringify(OP) "l", s0, s2, s1, res, iflags, flags & CC_MASK);
 }
 
@@ -84,7 +84,7 @@ void exec_opw(int s2, int s0, int s1, int iflags)
     /* overflow is undefined if count != 1 */
     if (s1 != 1)
       flags &= ~CC_O;
-    printf("%-10s A=%08x B=%08x C=%08x R=%08x CCIN=%04x CC=%04x\n",
+    xxprintf("%-10s A=%08x B=%08x C=%08x R=%08x CCIN=%04x CC=%04x\n",
            stringify(OP) "w", s0, s2, s1, res, iflags, flags & CC_MASK);
 }
 
@@ -100,7 +100,7 @@ void exec_opb(int s0, int s1, int iflags)
     /* overflow is undefined if count != 1 */
     if (s1 != 1)
       flags &= ~CC_O;
-    printf("%-10s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
+    xxprintf("%-10s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
            stringify(OP) "b", s0, s1, res, iflags, flags & CC_MASK);
 }
 #endif
@@ -150,8 +150,6 @@ void glue(test_, OP)(void)
     for(i = 0; i < 32; i++)
         exec_op(0x813f3421, 0x82345678, i);
 }
-
-void *glue(_test_, OP) __init_call = glue(test_, OP);
 
 #undef OP
 #undef OP_CC

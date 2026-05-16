@@ -1,6 +1,4 @@
 
-#define FULLTXT 1
-
 #define exec_op glue(exec_, OP)
 #define exec_opl glue(glue(exec_, OP), l)
 #define exec_opw glue(glue(exec_, OP), w)
@@ -25,89 +23,62 @@
          : "0" (res), "1" (flags));
 
 #ifdef OP1
-inline void exec_opl(int s0, int s1, int iflags)
+static inline void exec_opl(int s0, int s1, int iflags)
 {
     int res, flags;
     res = s0;
     flags = iflags;
     EXECOP1("", res, flags);
-    if (FULLTXT)
-       printf("%-6s A=%08x R=%08x CCIN=%04x CC=%04x\n",
-              stringify(OP) "l", s0, res, iflags, flags & CC_MASK);
-    else
-       printf("%08x %04x %04x\n",
-               res, iflags, flags & CC_MASK);
-
+    xxprintf("%-6s A=%08x R=%08x CCIN=%04x CC=%04x\n",
+           stringify(OP) "l", s0, res, iflags, flags & CC_MASK);
 }
-inline void exec_opw(int s0, int s1, int iflags)
+static inline void exec_opw(int s0, int s1, int iflags)
 {
     int res, flags;
     res = s0;
     flags = iflags;
     EXECOP1("w", res, flags);
-    if (FULLTXT)
-       printf("%-6s A=%08x R=%08x CCIN=%04x CC=%04x\n",
-              stringify(OP) "w", s0, res, iflags, flags & CC_MASK);
-    else
-       printf("%08x %04x %04x\n",
-              res, iflags, flags & CC_MASK);
-
+    xxprintf("%-6s A=%08x R=%08x CCIN=%04x CC=%04x\n",
+           stringify(OP) "w", s0, res, iflags, flags & CC_MASK);
 }
-inline void exec_opb(int s0, int s1, int iflags)
+static inline void exec_opb(int s0, int s1, int iflags)
 {
     int res, flags;
     res = s0;
     flags = iflags;
     EXECOP1("b", res, flags);
-    if (FULLTXT)
-       printf("%-6s A=%08x R=%08x CCIN=%04x CC=%04x\n",
-              stringify(OP) "b", s0, res, iflags, flags & CC_MASK);
-    else
-       printf("%08x %04x %04x\n",
-              res, iflags, flags & CC_MASK);
-
+    xxprintf("%-6s A=%08x R=%08x CCIN=%04x CC=%04x\n",
+           stringify(OP) "b", s0, res, iflags, flags & CC_MASK);
 }
 #else
-inline void exec_opl(int s0, int s1, int iflags)
+static inline void exec_opl(int s0, int s1, int iflags)
 {
     int res, flags;
     res = s0;
     flags = iflags;
     EXECOP2("", res, s1, flags);
-    if (FULLTXT)
-       printf("%-6s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
-              stringify(OP) "l", s0, s1, res, iflags, flags & CC_MASK);
-    else
-       printf("%08x %04x %04x\n",
-              res, iflags, flags & CC_MASK);
+    xxprintf("%-6s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
+           stringify(OP) "l", s0, s1, res, iflags, flags & CC_MASK);
 }
 
-inline void exec_opw(int s0, int s1, int iflags)
+static inline void exec_opw(int s0, int s1, int iflags)
 {
     int res, flags;
     res = s0;
     flags = iflags;
     EXECOP2("w", res, s1, flags);
-    if (FULLTXT)
-       printf("%-6s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
-              stringify(OP) "w", s0, s1, res, iflags, flags & CC_MASK);
-    else
-       printf("%08x %04x %04x\n",
-              res, iflags, flags & CC_MASK);
+    xxprintf("%-6s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
+           stringify(OP) "w", s0, s1, res, iflags, flags & CC_MASK);
 }
 
-inline void exec_opb(int s0, int s1, int iflags)
+static inline void exec_opb(int s0, int s1, int iflags)
 {
     int res, flags;
     res = s0;
     flags = iflags;
     EXECOP2("b", res, s1, flags);
-    if (FULLTXT)
-       printf("%-6s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
-              stringify(OP) "b", s0, s1, res, iflags, flags & CC_MASK);
-    else
-       printf("%08x %04x %04x\n",
-              res, iflags, flags & CC_MASK);
+    xxprintf("%-6s A=%08x B=%08x R=%08x CCIN=%04x CC=%04x\n",
+           stringify(OP) "b", s0, s1, res, iflags, flags & CC_MASK);
 }
 #endif
 
@@ -202,9 +173,5 @@ void glue(test_, OP)(void)
 #undef NVALS
 }
 
-void *glue(_test_, OP) __init_call = glue(test_, OP);
-
 #undef OP
 #undef OP_CC
-
-#undef FULLTXT

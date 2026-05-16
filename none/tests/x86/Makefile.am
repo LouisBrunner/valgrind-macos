@@ -46,6 +46,7 @@ EXTRA_DIST = \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
 	cse_fail.stdout.exp cse_fail.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
+	fb_test_i386.vgtest fb_test_i386.stderr.exp fb_test_i386.stdout.exp \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
@@ -96,6 +97,7 @@ check_PROGRAMS = \
 	cmpxchg8b \
 	cpuid \
 	cse_fail \
+	fb_test_i386 \
 	fcmovnu \
 	fpu_lazy_eflags \
 	fxtract \
@@ -159,6 +161,7 @@ AM_CFLAGS += -mdynamic-no-pic
 endif
 
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.S
+fb_test_i386_LDADD	= -lm
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them.
 fpu_lazy_eflags_CFLAGS	= $(AM_CFLAGS) -O2 -march=pentiumpro
 fxtract_CFLAGS		= $(AM_CFLAGS) @FLAG_W_NO_OVERFLOW@

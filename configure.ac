@@ -5364,6 +5364,7 @@ AC_CHECK_FUNCS([     \
         strndup      \
         close_range  \
         wcsncpy      \
+        free_sized   \
         free_aligned_sized \
         sbrk         \
         wcpncpy      \
@@ -5418,6 +5419,8 @@ AM_CONDITIONAL([HAVE_STRLCAT],
                [test x$ac_cv_func_strlcat = xyes])
 AM_CONDITIONAL([HAVE_STRLCPY],
                [test x$ac_cv_func_strlcpy = xyes])
+AM_CONDITIONAL([HAVE_FREE_SIZED],
+               [test x$ac_cv_func_free_sized = xyes])
 AM_CONDITIONAL([HAVE_FREE_ALIGNED_SIZED],
                [test x$ac_cv_func_free_aligned_sized = xyes])
 AM_CONDITIONAL([HAVE_SBRK],

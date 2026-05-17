@@ -138,6 +138,7 @@ EXTRA_DIST = \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.vgtest \
 	bug484002.stdout.exp bug484002.vgtest \
+	c23_free.stderr.exp c23_free.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	cdebug_zstd.vgtest cdebug_zstd.stderr.exp \
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
@@ -600,6 +601,13 @@ bug464969_d_demangle_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 if HAVE_WCSXFRM
 check_PROGRAMS += bug484002
+endif
+
+if HAVE_FREE_SIZED
+if HAVE_FREE_ALIGNED_SIZED
+check_PROGRAMS += c23_free
+c23_free_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
+endif
 endif
 
 if GZ_ZLIB

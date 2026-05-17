@@ -20,7 +20,7 @@ Invalid alignment value: 1000 (should be a power of 2)
    at 0x........: free_aligned_sized (vg_replace_malloc.c:...)
    by 0x........: main (c23_free.c:42)
 
-Mismatched aligned_alloc/free_aligned_sized alignment alloc value: 0 dealloc value: 1000
+Mismatched aligned_alloc/free_aligned_sized alignment alloc value: default-aligned dealloc value: 1000
    at 0x........: free_aligned_sized (vg_replace_malloc.c:...)
    by 0x........: main (c23_free.c:42)
  Address 0x........ is 0 bytes inside a block of size 1,000 alloc'd

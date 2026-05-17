@@ -50,9 +50,17 @@ int main() {
     
     mem = operator new[](size, align);
     operator delete[](mem, size, misalign);
+
+    // default size new, sized aligned delete
+    mem = operator new(size);
+    operator delete(mem, size, align);
+
+    // default size new array, sized aligned delete array
+    mem = operator new[](size);
+    operator delete[](mem, size, align);
     
     // initially this test had two throwing
     // versions called from fork()s
     // but that doesn't mix well with xml
-    // so they have split out int versions 2 and 3
+    // so they have split out into versions 2 and 3
 }

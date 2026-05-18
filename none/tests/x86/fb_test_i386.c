@@ -990,6 +990,9 @@ void test_fbcd(double a)
            (env)->fptag);\
 }
 
+/* Commented out because results differ depending on gcc/clang version
+   when run under valgrind --tool=none */
+#if 0
 void test_fenv(void)
 {
     struct __attribute__((packed)) {
@@ -1002,7 +1005,6 @@ void test_fenv(void)
         uint32_t ignored[4];
         long double fpregs[8];
     } float_env32;
-#if 0
     struct __attribute__((packed)) {
         uint16_t fpuc;
         uint16_t fpus;
@@ -1010,7 +1012,6 @@ void test_fenv(void)
         uint16_t ignored[4];
         long double fpregs[8];
     } float_env16;
-#endif
     double dtab[8];
     double rtab[8];
     int i;
@@ -1018,14 +1019,8 @@ void test_fenv(void)
     for(i=0;i<8;i++)
         dtab[i] = i + 1;
 
-#if 0
-    /* Commented out because results differ when run under 
-       valgrind --tool=none
-       Not sure whether the code here is busted or there is a bug
-       in VEX. */
     TEST_ENV(&float_env16, "data16 fnstenv", "data16 fldenv");
     TEST_ENV(&float_env16, "data16 fnsave", "data16 frstor");
-#endif
     TEST_ENV(&float_env32, "fnstenv", "fldenv");
     TEST_ENV(&float_env32, "fnsave", "frstor");
 
@@ -1037,6 +1032,7 @@ void test_fenv(void)
     asm volatile ("fninit");
     xxprintf("fptag=%04x\n", float_env32.fptag);
 }
+#endif
 
 
 #define TEST_FCMOV(a, b, eflags, CC)\
@@ -1211,10 +1207,8 @@ void test_string(void)
 
 int main(int argc, char **argv)
 {
-    // The three commented out test cases produce different results at different
-    // compiler optimisation levels.  This suggests to me that their inline
-    // assembly is incorrect.  I don't have time to investigate now, though.  So
-    // they are disabled.
+    // The commented out test cases produce different results depending on
+    // gcc / clang version and optimisation levels. Therefore disabled.
     xxprintf_start();
 
     test_adc();
@@ -1225,7 +1219,7 @@ int main(int argc, char **argv)
     test_dec();
     test_fcmov();
     test_fconst();
-    test_fenv();
+//    test_fenv();
     test_floats();
     test_inc();
 //    test_jcc();

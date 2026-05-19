@@ -47,6 +47,7 @@ EXTRA_DIST = \
 	cse_fail.stdout.exp cse_fail.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fb_test_i386.vgtest fb_test_i386.stderr.exp fb_test_i386.stdout.exp \
+	fb_test_i386.h fb_test_i386_shift.h fb_test_i386_muldiv.h \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \

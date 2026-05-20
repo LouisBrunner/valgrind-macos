@@ -3600,10 +3600,6 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_VOL_QUOTA_SIZE,      sizeof(off_t) },
       { ATTR_VOL_RESERVED_SIZE,   sizeof(off_t) },
 #endif
-#if DARWIN_VERS >= DARWIN_10_15
-      { ATTR_VOL_QUOTA_SIZE,      sizeof(off_t) },
-      { ATTR_VOL_RESERVED_SIZE,   sizeof(off_t) },
-#endif
       { ATTR_VOL_ATTRIBUTES,      sizeof(vol_attributes_attr_t) },
       { 0,                        0 }
    };

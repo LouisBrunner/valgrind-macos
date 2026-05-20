@@ -1,13 +1,17 @@
-Branch 3.27
-~~~~~~~~~~~
+Release 3.27.1 (20 May 2026)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This point release contains only bug fixes.
 
 * ==================== FIXED BUGS ====================
 
-The following bugs have been fixed or resolved on this branch.
+The following bugs have been fixed or resolved in this point release.
 
 519574  valgrind 3.27 "--fair-sched=yes" does not work
 519613  Valgrind incorrectly unpacks the result of sys_port (port_getn)
         on error, leading to a ~60s wallclock time delay on every call
+n-i-bz  Update vg-lifespan (copyright) years
+n-i-bz  Use SSizeT for VG_(readlink) result in VG_(realpath)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

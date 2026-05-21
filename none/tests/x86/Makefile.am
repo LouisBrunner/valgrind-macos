@@ -3,6 +3,11 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 
+# Used by fb_test_i386.c
+noinst_HEADERS = fb_test_i386.h \
+		 fb_test_i386_muldiv.h \
+		 fb_test_i386_shift.h
+
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
 INSN_TESTS = insn_basic insn_cmov insn_mmx insn_mmxext insn_sse insn_sse2
@@ -47,7 +52,6 @@ EXTRA_DIST = \
 	cse_fail.stdout.exp cse_fail.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fb_test_i386.vgtest fb_test_i386.stderr.exp fb_test_i386.stdout.exp \
-	fb_test_i386.h fb_test_i386_shift.h fb_test_i386_muldiv.h \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \

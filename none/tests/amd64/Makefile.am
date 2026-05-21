@@ -6,6 +6,11 @@ dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
 # Used by avx-1.c, avx-vmovq and avx_estimate_insn.c
 noinst_HEADERS = avx_tests.h
 
+# Used by fb_test_amd64.c
+noinst_HEADERS += fb_test_amd64.h \
+		  fb_test_amd64_muldiv.h \
+		  fb_test_amd64_shift.h
+
 CLEANFILES = $(addsuffix .c,$(INSN_TESTS))
 
 INSN_TESTS = insn_basic insn_mmx insn_sse insn_sse2 insn_fpu
@@ -53,7 +58,6 @@ EXTRA_DIST = \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fb_test_amd64.vgtest \
 	fb_test_amd64.stderr.exp fb_test_amd64.stdout.exp \
-	fb_test_amd64.h fb_test_amd64_muldiv.h fb_test_amd64_shift.h \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fma4.vgtest fma4.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \

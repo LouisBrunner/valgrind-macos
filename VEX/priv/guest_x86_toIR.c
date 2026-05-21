@@ -3399,6 +3399,72 @@ UInt dis_imul_I_E_G ( UChar       sorb,
    return delta;
 }
 
+/* Generate an IR sequence to do a popcount operation on the supplied
+   IRTemp, and return a new IRTemp holding the result.  'ty' may be
+   Ity_I16 or Ity_I32 only. */
+static IRTemp gen_POPCOUNT ( IRType ty, IRTemp src )
+{
+   Int i;
+   vassert(ty == Ity_I16 || ty == Ity_I32);
+
+   if (ty == Ity_I16) {
+      IRTemp old = IRTemp_INVALID;
+      IRTemp nyu = IRTemp_INVALID;
+      IRTemp mask[4], shift[4];
+      for (i = 0; i < 4; i++) {
+         mask[i]  = newTemp(ty);
+         shift[i] = 1 << i;
+      }
+      assign(mask[0], mkU16(0x5555));
+      assign(mask[1], mkU16(0x3333));
+      assign(mask[2], mkU16(0x0F0F));
+      assign(mask[3], mkU16(0x00FF));
+      old = src;
+      for (i = 0; i < 4; i++) {
+         nyu = newTemp(ty);
+         assign(nyu,
+                binop(Iop_Add16,
+                      binop(Iop_And16,
+                            mkexpr(old),
+                            mkexpr(mask[i])),
+                      binop(Iop_And16,
+                            binop(Iop_Shr16, mkexpr(old), mkU8(shift[i])),
+                            mkexpr(mask[i]))));
+         old = nyu;
+      }
+      return nyu;
+   }
+   if (ty == Ity_I32) {
+      IRTemp old = IRTemp_INVALID;
+      IRTemp nyu = IRTemp_INVALID;
+      IRTemp mask[5], shift[5];
+      for (i = 0; i < 5; i++) {
+         mask[i]  = newTemp(ty);
+         shift[i] = 1 << i;
+      }
+      assign(mask[0], mkU32(0x55555555));
+      assign(mask[1], mkU32(0x33333333));
+      assign(mask[2], mkU32(0x0F0F0F0F));
+      assign(mask[3], mkU32(0x00FF00FF));
+      assign(mask[4], mkU32(0x0000FFFF));
+      old = src;
+      for (i = 0; i < 5; i++) {
+         nyu = newTemp(ty);
+         assign(nyu,
+                binop(Iop_Add32,
+                      binop(Iop_And32,
+                            mkexpr(old),
+                            mkexpr(mask[i])),
+                      binop(Iop_And32,
+                            binop(Iop_Shr32, mkexpr(old), mkU8(shift[i])),
+                            mkexpr(mask[i]))));
+         old = nyu;
+      }
+      return nyu;
+   }
+   /*NOTREACHED*/
+   vassert(0);
+}
 
 /* Generate an IR sequence to do a count-leading-zeroes operation on
    the supplied IRTemp, and return a new IRTemp holding the result.
@@ -13519,6 +13585,48 @@ DisResult disInstr_X86_WRK (
          putXMMRegLane64F( gregOfRM(modrm), 0, mkexpr(res) );
       else
          putXMMRegLane32F( gregOfRM(modrm), 0, mkexpr(res) );
+
+      goto decode_success;
+   }
+
+   /* F3 0F B8  = POPCNT{W,L}
+      Count the number of 1 bits in a register
+   */
+   if (insn[0] == 0xF3 && insn[1] == 0x0F && insn[2] == 0xB8
+       && (sz == 2 || sz == 4)) {
+      /*IRType*/ ty  = szToITy(sz);
+      IRTemp     src = newTemp(ty);
+      modrm = insn[3];
+      if (epartIsReg(modrm)) {
+         assign(src, getIReg(sz, eregOfRM(modrm)));
+         delta += 3+1;
+         DIP("popcnt%c %s, %s\n", nameISize(sz),
+             nameIReg(sz, eregOfRM(modrm)),
+             nameIReg(sz, gregOfRM(modrm)));
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         assign(src, loadLE(ty, mkexpr(addr)));
+         delta += 3+alen;
+         DIP("popcnt%c %s, %s\n", nameISize(sz), dis_buf,
+             nameIReg(sz, gregOfRM(modrm)));
+      }
+
+      IRTemp result = gen_POPCOUNT(ty, src);
+      putIReg(sz, gregOfRM(modrm), mkexpr(result));
+
+      // Update flags.  This is pretty lame .. perhaps can do better
+      // if this turns out to be performance critical.
+      // O S A C P are cleared.  Z is set if SRC == 0.
+      stmt( IRStmt_Put( OFFB_CC_OP,   mkU32(X86G_CC_OP_COPY) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP2, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_NDEP, mkU32(0) ));
+      stmt( IRStmt_Put( OFFB_CC_DEP1,
+            binop(Iop_Shl32,
+                  unop(Iop_1Uto32,
+                       binop(Iop_CmpEQ32,
+                             widenUto32(mkexpr(src)),
+                             mkU32(0))),
+                  mkU8(X86G_CC_SHIFT_Z))));
 
       goto decode_success;
    }

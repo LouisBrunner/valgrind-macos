@@ -53,6 +53,16 @@ static ULong randULong ( void )
    return r;
 }
 
+static UInt randUInt ( void )
+{
+   Int i;
+   UInt r = 0;
+   for (i = 0; i < 4; i++) {
+      r = (r << 8) | (UInt)(0xFF & randUChar());
+   }
+   return r;
+}
+
 static void randV128 ( V128* v )
 {
    Int i;

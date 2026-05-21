@@ -137,6 +137,100 @@ void test_PTEST ( void )
    }
 }
 
+void test_POPCNTL_x86 ( void )
+{
+   UInt block[4];
+   Int i;
+   UInt oszacp_mask = 0x8D5;
+   for (i = 0; i < 10; i++) {
+      block[0] = i == 0 ? 0 : (UInt)randUInt();
+      block[1] = (UInt)randUInt();
+      block[2] = (UInt)randUInt();
+      block[3] = (UInt)randUInt();
+      __asm__ __volatile__(
+         "movl %0,       %%eax"  "\n\t"
+         "movl 0(%%eax), %%edi"  "\n\t"
+         "movl 4(%%eax), %%ecx"  "\n\t"
+         "popcntl %%edi,  %%ecx"  "\n\t"
+         "movl %%ecx, 8(%%eax)"  "\n\t"
+         "pushf"                 "\n\t"
+         "popl %%edx"             "\n\t"
+         "movl %%edx, 12(%%eax)"  "\n"
+         : /*out*/
+         : /*in*/"r"(&block[0])
+         : /*trash*/ "cc", "memory", "edi", "ecx", "edx"
+      );
+      printf("r popcntl  %08x %08x  %08x %08x\n",
+             block[0], block[1], block[2], block[3] & oszacp_mask);
+
+      block[0] = i == 0 ? 0 : (UInt)randUInt();
+      block[1] = (UInt)randUInt();
+      block[2] = (UInt)randUInt();
+      block[3] = (UInt)randUInt();
+      __asm__ __volatile__(
+         "movl %0,       %%eax"  "\n\t"
+         "movl 4(%%eax), %%ecx"  "\n\t"
+         "popcntl 0(%%eax), %%ecx"  "\n\t"
+         "movl %%ecx, 8(%%eax)"  "\n\t"
+         "pushf"                 "\n\t"
+         "popl %%edx"             "\n\t"
+         "movl %%edx, 12(%%eax)"  "\n"
+         : /*out*/
+         : /*in*/"r"(&block[0])
+         : /*trash*/ "cc", "memory", "ecx", "edx"
+      );
+      printf("m popcntl  %08x %08x  %08x %08x\n",
+             block[0], block[1], block[2], block[3] & oszacp_mask);
+   }
+}
+
+void test_POPCNTW_x86 ( void )
+{
+   UInt block[4];
+   Int i;
+   UInt oszacp_mask = 0x8D5;
+   for (i = 0; i < 10; i++) {
+      block[0] = i == 0 ? 0 : (UInt)randUInt();
+      block[1] = (UInt)randUInt();
+      block[2] = (UInt)randUInt();
+      block[3] = (UInt)randUInt();
+      __asm__ __volatile__(
+         "movl %0,       %%eax"  "\n\t"
+         "movl 0(%%eax), %%edi"  "\n\t"
+         "movl 4(%%eax), %%ecx"  "\n\t"
+         "popcntw %%di,  %%cx"  "\n\t"
+         "movl %%ecx, 8(%%eax)"  "\n\t"
+         "pushf"                 "\n\t"
+         "popl %%edx"             "\n\t"
+         "movl %%edx, 12(%%eax)"  "\n"
+         : /*out*/
+         : /*in*/"r"(&block[0])
+         : /*trash*/ "cc", "memory", "edi", "ecx", "edx"
+      );
+      printf("r popcntw  %08x %08x  %08x %08x\n",
+             block[0], block[1], block[2], block[3] & oszacp_mask);
+
+      block[0] = i == 0 ? 0 : (UInt)randUInt();
+      block[1] = (UInt)randUInt();
+      block[2] = (UInt)randUInt();
+      block[3] = (UInt)randUInt();
+      __asm__ __volatile__(
+         "movl %0,       %%eax"  "\n\t"
+         "movl 4(%%eax), %%ecx"  "\n\t"
+         "popcntw 0(%%eax), %%cx"  "\n\t"
+         "movl %%ecx, 8(%%eax)"  "\n\t"
+         "pushf"                 "\n\t"
+         "popl %%edx"             "\n\t"
+         "movl %%edx, 12(%%eax)"  "\n"
+         : /*out*/
+         : /*in*/"r"(&block[0])
+         : /*trash*/ "cc", "memory", "ecx", "edx"
+      );
+      printf("m popcntw  %08x %08x  %08x %08x\n",
+             block[0], block[1], block[2], block[3] & oszacp_mask);
+   }
+}
+
 /* ------------ main ------------ */
 
 int main(void)
@@ -168,6 +262,8 @@ int main(void)
    test_ROUNDSS_w_mxcsr_rounding();
    test_PEXTRD();
    test_PACKUSDW();
+   test_POPCNTL_x86();
+   test_POPCNTW_x86();
 
    return 0;
 }

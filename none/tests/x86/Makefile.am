@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
+dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 # Used by fb_test_i386.c
 noinst_HEADERS = fb_test_i386.h \
@@ -56,7 +56,6 @@ EXTRA_DIST = \
 	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
-	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
 	gnu_binutils_nop.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \

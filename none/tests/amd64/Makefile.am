@@ -95,8 +95,6 @@ EXTRA_DIST = \
 	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.vgtest \
 	sse4-64.stdout.exp sse4-64.vgtest \
-	sse4-64.stdout.exp-older-glibc \
-	sse4-64.stdout.exp-freebsd \
 	slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
 	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
@@ -240,6 +238,7 @@ jrcxz_LDFLAGS		= @LDFLAG_NO_PIE@
 looper_LDFLAGS		= @LDFLAG_NO_PIE@
 sbbmisc_LDFLAGS		= @LDFLAG_NO_PIE@
 shrld_LDFLAGS		= @LDFLAG_NO_PIE@
+sse4_64_LDADD           = -lm
 
 .def.c:
 	$(PERL) $(srcdir)/gen_insn_test.pl < $< > $@

@@ -79,7 +79,6 @@ EXTRA_DIST = \
 	ssse3_misaligned.stderr.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
 	sse4-x86.stdout.exp sse4-x86.vgtest \
-	sse4-x86.stdout.exp-freebsd \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
 	x87trigOOR.vgtest x87trigOOR.stdout.exp x87trigOOR.stderr.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \
@@ -190,6 +189,7 @@ insn_sse3_LDADD		= -lm
 insn_ssse3_SOURCES	= insn_ssse3.def
 insn_ssse3_LDADD	= -lm
 sse4_x86_CFLAGS		= ${AM_CFLAGS} @FLAG_W_NO_UNUSED_FUNCTION@
+sse4_x86_LDADD          = -lm
 x86locked_CFLAGS	= $(AM_CFLAGS) -O
 yield_LDADD		= -lpthread
 

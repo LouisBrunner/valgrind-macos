@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "tests/malloc.h"
 #include <string.h>
+#include <math.h>
 
 typedef  unsigned char           V128[16];
 typedef  unsigned int            UInt;
@@ -1122,6 +1123,73 @@ static inline void do_ROUNDSD_1XX ( Bool mem, V128* src, /*OUT*/V128* dst )
    }
 }
 
+/* Our wrapper for printf("%10f", d). Specifically to handle +/-NaNs and
+   +/-Infs.  */
+static inline void print_double (double d)
+{
+   if (isnan(d)) {
+      if (signbit(d)) {
+         printf("      -nan");
+      } else {
+         printf("       nan");
+      }
+   } else if (isinf(d)) {
+      if (signbit(d)) {
+         printf("      -inf");
+      } else {
+         printf("       inf");
+      }
+   } else {
+      printf ("%10f", d);
+   }
+}
+
+/* Our wrapper for printf("%9f", d). Specifically to handle +/-NaNs and
+   +/-Infs.  */
+static inline void print_float (float f)
+{
+   if (isnan(f)) {
+      if (signbit(f)) {
+         printf("     -nan");
+      } else {
+         printf("      nan");
+      }
+   } else if (isinf(f)) {
+      if (signbit(f)) {
+         printf("     -inf");
+      } else {
+         printf("      inf");
+      }
+   } else {
+      printf ("%9f", f);
+   }
+}
+
+/* Our wrapper for printf("  %10f %10f", double1, double2)
+   Specifically to handle +/-NaNs.  */
+static inline void print_doubles (double d1, double d2)
+{
+   printf("  ");
+   print_double(d1);
+   printf(" ");
+   print_double(d2);
+}
+
+static inline void print_floats (float f1, float f2)
+{
+   printf("  ");
+   print_float(f1);
+   printf(":");
+   print_float(f2);
+}
+
+static inline void print_double_to_double (double d1, double d2)
+{
+   print_double(d1);
+   printf(" -> ");
+   print_double(d2);
+}
+
 static inline void test_ROUNDSD_w_immediate_rounding ( void )
 {
    double vals[22];
@@ -1161,7 +1229,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1172,7 +1240,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
 
@@ -1184,7 +1252,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1195,7 +1263,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
 
@@ -1207,7 +1275,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1218,7 +1286,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
 
@@ -1230,7 +1298,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1241,7 +1309,7 @@ static inline void test_ROUNDSD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+      print_doubles(vals[i], *(double*)(&dst[0]));
       printf("\n");
    }
 }
@@ -1292,7 +1360,7 @@ static inline void test_ROUNDSD_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+         print_doubles(vals[i], *(double*)(&dst[0]));
          printf("\n");
 
          randV128(&src);
@@ -1303,7 +1371,7 @@ static inline void test_ROUNDSD_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %10f %10f", vals[i], *(double*)(&dst[0]));
+         print_doubles(vals[i], *(double*)(&dst[0]));
          printf("\n");
       }
    }
@@ -1477,7 +1545,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1488,7 +1556,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
 
@@ -1500,7 +1568,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1511,7 +1579,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
 
@@ -1523,7 +1591,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1534,7 +1602,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
 
@@ -1546,7 +1614,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
 
       randV128(&src);
@@ -1557,7 +1625,7 @@ static inline void test_ROUNDSS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+      print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
       printf("\n");
    }
 }
@@ -1608,7 +1676,7 @@ static inline void test_ROUNDSS_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+         print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
          printf("\n");
 
          randV128(&src);
@@ -1619,7 +1687,7 @@ static inline void test_ROUNDSS_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %10f %10f", (double)vals[i], (double)*(float*)(&dst[0]));
+         print_doubles((double)vals[i], (double)*(float*)(&dst[0]));
          printf("\n");
       }
    }

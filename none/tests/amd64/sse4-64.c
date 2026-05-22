@@ -1649,8 +1649,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
       randV128(&src);
@@ -1662,8 +1664,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
 
@@ -1676,8 +1680,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
       randV128(&src);
@@ -1689,8 +1695,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
 
@@ -1703,8 +1711,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
       randV128(&src);
@@ -1716,8 +1726,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
 
@@ -1730,8 +1742,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
 
       randV128(&src);
@@ -1743,8 +1757,10 @@ void test_ROUNDPD_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-      printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
       printf("\n");
    }
 }
@@ -1796,8 +1812,10 @@ void test_ROUNDPD_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-         printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+         printf("  ");
+         print_double_to_double(vals[i], *(double*)(&dst[0]));
+         printf("   ");
+         print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
          printf("\n");
 
          randV128(&src);
@@ -1809,8 +1827,10 @@ void test_ROUNDPD_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %10f -> %10f", vals[i], *(double*)(&dst[0]));
-         printf("   %10f -> %10f", vals[(i+11)%22], *(double*)(&dst[8]));
+         printf("  ");
+         print_double_to_double(vals[i], *(double*)(&dst[0]));
+         printf("   ");
+         print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
          printf("\n");
       }
    }
@@ -1986,10 +2006,10 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
 
       randV128(&src);
@@ -2003,10 +2023,10 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
 
 
@@ -2021,10 +2041,10 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
 
       randV128(&src);
@@ -2038,12 +2058,11 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
-
 
       randV128(&src);
       randV128(&dst);
@@ -2056,10 +2075,10 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
 
       randV128(&src);
@@ -2073,12 +2092,11 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
-
 
       randV128(&src);
       randV128(&dst);
@@ -2091,10 +2109,10 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
 
       randV128(&src);
@@ -2108,10 +2126,10 @@ void test_ROUNDPS_w_immediate_rounding ( void )
       showV128(&src);
       printf(" ");
       showV128(&dst);
-      printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-      printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-      printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-      printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
       printf("\n");
    }
 }
@@ -2165,10 +2183,10 @@ void test_ROUNDPS_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-         printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-         printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-         printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+         print_floats(vals[i], *(float*)(&dst[0]));
+         print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+         print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+         print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
          printf("\n");
 
          randV128(&src);
@@ -2182,10 +2200,10 @@ void test_ROUNDPS_w_mxcsr_rounding ( void )
          showV128(&src);
          printf(" ");
          showV128(&dst);
-         printf("  %9f:%9f", vals[i], (double)*(float*)(&dst[0]));
-         printf("  %9f:%9f", vals[(i+5)%22], (double)*(float*)(&dst[4]));
-         printf("  %9f:%9f", vals[(i+11)%22], (double)*(float*)(&dst[8]));
-         printf("  %9f:%9f", vals[(i+17)%22], (double)*(float*)(&dst[12]));
+         print_floats(vals[i], *(float*)(&dst[0]));
+         print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+         print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+         print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
          printf("\n");
       }
    }

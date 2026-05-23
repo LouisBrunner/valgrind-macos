@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_cpuid filter_inf_nan filter_stderr gen_insn_test.pl
+dist_noinst_SCRIPTS = filter_cpuid filter_stderr gen_insn_test.pl
 
 # Used by avx-1.c, avx-vmovq and avx_estimate_insn.c
 noinst_HEADERS = avx_tests.h
@@ -45,7 +45,6 @@ EXTRA_DIST = \
 	bug132813-amd64.stderr.exp \
 	bug137714-amd64.vgtest bug137714-amd64.stdout.exp \
 	bug132918.vgtest bug132918.stderr.exp bug132918.stdout.exp \
-	bug132918.stdout.exp-older-glibc \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
 	bug156404-amd64.stderr.exp \
 	bug485148.vgtest bug485148.stdout.exp \
@@ -61,7 +60,6 @@ EXTRA_DIST = \
 	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
 	fma4.vgtest fma4.stdout.exp \
 	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
-	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.vgtest \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \

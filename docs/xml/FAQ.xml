@@ -742,9 +742,26 @@ online copy of the manual. -->
   <para>Read the appropriate section(s) of the 
   <ulink url="&vg-docs-url;">Valgrind Documentation</ulink>.</para>
 
-  <para><ulink url="http://search.gmane.org">Search</ulink> the 
-  <ulink url="http://news.gmane.org/gmane.comp.debugging.valgrind">valgrind-users</ulink> mailing list archives, using the group name 
-  <computeroutput>gmane.comp.debugging.valgrind</computeroutput>.</para>
+  <para><ulink url="https://sourceforge.net/p/valgrind/mailman/search/?mail_list=valgrind-users">Search</ulink> the
+  <ulink url="https://sourceforge.net/p/valgrind/mailman/valgrind-users/">valgrind-users</ulink> mailing list archives.</para>
+
+  <para>The valgrind-users mailing list has a read-only usenet nntp mirror on news.gmane.io. The newsgroup is
+  gmane.comp.debugging.valgrind.</para>
+
+  <para>Stack Overflow has a <ulink url="https://stackoverflow.com/questions/tagged/valgrind">[valgrind] tag</ulink>.
+  Questions there are sometimes answered by Valgrind developers. However you should also be aware of some of the
+  site's limitations:</para>
+
+  <itemizedlist>
+    <listitem>
+      <para>Moderation quality for specialist tools like Valgrind is poor. Reviewers frequently lack familiarity
+      with it and have been known to close legitimate questions or answers on spurious grounds.</para>
+    </listitem>
+    <listitem>
+      <para>For authoritative answers, the valgrind-users mailing list remains a more reliable resource.</para>
+    </listitem>
+  </itemizedlist>
+
 
   <para>If you think an answer in this FAQ is incomplete or inaccurate, please
   e-mail <ulink url="mailto:&vg-vemail;">&vg-vemail;</ulink>.</para>

@@ -279,6 +279,13 @@ consumption was greatest.  The peak snapshot is represented in the graph by
 a bar consisting of '#' characters.  The text at the bottom shows
 that snapshot 14 was the peak.</para>
 
+<para> The option <option>--peak-only</option> limits the output to just the
+peak memory consumption figure and omits the full snapshot graph and
+associated output. This is primarily intended for use in automated
+environments such as CI pipelines, where the peak value is captured by a
+script for comparison against a threshold. The number of bytes printed
+does not use thousands separators to make parsing easier.</para>
+
 <para>Massif's determination of when the peak occurred can be wrong, for
 two reasons.</para>
 
@@ -836,6 +843,16 @@ various places online.
       will run drastically slower as the number approaches zero.</para>
     </listitem>
   </varlistentry>
+
+  <varlistentry id="opt.peak-only" xreflabel="--peak-only">
+   <term>
+     <option><![CDATA[--peak-only]]></option>
+   </term>
+   <listitem>
+     <para>Print only the peak memory usage figure in bytes, omitting
+     the snapshot graph and all other output.</para>
+   </listitem>
+</varlistentry>
 
   <varlistentry id="opt.time-unit" xreflabel="--time-unit">
     <term>

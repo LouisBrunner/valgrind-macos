@@ -2490,7 +2490,7 @@ void x86g_dirtyhelper_CPUID_sse3 ( VexGuestX86State* st )
          SET_ABCD(0x0000000a, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
       case 0x00000001:
-         SET_ABCD(0x000006f6, 0x00020800, 0x0000e3bd, 0xbfebfbff);
+         SET_ABCD(0x000006f6, 0x00020800, 0x0080e3bd, 0xbfebfbff);
          break;
       case 0x00000002:
          SET_ABCD(0x05b0b101, 0x005657f0, 0x00000000, 0x2cb43049);

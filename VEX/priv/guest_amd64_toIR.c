@@ -17667,8 +17667,8 @@ static Long dis_PHMINPOSUW_128 ( const VexAbiInfo* vbi, Prefix pfx,
    assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
    assign( dLo, mkIRExprCCall(
                    Ity_I64, 0/*regparms*/,
-                   "amd64g_calculate_sse_phminposuw", 
-                   &amd64g_calculate_sse_phminposuw,
+                   "g_calculate_sse_phminposuw",
+                   &g_calculate_sse_phminposuw,
                    mkIRExprVec_2( mkexpr(sLo), mkexpr(sHi) )
          ));
    (isAvx ? putYMMRegLoAndZU : putXMMReg)

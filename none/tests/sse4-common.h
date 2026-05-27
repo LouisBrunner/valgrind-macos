@@ -1723,4 +1723,18 @@ static inline void test_PACKUSDW ( void )
    }
 }
 
+static inline void test_PHMINPOSUW ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 20; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("phminposuw", src, dst);
+   }
+   memset(src, 0x55, sizeof(src));
+   memset(dst, 0xAA, sizeof(dst));
+   DO_mandr_r("phminposuw", src, dst);
+}
+
 #endif /* __SSE4_COMMON_H */

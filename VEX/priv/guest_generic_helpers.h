@@ -72,6 +72,38 @@ static inline UChar sel8x8_0 ( ULong w64 ) {
    UInt lo32 = toUInt(w64);
    return toUChar(lo32 >> 0);
 }
+static inline UShort sel16x4_3 ( ULong w64 ) {
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUShort(hi32 >> 16);
+}
+static inline UShort sel16x4_2 ( ULong w64 ) {
+   UInt hi32 = toUInt(w64 >> 32);
+   return toUShort(hi32);
+}
+static inline UShort sel16x4_1 ( ULong w64 ) {
+   UInt lo32 = toUInt(w64);
+   return toUShort(lo32 >> 16);
+}
+static inline UShort sel16x4_0 ( ULong w64 ) {
+   UInt lo32 = toUInt(w64);
+   return toUShort(lo32);
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+static inline ULong g_calculate_sse_phminposuw ( ULong sLo, ULong sHi )
+{
+   UShort t, min;
+   UInt   idx;
+   t = sel16x4_0(sLo); if (True)    { min = t; idx = 0; }
+   t = sel16x4_1(sLo); if (t < min) { min = t; idx = 1; }
+   t = sel16x4_2(sLo); if (t < min) { min = t; idx = 2; }
+   t = sel16x4_3(sLo); if (t < min) { min = t; idx = 3; }
+   t = sel16x4_0(sHi); if (t < min) { min = t; idx = 4; }
+   t = sel16x4_1(sHi); if (t < min) { min = t; idx = 5; }
+   t = sel16x4_2(sHi); if (t < min) { min = t; idx = 6; }
+   t = sel16x4_3(sHi); if (t < min) { min = t; idx = 7; }
+   return ((ULong)(idx << 16)) | ((ULong)min);
+}
 
 static inline ULong sad_8x4 ( ULong xx, ULong yy )
 {

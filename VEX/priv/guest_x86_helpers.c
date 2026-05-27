@@ -2661,23 +2661,6 @@ static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
 }
 
-static inline UShort sel16x4_3 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUShort(hi32 >> 16);
-}
-static inline UShort sel16x4_2 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUShort(hi32);
-}
-static inline UShort sel16x4_1 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUShort(lo32 >> 16);
-}
-static inline UShort sel16x4_0 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUShort(lo32);
-}
-
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong x86g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 {

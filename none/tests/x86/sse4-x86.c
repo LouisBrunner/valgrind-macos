@@ -264,6 +264,7 @@ int main(void)
    test_PACKUSDW();
    test_POPCNTL_x86();
    test_POPCNTW_x86();
+   test_PHMINPOSUW();
 
    return 0;
 }

@@ -36,7 +36,7 @@ typedef
    }
    RMArgs;
 
-static UChar randUChar ( void )
+static inline UChar randUChar ( void )
 {
    static UInt seed = 80021;
    seed = 1103515245 * seed + 12345;
@@ -44,7 +44,7 @@ static UChar randUChar ( void )
 }
 
 
-static ULong randULong ( void )
+static inline ULong randULong ( void )
 {
    Int i;
    ULong r = 0;
@@ -54,7 +54,7 @@ static ULong randULong ( void )
    return r;
 }
 
-static UInt randUInt ( void )
+static inline UInt randUInt ( void )
 {
    Int i;
    UInt r = 0;
@@ -1735,6 +1735,734 @@ static inline void test_PHMINPOSUW ( void )
    memset(src, 0x55, sizeof(src));
    memset(dst, 0xAA, sizeof(dst));
    DO_mandr_r("phminposuw", src, dst);
+}
+
+/* ------------ ROUNDPD ------------ */
+
+static inline void do_ROUNDPD_000 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST      "\n\t"
+         "roundpd $0, (%0), %%" XMMREG_DST  "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"   "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundpd $0, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"    "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPD_001 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundpd $1, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"  "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundpd $1, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"    "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPD_010 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundpd $2, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"  "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundpd $2, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"    "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPD_011 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundpd $3, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"  "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundpd $3, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"    "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPD_1XX ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundpd $4, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"  "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundpd $4, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ", (%1)"    "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void test_ROUNDPD_w_immediate_rounding ( void )
+{
+   double vals[22];
+   Int i = 0;
+   vals[i++] = 0.0;
+   vals[i++] = -0.0;
+   vals[i++] = mkPosInf();
+   vals[i++] = mkNegInf();
+   vals[i++] = mkPosNan();
+   vals[i++] = mkNegNan();
+   vals[i++] = -1.3;
+   vals[i++] = -1.1;
+   vals[i++] = -0.9;
+   vals[i++] = -0.7;
+   vals[i++] = -0.50001;
+   vals[i++] = -0.49999;
+   vals[i++] = -0.3;
+   vals[i++] = -0.1;
+   vals[i++] = 0.1;
+   vals[i++] = 0.3;
+   vals[i++] = 0.49999;
+   vals[i++] = 0.50001;
+   vals[i++] = 0.7;
+   vals[i++] = 0.9;
+   vals[i++] = 1.1;
+   vals[i++] = 1.3;
+   assert(i == 22);
+
+   for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
+      __attribute__ ( (aligned (16))) V128 src, dst;
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_000(False/*reg*/, &src, &dst);
+      printf("r roundpd_000  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_000(True/*mem*/, &src, &dst);
+      printf("m roundpd_000  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_001(False/*reg*/, &src, &dst);
+      printf("r roundpd_001  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_001(True/*mem*/, &src, &dst);
+      printf("m roundpd_001  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_010(False/*reg*/, &src, &dst);
+      printf("r roundpd_010  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_010(True/*mem*/, &src, &dst);
+      printf("m roundpd_010  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_011(False/*reg*/, &src, &dst);
+      printf("r roundpd_011  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 8);
+      memcpy(&src[8], &vals[(i+11)%22], 8);
+      do_ROUNDPD_011(True/*mem*/, &src, &dst);
+      printf("m roundpd_011  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      printf("  ");
+      print_double_to_double(vals[i], *(double*)(&dst[0]));
+      printf("   ");
+      print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+      printf("\n");
+   }
+}
+
+static inline void test_ROUNDPD_w_mxcsr_rounding ( void )
+{
+   UInt rm;
+   double vals[22];
+   Int i = 0;
+   vals[i++] = 0.0;
+   vals[i++] = -0.0;
+   vals[i++] = mkPosInf();
+   vals[i++] = mkNegInf();
+   vals[i++] = mkPosNan();
+   vals[i++] = mkNegNan();
+   vals[i++] = -1.3;
+   vals[i++] = -1.1;
+   vals[i++] = -0.9;
+   vals[i++] = -0.7;
+   vals[i++] = -0.50001;
+   vals[i++] = -0.49999;
+   vals[i++] = -0.3;
+   vals[i++] = -0.1;
+   vals[i++] = 0.1;
+   vals[i++] = 0.3;
+   vals[i++] = 0.49999;
+   vals[i++] = 0.50001;
+   vals[i++] = 0.7;
+   vals[i++] = 0.9;
+   vals[i++] = 1.1;
+   vals[i++] = 1.3;
+   assert(i == 22);
+
+   rm = get_sse_roundingmode();
+   assert(rm == 0); // 0 == RN == default
+
+   for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
+      __attribute__ ( (aligned (16))) V128 src, dst;
+
+      for (rm = 0; rm <= 3; rm++) {
+         set_sse_roundingmode(rm);
+
+         randV128(&src);
+         randV128(&dst);
+         memcpy(&src[0], &vals[i], 8);
+         memcpy(&src[8], &vals[(i+11)%22], 8);
+         do_ROUNDPD_1XX(False/*reg*/, &src, &dst);
+         printf("r (rm=%u) roundpd_1XX  ", rm);
+         showV128(&src);
+         printf(" ");
+         showV128(&dst);
+         printf("  ");
+         print_double_to_double(vals[i], *(double*)(&dst[0]));
+         printf("   ");
+         print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+         printf("\n");
+
+         randV128(&src);
+         randV128(&dst);
+         memcpy(&src[0], &vals[i], 8);
+         memcpy(&src[8], &vals[(i+11)%22], 8);
+         do_ROUNDPD_1XX(True/*mem*/, &src, &dst);
+         printf("m (rm=%u) roundpd_1XX  ", rm);
+         showV128(&src);
+         printf(" ");
+         showV128(&dst);
+         printf("  ");
+         print_double_to_double(vals[i], *(double*)(&dst[0]));
+         printf("   ");
+         print_double_to_double(vals[(i+11)%22], *(double*)(&dst[8]));
+         printf("\n");
+      }
+   }
+
+   rm = get_sse_roundingmode();
+   assert(rm == 3);
+   set_sse_roundingmode(0);
+   rm = get_sse_roundingmode();
+   assert(rm == 0); // 0 == RN == default
+}
+
+/* ------------ ROUNDPS ------------ */
+
+static inline void do_ROUNDPS_000 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundps $0, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"   "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundps $0, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"     "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPS_001 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundps $1, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"   "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundps $1, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"     "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPS_010 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundps $2, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"   "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundps $2, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"     "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPS_011 ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundps $3, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"   "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundps $3, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"     "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void do_ROUNDPS_1XX ( Bool mem, V128* src, /*OUT*/V128* dst )
+{
+   if (mem) {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST     "\n\t"
+         "roundps $4, (%0), %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"   "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST
+      );
+   } else {
+      __asm__ __volatile__(
+         "movupd  (%1), %%" XMMREG_DST       "\n\t"
+         "movupd  (%0), %%xmm2"              "\n\t"
+         "roundps $4, %%xmm2, %%" XMMREG_DST "\n\t"
+         "movupd  %%" XMMREG_DST ",(%1)"     "\n"
+         : /*OUT*/
+         : /*IN*/ "r"(src), "r"(dst)
+         : /*TRASH*/ XMMREG_DST , "xmm2"
+      );
+   }
+}
+
+static inline void test_ROUNDPS_w_immediate_rounding ( void )
+{
+   float vals[22];
+   Int i = 0;
+   vals[i++] = 0.0;
+   vals[i++] = -0.0;
+   vals[i++] = mkPosInf();
+   vals[i++] = mkNegInf();
+   vals[i++] = mkPosNan();
+   vals[i++] = mkNegNan();
+   vals[i++] = -1.3;
+   vals[i++] = -1.1;
+   vals[i++] = -0.9;
+   vals[i++] = -0.7;
+   vals[i++] = -0.50001;
+   vals[i++] = -0.49999;
+   vals[i++] = -0.3;
+   vals[i++] = -0.1;
+   vals[i++] = 0.1;
+   vals[i++] = 0.3;
+   vals[i++] = 0.49999;
+   vals[i++] = 0.50001;
+   vals[i++] = 0.7;
+   vals[i++] = 0.9;
+   vals[i++] = 1.1;
+   vals[i++] = 1.3;
+   assert(i == 22);
+
+   for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
+      __attribute__ ( (aligned (16))) V128 src, dst;
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_000(False/*reg*/, &src, &dst);
+      printf("r roundps_000  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_000(True/*mem*/, &src, &dst);
+      printf("m roundps_000  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_001(False/*reg*/, &src, &dst);
+      printf("r roundps_001  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_001(True/*mem*/, &src, &dst);
+      printf("m roundps_001  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_010(False/*reg*/, &src, &dst);
+      printf("r roundps_010  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_010(True/*mem*/, &src, &dst);
+      printf("m roundps_010  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_011(False/*reg*/, &src, &dst);
+      printf("r roundps_011  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+
+      randV128(&src);
+      randV128(&dst);
+      memcpy(&src[0], &vals[i], 4);
+      memcpy(&src[4], &vals[(i+5)%22], 4);
+      memcpy(&src[8], &vals[(i+11)%22], 4);
+      memcpy(&src[12], &vals[(i+17)%22], 4);
+      do_ROUNDPS_011(True/*mem*/, &src, &dst);
+      printf("m roundps_011  ");
+      showV128(&src);
+      printf(" ");
+      showV128(&dst);
+      print_floats(vals[i], *(float*)(&dst[0]));
+      print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+      print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+      print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+      printf("\n");
+   }
+}
+
+static inline void test_ROUNDPS_w_mxcsr_rounding ( void )
+{
+   UInt rm;
+   float vals[22];
+   Int i = 0;
+   vals[i++] = 0.0;
+   vals[i++] = -0.0;
+   vals[i++] = mkPosInf();
+   vals[i++] = mkNegInf();
+   vals[i++] = mkPosNan();
+   vals[i++] = mkNegNan();
+   vals[i++] = -1.3;
+   vals[i++] = -1.1;
+   vals[i++] = -0.9;
+   vals[i++] = -0.7;
+   vals[i++] = -0.50001;
+   vals[i++] = -0.49999;
+   vals[i++] = -0.3;
+   vals[i++] = -0.1;
+   vals[i++] = 0.1;
+   vals[i++] = 0.3;
+   vals[i++] = 0.49999;
+   vals[i++] = 0.50001;
+   vals[i++] = 0.7;
+   vals[i++] = 0.9;
+   vals[i++] = 1.1;
+   vals[i++] = 1.3;
+   assert(i == 22);
+
+   rm = get_sse_roundingmode();
+   assert(rm == 0); // 0 == RN == default
+
+   for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
+      V128 src, dst;
+
+      for (rm = 0; rm <= 3; rm++) {
+         set_sse_roundingmode(rm);
+
+         randV128(&src);
+         randV128(&dst);
+         memcpy(&src[0], &vals[i], 4);
+         memcpy(&src[4], &vals[(i+5)%22], 4);
+         memcpy(&src[8], &vals[(i+11)%22], 4);
+         memcpy(&src[12], &vals[(i+17)%22], 4);
+         do_ROUNDPS_1XX(False/*reg*/, &src, &dst);
+         printf("r (rm=%u) roundps_1XX  ", rm);
+         showV128(&src);
+         printf(" ");
+         showV128(&dst);
+         print_floats(vals[i], *(float*)(&dst[0]));
+         print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+         print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+         print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+         printf("\n");
+
+         randV128(&src);
+         randV128(&dst);
+         memcpy(&src[0], &vals[i], 4);
+         memcpy(&src[4], &vals[(i+5)%22], 4);
+         memcpy(&src[8], &vals[(i+11)%22], 4);
+         memcpy(&src[12], &vals[(i+17)%22], 4);
+         do_ROUNDPS_1XX(True/*mem*/, &src, &dst);
+         printf("m (rm=%u) roundps_1XX  ", rm);
+         showV128(&src);
+         printf(" ");
+         showV128(&dst);
+         print_floats(vals[i], *(float*)(&dst[0]));
+         print_floats(vals[(i+5)%22], *(float*)(&dst[4]));
+         print_floats(vals[(i+11)%22], *(float*)(&dst[8]));
+         print_floats(vals[(i+17)%22], *(float*)(&dst[12]));
+         printf("\n");
+      }
+   }
+
+   rm = get_sse_roundingmode();
+   assert(rm == 3);
+   set_sse_roundingmode(0);
+   rm = get_sse_roundingmode();
+   assert(rm == 0); // 0 == RN == default
 }
 
 #endif /* __SSE4_COMMON_H */

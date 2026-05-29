@@ -32,6 +32,8 @@
 #ifndef __VKI_DARWIN_H
 #define __VKI_DARWIN_H
 
+#include "config.h"
+
 /* struct __darwin_ucontext isn't fully declared without
  * this definition.  It's crazy but there it is.  */
 #ifndef _XOPEN_SOURCE

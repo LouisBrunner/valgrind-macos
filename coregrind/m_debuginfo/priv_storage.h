@@ -48,6 +48,7 @@
 #include "pub_core_deduppoolalloc.h" // DedupPoolAlloc
 #include "priv_d3basics.h"     // GExpr et al.
 #include "priv_image.h"        // DiCursor
+#include "config.h"            // DARWIN_VERS
 
 /* --------------------- SYMBOLS --------------------- */
 

@@ -51,6 +51,7 @@
 
 #include "mc_include.h"
 #include "memcheck.h"   /* for client requests */
+#include "config.h"     /* DARWIN_VERS */
 
 /* Set to 1 to do a little more sanity checking */
 #define VG_DEBUG_MEMORY 0

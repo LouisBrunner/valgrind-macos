@@ -287,9 +287,7 @@ DECL_TEMPLATE(darwin, exchangedata);            // 223
 // NYI searchfs 225
 // GEN delete 226
 // NYI copyfile 226
-#if DARWIN_VERS >= DARWIN_10_6
 DECL_TEMPLATE(darwin, fgetattrlist);            // 228
-#endif
 // 229
 // GEN poll 230
 DECL_TEMPLATE(darwin, watchevent);              // 231
@@ -353,9 +351,7 @@ DECL_TEMPLATE(darwin, chmod_extended);          // 282
 DECL_TEMPLATE(darwin, fchmod_extended);         // 283
 DECL_TEMPLATE(darwin, access_extended);         // 284
 DECL_TEMPLATE(darwin, settid);                  // 285
-#if DARWIN_VERS >= DARWIN_10_6
 DECL_TEMPLATE(darwin, gettid);                  // 286
-#endif
 // NYI setsgroups 287
 // NYI getsgroups 288
 // NYI setwgroups 289
@@ -367,7 +363,6 @@ DECL_TEMPLATE(darwin, gettid);                  // 286
 DECL_TEMPLATE(darwin, shared_region_check_np); // 294
 #endif
 // NYI shared_region_map_np 295
-#if DARWIN_VERS >= DARWIN_10_6
 // NYI vm_pressure_monitor 296
 // NYI psynch_rw_longrdlock 297
 // NYI psynch_rw_yieldwrlock 298
@@ -382,29 +377,9 @@ DECL_TEMPLATE(darwin, psynch_rw_rdlock);       // 306
 DECL_TEMPLATE(darwin, psynch_rw_wrlock);       // 307
 DECL_TEMPLATE(darwin, psynch_rw_unlock);       // 308
 // NYI psynch_rw_unlock2 309
-#else
-// old load_shared_file
-// old reset_shared_file
-// old new_system_shared_regions
-// old shared_region_map_file_np
-// old shared_region_make_private_np
-// NYI __pthread_mutex_destroy 301
-// NYI __pthread_mutex_init 302
-// NYI __pthread_mutex_lock 303
-// NYI __pthread_mutex_trylock 304
-// NYI __pthread_mutex_unlock 305
-// NYI __pthread_cond_init 306
-// NYI __pthread_cond_destroy 307
-// NYI __pthread_cond_broadcast 308
-// NYI __pthread_cond_signal 309
-#endif
 // NYI getsid 310
 // NYI settid_with_pid 311
-#if DARWIN_VERS >= DARWIN_10_7
 DECL_TEMPLATE(darwin, psynch_cvclrprepost);    // 312
-#else
-// NYI __pthread_cond_timedwait 312
-#endif
 // NYI aio_fsync 313
 DECL_TEMPLATE(darwin, aio_return);             // 314
 DECL_TEMPLATE(darwin, aio_suspend);            // 315
@@ -464,9 +439,7 @@ DECL_TEMPLATE(darwin, workq_ops);               // 368
 DECL_TEMPLATE(darwin, kevent64);                // 369
 // 370
 // 371
-#if DARWIN_VERS >= DARWIN_10_6
 DECL_TEMPLATE(darwin, __thread_selfid);         // 372
-#endif
 // 373
 #if DARWIN_VERS >= DARWIN_10_11
 DECL_TEMPLATE(darwin, kevent_qos);              // 374

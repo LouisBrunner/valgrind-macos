@@ -2170,10 +2170,8 @@ extern int * __error(void) __attribute__((weak));
  POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
 
 #elif defined(VGO_darwin)
-#if (DARWIN_VERS >= DARWIN_10_6)
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);
  POSIX_MEMALIGN(SO_SYN_MALLOC,    posix_memalign);
-#endif
 
 #elif defined(VGO_solaris)
  POSIX_MEMALIGN(VG_Z_LIBC_SONAME, posix_memalign);

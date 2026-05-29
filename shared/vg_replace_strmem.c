@@ -1173,9 +1173,6 @@ static inline void my_exit ( int x )
  MEMCPY(VG_Z_LD_ELF32_SO_1, memcpy)
 
 #elif defined(VGO_darwin)
-# if DARWIN_VERS <= DARWIN_10_6
-  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
-# endif
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse3x) /* memcpy$VARIANT$sse3x */
  MEMCPY(VG_Z_LIBC_SONAME,  memcpyZDVARIANTZDsse42) /* memcpy$VARIANT$sse42 */
  MEMCPY(VG_Z_LIBSYSTEM_C_SONAME, __memcpy_chk)
@@ -1439,9 +1436,6 @@ static inline void my_exit ( int x )
  MEMMOVE(VG_Z_LIBC_SONAME,   memmove)
 
 #elif defined(VGO_darwin)
-# if DARWIN_VERS <= DARWIN_10_6
-  MEMMOVE(VG_Z_LIBC_SONAME, memmove)
-# endif
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse3x) /* memmove$VARIANT$sse3x */
  MEMMOVE(VG_Z_LIBC_SONAME,  memmoveZDVARIANTZDsse42) /* memmove$VARIANT$sse42 */
 # if DARWIN_VERS >= DARWIN_10_9

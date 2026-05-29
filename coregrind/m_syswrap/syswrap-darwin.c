@@ -3451,9 +3451,7 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
    } attrspec;
    static const attrspec commonattr[] = {
       // This order is important.
-#if DARWIN_VERS >= DARWIN_10_6
       { ATTR_CMN_RETURNED_ATTRS,  sizeof(attribute_set_t) }, 
-#endif
       { ATTR_CMN_NAME,            -1 },
       { ATTR_CMN_DEVID,           sizeof(dev_t) },
       { ATTR_CMN_FSID,            sizeof(fsid_t) },
@@ -3486,9 +3484,7 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_CMN_GRPUUID,         sizeof(guid_t) },
       { ATTR_CMN_FILEID,          sizeof(uint64_t) },
       { ATTR_CMN_PARENTID,        sizeof(uint64_t) },
-#if DARWIN_VERS >= DARWIN_10_6
       { ATTR_CMN_FULLPATH,        -1 }, 
-#endif
 #if DARWIN_VERS >= DARWIN_10_8
       { ATTR_CMN_ADDEDTIME,       -1 },
 #endif
@@ -3519,9 +3515,7 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
       { ATTR_VOL_MOUNTEDDEVICE,   -1 }, 
       { ATTR_VOL_ENCODINGSUSED,   sizeof(uint64_t) }, 
       { ATTR_VOL_CAPABILITIES,    sizeof(vol_capabilities_attr_t) }, 
-#if DARWIN_VERS >= DARWIN_10_6
       { ATTR_VOL_UUID,            sizeof(uuid_t) }, 
-#endif
 #if DARWIN_VERS >= DARWIN_10_15
       { ATTR_VOL_QUOTA_SIZE,      sizeof(off_t) },
       { ATTR_VOL_RESERVED_SIZE,   sizeof(off_t) },
@@ -3589,7 +3583,6 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
    d = attrBuf;
    dend = d + attrBufSize;
 
-#if DARWIN_VERS >= DARWIN_10_6
    // ATTR_CMN_RETURNED_ATTRS tells us what's really here, if set
    if (a[0] & ATTR_CMN_RETURNED_ATTRS) {
        // fixme range check this?
@@ -3597,7 +3590,6 @@ static void scan_attrlist(ThreadId tid, struct vki_attrlist *attrList,
        fn(tid, d, sizeof(attribute_set_t));
        VG_(memcpy)(a, d, sizeof(a));
    }
-#endif
 
    for (g = 0; g < 5; g++) {
       for (i = 0; attrdefs[g][i].attrBit; i++) {
@@ -4637,9 +4629,7 @@ PRE(auditon)
    case VKI_A_SETCLASS:
    case VKI_A_SETPMASK:
    case VKI_A_SETFSIZE:
-#if DARWIN_VERS >= DARWIN_10_6
    case VKI_A_SENDTRIGGER:
-#endif
       // kernel reads data..data+length
       PRE_MEM_READ("auditon(data)", ARG2, ARG3);
       break;
@@ -4658,9 +4648,7 @@ PRE(auditon)
    case VKI_A_GETCLASS:
    case VKI_A_GETPINFO:
    case VKI_A_GETPINFO_ADDR:
-#if DARWIN_VERS >= DARWIN_10_6
    case VKI_A_GETSINFO_ADDR:
-#endif
       // kernel reads and writes data..data+length
       // GrP fixme be precise about what gets read and written
       PRE_MEM_READ("auditon(data)", ARG2, ARG3);
@@ -4694,9 +4682,7 @@ POST(auditon)
    case VKI_A_SETCLASS:
    case VKI_A_SETPMASK:
    case VKI_A_SETFSIZE:
-#if DARWIN_VERS >= DARWIN_10_6
    case VKI_A_SENDTRIGGER:
-#endif
       // kernel reads data..data+length
       break;
 
@@ -4714,9 +4700,7 @@ POST(auditon)
    case VKI_A_GETCLASS:
    case VKI_A_GETPINFO:
    case VKI_A_GETPINFO_ADDR:
-#if DARWIN_VERS >= DARWIN_10_6
    case VKI_A_GETSINFO_ADDR:
-#endif
       // kernel reads and writes data..data+length
       // GrP fixme be precise about what gets read and written
       POST_MEM_WRITE(ARG2, ARG3);
@@ -9909,8 +9893,6 @@ PRE(thread_fast_set_cthread_self)
    Added for OSX 10.6 (Snow Leopard)
    ------------------------------------------------------------------ */
 
-#if DARWIN_VERS >= DARWIN_10_6
-
 PRE(psynch_mutexwait)
 {
    PRINT("psynch_mutexwait(BOGUS)");
@@ -10050,14 +10032,10 @@ POST(fgetattrlist)
    }
 }
 
-#endif /* DARWIN_VERS >= DARWIN_10_6 */
-
 
 /* ---------------------------------------------------------------------
    Added for OSX 10.7 (Lion)
    ------------------------------------------------------------------ */
-
-#if DARWIN_VERS >= DARWIN_10_7
 
 PRE(psynch_cvclrprepost)
 {
@@ -10067,9 +10045,6 @@ PRE(psynch_cvclrprepost)
 POST(psynch_cvclrprepost)
 {
 }
-
-#endif /* DARWIN_VERS >= DARWIN_10_7 */
-
 
 /* ---------------------------------------------------------------------
    Added for OSX 10.8 (Mountain Lion)
@@ -11723,11 +11698,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENXY(__NR_dup,         sys_dup), 
    MACXY(__NR_pipe,        pipe), 
    GENX_(__NR_getegid,     sys_getegid), 
-#if DARWIN_VERS >= DARWIN_10_7
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(44)),    // old profil
-#else
-// _____(__NR_profil),
-#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(45)),    // old ktrace
    MACXY(__NR_sigaction,   sigaction), 
    GENX_(__NR_getgid,      sys_getgid), 
@@ -11878,11 +11849,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_sigreturn,   sigreturn), 
 // _____(__NR_chud), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(186)),   // ??? 
-#if DARWIN_VERS >= DARWIN_10_6
-// _____(__NR_fdatasync), 
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(187)),   // ??? 
-#endif
+// _____(__NR_fdatasync),
    GENXY(__NR_stat,        sys_newstat), 
    GENXY(__NR_fstat,       sys_newfstat), 
    GENXY(__NR_lstat,       sys_newlstat), 
@@ -11909,13 +11876,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_ATPgetreq), 
 // _____(__NR_ATPgetrsp), 
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(213)),   // Reserved for AppleTalk
-#if DARWIN_VERS >= DARWIN_10_6
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(214)),   // old kqueue_from_portset_np
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(215)),   // old kqueue_portset_np
-#else
-// _____(__NR_kqueue_from_portset_np), 
-// _____(__NR_kqueue_portset_np), 
-#endif
     MACXY(__NR_open_dprotected_np, open_dprotected_np),   // 216
 // _____(__NR_statv), 
 // _____(__NR_lstatv), 
@@ -11927,14 +11889,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(224)),   // checkuseraccess
 // _____(__NR_searchfs), 
    GENX_(__NR_delete,      sys_unlink), 
-// _____(__NR_copyfile), 
-#if DARWIN_VERS >= DARWIN_10_6
+// _____(__NR_copyfile),
    MACXY(__NR_fgetattrlist, fgetattrlist), // 228
 // _____(__NR_fsetattrlist),
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(228)),   // ?? 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(229)),   // ?? 
-#endif
    GENXY(__NR_poll,        sys_poll), 
    MACX_(__NR_watchevent,  watchevent), 
    MACXY(__NR_waitevent,   waitevent), 
@@ -11949,12 +11906,8 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_flistxattr,  flistxattr), 
    MACXY(__NR_fsctl,       fsctl), 
    MACX_(__NR_initgroups,  initgroups), 
-   MACXY(__NR_posix_spawn, posix_spawn), 
-#if DARWIN_VERS >= DARWIN_10_6
+   MACXY(__NR_posix_spawn, posix_spawn),
 // _____(__NR_ffsctl), 
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(245)),   // ???
-#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(246)),   // ???
 // _____(__NR_nfsclnt), 
 // _____(__NR_fhopen), 
@@ -12010,7 +11963,6 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_shared_region_check_np, shared_region_check_np), // 294
 #endif
 // _____(__NR_shared_region_map_np),
-#if DARWIN_VERS >= DARWIN_10_6
 // _____(__NR_vm_pressure_monitor), 
 // _____(__NR_psynch_rw_longrdlock), 
 // _____(__NR_psynch_rw_yieldwrlock), 
@@ -12025,29 +11977,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACXY(__NR_psynch_rw_wrlock, psynch_rw_wrlock), // 307
    MACXY(__NR_psynch_rw_unlock, psynch_rw_unlock), // 308
 // _____(__NR_psynch_rw_unlock2), 
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(296)),   // old load_shared_file 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(297)),   // old reset_shared_file 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(298)),   // old new_system_shared_regions 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(299)),   // old shared_region_map_file_np 
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(300)),   // old shared_region_make_private_np
-// _____(__NR___pthread_mutex_destroy), 
-// _____(__NR___pthread_mutex_init), 
-// _____(__NR___pthread_mutex_lock), 
-// _____(__NR___pthread_mutex_trylock), 
-// _____(__NR___pthread_mutex_unlock), 
-// _____(__NR___pthread_cond_init), 
-// _____(__NR___pthread_cond_destroy), 
-// _____(__NR___pthread_cond_broadcast), 
-// _____(__NR___pthread_cond_signal), 
-#endif
 // _____(__NR_getsid), 
 // _____(__NR_settid_with_pid), 
-#if DARWIN_VERS >= DARWIN_10_7
    MACXY(__NR_psynch_cvclrprepost, psynch_cvclrprepost), // 312
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)),   // old __pthread_cond_timedwait
-#endif
 // _____(__NR_aio_fsync),
    MACX_(__NR_aio_return,     aio_return),
    MACX_(__NR_aio_suspend,    aio_suspend),
@@ -12110,18 +12042,10 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    MACX_(__NR_bsdthread_register, bsdthread_register), 
    MACX_(__NR_workq_open,  workq_open), 
    MACXY(__NR_workq_ops,   workq_ops), 
-#if DARWIN_VERS >= DARWIN_10_6
    MACXY(__NR_kevent64,      kevent64), 
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(369)),   // ???
-#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(370)),   // old semwait_signal
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(371)),   // old semwait_signal_nocancel
-#if DARWIN_VERS >= DARWIN_10_6
    MACX_(__NR___thread_selfid, __thread_selfid), 
-#else
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(372)),   // ???
-#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(373)),   // ???
 #if DARWIN_VERS < DARWIN_10_11
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(374)),   // ???
@@ -12181,11 +12105,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR___mac_mount),
 // _____(__NR___mac_get_mount),
 // _____(__NR___mac_getfsstat),
-#if DARWIN_VERS >= DARWIN_10_6
    MACXY(__NR_fsgetpath, fsgetpath), 
    MACXY(__NR_audit_session_self, audit_session_self),
 // _____(__NR_audit_session_join),
-#endif
 #if DARWIN_VERS >= DARWIN_10_9
     MACX_(__NR_fileport_makeport, fileport_makeport),
 // _____(__NR_fileport_makefd),                         // 431

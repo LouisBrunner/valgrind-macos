@@ -442,11 +442,7 @@
 #else
 			/* 186  */
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR_fdatasync      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(187)
-#else
-			/* 187  */
-#endif
 #define	__NR_stat           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(188)
 #define	__NR_fstat          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(189)
 #define	__NR_lstat          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(190)
@@ -473,13 +469,8 @@
 #define	__NR_ATPgetreq      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(211)
 #define	__NR_ATPgetrsp      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(212)
 			/* 213  Reserved for AppleTalk */
-#if DARWIN_VERS >= DARWIN_10_6
                         /* 214  old kqueue_from_portset_np*/
                         /* 215  old kqueue_portset_np*/
-#else
-#define __NR_kqueue_from_portset_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(214)
-#define __NR_kqueue_portset_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(215)
-#endif
 #define	__NR_open_dprotected_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(216)
 #define	__NR_statv          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(217)
 #define	__NR_lstatv         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(218)
@@ -492,13 +483,8 @@
 #define	__NR_searchfs       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(225)
 #define	__NR_delete         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(226)
 #define	__NR_copyfile       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(227)
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR_fgetattrlist   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(228)
 #define __NR_fsetattrlist   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(229)
-#else
-			/* 228  */
-			/* 229  */
-#endif
 #define	__NR_poll           VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(230)
 #define	__NR_watchevent     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(231)
 #define	__NR_waitevent      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(232)
@@ -514,11 +500,7 @@
 #define	__NR_fsctl          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(242)
 #define	__NR_initgroups     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(243)
 #define __NR_posix_spawn    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(244)
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR_ffsctl         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(245)
-#else
-			/* 245  */
-#endif
 			/* 246  */
 #define __NR_nfsclnt        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(247)
 #define __NR_fhopen         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(248)
@@ -575,7 +557,6 @@
 #define	__NR_identitysvc    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(293)
 #define	__NR_shared_region_check_np VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(294)
 #define	__NR_shared_region_map_np   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(295)
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR_vm_pressure_monitor    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(296)
 #define __NR_psynch_rw_longrdlock   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(297)
 #define __NR_psynch_rw_yieldwrlock  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(298)
@@ -590,29 +571,9 @@
 #define __NR_psynch_rw_wrlock       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)
 #define __NR_psynch_rw_unlock       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)
 #define __NR_psynch_rw_unlock2      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(309)
-#else
-			/* 296  old load_shared_file */
-			/* 297  old reset_shared_file */
-			/* 298  old new_system_shared_regions */
-			/* 299  old shared_region_map_file_np */
-			/* 300  old shared_region_make_private_np */
-#define __NR___pthread_mutex_destroy  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(301)
-#define __NR___pthread_mutex_init     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(302)
-#define __NR___pthread_mutex_lock     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(303)
-#define __NR___pthread_mutex_trylock  VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(304)
-#define __NR___pthread_mutex_unlock   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(305)
-#define __NR___pthread_cond_init      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(306)
-#define __NR___pthread_cond_destroy   VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(307)
-#define __NR___pthread_cond_broadcast VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(308)
-#define __NR___pthread_cond_signal    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(309)
-#endif
 #define	__NR_getsid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(310)
 #define	__NR_settid_with_pid VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(311)
-#if DARWIN_VERS >= DARWIN_10_7
 #define __NR_psynch_cvclrprepost VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(312)
-#else
-#define __NR___pthread_cond_timedwait VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(312)
-#endif
 #define	__NR_aio_fsync      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(313)
 #define	__NR_aio_return     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(314)
 #define	__NR_aio_suspend    VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(315)
@@ -670,18 +631,10 @@
 #define __NR_bsdthread_register VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(366)
 #define __NR_workq_open     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(367)
 #define __NR_workq_ops      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(368)
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR_kevent64       VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(369)
-#else
-			/* 369  */
-#endif
 			/* 370  */
 			/* 371  */
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR___thread_selfid VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(372)  // was UX64
-#else
-			/* 372  */
-#endif
 			/* 373  */
 #if DARWIN_VERS >= DARWIN_10_11
 #define	__NR_kevent_qos             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(374)
@@ -748,11 +701,9 @@
 #define __NR___mac_mount            VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(424)
 #define __NR___mac_get_mount        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(425)
 #define __NR___mac_getfsstat        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(426)
-#if DARWIN_VERS >= DARWIN_10_6
 #define __NR_fsgetpath              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(427)
 #define __NR_audit_session_self     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(428)
 #define __NR_audit_session_join     VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(429)
-#endif /* DARWIN_VERS >= DARWIN_10_6 */
 #if DARWIN_VERS >= DARWIN_10_9
 #define __NR_fileport_makeport      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(430)
 #define __NR_fileport_makefd        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(431)

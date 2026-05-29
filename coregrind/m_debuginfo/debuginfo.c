@@ -1575,7 +1575,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    }
 
    Bool do_nothing = True;
-#  if defined(VGP_x86_darwin) && (DARWIN_VERS >= DARWIN_10_7)
+#  if defined(VGP_x86_darwin)
    do_nothing = False;
 #  endif
    if (do_nothing /* wrong platform */) {

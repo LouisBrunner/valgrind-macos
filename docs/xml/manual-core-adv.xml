@@ -138,6 +138,17 @@ tool-specific macros).</para>
     </para>
    </listitem>
   </varlistentry>
+  
+  <varlistentry>
+   <term><command><computeroutput>VALGRIND_RUNNING_VERSION</computeroutput></command>:</term>
+   <listitem>
+    <para>Returns the Valgrind version that this code is running under. 
+    Returns 0 if not running on Valgrind. The version number is expressed 
+    as a decimal number: Mmm where M is the major and mm the minor 
+    version of Valgrind e.g. 328 for version 3.28.
+    </para>
+   </listitem>
+  </varlistentry>
 
   <varlistentry>
    <term><command><computeroutput>VALGRIND_COUNT_ERRORS</computeroutput>:</command></term>

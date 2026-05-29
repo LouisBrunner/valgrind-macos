@@ -271,7 +271,9 @@ EXTRA_DIST = \
 	track_new.stderr.exp track_new.vgtest track_new.stderr.exp-illumos \
 	track_yes.vgtest track_high.vgtest \
 	track_yes.stderr.exp track_high.stderr.exp \
-	track_bad.vgtest track_bad.stderr.exp
+	track_bad.vgtest track_bad.stderr.exp \
+	valgrind_version.vgtest valgrind_version.stdout.exp \
+	valgrind_version.post.exp
 
 check_PROGRAMS = \
 	args \
@@ -331,7 +333,8 @@ check_PROGRAMS = \
         use_after_close \
 	track_new \
 	track_std \
-	track_bad
+	track_bad \
+	valgrind_version
 
 if HAVE_STATIC_LIBC
 if ! VGCONF_OS_IS_LINUX

@@ -1708,6 +1708,7 @@
 /none/tests/unit_debuglog
 /none/tests/use_after_close
 /none/tests/valgrind_cpp_test
+/none/tests/valgrind_version
 /none/tests/vgcore.*
 /none/tests/vgprintf
 /none/tests/vgprintf_nvalgrind

@@ -7173,6 +7173,7 @@ typedef
           VG_USERREQ__DISCARD_TRANSLATIONS     = 0x1002,
           VG_USERREQ__VALGRIND_REPLACES_MALLOC = 0x1003,
           VG_USERREQ__VALGRIND_GET_TOOLNAME    = 0x1004,
+          VG_USERREQ__VALGRIND_RUNNING_VERSION = 0x1005,
 
           /* These allow any function to be called from the simulated
              CPU but run on the real CPU.  Nb: the first arg passed to
@@ -7299,6 +7300,15 @@ typedef
                                     (zzbuflen),                        \
                                     0, 0, 0)
 
+/* Returns the Valgrind version that this code is running under. 
+   Returns 0 if not running on Valgrind. The version number is expressed 
+   as a decimal number: Mmm where M is the major and mm the minor 
+   version of Valgrind e.g. 328 for version 3.28. */
+#define VALGRIND_RUNNING_VERSION                                           \
+    (unsigned)VALGRIND_DO_CLIENT_REQUEST_EXPR(0 /* if not */,              \
+                                    VG_USERREQ__VALGRIND_RUNNING_VERSION,  \
+                                    0, 0, 0, 0, 0)                         \
+                                  
 #define VALGRIND_INNER_THREADS(_qzz_addr)                               \
    VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__INNER_THREADS,           \
                                    _qzz_addr, 0, 0, 0, 0)

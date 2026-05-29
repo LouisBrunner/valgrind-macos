@@ -285,7 +285,7 @@ ML_(notify_core_and_tool_of_madv_guard) ( Addr a, SizeT len, Bool install )
 }
 #endif
 
-#if HAVE_MREMAP
+#ifdef HAVE_MREMAP
 /* Expand (or shrink) an existing mapping, potentially moving it at
    the same time (controlled by the MREMAP_MAYMOVE flag).  Nightmare.
 */
@@ -3143,7 +3143,7 @@ POST(sys_madvise)
 }
 #endif
 
-#if HAVE_MREMAP
+#ifdef HAVE_MREMAP
 PRE(sys_mremap)
 {
    // Nb: this is different to the glibc version described in the man pages,

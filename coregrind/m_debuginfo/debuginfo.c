@@ -326,7 +326,7 @@ DebugInfo* alloc_DebugInfo( const HChar* filename )
       di->ddump_frames = VG_(clo_debug_dump_frames);
    }
 
-#if DARWIN_VERS >= DARWIN_11_00
+#if defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_11_00)
    di->from_memory = False;
 #endif
 

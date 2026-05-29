@@ -26,6 +26,8 @@
 #ifndef VKI_AMD64_FREEBSD_H
 #define VKI_AMD64_FREEBSD_H
 
+#define VKI_LITTLE_ENDIAN  1
+
 /* PAGE_SHIFT determines the page size. */
 #define VKI_PAGE_SHIFT  12UL
 #define VKI_PAGE_SIZE   (1UL << VKI_PAGE_SHIFT)

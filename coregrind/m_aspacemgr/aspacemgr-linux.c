@@ -3617,7 +3617,7 @@ const NSegment *VG_(am_extend_into_adjacent_reservation_client)( Addr addr,
 
 /* --- --- --- resizing/move a mapping --- --- --- */
 
-#if HAVE_MREMAP
+#ifdef HAVE_MREMAP
 
 /* This function grows a client mapping in place into an adjacent free segment.
    ADDR is the client mapping's start address and DELTA, which must be page

@@ -212,7 +212,7 @@ SysRes ML_(am_do_munmap_NO_NOTIFY)(Addr start, SizeT length)
    return VG_(do_syscall2)(__NR_munmap, (UWord)start, length );
 }
 
-#if HAVE_MREMAP
+#ifdef HAVE_MREMAP
 /* The following are used only to implement mremap(). */
 
 SysRes ML_(am_do_extend_mapping_NO_NOTIFY)( 

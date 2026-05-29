@@ -2017,6 +2017,24 @@ LZO_COMPILE_TIME_ASSERT_HEADER(sizeof(lzo_uintptr_t) >= sizeof(lzo_voidp))
 #  undef HAVE_MEMSET
 #endif
 
+// despite all of the above macro nastiness the code that
+// uses these macros still mixes up undefined and defined to 0
+#if !defined(HAVE_MEMCMP)
+#define HAVE_MEMCMP 0
+#endif
+
+#if !defined(HAVE_MEMCPY)
+#define HAVE_MEMCPY 0
+#endif
+
+#if !defined(HAVE_MEMMOVE)
+#define HAVE_MEMMOVE 0
+#endif
+
+#if !defined(HAVE_MEMSET)
+#define HAVE_MEMSET 0
+#endif
+
 #if !(HAVE_MEMCMP)
 #  undef memcmp
 #  define memcmp(a,b,c)         lzo_memcmp(a,b,c)

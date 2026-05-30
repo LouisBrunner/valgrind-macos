@@ -14,6 +14,10 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
 * ==================== TOOL CHANGES ===================
 
+* The massif ms_print script used to view results as text has a new
+  --peak-only option. This is intended for use in Continuous Integration
+  systems, making peak memory usage easier to parse.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

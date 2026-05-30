@@ -53,6 +53,11 @@
 #include "pub_core_ume.h"
 #include "pub_core_mach.h"
 
+/* Prior to OS X 10.10, CPU_TYPE_ARM64 is not defined in the system headers */
+#ifndef CPU_TYPE_ARM64
+#define CPU_TYPE_ARM64  (CPU_TYPE_ARM | CPU_ARCH_ABI64)
+#endif
+
 static struct {
    cpu_type_t cputype;
    const char *apple_name;     // e.g. x86_64

@@ -412,7 +412,7 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
       /* For whatever reason, tst->os_state.pthread appear to have a
          constant offset of 72 on 10.7, but zero on 10.6 and 10.5.  No
          idea why. */
-#     if DARWIN_VERS == DARWIN_VERS == DARWIN_10_8
+#     if DARWIN_VERS == DARWIN_10_8
       UWord magic_delta = 0x48;
 #     elif DARWIN_VERS == DARWIN_10_9 \
            || DARWIN_VERS == DARWIN_10_10 \

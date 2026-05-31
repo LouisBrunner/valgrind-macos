@@ -776,7 +776,8 @@ various places online.
 ]]></screen>
       Arguments of type <computeroutput>size_t</computeroutput> need to be replaced
       with <computeroutput>unsigned long</computeroutput> on 64bit platforms and <computeroutput>unsigned</computeroutput>
-      on 32bit platforms.
+      on 32bit platforms. macOS x86 is the exception to that rule, using
+      <computeroutput>unsigned long</computeroutput> for size_t.
       </para>
 
       <para><option>--alloc-fn</option> will work with inline functions.

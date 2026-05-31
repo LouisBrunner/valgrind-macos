@@ -8598,7 +8598,8 @@ DisResult disInstr_X86_WRK (
             UChar op2 = getIByte(delta+2);
             if ((op1 >= 0x70 && op1 <= 0x7F)
                 || (op1 == 0xE3)
-                || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)) {
+                || (op1 == 0x0F && op2 >= 0x80 && op2 <= 0x8F)
+                || (op1 == 0xff)) {
                if (0) vex_printf("vex x86->IR: ignoring branch hint\n");
             } else {
                /* All other CS override cases are not handled */

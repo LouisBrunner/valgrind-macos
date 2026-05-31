@@ -2389,6 +2389,7 @@ none/tests/freebsd/bug499212
 /none/tests/x86/bug135421-x86
 /none/tests/x86/bug137714-x86
 /none/tests/x86/bug152818-x86
+/none/tests/x86/bug520856-x86
 /none/tests/x86/cet_nops
 /none/tests/x86/cmpxchg8b
 /none/tests/x86/cpuid

@@ -37,6 +37,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 519613  Valgrind incorrectly unpacks the result of sys_port (port_getn)
         on error, leading to a ~60s wallclock time delay on every call
 520482  Advertise POPCNT on x86 via CPUID
+520856  unhandled instruction bytes: 0x2E 0xFF 0x14 0x85
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

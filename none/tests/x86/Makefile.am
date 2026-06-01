@@ -46,7 +46,7 @@ EXTRA_DIST = \
 	bug135421-x86.stderr.exp bug135421-x86.stdout.exp bug135421-x86.vgtest \
 	bug137714-x86.stdout.exp bug137714-x86.vgtest \
 	bug152818-x86.stderr.exp bug152818-x86.stdout.exp bug152818-x86.vgtest \
-	bug520856-x86.vgtest \
+	bug520856-x86.vgtest bug520856-x86.stdout.exp \
 	cet_nops.stdout.exp cet_nops.vgtest \
 	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
 	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \

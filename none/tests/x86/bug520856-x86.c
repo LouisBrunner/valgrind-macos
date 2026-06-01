@@ -1,27 +1,26 @@
-/* test_cs_jmp.c - regression test for CS-prefixed indirect jmp */
+/* Test for CS-prefixed indirect jmp.
+ * The previous version had a problem loading the skip address on illumos
+ * This version uses all inline asm and jumps around an int 3 to avoid
+ * crashing with SIGTRAP. Prints "ok" on success.
+*/
 #include <stdio.h>
 
 static void test(void)
 {
-   /* A CS-prefixed indirect jmp through a register is simpler:
-      2E FF E0 = cs jmp *%eax
-      This uses the same 0x2E/0xFF path without a complex SIB byte */
-   int dummy = (int)&&skip;
    __asm__ volatile (
-       "movl %0, %%eax\n\t"
-       ".byte 0x2E, 0xFF, 0xE0\n\t"   /* cs jmp *%eax */
-       :
-       : "r"(dummy)
-       : "eax"
+      "leal 1f, %%eax\n\t"
+      ".byte 0x2E, 0xFF, 0xE0\n\t"
+      ".int 3\n\t"
+      "1:\n\t"
+      :
+      :
+      : "eax"
    );
-   // should skip this
-   printf("failed\n");
-skip:
-   return;
 }
 
 int main(void)
 {
     test();
+    printf("ok\n");
     return 0;
 }

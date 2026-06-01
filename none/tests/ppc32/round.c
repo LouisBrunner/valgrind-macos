@@ -95,12 +95,8 @@ float norm_small;
 bool_t debug = FALSE;
 bool_t long_is_64_bits = sizeof(long) == 8;
 
-void assert_fail (msg, expr, file, line, fn)
-const char* msg;
-const char* expr;
-const char* file;
-int line;
-const char*fn;
+void assert_fail(const char *msg,
+	const char* expr, const char* file, int line, const char*fn)
 {
    printf( "\n%s: %s:%d (%s): Assertion `%s' failed.\n",
                msg, file, line, fn, expr );
@@ -227,7 +223,7 @@ int test_dbl_to_float_convert(char *msg, float *base)
 }
 
 void
-init()
+init(void)
 {
 	flt_overlay F;
 	dbl_overlay D;

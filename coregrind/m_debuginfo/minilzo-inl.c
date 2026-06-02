@@ -3960,7 +3960,8 @@ match:
                 m_pos -= t >> 2;
                 m_pos -= *ip++ << 2;
 #endif
-                TEST_LB(m_pos); NEED_OP(2);
+                TEST_LB(m_pos);
+                NEED_OP(2);
                 *op++ = *m_pos++; *op++ = *m_pos;
 #endif
                 goto match_done;
@@ -4373,7 +4374,9 @@ match:
                 }
                 t = (t >> 5) - 1;
 #endif
-                TEST_LB(m_pos); assert(t > 0); NEED_OP(t+3-1);
+                TEST_LB(m_pos);
+                assert(t > 0);
+                NEED_OP(t+3-1);
                 goto copy_match;
 #endif
             }
@@ -4486,7 +4489,8 @@ match:
                 m_pos -= t >> 2;
                 m_pos -= *ip++ << 2;
 #endif
-                TEST_LB(m_pos); NEED_OP(2);
+                TEST_LB(m_pos);
+                NEED_OP(2);
                 *op++ = *m_pos++; *op++ = *m_pos;
 #endif
                 goto match_done;
@@ -4499,7 +4503,9 @@ match:
 
 #else
 
-            TEST_LB(m_pos); assert(t > 0); NEED_OP(t+3-1);
+            TEST_LB(m_pos);
+            assert(t > 0);
+            NEED_OP(t+3-1);
 #if defined(LZO_UNALIGNED_OK_8) && defined(LZO_UNALIGNED_OK_4)
             if (op - m_pos >= 8)
             {

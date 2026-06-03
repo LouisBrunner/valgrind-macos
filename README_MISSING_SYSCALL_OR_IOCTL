@@ -5,7 +5,7 @@ You're probably reading this because Valgrind bombed out whilst
 running your program, and advised you to read this file.  The good
 news is that, in general, it's easy to write the missing syscall or
 ioctl wrappers you need, so that you can continue your debugging.  If
-you send the resulting patches to me, then you'll be doing a favour to
+you send the resulting patches to us, then you'll be doing a favour to
 all future Valgrind users too.
 
 Note that an "ioctl" is just a special kind of system call, really; so
@@ -49,7 +49,7 @@ The wrapper for the time system call looks like this:
   PRE(sys_time)
   {
      /* time_t time(time_t *t); */
-     PRINT("sys_time ( %p )",ARG1);
+     PRINT("sys_time ( %#" FMT_REGWORD "x )",ARG1);
      PRE_REG_READ1(long, "time", int *, t);
      if (ARG1 != 0) {
         PRE_MEM_WRITE( "time(t)", ARG1, sizeof(vki_time_t) );
@@ -64,8 +64,17 @@ The wrapper for the time system call looks like this:
   }
 
 The first thing we do happens before the syscall occurs, in the PRE() function.
-The PRE() function typically starts with invoking to the PRINT() macro. This
+The PRE() function typically starts with invoking the PRINT() macro. This
 PRINT() macro implements support for the --trace-syscalls command line option.
+In this case, ARG1 is a pointer and, instead of using the pointer format specifier
+%p, we use the hex number format %#x with the macro FMT_REGWORD. This macro will
+expand to "l" or "ll" corresponding to the register size for the platform being
+used. This is needed to make the code platform-independent so that it works for
+platforms such as N32 MIPS where the registers are 64 bits but pointers are
+32 bits. If the syscall wrapper that you are writing is either a generic wrapper
+or is for Linux, then you should use FMT_REGWORD for the register size. Even on
+other platforms it is better as it makes the code more future-proof.
+
 Next, the tool is told the return type of the syscall, that the syscall has
 one argument, the type of the syscall argument and that the argument is being
 read from a register:
@@ -89,16 +98,37 @@ the memory was written:
 
 The POST() function won't be called if the syscall failed, so you
 don't need to worry about checking that in the POST() function.
-(Note: this is sometimes a bug; some syscalls do return results when
+Note: this is sometimes a bug; some syscalls do return results when
 they "fail" - for example, nanosleep returns the amount of unslept
-time if interrupted. TODO: add another per-syscall flag for this
-case.)
+time if interrupted. Linux just uses a return code to indicate success
+or failure. This situation is a bit more complicated on non-Linux systems.
+On the other supported platforms, the carry flag is set to indicate
+failure. There are exceptions to that rule - syscalls that return
+failure error codes but do not set the carry flag. This kind of syscall
+is quite rare, so most of the time it is safe to assume that if the
+syscall fails then the POST will not be called.
 
 Note that we use the type 'vki_time_t'.  This is a copy of the kernel
 type, with 'vki_' prefixed.  Our copies of such types are kept in the
 appropriate vki*.h file(s).  We don't include kernel headers or glibc headers
 directly.
 
+There are occasions when you will need to dereference syscall arguments
+in the wrappers. For instance, the length of a piece of memory that needs
+to be instrumented by PRE_MEM_READ or PRE_MEM_WRITE may be in a field of
+a struct pointed to by another argument. Before you dereference that
+pointer, you should check that it is safe to do so by using
+'ML_(safe_to_deref)(start, size)'.
+
+When the argument of a syscall is a file descriptor (fd), there are several
+things that you need to do. You should check that it is valid using
+'ML_(fd_allowed)(fd, "description")' (where "description" is often the name
+of the syscall). Valgrind reserves a few fds for its own use and this check
+prevents things like the test executable closing the Valgrind log file.
+Similarly, system calls that open file descriptors should use POST_newFd_RES
+in their POST() function in order for Valgrind to optionally renumber the
+fd. Lastly, for opened fds 'ML_(record_fd_open_with_given_name)' should be called
+if the option 'VG_(clo_track_fds)' is true.
 
 Writing your own syscall wrappers (see below for ioctl wrappers)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,7 +263,22 @@ o For a door return wrapper the following parameters:
 
 There's a default case which may not be correct and you have to write a
 more specific case to get the right behaviour. Unless Valgrind's option
-'--sim-hints=lax-doors' is specified, the default case also spits a warning.
+'--sim-hints=lax-doors' is specified, the default case also spits out a warning.
+
+One other thing about Solaris is that syscalls are not considered public
+and stable. Solaris is closed source so we are dependent on help from
+Oracle in dealing with any new or changed syscalls. The open source fork
+of Solaris based on OpenIndiana is freely available which makes it easier
+to see what the syscalls are doing in the kernel.
+
+FreeBSD and Darwin syscall wrappers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+For more information on FreeBSD syscall wrappers see README.freebsd (some
+of the information there applies to all platforms).
+
+Information on Darwin syscalls is harder to obtain. One of the best sources
+is the XNU source. Not all Darwin components are open-sourced which makes
+the job a bit more difficult.
 
 As above, please create a bug report and attach the patch as described
 on http://www.valgrind.org.

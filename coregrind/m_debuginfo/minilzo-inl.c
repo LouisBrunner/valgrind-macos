@@ -4318,7 +4318,8 @@ first_literal_run:
         m_pos -= t >> 2;
         m_pos -= *ip++ << 2;
 #endif
-        TEST_LB(m_pos); NEED_OP(3);
+        TEST_LB(m_pos);
+        NEED_OP(3);
         *op++ = *m_pos++; *op++ = *m_pos++; *op++ = *m_pos;
 #endif
         goto match_done;

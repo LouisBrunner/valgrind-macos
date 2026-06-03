@@ -1515,7 +1515,7 @@ namespace test30 {
 
 const int N = 48;
 static int GLOB[N];
-volatile int BOUNDARY = 0;
+int BOUNDARY = 0;
 
 void Writer() {
   for (int i = 0; i < N; i++) {
@@ -1568,7 +1568,7 @@ namespace test31 {
 
 const int N = 48;
 static int GLOB[N];
-volatile int BOUNDARY = 0;
+int BOUNDARY = 0;
 
 void Writer1() {
   for (int i = 0; i < N; i++) {

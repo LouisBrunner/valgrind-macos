@@ -18,7 +18,7 @@ void *operator new[](size_t size)
 int main(int argc, char *argv[]) {
   Test *toto;
   int i;
-  volatile int j = 0;
+  int j = 0;
 
   toto = new Test[2];
 
@@ -28,4 +28,5 @@ int main(int argc, char *argv[]) {
     }
     //printf("%d : %08x %08x %08x %08x\n", i, toto[i].a, toto[i].b, toto[i].c, toto[i].d);
   }
+  return j;
 }

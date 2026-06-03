@@ -14,13 +14,13 @@
 // This function fails when compiled on clang version 10 or greater with -O2.
 // It's unused by the test but left here as a copy of the error in the bug
 // report https://bugs.kde.org/show_bug.cgi?id=432801
-void standalone() {
+size_t standalone(void) {
    struct sigaction act;
    if (sigaction(SIGTERM, 0, &act) == 1) {
-      return;
+      return 0U;
    }
    if (sigaction(SIGTERM, 0, &act) == 1) {
-      return;
+      return 0U;
    }
 
    char pattern[] = "\x1\x2\x3\x4\x5\x6\x7\x8\x9";
@@ -29,11 +29,12 @@ void standalone() {
    size_t hp=0;
    for (size_t i = 0; i < plen; ++i)
       hp += pattern[i];
-   volatile size_t j = 0;
+   size_t j = 0;
    if (j == hp % 10) {
       j++;
    }
    printf("%zd\n", hp);
+   return j;
 }
 
 typedef union V128 {

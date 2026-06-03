@@ -9,7 +9,7 @@
 /* Local variables. */
 
 static int s_i;
-static volatile int s_j;
+static int s_j;
 
 ANNOTATE_BENIGN_RACE_STATIC(s_i, "Benign because duplicate assignment.");
 

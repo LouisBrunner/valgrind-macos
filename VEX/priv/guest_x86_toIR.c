@@ -15525,8 +15525,15 @@ DisResult disInstr_X86_WRK (
             vpanic("disInstr(x86)(cpuid)");
 
          vassert(fName); vassert(fAddr);
-         d = unsafeIRDirty_0_N ( 0/*regparms*/, 
-                                 fName, fAddr, mkIRExprVec_1(IRExpr_GSPTR()) );
+         IRExpr** args = NULL;
+         if (fAddr == &x86g_dirtyhelper_CPUID_sse3) {
+            Bool hasLZCNT = (archinfo->hwcaps & VEX_HWCAPS_X86_LZCNT) != 0;
+            args = mkIRExprVec_2(IRExpr_GSPTR(),
+                                 mkIRExpr_HWord(hasLZCNT ? 1 : 0));
+         } else {
+            args = mkIRExprVec_1(IRExpr_GSPTR());
+         }
+         d = unsafeIRDirty_0_N ( 0/*regparms*/, fName, fAddr, args );
          /* declare guest state effects */
          d->nFxState = 4;
          vex_bzero(&d->fxState, sizeof(d->fxState));

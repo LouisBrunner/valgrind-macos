@@ -129,6 +129,7 @@ EXTRA_DIST = \
 	README.solaris \
 	README.freebsd \
 	NEWS.old \
+	NEWS.older \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec \

@@ -186,6 +186,7 @@ MANUAL_XML_FILES = $(myxmldir)/index.xml \
 		       $(top_srcdir)/AUTHORS \
 		       $(top_srcdir)/NEWS \
 		       $(top_srcdir)/NEWS.old \
+		       $(top_srcdir)/NEWS.older \
 		       $(top_srcdir)/README \
 		       $(top_srcdir)/README_MISSING_SYSCALL_OR_IOCTL \
 		       $(top_srcdir)/README_DEVELOPERS \

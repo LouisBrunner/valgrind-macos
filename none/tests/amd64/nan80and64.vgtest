@@ -1,1 +1,2 @@
 prog: nan80and64
+vgopts: -q

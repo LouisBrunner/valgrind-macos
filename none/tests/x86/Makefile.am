@@ -35,31 +35,31 @@ endif
 
 EXTRA_DIST = \
 	aad_aam.stdout.exp aad_aam.vgtest \
-	badseg.stderr.exp badseg.stdout.exp badseg.stdout.exp-solaris \
+	badseg.stdout.exp badseg.stdout.exp-solaris \
 	badseg.vgtest \
 	bswapw.stdout.exp bswapw.vgtest \
-	bt_everything.stderr.exp bt_everything.stdout.exp bt_everything.vgtest \
-	bt_literal.stderr.exp bt_literal.stdout.exp bt_literal.vgtest \
-	bug125959-x86.stderr.exp bug125959-x86.stdout.exp bug125959-x86.vgtest \
-	bug126147-x86.stderr.exp bug126147-x86.stdout.exp bug126147-x86.vgtest \
-	bug132813-x86.stderr.exp bug132813-x86.stdout.exp bug132813-x86.vgtest \
-	bug135421-x86.stderr.exp bug135421-x86.stdout.exp bug135421-x86.vgtest \
+	bt_everything.stdout.exp bt_everything.vgtest \
+	bt_literal.stdout.exp bt_literal.vgtest \
+	bug125959-x86.stdout.exp bug125959-x86.vgtest \
+	bug126147-x86.stdout.exp bug126147-x86.vgtest \
+	bug132813-x86.stdout.exp bug132813-x86.vgtest \
+	bug135421-x86.stdout.exp bug135421-x86.vgtest \
 	bug137714-x86.stdout.exp bug137714-x86.vgtest \
-	bug152818-x86.stderr.exp bug152818-x86.stdout.exp bug152818-x86.vgtest \
+	bug152818-x86.stdout.exp bug152818-x86.vgtest \
 	bug520856-x86.vgtest bug520856-x86.stdout.exp \
 	cet_nops.stdout.exp cet_nops.vgtest \
-	cmpxchg8b.stderr.exp cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
-	cpuid.stderr.exp cpuid.stdout.exp cpuid.vgtest \
+	cmpxchg8b.stdout.exp cmpxchg8b.vgtest \
+	cpuid.stdout.exp cpuid.vgtest \
 	cse_fail.stdout.exp cse_fail.vgtest \
 	faultstatus.disabled faultstatus.stderr.exp \
-	fb_test_i386.vgtest fb_test_i386.stderr.exp fb_test_i386.stdout.exp \
-	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
-	fpu_lazy_eflags.stderr.exp fpu_lazy_eflags.stdout.exp \
+	fb_test_i386.vgtest fb_test_i386.stdout.exp \
+	fcmovnu.vgtest fcmovnu.stdout.exp \
+	fpu_lazy_eflags.stdout.exp \
 	fpu_lazy_eflags.vgtest \
-	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
-	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
+	fxtract.stdout.exp fxtract.vgtest \
+	getseg.stdout.exp getseg.vgtest \
 	gnu_binutils_nop.vgtest \
-	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
+	incdec_alt.stdout.exp incdec_alt.vgtest \
 	int.stderr.exp int.disabled \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
@@ -67,20 +67,20 @@ EXTRA_DIST = \
 	insn_sse3.stdout.exp insn_sse3.vgtest \
 	insn_ssse3.stdout.exp insn_ssse3.vgtest \
 	jcxz.stdout.exp jcxz.vgtest \
-	lahf.stdout.exp lahf.stderr.exp lahf.vgtest \
-	looper.stderr.exp looper.stdout.exp looper.vgtest \
+	lahf.stdout.exp lahf.vgtest \
+	looper.stdout.exp looper.vgtest \
 	lzcnt32.stdout.exp lzcnt32.vgtest \
-	movx.stderr.exp movx.stdout.exp movx.vgtest \
+	movx.stdout.exp movx.vgtest \
 	movbe.stdout.exp movbe.vgtest \
-	pushpopseg.stderr.exp pushpopseg.stdout.exp pushpopseg.vgtest \
-	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
-	shift_ndep.stderr.exp shift_ndep.stdout.exp shift_ndep.vgtest \
+	pushpopseg.stdout.exp pushpopseg.vgtest \
+	sbbmisc.stdout.exp sbbmisc.vgtest \
+	shift_ndep.stdout.exp shift_ndep.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
 	sse4-x86.stdout.exp sse4-x86.vgtest \
-	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
-	x87trigOOR.vgtest x87trigOOR.stdout.exp x87trigOOR.stderr.exp \
+	x86locked.vgtest x86locked.stdout.exp \
+	x87trigOOR.vgtest x87trigOOR.stdout.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \
 	xadd.stdout.exp xadd.vgtest
 

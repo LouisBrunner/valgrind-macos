@@ -1,1 +1,2 @@
 prog: lsc2
+vgopts: -q

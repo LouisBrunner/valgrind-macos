@@ -20,13 +20,13 @@ EXTRA_DIST = \
 	proc_auxv_multiple.vgtest \
 	proc-cmdline-exe.stderr.exp-with-cmdline proc-cmdline-exe.stderr.exp-without-cmdline \
 	    proc-cmdline-exe.vgtest \
-	proc_psinfo.stderr.exp proc_psinfo.stdout.exp proc_psinfo.vgtest \
+	proc_psinfo.stdout.exp proc_psinfo.vgtest \
 	posix_spawn.stderr.exp  posix_spawn.vgtest \
 	pthread-stack.stderr.exp pthread-stack.vgtest \
-	readlinkat_self.stderr.exp readlinkat_self.vgtest \
+	readlinkat_self.vgtest \
 	reserve_sysstat_addr.map reserve_sysstat_addr.stderr.exp reserve_sysstat_addr.vgtest \
 	reserve_sysstat_zone_addr.map reserve_sysstat_zone_addr.stderr.exp reserve_sysstat_zone_addr.vgtest \
-	resolv.stdout.exp resolv.stderr.exp resolv.vgtest \
+	resolv.stdout.exp resolv.vgtest \
 	sigresend.stdout.exp sigresend.vgtest \
 	stack_overflow.stderr.exp stack_overflow.vgtest \
 	stack_prot.vgtest \

@@ -1,2 +1,3 @@
 prog: /bin/true
 post: ./bfp-emit.pl
+vgopts: -q

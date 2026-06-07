@@ -43,24 +43,24 @@ noinst_HEADERS = add.h and.h div.h dfp_utils.h insert.h mul.h opcodes.h \
 	or.h rounding.h sub.h svc.h table.h test.h vector.h xor.h
 
 EXTRA_DIST = \
-	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
-	bfp-arith.vgtest bfp-arith.stdout.exp bfp-arith.stderr.exp \
-	bfp-compare.vgtest bfp-compare.stdout.exp bfp-compare.stderr.exp \
-	bfp-convert.vgtest bfp-convert.stdout.exp bfp-convert.stderr.exp \
-	bfp-load.vgtest bfp-load.stdout.exp bfp-load.stderr.exp \
-	bfp-tdc.vgtest bfp-tdc.stdout.exp bfp-tdc.stderr.exp \
-	bfp-emit.vgtest bfp-emit.stderr.exp bfp-emit.post.exp \
-	bfp-XxC.vgtest bfp-XxC.stderr.exp bfp-XxC.post.exp \
-	cksm.vgtest cksm.stderr.exp \
-	flogr.vgtest flogr.stderr.exp \
+	bfp-arith.vgtest bfp-arith.stdout.exp \
+	bfp-compare.vgtest bfp-compare.stdout.exp \
+	bfp-convert.vgtest bfp-convert.stdout.exp \
+	bfp-load.vgtest bfp-load.stdout.exp \
+	bfp-tdc.vgtest bfp-tdc.stdout.exp \
+	bfp-emit.vgtest bfp-emit.post.exp \
+	bfp-XxC.vgtest  bfp-XxC.post.exp \
+	cksm.vgtest \
+	flogr.vgtest \
 	ecag.stdout.exp-z196 ecag.stdout.exp-zec12 \
 	ecag.stdout.exp-z13 ecag.stdout.exp-z14 ecag.stdout.exp-z15 \
 	ecag.stdout.exp-z16 ecag.stdout.exp-z17 \
 	op00.stderr.exp op00.vgtest \
-	dfp-XxC.vgtest dfp-XxC.stderr.exp dfp-XxC.post.exp \
-	dfp-XiC.vgtest dfp-XiC.stderr.exp dfp-XiC.post.exp \
+	op_exception.stderr.exp test_fork.stderr.exp \
+	dfp-XxC.vgtest dfp-XxC.post.exp \
+	dfp-XiC.vgtest dfp-XiC.post.exp \
 	stfle.stdout.exp-z16
 
 AM_CFLAGS    += @FLAG_M64@

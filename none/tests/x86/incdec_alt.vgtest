@@ -1,1 +1,2 @@
 prog: incdec_alt
+vgopts: -q

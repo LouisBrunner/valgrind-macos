@@ -1,2 +1,3 @@
 prog: gxx304
 post: rm -f pluto
+vgopts: -q

@@ -6,71 +6,69 @@ dist_noinst_SCRIPTS = filter_stderr
 noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h
 
 EXTRA_DIST = \
-	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
+	jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
 	jm-int.stdout.exp-LE-ISA3_0 \
-	jm-int-sh_algebraic.stderr.exp jm-int-sh_algebraic.stdout.exp \
+	jm-int-sh_algebraic.stdout.exp \
 	jm-int-sh_algebraic.stdout.exp-LE \
 	jm-int-sh_algebraic.stdout.exp-LE-ISA3_0 \
 	jm-int-sh_algebraic.vgtest \
-	jm-mfspr.stderr.exp jm-mfspr.stdout.exp jm-mfspr.stdout.exp-ALT \
+	jm-mfspr.stdout.exp jm-mfspr.stdout.exp-ALT \
 	jm-mfspr.vgtest \
-	jm-int_other.stderr.exp jm-int_other.stdout.exp jm-int_other.vgtest \
+	jm-int_other.stdout.exp jm-int_other.vgtest \
 	jm-int_other.stdout.exp-LE \
-	jm-fp.stderr.exp  jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \
-	jm-vmx.stderr.exp jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan jm-vmx.stdout.exp-LE \
+	jm-fp.stdout.exp  jm-fp.vgtest jm-fp.stdout.exp-LE jm-fp.stdout.exp-LE2 jm-fp.stdout.exp-BE2 \
+	jm-vmx.stdout.exp jm-vmx.stdout.exp_Minus_nan jm-vmx.stdout.exp-LE \
 	jm-vmx.vgtest \
-	jm-misc.stderr.exp jm-misc.stdout.exp jm-misc.vgtest \
-	lsw.stderr.exp lsw.stdout.exp lsw.vgtest \
+	jm-misc.stdout.exp jm-misc.vgtest \
+	lsw.stdout.exp lsw.vgtest \
 	std_reg_imm.vgtest std_reg_imm.stdout.exp std_reg_imm.stdout.exp-LE \
-	round.stderr.exp round.stdout.exp round.vgtest \
-	twi_tdi.stderr.exp twi_tdi.stdout.exp twi_tdi.vgtest \
-	tw_td.stderr.exp tw_td.stdout.exp tw_td.vgtest \
+	round.stdout.exp round.vgtest \
+	twi_tdi.stdout.exp twi_tdi.vgtest \
+	tw_td.stdout.exp tw_td.vgtest \
 	opcodes.h \
-	power6_bcmp.stderr.exp power6_bcmp.vgtest \
-	test_isa_2_06_part1.stderr.exp  test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
+	power6_bcmp.vgtest \
+	test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part1.stdout.exp-LE \
-	test_isa_2_06_part2.stderr.exp  test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
-	test_isa_2_06_part2-div.stderr.exp  test_isa_2_06_part2-div.stdout.exp \
+	test_isa_2_06_part2.stdout.exp  test_isa_2_06_part2.vgtest \
+	test_isa_2_06_part2-div.stdout.exp \
 	test_isa_2_06_part2-div.stdout.exp-LE-ISA3_0 test_isa_2_06_part2-div.vgtest \
-	test_isa_2_06_part3.stderr.exp  test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
-	test_isa_2_06_part3-div.stderr.exp  test_isa_2_06_part3-div.stdout.exp \
+	test_isa_2_06_part3.stdout.exp  test_isa_2_06_part3.vgtest \
+	test_isa_2_06_part3-div.stdout.exp \
 	test_isa_2_06_part3-div.stdout.exp-LE-ISA3_0  test_isa_2_06_part3-div.vgtest \
-	test_dfp1.stderr.exp test_dfp1.stdout.exp test_dfp1.vgtest \
-	test_dfp2.stderr.exp test_dfp2.stdout.exp test_dfp2.vgtest \
+	test_dfp1.stdout.exp test_dfp1.vgtest \
+	test_dfp2.stdout.exp test_dfp2.vgtest \
 	test_dfp2.stdout.exp_Without_dcffix \
-	test_dfp3.stderr.exp test_dfp3.stdout.exp test_dfp3.vgtest \
-	test_dfp4.stderr.exp test_dfp4.stdout.exp test_dfp4.vgtest \
-	test_dfp5.stderr.exp test_dfp5.stdout.exp test_dfp5.vgtest \
-	jm_vec_isa_2_07.stderr.exp jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.vgtest \
-	jm_fp_isa_2_07.stderr.exp jm_fp_isa_2_07.stdout.exp jm_fp_isa_2_07.vgtest \
-	jm_int_isa_2_07.stderr.exp jm_int_isa_2_07.vgtest \
+	test_dfp3.stdout.exp test_dfp3.vgtest \
+	test_dfp4.stdout.exp test_dfp4.vgtest \
+	test_dfp5.stdout.exp test_dfp5.vgtest \
+	jm_vec_isa_2_07.stdout.exp jm_vec_isa_2_07.vgtest \
+	jm_fp_isa_2_07.stdout.exp jm_fp_isa_2_07.vgtest \
+	jm_int_isa_2_07.vgtest \
 	jm_int_isa_2_07.stdout.exp  jm_int_isa_2_07.stdout.exp-LE \
-	test_isa_2_07_part2.stderr.exp test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
-	test_tm.stderr.exp test_tm.stdout.exp test_tm.vgtest \
-	test_touch_tm.stderr.exp  test_touch_tm.vgtest \
-	ldst_multiple.stderr.exp ldst_multiple.stdout.exp ldst_multiple.vgtest \
-	data-cache-instructions.stderr.exp data-cache-instructions.stdout.exp data-cache-instructions.vgtest \
-	test_isa_3_0_altivec.stderr.exp  \
+	test_isa_2_07_part2.stdout.exp test_isa_2_07_part2.vgtest \
+	test_tm.stdout.exp test_tm.vgtest \
+	test_touch_tm.vgtest \
+	ldst_multiple.stdout.exp ldst_multiple.vgtest \
+	data-cache-instructions.stdout.exp data-cache-instructions.vgtest \
 	test_isa_3_0_altivec.stdout.exp-LE test_isa_3_0_altivec.vgtest \
-	test_isa_3_0_other.stderr.exp  \
 	test_isa_3_0_other.stdout.exp-LE test_isa_3_0_other.vgtest \
-	test_mod_instructions.stderr.exp test_mod_instructions.stdout.exp \
+	test_mod_instructions.stdout.exp \
 	test_mod_instructions.vgtest \
-	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp \
-	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp \
-	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp \
-	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp \
-	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp \
-	test_isa_3_1_R1_RT.vgtest test_isa_3_1_R1_RT.stderr.exp test_isa_3_1_R1_RT.stdout.exp \
-	test_isa_3_1_R1_XT.vgtest test_isa_3_1_R1_XT.stderr.exp test_isa_3_1_R1_XT.stdout.exp \
-	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
-	subnormal_test.vgtest test_darn_inst.stderr.exp \
+	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stdout.exp \
+	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stdout.exp \
+	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stdout.exp \
+	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stdout.exp \
+	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stdout.exp \
+	test_isa_3_1_R1_RT.vgtest test_isa_3_1_R1_RT.stdout.exp \
+	test_isa_3_1_R1_XT.vgtest test_isa_3_1_R1_XT.stdout.exp \
+	subnormal_test.stdout.exp \
+	subnormal_test.vgtest \
 	test_darn_inst.stdout.exp test_darn_inst.vgtest \
-	scv_test.stderr.exp scv_test.stdout.exp scv_test.vgtest \
-	test_copy_paste.stderr.exp test_copy_paste.stdout.exp \
+	scv_test.stdout.exp scv_test.vgtest \
+	test_copy_paste.stdout.exp \
 	test_copy_paste.vgtest \
-	test_mcrxrx.vgtest test_mcrxrx.stderr.exp test_mcrxrx.stdout.exp \
-	test_lxvx_stxvx.vgtest test_lxvx_stxvx.stderr.exp \
+	test_mcrxrx.vgtest test_mcrxrx.stdout.exp \
+	test_lxvx_stxvx.vgtest \
 	test_lxvx_stxvx.stdout.exp-p8  test_lxvx_stxvx.stdout.exp-p9
 
 check_PROGRAMS = \

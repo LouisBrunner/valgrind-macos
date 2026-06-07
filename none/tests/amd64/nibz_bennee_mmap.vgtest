@@ -1,1 +1,2 @@
 prog: nibz_bennee_mmap
+vgopts: -q

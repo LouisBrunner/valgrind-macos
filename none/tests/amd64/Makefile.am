@@ -30,50 +30,48 @@ endif
 
 EXTRA_DIST = \
 	aes.vgtest aes.stdout.exp \
-	amd64locked.vgtest amd64locked.stdout.exp amd64locked.stderr.exp \
+	amd64locked.vgtest amd64locked.stdout.exp \
 	avx-1.vgtest avx-1.stdout.exp \
 	avx_estimate_insn.vgtest \
 	avx_estimate_insn.stdout.exp avx_estimate_insn.stdout.exp-amd \
 	avx-vmovq.vgtest avx-vmovq.stdout.exp \
 	avx2-1.vgtest avx2-1.stdout.exp \
-	asorep.stderr.exp asorep.vgtest \
+	asorep.vgtest \
 	bmi.stdout.exp bmi.vgtest \
-	bt_flags.stderr.exp bt_flags.stdout.exp bt_flags.vgtest \
+	bt_flags.stdout.exp bt_flags.vgtest \
 	fma.stdout.exp fma.vgtest \
-	bug127521-64.vgtest bug127521-64.stdout.exp bug127521-64.stderr.exp \
+	bug127521-64.vgtest bug127521-64.stdout.exp \
 	bug132813-amd64.vgtest bug132813-amd64.stdout.exp \
-	bug132813-amd64.stderr.exp \
 	bug137714-amd64.vgtest bug137714-amd64.stdout.exp \
-	bug132918.vgtest bug132918.stderr.exp bug132918.stdout.exp \
+	bug132918.vgtest bug132918.stdout.exp \
 	bug156404-amd64.vgtest bug156404-amd64.stdout.exp \
-	bug156404-amd64.stderr.exp \
 	bug485148.vgtest bug485148.stdout.exp \
 	bug487439.vgtest bug487439.stdout.exp \
 	cet_nops.vgtest cet_nops.stdout.exp \
-	clc.vgtest clc.stdout.exp clc.stderr.exp \
+	clc.vgtest clc.stdout.exp \
 	crc32.vgtest crc32.stdout.exp \
-	cmpxchg.vgtest cmpxchg.stdout.exp cmpxchg.stderr.exp \
+	cmpxchg.vgtest cmpxchg.stdout.exp \
 	f16c.vgtest f16c.stdout.exp \
 	faultstatus.disabled faultstatus.stderr.exp \
 	fb_test_amd64.vgtest \
-	fb_test_amd64.stderr.exp fb_test_amd64.stdout.exp \
-	fcmovnu.vgtest fcmovnu.stderr.exp fcmovnu.stdout.exp \
+	fb_test_amd64.stdout.exp \
+	fcmovnu.vgtest fcmovnu.stdout.exp \
 	fma4.vgtest fma4.stdout.exp \
-	fxtract.vgtest fxtract.stderr.exp fxtract.stdout.exp \
+	fxtract.vgtest fxtract.stdout.exp \
 	getseg.stdout.exp getseg.vgtest \
 	$(addsuffix .stdout.exp,$(INSN_TESTS)) \
 	$(addsuffix .vgtest,$(INSN_TESTS)) \
 	insn_pclmulqdq.vgtest insn_pclmulqdq.stdout.exp \
 	insn_sse3.stdout.exp insn_sse3.vgtest \
 	insn_ssse3.stdout.exp insn_ssse3.vgtest \
-	jrcxz.stderr.exp jrcxz.stdout.exp jrcxz.vgtest \
-	looper.stderr.exp looper.stdout.exp looper.vgtest \
-	loopnel.stderr.exp loopnel.stdout.exp loopnel.vgtest \
+	jrcxz.stdout.exp jrcxz.vgtest \
+	looper.stdout.exp looper.vgtest \
+	loopnel.stdout.exp loopnel.vgtest \
 	lzcnt64.stdout.exp lzcnt64.vgtest \
 	movbe.stdout.exp movbe.vgtest \
 	mpx.vgtest \
-	nan80and64.stderr.exp nan80and64.stdout.exp nan80and64.vgtest \
-	nibz_bennee_mmap.stderr.exp nibz_bennee_mmap.stdout.exp \
+	nan80and64.stdout.exp nan80and64.vgtest \
+	nibz_bennee_mmap.stdout.exp \
 	nibz_bennee_mmap.vgtest \
 	pcmpstr64.stdout.exp \
 	pcmpstr64.vgtest \
@@ -87,17 +85,16 @@ EXTRA_DIST = \
 	rdrand.vgtest rdrand.stdout.exp \
 	rdseed.vgtest rdseed.stdout.exp \
 	redundantRexW.vgtest redundantRexW.stdout.exp \
-	redundantRexW.stderr.exp \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
-	sbbmisc.stderr.exp sbbmisc.stdout.exp sbbmisc.vgtest \
-	shrld.stderr.exp shrld.stdout.exp shrld.vgtest \
+	sbbmisc.stdout.exp sbbmisc.vgtest \
+	shrld.stdout.exp shrld.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.vgtest \
 	sse4-64.stdout.exp sse4-64.vgtest \
 	slahf-amd64.stdout.exp \
 	slahf-amd64.vgtest \
-	tm1.vgtest tm1.stderr.exp tm1.stdout.exp \
-	x87trigOOR.vgtest x87trigOOR.stderr.exp x87trigOOR.stdout.exp \
-	xacq_xrel.stderr.exp xacq_xrel.stdout.exp xacq_xrel.vgtest \
+	tm1.vgtest tm1.stdout.exp \
+	x87trigOOR.vgtest x87trigOOR.stdout.exp \
+	xacq_xrel.stdout.exp xacq_xrel.vgtest \
 	xadd.stdout.exp xadd.vgtest
 
 check_PROGRAMS = \

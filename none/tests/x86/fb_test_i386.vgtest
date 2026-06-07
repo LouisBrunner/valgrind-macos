@@ -1,2 +1,3 @@
 prog: fb_test_i386
 prereq: test -x fb_test_i386 && ../../../tests/x86_amd64_features x86-sse2
+vgopts: -q

@@ -1,1 +1,2 @@
 prog: misc3
+vgopts: -q

@@ -1,1 +1,2 @@
 prog: laa
+vgopts: -q

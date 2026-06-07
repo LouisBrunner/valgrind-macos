@@ -1,1 +1,2 @@
 prog: pth_exit
+vgopts: -q

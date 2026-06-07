@@ -1,1 +1,2 @@
 prog: spechelper-algr
+vgopts: -q

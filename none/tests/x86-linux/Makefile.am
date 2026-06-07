@@ -10,7 +10,7 @@ EXTRA_DIST = \
 	cet_nops_gs.stdout.exp cet_nops_gs.vgtest \
 	hang.stderr.exp hang.vgtest \
 	seg_override.stderr.exp seg_override.stdout.exp seg_override.vgtest \
-	sigcontext.stdout.exp sigcontext.stderr.exp sigcontext.vgtest
+	sigcontext.stdout.exp sigcontext.vgtest
 
 check_PROGRAMS = \
 	bug345887 \

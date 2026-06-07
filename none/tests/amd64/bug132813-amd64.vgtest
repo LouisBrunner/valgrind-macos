@@ -1,1 +1,2 @@
 prog: bug132813-amd64
+vgopts: -q

@@ -1,1 +1,2 @@
 prog: tre
+vgopts: -q

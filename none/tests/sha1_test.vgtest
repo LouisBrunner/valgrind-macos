@@ -1,1 +1,2 @@
 prog: sha1_test
+vgopts: -q

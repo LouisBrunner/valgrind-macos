@@ -1,1 +1,2 @@
 prog: bfp-tdc
+vgopts: -q

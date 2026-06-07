@@ -1,1 +1,2 @@
 prog: pfpo
+vgopts: -q

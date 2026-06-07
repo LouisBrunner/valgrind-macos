@@ -1,1 +1,2 @@
 prog: fold_And16
+vgopts: -q

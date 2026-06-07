@@ -1,1 +1,2 @@
 prog: cksm
+vgopts: -q

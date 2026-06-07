@@ -1,2 +1,3 @@
 prereq: ( ! ../../tests/os_test freebsd ) || ( kldstat -m mqueuefs > /dev/null )
 prog: mq
+vgopts: -q

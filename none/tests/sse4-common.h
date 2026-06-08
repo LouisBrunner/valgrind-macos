@@ -434,6 +434,18 @@ static inline void test_PMULLD ( void )
    }
 }
 
+static inline void test_PMULDQ ( void )
+{
+   V128 src, dst;
+   Int i;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pmuldq", src, dst);
+   }
+}
+
+
 static inline void test_BLENDPD ( void )
 {
    V128 src, dst;

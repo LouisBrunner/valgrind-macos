@@ -269,6 +269,7 @@ int main(void)
    test_ROUNDPS_w_immediate_rounding();
    test_ROUNDPD_w_mxcsr_rounding();
    test_ROUNDPS_w_mxcsr_rounding();
+   test_PMULDQ();
 
    return 0;
 }

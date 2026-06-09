@@ -1347,7 +1347,7 @@ static inline void test_ROUNDSD_w_mxcsr_rounding ( void )
    assert(rm == 0); // 0 == RN == default
 
    for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
-      V128 src, dst;
+      __attribute__((aligned(16))) V128 src, dst;
 
       for (rm = 0; rm <= 3; rm++) {
          set_sse_roundingmode(rm);
@@ -1663,7 +1663,7 @@ static inline void test_ROUNDSS_w_mxcsr_rounding ( void )
    assert(rm == 0); // 0 == RN == default
 
    for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
-      V128 src, dst;
+      __attribute__((aligned(16))) V128 src, dst;
 
       for (rm = 0; rm <= 3; rm++) {
          set_sse_roundingmode(rm);
@@ -2417,7 +2417,7 @@ static inline void test_ROUNDPS_w_mxcsr_rounding ( void )
    assert(rm == 0); // 0 == RN == default
 
    for (i = 0; i < sizeof(vals)/sizeof(vals[0]); i++) {
-      V128 src, dst;
+      __attribute__((aligned(16))) V128 src, dst;
 
       for (rm = 0; rm <= 3; rm++) {
          set_sse_roundingmode(rm);

@@ -3,7 +3,8 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr \
 	filter_madv_guard \
-	filter_ioctl_procmap_query
+	filter_ioctl_procmap_query \
+	debuginfod-check.pl
 
 EXTRA_DIST = \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
@@ -16,7 +17,6 @@ EXTRA_DIST = \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	capget.stderr.exp4 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
-	debuginfod-check.pl \
 	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.vgtest \
 	dlclose_leak.stderr.exp dlclose_leak.vgtest \
 	ioctl_procmap_query.stdout.exp ioctl_procmap_query.vgtest \

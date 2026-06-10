@@ -2,7 +2,10 @@
 include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr test.sh filter_452274 filter_auxv \
-                      filter_pre_auxv filter_fdleak auxv_script
+                      filter_pre_auxv filter_fdleak auxv_script \
+	              bash_test.sh \
+	              csh_test.csh \
+	              ksh_test.ksh
 
 EXTRA_DIST = \
 	auxv.vgtest \
@@ -27,13 +30,10 @@ EXTRA_DIST = \
 	fexecve_txt.stderr.exp \
 	proc_pid_file.vgtest \
 	bash_test.vgtest \
-	bash_test.sh \
 	bash_test.stdout.exp \
 	csh_test.vgtest \
-	csh_test.csh \
 	csh_test.stdout.exp \
 	ksh_test.vgtest \
-	ksh_test.ksh \
 	ksh_test.stdout.exp \
 	open_client.vgtest \
 	procfs-cmdline-exe.vgtest \

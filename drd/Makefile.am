@@ -1,6 +1,6 @@
 include $(top_srcdir)/Makefile.tool.am
 
-EXTRA_DIST = docs/drd-manual.xml docs/drd-xml-output.xsd
+EXTRA_DIST = docs/drd-manual.xml docs/drd-xml-output.xsd Testing.txt
 
 #----------------------------------------------------------------------------
 # Headers, flags

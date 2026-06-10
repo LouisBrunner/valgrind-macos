@@ -1,3 +1,5 @@
+#!/usr/bin/env -S awk -f
+
 /pthread_create_WRK \(hg_intercepts.c/ {
    print;
    getline;

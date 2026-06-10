@@ -3,6 +3,9 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
+noinst_HEADERS = \
+	opcodes.h
+
 EXTRA_DIST = \
 	bug129390-ppc32.stdout.exp bug129390-ppc32.vgtest \
 	bug139050-ppc32.stdout.exp bug139050-ppc32.vgtest \
@@ -28,7 +31,6 @@ EXTRA_DIST = \
 	twi.stdout.exp twi.vgtest \
 	tw.stdout.exp tw.vgtest \
 	xlc_dbl_u32.stdout.exp xlc_dbl_u32.vgtest \
-	opcodes.h \
 	power5+_round.stdout.exp power5+_round.vgtest \
 	power6_bcmp.vgtest \
 	test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \

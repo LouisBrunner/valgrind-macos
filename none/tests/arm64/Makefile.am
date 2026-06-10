@@ -3,6 +3,9 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
+noinst_HEADERS = \
+	simd.h
+
 EXTRA_DIST = \
 	bug484426.stdout.exp bug484426.vgtest \
 	bug489338.stdout.exp bug489338.vgtest \
@@ -89,10 +92,10 @@ frinta_frintn_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
 integer_CFLAGS     = $(AM_CFLAGS) -g -O0 -DTEST_BFM=0
 v8crypto_CFLAGS = $(AM_CFLAGS) -march=armv8-a+crypto
 
-fp_and_simd_SOURCES     = fp_and_simd.c simd.h simd.c
-fp_and_simd_v82_SOURCES = fp_and_simd_v82.c simd.h simd.c
-sha512_v82_SOURCES      = sha512_v82.c simd.h simd.c
-v8crypto_SOURCES        = v8crypto.c simd.h simd.c
+fp_and_simd_SOURCES     = fp_and_simd.c simd.c
+fp_and_simd_v82_SOURCES = fp_and_simd_v82.c simd.c
+sha512_v82_SOURCES      = sha512_v82.c simd.c
+v8crypto_SOURCES        = v8crypto.c simd.c
 
 bug489338_LDADD    = -lm
 fp_and_simd_LDADD  = -lm

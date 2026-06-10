@@ -6,6 +6,9 @@ dist_noinst_SCRIPTS = filter_stderr filter_pts dump_stdout filter_sigwait \
 	toucher1 toucher2 filter_getfsstat filter_context filter_frame \
 	filter_supp filter_kenv filter_heap_usage
 
+noinst_HEADERS = \
+	scalar.h
+
 EXTRA_DIST = \
 	access.vgtest \
 	access.stderr.exp \
@@ -96,7 +99,7 @@ EXTRA_DIST = \
 	realpathat.stderr.exp2 \
 	revoke.vgtest \
 	revoke.stderr.exp \
-	scalar.h scalar.vgtest \
+	scalar.vgtest \
 	scalar.stderr.exp \
 		scalar.stderr.exp-x86 \
 		scalar.supp \

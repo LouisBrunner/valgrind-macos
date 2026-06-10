@@ -3,7 +3,8 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
-noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h
+noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h \
+	opcodes.h
 
 EXTRA_DIST = \
 	jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
@@ -25,7 +26,6 @@ EXTRA_DIST = \
 	round.stdout.exp round.vgtest \
 	twi_tdi.stdout.exp twi_tdi.vgtest \
 	tw_td.stdout.exp tw_td.vgtest \
-	opcodes.h \
 	power6_bcmp.vgtest \
 	test_isa_2_06_part1.stdout.exp  test_isa_2_06_part1.vgtest \
 	test_isa_2_06_part1.stdout.exp-LE \

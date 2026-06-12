@@ -3547,7 +3547,7 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
 */
 void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
                                      ULong hasF16C, ULong hasRDRAND,
-                                     ULong hasRDSEED )
+                                     ULong hasRDSEED, ULong hasLZCNT )
 {
    vassert((hasF16C >> 1) == 0ULL);
    vassert((hasRDRAND >> 1) == 0ULL);
@@ -3650,7 +3650,10 @@ void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
          SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
          break;
       case 0x80000001:
-         SET_ABCD(0x00000000, 0x00000000, 0x00000021, 0x2c100800);
+         ULong ecx_extra = 0;
+         ecx_extra = hasLZCNT ? (1U << 5) : 0;
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001 | ecx_extra,
+                  0x2c100800);
          break;
       case 0x80000002:
          SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);

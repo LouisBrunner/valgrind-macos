@@ -10656,6 +10656,7 @@ POST(kernelrpc_mach_port_construct_trap)
    PRINT("-> name:%p", *(mach_port_name_t**)a4);
    if (ML_(safe_to_deref)((mach_port_name_t*)a4, sizeof(mach_port_name_t*))) {
       POST_MEM_WRITE(a4, sizeof(mach_port_name_t*));
+      record_unnamed_port(tid, *(mach_port_name_t*)a4, MACH_PORT_RIGHT_RECEIVE);
    }
 }
 

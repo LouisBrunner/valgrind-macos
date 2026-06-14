@@ -1075,6 +1075,17 @@ static IRExpr* widenSto64 ( IRType srcTy, IRExpr* e )
    }
 }
 
+/* S-widen 8/16/32 bit int expr to 32. */
+static IRExpr* widenSto32 ( IRType srcTy, IRExpr* e )
+{
+   switch (srcTy) {
+      case Ity_I32: return e;
+      case Ity_I16: return unop(Iop_16Sto32, e);
+      case Ity_I8:  return unop(Iop_8Sto32, e);
+      default: vpanic("widenSto32(arm64)");
+   }
+}
+
 /* U-widen 8/16/32/64 bit int expr to 64. */
 static IRExpr* widenUto64 ( IRType srcTy, IRExpr* e )
 {
@@ -7247,6 +7258,76 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       return True;
    }
 
+   /* ------------------ STLU{R,RB,RH} ------------------ */
+   /* ------------------ LDAPU{R,RB,RH} ----------------- */
+   /* ------------------ LDAPUR{SW,SB,SH} --------------- */
+   /* ARMv8.4-a: Store/Load-Acquire PAO Unscaled Register
+      31 29     23 22 21 20   11 9 4
+      sz 011001 0  0  0  imm9 00 n t   STLUR<sz> Rt, [Xn|SP, #simm9]
+      sz 011001 0  1  0  imm9 00 n t   LDAPUR<sz> Rt, [Xn|SP, #simm9]
+      sz 011001 1  0  0  imm9 00 n t   LDAPURSB/LDAPURSH/LDAPURSW Xt, [Xn|SP, #simm9] (64-bit)
+      sz 011001 1  1  0  imm9 00 n t   LDAPURSB/LDAPURSH Wt, [Xn|SP, #simm9] (32-bit)
+   */
+   if (INSN(29,24) == BITS6(0,1,1,0,0,1)
+       && INSN(21,21) == 0
+       && INSN(11,10) == BITS2(0,0)) {
+      UInt szBlg2 = INSN(31,30);
+      UInt opc    = INSN(23,22);
+      Bool isLD   = opc != BITS2(0,0);
+      Bool isULD  = opc == BITS2(0,1);
+      UInt imm9   = INSN(20,12);
+      UInt nn     = INSN(9,5);
+      UInt tt     = INSN(4,0);
+      ULong simm9 = sx_to_64(imm9, 9);
+
+      const HChar* suffix[4] = { "b", "h", "", "" };
+
+      Bool valid = True;
+      /* opc=10: LDAPURSW only valid for sz=10; sz=11 is undefined */
+      if (opc == BITS2(1,0) && szBlg2 == 3) valid = False;
+      /* opc=11: only valid for sz=00 (LDAPURSB) and sz=01 (LDAPURSH) */
+      if (opc == BITS2(1,1) && szBlg2 >= 2) valid = False;
+
+      if (valid) {
+         IRTemp ea = newTemp(Ity_I64);
+         assign(ea, binop(Iop_Add64, getIReg64orSP(nn), mkU64(simm9)));
+
+         if (!isLD) {
+            UInt   szB = 1 << szBlg2;
+            IRType ty  = integerIRTypeOfSize(szB);
+            stmt(IRStmt_MBE(Imbe_Fence));
+            storeLE(mkexpr(ea), narrowFrom64(ty, getIReg64orZR(tt)));
+            DIP("stlur%s %s, [%s, #%lld]\n", suffix[szBlg2],
+                nameIRegOrZR(szBlg2 == 3, tt), nameIReg64orSP(nn), (Long)simm9);
+         } else {
+            UInt   szB = 1 << szBlg2;
+            IRType ty  = integerIRTypeOfSize(szB);
+            IRTemp res = newTemp(ty);
+            const HChar* signedSuffix = isULD ? "" : "s";
+            const HChar* signedWordSuffix = (szBlg2 == 2 && !isULD) ? "w" : "";
+            const HChar* reg = "?";
+
+            assign(res, loadLE(ty, mkexpr(ea)));
+            if (isULD) {
+              putIReg64orZR(tt, widenUto64(ty, mkexpr(res)));
+              reg = nameIRegOrZR(szBlg2 == 3, tt);
+            } else if (opc == BITS2(1,0)) {
+              putIReg64orZR(tt, widenSto64(ty, mkexpr(res)));
+              reg = nameIReg64orZR(tt);
+            } else {
+              putIReg32orZR(tt, widenSto32(ty, mkexpr(res)));
+              reg = nameIReg32orZR(tt);
+            }
+            stmt(IRStmt_MBE(Imbe_Fence));
+
+            DIP("ldapur%s%s%s %s, [%s, #%lld]\n",
+                signedSuffix, suffix[szBlg2], signedWordSuffix,
+                reg, nameIReg64orSP(nn), (Long)simm9);
+         }
+         return True;
+      }
+   }
+
    /* The PRFM cases that follow are possibly allow Rt values (the
       prefetch operation) which are not allowed by the documentation.
       This should be looked into. */
@@ -7527,48 +7608,6 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
              nameIReg64orSP(nn));
          return True;
       }
-   }
-
-   /* ---------------- ARMv8.3-A: Load-Acquire RCpc Register Byte --------------- */
-   /* 31 29  26 25 23 22 21 20 15 14  11 9  4
-      00 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPRB <Wt>, [<Xn|SP>{, #0}]
-      01 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPRH <Wt>, [<Xn|SP>{, #0}]
-      10 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPR  <Xt>, [<Xn|SP>{, #0}] (32-bit)
-      11 111 0  00 1  0  1  Rs 1  100 00 Rn Rt LDAPR  <Xt>, [<Xn|SP>{, #0}] (64-bit)
-      sz     V     A  R     Rs o3 opc    Rn Rt
-   */
-   if (INSN(29,21) == BITS9(1,1,1,0,0,0,1,0,1)
-       && INSN(15,11) == BITS5(1,1,0,0,0)
-   ) {
-      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_LRCPC) == 0) {
-        return False;
-      }
-      UInt tt = INSN(4,0);
-      UInt nn = INSN(9,5);
-      Bool isByte = INSN(31,30) == 0;
-      Bool isHalf = INSN(31,30) == 1;
-      Bool is32   = INSN(31,30) == 2;
-      Bool is64   = INSN(31,30) == 3;
-      IRType ty = isByte ? Ity_I8 : isHalf ? Ity_I16 : is32 ? Ity_I32 : Ity_I64;
-
-      IRTemp addr = newTemp(Ity_I64);
-      assign(addr, getIReg64orSP(nn));
-      IRTemp data = newTemp(ty);
-      assign(data, loadLE(ty, mkexpr(addr)));
-      if (is64) {
-        putIReg64orZR(tt, mkexpr(data));
-      } else if (is32) {
-        putIReg32orZR(tt, mkexpr(data));
-      } else if (isHalf) {
-        putIReg32orZR(tt, unop(Iop_16Uto32, mkexpr(data)));
-      } else {
-        putIReg32orZR(tt, unop(Iop_8Uto32, mkexpr(data)));
-      }
-
-      DIP("ldapr%s %s, [%s]\n",
-          isByte ? "b" : isHalf ? "h" : "",
-          nameIRegOrZR(is32, tt), nameIReg64orSP(nn));
-      return True;
    }
 
    /* ---------------------- LDRA{B} ----------------------- */

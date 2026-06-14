@@ -8299,27 +8299,44 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
 
 #if defined(VGP_arm64_darwin)
-   /* ---- Case for SPRR_UPERM_EL0 ----
+   /* ---- Cases for SPRR_UPERM_EL0 ----
       Apple-proprietary SPRR User Permissions register.
+
       Read by dyld_get_active_platform() in libdyld during early libSystem
       initialisation on macOS 26 / Darwin 25, to verify that TPRO regions
       are not writable.
+
+      31  23 21 20 19    4
+      D5  00 0  1  EF1A0 Rt   MSR sprr_uperm_el0, Rt
+      D5  00 1  1  EF1A0 Rt   MRS Rt, sprr_uperm_el0
+              mrs
    */
-   if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53EF1A0) {
-      UInt     tt   = INSN(4,0);
-      IRTemp   val  = newTemp(Ity_I64);
-      IRExpr** args = mkIRExprVec_0();
-      IRDirty* d    = unsafeIRDirty_1_N (
-                         val,
-                         0/*regparms*/,
-                         "arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0",
-                         &arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0,
-                         args
-                      );
-      /* execute the dirty call, dumping the result in val. */
-      stmt( IRStmt_Dirty(d) );
-      putIReg64orZR(tt, mkexpr(val));
-      DIP("mrs %s, sprr_uperm_el0\n", nameIReg64orZR(tt));
+   if ((INSN(31,0) & 0xFFDFFFE0) == 0xD51EF1A0) {
+      Bool     isMRS = INSN(21,21) == 1;
+      UInt     tt    = INSN(4,0);
+      IRDirty* d;
+      if (isMRS) {
+         IRTemp val = newTemp(Ity_I64);
+         d = unsafeIRDirty_1_N (
+           val,
+           0/*regparms*/,
+           "arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0",
+           &arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0,
+           mkIRExprVec_0()
+         );
+         stmt( IRStmt_Dirty(d) );
+         putIReg64orZR(tt, mkexpr(val));
+         DIP("mrs %s, sprr_uperm_el0\n", nameIReg64orZR(tt));
+      } else {
+         d = unsafeIRDirty_0_N (
+           0/*regparms*/,
+           "arm64g_dirtyhelper_MSR_SPRR_UPERM_EL0",
+           &arm64g_dirtyhelper_MSR_SPRR_UPERM_EL0,
+           mkIRExprVec_1(getIReg64orZR(tt))
+         );
+         stmt( IRStmt_Dirty(d) );
+         DIP("msr sprr_uperm_el0, %s\n", nameIReg64orZR(tt));
+      }
       return True;
    }
 #endif

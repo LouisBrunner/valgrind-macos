@@ -127,6 +127,7 @@ extern ULong arm64g_dirtyhelper_MRS_CNTFRQ_EL0 ( void );
 extern ULong arm64g_dirtyhelper_MRS_CNTPCT_EL0 ( void );
 #if defined(VGP_arm64_darwin)
 extern ULong arm64g_dirtyhelper_MRS_SPRR_UPERM_EL0 ( void );
+extern void  arm64g_dirtyhelper_MSR_SPRR_UPERM_EL0 ( ULong val );
 #endif
 
 extern void  arm64g_dirtyhelper_MSR_set_PSTATE_DIT ( void );

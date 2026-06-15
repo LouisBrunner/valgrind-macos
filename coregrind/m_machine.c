@@ -1864,6 +1864,7 @@ Bool VG_(machine_get_hwcaps)( void )
 #define IS_ENABLED(mib, miblen) \
         (DO_SYSCTL(mib, miblen) && val == 1)
 
+     // sysctlbyname("hw.ncpu")
      Int mibCheck[] = {VKI_CTL_HW,VKI_HW_NCPU};
      if (!DO_SYSCTL(mibCheck, 2) || val < 1) {
         VG_(debugLog)(1, "machine", "No sensible sysctlbyname values, falling back to defaults\n");

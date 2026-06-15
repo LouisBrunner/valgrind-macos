@@ -904,6 +904,8 @@ void arm64g_dirtyhelper_MSR_SPRR_UPERM_EL0 ( ULong val )
 {
 #  if defined(__aarch64__) && !defined(__arm__)
    __asm__ __volatile__("msr s3_6_c15_c1_5, %0" : : "r"(val));
+#  else
+   (void) val;
 #  endif
 }
 #endif

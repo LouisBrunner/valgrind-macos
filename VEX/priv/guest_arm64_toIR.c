@@ -16591,7 +16591,7 @@ Bool dis_AdvSIMD_fp_to_from_fixedp_conv(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn, const VexArchInfo* archinfo)
 {
    /* 31 30 29 28    23   21 20    18     15     9 4
       sf  0  0 11110 type 1  rmode opcode 000000 n d
@@ -17032,7 +17032,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_to_from_fixedp_conv(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_to_from_int_conv(dres, insn);
+   ok = dis_AdvSIMD_fp_to_from_int_conv(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_dot_product(dres, insn);
    if (UNLIKELY(ok)) return True;

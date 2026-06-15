@@ -1780,11 +1780,12 @@ Bool VG_(machine_get_hwcaps)( void )
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
      Bool have_vfp16, have_fp16, have_pauth, have_lrcpc, have_dit;
+     Bool have_jscvt;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
               = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth
-              = have_lrcpc = have_dit = False;
+              = have_lrcpc = have_dit = have_jscvt = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1857,11 +1858,15 @@ Bool VG_(machine_get_hwcaps)( void )
      SizeT len = 4;
      Int val;
 
+#define DO_SYSCTL(mib, miblen) \
+        (VG_(sysctl)(mib, (miblen), &val, &len, NULL, 0) == 0)
+
 #define IS_ENABLED(mib, miblen) \
-        (VG_(sysctl)(mib, (miblen), &val, &len, NULL, 0) == 0 && val == 1)
+        (DO_SYSCTL(mib, miblen) && val == 1)
 
      Int mibCheck[] = {VKI_CTL_HW,VKI_HW_NCPU};
-     if (!IS_ENABLED(mibCheck, 2)) {
+     if (!DO_SYSCTL(mibCheck, 2) || val < 1) {
+        VG_(debugLog)(1, "machine", "No sensible sysctlbyname values, falling back to defaults\n");
         // some virtual machines are missing most values in sysctlbyname so we fallback to good defaults
         vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
         vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
@@ -1901,6 +1906,11 @@ Bool VG_(machine_get_hwcaps)( void )
         Int mibSB[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SB};
         if (IS_ENABLED(mibSB, 4)) {
             vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
+        }
+        // sysctlbyname("hw.optional.arm.FEAT_JSCVT")
+        Int mibJSCVT[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_JSCVT};
+        if (IS_ENABLED(mibJSCVT, 4)) {
+            vai.hwcaps |= VEX_HWCAPS_ARM64_JSCVT;
         }
      }
 
@@ -1948,6 +1958,7 @@ Bool VG_(machine_get_hwcaps)( void )
      #define ID_AA64ISAR1_GPI_SHIFT            28
      #define ID_AA64ISAR1_GPA_SHIFT            24
      #define ID_AA64ISAR1_LRCPC_SHIFT          20
+     #define ID_AA64ISAR1_JSCVT_SHIFT          12
      #define ID_AA64ISAR1_API_SHIFT             8
      #define ID_AA64ISAR1_APA_SHIFT             4
      #define ID_AA64ISAR1_DPB_SHIFT             0
@@ -1957,6 +1968,7 @@ Bool VG_(machine_get_hwcaps)( void )
      #define ID_AA64ISAR1_GPI_SUPPORTED        0x1
      #define ID_AA64ISAR1_GPA_SUPPORTED        0x1
      #define ID_AA64ISAR1_LRCPC_SUPPORTED      0x2
+     #define ID_AA64ISAR1_JSCVT_SUPPORTED      0x1
      #define ID_AA64ISAR1_API_SUPPORTED        0x1
      #define ID_AA64ISAR1_APA_SUPPORTED        0x1
      #define ID_AA64ISAR1_DPBCVAP_SUPPORTED    0x1
@@ -2066,6 +2078,12 @@ Bool VG_(machine_get_hwcaps)( void )
      get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_LRCPC_SHIFT,
              ID_AA64ISAR1_LRCPC_SUPPORTED, have_lrcpc);
 
+     /* JSCVT indicates support for JavaScript conversion instructions.
+      * Optional for v8.2.
+      */
+     get_ftr(ID_AA64ISAR1_EL1, ID_AA64ISAR1_JSCVT_SHIFT,
+             ID_AA64ISAR1_JSCVT_SUPPORTED, have_jscvt);
+
      /* APA or API indicate support for PAUTH instructions.
       * Optional for v8.3.
       */
@@ -2111,6 +2129,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_pauth)      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
      if (have_lrcpc)      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
      if (have_dit)        vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+     if (have_jscvt)      vai.hwcaps |= VEX_HWCAPS_ARM64_JSCVT;
 
      #undef get_cpu_ftr
      #undef get_ftr

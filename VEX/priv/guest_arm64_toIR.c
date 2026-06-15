@@ -5194,6 +5194,9 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       x==1 => 64 bit transfers
       simm7 is scaled by the (single-register) transfer size
 
+      (at-EA, with nontemporal hint)
+      x0 101 0000 L imm7 Rt2 Rn Rt1  mmNP Rt1,Rt2, [Xn|SP, #imm]
+
       (at-Rn-then-Rn=EA)
       x0 101 0001 L imm7 Rt2 Rn Rt1  mmP Rt1,Rt2, [Xn|SP], #imm
 
@@ -5204,7 +5207,8 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
       x0 101 0010 L imm7 Rt2 Rn Rt1  mmP Rt1,Rt2, [Xn|SP, #imm]
    */
    UInt insn_30_23 = INSN(30,23);
-   if (insn_30_23 == BITS8(0,1,0,1,0,0,0,1)
+   if (insn_30_23 == BITS8(0,1,0,1,0,0,0,0)
+       || insn_30_23 == BITS8(0,1,0,1,0,0,0,1)
        || insn_30_23 == BITS8(0,1,0,1,0,0,1,1)
        || insn_30_23 == BITS8(0,1,0,1,0,0,1,0)) {
       UInt bL     = INSN(22,22);
@@ -5235,6 +5239,7 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
             case BITS2(1,1):
                assign(tTA, mkexpr(tEA)); assign(tWA, mkexpr(tEA)); break;
             case BITS2(1,0):
+            case BITS2(0,0):
                assign(tTA, mkexpr(tEA)); /* tWA is unused */ break;
             default:
                vassert(0); /* NOTREACHED */
@@ -5290,6 +5295,9 @@ Bool dis_ARM64_load_store(/*MB_OUT*/DisResult* dres, UInt insn,
 
          const HChar* fmt_str = NULL;
          switch (INSN(24,23)) {
+            case BITS2(0,0):
+               fmt_str = "%snp %s, %s, [%s, #%lld]\n";
+               break;
             case BITS2(0,1):
                fmt_str = "%sp %s, %s, [%s], #%lld (at-Rn-then-Rn=EA)\n";
                break;
@@ -16763,6 +16771,26 @@ Bool dis_AdvSIMD_fp_to_from_int_conv(/*MB_OUT*/DisResult* dres, UInt insn)
       DIP("%ccvtf %s, %s\n",
           isU ? 'u' : 's', nameQRegLO(dd, isF64 ? Ity_F64 : Ity_F32),
           nameIRegOrZR(isI64, nn));
+      return True;
+   }
+
+   // op = 110, rm = 11 (FJCVTZS) -- must be checked before FMOV (op=110, rm=00)
+   /* -------- FJCVTZS (ARMv8.2, FEAT_JSCVT) -------- */
+   /* sf 30  S 28    ty   rm  op  15     9 4
+       0  0  0 11110 01 1 11  110 000000 n d   FJCVTZS Wd, Dn
+   */
+   if (bitSF == 0 && ty == BITS2(0,1)
+       && rm == BITS2(1,1) && op == BITS3(1,1,0)) {
+      if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_JSCVT) == 0) {
+         return False;
+      }
+      IRTemp src = newTemp(Ity_F64);
+      IRTemp dst = newTemp(Ity_I32);
+      assign(src, getQRegLO(nn, Ity_F64));
+      // FIXME: technically has a few more edge cases than that...
+      assign(dst, binop(Iop_F64toI32S, mkU32(Irrm_ZERO), mkexpr(src)));
+      putIReg32orZR(dd, mkexpr(dst));
+      DIP("fjcvtzs %s, %s\n", nameIReg32orZR(dd), nameQRegLO(nn, Ity_F64));
       return True;
    }
 

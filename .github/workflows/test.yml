@@ -31,6 +31,8 @@ jobs:
       - name: install Valgrind
         run: |
           brew install --HEAD LouisBrunner/valgrind/valgrind
+        env:
+          HOMEBREW_I_ACKNOWLEDGE_THIS_MIGHT_CRASH_OR_DAMAGE_MY_COMPUTER: yes
       - name: Build sysctl tester
         run: |
           cc -o sysctl_tester .github/sysctl_tester.c

@@ -1858,62 +1858,31 @@ Bool VG_(machine_get_hwcaps)( void )
      SizeT len = 4;
      Int val;
 
-#define DO_SYSCTL(mib, miblen) \
-        (VG_(sysctl)(mib, (miblen), &val, &len, NULL, 0) == 0)
+#define IS_ENABLED(name) \
+        (VG_(sysctlbyname)(name, &val, &len, NULL, 0) == 0 && val == 1)
 
-#define IS_ENABLED(mib, miblen) \
-        (DO_SYSCTL(mib, miblen) && val == 1)
-
-     // sysctlbyname("hw.ncpu")
-     Int mibCheck[] = {VKI_CTL_HW,VKI_HW_NCPU};
-     if (!DO_SYSCTL(mibCheck, 2) || val < 1) {
-        VG_(debugLog)(1, "machine", "No sensible sysctlbyname values, falling back to defaults\n");
-        // some virtual machines are missing most values in sysctlbyname so we fallback to good defaults
-        vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
-        vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
-        vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
-        vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
-        vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
-        vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
-        vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
-     } else {
-        // sysctlbyname("hw.optional.arm.FEAT_PAuth")
-        Int mibPAUTH[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_PAUTH};
-        if (IS_ENABLED(mibPAUTH, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
-        }
-        // sysctlbyname("hw.optional.arm.FEAT_LRCPC")
-        Int mibLRCPC[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_LRCPC};
-        if (IS_ENABLED(mibLRCPC, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
-        }
-        // sysctlbyname("hw.optional.arm.FEAT_DIT")
-        Int mibDIT[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_DIT};
-        if (IS_ENABLED(mibDIT, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
-        }
-        // sysctlbyname("hw.optional.arm.FEAT_FP16")
-        Int mibFP16[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_FP16};
-        if (IS_ENABLED(mibFP16, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
-            vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
-        }
-        // sysctlbyname("hw.optional.arm.FEAT_SHA3")
-        Int mibSHA3[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SHA3};
-        if (IS_ENABLED(mibSHA3, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
-        }
-        // sysctlbyname("hw.optional.arm.FEAT_SB")
-        Int mibSB[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_SB};
-        if (IS_ENABLED(mibSB, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
-        }
-        // sysctlbyname("hw.optional.arm.FEAT_JSCVT")
-        Int mibJSCVT[] = {VKI_CTL_HW,VKI_HW_OPTIONAL,VKI_HW_ARM,VKI_HW_FEAT_JSCVT};
-        if (IS_ENABLED(mibJSCVT, 4)) {
-            vai.hwcaps |= VEX_HWCAPS_ARM64_JSCVT;
-        }
-     }
+      if (IS_ENABLED("hw.optional.arm.FEAT_PAuth")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
+      }
+      if (IS_ENABLED("hw.optional.arm.FEAT_LRCPC")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
+      }
+      if (IS_ENABLED("hw.optional.arm.FEAT_DIT")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+      }
+      if (IS_ENABLED("hw.optional.arm.FEAT_FP16")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
+          vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
+      }
+      if (IS_ENABLED("hw.optional.arm.FEAT_SHA3")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
+      }
+      if (IS_ENABLED("hw.optional.arm.FEAT_SB")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
+      }
+      if (IS_ENABLED("hw.optional.arm.FEAT_JSCVT")) {
+          vai.hwcaps |= VEX_HWCAPS_ARM64_JSCVT;
+      }
 
 #undef IS_ENABLED
 

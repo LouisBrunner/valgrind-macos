@@ -11998,6 +11998,15 @@ POST(mach_vm_deferred_reclamation_buffer_allocate)
 
 #if DARWIN_VERS >= DARWIN_26_00
 
+PRE(mk_timer_arm_leeway) // FIXME: technicallt introduced in 10.12.4 (Darwin 16.5.0)
+{
+   PRINT("mk_timer_arm(%s, %#lx, %lu, %lu)", name_for_port(ARG1), ARG2, ARG3, ARG4);
+   PRE_REG_READ4(long, "mk_timer_arm", mach_port_t,"name",
+                 unsigned long,"flags", unsigned long,"expire_time",
+                 unsigned long,"leeway"
+   );
+}
+
 #endif /* DARWIN_VERS >= DARWIN_15_00 */
 
 
@@ -12878,7 +12887,11 @@ const SyscallTableEntry ML_(mach_trap_table)[] = {
    MACXY(__NR_mk_timer_destroy, mk_timer_destroy),
    MACX_(__NR_mk_timer_arm, mk_timer_arm),
    MACXY(__NR_mk_timer_cancel, mk_timer_cancel),
+#if DARWIN_VERS >= DARWIN_26_00
+   MACX_(__NR_mk_timer_arm_leeway, mk_timer_arm_leeway),
+#else
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(95)),
+#endif
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(96)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(97)),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_MACH(98)),

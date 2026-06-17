@@ -1276,7 +1276,7 @@ Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void 
   Int by_name_oid[] = {0, 3};
   Int oid[CTL_MAXNAME];
   SizeT oidlen = sizeof(oid);
-  Int res = VG_(sysctl)(by_name_oid, oid, &oidlen, 0, 0);
+  Int res = VG_(sysctl)(by_name_oid, 2, oid, &oidlen, name, VG_(strlen)(name));
   return VG_(sysctl)(oid, oidlen / sizeof(Int), oldp, oldlenp, newp, newlen);
 }
 #endif

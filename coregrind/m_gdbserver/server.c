@@ -1248,13 +1248,11 @@ void handle_query (char *arg_own_buf, int *new_packet_len_p)
    }
 
    if (strncmp("qHostInfo", arg_own_buf, 9) == 0) {
-      Int cputypeID[] = {VKI_CTL_HW, VKI_HW_CPUTYPE};
-      Int subcputypeID[] = {VKI_CTL_HW, VKI_HW_CPUSUBTYPE};
+#if defined(VGO_darwin)
       Int cputype = 0, cpusubtype = 0;
       SizeT len = sizeof(cputype);
-      VG_(sysctl)(cputypeID, 2, &cputype, &len, NULL, 0);
-      VG_(sysctl)(subcputypeID, 2, &cpusubtype, &len, NULL, 0);
-#if defined(VGO_darwin)
+      VG_(sysctlbyname)("hw.cputype", &cputype, &len, NULL, 0);
+      VG_(sysctlbyname)("hw.cpusubtype", &cpusubtype, &len, NULL, 0);
       VG_(sprintf) (arg_own_buf,
                     // FIXME: ostype should be `ios` for iOS
                     "cputype:%d;cpusubtype:%d;ostype:macosx;vendor:apple;endian:little;ptrsize:%d;os_version:%d.%d;",

@@ -98,6 +98,8 @@ struct auxv {
    } u;
 };
 
+#elif defined(VGO_darwin)
+extern Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void *newp, SizeT newlen);
 #endif
 
 // icache invalidation

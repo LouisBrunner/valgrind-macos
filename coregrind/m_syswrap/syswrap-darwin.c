@@ -255,7 +255,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 
    } else {
 
-      VG_(debugLog)(1, "syswrap-darwin", 
+      VG_(debugLog)(1, "syswrap-darwin",
                        "run_a_thread_NORETURN(tid=%u): "
                           "not last one standing\n",
                           tid);
@@ -279,7 +279,7 @@ static void run_a_thread_NORETURN ( Word tidW )
       tst->status = VgTs_Empty;
       // GrP fixme race here! new thread may claim this V thread stack
       // before we get out here!
-      mach_msg(&msg, MACH_SEND_MSG|MACH_MSG_OPTION_NONE, 
+      mach_msg(&msg, MACH_SEND_MSG|MACH_MSG_OPTION_NONE,
                sizeof(msg), 0, 0, MACH_MSG_TIMEOUT_NONE, 0);
 
 #else
@@ -340,7 +340,7 @@ static void run_a_thread_NORETURN ( Word tidW )
 # error Unknown platform
 #endif
 #endif
-      
+
       // DDD: This is reached sometimes on none/tests/manythreads, maybe
       // because of the race above.
       VG_(core_panic)("Thread exit failed?\n");
@@ -2356,11 +2356,11 @@ PRE(disconnectx)
 
 PRE(kevent)
 {
-   PRINT("kevent( %ld, %#lx, %ld, %#lx, %ld, %#lx )", 
+   PRINT("kevent( %ld, %#lx, %ld, %#lx, %ld, %#lx )",
          SARG1, ARG2, SARG3, ARG4, SARG5, ARG6);
-   PRE_REG_READ6(int,"kevent", int,kq, 
-                 const struct vki_kevent *,changelist, int,nchanges, 
-                 struct vki_kevent *,eventlist, int,nevents, 
+   PRE_REG_READ6(int,"kevent", int,kq,
+                 const struct vki_kevent *,changelist, int,nchanges,
+                 struct vki_kevent *,eventlist, int,nevents,
                  const struct vki_timespec *,timeout);
 
    if (ARG3) PRE_MEM_READ ("kevent(changelist)",
@@ -11998,16 +11998,16 @@ POST(mach_vm_deferred_reclamation_buffer_allocate)
 
 #if DARWIN_VERS >= DARWIN_26_00
 
-PRE(mk_timer_arm_leeway) // FIXME: technicallt introduced in 10.12.4 (Darwin 16.5.0)
+PRE(mk_timer_arm_leeway) // FIXME: technically introduced in 10.12.4 (Darwin 16.5.0)
 {
-   PRINT("mk_timer_arm(%s, %#lx, %lu, %lu)", name_for_port(ARG1), ARG2, ARG3, ARG4);
+   PRINT("mk_timer_arm_leeway(%s, %#lx, %lu, %lu)", name_for_port(ARG1), ARG2, ARG3, ARG4);
    PRE_REG_READ4(long, "mk_timer_arm", mach_port_t,"name",
                  unsigned long,"flags", unsigned long,"expire_time",
                  unsigned long,"leeway"
    );
 }
 
-#endif /* DARWIN_VERS >= DARWIN_15_00 */
+#endif /* DARWIN_VERS >= DARWIN_26_00 */
 
 
 /* ---------------------------------------------------------------------
@@ -12101,7 +12101,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_revoke),
    GENX_(__NR_symlink,     sys_symlink),   // 57
    GENXY(__NR_readlink,    sys_readlink),
-   GENX_(__NR_execve,      sys_execve), 
+   GENX_(__NR_execve,      sys_execve),
    GENX_(__NR_umask,       sys_umask),     // 60
    GENX_(__NR_chroot,      sys_chroot),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(62)),    // old fstat
@@ -12125,7 +12125,7 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_setgroups),   // 80
    GENX_(__NR_getpgrp,     sys_getpgrp),
    GENX_(__NR_setpgid,     sys_setpgid),
-   GENXY(__NR_setitimer,   sys_setitimer), 
+   GENXY(__NR_setitimer,   sys_setitimer),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(84)),    // old wait
 // _____(__NR_swapon),
    GENXY(__NR_getitimer,   sys_getitimer),
@@ -12192,12 +12192,12 @@ const SyscallTableEntry ML_(syscall_table)[] = {
    GENX_(__NR_setsid,      sys_setsid),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(148)),   // old setquota
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(149)),   // old qquota
-   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(150)),   // old getsockname 
+   _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(150)),   // old getsockname
    GENX_(__NR_getpgid,     sys_getpgid),
-// _____(__NR_setprivexec), 
-   GENXY(__NR_pread,       sys_pread64), 
-   GENX_(__NR_pwrite,      sys_pwrite64), 
-// _____(__NR_nfssvc), 
+// _____(__NR_setprivexec),
+   GENXY(__NR_pread,       sys_pread64),
+   GENX_(__NR_pwrite,      sys_pwrite64),
+// _____(__NR_nfssvc),
    _____(VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(156)),   // old getdirentries
    GENXY(__NR_statfs,      sys_statfs),
    GENXY(__NR_fstatfs,     sys_fstatfs),
@@ -12284,9 +12284,9 @@ const SyscallTableEntry ML_(syscall_table)[] = {
 // _____(__NR_kqueue_portset_np),
 #endif
     MACXY(__NR_open_dprotected_np, open_dprotected_np),   // 216
-// _____(__NR_statv), 
-// _____(__NR_lstatv), 
-// _____(__NR_fstatv), 
+// _____(__NR_statv),
+// _____(__NR_lstatv),
+// _____(__NR_fstatv),
    MACXY(__NR_getattrlist, getattrlist),   // 220
    MACX_(__NR_setattrlist, setattrlist),
    MACXY(__NR_getdirentriesattr, getdirentriesattr),

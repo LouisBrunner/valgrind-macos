@@ -246,6 +246,9 @@
 #define __NR_mk_timer_destroy                 VG_DARWIN_SYSCALL_CONSTRUCT_MACH(92)
 #define __NR_mk_timer_arm                     VG_DARWIN_SYSCALL_CONSTRUCT_MACH(93)
 #define __NR_mk_timer_cancel                  VG_DARWIN_SYSCALL_CONSTRUCT_MACH(94)
+#if DARWIN_VERS >= DARWIN_26_00
+#define __NR_mk_timer_arm_leeway              VG_DARWIN_SYSCALL_CONSTRUCT_MACH(95)
+#endif
 
 #define __NR_iokit_user_client_trap           VG_DARWIN_SYSCALL_CONSTRUCT_MACH(100)
 

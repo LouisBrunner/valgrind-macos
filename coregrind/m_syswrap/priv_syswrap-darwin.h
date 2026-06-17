@@ -834,6 +834,9 @@ DECL_TEMPLATE(darwin, mk_timer_create);
 DECL_TEMPLATE(darwin, mk_timer_destroy);
 DECL_TEMPLATE(darwin, mk_timer_arm);
 DECL_TEMPLATE(darwin, mk_timer_cancel);
+#if DARWIN_VERS >= DARWIN_26_00
+DECL_TEMPLATE(darwin, mk_timer_arm_leeway);
+#endif
 DECL_TEMPLATE(darwin, iokit_user_client_trap);
 DECL_TEMPLATE(darwin, swtch);
 DECL_TEMPLATE(darwin, swtch_pri);

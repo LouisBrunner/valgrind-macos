@@ -12001,7 +12001,7 @@ POST(mach_vm_deferred_reclamation_buffer_allocate)
 PRE(mk_timer_arm_leeway) // FIXME: technically introduced in 10.12.4 (Darwin 16.5.0)
 {
    PRINT("mk_timer_arm_leeway(%s, %#lx, %lu, %lu)", name_for_port(ARG1), ARG2, ARG3, ARG4);
-   PRE_REG_READ4(long, "mk_timer_arm", mach_port_t,"name",
+   PRE_REG_READ4(long, "mk_timer_arm_leeway", mach_port_t,"name",
                  unsigned long,"flags", unsigned long,"expire_time",
                  unsigned long,"leeway"
    );

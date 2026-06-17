@@ -933,3 +933,12 @@
    fun:-[_CFXPreferences canLookUpAgents]
    ...
 }
+
+{
+   OSX2600:mach_vm_deferred_reclamation_buffer_allocate_param
+   Memcheck:Param
+   mach_vm_deferred_reclamation_buffer_allocate(address)
+   ...
+   fun:libSystem_initializer
+   ...
+}

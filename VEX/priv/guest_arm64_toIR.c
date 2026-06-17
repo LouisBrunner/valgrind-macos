@@ -2344,6 +2344,37 @@ IRExpr* mk_strip_pauth(UInt iregNo, Bool is_data)
 }
 
 /*------------------------------------------------------------*/
+/*--- Branch helpers                                       ---*/
+/*------------------------------------------------------------*/
+
+/* This function generates an AbiHint to say that [sp-redzone, sp) is now regarded as uninitialised.
+ *
+   Let nia be the guest address of the next instruction to be executed.
+
+   SP is always read directly from register.
+ */
+static
+void make_redzone_AbiHint ( const VexAbiInfo* vbi, IRTemp nia, const HChar* who )
+{
+   Int szB = vbi->guest_stack_redzone_size;
+   IRExpr* new_sp = NULL;
+   vassert(szB >= 0);
+
+   if (szB == 0) {
+     return;
+   }
+
+   if (0) vex_printf("AbiHint: %s\n", who);
+   new_sp = getIReg64orSP(31);
+   vassert(typeOfIRTemp(irsb->tyenv, nia) == Ity_I64);
+   stmt( IRStmt_AbiHint(
+       binop(Iop_Sub64, new_sp, mkU64(szB)),
+       szB,
+       mkexpr(nia)
+   ) );
+}
+
+/*------------------------------------------------------------*/
 /*--- Data processing (immediate)                          ---*/
 /*------------------------------------------------------------*/
 
@@ -7705,10 +7736,13 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       UInt  bLink  = INSN(31,31);
       ULong uimm64 = INSN(25,0) << 2;
       Long  simm64 = (Long)sx_to_64(uimm64, 28);
+      IRTemp new_pc = newTemp(Ity_I64);
+      assign(new_pc, mkU64(guest_PC_curr_instr + simm64));
       if (bLink) {
          putIReg64orSP(30, mkU64(guest_PC_curr_instr + 4));
+         make_redzone_AbiHint(abiinfo, new_pc, "bl");
       }
-      putPC(mkU64(guest_PC_curr_instr + simm64));
+      putPC(mkexpr(new_pc));
       dres->whatNext = Dis_StopHere;
       dres->jk_StopHere = Ijk_Call;
       DIP("b%s 0x%llx\n", bLink == 1 ? "l" : "",
@@ -7729,7 +7763,10 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       UInt branch_type = INSN(22,21);
       UInt nn          = INSN(9,5);
       if (branch_type == BITS2(1,0) /* RET */) {
-         putPC(getIReg64orZR(nn));
+         IRTemp new_pc = newTemp(Ity_I64);
+         assign(new_pc, getIReg64orZR(nn));
+         make_redzone_AbiHint(abiinfo, new_pc, "ret");
+         putPC(mkexpr(new_pc));
          dres->whatNext = Dis_StopHere;
          dres->jk_StopHere = Ijk_Ret;
          DIP("ret %s\n", nameIReg64orZR(nn));
@@ -7739,6 +7776,7 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
          IRTemp dst = newTemp(Ity_I64);
          assign(dst, getIReg64orZR(nn));
          putIReg64orSP(30, mkU64(guest_PC_curr_instr + 4));
+         make_redzone_AbiHint(abiinfo, dst, "blr");
          putPC(mkexpr(dst));
          dres->whatNext = Dis_StopHere;
          dres->jk_StopHere = Ijk_Call;
@@ -8636,10 +8674,13 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       if (isE) {
         return False;
       } else {
-      // FIXME: should we actually auth instead of just stripping?
+        IRTemp new_pc = newTemp(Ity_I64);
+        // FIXME: should we actually auth instead of just stripping?
         // pc = authenticate(x30, SP, isA, True);
         // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
-        putPC(mk_strip_pauth(30, False));
+        assign(new_pc, mk_strip_pauth(30, False));
+        make_redzone_AbiHint(abiinfo, new_pc, "reta");
+        putPC(mkexpr(new_pc));
         dres->whatNext = Dis_StopHere;
         dres->jk_StopHere = Ijk_Ret;
       }
@@ -8671,14 +8712,17 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       Bool isA = INSN(10,10) == 0;
       UInt nn  = INSN(9,5);
       UInt mm  = INSN(4,0);
+      IRTemp new_pc = newTemp(Ity_I64);
+      assign(new_pc, mk_strip_pauth(nn, False));
 
       if (isL) {
         putIReg64orZR(30, mkU64(guest_PC_curr_instr + 4));
+        make_redzone_AbiHint(abiinfo, new_pc, "blra");
       }
       // FIXME: should we actually auth instead of just stripping?
       // pc = authenticate(nn, mm | SP, isA, True);
       // see https://developer.arm.com/documentation/ddi0597/2023-12/Shared-Pseudocode/aarch64-functions-pac?lang=en#impl-aarch64.Authenticate.8
-      putPC(mk_strip_pauth(nn, False));
+      putPC(mkexpr(new_pc));
       dres->whatNext = Dis_StopHere;
       dres->jk_StopHere = Ijk_Call; // FIXME: I think?
       if (isZ) {

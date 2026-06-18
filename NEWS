@@ -45,6 +45,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 520856  unhandled instruction bytes: 0x2E 0xFF 0x14 0x85
 520861  Update FAQ for C++ standard library
 521027  Advertise LZCNT on amd64 via CPUID
+521259  Improve check_makefile_consistency
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

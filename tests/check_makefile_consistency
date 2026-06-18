@@ -1,141 +1,434 @@
-#!/bin/sh
+#!/usr/bin/env perl
 
-# Verify consistency of the regression test files present in a directory with
-# the contents of the EXTRA_DIST Makefile.am variable.
+#-----------------------------------------------------------------------
+# Check makefiles in the regtest buckets for consistency and neatness.
+#
+# Typical use case: A new testcase is added but it is forgotten to add
+# e.g. the .stdout.exp file to EXTRA_DIST or new header files to
+# noinst_HEADERS. For full details see the comments in these functions below:
+# - check_noinst_HEADERS
+# - check_EXTRA_DIST
+# - check_dist_noinst_SCRIPTS
+#
+# Makefile parsing is approximate. We are only interested in assignments
+# to makefile variables. The following assumptions are being made:
+#
+# (1) Makefiles are well-formed.
+# (2) addsuffix is the only recognised function
+# (3) addsuffix calls must not nest.
+# (4) := style assignments are not reconised
+#-----------------------------------------------------------------------
 
-# Expand variables in a Makefile ($(NAME) syntax), evaluate $(add_suffix ...)
-# and ignore $(noinst_SCRIPTS).
-parse_makefile() {
-  cat "$1" |
-  awk '/\\$/ {
-         n = $0
-         sub("\\\\$", "", n)
-         if (line != "")
-           line = line " " n
-         else
-           line = n
-       }
-       /[^\\]$/ {
-         if (line != "") {
-           print line " " $0
-           line = ""
-         } else {
-           print
-         }
-       }' |
-  awk '{
-         if (match($0, "^ *[A-Za-z_]* *= *.*$")) {
-           varname = $0
-           gsub("^ *", "", varname)
-           gsub(" *=.*", "", varname)
-           value = $0
-           gsub("^ *[A-Za-z_]* *= *", "", value)
-           var[varname] = value
-         }
-         for (v in var)
-           gsub("\\$\\( *" v " *\\)", var[v])
-         while ((pos = match($0, "\\$\\( *addsuffix *[^,)]*, *[^)]*\\)")) >= 1) {
-           suffix = substr($0, pos)
-           gsub("^\\$\\( *addsuffix *", "", suffix)
-           gsub(",.*", "", suffix)
-           names = substr($0, pos)
-           gsub("^\\$\\( *addsuffix *[^,)]*, *", "", names)
-           gsub("\\).*", "", names)
-           split(names, name)
-           name_and_suff=""
-           for (n in name)
-             name_and_suff = name_and_suff " " name[n] suffix
-           sub("\\$\\( *addsuffix *[^,)]*, *[^)]*\\)", name_and_suff)
-         }
-         print
-       }' |
-  sed 's/\$(noinst_SCRIPTS)//'
+use strict;
+use warnings;
+
+my %assign = ();       # global for ease of access
+my $debug  = 0;
+my @makefiles = ();
+
+my $usage = "\n"
+    . "Usage:\n"
+    . "   check_makefile_consistency [-d]* DIRECTORIES\n"
+    . "\n";
+
+for my $arg (@ARGV) {
+    if ($arg =~ /^-/) {
+        if ($arg =~ /^-(d+)$/) {
+            $debug += length($1);
+        } else {
+            die $usage;
+        }
+    } else {
+        my @mfiles = `find "$arg" -name Makefile`;
+        chomp(@mfiles);
+        push @makefiles, @mfiles;
+    }
 }
 
-if [ $# = 0 ]; then
-  echo "Error: tool name argument is missing."
-  exit 1
-fi
+STDOUT->autoflush if ($debug);   # make stdout unbuffered
 
-rc=0
+foreach my $path (@makefiles) {
+    %assign = ();
 
-# For all directories specified as an argument, find the Makefile.am files
-# beneath and check the consistency of the files *.vgtest and *.exp* files
-# in that directory with the filenames specified in EXTRA_DIST in Makefile.am.
-for t in "$@"
-do
-  find $t -name Makefile.am |
-  while read m; do
-    d="$(dirname "$m")"
-    (
-      rc=0
-      if cd $d; then
-        parsed_makefile="$(parse_makefile Makefile.am)"
-        for f in $(ls -d *.exp* *.gdb *.vgtest 2>/dev/null)
-        do
-          if [ "$f" = "*.exp*" -o "$f" = "*.gdb" -o "$f" = "*.vgtest" ]; then
-            continue
-          fi
-          if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *EXTRA_DIST *=' |
-               grep -qw "$f"
-          then
-            echo "$m:1: error: $f is missing in EXTRA_DIST"
-            rc=1
-          fi
-        done
+    parse_makefile($path);
+    check_makefile($path);
+}
+exit 0;
 
-        # check that filter files (but nor ones derived from filter*.in and emacs backup files)
-        # are in dist_noinst_SCRIPTS
-        for f in $(ls -d filter* 2>/dev/null | grep -v -e \.in -e '.*~$')
-        do
-          if [ ! -e "$f".in ]; then
-            if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *dist_noinst_SCRIPTS *=' |
-               grep -qw "$f"
-            then
-              echo "$m:1: error: $f is missing in dist_noinst_SCRIPTS"
-              rc=1
-            fi
-          fi
-        done
-        
-        # check that filter files derived from filter*.in are in noinst_SCRIPTS
-        for f in $(ls -d filter*\.in 2>/dev/null )
-        do
-          f2=`echo $f | sed 's/\.in//'`
-          if ! echo "${parsed_makefile}" 2>/dev/null | grep '^ *noinst_SCRIPTS *=' |
-             grep -qw "$f2"
-          then
-            echo "$m:1: error: $f2 is missing in noinst_SCRIPTS"
-            rc=1
-          fi
-        done
+sub process_line
+{
+    my ($line) = @_;
 
-        for f in $(parse_makefile Makefile.am | sed -n 's/^ *EXTRA_DIST *=//p')
-        do
-          if [ ! -e "$f" ]; then
-            echo "$m:1: error: $f is in EXTRA_DIST but doesn't exist"
-            rc=1
-          fi
-        done
+    # Look for '=' and '+=' assignments
+    if ($line =~ /\s*([A-Za-z_][A-Za-z_0-9]*)\s*=\s*(.*)/) {
+        $assign{$1} = $2;
+        print "ASSIGNMENT: $1 = $2\n" if ($debug >= 3);
+    } elsif ($line =~ /\s*([A-Za-z_][A-Za-z_0-9]*)\s*\+=\s*(.*)/) {
+        $assign{$1} .= " $2";
+        print "ASSIGNMENT: $1 += $2\n" if ($debug >= 3);
+    }
+}
 
-        for f in $(parse_makefile Makefile.am | sed -n 's/^ *dist_noinst_SCRIPTS *=//p')
-        do
-          if [ ! -e "$f" ]; then
-            echo "$m:1: error: $f is in dist_noinst_SCRIPTS but doesn't exist"
-            rc=1
-          fi
-        done
-      fi
-      [ $rc = 0 ]
-    )
-    if [ $? != 0 ]; then
-      rc=1
-    fi
-    [ $rc = 0 ]
-  done
-  if [ $? != 0 ]; then
-    rc=1
-  fi
-  [ $rc = 0 ]
-done
-exit $?
+# Look for assignments and store them in %assign
+sub parse_makefile
+{
+    my ($makefile) = @_;
+    my $fh;
+
+    print "PARSING '$makefile'\n" if ($debug);
+    open($fh, '<' , $makefile) || die("Cannot open '$makefile': $!");
+
+    while (my $line = <$fh>) {
+        chomp($line);
+
+        # Skip empty line
+        next if ($line =~ /^\s*$/);
+
+        # Join continuation lines into linebuf
+        my $linebuf = "";
+        while (42) {
+            if ($line =~ /\\$/) {      # test for continuation line
+                $line =~ s/\\$//;      # remove backslash
+                $linebuf .= " $line";
+                $line = <$fh>;
+                return if (! $line);   # really a syntax error
+                chomp($line);
+            } else {
+                $linebuf .= " $line";
+                last;
+            }
+        }
+        $linebuf =~ s/#.*//;    # Remove inline comment
+        print("LINE $linebuf\n") if ($debug >= 4);
+    
+        process_line($linebuf);
+    }
+}
+
+sub check_makefile
+{
+    my ($makefile) = @_;
+
+    print "CHECKING '$makefile'\n" if ($debug);
+    check_noinst_HEADERS($makefile);
+    check_EXTRA_DIST($makefile);
+    check_dist_noinst_SCRIPTS($makefile);
+}
+
+sub check_noinst_HEADERS
+{
+    my ($makefile) = @_;
+    my ($dir) = $makefile =~ /(.*)\/.*/;
+    my $var    = "noinst_HEADERS";
+    my $varpkg = "pkginclude_HEADERS";
+
+    print "CHECKING '$var'\n" if ($debug >= 2);
+
+    my %files = collect_files("$dir/*.h");
+
+    my %noinst_HEADERS = collect_and_expand($var);
+    my %pkginclude_HEADERS = collect_and_expand($varpkg);
+
+    # A header file must not appear both in noinst_HEADERS and
+    # pkginclude_HEADERS.
+    foreach my $header (keys %pkginclude_HEADERS) {
+        if ($noinst_HEADERS{$header}) {
+            complain("$makefile", "$header appears both in $var and $varpkg");
+            delete $noinst_HEADERS{$header};
+        }
+    }
+
+    # If pkginclude_HEADERS is defined remove named headers from %files.
+    foreach my $name (keys %pkginclude_HEADERS) {
+        if ($files{$name}) {
+            delete $files{$name};
+        } else {
+            complain("$makefile", "$name is in $varpkg but doesn't exist");
+        }
+    }
+    
+    # If any header files exist there must be a noinst_HEADERS makefile
+    # variable.
+    if (! $assign{$var}) {
+        if (scalar(keys %files) != 0) {
+            my $str = join(" ", keys %files);
+            complain("$makefile", "missing variable $var (needed for: $str)")
+        }
+        return;
+    }
+
+    # All existing header files should be listed in noinst_HEADERS.
+    foreach my $file (keys %files) {
+        if (! $noinst_HEADERS{$file}) {
+            complain("$makefile", "$file is missing in $var");
+        }
+    }
+
+    # All header files named in noinst_HEADERS should exist.
+    foreach my $name (keys %noinst_HEADERS) {
+        if ($name =~ /\.h$/ && ! $files{$name}) {
+            complain("$makefile", "$name is in $var but doesn't exist");
+        }
+    }
+
+    # Only header files or files that are #include'd ought to be listed
+    # in noinst_HEADERS.
+    foreach my $name (keys %noinst_HEADERS) {
+        if ($name !~ /\.h$/ && ! is_included($dir, $name)) {
+            complain("$makefile", "$name shouldn't be listed in $var");
+        }
+    }
+
+    # Only header files or files that are #include'd ought to be listed
+    # in pkginclude_HEADERS.
+    foreach my $name (keys %pkginclude_HEADERS) {
+        if ($name !~ /\.h$/ && ! is_included($dir, $name)) {
+            complain("$makefile", "$name shouldn't be listed in $varpkg");
+        }
+    }
+}
+
+sub check_EXTRA_DIST
+{
+    my ($makefile) = @_;
+    my ($dir) = $makefile =~ /(.*)\/.*/;
+    my $var = "EXTRA_DIST";
+
+    print "CHECKING '$var'\n" if ($debug >= 2);
+
+    my %files = collect_files("$dir/*.vgtest $dir/*.vgtest $dir/*.stdout.exp* "
+                              . "$dir/*.stderr.exp* $dir/*.post.exp*");
+
+    my %vgtestin = collect_files("$dir/*.vgtest.in");
+
+    # If any files matching the patterns exist there must be an EXTRA_DIST
+    # makefile variable.
+    if (! $assign{$var}) {
+        my @anyfiles = (keys %files, keys %vgtestin);
+        if (scalar(@anyfiles) != 0) {
+            my $str = join(" ", @anyfiles);
+            complain("$makefile", "missing variable $var (needed for: $str)")
+        }
+        return;
+    }
+
+    # Merge %files and %vgtestin.
+    foreach my $file (keys %vgtestin) {
+        my $base = $file;
+        $base =~ s/\.in$//;
+        if ($files{$base}) {
+            delete $files{$base};
+            $files{$file} = 1;
+        }
+    }
+    
+    # All existing files matching the patterns should be listed in
+    # EXTRA_DIST.
+    my %EXTRA_DIST = collect_and_expand($var);
+    foreach my $file (keys %files) {
+        if (! $EXTRA_DIST{$file}) {
+            complain("$makefile", "$file is missing in $var");
+        }
+    }
+
+    # All files named in EXTRA_DIST should exist.
+    foreach my $name (keys %EXTRA_DIST) {
+        if (! -f "$dir/$name") {
+            complain("$makefile", "$name is in $var but doesn't exist");
+        }
+    }
+
+    # EXTRA_DIST shouldn't contain any header files.
+    foreach my $name (keys %EXTRA_DIST) {
+        if ($name =~ /\.h$/) {
+            complain("$makefile", "move '$name' from $var to noinst_HEADERS");
+        }
+    }
+}
+
+sub check_dist_noinst_SCRIPTS
+{
+    my ($makefile) = @_;
+    my ($dir) = $makefile =~ /(.*)\/.*/;
+    my $var  = "dist_noinst_SCRIPTS";
+    my $var2 = "noinst_SCRIPTS";
+
+    print "CHECKING '$var'\n" if ($debug >= 2);
+
+    my %noinst_SCRIPTS = collect_and_expand($var2);
+    my %dist_noinst_SCRIPTS = collect_and_expand($var);
+
+    # Collect executable files into %files.
+
+    my %files = ();
+    opendir(my $dh, "$dir") or die "Cannot open current directory: $!";
+    while (my $file = readdir($dh)) {
+        if (-f "$dir/$file" && -x "$dir/$file") {
+            next if ($file =~ /~$/);               # ignore emacs backup files
+            next if (! is_script("$dir/$file"));   # ignore all non-scripts
+            next if ($noinst_SCRIPTS{$file});      # ignore generated scripts
+            $files{$file} = 1;
+        }
+    }
+    closedir($dh);
+
+    # If any scripts exist there must be a dist_noinst_SCRIPTS makefile
+    # variable.
+    if (! $assign{$var}) {
+        if (scalar(keys %files) != 0) {
+            my $str = join(" ", keys %files);
+            complain("$makefile", "missing variable $var (needed for: $str)")
+        }
+        return;
+    }
+
+    # All existing scripts should be listed in dist_noinst_SCRIPTS
+    foreach my $file (keys %files) {
+        if (! $dist_noinst_SCRIPTS{$file}) {
+            complain("$makefile", "$file is missing in $var");
+        }
+    }
+
+    # All files named in dist_noinst_SCRIPTS should exist.
+    foreach my $name (keys %dist_noinst_SCRIPTS) {
+        if (! $files{$name}) {
+            complain("$makefile", "$name is in $var but doesn't exist");
+        }
+    }
+}
+
+sub append_suffix
+{
+    my ($suffix, $str) = @_;
+    my @names = split(" ", $str);
+
+    my @suffixed = map { $_ . $suffix } @names;
+
+    return join(" ", @suffixed);
+}
+
+sub expand_makefile_vars
+{
+    my ($str) = @_;
+
+    # make docs: A variable name may be any sequence of characters not
+    # containing # ':', '#', '=', or whitespace.
+    # This is messy and also does not work when the variable name contains
+    # the ')' character.
+    # So we do not allow it. C-style variable names are allowed only.
+    while ($str =~ /^(.*?)\$\(([A-Za-z_][A-Za-z_0-9]*)\)(.*)/) {  # non-greedy
+        my $before = $1;
+        my $var = $2;
+        my $remainder = $3;
+#        print "IN     |$str|\n";
+#        print "BEFORE |$before|\n";
+#        print "VAR    |$var|\n";
+#        print "REMAIN |$remainder|\n";
+        my $name_list = $assign{$var};
+        $str  = $before;
+        $str .= $name_list if (defined $name_list);
+        $str .= $remainder;
+    }
+    return $str;
+}
+
+sub expand_addsuffix_calls
+{
+    my ($str) = @_;
+
+    while ($str =~ /^(.*?)\$\(addsuffix\s+([^,]+),\s*(.*)/) { # non-greedy
+        my $before = $1;
+        my $suffix = $2;
+        my $remainder = $3;
+#        print "IN     |$str|\n";
+#        print "BEFORE |$before|\n";
+#        print "SUFFIX |$suffix|\n";
+#        print "REMAIN |$remainder|\n";
+
+        # REMAINDER is the rest of the line
+        # We need to find the closing paren matching the '(' right after
+        # "addsuffix". That cannot be done with regular expressions.
+        my @chars = split("", $remainder);  
+        my $num_paren = 1;   # the '(' right before addsuffix
+        my $ix = 0;
+        foreach my $c (@chars) {
+            ++$num_paren if ($c eq "(");
+            --$num_paren if ($c eq ")");
+            if ($num_paren == 0) {
+                my $remains = join("", @chars[$ix + 1 .. $#chars]);
+                my $names   = join("", @chars[0 .. $ix - 1]);
+#                print "NAMES   |$names|\n";
+#                print "REMAINS |$remains|\n";
+                # Now execute the addsuffix function
+                $str  = $before;
+                $str .= append_suffix($suffix, $names);
+                $str .= $remains;
+                last;
+            }
+            ++$ix;
+        }
+    }
+    return $str;
+}
+
+sub collect_files
+{
+    my ($pattern) = @_;
+    
+    my @files = glob($pattern);
+
+    # Remove directory prefix
+    foreach my $x (@files) {
+        $x =~ s/.*\///;
+    }
+    my %files_hash = ();
+    $files_hash{$_}++ for (@files);
+
+    return %files_hash;
+}
+
+sub collect_and_expand
+{
+    my ($var) = @_;
+
+    my $str = $assign{$var};
+
+    return () if (! defined $str);  # variable does not exist
+    
+    print "EXPANDING '$var'\n" if ($debug >= 3);
+    
+    $str = expand_makefile_vars($str);
+    $str = expand_addsuffix_calls($str);
+
+    print "EXPANDED |$str|\n" if ($debug >= 3);
+    
+    my @named = split(" ", $str);
+    my %named_hash = ();
+    $named_hash{$_}++ for (@named);
+    return %named_hash;
+}
+
+sub is_script
+{
+    my ($file) = @_;
+    my $fh;
+
+    open($fh, '<' , $file) || die("Cannot open '$file': $!");
+    my $line = <$fh>;
+    close($fh);
+    return ($line && $line =~ /^\s*#!/);  # test for shebang
+}
+
+sub is_included
+{
+    my ($dir, $name) = @_;
+
+    `grep -E '[ ]*#[ ]*include[ ]+"$name"' $dir/*.[ch] > /dev/null 2>/dev/null`;
+    return $? == 0 ? 1 : 0;
+}
+
+sub complain
+{
+    my ($makefile, $msg) = @_;
+    print STDERR "$makefile: error: $msg\n";
+}

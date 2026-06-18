@@ -2000,6 +2000,20 @@ ac_asm_have_darn_inst=no
 AC_MSG_RESULT([no])
 ])
 
+# power9 (isa 3.0) compiler support
+AC_MSG_CHECKING([that compiler supports power9 (ISA 3.0) ])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mcpu=power9 -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[ ]])], [
+ac_compiler_have_power9=yes
+AC_MSG_RESULT([yes])
+], [
+ac_compiler_have_power9=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
 # isa 3.01 checking
 AC_MSG_CHECKING([that assembler knows ISA 3.1 ])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -2014,13 +2028,30 @@ ac_asm_have_isa_3_1=no
 AC_MSG_RESULT([no])
 ])
 
+# power10 and power11 (isa 3.1) compiler support
+AC_MSG_CHECKING([that compiler supports power10 and power11 (ISA 3.1)])
+safe_CFLAGS=$CFLAGS
+CFLAGS="-mcpu=power10 -Werror"
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[ ]])], [
+ac_compiler_have_power10=yes
+AC_MSG_RESULT([yes])
+], [
+ac_compiler_have_power10=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
 
-AM_CONDITIONAL(HAS_ISA_3_00, [test x$ac_asm_have_isa_3_00 = xyes])
+# isa 3.01 checking
+
+AM_CONDITIONAL(HAS_ISA_3_00, [test x$ac_asm_have_isa_3_00 = xyes \
+                             -a x$ac_compiler_have_power9 = xyes])
 
 AM_CONDITIONAL(HAS_XSCVHPDP, [test x$ac_asm_have_xscvhpdp = xyes])
 AM_CONDITIONAL(HAS_DARN, [test x$ac_asm_have_darn_inst = xyes])
 
-AM_CONDITIONAL(HAS_ISA_3_1, [test x$ac_asm_have_isa_3_1 = xyes])
+AM_CONDITIONAL(HAS_ISA_3_1, [test x$ac_asm_have_isa_3_1 = xyes \
+                            -a x$ac_compiler_have_power10 = xyes])
 
 # Check for pthread_create@GLIBC2.0
 AC_MSG_CHECKING([for pthread_create@GLIBC2.0()])

@@ -5372,7 +5372,8 @@ AC_CHECK_FUNCS([     \
         timer_delete \
         fchroot      \
         setcred      \
-        exterrctl
+        exterrctl    \
+        getauxval
         ])
 
 if test "$VGCONF_OS" = "solaris" ; then

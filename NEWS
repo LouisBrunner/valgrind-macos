@@ -32,6 +32,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 338365  New client request to fetch valgrind version
 387080  Add --peak-only option to ms_print
 391311  Fix arm64 valgrind tests compilation with clang
+438640  vex x86->IR: unhandled instruction bytes:
+        0xF2 0xF 0x38 0xF1 (CRC, SSE4.2)
 519223  Recognize ioctl(UFFDIO_*) operations
 519539  Darwin shm_open mode is optional and depends on oflag
 519574  valgrind 3.27 "--fair-sched=yes" does not work

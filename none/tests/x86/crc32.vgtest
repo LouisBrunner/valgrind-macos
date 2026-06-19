@@ -1,0 +1,3 @@
+prog: crc32
+prereq: test -x crc32
+vgopts: -q

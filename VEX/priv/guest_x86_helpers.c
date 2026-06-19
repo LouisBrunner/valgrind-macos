@@ -709,6 +709,36 @@ UInt x86g_calculate_condition ( UInt/*X86Condcode*/ cond,
    }
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calc_crc32b ( UInt crcIn, UInt b )
+{
+   UInt  i;
+   UInt crc = (b & 0xFFU) ^ crcIn;
+   for (i = 0; i < 8; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78U : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calc_crc32w ( UInt crcIn, UInt w )
+{
+   UInt  i;
+   UInt crc = (w & 0xFFFFU) ^ crcIn;
+   for (i = 0; i < 16; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78U : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calc_crc32l ( UInt crcIn, UInt l )
+{
+   UInt i;
+   UInt crc = (l & 0xFFFFFFFFU) ^ crcIn;
+   for (i = 0; i < 32; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78U : 0);
+   return crc;
+}
+
 
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestX86_get_eflags ( /*IN*/const VexGuestX86State* vex_state )

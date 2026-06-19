@@ -82,7 +82,8 @@ EXTRA_DIST = \
 	x86locked.vgtest x86locked.stdout.exp \
 	x87trigOOR.vgtest x87trigOOR.stdout.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \
-	xadd.stdout.exp xadd.vgtest
+	xadd.stdout.exp xadd.vgtest \
+	crc32.vgtest crc32.stdout.exp
 
 check_PROGRAMS = \
 	aad_aam \
@@ -126,7 +127,8 @@ if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
 endif
 if BUILD_SSE42_TESTS
-   check_PROGRAMS += sse4-x86
+   check_PROGRAMS += sse4-x86 \
+	crc32
 endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32

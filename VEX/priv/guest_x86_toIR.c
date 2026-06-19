@@ -13881,6 +13881,53 @@ DisResult disInstr_X86_WRK (
       goto decode_success;
    }
 
+   // crc32
+   if (insn[0] == 0xF2 && insn[1] == 0x0F &&
+       insn[2] == 0x38 && (insn[3] == 0xF0 || insn[3] == 0xF1)) {
+      /* insn[3] == 0xF0 signalizes a 8-bit operand.  Wider operands
+         are signalized using prefixes in 64-bit case or sz in this case */
+      if (insn[3] == 0xF0)
+         sz = 1;
+      else
+         vassert(sz == 2 || sz == 4 || sz == 8);
+
+      IRType tyE = szToITy(sz);
+      IRTemp valE = newTemp(tyE);
+      modrm = insn[4];
+
+      if (epartIsReg(modrm)) {
+         assign(valE, getIReg(sz, eregOfRM(modrm)));
+         delta += 4 + 1;
+      } else {
+         // F2 0F 38 F0 => 4 bytes
+         addr = disAMode( &alen, sorb, delta+4, dis_buf );
+         assign(valE, loadLE(tyE, mkexpr(addr)));
+         delta += 4 + alen;
+      }
+
+      IRTemp valG0 = newTemp(Ity_I32);
+      assign(valG0, getIReg(4, gregOfRM(modrm)));
+
+      const HChar* nm = NULL;
+      void*  fn = NULL;
+      switch (sz) {
+         case 1: nm = "x86g_calc_crc32b";
+                 fn = &x86g_calc_crc32b; break;
+         case 2: nm = "x86g_calc_crc32w";
+                 fn = &x86g_calc_crc32w; break;
+         case 4: nm = "x86g_calc_crc32l";
+                 fn = &x86g_calc_crc32l; break;
+      }
+      vassert(nm && fn);
+      IRTemp valG1 = newTemp(Ity_I32);
+      assign(valG1,
+             mkIRExprCCall(Ity_I32, 0, nm, fn,
+             mkIRExprVec_2(mkexpr(valG0), widenUto32(mkexpr(valE)))));
+
+      putIReg(4, gregOfRM(modrm), mkexpr(valG1));
+      goto decode_success;
+   }
+
    /* ---------------------------------------------------- */
    /* --- end of the SSE4 decoder                      --- */
    /* ---------------------------------------------------- */

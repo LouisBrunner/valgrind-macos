@@ -198,7 +198,7 @@ void test_CRC32_U8_x86 ( void )
       block[3] = (UInt)randUInt();
       __asm__ __volatile__(
          "movl %0,       %%eax"  "\n\t"
-         "movl 0(%%eax), %%edi"  "\n\t"
+         "movl 0(%%eax), %%edx"  "\n\t"
          "movl 4(%%eax), %%ecx"  "\n\t"
          "crc32 %%dl,  %%ecx"  "\n\t"
          "movl %%ecx, 8(%%eax)"  "\n\t"
@@ -207,7 +207,7 @@ void test_CRC32_U8_x86 ( void )
          "movl %%edx, 12(%%eax)"  "\n"
          : /*out*/
          : /*in*/"r"(&block[0])
-         : /*trash*/ "cc", "memory", "edi", "ecx", "edx"
+         : /*trash*/ "cc", "memory", "ecx", "edx"
       );
       printf("r crc32_u8  %08x %08x  %08x %08x\n",
              block[0], block[1], block[2], block[3] & oszacp_mask);

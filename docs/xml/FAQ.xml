@@ -565,7 +565,7 @@ int main(void)
     similar issues. Dealing with these issues is beyond the scope of this document.</para>
     <para>To read more about C++ allocators, see the cppreference pages on <ulink url="https://en.cppreference.com/cpp/memory/allocator">allocator</ulink>
     or <ulink url="https://en.cppreference.com/cpp/memory/polymorphic_allocator">polymorphic_allocator</ulink>.</para>
-    <para>To read more about how to teach Valgrind to understand memory pools, see <xref linkend="mc-manual.mempools"/>
+    <para>To read more about how to teach Valgrind to understand memory pools, see the Memcheck manual section <ulink url="https://valgrind.org/docs/manual/mc-manual.html#mc-manual.mempools">Memory Pools: describing and working with custom allocators</ulink>
     for details. This <ulink url="https://developers.redhat.com/articles/2022/03/23/use-valgrind-memcheck-custom-memory-manager#">guide</ulink>
     also shows how to instrument memory pools.</para>
  </answer>

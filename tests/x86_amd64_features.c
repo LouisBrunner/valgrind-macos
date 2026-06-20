@@ -102,6 +102,12 @@ static Bool go(char* cpu)
    } else if ( strcmp( cpu, "x86-lzcnt" ) == 0 ) {
      level = 0x80000001;
      cmask = 1 << 5;
+   } else if ( strcmp( cpu, "x86-sse42" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 20;
+   } else if ( strcmp( cpu, "x86-movbe" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 22;
 #if defined(VGA_amd64)
    } else if ( strcmp( cpu, "amd64-sse3" ) == 0 ) {
      level = 1;
@@ -138,6 +144,12 @@ static Bool go(char* cpu)
    } else if (strcmp (cpu,  "amd64-rdseed" ) == 0) {
       level = 7;
       bmask = 1 << 18;
+   } else if ( strcmp( cpu, "amd64-movbe" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 22;
+   } else if ( strcmp( cpu, "amd64-aes" ) == 0 ) {
+     level = 1;
+     cmask = 1 << 25;
 #endif
    } else {
      return UNRECOGNISED_FEATURE;

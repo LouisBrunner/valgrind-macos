@@ -27,12 +27,6 @@ if !SOLARIS_SUN_STUDIO_AS
    INSN_TESTS += insn_fpu
 endif
 
-# Explicitly include insn_sse3 even if ! BUILD_SSE3_TESTS, 
-# to avoid packaging screwups if 'make dist' is run on a machine
-# which failed the BUILD_SSE3_TESTS test in configure.in.
-
-## FIXME: move lzcnt32 to SSE4 conditionalisation, when that happens.
-
 EXTRA_DIST = \
 	aad_aam.stdout.exp aad_aam.vgtest \
 	badseg.stdout.exp badseg.stdout.exp-solaris \
@@ -126,14 +120,14 @@ check_PROGRAMS = \
 if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
 endif
-if BUILD_SSE42_TESTS
+if BUILD_SSE42_X86_TESTS
    check_PROGRAMS += sse4-x86 \
 	crc32
 endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32
 endif
-if BUILD_MOVBE_TESTS
+if BUILD_MOVBE_X86_TESTS
  check_PROGRAMS += movbe
 endif
 if !VGCONF_OS_IS_DARWIN

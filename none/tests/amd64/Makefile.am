@@ -148,8 +148,11 @@ if BUILD_MOVBE_TESTS
 endif
 if BUILD_SSE42_TESTS
  check_PROGRAMS += \
-	pcmpstr64 pcmpxstrx64 sse4-64 crc32 aes \
+	pcmpstr64 pcmpxstrx64 sse4-64 crc32 \
 	pcmpstr64w pcmpxstrx64w
+endif
+if BUILD_AES_TESTS
+  check_PROGRAMS += aes
 endif
 if BUILD_TSX_TESTS
   check_PROGRAMS += tm1 xacq_xrel

@@ -3698,9 +3698,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
       "crc32q %%r15,%%r15" : : : "r15" );
    __asm__ __volatile__(
       "pblendvb (%%rcx), %%xmm11" : : : "memory", "xmm11"); 
-   __asm__ __volatile__(
-      "aesdec %%xmm2, %%xmm1" : : : "xmm2", "xmm1"); }
-  while (0)
+  } while (0)
 ]])], [
 ac_have_as_sse42=yes
 AC_MSG_RESULT([yes])
@@ -3711,6 +3709,46 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(BUILD_SSE42_TESTS, test x$ac_have_as_sse42 = xyes)
 
+# Same for x86 (32bit)
+AC_MSG_CHECKING([if x86/amd64 assembler speaks SSE4.2 x86])
+
+safe_CFLAGS=$CFLAGS
+CFLAGS="-msse -Werror"
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x;
+   __asm__ __volatile__(
+      "crc32w %%cx,%%ecx" : : : "ecx" );
+   __asm__ __volatile__(
+      "pblendvb (%%ecx), %%xmm7" : : : "memory", "xmm7");
+  } while (0)
+]])], [
+ac_have_as_sse42_x86=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_sse42_x86=no
+AC_MSG_RESULT([no])
+])
+CFLAGS=$safe_CFLAGS
+
+AM_CONDITIONAL(BUILD_SSE42_X86_TESTS, test x$ac_have_as_sse42_x86 = xyes)
+
+AC_MSG_CHECKING([if x86/amd64 assembler speaks AES])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x;
+   __asm__ __volatile__(
+      "aesdec %%xmm2, %%xmm1" : : : "xmm2", "xmm1"); }
+  while (0)
+]])], [
+ac_have_as_aes=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_aes=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_AES_TESTS, test x$ac_have_as_aes = xyes)
 
 # does the x86/amd64 assembler understand AVX instructions?
 # Note, this doesn't generate a C-level symbol.  It generates a
@@ -3963,6 +4001,24 @@ AC_MSG_RESULT([no])
 ])
 
 AM_CONDITIONAL(BUILD_MOVBE_TESTS, test x$ac_have_as_movbe = xyes)
+
+# Same but now for x86 (32bit)
+AC_MSG_CHECKING([if x86/amd64 assembler knows the MOVBE insn x86])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+  do { long long int x;
+   __asm__ __volatile__(
+      "movbe (%%esp), %%edi" : : : "memory", "edi" ); }
+  while (0)
+]])], [
+ac_have_as_movbe32=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_as_movbe32=no
+AC_MSG_RESULT([no])
+])
+
+AM_CONDITIONAL(BUILD_MOVBE_X86_TESTS, test x$ac_have_as_movbe32 = xyes)
 
 
 # Does the C compiler support the "ifunc" attribute

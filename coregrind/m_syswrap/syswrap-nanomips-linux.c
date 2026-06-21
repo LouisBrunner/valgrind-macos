@@ -828,6 +828,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY (__NR_lsm_list_modules,       sys_lsm_list_modules),
    LINX_ (__NR_mseal,                  sys_mseal),
    LINX_ (__NR_futex_waitv,            sys_futex_waitv),
+   LINXY (__NR_open_tree_attr,         sys_open_tree_attr),
    LINXY (__NR_file_getattr,           sys_file_getattr),
    LINX_ (__NR_file_setattr,           sys_file_setattr),
 };

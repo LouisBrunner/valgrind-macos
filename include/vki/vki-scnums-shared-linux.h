@@ -64,6 +64,7 @@
 #define __NR_lsm_set_self_attr	460
 #define __NR_lsm_list_modules   461
 #define __NR_mseal		462
+#define __NR_open_tree_attr	467
 #define __NR_file_getattr	468
 #define __NR_file_setattr	469
 

@@ -14753,6 +14753,39 @@ POST(sys_open_tree)
    }
 }
 
+/* int open_tree_attr (int dfd, const char *filename, unsigned int flags,
+                       struct mount_attr __user * uattr, size_t usize)  */
+PRE(sys_open_tree_attr)
+{
+   PRINT("sys_open_tree_attr ( %ld, %#" FMT_REGWORD "x(%s), %ld, %#" FMT_REGWORD "x, %" FMT_REGWORD "u ",
+         SARG1, ARG2, (HChar*)(Addr)ARG2, SARG3, ARG4, ARG5);
+   PRE_REG_READ5(long, "open_tree_attr",
+                 int, dfd, const char *, filename, int, flags,
+                 struct vki_mount_attr *, uattr, vki_size_t, usize);
+   PRE_MEM_RASCIIZ( "open_tree_attr(filename)", ARG2);
+   /* For absolute filenames, dfd is ignored.  If dfd is AT_FDCWD,
+      filename is relative to cwd.  When comparing dfd against AT_FDCWD,
+      be sure only to compare the bottom 32 bits. */
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && *(Char *)(Addr)ARG2 != '/'
+       && ((Int)ARG1) != ((Int)VKI_AT_FDCWD)
+       && !ML_(fd_allowed)(ARG1, "open_tree_attr", tid, False))
+      SET_STATUS_Failure( VKI_EBADF );
+   PRE_MEM_READ("open_tree_attr(uattr)", ARG4, ARG5);
+}
+
+POST(sys_open_tree_attr)
+{
+   POST_newFd_RES;
+   if (!ML_(fd_allowed)(RES, "open_tree_attr", tid, True)) {
+      VG_(close)(RES);
+      SET_STATUS_Failure( VKI_EMFILE );
+   } else {
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_with_given_name)(tid, RES, (HChar*)(Addr)ARG2);
+   }
+}
+
 /* int move_mount (int from_dfd, const char *from_pathname,
                    int to_dfd, const char *to_pathname,
                    unsigned int flags)  */

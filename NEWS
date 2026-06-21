@@ -47,6 +47,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 520856  unhandled instruction bytes: 0x2E 0xFF 0x14 0x85
 520861  Update FAQ for C++ standard library
 521027  Advertise LZCNT on amd64 via CPUID
+521054  Unhandled amd64-linux syscall: 467 (open_tree_attr)
 521259  Improve check_makefile_consistency
 521332  vex x86->IR: unhandled instruction bytes: 66 0F 38 37 (PCMPGTQ)
 

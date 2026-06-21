@@ -1192,6 +1192,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_lsm_set_self_attr,       sys_lsm_set_self_attr),       // 460
    LINXY(__NR_lsm_list_modules,        sys_lsm_list_modules),        // 461
    LINX_(__NR_mseal,                   sys_mseal),                   // 462
+   LINXY(__NR_open_tree_attr,          sys_open_tree_attr),          // 467
    LINXY(__NR_file_getattr,            sys_file_getattr),            // 468
    LINX_(__NR_file_setattr,            sys_file_setattr),            // 469
 };

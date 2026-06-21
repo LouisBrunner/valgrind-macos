@@ -2477,4 +2477,31 @@ static inline void test_ROUNDPS_w_mxcsr_rounding ( void )
    assert(rm == 0); // 0 == RN == default
 }
 
+static inline void test_PCMPGTQ ( void )
+{
+   V128 spec[7];
+   do64HLtoV128( &spec[0], 0x0000000000000000ULL, 0xffffffffffffffffULL );
+   do64HLtoV128( &spec[1], 0x0000000000000001ULL, 0xfffffffffffffffeULL );
+   do64HLtoV128( &spec[2], 0x7fffffffffffffffULL, 0x8000000000000001ULL );
+   do64HLtoV128( &spec[3], 0x8000000000000000ULL, 0x8000000000000000ULL );
+   do64HLtoV128( &spec[4], 0x8000000000000001ULL, 0x7fffffffffffffffULL );
+   do64HLtoV128( &spec[5], 0xfffffffffffffffeULL, 0x0000000000000001ULL );
+   do64HLtoV128( &spec[6], 0xffffffffffffffffULL, 0x0000000000000000ULL );
+
+   V128 src, dst;
+   Int i, j;
+   for (i = 0; i < 10; i++) {
+      randV128(&src);
+      randV128(&dst);
+      DO_mandr_r("pcmpgtq", src, dst);
+   }
+   for (i = 0; i < 7; i++) {
+      for (j = 0; j < 7; j++) {
+         memcpy(&src, &spec[i], 16);
+         memcpy(&dst, &spec[j], 16);
+         DO_mandr_r("pcmpgtq", src, dst);
+      }
+   }
+}
+
 #endif /* __SSE4_COMMON_H */

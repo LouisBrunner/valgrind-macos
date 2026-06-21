@@ -48,6 +48,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 520861  Update FAQ for C++ standard library
 521027  Advertise LZCNT on amd64 via CPUID
 521259  Improve check_makefile_consistency
+521332  vex x86->IR: unhandled instruction bytes: 66 0F 38 37 (PCMPGTQ)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -270,6 +270,7 @@ int main(void)
    test_ROUNDPD_w_mxcsr_rounding();
    test_ROUNDPS_w_mxcsr_rounding();
    test_PMULDQ();
+   test_PCMPGTQ();
 
    return 0;
 }

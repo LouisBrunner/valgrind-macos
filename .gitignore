@@ -2546,6 +2546,7 @@ none/tests/freebsd/bug499212
 /tests/vg_regtest
 /tests/x86_amd64_features
 /tests/arm64_features
+/tests/check_ppc64_auxv_cap
 
 # /VEX/
 /VEX/libvex*.a

@@ -313,7 +313,7 @@ void test_CRC32_U32_x86 ( void )
       __asm__ __volatile__(
          "movl %0,       %%eax"  "\n\t"
          "movl 4(%%eax), %%ecx"  "\n\t"
-         "crc32 0(%%eax), %%ecx"  "\n\t"
+         "crc32l 0(%%eax), %%ecx"  "\n\t"
          "movl %%ecx, 8(%%eax)"  "\n\t"
          "pushf"                 "\n\t"
          "popl %%edx"             "\n\t"

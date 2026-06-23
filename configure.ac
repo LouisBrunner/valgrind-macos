@@ -5415,8 +5415,6 @@ AC_CHECK_FUNCS([     \
         strndup      \
         close_range  \
         wcsncpy      \
-        free_sized   \
-        free_aligned_sized \
         sbrk         \
         wcpncpy      \
         wcsxfrm      \
@@ -6034,6 +6032,25 @@ AC_MSG_RESULT([no])
 
 AM_CONDITIONAL(HAVE_THRD_CREATE, test x$ac_have_thrd_create = xyes)
 
+# check for C23 free_sized
+safe_CFLAGS=${CFLAGS}
+AC_MSG_CHECKING([for free_sized])
+CFLAGS="-std=c23 -Werror"
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+   #include <stdlib.h>
+]], [[
+   free_sized(0U, 0U);
+]])], [
+   ac_have_free_sized=yes
+   AC_MSG_RESULT([yes])
+], [
+   ac_have_free_sized=no
+   AC_MSG_RESULT([no])
+])
+
+CFLAGS=${safe_CFLAGS}
+
+AM_CONDITIONAL([HAVE_FREE_SIZED], [test x$ac_have_free_sized = xyes])
 
 # Check arm64 sha3
 safe_CFLAGS=$CFLAGS

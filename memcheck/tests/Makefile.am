@@ -602,11 +602,10 @@ if HAVE_WCSXFRM
 check_PROGRAMS += bug484002
 endif
 
+# assume that if free_sized is present then so is free_aligned_sized
 if HAVE_FREE_SIZED
-if HAVE_FREE_ALIGNED_SIZED
 check_PROGRAMS += c23_free
-c23_free_CFLAGS = ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
-endif
+c23_free_CFLAGS = -std=c23 ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 endif
 
 if GZ_ZLIB

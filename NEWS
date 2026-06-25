@@ -50,6 +50,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 521054  Unhandled amd64-linux syscall: 467 (open_tree_attr)
 521259  Improve check_makefile_consistency
 521332  vex x86->IR: unhandled instruction bytes: 66 0F 38 37 (PCMPGTQ)
+522160  Robustify the flags check in the none/tests/x86/crc32 test
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

@@ -5075,6 +5075,12 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       s390_amode *am;
       ULong new_value, old_value, difference;
 
+      /* Peephole optimization:  PUT(...) = GET:I64(...) can be thrown out
+         iff guest state offsets are identical. */
+      if (stmt->Ist.Put.data->tag == Iex_Get &&
+          stmt->Ist.Put.data->Iex.Get.offset == stmt->Ist.Put.offset)
+         return;
+
       /* Detect updates to certain guest registers. We track the contents
          of those registers as long as they contain constants. If the new
          constant is either zero or in the 8-bit neighbourhood of the

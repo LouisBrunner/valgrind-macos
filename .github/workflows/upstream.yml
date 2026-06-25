@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout local `upstream` branch (us)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           ref: upstream
           fetch-depth: 0
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout local `main` branch (us)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -70,7 +70,7 @@ jobs:
         shell: bash
       - name: Create pull request
         id: cpr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v8
         with:
           title: "chore(upstream): merge upstream changes into main"
           body: |

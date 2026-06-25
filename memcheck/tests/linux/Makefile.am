@@ -124,11 +124,12 @@ endif
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
-stack_switch_LDADD    = -lpthread
-timerfd_syscall_LDADD = -lrt
+aligned_alloc_CFLAGS 		= ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+stack_switch_LDADD		= -lpthread
+timerfd_syscall_LDADD		= -lrt
 
 if HAVE_OPENSSL
-bug480706_LDADD             = -lcrypto
+bug480706_LDADD			= -lcrypto
 endif
 
 if HAVE_LIBAIO

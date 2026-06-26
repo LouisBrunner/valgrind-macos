@@ -6177,7 +6177,7 @@ s390_sprintf(HChar *buf, const HChar *fmt, ...)
          continue;
 
       case 'G':     /* %G = guest state @ offset */
-         p += vex_sprintf(p, "guest[%u]", va_arg(args, UInt));
+         p += vex_sprintf(p, "%s", s390_guest_regname(va_arg(args, UInt)));
          continue;
 
       case 'C':     /* %C = condition code */

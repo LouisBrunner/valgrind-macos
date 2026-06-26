@@ -6743,7 +6743,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_ELEM_SHRL_INT: op = "v-veshrl"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %R, %A", op, insn->variant.vec_amodeop.dst,
+      s390_sprintf(buf, "%M %R,%R,%A", op, insn->variant.vec_amodeop.dst,
                    insn->variant.vec_amodeop.op1,
                    insn->variant.vec_amodeop.op2);
       break;
@@ -6753,7 +6753,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_SET_ELEM:  op = "v-vsetelem";  break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %A, %R", op, insn->variant.vec_amodeintop.dst,
+      s390_sprintf(buf, "%M %R,%A,%R", op, insn->variant.vec_amodeintop.dst,
                    insn->variant.vec_amodeintop.op2,
                    insn->variant.vec_amodeintop.op3);
       break;
@@ -6814,7 +6814,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_FLOAT_COMPARE_LESS: op = "v-vfloatcmpl"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %R, %R", op, insn->variant.vec_binop.dst,
+      s390_sprintf(buf, "%M %R,%R,%R", op, insn->variant.vec_binop.dst,
                    insn->variant.vec_binop.op1, insn->variant.vec_binop.op2);
       break;
 
@@ -6825,13 +6825,13 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_FLOAT_MSUB: op = "v-vfloatmsub"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %R, %R, %R", op, insn->variant.vec_triop.dst,
+      s390_sprintf(buf, "%M %R,%R,%R,%R", op, insn->variant.vec_triop.dst,
                    insn->variant.vec_triop.op1, insn->variant.vec_triop.op2,
                    insn->variant.vec_triop.op3);
       break;
 
    case S390_INSN_VEC_REPLICATE:
-      s390_sprintf(buf, "%M %R, %R, %I", "v-vrep",
+      s390_sprintf(buf, "%M %R,%R,%I", "v-vrep",
                    insn->variant.vec_replicate.dst,
                    insn->variant.vec_replicate.op1,
                    insn->variant.vec_replicate.idx);

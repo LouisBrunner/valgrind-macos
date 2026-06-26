@@ -2252,6 +2252,8 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
  WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
+#elif defined(VGO_darwin)
+ WCSCPY(libsystemZucZaZddylib, wcscpy)
 #endif
 
 

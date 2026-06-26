@@ -2253,7 +2253,7 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux) || defined(VGO_solaris) || defined(VGO_freebsd)
  WCSCPY(VG_Z_LIBC_SONAME, wcscpy)
 #elif defined(VGO_darwin)
- WCSCPY(libsystemZucZaZddylib, wcscpy)
+ WCSCPY(VG_Z_LIBSYSTEM_C_SONAME, wcscpy)
 #endif
 
 
@@ -2391,6 +2391,8 @@ static inline void my_exit ( int x )
 
 #if defined(VGO_linux) || defined(VGO_freebsd)
  WCSNCPY(VG_Z_LIBC_SONAME, wcsncpy)
+#elif defined(VGO_darwin)
+ WCSNCPY(VG_Z_LIBSYSTEM_C_SONAME, wcsncpy)
 #endif
 
  /*---------------------- memccpy ----------------------*/

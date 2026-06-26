@@ -324,6 +324,7 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
 {
    if (expr->tag == Iex_Unop && expr->Iex.Unop.op == Iop_8Uto64 &&
        expr->Iex.Unop.arg->tag == Iex_Const) {
+      /* This actually does occur (look for Iop_8Uto64 in this file). */
       UChar value = expr->Iex.Unop.arg->Iex.Const.con->Ico.U8;
       return s390_amode_b12((Int)value, s390_hreg_gpr(0));
 
@@ -331,6 +332,9 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
       ULong value = expr->Iex.Const.con->Ico.U64;
       if (ulong_fits_unsigned_12bit(value)) {
          return s390_amode_b12((Int)value, s390_hreg_gpr(0));
+      }
+      if (!short_displacement && ulong_fits_signed_20bit(value)) {
+         return s390_amode_b20((Int)value, s390_hreg_gpr(0));
       }
 
    } else if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {

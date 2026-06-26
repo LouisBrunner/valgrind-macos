@@ -380,7 +380,8 @@ s390_amode_is_sane(const s390_amode *am)
              fits_unsigned_12bit(am->d);
 
    case S390_AMODE_B20:
-      return is_virtual_gpr(am->b) && fits_signed_20bit(am->d);
+      return (is_virtual_gpr(am->b) || sameHReg(am->b, s390_hreg_gpr(0))) &&
+              fits_signed_20bit(am->d);
 
    case S390_AMODE_BX12:
       return is_virtual_gpr(am->b) && is_virtual_gpr(am->x) &&

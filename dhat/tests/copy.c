@@ -38,8 +38,9 @@ int main(void) {
 }
 
 void f(char* a, char* b, wchar_t* wa, wchar_t* wb) {
-   // The memcpy is duplicated so we have 10 calls, which makes for nice round
-   // numbers in the totals.
+   // The memcpy is duplicated so we have 10 calls
+   // which was a nice round 100,000 until wcpncpy
+   // and wcsncpy were added
    memcpy (a, b, 1000); // Redirects to memmove
    memcpy (a, b, 1000); // Redirects to memmove
    memmove(a, b, 1000);
@@ -54,6 +55,16 @@ void f(char* a, char* b, wchar_t* wa, wchar_t* wb) {
    stpcpy (a, b);       // Redirects to strcpy
    stpncpy(a, b, 1000);
    wcscpy (wa, wb);
+#if defined(HAVE_WCPNCPY)
+   wcpncpy(wa, wb, 1000/sizeof(*wa));
+#else
+   memcpy(a, b, 1000);
+#endif
+#if defined(HAVE_WCSNCPY)
+    wcsncpy(wa, wb, 1000/sizeof(*wa));
+#else
+   memcpy(a, b, 1000);
+#endif
 }
 
 void test_malloc() {

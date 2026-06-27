@@ -2389,7 +2389,7 @@ static inline void my_exit ( int x )
       return dst_orig; \
  }
 
-#if defined(VGO_linux) || defined(VGO_freebsd)
+#if defined(VGO_linux) || defined(VGO_freebsd) || defined(VGO_solaris)
  WCSNCPY(VG_Z_LIBC_SONAME, wcsncpy)
 #elif defined(VGO_darwin)
  WCSNCPY(VG_Z_LIBSYSTEM_C_SONAME, wcsncpy)

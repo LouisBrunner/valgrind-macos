@@ -395,7 +395,8 @@ s390_amode_is_sane(const s390_amode *am)
 static Bool
 s390_amode_is_constant(const s390_amode *am)
 {
-   return am->tag == S390_AMODE_B12 && sameHReg(am->b, s390_hreg_gpr(0));
+   return sameHReg(am->b, s390_hreg_gpr(0)) &&
+          sameHReg(am->x, s390_hreg_gpr(0));
 }
 
 

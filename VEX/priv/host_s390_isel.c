@@ -125,7 +125,6 @@ typedef struct {
 /* Forward declarations */
 static HReg          s390_isel_int_expr(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode(ISelEnv *, IRExpr *);
-static s390_amode   *s390_isel_amode_b12_b20(ISelEnv *, IRExpr *);
 static s390_cc_t     s390_isel_cc(ISelEnv *, IRExpr *);
 static HReg          s390_isel_int1_expr(ISelEnv *env, IRExpr *expr);
 static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
@@ -401,73 +400,6 @@ s390_isel_amode_short(ISelEnv *env, IRExpr *expr)
 
    return am;
 }
-
-
-/* Sometimes we must compile an expression into an amode that is either
-   S390_AMODE_B12 or S390_AMODE_B20. An example is the compare-and-swap
-   opcode. These opcodes do not have a variant hat accepts an addressing
-   mode with an index register.
-   Now, in theory we could, when emitting the compare-and-swap insn,
-   hack a, say, BX12 amode into a B12 amode like so:
-
-      r0 = b       # save away base register
-      b  = b + x   # add index register to base register
-      cas(b,d,...) # emit compare-and-swap using b12 amode
-      b  = r0      # restore base register
-
-   Unfortunately, emitting the compare-and-swap insn already utilises r0
-   under the covers, so the trick above is off limits, sadly. */
-static s390_amode *
-s390_isel_amode_b12_b20(ISelEnv *env, IRExpr *expr)
-{
-   s390_amode *am;
-
-   /* Address computation should yield a 64-bit value */
-   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
-
-   am = s390_isel_amode_wrk(env, expr, True, False);
-
-   HReg  x = newVRegI(env);
-   ULong d = (Long)am->d;
-
-   static UInt count = 0;
-
-   ++count;
-   if ((count % 2) == 0) {
-      /* Scenario #1: Move d to the index register and construct
-         an amode with d == 0 */
-      if (d != 0) {
-//         vex_printf("!!! CASE 1\n");
-         addInstr(env, s390_insn_load_immediate(8, x, d));
-
-         if (am->tag == S390_AMODE_B12)
-            return s390_amode_bx12(0, am->b, x);
-         if (am->tag == S390_AMODE_B20)
-            return s390_amode_bx20(0, am->b, x);
-         vpanic("WHOOPSIE");
-      } else {
-//         vex_printf("!!! CASE 2\n");
-         d = -11;
-         addInstr(env, s390_insn_load_immediate(8, x, d));
-
-         if (am->tag == S390_AMODE_B12)
-            return s390_amode_bx12(-d, am->b, x);
-         if (am->tag == S390_AMODE_B20)
-            return s390_amode_bx20(-d, am->b, x);
-         vpanic("WHOOPSIE");
-      }
-   } else {
-      /* Scenario #2: Use b as an index register and construct an
-         amode with b == R0. */
-//      vex_printf("!!! CASE 3\n");
-      if (am->tag == S390_AMODE_B12)
-         return s390_amode_bx12(d, s390_hreg_gpr(0), am->b);
-      if (am->tag == S390_AMODE_B20)
-         return s390_amode_bx20(d, s390_hreg_gpr(0), am->b);
-      vpanic("WHOOPSIE");
-   }
-}
-
 
 /*---------------------------------------------------------*/
 /*--- Helper functions                                  ---*/
@@ -5415,7 +5347,7 @@ no_memcpy_put:
    case Ist_CAS:
       if (stmt->Ist.CAS.details->oldHi == IRTemp_INVALID) {
          IRCAS *cas = stmt->Ist.CAS.details;
-         s390_amode *op2 = s390_isel_amode_b12_b20(env, cas->addr);
+         s390_amode *op2 = s390_isel_amode(env, cas->addr);
          HReg op3 = s390_isel_int_expr(env, cas->dataLo);  /* new value */
          HReg op1 = s390_isel_int_expr(env, cas->expdLo);  /* expected value */
          HReg old = lookupIRTemp(env, cas->oldLo);
@@ -5428,7 +5360,7 @@ no_memcpy_put:
          return;
       } else {
          IRCAS *cas = stmt->Ist.CAS.details;
-         s390_amode *op2 = s390_isel_amode_b12_b20(env, cas->addr);
+         s390_amode *op2 = s390_isel_amode(env, cas->addr);
          HReg r8, r9, r10, r11, r1;
          HReg op3_high = s390_isel_int_expr(env, cas->dataHi);  /* new value */
          HReg op3_low  = s390_isel_int_expr(env, cas->dataLo);  /* new value */

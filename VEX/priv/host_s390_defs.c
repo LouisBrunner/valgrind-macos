@@ -5051,8 +5051,6 @@ s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3, HReg old_mem)
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
    vassert(size == 4 || size == 8);
-   vassert(hregNumber(op2->x) == 0);
-   vassert(op2->tag == S390_AMODE_B12 || op2->tag == S390_AMODE_B20);
 
    insn->tag  = S390_INSN_CAS;
    insn->size = size;
@@ -5074,9 +5072,7 @@ s390_insn_cdas(UChar size, HReg op1_high, HReg op1_low, s390_amode *op2,
    s390_cdas *cdas = LibVEX_Alloc_inline(sizeof(s390_cdas));
 
    vassert(size == 4 || size == 8);
-   vassert(hregNumber(op2->x) == 0);
    vassert(hregNumber(scratch) == 1);  /* r0,r1 used as scratch reg pair */
-   vassert(op2->tag == S390_AMODE_B12 || op2->tag == S390_AMODE_B20);
 
    insn->tag  = S390_INSN_CDAS;
    insn->size = size;
@@ -8287,7 +8283,7 @@ s390_insn_cc2bool_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
 {
-   UChar r1, r3, b, old;
+   UChar r1, r3, b, x, old;
    Int d;
    s390_amode *am;
 
@@ -8296,31 +8292,49 @@ s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
    old= hregNumber(insn->variant.cas.old_mem);
    am = insn->variant.cas.op2;
    b  = hregNumber(am->b);
+   x  = hregNumber(am->x);
    d  = am->d;
 
-   vassert(am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20);
+   int b_was_zero = b == 0;
+   if (x != 0) {
+      if (b != 0)
+         buf = s390_emit_AGR(buf, b, x);   // b = b + x
+      else
+         b = x;
+   }
 
    switch (insn->size) {
    case 4:
       /* r1 must not be overwritten. So copy it to R0 and let CS clobber it */
       buf = s390_emit_LR(buf, R0, r1);
-      if (am->tag == S390_AMODE_B12)
+      if (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_BX12)
          buf = s390_emit_CS(buf, R0, r3, b, d);
       else
          buf = s390_emit_CSY(buf, R0, r3, b, DISP20(d));
       /* Now copy R0 which has the old memory value to OLD */
-      return s390_emit_LR(buf, old, R0);
+      buf = s390_emit_LR(buf, old, R0);
+      break;
 
    case 8:
       /* r1 must not be overwritten. So copy it to R0 and let CS clobber it */
       buf = s390_emit_LGR(buf, R0, r1);
       buf = s390_emit_CSG(buf, R0, r3, b, DISP20(d));
       /* Now copy R0 which has the old memory value to OLD */
-      return s390_emit_LGR(buf, old, R0);
+      buf = s390_emit_LGR(buf, old, R0);
+      break;
 
    default:
       goto fail;
    }
+
+   if (x != 0) {
+      if (! b_was_zero) {
+         buf = s390_emit_SGR(buf, b, x);
+      } else {
+         /* Nothing to do because b was 0 and that is a scratch reg. */
+      }
+   }
+   return buf;
 
  fail:
    vpanic("s390_insn_cas_emit");
@@ -8331,7 +8345,7 @@ s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
 {
-   UChar r1, r1p1, r3, /*r3p1,*/ b, old_high, old_low, scratch;
+   UChar r1, r1p1, r3, /*r3p1,*/ b, x, old_high, old_low, scratch;
    Int d;
    s390_amode *am;
    s390_cdas *cdas = insn->variant.cdas.details;
@@ -8345,10 +8359,17 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
    scratch  = hregNumber(cdas->scratch);
    am = cdas->op2;
    b  = hregNumber(am->b);
+   x  = hregNumber(am->x);
    d  = am->d;
+   int b_was_zero = b == 0;
+   if (x != 0) {
+      if (b != 0)
+         buf = s390_emit_AGR(buf, b, x);   // b = b + x
+      else
+         b = x;
+   }
 
    vassert(scratch == 1);
-   vassert(am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20);
 
    switch (insn->size) {
    case 4:
@@ -8357,7 +8378,7 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
       buf = s390_emit_LR(buf, R0, r1);
       buf = s390_emit_LR(buf, scratch, r1p1);
 
-      if (am->tag == S390_AMODE_B12)
+      if (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_BX12)
          buf = s390_emit_CDS(buf, R0, r3, b, d);
       else
          buf = s390_emit_CDSY(buf, R0, r3, b, DISP20(d));
@@ -8365,7 +8386,7 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
       /* Now copy R0,scratch which has the old memory value to OLD */
       buf = s390_emit_LR(buf, old_high, R0);
       buf = s390_emit_LR(buf, old_low,  scratch);
-      return buf;
+      break;
 
    case 8:
       /* r1, r1+1 must not be overwritten. So copy them to R0,scratch
@@ -8378,11 +8399,20 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
       /* Now copy R0,scratch which has the old memory value to OLD */
       buf = s390_emit_LGR(buf, old_high, R0);
       buf = s390_emit_LGR(buf, old_low,  scratch);
-      return buf;
+      break;
 
    default:
       goto fail;
    }
+
+   if (x != 0) {
+      if (! b_was_zero) {
+         buf = s390_emit_SGR(buf, b, x);
+      } else {
+         /* Nothing to do because b was 0 and that is a scratch reg. */
+      }
+   }
+   return buf;
 
  fail:
    vpanic("s390_insn_cdas_emit");

@@ -427,11 +427,45 @@ s390_isel_amode_b12_b20(ISelEnv *env, IRExpr *expr)
 
    am = s390_isel_amode_wrk(env, expr, True, False);
 
-   /* Check post-condition */
-   vassert(s390_amode_is_sane(am) &&
-           (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20));
+   HReg  x = newVRegI(env);
+   ULong d = (Long)am->d;
 
-   return am;
+   static UInt count = 0;
+
+   ++count;
+   if ((count % 2) == 0) {
+      /* Scenario #1: Move d to the index register and construct
+         an amode with d == 0 */
+      if (d != 0) {
+//         vex_printf("!!! CASE 1\n");
+         addInstr(env, s390_insn_load_immediate(8, x, d));
+
+         if (am->tag == S390_AMODE_B12)
+            return s390_amode_bx12(0, am->b, x);
+         if (am->tag == S390_AMODE_B20)
+            return s390_amode_bx20(0, am->b, x);
+         vpanic("WHOOPSIE");
+      } else {
+//         vex_printf("!!! CASE 2\n");
+         d = -11;
+         addInstr(env, s390_insn_load_immediate(8, x, d));
+
+         if (am->tag == S390_AMODE_B12)
+            return s390_amode_bx12(-d, am->b, x);
+         if (am->tag == S390_AMODE_B20)
+            return s390_amode_bx20(-d, am->b, x);
+         vpanic("WHOOPSIE");
+      }
+   } else {
+      /* Scenario #2: Use b as an index register and construct an
+         amode with b == R0. */
+//      vex_printf("!!! CASE 3\n");
+      if (am->tag == S390_AMODE_B12)
+         return s390_amode_bx12(d, s390_hreg_gpr(0), am->b);
+      if (am->tag == S390_AMODE_B20)
+         return s390_amode_bx20(d, s390_hreg_gpr(0), am->b);
+      vpanic("WHOOPSIE");
+   }
 }
 
 

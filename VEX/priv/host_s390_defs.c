@@ -217,8 +217,6 @@ s390_amode_bx12(Int d, HReg b, HReg x)
    s390_amode *am = LibVEX_Alloc_inline(sizeof(s390_amode));
 
    vassert(fits_unsigned_12bit(d));
-   vassert(hregNumber(b) != 0);
-   vassert(hregNumber(x) != 0);
 
    am->tag = S390_AMODE_BX12;
    am->d = d;
@@ -236,8 +234,6 @@ s390_amode_bx20(Int d, HReg b, HReg x)
    s390_amode *am = LibVEX_Alloc_inline(sizeof(s390_amode));
 
    vassert(fits_signed_20bit(d));
-   vassert(hregNumber(b) != 0);
-   vassert(hregNumber(x) != 0);
 
    am->tag = S390_AMODE_BX20;
    am->d = d;

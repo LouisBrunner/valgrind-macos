@@ -16443,6 +16443,41 @@ Bool disInstr_ARM64_WRK (
       }
    }
 
+   /* Generalized handler for EOR3 instructions. */
+
+   // This pattern identifies the EOR3 instruction class by
+   // masking out the register fields (Rd, Rn, Ra, Rm).
+   if ((insn & 0xFFE08000) == 0xCE000000) {
+      // Extract the four register numbers from the instruction bits
+      UInt rD = INSN(4,0);    // Destination Vd
+      UInt rN = INSN(9,5);    // Source Vn
+      UInt rA = INSN(14,10);  // Source Va
+      UInt rM = INSN(20,16);  // Source Vm
+
+      // Get the VReg contents for the three source registers
+      IRTemp vN = newTemp(Ity_V128);
+      IRTemp vM = newTemp(Ity_V128);
+      IRTemp vA = newTemp(Ity_V128);
+      assign(vN, getQReg128(rN));
+      assign(vM, getQReg128(rM));
+      assign(vA, getQReg128(rA));
+
+      // Perform the three-way XOR by chaining two binary XORs
+      // temp = Vn EOR Vm
+      IRTemp temp = newTemp(Ity_V128);
+      assign(temp, binop(Iop_XorV128, mkexpr(vN), mkexpr(vM)));
+
+      // res = temp EOR Va
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, binop(Iop_XorV128, mkexpr(temp), mkexpr(vA)));
+
+      // Store the final result in the destination register
+      putQReg128(rD, mkexpr(res));
+
+      DIP("eor3 v%u.16b, v%u.16b, v%u.16b, v%u.16b\n", rD, rN, rM, rA);
+      return True;
+   }
+
    /* ----------------------------------------------------------- */
 
    /* Main ARM64 instruction decoder starts here. */

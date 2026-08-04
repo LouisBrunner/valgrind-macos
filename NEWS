@@ -54,6 +54,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 522160  Robustify the flags check in the none/tests/x86/crc32 test
 522533  Valgrind can't handle some encoding from gas trunk with -Wa,-O2
 523375  Fix none/tests/amd64/pcmpxstrx64.c
+523626  Fix sse4-x86 test fails when valgrind compiled with clang
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

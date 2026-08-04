@@ -116,9 +116,13 @@ static inline ULong sad_8x4 ( ULong xx, ULong yy )
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-static inline ULong g_calc_mpsadbw ( ULong sHi, ULong sLo,
-                               ULong dHi, ULong dLo,
-                               ULong imm_and_return_control_bit )
+#if defined(VGA_x86)
+// Handle https://bugs.kde.org/show_bug.cgi?id=523626
+__attribute__((force_align_arg_pointer))
+#endif
+static ULong g_calc_mpsadbw ( ULong sHi, ULong sLo,
+                              ULong dHi, ULong dLo,
+                              ULong imm_and_return_control_bit )
 {
    UInt imm8     = imm_and_return_control_bit & 7;
    Bool calcHi   = (imm_and_return_control_bit >> 7) & 1;

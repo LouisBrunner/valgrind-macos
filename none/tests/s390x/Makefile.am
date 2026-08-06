@@ -10,7 +10,7 @@ INSN_TESTS = clc clcle cvb cvd icm lpr lam_stam xc mvst add sub mul \
              cs csg cds cdsg cu21 cu21_1 cu24 cu24_1 cu42 cu12 cu12_1 \
              ex_sig ex_clone cu14 cu14_1 cu41 ecag \
              bfp-fpc bfp-306054 \
-             bfp-muldiv comp-1 comp-2 exrl tmll tm stmg \
+             bfp-muldiv bfp-diint comp-1 comp-2 exrl tmll tm stmg \
 	     ex clst mvc test_fork test_sig rxsbg popcnt popcnt-mi3 \
 	     high-word traps \
 	     spechelper-alr spechelper-algr \

@@ -942,3 +942,75 @@
    fun:libSystem_initializer
    ...
 }
+
+# Leaks
+
+## One-time allocations made by system libraries during startup or lazy initialization
+## which the application cannot do anything about (see #198)
+
+{
+   OSX2600:dyld_map_images_leak
+   Memcheck:Leak
+   ...
+   fun:map_images
+}
+
+{
+   OSX2600:libSystem_initializer_leak
+   Memcheck:Leak
+   ...
+   fun:libSystem_initializer
+}
+
+## Reachable allocations kept around by system libraries (caches, buffers, etc)
+## which the application cannot do anything about (see #198)
+
+{
+   OSX2600:tlv_get_addr_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:_tlv_get_addr
+}
+
+{
+   OSX2600:objc_lookUpImpOrForward_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:lookUpImpOrForward
+}
+
+## setenv/unsetenv keep an owned copy of the environ array around,
+## see https://bugs.kde.org/show_bug.cgi?id=188572
+{
+   OSX2600:setenv_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:setenv
+}
+
+{
+   OSX2600:unsetenv_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:unsetenv
+}
+
+{
+   OSX2600:stdio_vfprintf_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:__vfprintf
+}
+
+{
+   OSX2600:stdio_smakebuf_leak
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   ...
+   fun:__smakebuf
+}

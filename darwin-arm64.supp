@@ -1014,3 +1014,21 @@
    ...
    fun:__smakebuf
 }
+
+## objc stores list of classes currently being initialized in thread data
+
+{
+   OSX2600:objc_fetchInitializingClassList_leak_indirect
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   ...
+   fun:_ZL27_fetchInitializingClassListb
+}
+
+{
+   OSX2600:objc_fetchInitializingClassList_leak_definite
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:_ZL27_fetchInitializingClassListb
+}

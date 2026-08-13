@@ -64,6 +64,18 @@ jobs:
       - name: calculate short SHA
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      - name: check if PR is from a fork
+        id: fork
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          THIS_REPO: ${{ github.repository }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          is_fork=false
+          if [ "$EVENT_NAME" == "pull_request" ] && [ "$HEAD_REPO" != "$THIS_REPO" ]; then
+            is_fork=true
+          fi
+          echo "is_fork=${is_fork}" >> "$GITHUB_OUTPUT"
       - name: autogen.sh
         run: ./autogen.sh
       - name: configure
@@ -110,8 +122,8 @@ jobs:
           output: ${{ env.TEST_FOLDER }}/results.diff
           token: ${{ secrets.GITHUB_TOKEN }}
           title: ${{ matrix.os }}
-          notify_check: true
-          notify_issue: failure
+          notify_check: ${{ steps.fork.outputs.is_fork != 'true' }}
+          notify_issue: ${{ steps.fork.outputs.is_fork != 'true' && 'failure' || '' }}
           sticky_comment: true
       - name: upload artifacts
         if: always()

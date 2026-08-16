@@ -4813,7 +4813,9 @@ AM_CONDITIONAL(SOLARIS_UTIMENSAT_SYSCALL, test x$solaris_utimensat_syscall = xye
 
 
 # Solaris-specific check determining if the spawn() syscall is available
-# (on newer Solaris).
+# (on newer Solaris). illumos has a spawn() syscall of its own with a
+# different interface which does not ship <sys/spawn_impl.h>; it is
+# detected separately below.
 #
 # C-level symbol: SOLARIS_SPAWN_SYSCALL
 # Automake-level symbol: SOLARIS_SPAWN_SYSCALL
@@ -4821,6 +4823,7 @@ AM_CONDITIONAL(SOLARIS_UTIMENSAT_SYSCALL, test x$solaris_utimensat_syscall = xye
 AC_MSG_CHECKING([for the `spawn' syscall (Solaris-specific)])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/syscall.h>
+#include <sys/spawn_impl.h>
 ]], [[
   return !SYS_spawn;
 ]])], [
@@ -4833,6 +4836,34 @@ solaris_spawn_syscall=no
 AC_MSG_RESULT([no])
 ])
 AM_CONDITIONAL(SOLARIS_SPAWN_SYSCALL, test x$solaris_spawn_syscall = xyes)
+
+
+# Solaris-specific check determining if the illumos spawn() syscall is
+# available. The illumos spawn() syscall implements posix_spawn(3C) and
+# has a different interface to the Solaris spawn() syscall detected above.
+# The private libc/kernel interface it uses is not shipped in a header,
+# so it is replicated in vki-solaris.h.
+#
+# C-level symbol: ILLUMOS_SPAWN_SYSCALL
+# Automake-level symbol: (none)
+#
+AC_MSG_CHECKING([for the `spawn' syscall (illumos-specific)])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/syscall.h>
+#if !defined(__illumos__)
+#error "not illumos"
+#endif
+]], [[
+  return !SYS_spawn;
+]])], [
+illumos_spawn_syscall=yes
+AC_MSG_RESULT([yes])
+AC_DEFINE([ILLUMOS_SPAWN_SYSCALL], 1,
+          [Define to 1 if you have the illumos `spawn' syscall.])
+], [
+illumos_spawn_syscall=no
+AC_MSG_RESULT([no])
+])
 
 
 # Solaris-specific check determining if commands MODNVL_CTRLMAP through

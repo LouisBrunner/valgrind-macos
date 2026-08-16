@@ -63,9 +63,9 @@
    ((sysno) & VG_SOLARIS_SYSCALL_NUMBER_MASK)
 
 #define __NR_exit                       SYS_exit
-#if defined(SOLARIS_SPAWN_SYSCALL)
+#if defined(SOLARIS_SPAWN_SYSCALL) || defined(ILLUMOS_SPAWN_SYSCALL)
 #define __NR_spawn                      SYS_spawn
-#endif /* SOLARIS_SPAWN_SYSCALL */
+#endif /* SOLARIS_SPAWN_SYSCALL || ILLUMOS_SPAWN_SYSCALL */
 #define __NR_read                       SYS_read
 #define __NR_write                      SYS_write
 #define __NR_close                      SYS_close

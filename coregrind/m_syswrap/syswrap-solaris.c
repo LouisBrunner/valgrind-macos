@@ -908,9 +908,9 @@ static const OpenDoor *door_find_by_fd(Int fd)
 
 /* prototypes */
 DECL_TEMPLATE(solaris, sys_exit);
-#if defined(SOLARIS_SPAWN_SYSCALL)
+#if defined(SOLARIS_SPAWN_SYSCALL) || defined(ILLUMOS_SPAWN_SYSCALL)
 DECL_TEMPLATE(solaris, sys_spawn);
-#endif /* SOLARIS_SPAWN_SYSCALL */
+#endif /* SOLARIS_SPAWN_SYSCALL || ILLUMOS_SPAWN_SYSCALL */
 #if defined(SOLARIS_OLD_SYSCALLS)
 DECL_TEMPLATE(solaris, sys_open);
 #endif /* SOLARIS_OLD_SYSCALLS */
@@ -1634,6 +1634,741 @@ exit:
    VG_(deleteXA)(envp);
 }
 #endif /* SOLARIS_SPAWN_SYSCALL */
+
+#if defined(ILLUMOS_SPAWN_SYSCALL)
+static Bool spawn_pre_check_kfa(ThreadId tid, SyscallStatus *status,
+                                vki_kfile_attr_t *kfa)
+{
+   PRE_FIELD_READ("spawn(param->kfa_len)", kfa->kfa_len);
+   PRE_FIELD_READ("spawn(param->kfa_type)", kfa->kfa_type);
+
+   if (ML_(safe_to_deref)(kfa, kfa->kfa_len)) {
+      switch (kfa->kfa_type) {
+      case VKI_FA_DUP2:
+         PRE_FIELD_READ("spawn(param->kfa_filedes)", kfa->kfa_filedes);
+         PRE_FIELD_READ("spawn(param->kfa_newfiledes)", kfa->kfa_newfiledes);
+         if (kfa->kfa_filedes < 0 || kfa->kfa_newfiledes < 0) {
+            SET_STATUS_Failure(VKI_EINVAL);
+            return False;
+         }
+         if (!ML_(fd_allowed)(kfa->kfa_filedes, "spawn(dup2)", tid, False) ||
+             !ML_(fd_allowed)(kfa->kfa_newfiledes, "spawn(dup2)", tid, False)) {
+            SET_STATUS_Failure(VKI_EBADF);
+            return False;
+         }
+         break;
+      case VKI_FA_CLOSE:
+         PRE_FIELD_READ("spawn(param->kfa_filedes)", kfa->kfa_filedes);
+         if (kfa->kfa_filedes < 0) {
+            SET_STATUS_Failure(VKI_EINVAL);
+            return False;
+         }
+         /* The kernel deliberately ignores a failure to close this fd,
+            for compatibility with the historical libc implementation, so
+            an fd outside the client's allowed range must not be failed
+            here either. The action runs in the child and cannot affect
+            valgrind itself.
+            If doing -d style logging (which is to fd = 2 = stderr),
+            don't allow that filedes to be closed. */
+         if (kfa->kfa_filedes == 2 && VG_(debugLog_getLevel)() > 0) {
+            SET_STATUS_Failure(VKI_EBADF);
+            return False;
+         }
+         break;
+      case VKI_FA_CLOSEFROM:
+         PRE_FIELD_READ("spawn(param->kfa_filedes)", kfa->kfa_filedes);
+         if (kfa->kfa_filedes < 0) {
+            SET_STATUS_Failure(VKI_EINVAL);
+            return False;
+         }
+         /* The filedes is a lower bound for the descriptors to close in
+            the child, not a reference to an open descriptor, so there is
+            nothing to police beyond the -d logging case, as for
+            FA_CLOSE above. */
+         if (kfa->kfa_filedes <= 2 && VG_(debugLog_getLevel)() > 0) {
+            SET_STATUS_Failure(VKI_EBADF);
+            return False;
+         }
+         break;
+      case VKI_FA_FCHDIR:
+         PRE_FIELD_READ("spawn(param->kfa_filedes)", kfa->kfa_filedes);
+         if (kfa->kfa_filedes < 0) {
+            SET_STATUS_Failure(VKI_EINVAL);
+            return False;
+         }
+         if (!ML_(fd_allowed)(kfa->kfa_filedes, "spawn(fchdir)", tid,
+                              False)) {
+            SET_STATUS_Failure(VKI_EBADF);
+            return False;
+         }
+         break;
+      case VKI_FA_OPEN:
+         PRE_FIELD_READ("spawn(param->kfa_filedes)", kfa->kfa_filedes);
+         PRE_FIELD_READ("spawn(param->kfa_oflag)", kfa->kfa_oflag);
+         PRE_FIELD_READ("spawn(param->kfa_mode)", kfa->kfa_mode);
+         if (kfa->kfa_filedes < 0) {
+            SET_STATUS_Failure(VKI_EINVAL);
+            return False;
+         }
+         if (!ML_(fd_allowed)(kfa->kfa_filedes, "spawn(open)", tid, False)) {
+            SET_STATUS_Failure(VKI_EBADF);
+            return False;
+         }
+         /* fallthrough */
+      case VKI_FA_CHDIR:
+         PRE_FIELD_READ("spawn(param->kfa_pathsize)", kfa->kfa_pathsize);
+         if (kfa->kfa_pathsize != 0) {
+            PRE_MEM_RASCIIZ("spawn(param->kfa_path)", (Addr) kfa->kfa_path);
+         }
+         break;
+      default:
+         /* An unknown action type; the kernel rejects the whole blob with
+            EINVAL, so there is nothing to check here. */
+         break;
+      }
+   }
+
+   return True;
+}
+
+/* Resolve 'name' against the marshalled search path 'pathstr' the same way
+   the kernel's spawn_exec() would, so that a traced child can be handed the
+   resolved program while the kernel execs the launcher directly. A
+   candidate is accepted when it is executable. Where the kernel's exec
+   would instead have run a shebang-less script through the shell, the
+   traced child valgrind reports the failure itself. Returns 0 and fills
+   buf on success, otherwise the errno the kernel's search would have
+   returned. */
+static Int spawn_resolve_path(const HChar *pathstr, const HChar *name,
+                              HChar *buf, SizeT bufl)
+{
+   Int err = VKI_ENOENT;
+   Int saved_err = 0;
+   SizeT namelen = VG_(strlen)(name);
+   const HChar *cp = pathstr;
+
+   do {
+      const HChar *sep = VG_(strchr)(cp, ':');
+      SizeT dirlen = (sep == NULL) ? VG_(strlen)(cp) : (SizeT) (sep - cp);
+      SizeT need = dirlen + namelen + 1;
+
+      if (dirlen > 0)
+         need++;      /* for the '/' separator */
+
+      if (need > bufl) {
+         /* This candidate does not fit in the buffer. Skip it, remembering
+            the error in case the search finds nothing better. */
+         err = VKI_ENAMETOOLONG;
+         if (saved_err == 0)
+            saved_err = VKI_ENAMETOOLONG;
+      } else {
+         if (dirlen > 0) {
+            VG_(memcpy)(buf, cp, dirlen);
+            buf[dirlen] = '/';
+            VG_(memcpy)(buf + dirlen + 1, name, namelen + 1);
+         } else {
+            VG_(memcpy)(buf, name, namelen + 1);
+         }
+
+         SysRes res = VG_(do_syscall4)(__NR_faccessat, VKI_AT_FDCWD,
+                                       (UWord) buf, VKI_X_OK, 0);
+         if (!sr_isError(res)) {
+            /* An executable candidate that is not a regular file (such as
+               a directory with search permission) would fail the kernel's
+               exec with EACCES and the search would continue. */
+            struct vg_stat st;
+            SysRes sres = VG_(stat)(buf, &st);
+            if (!sr_isError(sres) && VKI_S_ISREG(st.mode))
+               return 0;
+            err = VKI_EACCES;
+         } else {
+            err = sr_Err(res);
+         }
+
+         /* Remember the most meaningful error seen during the search
+            (matching the kernel). A candidate that existed but could not
+            be executed outranks both a later "not found" and an over-long
+            candidate that had to be skipped. */
+         if (err == VKI_EACCES)
+            saved_err = VKI_EACCES;
+      }
+
+      cp = (sep != NULL) ? sep + 1 : NULL;
+   } while (cp != NULL);
+
+   if (saved_err != 0)
+      err = saved_err;
+   return err;
+}
+
+PRE(sys_spawn)
+{
+   /* pid_t spawn(const char *path, const spawn_param_t *param,
+                  uint32_t param_size, const spawn_args_t *args,
+                  uint32_t args_size);
+
+      This is the illumos spawn() syscall, the private interface between
+      libc and the kernel that implements the posix_spawn(3C) family. It
+      shares nothing but a name and purpose with the Solaris spawn()
+      syscall handled above. libc marshals the spawn attributes and the
+      file actions into 'param' and the argv and envp string vectors into
+      'args'; both are flat blobs whose fixed header carries byte offsets
+      and counts into a trailing data[] array. */
+   PRINT("sys_spawn ( %#lx(%s), %#lx, %lu, %#lx, %lu )",
+         ARG1, (HChar *) ARG1, ARG2, ARG3, ARG4, ARG5);
+   PRE_REG_READ5(long, "spawn", const char *, path, void *, param,
+                 vki_uint32_t, param_size, void *, args,
+                 vki_uint32_t, args_size);
+
+   /* First check input arguments. */
+   PRE_MEM_RASCIIZ("spawn(path)", ARG1);
+   if (ARG2 != 0 && ARG3 >= sizeof(vki_spawn_param_t)) {
+      vki_spawn_param_t *prm = (vki_spawn_param_t *) ARG2;
+      PRE_FIELD_READ("spawn(param->sp_size)", prm->sp_size);
+      PRE_FIELD_READ("spawn(param->sp_datalen)", prm->sp_datalen);
+      PRE_FIELD_READ("spawn(param->sp_attr_off)", prm->sp_attr_off);
+      PRE_FIELD_READ("spawn(param->sp_attr_len)", prm->sp_attr_len);
+      PRE_FIELD_READ("spawn(param->sp_fattr_off)", prm->sp_fattr_off);
+      PRE_FIELD_READ("spawn(param->sp_fattr_cnt)", prm->sp_fattr_cnt);
+      PRE_FIELD_READ("spawn(param->sp_shell_off)", prm->sp_shell_off);
+      PRE_FIELD_READ("spawn(param->sp_shell_len)", prm->sp_shell_len);
+      PRE_FIELD_READ("spawn(param->sp_path_off)", prm->sp_path_off);
+      PRE_FIELD_READ("spawn(param->sp_path_len)", prm->sp_path_len);
+      PRE_FIELD_READ("spawn(param->sp_sched_off)", prm->sp_sched_off);
+      PRE_FIELD_READ("spawn(param->sp_sched_len)", prm->sp_sched_len);
+
+      if (ML_(safe_to_deref)(prm, sizeof(vki_spawn_param_t))) {
+         if (prm->sp_attr_len != 0) {
+            PRE_MEM_READ("spawn(param->attr)",
+                         (Addr) prm->sp_data + prm->sp_attr_off,
+                         prm->sp_attr_len);
+         }
+         if (prm->sp_sched_len != 0) {
+            PRE_MEM_READ("spawn(param->sched)",
+                         (Addr) prm->sp_data + prm->sp_sched_off,
+                         prm->sp_sched_len);
+         }
+         if (prm->sp_shell_len != 0) {
+            PRE_MEM_RASCIIZ("spawn(param->shell)",
+                            (Addr) prm->sp_data + prm->sp_shell_off);
+         }
+         if (prm->sp_path_len != 0) {
+            PRE_MEM_RASCIIZ("spawn(param->PATH)",
+                            (Addr) prm->sp_data + prm->sp_path_off);
+         }
+
+         /* Every record must lie within the blob and be at least a header
+            in size, which also bounds this walk; the kernel rejects
+            anything malformed. */
+         UWord fattr_lim = ARG3 - sizeof(vki_spawn_param_t);
+         UWord off = prm->sp_fattr_off;
+         for (vki_uint32_t i = 0; i < prm->sp_fattr_cnt; i++) {
+            if (off > fattr_lim ||
+                fattr_lim - off < sizeof(vki_kfile_attr_t))
+               break;
+            vki_kfile_attr_t *kfa =
+                (vki_kfile_attr_t *) ((Addr) prm->sp_data + off);
+            if (!ML_(safe_to_deref)(kfa, sizeof(vki_kfile_attr_t)))
+               break;
+            if (spawn_pre_check_kfa(tid, status, kfa) == False) {
+               return;
+            }
+            if (kfa->kfa_len < sizeof(vki_kfile_attr_t) ||
+                kfa->kfa_len > fattr_lim - off)
+               break;
+            off += kfa->kfa_len;
+         }
+      }
+   }
+   PRE_MEM_READ("spawn(args)", ARG4, ARG5);
+
+   /* The kernel rejects a missing path or args blob outright. */
+   if ((ARG1 == 0) || (ARG4 == 0) || (ARG5 < sizeof(vki_spawn_args_t))) {
+      SET_STATUS_Failure(VKI_EINVAL);
+      return;
+   }
+
+   /* The kernel limits both blobs to NCARGS64 bytes. */
+   if (ARG3 > VKI_NCARGS64 || ARG5 > VKI_NCARGS64) {
+      SET_STATUS_Failure(VKI_E2BIG);
+      return;
+   }
+
+   /* Check that the name at least begins in client-accessible storage. */
+   if (!ML_(safe_to_deref)((HChar *) ARG1, 1)) {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
+   }
+
+   /* Both blob headers are checked and used via snapshots taken with a
+      single read, the same way the kernel verifies its copied-in blobs.
+      The client's memory may be a shared mapping, and a concurrent writer
+      in another process must not be able to invalidate a checked value
+      after the fact. */
+
+   /* A param blob is present only when a non-zero size was passed. */
+   Bool have_param = (ARG3 > 0);
+   vki_spawn_param_t param_hdr;
+   if (have_param) {
+      if (ARG3 < sizeof(vki_spawn_param_t)) {
+         SET_STATUS_Failure(VKI_EINVAL);
+         return;
+      }
+      /* Check that the param blob resides in client-accessible storage. */
+      if (ARG2 == 0 ||
+          !VG_(am_is_valid_for_client)(ARG2, ARG3, VKI_PROT_READ)) {
+         SET_STATUS_Failure(VKI_EFAULT);
+         return;
+      }
+      /* Sanity check the header, as the kernel would, before using it to
+         build a modified copy below. */
+      VG_(memcpy)(&param_hdr, (void *) ARG2, sizeof(param_hdr));
+      if (param_hdr.sp_size != ARG3 ||
+          param_hdr.sp_datalen != ARG3 - sizeof(vki_spawn_param_t)) {
+         SET_STATUS_Failure(VKI_EINVAL);
+         return;
+      }
+      if (param_hdr.sp_attr_len != 0) {
+         if (param_hdr.sp_attr_len != sizeof(vki_spawn_attr_t) ||
+             param_hdr.sp_attr_len > param_hdr.sp_datalen ||
+             param_hdr.sp_attr_off >
+                 param_hdr.sp_datalen - param_hdr.sp_attr_len) {
+            SET_STATUS_Failure(VKI_EINVAL);
+            return;
+         }
+      } else if (param_hdr.sp_attr_off != 0) {
+         SET_STATUS_Failure(VKI_EINVAL);
+         return;
+      }
+   }
+
+   /* Check that the args blob resides in client-accessible storage. */
+   if (!VG_(am_is_valid_for_client)(ARG4, ARG5, VKI_PROT_READ)) {
+      SET_STATUS_Failure(VKI_EFAULT);
+      return;
+   }
+   vki_spawn_args_t *cl_args = (vki_spawn_args_t *) ARG4;
+   vki_spawn_args_t args_hdr;
+   VG_(memcpy)(&args_hdr, cl_args, sizeof(args_hdr));
+   if (args_hdr.sa_size != ARG5 ||
+       args_hdr.sa_datalen != ARG5 - sizeof(vki_spawn_args_t) ||
+       args_hdr.sa_env_off > args_hdr.sa_datalen ||
+       args_hdr.sa_arg_off > args_hdr.sa_env_off) {
+      SET_STATUS_Failure(VKI_EINVAL);
+      return;
+   }
+
+   /* Copy the existing param blob or create a minimal one, so that it
+      always contains a spawn_attr_t for the signal handling below to
+      update. The regions within sp_data[] are located by the header
+      offsets alone, so a missing spawn_attr_t can simply be appended. */
+   vki_spawn_param_t *param;
+   SizeT param_size;
+   if (!have_param) {
+      /* minimalistic spawn_param_t + spawn_attr_t */
+      param_size = sizeof(vki_spawn_param_t) + sizeof(vki_spawn_attr_t);
+      param = VG_(calloc)("syswrap.spawn.1", 1, param_size);
+      param->sp_attr_off = 0;
+      param->sp_attr_len = sizeof(vki_spawn_attr_t);
+   } else if (param_hdr.sp_attr_len == 0) {
+      /* Existing spawn_param_t but missing spawn_attr_t; append one,
+         padded so that it remains 32-bit aligned. Appending grows
+         sp_datalen, which the kernel then uses to validate the other
+         regions, so first reject any region the kernel would have
+         rejected against the original length. */
+      if ((param_hdr.sp_shell_len != 0 &&
+           (param_hdr.sp_shell_len > param_hdr.sp_datalen ||
+            param_hdr.sp_shell_off >
+                param_hdr.sp_datalen - param_hdr.sp_shell_len)) ||
+          (param_hdr.sp_path_len != 0 &&
+           (param_hdr.sp_path_len > param_hdr.sp_datalen ||
+            param_hdr.sp_path_off >
+                param_hdr.sp_datalen - param_hdr.sp_path_len)) ||
+          (param_hdr.sp_sched_len != 0 &&
+           (param_hdr.sp_sched_len > param_hdr.sp_datalen ||
+            param_hdr.sp_sched_off >
+                param_hdr.sp_datalen - param_hdr.sp_sched_len))) {
+         SET_STATUS_Failure(VKI_EINVAL);
+         return;
+      }
+      SizeT attr_off = VG_ROUNDUP(param_hdr.sp_datalen,
+                                  sizeof(vki_uint32_t));
+      param_size = sizeof(vki_spawn_param_t) + attr_off +
+                   sizeof(vki_spawn_attr_t);
+      param = VG_(calloc)("syswrap.spawn.2", 1, param_size);
+      VG_(memcpy)(param, (void *) ARG2, ARG3);
+      VG_(memcpy)(param, &param_hdr, sizeof(param_hdr));
+      param->sp_attr_off = attr_off;
+      param->sp_attr_len = sizeof(vki_spawn_attr_t);
+   } else {
+      /* existing spawn_param_t + spawn_attr_t */
+      param_size = ARG3;
+      param = VG_(malloc)("syswrap.spawn.3", param_size);
+      VG_(memcpy)(param, (void *) ARG2, param_size);
+      VG_(memcpy)(param, &param_hdr, sizeof(param_hdr));
+   }
+   param->sp_size = param_size;
+   param->sp_datalen = param_size - sizeof(vki_spawn_param_t);
+   vki_spawn_attr_t *spa = (vki_spawn_attr_t *) ((Addr) param->sp_data +
+                                                 param->sp_attr_off);
+
+   /* The kernel rejects unknown flags. Checking here means the signal
+      handling below never modifies attributes that mean something
+      valgrind does not know about. */
+   Int rem = spa->sa_psflags & ~(
+      VKI_POSIX_SPAWN_RESETIDS      | VKI_POSIX_SPAWN_SETPGROUP |
+      VKI_POSIX_SPAWN_SETSIGDEF     | VKI_POSIX_SPAWN_SETSIGMASK |
+      VKI_POSIX_SPAWN_SETSCHEDPARAM | VKI_POSIX_SPAWN_SETSCHEDULER |
+      VKI_POSIX_SPAWN_SETSID        | VKI_POSIX_SPAWN_SETSIGIGN_NP |
+      VKI_POSIX_SPAWN_NOSIGCHLD_NP  | VKI_POSIX_SPAWN_WAITPID_NP |
+      VKI_POSIX_SPAWN_NOEXECERR_NP);
+   if (rem != 0) {
+      VG_(free)(param);
+      SET_STATUS_Failure(VKI_EINVAL);
+      return;
+   }
+
+   /* The requested program, possibly replaced by its resolved path
+      below. */
+   const HChar *client_name = (const HChar *) ARG1;
+   HChar *resolved = NULL;
+
+   /* Convert the argv and envp parts of the args blob into their separate
+      XArray's. Duplicate strings because argv and envp will be then
+      modified. Walk the strings as the kernel does; each vector must
+      exactly tile its part of sa_data[]. */
+   XArray *argv = VG_(newXA)(VG_(malloc), "syswrap.spawn.4",
+                             VG_(free), sizeof(HChar *));
+   XArray *envp = VG_(newXA)(VG_(malloc), "syswrap.spawn.5",
+                             VG_(free), sizeof(HChar *));
+
+   Bool bogus = False;
+   vki_uint32_t stroff = args_hdr.sa_arg_off;
+   for (vki_uint32_t i = 0; i < args_hdr.sa_arg_cnt; i++) {
+      vki_uint32_t strend = stroff;
+      while (strend < args_hdr.sa_env_off &&
+             cl_args->sa_data[strend] != '\0') {
+         strend++;
+      }
+      if (strend == args_hdr.sa_env_off) {
+         bogus = True;
+         break;
+      }
+      SizeT strsz = strend - stroff;
+      HChar *duplicate = VG_(malloc)("syswrap.spawn.6", strsz + 1);
+      VG_(memcpy)(duplicate, &cl_args->sa_data[stroff], strsz);
+      duplicate[strsz] = '\0';
+      VG_(addToXA)(argv, &duplicate);
+      stroff = strend + 1;
+   }
+   if (stroff != args_hdr.sa_env_off)
+      bogus = True;
+   if (!bogus) {
+      for (vki_uint32_t i = 0; i < args_hdr.sa_env_cnt; i++) {
+         vki_uint32_t strend = stroff;
+         while (strend < args_hdr.sa_datalen &&
+                cl_args->sa_data[strend] != '\0') {
+            strend++;
+         }
+         if (strend == args_hdr.sa_datalen) {
+            bogus = True;
+            break;
+         }
+         SizeT strsz = strend - stroff;
+         HChar *duplicate = VG_(malloc)("syswrap.spawn.6", strsz + 1);
+         VG_(memcpy)(duplicate, &cl_args->sa_data[stroff], strsz);
+         duplicate[strsz] = '\0';
+         VG_(addToXA)(envp, &duplicate);
+         stroff = strend + 1;
+      }
+      if (stroff != args_hdr.sa_datalen)
+         bogus = True;
+   }
+   if (bogus) {
+      if (VG_(clo_trace_syscalls))
+         VG_(debugLog)(3, "syswrap-solaris", "spawn: bogus args blob\n");
+      SET_STATUS_Failure(VKI_EINVAL);
+      goto exit;
+   }
+
+   /* For posix_spawnp() the kernel, not libc, performs the search: the
+      param blob carries the caller's search path and the requested name is
+      passed through as given. Tracing the child replaces the exec target
+      with the valgrind launcher below, which would defeat that search, so
+      when child tracing is enabled resolve the requested name here the
+      same way the kernel would. The traced child valgrind is then handed
+      the resolved program and the kernel-side search is disabled. */
+   if (VG_(clo_trace_children) && param->sp_path_len != 0) {
+      /* Validate the search path region, as the kernel would, before
+         using it. */
+      if (param->sp_path_len > param->sp_datalen ||
+          param->sp_path_off > param->sp_datalen - param->sp_path_len ||
+          param->sp_data[param->sp_path_off + param->sp_path_len - 1] !=
+              '\0') {
+         SET_STATUS_Failure(VKI_EINVAL);
+         goto exit;
+      }
+      resolved = VG_(malloc)("syswrap.spawn.14", VKI_PATH_MAX + 1);
+      Int resolve_err = spawn_resolve_path(
+          (const HChar *) ((Addr) param->sp_data + param->sp_path_off),
+          (const HChar *) ARG1, resolved, VKI_PATH_MAX + 1);
+      if (resolve_err != 0) {
+         SET_STATUS_Failure(resolve_err);
+         goto exit;
+      }
+      client_name = resolved;
+   }
+
+   /* Decide whether or not we want to trace the spawned child.
+      Omit the executable name itself from child_argv. */
+   Word argv_cnt = VG_(sizeXA)(argv);
+   const HChar **child_argv = VG_(malloc)("syswrap.spawn.7",
+                            (argv_cnt > 0 ? argv_cnt : 1) * sizeof(HChar *));
+   for (Word i = 1; i < argv_cnt; i++) {
+      child_argv[i - 1] = *(HChar **) VG_(indexXA)(argv, i);
+   }
+   child_argv[argv_cnt > 0 ? argv_cnt - 1 : 0] = NULL;
+   Bool trace_this_child = VG_(should_we_trace_this_child)(client_name,
+                                                           child_argv);
+   VG_(free)(child_argv);
+
+   /* If we're tracing the child, and the launcher name looks bogus (possibly
+      because launcher.c couldn't figure it out, see comments therein) then we
+      have no option but to fail. */
+   if (trace_this_child &&
+       (!VG_(name_of_launcher) || VG_(name_of_launcher)[0] != '/')) {
+      SET_STATUS_Failure(VKI_ECHILD); /* "No child processes." */
+      goto exit;
+   }
+
+   /* Set up the child's exe path. */
+   const HChar *path = (const HChar *) ARG1;
+   const HChar *launcher_basename = NULL;
+   if (trace_this_child) {
+      /* We want to exec the launcher. */
+      path = VG_(name_of_launcher);
+      vg_assert(path != NULL);
+
+      /* The launcher path is absolute, and the search path and shell
+         fallback in the param blob describe the requested program, not
+         the launcher, so disable them. The requested program was resolved
+         above and the traced child valgrind handles it from here. */
+      param->sp_path_off = param->sp_path_len = 0;
+      param->sp_shell_off = param->sp_shell_len = 0;
+
+      launcher_basename = VG_(strrchr)(path, '/');
+      if ((launcher_basename == NULL) || (launcher_basename[1] == '\0')) {
+         launcher_basename = path;  /* hmm, tres dubious */
+      } else {
+         launcher_basename++;
+      }
+   }
+
+   /* Set up the child's environment.
+
+      Remove the valgrind-specific stuff from the environment so the child
+      doesn't get vgpreload_core.so, vgpreload_<tool>.so, etc. This is done
+      unconditionally, since if we are tracing the child, the child valgrind
+      will set up the appropriate client environment.
+
+      Then, if tracing the child, set VALGRIND_LIB for it. */
+   HChar **child_envp = VG_(calloc)("syswrap.spawn.8",
+                                    VG_(sizeXA)(envp) + 1, sizeof(HChar *));
+   for (Word i = 0; i < VG_(sizeXA)(envp); i++) {
+      child_envp[i] = *(HChar **) VG_(indexXA)(envp, i);
+   }
+   VG_(env_remove_valgrind_env_stuff)(child_envp, /* ro_strings */ False,
+                                      VG_(free));
+
+   /* Stuff was removed from child_envp, reflect that in envp XArray. */
+   VG_(dropTailXA)(envp, VG_(sizeXA)(envp));
+   for (UInt i = 0; child_envp[i] != NULL; i++) {
+      VG_(addToXA)(envp, &child_envp[i]);
+   }
+   VG_(free)(child_envp);
+
+   if (trace_this_child) {
+      /* Set VALGRIND_LIB in envp. */
+      SizeT len = VG_(strlen)(VALGRIND_LIB) + VG_(strlen)(VG_(libdir)) + 2;
+      HChar *valstr = VG_(malloc)("syswrap.spawn.9", len);
+      VG_(sprintf)(valstr, "%s=%s", VALGRIND_LIB, VG_(libdir));
+      VG_(addToXA)(envp, &valstr);
+   }
+
+   /* Set up the child's args. If not tracing it, they are left untouched.
+      Otherwise, they are:
+
+      [launcher_basename] ++ VG_(args_for_valgrind) ++ [client_name] ++
+      argv[1..],
+
+      except that the first VG_(args_for_valgrind_noexecpass) args are
+      omitted. */
+   if (trace_this_child) {
+      vg_assert(VG_(args_for_valgrind) != NULL);
+      vg_assert(VG_(args_for_valgrind_noexecpass) >= 0);
+      vg_assert(VG_(args_for_valgrind_noexecpass)
+                   <= VG_(sizeXA)(VG_(args_for_valgrind)));
+
+      /* So what args will there be? Bear with me... */
+      /* ... launcher basename, ... */
+      HChar *duplicate = VG_(strdup)("syswrap.spawn.10", launcher_basename);
+      VG_(insertIndexXA)(argv, 0, &duplicate);
+
+      /* ... Valgrind's args, ... */
+      UInt v_args = VG_(sizeXA)(VG_(args_for_valgrind));
+      v_args -= VG_(args_for_valgrind_noexecpass);
+      for (Word i = VG_(args_for_valgrind_noexecpass);
+           i < VG_(sizeXA)(VG_(args_for_valgrind)); i++) {
+         duplicate = VG_(strdup)("syswrap.spawn.11",
+                           *(HChar **) VG_(indexXA)(VG_(args_for_valgrind), i));
+         VG_(insertIndexXA)(argv, 1 + i - VG_(args_for_valgrind_noexecpass),
+                            &duplicate);
+      }
+
+      /* ... name of client executable, ... */
+      duplicate = VG_(strdup)("syswrap.spawn.12", client_name);
+      VG_(insertIndexXA)(argv, 1 + v_args, &duplicate);
+
+      /* ... and args for client executable (without [0]). */
+      if (VG_(sizeXA)(argv) > 1 + v_args + 1) {
+         duplicate = *(HChar **) VG_(indexXA)(argv, 1 + v_args + 1);
+         VG_(free)(duplicate);
+         VG_(removeIndexXA)(argv, 1 + v_args + 1);
+      }
+   }
+
+   /* Debug-only printing. */
+   if (0) {
+      VG_(printf)("\npath = %s\n", path);
+      VG_(printf)("argv = ");
+      for (Word i = 0; i < VG_(sizeXA)(argv); i++) {
+         VG_(printf)("%s ", *(HChar **) VG_(indexXA)(argv, i));
+      }
+
+      VG_(printf)("\nenvp = ");
+      for (Word i = 0; i < VG_(sizeXA)(envp); i++) {
+         VG_(printf)("%s ", *(HChar **) VG_(indexXA)(envp, i));
+      }
+      VG_(printf)("\n");
+   }
+
+   /* Set the signal state up for the spawned child.
+
+      Valgrind virtualises the client's signal dispositions in SCSS and the
+      host-level dispositions differ from what the client believes, so the
+      child cannot be left to inherit them. Query SCSS and prepare default
+      (DFL) and ignore (IGN) signal sets reflecting the client's view;
+      signals set to be caught are equivalent to signals set to the default
+      action, from the child's perspective, since exec resets them.
+
+      These sets are then combined with those passed from the client, if
+      flags POSIX_SPAWN_SETSIGDEF or POSIX_SPAWN_SETSIGIGN_NP have been
+      specified. A signal which the client explicitly placed in one of its
+      sets must not be added to the opposite one; the kernel gives
+      sa_sigdefault priority when a signal appears in both sets, so a
+      synthesized entry would otherwise override the client's request. */
+   vki_sigset_t sig_default;
+   vki_sigset_t sig_ignore;
+   VG_(sigemptyset)(&sig_default);
+   VG_(sigemptyset)(&sig_ignore);
+   for (Int i = 1; i < VG_(max_signal); i++) {
+      vki_sigaction_fromK_t sa;
+      VG_(do_sys_sigaction)(i, NULL, &sa); /* query SCSS */
+      if (sa.sa_handler == VKI_SIG_IGN) {
+         if (!((spa->sa_psflags & VKI_POSIX_SPAWN_SETSIGDEF) &&
+               VG_(sigismember)(&spa->sa_sigdefault, i))) {
+            VG_(sigaddset)(&sig_ignore, i);
+         }
+      } else {
+         if (!((spa->sa_psflags & VKI_POSIX_SPAWN_SETSIGIGN_NP) &&
+               VG_(sigismember)(&spa->sa_sigignore, i))) {
+            VG_(sigaddset)(&sig_default, i);
+         }
+      }
+   }
+
+   if (spa->sa_psflags & VKI_POSIX_SPAWN_SETSIGDEF) {
+      VG_(sigaddset_from_set)(&spa->sa_sigdefault, &sig_default);
+   } else {
+      spa->sa_psflags |= VKI_POSIX_SPAWN_SETSIGDEF;
+      spa->sa_sigdefault = sig_default;
+   }
+
+   if (spa->sa_psflags & VKI_POSIX_SPAWN_SETSIGIGN_NP) {
+      VG_(sigaddset_from_set)(&spa->sa_sigignore, &sig_ignore);
+   } else {
+      spa->sa_psflags |= VKI_POSIX_SPAWN_SETSIGIGN_NP;
+      spa->sa_sigignore = sig_ignore;
+   }
+
+   /* Set the signal mask for the spawned child.
+
+      When the client specified POSIX_SPAWN_SETSIGMASK the kernel sets the
+      child's mask to exactly the given set and the mask inherited from the
+      spawning thread is irrelevant, so nothing needs to be done here.
+      Without the flag the child would inherit this thread's host-level
+      mask, which is valgrind's own rather than the client's; pass the
+      client's virtualised mask through the same mechanism instead. */
+   if (!(spa->sa_psflags & VKI_POSIX_SPAWN_SETSIGMASK)) {
+      spa->sa_psflags |= VKI_POSIX_SPAWN_SETSIGMASK;
+      spa->sa_sigmask = VG_(get_ThreadState)(tid)->sig_mask;
+   }
+
+   /* Lastly, reconstruct the args blob from argv + envp. */
+   SizeT args_size = sizeof(vki_spawn_args_t);
+   for (Word i = 0; i < VG_(sizeXA)(argv); i++) {
+      args_size += VG_(strlen)(*(HChar **) VG_(indexXA)(argv, i)) + 1;
+   }
+   for (Word i = 0; i < VG_(sizeXA)(envp); i++) {
+      args_size += VG_(strlen)(*(HChar **) VG_(indexXA)(envp, i)) + 1;
+   }
+
+   vki_spawn_args_t *args = VG_(malloc)("syswrap.spawn.13", args_size);
+   args->sa_size = args_size;
+   args->sa_datalen = args_size - sizeof(vki_spawn_args_t);
+   SizeT datoff = 0;
+   args->sa_arg_off = datoff;
+   args->sa_arg_cnt = VG_(sizeXA)(argv);
+   for (Word i = 0; i < VG_(sizeXA)(argv); i++) {
+      const HChar *str = *(HChar **) VG_(indexXA)(argv, i);
+      SizeT len = VG_(strlen)(str) + 1;
+      VG_(memcpy)(&args->sa_data[datoff], str, len);
+      datoff += len;
+   }
+   args->sa_env_off = datoff;
+   args->sa_env_cnt = VG_(sizeXA)(envp);
+   for (Word i = 0; i < VG_(sizeXA)(envp); i++) {
+      const HChar *str = *(HChar **) VG_(indexXA)(envp, i);
+      SizeT len = VG_(strlen)(str) + 1;
+      VG_(memcpy)(&args->sa_data[datoff], str, len);
+      datoff += len;
+   }
+   vg_assert(datoff == args->sa_datalen);
+
+   /* Actual spawn() syscall. */
+   SysRes res = VG_(do_syscall5)(__NR_spawn, (UWord) path, (UWord) param,
+                                 param_size, (UWord) args, args_size);
+   SET_STATUS_from_SysRes(res);
+   VG_(free)(args);
+
+   if (SUCCESS) {
+      PRINT("   spawn: process %d spawned child %lu\n", VG_(getpid)(), RES);
+   }
+
+exit:
+   if (resolved != NULL)
+      VG_(free)(resolved);
+   VG_(free)(param);
+   for (Word i = 0; i < VG_(sizeXA)(argv); i++) {
+      VG_(free)(*(HChar **) VG_(indexXA)(argv, i));
+   }
+   for (Word i = 0; i < VG_(sizeXA)(envp); i++) {
+      VG_(free)(*(HChar **) VG_(indexXA)(envp, i));
+   }
+   VG_(deleteXA)(argv);
+   VG_(deleteXA)(envp);
+}
+#endif /* ILLUMOS_SPAWN_SYSCALL */
 
 static Bool handle_auxv_open(SyscallStatus *status, const HChar *filename,
                            int flags)
@@ -10829,9 +11564,9 @@ POST(fast_getzoneoffset)
 
 static SyscallTableEntry syscall_table[] = {
    SOLX_(__NR_exit,                 sys_exit),                  /*   1 */
-#if defined(SOLARIS_SPAWN_SYSCALL)
-   SOLX_(__NR_spawn,                sys_spawn),                 /*   2 */
-#endif /* SOLARIS_SPAWN_SYSCALL */
+#if defined(SOLARIS_SPAWN_SYSCALL) || defined(ILLUMOS_SPAWN_SYSCALL)
+   SOLX_(__NR_spawn,                sys_spawn),                 /*   2 (Solaris) 143 (illumos) */
+#endif /* SOLARIS_SPAWN_SYSCALL || ILLUMOS_SPAWN_SYSCALL */
    GENXY(__NR_read,                 sys_read),                  /*   3 */
    GENX_(__NR_write,                sys_write),                 /*   4 */
 #if defined(SOLARIS_OLD_SYSCALLS)

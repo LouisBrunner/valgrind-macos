@@ -472,6 +472,7 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_ERANGE ERANGE
 #define VKI_ENOTSUP ENOTSUP
 #define VKI_ENODATA ENODATA
+#define VKI_ENAMETOOLONG ENAMETOOLONG
 #define VKI_EOVERFLOW EOVERFLOW
 #define VKI_ENOSYS ENOSYS
 #define VKI_ERESTART ERESTART
@@ -676,7 +677,9 @@ typedef struct vki_kcf_door_arg_s {
 #define VKI_MNTIOC_GETEXTMNTENT MNTIOC_GETEXTMNTENT
 #define VKI_MNTIOC_GETMNTANY MNTIOC_GETMNTANY
 
-
+/* Just forward define FILE to avoid needing to pull in stdio.h */
+struct __FILE;
+typedef __FILE FILE;
 #include <sys/mnttab.h>
 #define vki_extmnttab extmnttab
 #define vki_mntentbuf mntentbuf
@@ -1195,6 +1198,88 @@ typedef struct sigaction vki_sigaction_fromK_t;
 #define vki_kspawn_attr_t kspawn_attr_t
 #define vki_spawn_attr_t spawn_attr_t
 #endif /* SOLARIS_SPAWN_SYSCALL */
+
+#if defined(ILLUMOS_SPAWN_SYSCALL)
+/* The illumos spawn() syscall implements posix_spawn(3C) and differs from
+   the Solaris spawn() syscall above. The public flags are shipped in
+   <sys/spawn.h> but the private marshalling interface between libc and the
+   kernel is not shipped in any header, so it is replicated here from the
+   illumos usr/src/uts/common/sys/spawn_impl.h. It is not a committed
+   interface and may need to be kept in sync. All of the structures below
+   deliberately have the same layout in 32-bit and 64-bit processes. */
+#include <sys/param.h>
+#define VKI_NCARGS64 NCARGS64
+
+#include <sys/spawn.h>
+#define VKI_POSIX_SPAWN_NOEXECERR_NP POSIX_SPAWN_NOEXECERR_NP
+#define VKI_POSIX_SPAWN_NOSIGCHLD_NP POSIX_SPAWN_NOSIGCHLD_NP
+#define VKI_POSIX_SPAWN_RESETIDS POSIX_SPAWN_RESETIDS
+#define VKI_POSIX_SPAWN_SETPGROUP POSIX_SPAWN_SETPGROUP
+#define VKI_POSIX_SPAWN_SETSCHEDPARAM POSIX_SPAWN_SETSCHEDPARAM
+#define VKI_POSIX_SPAWN_SETSCHEDULER POSIX_SPAWN_SETSCHEDULER
+#define VKI_POSIX_SPAWN_SETSID POSIX_SPAWN_SETSID
+#define VKI_POSIX_SPAWN_SETSIGDEF POSIX_SPAWN_SETSIGDEF
+#define VKI_POSIX_SPAWN_SETSIGIGN_NP POSIX_SPAWN_SETSIGIGN_NP
+#define VKI_POSIX_SPAWN_SETSIGMASK POSIX_SPAWN_SETSIGMASK
+#define VKI_POSIX_SPAWN_WAITPID_NP POSIX_SPAWN_WAITPID_NP
+
+typedef struct vki_spawn_attr {
+   int          sa_psflags;     /* POSIX_SPAWN_* flags */
+   int          sa_priority;
+   int          sa_schedpolicy;
+   vki_pid_t    sa_pgroup;
+   vki_sigset_t sa_sigdefault;
+   vki_sigset_t sa_sigignore;
+   vki_sigset_t sa_sigmask;
+} vki_spawn_attr_t;
+
+/* file_action_t */
+#define VKI_FA_OPEN      0
+#define VKI_FA_CLOSE     1
+#define VKI_FA_DUP2      2
+#define VKI_FA_CLOSEFROM 3
+#define VKI_FA_CHDIR     4
+#define VKI_FA_FCHDIR    5
+
+typedef struct vki_kfile_attr {
+   vki_uint32_t kfa_len;         /* size of this record */
+   vki_uint32_t kfa_type;        /* type of action (file_action_t) */
+   vki_uint32_t kfa_pathsize;    /* size of kfa_path[] array (can be 0) */
+   vki_uint32_t kfa_oflag;       /* oflag for open() */
+   vki_uint32_t kfa_mode;        /* mode for open() */
+   int          kfa_filedes;     /* file descriptor for open()/close() */
+   int          kfa_newfiledes;  /* new file descriptor for dup2() */
+   char         kfa_path[];      /* pathname for open()/chdir() */
+} vki_kfile_attr_t;
+
+/* Every *_off field is a byte offset measured from the start of the
+   trailing sp_data[]/sa_data[] array. */
+typedef struct vki_spawn_param {
+   vki_uint32_t sp_size;         /* total size of this structure */
+   vki_uint32_t sp_datalen;      /* size of sp_data[] */
+   vki_uint32_t sp_attr_off;     /* offset of vki_spawn_attr_t */
+   vki_uint32_t sp_attr_len;     /* length of vki_spawn_attr_t */
+   vki_uint32_t sp_fattr_off;    /* offset of the first file attribute */
+   vki_uint32_t sp_fattr_cnt;    /* number of file attributes */
+   vki_uint32_t sp_shell_off;    /* offset of the shell */
+   vki_uint32_t sp_shell_len;    /* length of the shell */
+   vki_uint32_t sp_path_off;     /* offset of the PATH */
+   vki_uint32_t sp_path_len;     /* length of the PATH */
+   vki_uint32_t sp_sched_off;    /* offset of the scheduling attributes */
+   vki_uint32_t sp_sched_len;    /* length of the scheduling attributes */
+   uint8_t      sp_data[];
+} vki_spawn_param_t;
+
+typedef struct vki_spawn_args {
+   vki_uint32_t sa_size;         /* total size of this structure */
+   vki_uint32_t sa_datalen;      /* size of sa_data[] */
+   vki_uint32_t sa_arg_off;      /* offset of the first argument */
+   vki_uint32_t sa_arg_cnt;      /* number of arguments */
+   vki_uint32_t sa_env_off;      /* offset of the first environment entry */
+   vki_uint32_t sa_env_cnt;      /* number of environment entries */
+   uint8_t      sa_data[];
+} vki_spawn_args_t;
+#endif /* ILLUMOS_SPAWN_SYSCALL */
 
 
 #include <sys/stat.h>

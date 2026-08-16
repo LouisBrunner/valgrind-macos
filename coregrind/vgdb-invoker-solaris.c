@@ -64,6 +64,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h> // snprintf
 
 typedef Addr CORE_ADDR;
 

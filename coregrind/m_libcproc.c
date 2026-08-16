@@ -521,6 +521,60 @@ Int VG_(spawn) ( const HChar *filename, const HChar **argv )
       return -1;
    return sr_Res(res);
 
+#  elif defined(VGO_solaris) && defined(ILLUMOS_SPAWN_SYSCALL)
+   HChar **envp = VG_(env_clone)(VG_(client_envp));
+   for (HChar **p = envp; *p != NULL; p++) {
+      *p = VG_(strdup)("libcproc.s.1", *p);
+   }
+   VG_(env_remove_valgrind_env_stuff)(envp, /* ro_strings */ False, VG_(free));
+
+   /* Now marshal argv and envp into a spawn_args_t blob, in which the
+      strings of each vector are packed back to back. */
+   SizeT args_size = sizeof(vki_spawn_args_t);
+   for (const HChar **p = argv; *p != NULL; p++) {
+      args_size += VG_(strlen)(*p) + 1;
+   }
+   for (HChar **p = envp; *p != NULL; p++) {
+      args_size += VG_(strlen)(*p) + 1;
+   }
+
+   vki_spawn_args_t *args = VG_(malloc)("libcproc.s.2", args_size);
+   args->sa_size = args_size;
+   args->sa_datalen = args_size - sizeof(vki_spawn_args_t);
+   SizeT off = 0;
+   UInt cnt = 0;
+   args->sa_arg_off = off;
+   for (const HChar **p = argv; *p != NULL; p++) {
+      SizeT len = VG_(strlen)(*p) + 1;
+      VG_(memcpy)(&args->sa_data[off], *p, len);
+      off += len;
+      cnt++;
+   }
+   args->sa_arg_cnt = cnt;
+   args->sa_env_off = off;
+   cnt = 0;
+   for (HChar **p = envp; *p != NULL; p++) {
+      SizeT len = VG_(strlen)(*p) + 1;
+      VG_(memcpy)(&args->sa_data[off], *p, len);
+      off += len;
+      cnt++;
+   }
+   args->sa_env_cnt = cnt;
+   vg_assert(off == args->sa_datalen);
+
+   SysRes res = VG_(do_syscall5)(__NR_spawn, (UWord) filename, (UWord) NULL, 0,
+                                 (UWord) args, args_size);
+
+   VG_(free)(args);
+   for (HChar **p = envp; *p != NULL; p++) {
+      VG_(free)(*p);
+   }
+   VG_(free)(envp);
+
+   if (sr_isError(res))
+      return -1;
+   return sr_Res(res);
+
 #  else
 
    Int pid = VG_(fork)();
@@ -535,7 +589,7 @@ Int VG_(spawn) ( const HChar *filename, const HChar **argv )
    } else {
       return pid;
    }
-#  endif /* VGO_solaris && SOLARIS_SPAWN_SYSCALL */
+#  endif /* VGO_solaris && (SOLARIS_SPAWN_SYSCALL || ILLUMOS_SPAWN_SYSCALL) */
 }
 
 /* Return -1 if error, else 0.  NOTE does not indicate return code of

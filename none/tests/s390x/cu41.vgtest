@@ -1,1 +1,2 @@
 prog: cu41
+vgopts: -q

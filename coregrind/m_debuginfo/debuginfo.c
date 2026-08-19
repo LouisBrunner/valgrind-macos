@@ -326,7 +326,7 @@ DebugInfo* alloc_DebugInfo( const HChar* filename )
       di->ddump_frames = VG_(clo_debug_dump_frames);
    }
 
-#if DARWIN_VERS >= DARWIN_11_00
+#if defined(VGO_darwin) && (DARWIN_VERS >= DARWIN_11_00)
    di->from_memory = False;
 #endif
 
@@ -1575,7 +1575,7 @@ void VG_(di_notify_vm_protect)( Addr a, SizeT len, UInt prot )
    }
 
    Bool do_nothing = True;
-#  if defined(VGP_x86_darwin) && (DARWIN_VERS >= DARWIN_10_7)
+#  if defined(VGP_x86_darwin)
    do_nothing = False;
 #  endif
    if (do_nothing /* wrong platform */) {

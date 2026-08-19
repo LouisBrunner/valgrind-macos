@@ -32,6 +32,8 @@
 #ifndef __VKI_DARWIN_H
 #define __VKI_DARWIN_H
 
+#include "config.h"
+
 /* struct __darwin_ucontext isn't fully declared without
  * this definition.  It's crazy but there it is.  */
 #ifndef _XOPEN_SOURCE
@@ -378,7 +380,15 @@ typedef uint32_t vki_u32;
 #define	VKI_O_EXCL	O_EXCL
 #define	VKI_O_EVTONLY	O_EVTONLY
 
+/* OSX 10.6 was the first to get any *at functions like openat
+ * but it wasn't until OSX 10.10 that a definition for AT_FDCWD
+ * was added. We dont claim to support anything older than 10.8
+ * any more, so no need to worry about versions older than that. */
+#if DARWIN_VERS >= DARWIN_10_10
 #define VKI_AT_FDCWD AT_FDCWD
+#else
+#define VKI_AT_FDCWD -2
+#endif
 
 #define	VKI_F_DUPFD	F_DUPFD
 #define	VKI_F_GETFD	F_GETFD
@@ -1205,33 +1215,31 @@ struct ByteRangeLockPB2
 
 #include <bsm/audit.h>
 
-#define	VKI_A_GETPOLICY	A_GETPOLICY
-#define	VKI_A_SETPOLICY	A_SETPOLICY
-#define	VKI_A_GETKMASK	A_GETKMASK
-#define	VKI_A_SETKMASK	A_SETKMASK
-#define	VKI_A_GETQCTRL	A_GETQCTRL
-#define	VKI_A_SETQCTRL	A_SETQCTRL
-#define	VKI_A_GETCWD	A_GETCWD
-#define	VKI_A_GETCAR	A_GETCAR
-#define	VKI_A_GETSTAT	A_GETSTAT
-#define	VKI_A_SETSTAT	A_SETSTAT
-#define	VKI_A_SETUMASK	A_SETUMASK
-#define	VKI_A_SETSMASK	A_SETSMASK
-#define	VKI_A_GETCOND	A_GETCOND
-#define	VKI_A_SETCOND	A_SETCOND
-#define	VKI_A_GETCLASS	A_GETCLASS
-#define	VKI_A_SETCLASS	A_SETCLASS
-#define	VKI_A_GETPINFO	A_GETPINFO
-#define	VKI_A_SETPMASK	A_SETPMASK
-#define	VKI_A_SETFSIZE	A_SETFSIZE
-#define	VKI_A_GETFSIZE	A_GETFSIZE
-#define	VKI_A_GETPINFO_ADDR	A_GETPINFO_ADDR
-#define	VKI_A_GETKAUDIT	A_GETKAUDIT
-#define	VKI_A_SETKAUDIT	A_SETKAUDIT
-#if DARWIN_VERS >= DARWIN_10_6
+#define	VKI_A_GETPOLICY	A_GETPOLICY	
+#define	VKI_A_SETPOLICY	A_SETPOLICY	
+#define	VKI_A_GETKMASK	A_GETKMASK	
+#define	VKI_A_SETKMASK	A_SETKMASK	
+#define	VKI_A_GETQCTRL	A_GETQCTRL	
+#define	VKI_A_SETQCTRL	A_SETQCTRL	
+#define	VKI_A_GETCWD	A_GETCWD	
+#define	VKI_A_GETCAR	A_GETCAR	
+#define	VKI_A_GETSTAT	A_GETSTAT	
+#define	VKI_A_SETSTAT	A_SETSTAT	
+#define	VKI_A_SETUMASK	A_SETUMASK	
+#define	VKI_A_SETSMASK	A_SETSMASK	
+#define	VKI_A_GETCOND	A_GETCOND	
+#define	VKI_A_SETCOND	A_SETCOND	
+#define	VKI_A_GETCLASS	A_GETCLASS	
+#define	VKI_A_SETCLASS	A_SETCLASS	
+#define	VKI_A_GETPINFO	A_GETPINFO	
+#define	VKI_A_SETPMASK	A_SETPMASK	
+#define	VKI_A_SETFSIZE	A_SETFSIZE	
+#define	VKI_A_GETFSIZE	A_GETFSIZE	
+#define	VKI_A_GETPINFO_ADDR	A_GETPINFO_ADDR	
+#define	VKI_A_GETKAUDIT	A_GETKAUDIT	
+#define	VKI_A_SETKAUDIT	A_SETKAUDIT	
 #define VKI_A_SENDTRIGGER A_SENDTRIGGER
 #define VKI_A_GETSINFO_ADDR A_GETSINFO_ADDR
-#endif
 
 
 #include <sys/aio.h>

@@ -2062,6 +2062,10 @@ void do_client_request ( ThreadId tid )
          SET_CLREQ_RETVAL(tid, len_needed);
          break;
       }
+      
+      case VG_USERREQ__VALGRIND_RUNNING_VERSION:
+         SET_CLREQ_RETVAL(tid, (__VALGRIND_MAJOR__ *100) + (__VALGRIND_MINOR__));
+         break;
 
       case VG_USERREQ__PRINTF: {
          const HChar* format = (HChar *)arg[1];

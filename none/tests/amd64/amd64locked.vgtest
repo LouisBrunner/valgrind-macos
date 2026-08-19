@@ -1,1 +1,2 @@
 prog: amd64locked
+vgopts: -q

@@ -3435,6 +3435,12 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
             return True;
          }
          /* We don't know what it is. */
+         if (sigill_diag) {
+            vex_printf ("disInstr(riscv64): special instruction preamble ");
+            vex_printf ("followed by unknown instruction\n");
+            vex_printf ("  this can happen when inline valgrind.h assembly ");
+            vex_printf ("is optimized (away)\n");
+         }
          return False;
       }
    }

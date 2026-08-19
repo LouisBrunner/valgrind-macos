@@ -1,1 +1,2 @@
 prog: cu24_1
+vgopts: -q

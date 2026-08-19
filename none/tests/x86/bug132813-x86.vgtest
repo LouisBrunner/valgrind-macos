@@ -1,1 +1,2 @@
 prog: bug132813-x86
+vgopts: -q

@@ -1,1 +1,2 @@
 prog: lpr
+vgopts: -q

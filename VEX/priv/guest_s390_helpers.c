@@ -2586,6 +2586,49 @@ s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
 
 #endif
 
+/*------------------------------------------------------------*/
+/*--- Dirty helper for DIEBR/DIDBR instructions            ---*/
+/*------------------------------------------------------------*/
+
+#if defined(VGA_s390x)
+
+ULong
+s390x_dirtyhelper_DIxBR(VexGuestS390XState *guest_state, ULong args)
+{
+   UInt r1 = (args >> 0) & 0xf;
+   UInt r2 = (args >> 4) & 0xf;
+   UInt r3 = (args >> 8) & 0xf;
+   UInt m4 = (args >> 12) & 0xf;
+   UInt op = (args >> 16) & 0xffff;
+   UInt cc;
+
+   V128* gv = &guest_state->guest_v0;
+
+   /* DIEBR/DIDBR instruction to be targeted by EX */
+   UInt insn = (op << 16) | (4u << 12) | ((UInt)m4 << 8) | (0u << 4) | 2u;
+
+   __asm__("ld  %%f0, %[op1]\n\t"
+           "ld  %%f2, %[op2]\n\t"
+           "ld  %%f4, %[op3]\n\t"
+           "ex  %%r0, %[insn]\n\t"
+           "std %%f0, %[op1]\n\t"
+           "std %%f4, %[op3]\n\t"
+           "ipm %[cc]\n\t"
+           : [op1] "+R"(gv[r1]), [op3] "=R"(gv[r3]), [cc] "=d"(cc)
+           : [op2] "R"(gv[r2]), [insn] "R"(insn)
+           : "cc", "f0", "f2", "f4");
+
+   return cc >> 28;
+}
+
+#else
+
+ULong
+s390x_dirtyhelper_DIxBR(VexGuestS390XState *guest_state, ULong packed)
+{ return 0; }
+
+#endif
+
 /*---------------------------------------------------------------*/
 /*--- end                                guest_s390_helpers.c ---*/
 /*---------------------------------------------------------------*/

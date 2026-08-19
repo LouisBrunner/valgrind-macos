@@ -1,2 +1,3 @@
 prog: tls
 prereq: grep '^#define HAVE_TLS 1' ../../config.h > /dev/null
+vgopts: -q

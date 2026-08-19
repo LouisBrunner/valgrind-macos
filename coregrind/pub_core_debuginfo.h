@@ -29,6 +29,8 @@
 #ifndef __PUB_CORE_DEBUGINFO_H
 #define __PUB_CORE_DEBUGINFO_H
 
+#include "config.h" // DARWIN_VERS
+
 //--------------------------------------------------------------------
 // PURPOSE: This module deals with reading debug info and symbol tables
 // to get file and function names, line numbers, variable types, and

@@ -35884,6 +35884,12 @@ DisResult disInstr_PPC_WRK (
             dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
+         if (sigill_diag) {
+            vex_printf ("disInstr(ppc): special instruction preamble ");
+            vex_printf ("followed by unknown instruction\n");
+            vex_printf ("  this can happen when inline valgrind.h assembly ");
+            vex_printf ("is optimized (away)\n");
+         }
          /* We don't know what it is.  Set opc1/opc2 so decode_failure
             can print the insn following the Special-insn preamble. */
          theInstr = getUIntPPCendianly(code+16);

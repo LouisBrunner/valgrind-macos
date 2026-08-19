@@ -139,8 +139,6 @@ extern void amd64g_dirtyhelper_FNSAVES ( VexGuestAMD64State*, HWord );
 extern ULong amd64g_calculate_mmx_pmaddwd  ( ULong, ULong );
 extern ULong amd64g_calculate_mmx_psadbw   ( ULong, ULong );
 
-extern ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi );
-
 extern ULong amd64g_calc_crc32b ( ULong crcIn, ULong b );
 extern ULong amd64g_calc_crc32w ( ULong crcIn, ULong w );
 extern ULong amd64g_calc_crc32l ( ULong crcIn, ULong l );
@@ -165,7 +163,7 @@ extern void  amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
 
 extern void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
                                             ULong hasF16C, ULong hasRDRAND,
-                                            ULong hasRDSEED );
+                                            ULong hasRDSEED, ULong hasLZCNT );
 
 
 extern void  amd64g_dirtyhelper_FINIT ( VexGuestAMD64State* );

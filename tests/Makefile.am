@@ -24,7 +24,6 @@ min_power_isa_FLAGS = $(ISA_2_05_FLAG)  $(ISA_2_06_FLAG) $(ISA_2_07_FLAG)
 dist_noinst_SCRIPTS = \
 	check_headers_and_includes \
 	check_makefile_consistency \
-	check_ppc64_auxv_cap \
 	filter_addresses \
 	filter_libc \
 	filter_numbers \
@@ -52,6 +51,7 @@ check_PROGRAMS = \
 	x86_amd64_features \
 	s390x_features \
 	mips_features \
+	check_ppc64_auxv_cap \
 	power_insn_available \
 	is_ppc64_BE \
 	min_power_isa \

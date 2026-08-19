@@ -200,11 +200,11 @@ for example "/tool/tests/newtest".
 The 'scalar' tests are something of a special case. Scalar in this sense
 refers to the registers (or stack slots) used to pass in arguments. These tests
 directly use the 'syscall' syscall via a macro, SY. They make little effort
-to use the sysall in a realistic manner. Rather, the objective is to
-exhaustively test all of the arguemnts and referenced memory of syscalls.
+to use the syscall in a realistic manner. Rather, the objective is to
+exhaustively test all of the arguments and referenced memory of syscalls.
 The variable 'x0' is a long integer, containing the value of 0 but
 also uninitialised. It can be used on its own or with some other value
-to ensure that all of the syscall arguemts are uninitialised.
+to ensure that all of the syscall arguments are uninitialised.
 A second macro, GO, is used precede the syscall (and subsequent errors)
 with a header. The GO string includes the name of the syscall, a count of
 expected scalar errors and a count of memory errors. The tests are usually
@@ -550,7 +550,9 @@ Updating zstd
 ~~~~~~~~~~~~~
 Similar to libiberty, we have to import a copy of zstd rather than linking
 with a library. There isn't (yet) a script to automate this, so it has to be
-done manually.
+done manually. Use a stable version of Linux with GCC to perform the update.
+Other compilers/platforms may produce different versions of the single file
+version of zstd which could have unexpected consequences.
 
 The version currently in use can be seen in coregrind/m_debuginfo/zstd.h.
 Look for ZSTD_VERSION_MAJOR ZSTD_VERSION_MINOR and ZSTD_VERSION_RELEASE.
@@ -562,11 +564,56 @@ Look for ZSTD_VERSION_MAJOR ZSTD_VERSION_MINOR and ZSTD_VERSION_RELEASE.
  - Checkout the latest release tag (should be vMAJ.MIN.REL)
 
  - Copy {zstd git repo}/lib/zstd.h to coregrind/m_debuginfo/zstd.h
- 
- -  cd to {zstd git repo}/build/single_file_libs and run ./create_single_file_decoder.sh
- 
+
+ - Copy {zstd git repo}/lib/zstd_errors.h to coregrind/m_debuginfo/zstd_errors.h
+
+ - cd to {zstd git repo}/build/single_file_libs and run ./create_single_file_decoder.sh
+
+ - copy zstddeclib.c to zstddeclib_theirs.c
+
+ - checkout the previous release tag
+
+ - run create_single_file_decoder.sh
+
+ - copy zstddeclib.c to zstddeclib_orig.c
+
  - You cannot simply copy and use the generated zstddeclib.c!
    All calls to libc functions in this file need replacing with VG_ versions.
-   Merge the newly generated zstddeclib.c with coregrind/m_debuginfo/zstddeclib.c.
+   Merge the newly generated zstddeclib.c with
+   coregrind/m_debuginfo/zstddeclib.c.
    Make sure to keep the copy of the BSD license in the C file.
-   
+
+   You can use a 3-way merge GUI tool like meld. An example usage is
+
+   meld --auto-merge path/to/zstddeclib_orig.c coregrind/m_debuginfo/zstddeclib.c path/to/zstddeclib_theirs.c -o coregrind/m_debuginfo/zstddeclib.c
+
+   Alternatively, you could use patch and diff.
+
+   diff path/to/zstddeclib_orig.c path/to/zstddeclib_theirs.c > zstd_delta.patch
+   patch coregrind/m_debuginfo/zstddeclib.c zstd_delta.patch
+
+ - After you have ensured that Valgrind builds correctly, perform some extra
+   tests.
+
+ - Check that upstream has not added any header dependencies to zstd.h. Ensure
+   that you have run make before performing this test because the deps files
+   are only updated by performing a build.
+
+   grep zstd coregrind/m_debuginfo/.deps/*
+
+   Ensure that all of the paths to zstd headers start with m_debuginfo
+   and not a system header path like /usr/include. If you do see a path like
+   /usr/include check to see what has been added to zstd. You will need to
+   copy the new file to coregrind/m_debuginfo and then edit
+   coregrind/Makefile.am and add the new header to noinst_HEADERS somewhere
+   after the existing zstd headers.
+
+ - Check that zstddeclib.c does not use any libc functions. This assumes that
+   you are on the amd64 platform.
+
+   nm coregrind/m_debuginfo/libcoregrind_amd64_linux_a-zstddeclib.o | grep " U "
+
+   You should only see functions with a "vgPlain_" prefix. This check is
+   probably redundant since the Valgrind tools ought to fail to link if they
+   refer to libc functions. There is no harm in performing this extra check.
+

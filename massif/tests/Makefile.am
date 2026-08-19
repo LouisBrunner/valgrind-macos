@@ -36,6 +36,7 @@ EXTRA_DIST = \
 	overloaded-new.stderr.exp overloaded-new.vgtest \
 	pages_as_heap.stderr.exp pages_as_heap.vgtest \
 	peak.post.exp peak.stderr.exp peak.vgtest \
+	peak_only.post.exp peak_only.stderr.exp peak_only.vgtest \
 	peak2.post.exp peak2.stderr.exp peak2.vgtest \
 	realloc.post.exp realloc.stderr.exp realloc.vgtest \
 	thresholds_0_0.post.exp \

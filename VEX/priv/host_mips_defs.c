@@ -795,6 +795,9 @@ const HChar *showMIPSAluOp(MIPSAluOp op, Bool immR)
       case Malu_SLT:
          ret = immR ? "slti" : "slt";
          break;
+      case Malu_SLTU:
+         ret = immR ? "sltui" : "sltu";
+         break;
       default:
          vpanic("showMIPSAluOp");
          break;
@@ -3883,6 +3886,13 @@ Int emit_MIPSInstr ( /*MB_MOD*/Bool* is_profInc,
                   goto bad;
                } else {
                   p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 42);
+               }
+               break;
+            case Malu_SLTU:
+               if (immR) {
+                  goto bad;
+               } else {
+                  p = mkFormR(p, 0, r_srcL, r_srcR, r_dst, 0, 43);
                }
                break;
 

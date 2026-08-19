@@ -1,1 +1,2 @@
 prog: tw_td
+vgopts: -q

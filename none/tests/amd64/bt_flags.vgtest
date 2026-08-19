@@ -1,1 +1,2 @@
 prog: bt_flags
+vgopts: -q

@@ -1,1 +1,2 @@
 prog: x86locked
+vgopts: -q

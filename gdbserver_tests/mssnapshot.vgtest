@@ -10,3 +10,4 @@ argsB: --quiet -l 60 --nx ./t
 stdinB: mssnapshot.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_vgdb
+cleanup: rm -f garbage.filtered.out

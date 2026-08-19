@@ -38,6 +38,9 @@ my $cmd;
 # Time unit used in profile.
 my $time_unit;
 
+# Indicates whether only peak memory usage should be given.
+my $peak_only = 0;
+
 # Threshold dictating what percentage an entry must represent for us to
 # bother showing it.
 my $threshold = 1.0;
@@ -70,6 +73,7 @@ usage: ms_print [options] massif-out-file
   options for the user, with defaults in [ ], are:
     -h --help             show this message
     --version             show version
+    --peak-only           show only the peak memory usage [no]
     --threshold=<m.n>     significance threshold, in percent [$threshold]
     --x=<4..1000>         graph width, in columns [72]
     --y=<4..1000>         graph height, in rows [20]
@@ -113,6 +117,9 @@ sub process_cmd_line()
             if ($arg =~ /^--version$/) {
                 die("ms_print-$version\n");
 
+            # --peak-only
+            } elsif ($arg eq '--peak-only') {
+                $peak_only = 1;
             # --threshold=X (tolerates a trailing '%')
             } elsif ($arg =~ /^--threshold=([\d\.]+)%?$/) {
                 $threshold = $1;
@@ -465,6 +472,12 @@ sub read_input_file()
 
     close(INPUTFILE);
     close(TMPFILE);
+
+    if ($peak_only) {
+        print "Peak memory usage: $peak_mem_total_szB bytes\n";
+        unlink($tmp_file);
+        return;
+    }
 
     #-------------------------------------------------------------------------
     # Print header.

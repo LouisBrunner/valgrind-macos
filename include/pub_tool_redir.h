@@ -249,9 +249,7 @@
 #endif
 #elif defined(VGO_darwin)
 
-#if (DARWIN_VERS <= DARWIN_10_6)
-#  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
-#elif (DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8)
+#if (DARWIN_VERS == DARWIN_10_8)
 #  define  VG_Z_LIBC_SONAME  libsystemZucZaZddylib   // libsystem_c*.dylib
    /* Note that the idea of a single name for the C library falls
       apart on more recent Darwins (10.8 and later) since the

@@ -272,6 +272,10 @@ typedef struct {
 extern
 void LibVEX_GuestX86_initialise ( /*OUT*/VexGuestX86State* vex_state );
 
+/* CRC32 helpers */
+extern UInt x86g_calc_crc32b ( UInt crcIn, UInt b );
+extern UInt x86g_calc_crc32w ( UInt crcIn, UInt w );
+extern UInt x86g_calc_crc32l ( UInt crcIn, UInt l );
 
 /* Extract from the supplied VexGuestX86State structure the
    corresponding native %eflags value. */

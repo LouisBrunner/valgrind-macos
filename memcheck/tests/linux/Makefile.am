@@ -3,7 +3,8 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr \
 	filter_madv_guard \
-	filter_ioctl_procmap_query
+	filter_ioctl_procmap_query \
+	debuginfod-check.pl
 
 EXTRA_DIST = \
 	aligned_alloc.vgtest aligned_alloc.stderr.exp \
@@ -16,7 +17,6 @@ EXTRA_DIST = \
 	capget.vgtest capget.stderr.exp capget.stderr.exp2 capget.stderr.exp3 \
 	capget.stderr.exp4 \
 	debuginfod-check.stderr.exp debuginfod-check.vgtest.in \
-	debuginfod-check.pl \
 	dlclose_leak-no-keep.stderr.exp dlclose_leak-no-keep.vgtest \
 	dlclose_leak.stderr.exp dlclose_leak.vgtest \
 	ioctl_procmap_query.stdout.exp ioctl_procmap_query.vgtest \
@@ -45,6 +45,7 @@ EXTRA_DIST = \
 	sys-preadv_pwritev.vgtest sys-preadv_pwritev.stderr.exp \
 	sys-preadv2_pwritev2.vgtest sys-preadv2_pwritev2.stderr.exp \
 	sys-execveat.vgtest sys-execveat.stderr.exp sys-execveat.stdout.exp \
+		sys-execveat.stderr.exp-ppc64le \
 	enomem.vgtest enomem.stdout.exp \
 	memalign.vgtest memalign.stderr.exp \
 		memalign.stderr.exp-musl
@@ -123,11 +124,12 @@ endif
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)
 AM_CXXFLAGS += $(AM_FLAG_M3264_PRI)
 
-stack_switch_LDADD    = -lpthread
-timerfd_syscall_LDADD = -lrt
+aligned_alloc_CFLAGS 		= ${AM_CFLAGS} @FLAG_W_NO_NON_POWER_OF_TWO_ALIGNMENT@
+stack_switch_LDADD		= -lpthread
+timerfd_syscall_LDADD		= -lrt
 
 if HAVE_OPENSSL
-bug480706_LDADD             = -lcrypto
+bug480706_LDADD			= -lcrypto
 endif
 
 if HAVE_LIBAIO

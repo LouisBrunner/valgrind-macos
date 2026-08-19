@@ -5605,6 +5605,13 @@ struct vki_statmount {
 	char str[];		/* Variable size part containing strings */
 };
 
+struct vki_mount_attr {
+	__vki_u64 attr_set;
+	__vki_u64 attr_clr;
+	__vki_u64 propagation;
+	__vki_u64 userns_fd;
+};
+
 //----------------------------------------------------------------------
 // From uapi/linux/fs.h
 //----------------------------------------------------------------------

@@ -829,31 +829,31 @@ void MC_(pp_Error) ( const Error* err )
          }
          break;
 
-      case Err_AlignMismatch:
+      case Err_AlignMismatch: {
+         HChar alloc_buf[32];
+         HChar dealloc_buf[32];
+         if (extra->Err.AlignMismatch.alloc_align == 0) {
+            VG_(sprintf)(alloc_buf, "%s", "default-aligned");
+         } else {
+            VG_(sprintf)(alloc_buf, "%lu", extra->Err.AlignMismatch.alloc_align);
+         }
+         if (extra->Err.AlignMismatch.default_delete) {
+            VG_(sprintf)(dealloc_buf, "%s", "default-aligned");
+         } else {
+            VG_(sprintf)(dealloc_buf, "%lu", extra->Err.AlignMismatch.dealloc_align);
+         }
          if (xml) {
             emit( "  <kind>MismatchedAllocateDeallocateAlignment</kind>\n" );
-            if (extra->Err.AlignMismatch.default_delete) {
-               emit( "  <what>Mismatched %s size alloc value: %lu dealloc value: default-aligned</what>\n",
-                    extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align );
-            } else {
-               emit( "  <what>Mismatched %s size alloc value: %lu dealloc value: %lu</what>\n",
-                     extra->Err.SizeMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
-            }
-            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
-                                &extra->Err.AlignMismatch.ai, False);
+            emit( "  <what>Mismatched %s alignment alloc value: %s dealloc value: %s</what>\n",
+                 extra->Err.AlignMismatch.function_names, alloc_buf, dealloc_buf );
          } else {
-            if (extra->Err.AlignMismatch.default_delete) {
-               emit( "Mismatched %s alignment alloc value: %lu dealloc value: default-aligned\n",
-                    extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align );
-            } else {
-               emit( "Mismatched %s alignment alloc value: %lu dealloc value: %lu\n",
-                     extra->Err.AlignMismatch.function_names, extra->Err.AlignMismatch.alloc_align, extra->Err.AlignMismatch.dealloc_align );
-            }
-            VG_(pp_ExeContext)( VG_(get_error_where)(err) );
-            VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
-                                &extra->Err.AlignMismatch.ai, False);
+            emit( "Mismatched %s alignment alloc value: %s dealloc value: %s\n",
+                  extra->Err.AlignMismatch.function_names, alloc_buf, dealloc_buf );
          }
+         VG_(pp_ExeContext)( VG_(get_error_where)(err) );
+         VG_(pp_addrinfo_mc)(VG_(get_error_address)(err),
+                             &extra->Err.AlignMismatch.ai, False);
+      }
          break;
 
       default: 

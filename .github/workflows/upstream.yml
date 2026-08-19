@@ -13,6 +13,9 @@ jobs:
   sync-upstream:
     name: Sync upstream branch
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
       - name: Checkout local `upstream` branch (us)
         uses: actions/checkout@v7
@@ -34,6 +37,11 @@ jobs:
           git push -f origin upstream
           git push --tags origin
         shell: bash
+      - name: Trigger Build workflow on `upstream`
+        run: gh workflow run build.yml --ref upstream
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
   upstream-merge-pr:
     name: Merge upstream changes into main
     runs-on: ubuntu-latest

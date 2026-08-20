@@ -41,6 +41,18 @@
 #include "priv_aspacemgr.h"
 #include "config.h"
 
+// FIXME: arm64 supports tagged pointers where part of the address space can be used without affecting the pointer.
+// This function handles pointers before they are handed to the tool, VEX does its own (cheaper) stripping when loading/storing.
+// Currently only Darwin seem to have an issue with it as it's enabled by default, unlike Linux/FreeBSD.
+static inline Addr stripTagBits(Addr a) {
+#if defined(VGP_arm64_darwin)
+  asm volatile (
+    "xpacd %[a]\n"
+    : [a] "+r" (a)
+  );
+#endif
+  return a;
+}
 
 /* Note: many of the exported functions implemented below are
    described more fully in comments in pub_core_aspacemgr.h.
@@ -1523,6 +1535,8 @@ Bool is_valid_for( UInt kinds, Addr start, SizeT len, UInt prot )
 #if defined(VGO_linux)
    Bool needGuardPageCheck = False;
 #endif
+
+  start = stripTagBits(start);
 
    if (len == 0)
       return True; /* somewhat dubious case */

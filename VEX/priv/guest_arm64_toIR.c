@@ -289,9 +289,22 @@ static IRExpr* qop ( IROp op, IRExpr* a1, IRExpr* a2,
    return IRExpr_Qop(op, a1, a2, a3, a4);
 }
 
+// FIXME: arm64 supports tagged pointers where part of the address space can be used without affecting the pointer.
+// This function handles pointers before they are handed to VG, which does extra stripping for specific cases.
+// Currently only Darwin seem to have an issue with it as it's enabled by default, unlike Linux/FreeBSD.
+// FIXME: LDXR/STXR/CAS-family accesses (IRStmt_LLSC/IRStmt_CAS) bypass loadLE/storeLE and are not covered by this.
+static IRExpr* stripTagBits ( IRExpr* addr )
+{
+#if defined(VGP_arm64_darwin)
+   return binop(Iop_And64, addr, mkU64(0x00FFFFFFFFFFFFFFULL));
+#else
+   return addr;
+#endif
+}
+
 static IRExpr* loadLE ( IRType ty, IRExpr* addr )
 {
-   return IRExpr_Load(Iend_LE, ty, addr);
+   return IRExpr_Load(Iend_LE, ty, stripTagBits(addr));
 }
 
 /* Add a statement to the list held by "irbb". */
@@ -307,7 +320,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_Store(Iend_LE, addr, data) );
+   stmt( IRStmt_Store(Iend_LE, stripTagBits(addr), data) );
 }
 
 //ZZ static void storeGuardedLE ( IRExpr* addr, IRExpr* data, IRTemp guardT )

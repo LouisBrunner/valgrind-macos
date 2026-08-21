@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
 
 double arg, res1, res2;
 
@@ -18,12 +19,41 @@ asm("\n"
 ".previous\n"
 );
 
+static inline void print_double (double d, bool first)
+{
+   int width = first ? 17 : 14;
+   if (isnan(d)) {
+      if (signbit(d)) {
+         printf("%*s", width, "-nan");
+      } else {
+         printf("%*s", width, "nan");
+      }
+   } else if (isinf(d)) {
+      if (signbit(d)) {
+         printf("%*s", width, "-inf");
+      } else {
+         printf("%*s", width, "inf");
+      }
+   } else {
+      if (first) {
+         printf ("%*.10e", width, d);
+      } else {
+         printf ("%*.10f", width, d);
+      }
+   }
+}
+
 void try ( double x )
 {
   arg = x * 1.414213562373049;
   res1 = res2 = 0.0;
   do_fxtract();
-  printf("%17.10e  -> %14.10f %14.10f\n", arg, res1, res2);
+  print_double(arg, true);
+  printf("  -> ");
+  print_double(res1, false);
+  printf(" ");
+  print_double(res2, false);
+  printf("\n");
 }
 
 int main ( void )
@@ -36,8 +66,8 @@ int main ( void )
      try( 1.27 + (double)(i*10 - 200) );
 
   try(+0.0);
-  try(1.0 / 0.0);
-  try(sqrt(-1.0));
+  try(__builtin_inf());
+  try(__builtin_nan(""));
 
   try(5.1e-308);
   try(4.1e-308);
@@ -70,8 +100,8 @@ int main ( void )
      try( - (1.27 + (double)(i*10 - 200)) );
 
   try(-0.0);
-  try(-(1.0 / 0.0));
-  try(-sqrt(-1.0));
+  try(-__builtin_inf());
+  try(-__builtin_nan(""));
 
   try(-5.1e-308);
   try(-4.1e-308);

@@ -289,9 +289,22 @@ static IRExpr* qop ( IROp op, IRExpr* a1, IRExpr* a2,
    return IRExpr_Qop(op, a1, a2, a3, a4);
 }
 
+// FIXME: arm64 supports tagged pointers where part of the address space can be used without affecting the pointer.
+// This function handles pointers before they are handed to VG, which does extra stripping for specific cases.
+// Currently only Darwin seem to have an issue with it as it's enabled by default, unlike Linux/FreeBSD.
+// FIXME: LDXR/STXR/CAS-family accesses (IRStmt_LLSC/IRStmt_CAS) bypass loadLE/storeLE and are not covered by this.
+static IRExpr* stripTagBits ( IRExpr* addr )
+{
+#if defined(VGP_arm64_darwin)
+   return binop(Iop_And64, addr, mkU64(0x00FFFFFFFFFFFFFFULL));
+#else
+   return addr;
+#endif
+}
+
 static IRExpr* loadLE ( IRType ty, IRExpr* addr )
 {
-   return IRExpr_Load(Iend_LE, ty, addr);
+   return IRExpr_Load(Iend_LE, ty, stripTagBits(addr));
 }
 
 /* Add a statement to the list held by "irbb". */
@@ -307,7 +320,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_Store(Iend_LE, addr, data) );
+   stmt( IRStmt_Store(Iend_LE, stripTagBits(addr), data) );
 }
 
 //ZZ static void storeGuardedLE ( IRExpr* addr, IRExpr* data, IRTemp guardT )
@@ -8217,25 +8230,18 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
    /* ---- Cases for DCZID_EL0 ----
       This is the data cache zero ID register. It controls whether
-      DC ZVA is supported and if so the block size used. Support reads of it
-      only by passing through to the host.
+      DC ZVA is supported and if so the block size used. Use the values
+      read during startup when calling get_cache_info.
       D5 3B 00 111 Rt  MRS rT, dczid_el0
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B00E0) {
       UInt tt = INSN(4,0);
-      IRTemp   val  = newTemp(Ity_I64);
-      IRExpr** args = mkIRExprVec_0();
-      IRDirty* d    = unsafeIRDirty_1_N (
-                         val,
-                         0/*regparms*/,
-                         "arm64g_dirtyhelper_MRS_DCZID_EL0",
-                         &arm64g_dirtyhelper_MRS_DCZID_EL0,
-                         args
-                      );
-      /* execute the dirty call, dumping the result in val. */
-      stmt( IRStmt_Dirty(d) );
+      ULong val_cached = (archinfo->arm64_data_zero_prohibited ? 0x10 : 0) |
+                         archinfo->arm64_cache_block_size;
+      IRTemp val = newTemp(Ity_I64);
+      assign(val, mkU64(val_cached));
       putIReg64orZR(tt, mkexpr(val));
-      DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
+      DIP("mrs %s, dczid_el0 (cached)\n", nameIReg64orZR(tt));
       return True;
    }
    /* ---- Cases for CTR_EL0 ----
@@ -8421,6 +8427,14 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7420) {
       /* Round the requested address, in rT, down to the start of the
          containing block. */
+      /* Unless DZP is true */
+      if (archinfo->arm64_data_zero_prohibited) {
+         vex_printf("ARM64 front end: DC ZVA instruction encountered with the DCZID_EL0 DZP flag set.\n");
+         putPC(mkU64( guest_PC_curr_instr));
+         dres->jk_StopHere = Ijk_SigILL;
+         dres->whatNext    = Dis_StopHere;
+         return True;
+      }
       UInt   tt      = INSN(4,0);
       ULong  clearszB = 1UL << (archinfo->arm64_cache_block_size + 2);
       IRTemp addr    = newTemp(Ity_I64);
@@ -17203,9 +17217,50 @@ Bool disInstr_ARM64_WRK (
             return True;
          }
          /* We don't know what it is. */
+         if (sigill_diag) {
+            vex_printf ("disInstr(arm64): special instruction preamble ");
+            vex_printf ("followed by unknown instruction\n");
+            vex_printf ("  this can happen when inline valgrind.h assembly ");
+            vex_printf ("is optimized (away)\n");
+         }
          return False;
          /*NOTREACHED*/
       }
+   }
+
+   /* Generalized handler for EOR3 instructions. */
+
+   // This pattern identifies the EOR3 instruction class by
+   // masking out the register fields (Rd, Rn, Ra, Rm).
+   if ((insn & 0xFFE08000) == 0xCE000000) {
+      // Extract the four register numbers from the instruction bits
+      UInt rD = INSN(4,0);    // Destination Vd
+      UInt rN = INSN(9,5);    // Source Vn
+      UInt rA = INSN(14,10);  // Source Va
+      UInt rM = INSN(20,16);  // Source Vm
+
+      // Get the VReg contents for the three source registers
+      IRTemp vN = newTemp(Ity_V128);
+      IRTemp vM = newTemp(Ity_V128);
+      IRTemp vA = newTemp(Ity_V128);
+      assign(vN, getQReg128(rN));
+      assign(vM, getQReg128(rM));
+      assign(vA, getQReg128(rA));
+
+      // Perform the three-way XOR by chaining two binary XORs
+      // temp = Vn EOR Vm
+      IRTemp temp = newTemp(Ity_V128);
+      assign(temp, binop(Iop_XorV128, mkexpr(vN), mkexpr(vM)));
+
+      // res = temp EOR Va
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, binop(Iop_XorV128, mkexpr(temp), mkexpr(vA)));
+
+      // Store the final result in the destination register
+      putQReg128(rD, mkexpr(res));
+
+      DIP("eor3 v%u.16b, v%u.16b, v%u.16b, v%u.16b\n", rD, rN, rM, rA);
+      return True;
    }
 
    /* ----------------------------------------------------------- */

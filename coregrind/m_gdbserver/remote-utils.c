@@ -664,7 +664,7 @@ void decode_address (CORE_ADDR *addrp, const char *start, int len)
    Useful for register and int image */
 char* heximage (char *buf, const char *bin, int count)
 {
-#if (VKI_LITTLE_ENDIAN)
+#if defined(VKI_LITTLE_ENDIAN)
    char rev[count]; 
    /* note: no need for trailing \0, length is known with count */
    int i;

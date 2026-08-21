@@ -8,7 +8,9 @@ noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
 	access_below_sp_1.vgtest access_below_sp_1.stderr.exp \
+		access_below_sp_1.stderr.exp-clang \
 	access_below_sp_2.vgtest access_below_sp_2.stderr.exp \
+		access_below_sp_2.stderr.exp-clang \
 	defcfaexpr.vgtest defcfaexpr.stderr.exp \
 	int3-amd64.vgtest int3-amd64.stdout.exp \
 	scalar.stderr.exp scalar.vgtest \

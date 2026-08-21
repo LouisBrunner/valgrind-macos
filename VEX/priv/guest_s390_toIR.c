@@ -12775,6 +12775,44 @@ s390_irgen_LXEB(UChar r1, IRTemp op2addr)
    put_fpr_pair(r1, unop(Iop_F32toF128, mkexpr(op)));
 }
 
+
+static void
+s390_irgen_DIxBR(UChar r1, UChar r3, UChar r2, UChar m4, ULong op)
+{
+   s390_insn_assert(is_valid_rounding_mode(m4));
+   IRTemp cc   = newTemp(Ity_I64);
+   ULong  args = (op << 16) | ((ULong)m4 << 12) | ((ULong)r3 << 8) |
+                ((ULong)r2 << 4) | (ULong)r1;
+   IRDirty* d  = unsafeIRDirty_1_N(cc, 0, "s390x_dirtyhelper_DIxBR",
+                                   &s390x_dirtyhelper_DIxBR,
+                                   mkIRExprVec_2(IRExpr_GSPTR(), mkU64(args)));
+   d->nFxState = 3;
+   vex_bzero(&d->fxState, sizeof(d->fxState));
+   d->fxState[0].fx     = Ifx_Read;
+   d->fxState[0].offset = fpr_w0_offset(r2);
+   d->fxState[0].size   = sizeof(UInt);
+   d->fxState[1].fx     = Ifx_Modify;
+   d->fxState[1].offset = fpr_w0_offset(r1);
+   d->fxState[1].size   = sizeof(UInt);
+   d->fxState[2].fx     = Ifx_Write;
+   d->fxState[2].offset = fpr_w0_offset(r3);
+   d->fxState[2].size   = sizeof(UInt);
+   stmt(IRStmt_Dirty(d));
+   s390_cc_set(cc);
+}
+
+static void
+s390_irgen_DIEBR(UChar r1, UChar r3, UChar r2, UChar m4)
+{
+   s390_irgen_DIxBR(r1, r3, r2, m4, 0xb353);
+}
+
+static void
+s390_irgen_DIDBR(UChar r1, UChar r3, UChar r2, UChar m4)
+{
+   s390_irgen_DIxBR(r1, r3, r2, m4, 0xb35b);
+}
+
 static void
 s390_irgen_FIEBRA(UChar m3, UChar m4, UChar r1, UChar r2)
 {
@@ -18686,13 +18724,17 @@ s390_decode_4byte_and_irgen(const UChar *bytes)
                 goto ok;
    case 0xb350: /* TBEDR */ goto unimplemented;
    case 0xb351: /* TBDR */ goto unimplemented;
-   case 0xb353: /* DIEBR */ goto unimplemented;
+   case 0xb353: s390_irgen_DIEBR(RRFb_r1(ovl), RRFb_r3(ovl), RRFb_r2(ovl),
+                                 RRFb_m4(ovl));
+                goto ok;
    case 0xb357: s390_irgen_FIEBRA(RRFe_m3(ovl), RRFe_m4(ovl), RRFe_r1(ovl),
                                   RRFe_r2(ovl));
                 goto ok;
    case 0xb358: /* THDER */ goto unimplemented;
    case 0xb359: /* THDR */ goto unimplemented;
-   case 0xb35b: /* DIDBR */ goto unimplemented;
+   case 0xb35b: s390_irgen_DIDBR(RRFb_r1(ovl), RRFb_r3(ovl), RRFb_r2(ovl),
+                                 RRFb_m4(ovl));
+                goto ok;
    case 0xb35f: s390_irgen_FIDBRA(RRFe_m3(ovl), RRFe_m4(ovl), RRFe_r1(ovl),
                                   RRFe_r2(ovl));
                 goto ok;
@@ -20586,6 +20628,12 @@ s390_decode_special_and_irgen(const UChar *bytes)
       s390_irgen_inject_ir();
    } else {
       /* We don't know what it is. */
+      if (sigill_diag) {
+         vex_printf ("vex s390->IR: special instruction preamble ");
+         vex_printf ("followed by unknown instruction\n");
+         vex_printf ("  this can happen when inline valgrind.h assembly ");
+         vex_printf ("is optimized (away)\n");
+      }
       return S390_DECODE_UNKNOWN_SPECIAL_INSN;
    }
 

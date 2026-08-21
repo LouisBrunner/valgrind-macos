@@ -1,3 +1,3 @@
-prereq: test -e movbe
+prereq: test -e movbe && ../../../tests/x86_amd64_features x86-movbe
 prog: movbe
 vgopts: -q

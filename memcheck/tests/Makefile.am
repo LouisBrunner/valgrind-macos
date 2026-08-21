@@ -95,7 +95,6 @@ dist_noinst_SCRIPTS = \
 	filter_stanza \
 	filter_stanza.awk \
 	filter_used_supp \
-	filter_stanza_and_size_t \
 	filter_malloc_zone \
 	run_descr_belowsp_test
 
@@ -138,6 +137,7 @@ EXTRA_DIST = \
 		bug464969_d_demangle.stdout.exp \
 	bug472219.vgtest \
 	bug484002.stdout.exp bug484002.vgtest \
+	c23_free.stderr.exp c23_free.vgtest \
 	calloc-overflow.stderr.exp calloc-overflow.vgtest\
 	cdebug_zstd.vgtest cdebug_zstd.stderr.exp \
 	cdebug_zlib.stderr.exp cdebug_zlib.vgtest \
@@ -600,6 +600,12 @@ bug464969_d_demangle_CXXFLAGS = $(AM_CXXFLAGS) @FLAG_W_NO_UNINITIALIZED@
 
 if HAVE_WCSXFRM
 check_PROGRAMS += bug484002
+endif
+
+# assume that if free_sized is present then so is free_aligned_sized
+if HAVE_FREE_SIZED
+check_PROGRAMS += c23_free
+c23_free_CFLAGS = -std=c23 ${AM_CFLAGS} @FLAG_W_NO_UNINITIALIZED@
 endif
 
 if GZ_ZLIB

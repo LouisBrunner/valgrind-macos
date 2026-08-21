@@ -1,2 +1,3 @@
 prereq: ../../../tests/check_ppc64_auxv_cap altivec && ../../../tests/check_ppc64_auxv_cap arch_2_06
 prog: subnormal_test
+vgopts: -q

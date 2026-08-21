@@ -132,7 +132,7 @@ problem 1, the heap block overrun:</para>
   <listitem>
     <para>Below the first line is a stack trace telling you where the
     problem occurred.  Stack traces can get quite large, and be
-    confusing, especially if you are using the C++ STL.  Reading them
+    confusing, especially if you are using the C++ standard library.  Reading them
     from the bottom up can help.  If the stack trace is not big enough,
     use the <option>--num-callers</option> option to make it
     bigger.</para>

@@ -21,8 +21,7 @@ LTP_FILTERS = \
 	filters/select03 \
 	filters/munmap01
 
-LTP_PATCHES = \
-	ltp-patches/openat2.patch
+LTP_PATCHES =
 
 EXTRA_DIST = \
 	docs/valgrind-listener-manpage.xml \
@@ -172,8 +171,8 @@ endif
 endif
 
 # Linux Test Project
-LTP_VERSION=20260130
-LTP_SHA256_SUM=5effc9d3eb3f5cd45d47e8ac3d78f59cb8f3f73c8598a2f182ef5b40ddfff311
+LTP_VERSION=20260529
+LTP_SHA256_SUM=685d83c6e370ac09201fb79593412f868fe031ee2890e204b5727fedcf51fb47
 LTP_TAR_NAME=ltp-full-$(LTP_VERSION).tar.xz
 LTP_URL=https://github.com/linux-test-project/ltp/releases/download/$(LTP_VERSION)/$(LTP_TAR_NAME)
 LTP_TAR=$(AUX_CHECK_DIR)/$(LTP_TAR_NAME)

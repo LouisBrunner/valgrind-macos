@@ -1,1 +1,2 @@
 prog: fpu_lazy_eflags
+vgopts: -q

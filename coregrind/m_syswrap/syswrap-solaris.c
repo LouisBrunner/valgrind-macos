@@ -7802,9 +7802,11 @@ POST(sys_port)
    case VKI_PORT_GET:
       POST_MEM_WRITE(ARG3, sizeof(vki_port_event_t));
       break;
-   case VKI_PORT_GETN:
-      POST_MEM_WRITE(ARG3, RES * sizeof(vki_port_event_t));
+   case VKI_PORT_GETN: {
+      UInt nget = (UInt)(RES & 0xFFFFFFFFu);
+      POST_MEM_WRITE(ARG3, nget * sizeof(vki_port_event_t));
       break;
+   }
    case VKI_PORT_ALERT:
    case VKI_PORT_DISPATCH:
       break;

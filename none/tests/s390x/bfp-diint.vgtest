@@ -1,0 +1,2 @@
+prog: bfp-diint
+vgopts: -q

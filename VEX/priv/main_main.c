@@ -1636,18 +1636,19 @@ const HChar* LibVEX_ppVexHwCaps ( VexArch arch, UInt hwcaps )
 void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
 {
    vex_bzero(vai, sizeof(*vai));
-   vai->hwcaps                  = 0;
-   vai->endness                 = VexEndness_INVALID;
-   vai->ppc_icache_line_szB     = 0;
-   vai->ppc_dcbz_szB            = 0;
-   vai->ppc_dcbzl_szB           = 0;
-   vai->arm64_dMinLine_lg2_szB  = 0;
-   vai->arm64_iMinLine_lg2_szB  = 0;
-   vai->arm64_cache_block_size  = 0;
+   vai->hwcaps                       = 0;
+   vai->endness                      = VexEndness_INVALID;
+   vai->ppc_icache_line_szB          = 0;
+   vai->ppc_dcbz_szB                 = 0;
+   vai->ppc_dcbzl_szB                = 0;
+   vai->arm64_dMinLine_lg2_szB       = 0;
+   vai->arm64_iMinLine_lg2_szB       = 0;
+   vai->arm64_cache_block_size       = 0;
+   vai->arm64_data_zero_prohibited   = 0;
    vai->arm64_requires_fallback_LLSC = False;
-   vai->hwcache_info.num_levels = 0;
-   vai->hwcache_info.num_caches = 0;
-   vai->hwcache_info.caches     = NULL;
+   vai->hwcache_info.num_levels      = 0;
+   vai->hwcache_info.num_caches      = 0;
+   vai->hwcache_info.caches          = NULL;
    vai->hwcache_info.icaches_maintain_coherence = True;  // whatever
 }
 

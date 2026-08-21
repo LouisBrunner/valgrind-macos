@@ -35,12 +35,12 @@
 static const char *
 insn_bytes_as_string(const unsigned char *bytes, unsigned num_bytes)
 {
-   static char buf[4 + 1 + 4 + 1 + 4 + 1];
+   static char buf[3 * (4 + 1) + 1];
 
    char *p = buf;
+   *p = '\0';
    for (int j = 0; j < num_bytes; j += 2)
       p += sprintf(p, "%02X%02X ", bytes[j], bytes[j + 1]);
-   *--p = '\0';
 
    return buf;
 }
@@ -51,7 +51,7 @@ verify_spec_exceptions(const opcode *opc, int gen_spec_exc_tests)
 {
    test_stats stats = { 0, 0 };  // return value
 
-   char file[strlen(opc->name) + 15];    // large enough
+   char file[strlen(opc->name) + sizeof "-no-se.dump"];
    sprintf(file, "%s-%s.dump", opc->name, gen_spec_exc_tests ? "se" : "no-se");
 
    objdump_file *ofile = read_objdump(file);
@@ -61,7 +61,7 @@ verify_spec_exceptions(const opcode *opc, int gen_spec_exc_tests)
    if (verbose)
       printf("...verifying %u insns in '%s'\n", ofile->num_lines, file);
 
-   char se_file[strlen(opc->name) + 15];  // large enough
+   char se_file[strlen(opc->name) + sizeof "-no-se.spec-exc"];
    sprintf(se_file, "%s-%s.spec-exc", opc->name,
            gen_spec_exc_tests ? "se" : "no-se");
 

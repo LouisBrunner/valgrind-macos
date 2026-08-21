@@ -1,5 +1,4 @@
 prog: clone_test
 vgopts: --interval-size=100000 --bb-out-file=clone_test.out.bb --pc-out-file=clone_test.out.pc
 post:	cat clone_test.out.bb clone_test.out.bb.2 | ../filter_bb
-cleanup: rm clone_test.out.bb
-
+cleanup: rm -f clone_test.out.bb clone_test.out.bb.2 clone_test.out.pc

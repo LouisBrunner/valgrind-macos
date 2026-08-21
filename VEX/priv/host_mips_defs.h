@@ -268,7 +268,7 @@ typedef enum {
    Malu_ADD, Malu_SUB,
    Malu_AND, Malu_OR, Malu_NOR, Malu_XOR,
    Malu_DADD, Malu_DSUB,
-   Malu_SLT
+   Malu_SLT, Malu_SLTU
 } MIPSAluOp;
 
 extern const HChar *showMIPSAluOp(MIPSAluOp,

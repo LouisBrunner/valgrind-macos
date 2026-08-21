@@ -21,7 +21,6 @@ PARALLEL_JOBS=${PARALLEL_JOBS:-$(nproc)}
 # https://lore.kernel.org/ltp/20250505195003.GB137650@pevik/T/#t
 export LTP_COLORIZE_OUTPUT=0
 export LTP_REPRODUCIBLE_OUTPUT=1
-export LTP_QUIET=1
 
 # Initialize LOGDIR for bunsen upload (https://sourceware.org/bunsen/)
 mkdir -p $LOGDIR; rm -rf ${LOGDIR:?}/*

@@ -1,2 +1,3 @@
 prereq: ../../../tests/check_ppc64_auxv_cap dfp
 prog: test_dfp1
+vgopts: -q

@@ -10,7 +10,8 @@ dist_noinst_SCRIPTS =		    \
 	filter_thread_name_xml      \
 	run_openmp_test             \
 	supported_libpthread	    \
-	supported_sem_init
+	supported_sem_init          \
+	verify-xml-output
 
 noinst_SCRIPTS = \
 	filter_error_count \

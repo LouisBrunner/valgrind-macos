@@ -14,6 +14,10 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
 * ==================== TOOL CHANGES ===================
 
+* The massif ms_print script used to view results as text has a new
+  --peak-only option. This is intended for use in Continuous Integration
+  systems, making peak memory usage easier to parse.
+
 * ==================== FIXED BUGS ====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
@@ -23,8 +27,34 @@ bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
 than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
+271615  Unhandled instruction "popcnt" on x86
+295974  Add SSE4.1 PEXTRD instruction for x86 32 bit
+338365  New client request to fetch valgrind version
+387080  Add --peak-only option to ms_print
+391311  Fix arm64 valgrind tests compilation with clang
+438640  vex x86->IR: unhandled instruction bytes:
+        0xF2 0xF 0x38 0xF1 (CRC, SSE4.2)
 519223  Recognize ioctl(UFFDIO_*) operations
 519539  Darwin shm_open mode is optional and depends on oflag
+519574  valgrind 3.27 "--fair-sched=yes" does not work
+519613  Valgrind incorrectly unpacks the result of sys_port (port_getn)
+        on error, leading to a ~60s wallclock time delay on every call
+518217  Add PHMINPOSUW SSE4.1 support for x86
+518218  Add PMULDQ SSE4.1 support for x86
+518220  Add ROUNDPS, ROUNDSS, ROUNDPD, ROUNDSD SSE4.1 support for x86
+518221  Implement PMOVSXBW SSE4.1 for x86
+520482  Advertise POPCNT on x86 via CPUID
+520753  Advertise LZCNT via CPUID for x86 (32-bit) clients
+520856  unhandled instruction bytes: 0x2E 0xFF 0x14 0x85
+520861  Update FAQ for C++ standard library
+521027  Advertise LZCNT on amd64 via CPUID
+521054  Unhandled amd64-linux syscall: 467 (open_tree_attr)
+521259  Improve check_makefile_consistency
+521332  vex x86->IR: unhandled instruction bytes: 66 0F 38 37 (PCMPGTQ)
+522160  Robustify the flags check in the none/tests/x86/crc32 test
+522533  Valgrind can't handle some encoding from gas trunk with -Wa,-O2
+523375  Fix none/tests/amd64/pcmpxstrx64.c
+523626  Fix sse4-x86 test fails when valgrind compiled with clang
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
@@ -193,6 +223,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 516289  illumos lsframe2 regtest fails
 516748  Incorrect use of SET_STATUS_Failure for syscall wrappers that return
         error codes rather than -1 on error
+517144  Add PACKUSDW SSE4.1 support for x86
 517455  Add PCMPEQQ SSE4.1 support for x86
 517697  Implement CLRSSONSTACK and SETUJMPBUF handling on Solaris.
 517748  Add ability to redirect global functions to Darwin

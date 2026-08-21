@@ -1,1 +1,2 @@
 prog: cdsg
+vgopts: -q

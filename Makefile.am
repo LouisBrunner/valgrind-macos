@@ -129,6 +129,7 @@ EXTRA_DIST = \
 	README.solaris \
 	README.freebsd \
 	NEWS.old \
+	NEWS.older \
 	valgrind.pc.in \
 	valgrind.spec.in \
 	valgrind.spec \
@@ -152,6 +153,16 @@ clean-local:
 	find . -name '*.vgtest.trs' -print0 | xargs -r -0 rm
 	find . -name test-suite.log -print0 | xargs -r -0 rm
 	rm -f test-suite-overall.log
+	find . -name '*.stdout.out'    -print0 | xargs -r -0 rm
+	find . -name '*.stderr.out'    -print0 | xargs -r -0 rm
+	find . -name '*.stdoutB.out'   -print0 | xargs -r -0 rm
+	find . -name '*.stderrB.out'   -print0 | xargs -r -0 rm
+	find . -name '*.post.out'      -print0 | xargs -r -0 rm
+	find . -name '*.stdout.diff*'  -print0 | xargs -r -0 rm
+	find . -name '*.stderr.diff*'  -print0 | xargs -r -0 rm
+	find . -name '*.stdoutB.diff*' -print0 | xargs -r -0 rm
+	find . -name '*.stderrB.diff*' -print0 | xargs -r -0 rm
+	find . -name '*.post.diff*'    -print0 | xargs -r -0 rm
 
 # Need config.h in the installed tree, since some files depend on it
 pkginclude_HEADERS = config.h

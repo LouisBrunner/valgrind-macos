@@ -49,6 +49,19 @@
 
 #include "mc_include.h"
 
+// FIXME: arm64 supports tagged pointers where part of the address space can be used without affecting the pointer.
+// This function handles pointers before they are handed to the tool, VEX does its own (cheaper) stripping when loading/storing.
+// Currently only Darwin seem to have an issue with it as it's enabled by default, unlike Linux/FreeBSD.
+static inline Addr stripTagBits(Addr a) {
+#if defined(VGP_arm64_darwin)
+  asm volatile (
+    "xpacd %[a]\n"
+    : [a] "+r" (a)
+  );
+#endif
+  return a;
+}
+
 /*------------------------------------------------------------*/
 /*--- An overview of leak checking.                        ---*/
 /*------------------------------------------------------------*/
@@ -668,6 +681,7 @@ static Bool aligned_ptr_above_page0_is_vtable_addr(Addr ptr)
       scan_max = seg->end - sizeof(Addr);
    for (scan = ptr; scan <= scan_max; scan+=sizeof(Addr)) {
       Addr pot_fn = *((Addr *)scan);
+      pot_fn = stripTagBits(pot_fn);
       if (pot_fn == 0)
          continue; // NULL fn pointer. Seems it can happen in vtable.
       seg = VG_(am_find_nsegment) (pot_fn);
@@ -879,10 +893,12 @@ static LeakCheckHeuristic heuristic_reachedness (Addr ptr,
          // for small negative integers, as no vtable should be located
          // in the last page.
          inner_addr = *((Addr*)ptr);
+         inner_addr = stripTagBits(inner_addr);
          if (VG_IS_WORD_ALIGNED(inner_addr) 
              && inner_addr >= (Addr)VKI_PAGE_SIZE
              && MC_(is_valid_aligned_word)(ch->data)) {
             first_addr = *((Addr*)ch->data);
+            first_addr = stripTagBits(first_addr);
             if (VG_IS_WORD_ALIGNED(first_addr)
                 && first_addr >= (Addr)VKI_PAGE_SIZE
                 && aligned_ptr_above_page0_is_vtable_addr(inner_addr)
@@ -1154,6 +1170,7 @@ lc_scan_memory(Addr start, SizeT len, Bool is_prior_definite,
          lc_scanned_szB += sizeof(Addr);
          // If the below read fails, we will longjmp to the loop begin.
          addr = *(Addr *)ptr;
+         addr = stripTagBits(addr);
          // If we get here, the scanned word is in valid memory.  Now
          // let's see if its contents point to a chunk.
          if (UNLIKELY(searched)) {

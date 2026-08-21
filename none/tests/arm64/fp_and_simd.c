@@ -2623,11 +2623,8 @@ GEN_UNARY_TEST(not, 8b,  8b)
 
 GEN_BINARY_TEST(pmul, 16b, 16b, 16b)
 GEN_BINARY_TEST(pmul, 8b, 8b, 8b)
-
 GEN_BINARY_TEST(pmull,  8h, 8b,  8b)
 GEN_BINARY_TEST(pmull2, 8h, 16b, 16b)
-GEN_BINARY_TEST(pmull,  1q, 1d,  1d)
-GEN_BINARY_TEST(pmull2, 1q, 2d,  2d)
 
 GEN_UNARY_TEST(rbit, 16b, 16b)
 GEN_UNARY_TEST(rbit, 8b, 8b)
@@ -4042,26 +4039,6 @@ GEN_UNARY_TEST(xtn2, 16b, 8h)
 // ======================== MEM ========================
 
 // All the SIMD and FP memory tests are in none/tests/arm64/memory.c.
-
-// ======================== CRYPTO ========================
-
-GEN_TWOVEC_TEST(aesd_16b_16b,    "aesd v6.16b,  v27.16b",  6, 27)
-GEN_TWOVEC_TEST(aese_16b_16b,    "aese v6.16b,  v27.16b",  6, 27)
-GEN_TWOVEC_TEST(aesimc_16b_16b,  "aesimc v6.16b,  v27.16b",  6, 27)
-GEN_TWOVEC_TEST(aesmc_16b_16b,   "aesmc v6.16b,  v27.16b",  6, 27)
-
-GEN_THREEVEC_TEST(sha1c_q_s_4s,     "sha1c q29, s28, v27.4s", 29,28,27)
-GEN_TWOVEC_TEST(sha1h_s_s,          "sha1h s6,  s27",  6, 27)
-GEN_THREEVEC_TEST(sha1m_q_s_4s,     "sha1m q29, s28, v27.4s", 29,28,27)
-GEN_THREEVEC_TEST(sha1p_q_s_4s,     "sha1p q29, s28, v27.4s", 29,28,27)
-GEN_THREEVEC_TEST(sha1su0_4s_4s_4s, "sha1su0 v29.4s, v28.4s, v27.4s", 29,28,27)
-GEN_TWOVEC_TEST(sha1su1_4s_4s,      "sha1su1 v6.4s,  v27.4s",  6, 27)
-
-GEN_THREEVEC_TEST(sha256h2_q_q_4s,  "sha256h2 q29, q28, v27.4s", 29,28,27)
-GEN_THREEVEC_TEST(sha256h_q_q_4s,   "sha256h q29, q28, v27.4s", 29,28,27)
-GEN_TWOVEC_TEST(sha256su0_4s_4s,    "sha256su0 v6.4s,  v27.4s",  6, 27)
-GEN_THREEVEC_TEST(sha256su1_4s_4s_4s, "sha256su1 v29.4s, v28.4s, v27.4s", 
-                                      29,28,27)
 
 
 /* ---------------------------------------------------------------- */
@@ -6900,43 +6877,6 @@ int main ( void )
    // stur  q,d,s,h,b_addr
    //       addr = [Xn|SP,#imm] (unscaled offset)
 
-   // ======================== CRYPTO ========================
-
-   // aesd       16b (aes single round decryption)
-   // aese       16b (aes single round encryption)
-   // aesimc     16b (aes inverse mix columns)
-   // aesmc      16b (aes mix columns)
-   if (1) DO50( test_aesd_16b_16b(TyNONE) );
-   if (1) DO50( test_aese_16b_16b(TyNONE) );
-   if (1) DO50( test_aesimc_16b_16b(TyNONE) );
-   if (1) DO50( test_aesmc_16b_16b(TyNONE) );
-
-   // sha1c      q_s_4s
-   // sha1h      s_s
-   // sha1m      q_s_4s
-   // sha1p      q_s_4s
-   // sha1su0    4s_4s_4s
-   // sha1su1    4s_4s
-   if (1) DO50( test_sha1c_q_s_4s(TyNONE) );
-   if (1) DO50( test_sha1h_s_s(TyNONE) );
-   if (1) DO50( test_sha1m_q_s_4s(TyNONE) );
-   if (1) DO50( test_sha1p_q_s_4s(TyNONE) );
-   if (1) DO50( test_sha1su0_4s_4s_4s(TyNONE) );
-   if (1) DO50( test_sha1su1_4s_4s(TyNONE) );
-
-   // sha256h2   q_q_4s
-   // sha256h    q_q_4s
-   // sha256su0  4s_4s
-   // sha256su1  4s_4s_4s
-   if (1) DO50( test_sha256h2_q_q_4s(TyNONE) );
-   if (1) DO50( test_sha256h_q_q_4s(TyNONE) );
-   if (1) DO50( test_sha256su0_4s_4s(TyNONE) );
-   if (1) DO50( test_sha256su1_4s_4s_4s(TyNONE) );
-
-   // pmull{2} 1q_1d_1d,1q_2d_2d
-   if (1) test_pmull_1q_1d_1d(TyD);
-   if (1) test_pmull2_1q_2d_2d(TyD);
-
 return 0;
 }
 
@@ -6953,10 +6893,6 @@ return 0;
    addp     d (add pairs, across)
    addp     2d,4s,2s,8h,4h,16b,8b
    addv     4s,8h,4h,16b,18b (reduce across vector)
-   aesd     16b (aes single round decryption)
-   aese     16b (aes single round encryption)
-   aesimc   16b (aes inverse mix columns)
-   aesmc    16b (aes mix columns)
    and      16b,8b
 
    bic      4s,2s,8h,4h (vector, imm)
@@ -7341,17 +7277,6 @@ return 0;
 
    scvtf     s_w, d_w, s_x, d_x,   _#fbits
    scvtf     s_w, d_w, s_x, d_x
-
-   sha1c       q_s_4s
-   sha1h       s_s
-   sha1m       q_s_4s
-   sha1p       q_s_4s
-   sha1su0     4s_4s_4s
-   sha1su1     4s_4s
-   sha256h2    q_q_4s
-   sha256h     q_q_4s
-   sha256su0   4s_4s
-   sha256su1   4s_4s_4s
 
    shadd       16b,8b,8h,4h,4s,2s
 
@@ -8293,23 +8218,4 @@ return 0;
 
    stur  q,d,s,h,b_addr
          addr = [Xn|SP,#imm] (unscaled offset)
-
-   ======================== CRYPTO ========================
-
-   aesd       16b (aes single round decryption)
-   aese       16b (aes single round encryption)
-   aesimc     16b (aes inverse mix columns)
-   aesmc      16b (aes mix columns)
-
-   sha1c      q_s_4s
-   sha1h      s_s
-   sha1m      q_s_4s
-   sha1p      q_s_4s
-   sha1su0    4s_4s_4s
-   sha1su1    4s_4s
-
-   sha256h2   q_q_4s
-   sha256h    q_q_4s
-   sha256su0  4s_4s
-   sha256su1  4s_4s_4s
 */

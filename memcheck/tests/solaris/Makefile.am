@@ -15,6 +15,7 @@ EXTRA_DIST = \
 	aligned_alloc.stderr.exp aligned_alloc.vgtest \
 	aligned_alloc.stderr.exp-solaris \
 	brk.stderr.exp brk.vgtest \
+	bug519613.vgtest bug519613.stdout.exp \
 	context_stack_die.stderr.exp context_stack_die.vgtest \
 	door_data.stdout.exp door_data.vgtest \
 	door_kill.stdout.exp door_kill.vgtest \
@@ -64,6 +65,7 @@ EXTRA_DIST = \
 check_PROGRAMS = \
 	aligned_alloc \
 	brk \
+	bug519613 \
 	context_stack_die \
 	door_data \
 	door_kill \

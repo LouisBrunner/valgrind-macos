@@ -16,7 +16,7 @@ __attribute__((noinline)) double do_scvtf_d_x_imm1 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf d18,x13,#1;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf d18,x13,#1\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -24,7 +24,7 @@ __attribute__((noinline)) double do_scvtf_d_x_imm32 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf d18,x13,#32;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf d18,x13,#32\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -32,7 +32,7 @@ __attribute__((noinline)) double do_scvtf_d_x_imm64 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf d18,x13,#64;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf d18,x13,#64\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -41,7 +41,7 @@ __attribute__((noinline)) double do_ucvtf_d_x_imm1 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf d18,x13,#1;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf d18,x13,#1\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -49,7 +49,7 @@ __attribute__((noinline)) double do_ucvtf_d_x_imm32 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf d18,x13,#32;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf d18,x13,#32\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -57,7 +57,7 @@ __attribute__((noinline)) double do_ucvtf_d_x_imm64 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf d18,x13,#64;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf d18,x13,#64\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -69,7 +69,7 @@ __attribute__((noinline)) double do_scvtf_d_w_imm1 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf d18,w13,#1;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf d18,w13,#1\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -77,7 +77,7 @@ __attribute__((noinline)) double do_scvtf_d_w_imm16 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf d18,w13,#16;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf d18,w13,#16\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -85,7 +85,7 @@ __attribute__((noinline)) double do_scvtf_d_w_imm32 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf d18,w13,#32;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf d18,w13,#32\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -94,7 +94,7 @@ __attribute__((noinline)) double do_ucvtf_d_w_imm1 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf d18,w13,#1;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf d18,w13,#1\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -102,7 +102,7 @@ __attribute__((noinline)) double do_ucvtf_d_w_imm16 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf d18,w13,#16;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf d18,w13,#16\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -110,7 +110,7 @@ __attribute__((noinline)) double do_ucvtf_d_w_imm32 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf d18,w13,#32;  str d18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf d18,w13,#32\n\t str d18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return block[1].d64;
 }
@@ -122,7 +122,7 @@ __attribute__((noinline)) double do_scvtf_s_x_imm1 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf s18,x13,#1;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf s18,x13,#1\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -130,7 +130,7 @@ __attribute__((noinline)) double do_scvtf_s_x_imm32 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf s18,x13,#32;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf s18,x13,#32\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -138,7 +138,7 @@ __attribute__((noinline)) double do_scvtf_s_x_imm64 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf s18,x13,#64;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf s18,x13,#64\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -147,7 +147,7 @@ __attribute__((noinline)) double do_ucvtf_s_x_imm1 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf s18,x13,#1;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf s18,x13,#1\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -155,7 +155,7 @@ __attribute__((noinline)) double do_ucvtf_s_x_imm32 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf s18,x13,#32;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf s18,x13,#32\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -163,7 +163,7 @@ __attribute__((noinline)) double do_ucvtf_s_x_imm64 ( Long x )
 {
    U block[2]; block[0].i64 = x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf s18,x13,#64;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf s18,x13,#64\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -175,7 +175,7 @@ __attribute__((noinline)) double do_scvtf_s_w_imm1 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf s18,w13,#1;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf s18,w13,#1\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -183,7 +183,7 @@ __attribute__((noinline)) double do_scvtf_s_w_imm16 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf s18,w13,#16;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf s18,w13,#16\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -191,7 +191,7 @@ __attribute__((noinline)) double do_scvtf_s_w_imm32 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  scvtf s18,w13,#32;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t scvtf s18,w13,#32\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -200,7 +200,7 @@ __attribute__((noinline)) double do_ucvtf_s_w_imm1 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf s18,w13,#1;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf s18,w13,#1\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -208,7 +208,7 @@ __attribute__((noinline)) double do_ucvtf_s_w_imm16 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf s18,w13,#16;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf s18,w13,#16\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }
@@ -216,7 +216,7 @@ __attribute__((noinline)) double do_ucvtf_s_w_imm32 ( Int x )
 {
    U block[2]; block[0].i64 = (Long)x; block[1].i64 = 0;
    __asm__ __volatile__(
-      "ldr x13,[%0,#0];  ucvtf s18,w13,#32;  str s18, [%0,#8]"
+      "ldr x13,[%0,#0]\n\t ucvtf s18,w13,#32\n\t str s18, [%0,#8]"
       ::"r"(&block[0]) : "memory", "x13","v18");
    return (double)block[1].f32[0];
 }

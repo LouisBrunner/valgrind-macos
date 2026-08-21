@@ -20,8 +20,8 @@ void test_UMINV ( void )
     randV128(&block[0], TyS);
     randV128(&block[1], TyS);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "uminv s8, v7.4s   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "uminv s8, v7.4s  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -37,8 +37,8 @@ void test_UMINV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "uminv h8, v7.8h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "uminv h8, v7.8h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -54,8 +54,8 @@ void test_UMINV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "uminv h8, v7.4h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "uminv h8, v7.4h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -71,8 +71,8 @@ void test_UMINV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "uminv b8, v7.16b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "uminv b8, v7.16b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -88,8 +88,8 @@ void test_UMINV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "uminv b8, v7.8b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "uminv b8, v7.8b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -113,8 +113,8 @@ void test_UMAXV ( void )
     randV128(&block[0], TyS);
     randV128(&block[1], TyS);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "umaxv s8, v7.4s   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "umaxv s8, v7.4s  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -130,8 +130,8 @@ void test_UMAXV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "umaxv h8, v7.8h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "umaxv h8, v7.8h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -147,8 +147,8 @@ void test_UMAXV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "umaxv h8, v7.4h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "umaxv h8, v7.4h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -164,8 +164,8 @@ void test_UMAXV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "umaxv b8, v7.16b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "umaxv b8, v7.16b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -181,8 +181,8 @@ void test_UMAXV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "umaxv b8, v7.8b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "umaxv b8, v7.8b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -203,9 +203,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyD);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.d[0], x19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.d[0], x19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -216,9 +216,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyD);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.d[1], x19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.d[1], x19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -231,9 +231,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyS);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.s[0], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.s[0], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -244,9 +244,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyS);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.s[1], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.s[1], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -257,9 +257,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyS);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.s[2], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.s[2], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -270,9 +270,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyS);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.s[3], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.s[3], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -285,9 +285,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[0], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[0], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -298,9 +298,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[1], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[1], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -311,9 +311,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[2], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[2], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -324,9 +324,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[3], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[3], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -337,9 +337,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[4], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[4], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -350,9 +350,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[5], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[5], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -363,9 +363,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[6], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[6], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -376,9 +376,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyH);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.h[7], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.h[7], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -391,9 +391,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyB);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.b[0], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.b[0], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -404,9 +404,9 @@ void test_INS_general ( void )
   memset(&block, 0x55, sizeof(block));
   block[1].u64[0] = randULong(TyB);
   __asm__ __volatile__(
-     "ldr q7, [%0, #0]   ; "
-     "ldr x19, [%0, #16] ; "
-     "ins v7.b[15], w19   ; "
+     "ldr q7, [%0, #0]  \n\t"
+     "ldr x19, [%0, #16]\n\t"
+     "ins v7.b[15], w19  \n\t"
      "str q7, [%0, #32] "
      : : "r"(&block[0]) : "memory", "x19", "v7"
   );
@@ -429,8 +429,8 @@ void test_SMINV ( void )
     randV128(&block[0], TyS);
     randV128(&block[1], TyS);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "sminv s8, v7.4s   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "sminv s8, v7.4s  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -446,8 +446,8 @@ void test_SMINV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "sminv h8, v7.8h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "sminv h8, v7.8h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -463,8 +463,8 @@ void test_SMINV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "sminv h8, v7.4h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "sminv h8, v7.4h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -480,8 +480,8 @@ void test_SMINV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "sminv b8, v7.16b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "sminv b8, v7.16b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -497,8 +497,8 @@ void test_SMINV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "sminv b8, v7.8b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "sminv b8, v7.8b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -522,8 +522,8 @@ void test_SMAXV ( void )
     randV128(&block[0], TyS);
     randV128(&block[1], TyS);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "smaxv s8, v7.4s   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "smaxv s8, v7.4s  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -539,8 +539,8 @@ void test_SMAXV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "smaxv h8, v7.8h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "smaxv h8, v7.8h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -556,8 +556,8 @@ void test_SMAXV ( void )
     randV128(&block[0], TyH);
     randV128(&block[1], TyH);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "smaxv h8, v7.4h   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "smaxv h8, v7.4h  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -573,8 +573,8 @@ void test_SMAXV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "smaxv b8, v7.16b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "smaxv b8, v7.16b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -590,8 +590,8 @@ void test_SMAXV ( void )
     randV128(&block[0], TyB);
     randV128(&block[1], TyB);
     __asm__ __volatile__(
-       "ldr   q7, [%0, #0]   ; "
-       "smaxv b8, v7.8b   ; "
+       "ldr   q7, [%0, #0]  \n\t"
+       "smaxv b8, v7.8b  \n\t"
        "str   q8, [%0, #16] "
        : : "r"(&block[0]) : "memory", "v7", "v8"
                          );
@@ -613,11 +613,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_D_D_0xF_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp d29, d11, #0xf, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp d29, d11, #0xf, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_D_D_0xF_EQ after", &block[0], 4); \
@@ -632,11 +632,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_D_D_0xF_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp d29, d11, #0xf, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp d29, d11, #0xf, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_D_D_0xF_NE after", &block[0], 4); \
@@ -651,11 +651,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_D_D_0x0_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp d29, d11, #0x0, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp d29, d11, #0x0, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_D_D_0x0_EQ after", &block[0], 4); \
@@ -670,11 +670,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_D_D_0x0_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp d29, d11, #0x0, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp d29, d11, #0x0, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_D_D_0x0_NE after", &block[0], 4); \
@@ -691,11 +691,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0xF_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp s29, s11, #0xf, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp s29, s11, #0xf, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_S_S_0xF_EQ after", &block[0], 4); \
@@ -710,11 +710,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0xF_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp s29, s11, #0xf, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp s29, s11, #0xf, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_S_S_0xF_NE after", &block[0], 4); \
@@ -729,11 +729,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0x0_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp s29, s11, #0x0, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp s29, s11, #0x0, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_S_S_0x0_EQ after", &block[0], 4); \
@@ -748,11 +748,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0x0_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmp s29, s11, #0x0, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmp s29, s11, #0x0, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMP_S_S_0x0_NE after", &block[0], 4); \
@@ -769,11 +769,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMPE_D_D_0xF_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe d29, d11, #0xf, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe d29, d11, #0xf, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_D_D_0xF_EQ after", &block[0], 4); \
@@ -788,11 +788,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMPE_D_D_0xF_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe d29, d11, #0xf, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe d29, d11, #0xf, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_D_D_0xF_NE after", &block[0], 4); \
@@ -807,11 +807,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMPE_D_D_0x0_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe d29, d11, #0x0, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe d29, d11, #0x0, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_D_D_0x0_EQ after", &block[0], 4); \
@@ -826,11 +826,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMPE_D_D_0x0_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe d29, d11, #0x0, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe d29, d11, #0x0, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_D_D_0x0_NE after", &block[0], 4); \
@@ -847,11 +847,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0xF_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe s29, s11, #0xf, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe s29, s11, #0xf, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_S_S_0xF_EQ after", &block[0], 4); \
@@ -866,11 +866,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMPE_S_S_0xF_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe s29, s11, #0xf, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe s29, s11, #0xf, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_S_S_0xF_NE after", &block[0], 4); \
@@ -885,11 +885,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0x0_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe s29, s11, #0x0, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe s29, s11, #0x0, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_S_S_0x0_EQ after", &block[0], 4); \
@@ -904,11 +904,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCCMP_S_S_0x0_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fccmpe s29, s11, #0x0, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fccmpe s29, s11, #0x0, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCCMPE_S_S_0x0_NE after", &block[0], 4); \
@@ -925,11 +925,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMEQ_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmeq d29, d11, d9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmeq d29, d11, d9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMEQ_D_D_D after", &block[0], 4); \
@@ -946,11 +946,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMEQ_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmeq s29, s11, s9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmeq s29, s11, s9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMEQ_S_S_S after", &block[0], 4); \
@@ -967,11 +967,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGE_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmge d29, d11, d9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmge d29, d11, d9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGE_D_D_D after", &block[0], 4); \
@@ -988,11 +988,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGE_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmge s29, s11, s9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmge s29, s11, s9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGE_S_S_S after", &block[0], 4); \
@@ -1009,11 +1009,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGT_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmgt d29, d11, d9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmgt d29, d11, d9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGT_D_D_D after", &block[0], 4); \
@@ -1030,11 +1030,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGT_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmgt s29, s11, s9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmgt s29, s11, s9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGT_S_S_S after", &block[0], 4); \
@@ -1051,11 +1051,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FACGT_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "facgt d29, d11, d9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "facgt d29, d11, d9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FACGT_D_D_D after", &block[0], 4); \
@@ -1072,11 +1072,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FACGT_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "facgt s29, s11, s9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "facgt s29, s11, s9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FACGT_S_S_S after", &block[0], 4); \
@@ -1093,11 +1093,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FACGE_D_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "facge d29, d11, d9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "facge d29, d11, d9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FACGE_D_D_D after", &block[0], 4); \
@@ -1114,11 +1114,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FACGE_S_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "facge s29, s11, s9; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "facge s29, s11, s9\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FACGE_S_S_S after", &block[0], 4); \
@@ -1135,11 +1135,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMEQ_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmeq d29, d11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmeq d29, d11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMEQ_D_D_Z after", &block[0], 4); \
@@ -1156,11 +1156,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMEQ_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmeq s29, s11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmeq s29, s11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMEQ_S_S_Z after", &block[0], 4); \
@@ -1177,11 +1177,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGE_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmge d29, d11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmge d29, d11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGE_D_D_Z after", &block[0], 4); \
@@ -1198,11 +1198,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGE_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmge s29, s11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmge s29, s11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGE_S_S_Z after", &block[0], 4); \
@@ -1219,11 +1219,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGT_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmgt d29, d11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmgt d29, d11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGT_D_D_Z after", &block[0], 4); \
@@ -1240,11 +1240,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMGT_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmgt s29, s11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmgt s29, s11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMGT_S_S_Z after", &block[0], 4); \
@@ -1261,11 +1261,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMLE_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmle d29, d11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmle d29, d11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMLE_D_D_Z after", &block[0], 4); \
@@ -1282,11 +1282,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMLE_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmle s29, s11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmle s29, s11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMLE_S_S_Z after", &block[0], 4); \
@@ -1303,11 +1303,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMLT_D_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmlt d29, d11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmlt d29, d11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMLT_D_D_Z after", &block[0], 4); \
@@ -1324,11 +1324,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMLT_S_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmlt s29, s11, #0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmlt s29, s11, #0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMLT_S_S_Z after", &block[0], 4); \
@@ -1345,11 +1345,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMP_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmp d29, d11; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmp d29, d11\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMP_D_D after", &block[0], 4); \
@@ -1366,11 +1366,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMP_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmp s29, s11; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmp s29, s11\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMP_S_S after", &block[0], 4); \
@@ -1387,11 +1387,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMPE_D_D before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmpe d29, d11; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmpe d29, d11\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMPE_D_D after", &block[0], 4); \
@@ -1408,11 +1408,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMPE_S_S before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmpe s29, s11; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmpe s29, s11\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMPE_S_S after", &block[0], 4); \
@@ -1429,11 +1429,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMP_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmp d29, #0.0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmp d29, #0.0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMP_D_Z after", &block[0], 4); \
@@ -1450,11 +1450,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMP_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmp s29, #0.0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmp s29, #0.0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMP_S_Z after", &block[0], 4); \
@@ -1471,11 +1471,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMPE_D_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmpe d29, #0.0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmpe d29, #0.0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMPE_D_Z after", &block[0], 4); \
@@ -1492,11 +1492,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCMPE_S_Z before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcmpe s29, #0.0; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcmpe s29, #0.0\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCMPE_S_Z after", &block[0], 4); \
@@ -1513,11 +1513,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCSEL_D_D_D_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcsel d29, d11, d9, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcsel d29, d11, d9, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCSEL_D_D_D_EQ after", &block[0], 4); \
@@ -1534,11 +1534,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCSEL_D_D_D_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcsel d29, d11, d9, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcsel d29, d11, d9, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCSEL_D_D_D_NE after", &block[0], 4); \
@@ -1555,11 +1555,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCSEL_S_S_S_EQ before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcsel s29, s11, s9, eq; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcsel s29, s11, s9, eq\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCSEL_S_S_S_EQ after", &block[0], 4); \
@@ -1576,11 +1576,11 @@ void test_SMAXV ( void )
      block[3].u64[0] = dup4x16(0x5); block[3].u64[1] = dup4x16(0xA); \
      showBlock("FCSEL_S_S_S_NE before", &block[0], 4); \
      __asm__ __volatile__( \
-        "ldr x9,  [%0, 48];  msr nzcv, x9; " \
-        "ldr q29, [%0, #0];  ldr q11, [%0, #16];  ldr q9, [%0, #32]; " \
-        "fcsel s29, s11, s9, ne; " \
-        "mrs x9, nzcv; str x9, [%0, 48]; " \
-        "str q29, [%0, #0];  str q11, [%0, #16];  str q9, [%0, #32]; " \
+        "ldr x9,  [%0, 48]\n\t msr nzcv, x9\n\t" \
+        "ldr q29, [%0, #0]\n\t ldr q11, [%0, #16]\n\t ldr q9, [%0, #32]\n\t" \
+        "fcsel s29, s11, s9, ne\n\t" \
+        "mrs x9, nzcv\n\tstr x9, [%0, 48]\n\t" \
+        "str q29, [%0, #0]\n\t str q11, [%0, #16]\n\t str q9, [%0, #32]\n\t" \
         ::"r"(&block[0]) : "x9","cc","memory","v9","v11","v29" \
      ); \
      showBlock("FCSEL_S_S_S_NE after", &block[0], 4); \
@@ -2452,13 +2452,13 @@ GEN_TWOVEC_TEST(dup_16b_b12, "dup v9.16b, v17.b[12]", 9, 17)
 GEN_TWOVEC_TEST(dup_8b_b3,  "dup v9.8b, v17.b[3]", 9, 17)
 GEN_TWOVEC_TEST(dup_8b_b13, "dup v9.8b, v17.b[13]", 9, 17)
 
-GEN_TWOVEC_TEST(dup_2d_x,  "mov x10, v17.d[0];  dup v9.2d,  x10", 9, 17)
-GEN_TWOVEC_TEST(dup_4s_w,  "mov x10, v17.d[0];  dup v9.4s,  w10", 9, 17)
-GEN_TWOVEC_TEST(dup_2s_w,  "mov x10, v17.d[0];  dup v9.2s,  w10", 9, 17)
-GEN_TWOVEC_TEST(dup_8h_w,  "mov x10, v17.d[0];  dup v9.8h,  w10",  9, 17)
-GEN_TWOVEC_TEST(dup_4h_w,  "mov x10, v17.d[0];  dup v9.4h,  w10",  9, 17)
-GEN_TWOVEC_TEST(dup_16b_w, "mov x10, v17.d[0];  dup v9.16b, w10", 9, 17)
-GEN_TWOVEC_TEST(dup_8b_w,  "mov x10, v17.d[0];  dup v9.8b,  w10",  9, 17)
+GEN_TWOVEC_TEST(dup_2d_x,  "mov x10, v17.d[0]\n\t dup v9.2d,  x10", 9, 17)
+GEN_TWOVEC_TEST(dup_4s_w,  "mov x10, v17.d[0]\n\t dup v9.4s,  w10", 9, 17)
+GEN_TWOVEC_TEST(dup_2s_w,  "mov x10, v17.d[0]\n\t dup v9.2s,  w10", 9, 17)
+GEN_TWOVEC_TEST(dup_8h_w,  "mov x10, v17.d[0]\n\t dup v9.8h,  w10",  9, 17)
+GEN_TWOVEC_TEST(dup_4h_w,  "mov x10, v17.d[0]\n\t dup v9.4h,  w10",  9, 17)
+GEN_TWOVEC_TEST(dup_16b_w, "mov x10, v17.d[0]\n\t dup v9.16b, w10", 9, 17)
+GEN_TWOVEC_TEST(dup_8b_w,  "mov x10, v17.d[0]\n\t dup v9.8b,  w10",  9, 17)
 
 GEN_THREEVEC_TEST(ext_16b_16b_16b_0x0,
                   "ext  v2.16b, v11.16b, v29.16b, #0", 2, 11, 29)
@@ -3913,70 +3913,70 @@ GEN_THREEVEC_TEST(
    tbl_16b_1reg, "tbl v21.16b, {v15.16b}, v23.16b", 21, 15, 23)
 // and v15 ^ v21 as the second table entry
 GEN_THREEVEC_TEST(
-   tbl_16b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+   tbl_16b_2reg, "eor v16.16b, v15.16b, v21.16b\n\t"
                  "tbl v21.16b, {v15.16b, v16.16b}, v23.16b", 21, 15, 23)
 // and v15 ^ v23 as the third table entry
 GEN_THREEVEC_TEST(
-   tbl_16b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
-                 "eor v17.16b, v15.16b, v23.16b ; "
+   tbl_16b_3reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                 "eor v17.16b, v15.16b, v23.16b\n\t"
                  "tbl v21.16b, {v15.16b, v16.16b, v17.16b}, v23.16b",
                  21, 15, 23)
 // and v21 ^ v23 as the fourth table entry
 GEN_THREEVEC_TEST(
-   tbl_16b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
-                 "eor v17.16b, v15.16b, v23.16b ; "
-                 "eor v18.16b, v21.16b, v23.16b ; "
+   tbl_16b_4reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                 "eor v17.16b, v15.16b, v23.16b\n\t"
+                 "eor v18.16b, v21.16b, v23.16b\n\t"
                  "tbl v21.16b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.16b",
                  21, 15, 23)
 // Same register scheme for tbl .8b, tbx .16b, tbx.8b
 GEN_THREEVEC_TEST(
    tbl_8b_1reg, "tbl v21.8b, {v15.16b}, v23.8b", 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbl_8b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+   tbl_8b_2reg, "eor v16.16b, v15.16b, v21.16b\n\t"
                 "tbl v21.8b, {v15.16b, v16.16b}, v23.8b", 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbl_8b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
-                "eor v17.16b, v15.16b, v23.16b ; "
+   tbl_8b_3reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                "eor v17.16b, v15.16b, v23.16b\n\t"
                 "tbl v21.8b, {v15.16b, v16.16b, v17.16b}, v23.8b",
                 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbl_8b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
-                "eor v17.16b, v15.16b, v23.16b ; "
-                "eor v18.16b, v21.16b, v23.16b ; "
+   tbl_8b_4reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                "eor v17.16b, v15.16b, v23.16b\n\t"
+                "eor v18.16b, v21.16b, v23.16b\n\t"
                 "tbl v21.8b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.8b",
                 21, 15, 23)
 
 GEN_THREEVEC_TEST(
    tbx_16b_1reg, "tbx v21.16b, {v15.16b}, v23.16b", 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbx_16b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+   tbx_16b_2reg, "eor v16.16b, v15.16b, v21.16b\n\t"
                  "tbx v21.16b, {v15.16b, v16.16b}, v23.16b", 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbx_16b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
-                 "eor v17.16b, v15.16b, v23.16b ; "
+   tbx_16b_3reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                 "eor v17.16b, v15.16b, v23.16b\n\t"
                  "tbx v21.16b, {v15.16b, v16.16b, v17.16b}, v23.16b",
                  21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbx_16b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
-                 "eor v17.16b, v15.16b, v23.16b ; "
-                 "eor v18.16b, v21.16b, v23.16b ; "
+   tbx_16b_4reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                 "eor v17.16b, v15.16b, v23.16b\n\t"
+                 "eor v18.16b, v21.16b, v23.16b\n\t"
                  "tbx v21.16b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.16b",
                  21, 15, 23)
 // Same register scheme for tbx .8b, tbx .16b, tbx.8b
 GEN_THREEVEC_TEST(
    tbx_8b_1reg, "tbx v21.8b, {v15.16b}, v23.8b", 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbx_8b_2reg, "eor v16.16b, v15.16b, v21.16b ; "
+   tbx_8b_2reg, "eor v16.16b, v15.16b, v21.16b\n\t"
                 "tbx v21.8b, {v15.16b, v16.16b}, v23.8b", 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbx_8b_3reg, "eor v16.16b, v15.16b, v21.16b ; "
-                "eor v17.16b, v15.16b, v23.16b ; "
+   tbx_8b_3reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                "eor v17.16b, v15.16b, v23.16b\n\t"
                 "tbx v21.8b, {v15.16b, v16.16b, v17.16b}, v23.8b",
                 21, 15, 23)
 GEN_THREEVEC_TEST(
-   tbx_8b_4reg, "eor v16.16b, v15.16b, v21.16b ; "
-                "eor v17.16b, v15.16b, v23.16b ; "
-                "eor v18.16b, v21.16b, v23.16b ; "
+   tbx_8b_4reg, "eor v16.16b, v15.16b, v21.16b\n\t"
+                "eor v17.16b, v15.16b, v23.16b\n\t"
+                "eor v18.16b, v21.16b, v23.16b\n\t"
                 "tbx v21.8b, {v15.16b, v16.16b, v17.16b, v18.16b}, v23.8b",
                 21, 15, 23)
 

@@ -15,9 +15,9 @@ void test_frinta(T input, T expected)
     if constexpr (std::is_same_v<double, T> == true)
     {
      __asm__ __volatile__(
-         "ldr d0, [%1];\n"
-         "frinta d0, d0;\n"
-         "str d0, [%0];\n"
+         "ldr d0, [%1]\n\t"
+         "frinta d0, d0\n\t"
+         "str d0, [%0]\n\t"
          : "+rm" (rp)
          : "r" (ip)
          : "memory", "d0");
@@ -26,9 +26,9 @@ void test_frinta(T input, T expected)
    else
    {
     __asm__ __volatile__(
-         "ldr s0, [%1];\n"
-         "frinta s0, s0;\n"
-         "str s0, [%0];\n"
+         "ldr s0, [%1]\n\t"
+         "frinta s0, s0\n\t"
+         "str s0, [%0]\n\t"
          : "+rm" (rp)
          : "r" (ip)
          : "memory", "s0");
@@ -44,9 +44,9 @@ void test_frinta_fullvec(T* input, T* expected)
     if constexpr (std::is_same_v<double, T> == true)
     {
      __asm__ __volatile__(
-         "ldr q23, [%1];\n"
-         "frinta v22.2d, v23.2d;\n"
-         "str q22, [%0];\n"
+         "ldr q23, [%1]\n\t"
+         "frinta v22.2d, v23.2d\n\t"
+         "str q22, [%0]\n\t"
          : "+rm" (rp)
          : "r" (input)
          : "memory", "v22", "v23");
@@ -56,9 +56,9 @@ void test_frinta_fullvec(T* input, T* expected)
    else
    {
      __asm__ __volatile__(
-         "ldr q23, [%1];\n"
-         "frinta v22.4s, v23.4s;\n"
-         "str q22, [%0];\n"
+         "ldr q23, [%1]\n\t"
+         "frinta v22.4s, v23.4s\n\t"
+         "str q22, [%0]\n\t"
          : "+rm" (rp)
          : "r" (input)
          : "memory", "v22", "v23");
@@ -74,9 +74,9 @@ void test_frinta_halfvec(float* input, float* expected)
     float result[2];
     float* rp = result;
     __asm__ __volatile__(
-         "ldr d23, [%1];\n"
-         "frinta v22.2s, v23.2s;\n"
-         "str d22, [%0];\n"
+         "ldr d23, [%1]\n\t"
+         "frinta v22.2s, v23.2s\n\t"
+         "str d22, [%0]\n\t"
          : "+rm" (rp)
          : "r" (input)
          : "memory", "v22", "v23");
@@ -94,9 +94,9 @@ void test_frintn(T input, T expected)
     if constexpr (std::is_same_v<double, T> == true)
     {
      __asm__ __volatile__(
-         "ldr d0, [%1];\n"
-         "frintn d0, d0;\n"
-         "str d0, [%0];\n"
+         "ldr d0, [%1]\n\t"
+         "frintn d0, d0\n\t"
+         "str d0, [%0]\n\t"
          : "+rm" (rp)
          : "r" (ip)
          : "memory", "d0");
@@ -105,9 +105,9 @@ void test_frintn(T input, T expected)
    else
    {
     __asm__ __volatile__(
-         "ldr s0, [%1];\n"
-         "frintn s0, s0;\n"
-         "str s0, [%0];\n"
+         "ldr s0, [%1]\n\t"
+         "frintn s0, s0\n\t"
+         "str s0, [%0]\n\t"
          : "+rm" (rp)
          : "r" (ip)
          : "memory", "s0");
@@ -123,9 +123,9 @@ void test_frintn_fullvec(T* input, T* expected)
     if constexpr (std::is_same_v<double, T> == true)
     {
      __asm__ __volatile__(
-         "ldr q23, [%1];\n"
-         "frintn v22.2d, v23.2d;\n"
-         "str q22, [%0];\n"
+         "ldr q23, [%1]\n\t"
+         "frintn v22.2d, v23.2d\n\t"
+         "str q22, [%0]\n\t"
          : "+rm" (rp)
          : "r" (input)
          : "memory", "v22", "v23");
@@ -135,9 +135,9 @@ void test_frintn_fullvec(T* input, T* expected)
    else
    {
      __asm__ __volatile__(
-         "ldr q23, [%1];\n"
-         "frintn v22.4s, v23.4s;\n"
-         "str q22, [%0];\n"
+         "ldr q23, [%1]\n\t"
+         "frintn v22.4s, v23.4s\n\t"
+         "str q22, [%0]\n\t"
          : "+rm" (rp)
          : "r" (input)
          : "memory", "v22", "v23");
@@ -153,9 +153,9 @@ void test_frintn_halfvec(float* input, float* expected)
     float result[2];
     float* rp = result;
      __asm__ __volatile__(
-         "ldr d23, [%1];\n"
-         "frintn v22.2s, v23.2s;\n"
-         "str d22, [%0];\n"
+         "ldr d23, [%1]\n\t"
+         "frintn v22.2s, v23.2s\n\t"
+         "str d22, [%0]\n\t"
          : "+rm" (rp)
          : "r" (input)
          : "memory", "v22", "v23");

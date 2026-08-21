@@ -57,6 +57,17 @@ static inline float shortToSingle(UShort imm)
    return v.f;
 }
 
+static const char* formatForTest(const char* s) {
+   static char buf[256];
+   char* d = buf;
+   while (*s && d < buf + sizeof(buf) - 1) {
+      if (s[0] == '\n' && s[1] == '\t') { *d++ = ';'; s += 2; }
+      else *d++ = *s++;
+   }
+   *d = 0;
+   return buf;
+}
+
 UChar randUChar ( void );
 
 static inline ULong randULong ( LaneTy ty )
@@ -134,12 +145,12 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q7, [%0, #0]   ; " \
-           "ldr   q8, [%0, #16]   ; " \
-           #INSN " v8." #SUFFIXD ", v7." #SUFFIXN " ; " \
-           "str   q8, [%0, #16] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #32] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q7, [%0, #0]  \n\t" \
+           "ldr   q8, [%0, #16]  \n\t" \
+           #INSN " v8." #SUFFIXD ", v7." #SUFFIXN "\n\t" \
+           "str   q8, [%0, #16]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #32] " \
            : : "r"(&block[0]) : "memory", "v7", "v8", "x30" \
         ); \
         printf(#INSN   " v8." #SUFFIXD ", v7." #SUFFIXN); \
@@ -163,13 +174,13 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[1], ty); \
         randV128(&block[2], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q7, [%0, #0]   ; " \
-           "ldr   q8, [%0, #16]   ; " \
-           "ldr   q9, [%0, #32]   ; " \
-           #INSN " v9." #SUFFIXD ", v7." #SUFFIXN ", v8." #SUFFIXM " ; " \
-           "str   q9, [%0, #32] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #48] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q7, [%0, #0]  \n\t" \
+           "ldr   q8, [%0, #16]  \n\t" \
+           "ldr   q9, [%0, #32]  \n\t" \
+           #INSN " v9." #SUFFIXD ", v7." #SUFFIXN ", v8." #SUFFIXM "\n\t" \
+           "str   q9, [%0, #32]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #48] " \
            : : "r"(&block[0]) : "memory", "v7", "v8", "v9", "x30" \
         ); \
         printf(#INSN   " v9." #SUFFIXD \
@@ -194,12 +205,12 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[0], ty); \
         randV128(&block[1], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q7, [%0, #0]   ; " \
-           "ldr   q8, [%0, #16]   ; " \
-           #INSN " v8." #SUFFIXD ", v7." #SUFFIXN ", #" #AMOUNT " ; " \
-           "str   q8, [%0, #16] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #32] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q7, [%0, #0]  \n\t" \
+           "ldr   q8, [%0, #16]  \n\t" \
+           #INSN " v8." #SUFFIXD ", v7." #SUFFIXN ", #" #AMOUNT "\n\t" \
+           "str   q8, [%0, #16]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #32] " \
            : : "r"(&block[0]) : "memory", "v7", "v8", "x30" \
         ); \
         printf(#INSN   " v8." #SUFFIXD ", v7." #SUFFIXN ", #" #AMOUNT "  "); \
@@ -225,16 +236,16 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[2], ty); \
         randV128(&block[3], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q"#VECREGNO", [%0, #0]  ; " \
-           "ldr   x"#INTREGNO", [%0, #16] ; " \
-           INSN " ; " \
-           "str   q"#VECREGNO", [%0, #32] ; " \
-           "str   x"#INTREGNO", [%0, #48] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #64] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q"#VECREGNO", [%0, #0] \n\t" \
+           "ldr   x"#INTREGNO", [%0, #16]\n\t" \
+           INSN "\n\t" \
+           "str   q"#VECREGNO", [%0, #32]\n\t" \
+           "str   x"#INTREGNO", [%0, #48]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #64] " \
            : : "r"(&block[0]) : "memory", "v"#VECREGNO, "x"#INTREGNO, "x30" \
         ); \
-        printf(INSN   "   "); \
+        printf("%s   ", formatForTest(INSN)); \
         UInt fpsr = 0xFFFFFF60 & block[4].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
@@ -259,17 +270,17 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[2], ty); \
         randV128(&block[3], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q"#VECREG1NO", [%0, #0]  ; " \
-           "ldr   q"#VECREG2NO", [%0, #16] ; " \
-           INSN " ; " \
-           "str   q"#VECREG1NO", [%0, #32] ; " \
-           "str   q"#VECREG2NO", [%0, #48] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #64] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q"#VECREG1NO", [%0, #0] \n\t" \
+           "ldr   q"#VECREG2NO", [%0, #16]\n\t" \
+           INSN "\n\t" \
+           "str   q"#VECREG1NO", [%0, #32]\n\t" \
+           "str   q"#VECREG2NO", [%0, #48]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #64] " \
            : : "r"(&block[0]) \
              : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "x10", "x30" \
         ); \
-        printf(INSN   "   "); \
+        printf("%s   ", formatForTest(INSN)); \
         UInt fpsr = 0xFFFFFF60 & block[4].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
@@ -296,20 +307,20 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[4], ty); \
         randV128(&block[5], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q"#VECREG1NO", [%0, #0]  ; " \
-           "ldr   q"#VECREG2NO", [%0, #16] ; " \
-           "ldr   q"#VECREG3NO", [%0, #32] ; " \
-           INSN " ; " \
-           "str   q"#VECREG1NO", [%0, #48] ; " \
-           "str   q"#VECREG2NO", [%0, #64] ; " \
-           "str   q"#VECREG3NO", [%0, #80] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #96] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q"#VECREG1NO", [%0, #0] \n\t" \
+           "ldr   q"#VECREG2NO", [%0, #16]\n\t" \
+           "ldr   q"#VECREG3NO", [%0, #32]\n\t" \
+           INSN "\n\t" \
+           "str   q"#VECREG1NO", [%0, #48]\n\t" \
+           "str   q"#VECREG2NO", [%0, #64]\n\t" \
+           "str   q"#VECREG3NO", [%0, #80]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #96] " \
            : : "r"(&block[0]) \
            : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "v"#VECREG3NO, \
              "v16", "v17", "v18", "x30" \
         ); \
-        printf(INSN   "   "); \
+        printf("%s   ", formatForTest(INSN)); \
         UInt fpsr = 0xFFFFFF60 & block[6].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \
@@ -341,23 +352,23 @@ void randBlock_Floats ( V128* block, Int nBlock );
         randV128(&block[6], ty); \
         randV128(&block[7], ty); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q"#VECREG1NO", [%0, #0]  ; " \
-           "ldr   q"#VECREG2NO", [%0, #16] ; " \
-           "ldr   q"#VECREG3NO", [%0, #32] ; " \
-           "ldr   q"#VECREG4NO", [%0, #48] ; " \
-           INSN " ; " \
-           "str   q"#VECREG1NO", [%0, #64] ; " \
-           "str   q"#VECREG2NO", [%0, #80] ; " \
-           "str   q"#VECREG3NO", [%0, #96] ; " \
-           "str   q"#VECREG4NO", [%0, #112] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #128] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q"#VECREG1NO", [%0, #0] \n\t" \
+           "ldr   q"#VECREG2NO", [%0, #16]\n\t" \
+           "ldr   q"#VECREG3NO", [%0, #32]\n\t" \
+           "ldr   q"#VECREG4NO", [%0, #48]\n\t" \
+           INSN "\n\t" \
+           "str   q"#VECREG1NO", [%0, #64]\n\t" \
+           "str   q"#VECREG2NO", [%0, #80]\n\t" \
+           "str   q"#VECREG3NO", [%0, #96]\n\t" \
+           "str   q"#VECREG4NO", [%0, #112]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #128] " \
            : : "r"(&block[0]) \
            : "memory", "v"#VECREG1NO, "v"#VECREG2NO, \
                        "v"#VECREG3NO, "v"#VECREG4NO, \
              "v16", "v17", "v18", "x30" \
         ); \
-        printf(INSN   "   "); \
+        printf("%s   ", formatForTest(INSN)); \
         UInt fpsr = 0xFFFFFF60 & block[8].u32[0]; \
         showV128(&block[0]); printf("  "); \
         showV128(&block[1]); printf("  "); \

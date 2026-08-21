@@ -19,9 +19,9 @@ void test_fcvtas(T input, U expected)
       {
          // double to long
          __asm__ __volatile__(
-            "ldr d0, [%1];\n"
-            "fcvtas x0, d0;\n"
-            "str x0, [%0];\n"
+            "ldr d0, [%1]\n\t"
+            "fcvtas x0, d0\n\t"
+            "str x0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "d0", "x0");
@@ -31,9 +31,9 @@ void test_fcvtas(T input, U expected)
       {
          // double to int
          __asm__ __volatile__(
-            "ldr d0, [%1];\n"
-            "fcvtas w0, d0;\n"
-            "str w0, [%0];\n"
+            "ldr d0, [%1]\n\t"
+            "fcvtas w0, d0\n\t"
+            "str w0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "d0", "x0");
@@ -46,9 +46,9 @@ void test_fcvtas(T input, U expected)
       {
          // float to long
          __asm__ __volatile__(
-            "ldr s0, [%1];\n"
-            "fcvtas x0, s0;\n"
-            "str x0, [%0];\n"
+            "ldr s0, [%1]\n\t"
+            "fcvtas x0, s0\n\t"
+            "str x0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "s0", "x0");
@@ -58,9 +58,9 @@ void test_fcvtas(T input, U expected)
       {
          // float to int
          __asm__ __volatile__(
-            "ldr s0, [%1];\n"
-            "fcvtas w0, s0;\n"
-            "str w0, [%0];\n"
+            "ldr s0, [%1]\n\t"
+            "fcvtas w0, s0\n\t"
+            "str w0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "s0", "w0");
@@ -81,9 +81,9 @@ void test_fcvtau(T input, U expected)
       {
          // double to unsigned long
          __asm__ __volatile__(
-            "ldr d0, [%1];\n"
-            "fcvtau x0, d0;\n"
-            "str x0, [%0];\n"
+            "ldr d0, [%1]\n\t"
+            "fcvtau x0, d0\n\t"
+            "str x0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "d0", "x0");
@@ -93,9 +93,9 @@ void test_fcvtau(T input, U expected)
       {
          // double to unsigned int
          __asm__ __volatile__(
-            "ldr d0, [%1];\n"
-            "fcvtau w0, d0;\n"
-            "str w0, [%0];\n"
+            "ldr d0, [%1]\n\t"
+            "fcvtau w0, d0\n\t"
+            "str w0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "d0", "w0");
@@ -108,9 +108,9 @@ void test_fcvtau(T input, U expected)
       {
          // float to unsigned long
          __asm__ __volatile__(
-            "ldr s0, [%1];\n"
-            "fcvtau x0, s0;\n"
-            "str x0, [%0];\n"
+            "ldr s0, [%1]\n\t"
+            "fcvtau x0, s0\n\t"
+            "str x0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "s0", "x0");
@@ -120,9 +120,9 @@ void test_fcvtau(T input, U expected)
       {
          // float to unsigned int
          __asm__ __volatile__(
-            "ldr s0, [%1];\n"
-            "fcvtau w0, s0;\n"
-            "str w0, [%0];\n"
+            "ldr s0, [%1]\n\t"
+            "fcvtau w0, s0\n\t"
+            "str w0, [%0]\n\t"
             : "+rm" (rp)
             : "r" (ip)
             : "memory", "s0", "w0");

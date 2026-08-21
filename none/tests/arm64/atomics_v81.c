@@ -41,13 +41,13 @@ CHECK(eor, ^, 64);
           instruction, rs, rt, mem_val); \
    \
    __asm__ __volatile__( \
-      "mov x5, %2;" \
-      "mov x13, %3;" \
-      "str x13, [x5, #0];" \
-      "mov x11, %4;" \
-      instruction ";" \
-      "ldr %0, [x5, #0];" \
-      "mov %1, x12;" \
+      "mov x5, %2\n\t" \
+      "mov x13, %3\n\t" \
+      "str x13, [x5, #0]\n\t" \
+      "mov x11, %4\n\t" \
+      instruction "\n\t" \
+      "ldr %0, [x5, #0]\n\t" \
+      "mov %1, x12\n\t" \
       : "=&r" (mem_val_after), "=&r" (rt) \
       : "r" (base_addr), "r" (mem_val) , "r" (rs) \
       : "x5", "x11", "x12", "x13", "memory" \
@@ -75,13 +75,13 @@ CHECK(eor, ^, 64);
    \
    Int swap = (rs == mem_val) ? 1 : 0; \
    __asm__ __volatile__( \
-      "mov " #rsz "5, %" #rsz "1;" \
-      "mov " #rsz "13, %" #rsz "2;" \
-      "str " #rsz "13, [x5, #0];" \
-      "mov " #rsz "11, %" #rsz "3;" \
-      "mov " #rsz "12, %" #rsz "4;" \
-      instruction ";" \
-      "ldr %" #rsz "0, [x5, #0];" \
+      "mov " #rsz "5, %" #rsz "1\n\t" \
+      "mov " #rsz "13, %" #rsz "2\n\t" \
+      "str " #rsz "13, [x5, #0]\n\t" \
+      "mov " #rsz "11, %" #rsz "3\n\t" \
+      "mov " #rsz "12, %" #rsz "4\n\t" \
+      instruction "\n\t" \
+      "ldr %" #rsz "0, [x5, #0]\n\t" \
       : "=&r" (mem_val_after) \
       : "r" (base_addr), "r" (mem_val), "r" (rs), "r" (rt) \
       : #rsz "5", #rsz "11", #rsz "12", #rsz "13", "memory" \
@@ -117,16 +117,16 @@ CHECK(eor, ^, 64);
    \
    Int swap = (rs0 == mem_val0 && rs1 == mem_val1) ? 1 : 0; \
    __asm__ __volatile__( \
-      "mov " #rsz "5, %" #rsz "2;" \
-      "mov " #rsz "13, %" #rsz "3;" \
-      "mov " #rsz "14, %" #rsz "4;" \
-      "stp " #rsz "13, " #rsz "14, [x5, #0];" \
-      "mov " #rsz "8, %" #rsz "5;" \
-      "mov " #rsz "9, %" #rsz "6;" \
-      "mov " #rsz "10, %" #rsz "7;" \
-      "mov " #rsz "11, %" #rsz "8;" \
-      instruction ";" \
-      "ldp %" #rsz "0, %" #rsz "1, [x5, #0];" \
+      "mov " #rsz "5, %" #rsz "2\n\t" \
+      "mov " #rsz "13, %" #rsz "3\n\t" \
+      "mov " #rsz "14, %" #rsz "4\n\t" \
+      "stp " #rsz "13, " #rsz "14, [x5, #0]\n\t" \
+      "mov " #rsz "8, %" #rsz "5\n\t" \
+      "mov " #rsz "9, %" #rsz "6\n\t" \
+      "mov " #rsz "10, %" #rsz "7\n\t" \
+      "mov " #rsz "11, %" #rsz "8\n\t" \
+      instruction "\n\t" \
+      "ldp %" #rsz "0, %" #rsz "1, [x5, #0]\n\t" \
       : "=&r" (mem_val_after0), "=&r" (mem_val_after1) \
       : "r" (base_addr), "r" (mem_val0), "r" (mem_val1), "r" (rs0), "r" (rs1), "r" (rt0), "r" (rt1) \
       : #rsz "5", #rsz "8", #rsz "9", #rsz "10", #rsz "11", #rsz "13", #rsz "14", "memory" \

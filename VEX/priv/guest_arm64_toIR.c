@@ -9315,6 +9315,7 @@ static IRTemp math_FOLDV ( IRTemp src, IROp op )
       }
       case Iop_Max32Fx4: case Iop_Min32Fx4:
       case Iop_MaxNumF32: case Iop_MinNumF32:
+      case Iop_MaxN32Fx4: case Iop_MinN32Fx4:
       case Iop_Min32Sx4: case Iop_Min32Ux4:
       case Iop_Max32Sx4: case Iop_Max32Ux4: case Iop_Add32x4: {
          IRTemp x3210 = src;
@@ -9340,6 +9341,7 @@ static IRTemp math_FOLDV ( IRTemp src, IROp op )
          assign(res, unop(Iop_ZeroHI96ofV128, mkexpr(max3210)));
          return res;
       }
+      case Iop_MaxN64Fx2: case Iop_MinN64Fx2:
       case Iop_Add64x2: {
          IRTemp x10 = src;
          IRTemp x00 = newTempV128();

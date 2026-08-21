@@ -364,6 +364,19 @@ SizeT min_useful_bszB ( Arena* a )
    return overhead_szB(a);
 }
 
+// Whether a free-block candidate is acceptable for reuse.
+// On Darwin, heavy pre-main allocs (dyld/libSystem/ObjC runtime) leaves lot of oversized free blocks.
+// This causes issues in massif and other tests so we are a bit more conservative.
+static __inline__
+Bool frag_is_acceptable ( Arena* a, SizeT frag_bszB )
+{
+#if defined(VGO_darwin)
+   return frag_bszB == 0 || frag_bszB >= min_useful_bszB(a);
+#else
+   return True;
+#endif
+}
+
 //---------------------------------------------------------------------------
 
 // Convert payload size <--> block size (both in bytes).
@@ -1817,7 +1830,7 @@ void* VG_(arena_malloc) ( ArenaId aid, const HChar* cc, SizeT req_pszB )
             break;
          }
          b_bszB = get_bszB(b);
-         if (b_bszB >= req_bszB) goto obtained_block;    // success!
+         if (b_bszB >= req_bszB && frag_is_acceptable(a, b_bszB - req_bszB)) goto obtained_block;    // success!
          b = get_next_b(b);
          if (b == a->freelist[lno]) break;   // traversed entire freelist
       }

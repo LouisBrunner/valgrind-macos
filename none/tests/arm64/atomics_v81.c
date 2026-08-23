@@ -75,7 +75,7 @@ CHECK(eor, ^, 64);
    \
    Int swap = (rs == mem_val) ? 1 : 0; \
    __asm__ __volatile__( \
-      "mov " #rsz "5, %" #rsz "1\n\t" \
+      "mov x5, %1\n\t" \
       "mov " #rsz "13, %" #rsz "2\n\t" \
       "str " #rsz "13, [x5, #0]\n\t" \
       "mov " #rsz "11, %" #rsz "3\n\t" \
@@ -117,7 +117,7 @@ CHECK(eor, ^, 64);
    \
    Int swap = (rs0 == mem_val0 && rs1 == mem_val1) ? 1 : 0; \
    __asm__ __volatile__( \
-      "mov " #rsz "5, %" #rsz "2\n\t" \
+      "mov x5, %2\n\t" \
       "mov " #rsz "13, %" #rsz "3\n\t" \
       "mov " #rsz "14, %" #rsz "4\n\t" \
       "stp " #rsz "13, " #rsz "14, [x5, #0]\n\t" \

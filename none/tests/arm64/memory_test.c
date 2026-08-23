@@ -371,6 +371,7 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
   block[11] = (Long)AREG2VAL; \
   ULong block2[12]; \
   for (i = 0; i < 12; i++) block2[i] = block[i]; \
+  register ULong* blockp0 asm("x0") = &block[0]; /* GCC always uses x0, Clang might use others */ \
   __asm__ __volatile__( \
   "ldr x13, [%0, #0] \n\t" \
   "ldr x23, [%0, #8] \n\t" \
@@ -389,8 +390,8 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
   "str q20, [%0, #64]\n\t" \
   "str x5,  [%0, #80]\n\t" \
   "str x6,  [%0, #88]\n\t" \
-  : : "r"(&block[0]) : "x5", "x6", "x13", "x23", \
-                       "v17", "v18", "v19", "v20", "memory", "cc" \
+  : : "r"(blockp0) : "x5", "x6", "x13", "x23", \
+                     "v17", "v18", "v19", "v20", "memory", "cc" \
   ); \
   printf("%s  with  x5 = middle_of_block+%lld,  x6=%lld\n", \
          INSN, (Long)AREG1OFF, (Long)AREG2VAL); \

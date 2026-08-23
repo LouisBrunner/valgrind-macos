@@ -1465,5 +1465,10 @@ struct vki_kpersona_info {
    vki_uid_t    persona_uid;
 } __attribute__((packed));
 
+#if defined(VGP_arm64_darwin)
+// see libplatform/src/cachecontrol/arm64/cache.s
+#define VKI_MMU_I_CLINE 6
+#define VKI_ICACHE_LINE_SIZE (1 << VKI_MMU_I_CLINE)
+#endif
 
 #endif

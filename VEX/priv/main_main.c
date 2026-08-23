@@ -1646,6 +1646,8 @@ void LibVEX_default_VexArchInfo ( /*OUT*/VexArchInfo* vai )
    vai->arm64_cache_block_size       = 0;
    vai->arm64_data_zero_prohibited   = 0;
    vai->arm64_requires_fallback_LLSC = False;
+   vai->arm64_emulate_el1_registers  = False;
+   vai->arm64_ctr_el0_allowed        = False;
    vai->hwcache_info.num_levels      = 0;
    vai->hwcache_info.num_caches      = 0;
    vai->hwcache_info.caches          = NULL;

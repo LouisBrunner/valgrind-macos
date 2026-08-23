@@ -61,6 +61,7 @@
 /* ID_AA64ISAR1_EL1 Instruction set attribute register 1 fields */
 #define ID_AA64ISAR1_I8MM_SHIFT           52
 #define ID_AA64ISAR1_BF16_SHIFT           44
+#define ID_AA64ISAR1_SB_SHIFT             36
 #define ID_AA64ISAR1_LRCPC_SHIFT          20
 #define ID_AA64ISAR1_JSCVT_SHIFT          12
 #define ID_AA64ISAR1_API_SHIFT             8
@@ -69,6 +70,7 @@
 /* Field values */
 #define ID_AA64ISAR1_I8MM_SUPPORTED       0x1
 #define ID_AA64ISAR1_BF16_SUPPORTED       0x1
+#define ID_AA64ISAR1_SB_SUPPORTED         0x1
 #define ID_AA64ISAR1_LRCPC_SUPPORTED      0x2
 #define ID_AA64ISAR1_JSCVT_SUPPORTED      0x1
 #define ID_AA64ISAR1_API_SUPPORTED        0x1

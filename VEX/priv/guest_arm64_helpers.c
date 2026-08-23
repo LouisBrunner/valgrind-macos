@@ -1601,12 +1601,10 @@ void arm64g_dirtyhelper_SHA512SU1 ( /*OUT*/V128* res, ULong dHi, ULong dLo,
 }
 
 /* CALLED FROM GENERATED CODE */
-// TODO: would be much better to have this directly in JIT'd assembly
-// but I am not sure how to do that within VEX
 ULong arm64g_dirtyhelper_STRIP_PAC ( ULong ptr, UInt is_data )
 {
    ULong res = ptr;
-#if defined(VGP_arm64_darwin)
+#if defined(VGP_arm64_darwin) // FIXME: need to inject archinfo somehow?
    if (is_data) {
       asm volatile (
         "xpacd %[res]\n"

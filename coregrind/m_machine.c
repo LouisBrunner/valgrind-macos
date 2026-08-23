@@ -1753,7 +1753,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_arm64)
    {
-#if !defined(VGO_darwin)
      /* Use the attribute and feature registers to determine host hardware
       * capabilities. Only user-space features are read. Naming conventions
       * follow the Arm Architecture Reference Manual.
@@ -1762,32 +1761,30 @@ Bool VG_(machine_get_hwcaps)( void )
       * ----------------
       * ...5544 4444 4444 3333 3333 3332 2222 2222 1111 1111 11
       * ...1098 7654 3210 9876 5432 1098 7654 3210 9876 5432 1098 7654 3210
-      *    FHM   DP  SM4  SM3  SHA3  RDM     ATOMICS
+      *    FHM  DP   SM4  SM3  SHA3 RDM       ATOM CRC  SHA2 SHA1 AES  RES0
       *
       * ID_AA64ISAR1_EL1 Instruction Set Attribute Register 1
       * ----------------
       * ...5555 5544 4444 4444 3333 3333 3332 2222 2222 1111 1111 11
       * ...5432 1098 7654 3210 9876 5432 1098 7654 3210 9876 5432 1098 7654 3210
-      * ...I8MM      BF16                GPI  GPA                 API  APA  DPB
+      * ...I8MM      BF16      SB        GPI  GPA  LRC       JS   API  APA  DPB
       *
       * ID_AA64PFR0_EL1 Processor Feature Register 0
       * ---------------
-      * 6666...2222 2222 1111 1111 11
-      * 3210...7654 3210 9876 5432 1098 7654 3210
-      *            ASIMD FP16
+      * 6666 5555 5555 5544 4444 4444 3333 3333 3332 2222 2222 1111 1111 11
+      * 3210 9876 5432 1098 7654 3210 9876 5432 1098 7654 3210 9876 5432 1098 7654 3210
+      * CSV3 CSV2 RME  DIT  AMU  MPAM SEL2 SVE  RAS  GIC  SIMD FP16 EL3  EL2  EL1  EL0
       */
-
-     Bool is_base_v8 = False;
 
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
      Bool have_vfp16, have_fp16, have_pauth, have_lrcpc, have_dit;
-     Bool have_jscvt;
+     Bool have_sb, have_jscvt;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
               = have_dpbcvadp = have_vfp16 = have_fp16 = have_pauth
-              = have_lrcpc = have_dit = have_jscvt = False;
+              = have_lrcpc = have_dit = have_sb = have_jscvt = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1807,7 +1804,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
      r = VG_(sigaction)(VKI_SIGILL, NULL, &saved_sigill_act);
      vg_assert(r == 0);
-
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
 
      /* NODEFER: signal handler does not return (from the kernel's point of
@@ -1821,17 +1817,35 @@ Bool VG_(machine_get_hwcaps)( void )
      vg_assert(r == 0);
 
      /* Does reading ID_AA64ISAR0_EL1 register throw SIGILL on base v8.0? */
-     if (VG_MINIMAL_SETJMP(env_unsup_insn))
-        is_base_v8 = True;
-     else
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+     } else {
         __asm__ __volatile__("mrs x0, ID_AA64ISAR0_EL1");
+        vai.arm64_emulate_el1_registers = True;
+     }
+
+     /* 0 denotes 'not set'.  The range of legitimate values here,
+        after being set that is, is 2 though 17 inclusive. */
+     vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
+     vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
+     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
+#if defined(VGP_arm64_darwin)
+       vai.arm64_iMinLine_lg2_szB = VKI_MMU_I_CLINE;
+#else
+#error "Unsupported OS"
+#endif
+     } else {
+       ULong ctr_el0;
+       __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
+       vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;
+       vai.arm64_iMinLine_lg2_szB = ((ctr_el0 >>  0) & 0xF) + 2;
+       vai.arm64_ctr_el0_allowed = True;
+     }
 
      VG_(convert_sigaction_fromK_to_toK)(&saved_sigill_act, &tmp_sigill_act);
      r = VG_(sigaction)(VKI_SIGILL, &tmp_sigill_act, NULL);
      vg_assert(r == 0);
      r = VG_(sigprocmask)(VKI_SIG_SETMASK, &saved_set, NULL);
      vg_assert(r == 0);
-#endif
 
      va = VexArchARM64;
      vai.endness = VexEndnessLE;
@@ -1849,53 +1863,10 @@ Bool VG_(machine_get_hwcaps)( void )
         return False;
 #endif
 
-     /* 0 denotes 'not set'.  The range of legitimate values here,
-        after being set that is, is 2 though 17 inclusive. */
-     vg_assert(vai.arm64_dMinLine_lg2_szB == 0);
-     vg_assert(vai.arm64_iMinLine_lg2_szB == 0);
-
-#if defined(VGO_darwin)
-     (void) handler_unsup_insn;
-
-     SizeT len = 4;
-     Int val;
-
-#define IS_ENABLED(name) \
-        (VG_(sysctlbyname)(name, &val, &len, NULL, 0) == 0 && val == 1)
-
-      if (IS_ENABLED("hw.optional.arm.FEAT_PAuth")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
-      }
-      if (IS_ENABLED("hw.optional.arm.FEAT_LRCPC")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
-      }
-      if (IS_ENABLED("hw.optional.arm.FEAT_DIT")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
-      }
-      if (IS_ENABLED("hw.optional.arm.FEAT_FP16")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
-          vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16; // FIXME: is that true?
-      }
-      if (IS_ENABLED("hw.optional.arm.FEAT_SHA3")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_SHA3;
-      }
-      if (IS_ENABLED("hw.optional.arm.FEAT_SB")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
-      }
-      if (IS_ENABLED("hw.optional.arm.FEAT_JSCVT")) {
-          vai.hwcaps |= VEX_HWCAPS_ARM64_JSCVT;
-      }
-
-#undef IS_ENABLED
-
-     ULong ctr_el0 = 0;
-#else
-     ULong ctr_el0;
-     __asm__ __volatile__("mrs %0, ctr_el0" : "=r"(ctr_el0));
-#endif
-
-     vai.arm64_dMinLine_lg2_szB = ((ctr_el0 >> 16) & 0xF) + 2;
-     vai.arm64_iMinLine_lg2_szB = ((ctr_el0 >>  0) & 0xF) + 2;
+     VG_(debugLog)(1, "machine", "ARM64: emulate_el1_registers: %s\n",
+                    vai.arm64_emulate_el1_registers ? "yes" : "no");
+     VG_(debugLog)(1, "machine", "ARM64: ctr_el0_allowed: %s\n",
+                    vai.arm64_ctr_el0_allowed ? "yes" : "no");
      VG_(debugLog)(1, "machine", "ARM64: ctr_el0.dMinLine_szB = %d, "
                       "ctr_el0.iMinLine_szB = %d\n",
                    1 << vai.arm64_dMinLine_lg2_szB,
@@ -1903,127 +1874,160 @@ Bool VG_(machine_get_hwcaps)( void )
      VG_(debugLog)(1, "machine", "ARM64: requires_fallback_LLSC: %s\n",
                    vai.arm64_requires_fallback_LLSC ? "yes" : "no");
 
-#if !defined(VGO_darwin)
-     if (is_base_v8)
-        return True;
+     if (vai.arm64_emulate_el1_registers) {
+      #define get_cpu_ftr(id, val) ({                                             \
+          asm("mrs %0, "#id : "=r" (val));                                   \
+          VG_(debugLog)(1, "machine", "ARM64: %-20s: 0x%016lx\n", #id, val); \
+      })
 
+      unsigned long isar0;
+      unsigned long isar1;
+      unsigned long pfr0;
 
-     #define get_cpu_ftr(id, val) ({                                             \
-         asm("mrs %0, "#id : "=r" (val));                                   \
-         VG_(debugLog)(1, "machine", "ARM64: %-20s: 0x%016lx\n", #id, val); \
-     })
+      get_cpu_ftr(ID_AA64ISAR0_EL1, isar0);
+      get_cpu_ftr(ID_AA64ISAR1_EL1, isar1);
+      get_cpu_ftr(ID_AA64PFR0_EL1, pfr0);
 
-     unsigned long isar0;
-     unsigned long isar1;
-     unsigned long pfr0;
+      #undef get_cpu_ftr
 
-     get_cpu_ftr(ID_AA64ISAR0_EL1, isar0);
-     get_cpu_ftr(ID_AA64ISAR1_EL1, isar1);
-     get_cpu_ftr(ID_AA64PFR0_EL1, pfr0);
+      /* Read ID_AA64ISAR0_EL1 attributes */
 
-     /* Read ID_AA64ISAR0_EL1 attributes */
+      /* FHM indicates support for FMLAL and FMLSL instructions.
+        * Optional for v8.2.
+        */
+      have_fhm = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_FHM_SHIFT) >= ID_AA64ISAR0_FHM_SUPPORTED;
 
-     /* FHM indicates support for FMLAL and FMLSL instructions.
-      * Optional for v8.2.
-      */
-     have_fhm = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_FHM_SHIFT) >= ID_AA64ISAR0_FHM_SUPPORTED;
+      /* DP indicates support for UDOT and SDOT instructions.
+        * Optional for v8.2.
+        */
+      have_dp = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_DP_SHIFT) >= ID_AA64ISAR0_DP_SUPPORTED;
 
-     /* DP indicates support for UDOT and SDOT instructions.
-      * Optional for v8.2.
-      */
-     have_dp = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_DP_SHIFT) >= ID_AA64ISAR0_DP_SUPPORTED;
+      /* SM4 indicates support for SM4E and SM4EKEY instructions.
+        * Optional for v8.2.
+        */
+      have_sm4 = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_SM4_SHIFT) >= ID_AA64ISAR0_SM4_SUPPORTED;
 
-     /* SM4 indicates support for SM4E and SM4EKEY instructions.
-      * Optional for v8.2.
-      */
-     have_sm4 = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_SM4_SHIFT) >= ID_AA64ISAR0_SM4_SUPPORTED;
+      /* SM3 indicates support for SM3SS1, SM3TT1A, SM3TT1B, SM3TT2A, * SM3TT2B,
+        * SM3PARTW1, and SM3PARTW2 instructions.
+        * Optional for v8.2.
+        */
+      have_sm3 = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_SM3_SHIFT) >= ID_AA64ISAR0_SM3_SUPPORTED;
 
-     /* SM3 indicates support for SM3SS1, SM3TT1A, SM3TT1B, SM3TT2A, * SM3TT2B,
-      * SM3PARTW1, and SM3PARTW2 instructions.
-      * Optional for v8.2.
-      */
-     have_sm3 = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_SM3_SHIFT) >= ID_AA64ISAR0_SM3_SUPPORTED;
+      /* SHA3 indicates support for EOR3, RAX1, XAR, and BCAX instructions.
+        * Optional for v8.2.
+        */
+      have_sha3 = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_SHA3_SHIFT) >= ID_AA64ISAR0_SHA3_SUPPORTED;
 
-     /* SHA3 indicates support for EOR3, RAX1, XAR, and BCAX instructions.
-      * Optional for v8.2.
-      */
-     have_sha3 = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_SHA3_SHIFT) >= ID_AA64ISAR0_SHA3_SUPPORTED;
+      /* RDM indicates support for SQRDMLAH and SQRDMLSH instructions.
+        * Mandatory from v8.1 onwards.
+        */
+      have_rdm = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_RDM_SHIFT) >= ID_AA64ISAR0_RDM_SUPPORTED;
 
-     /* RDM indicates support for SQRDMLAH and SQRDMLSH instructions.
-      * Mandatory from v8.1 onwards.
-      */
-     have_rdm = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_RDM_SHIFT) >= ID_AA64ISAR0_RDM_SUPPORTED;
+      /* v8.1 ATOMICS indicates support for LDADD, LDCLR, LDEOR, LDSET, LDSMAX,
+        * LDSMIN, LDUMAX, LDUMIN, CAS, CASP, and SWP instructions.
+        * Mandatory from v8.1 onwards.
+        */
+      have_atomics = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_ATOMICS_SHIFT) >= ID_AA64ISAR0_ATOMICS_SUPPORTED;
 
-     /* v8.1 ATOMICS indicates support for LDADD, LDCLR, LDEOR, LDSET, LDSMAX,
-      * LDSMIN, LDUMAX, LDUMIN, CAS, CASP, and SWP instructions.
-      * Mandatory from v8.1 onwards.
-      */
-     have_atomics = SYSTEM_REGISTER_FIELD(isar0, ID_AA64ISAR0_ATOMICS_SHIFT) >= ID_AA64ISAR0_ATOMICS_SUPPORTED;
+      /* Read ID_AA64ISAR1_EL1 attributes */
 
-     /* Read ID_AA64ISAR1_EL1 attributes */
+      /* I8MM indicates support for SMMLA, SUDOT, UMMLA, USMMLA, and USDOT
+        * instructions.
+        * Optional for v8.2.
+        */
+      have_i8mm = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_I8MM_SHIFT) >= ID_AA64ISAR1_I8MM_SUPPORTED;
 
-     /* I8MM indicates support for SMMLA, SUDOT, UMMLA, USMMLA, and USDOT
-      * instructions.
-      * Optional for v8.2.
-      */
-     have_i8mm = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_I8MM_SHIFT) >= ID_AA64ISAR1_I8MM_SUPPORTED;
+      /* BF16 indicates support for BFDOT, BFMLAL, BFMLAL2, BFMMLA, BFCVT, and
+        * BFCVT2 instructions.
+        * Optional for v8.2.
+        */
+      have_bf16 = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_BF16_SHIFT) >= ID_AA64ISAR1_BF16_SUPPORTED;
 
-     /* BF16 indicates support for BFDOT, BFMLAL, BFMLAL2, BFMMLA, BFCVT, and
-      * BFCVT2 instructions.
-      * Optional for v8.2.
-      */
-     have_bf16 = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_BF16_SHIFT) >= ID_AA64ISAR1_BF16_SUPPORTED;
+      /* DPB indicates support for DC CVAP instruction.
+        * Mandatory for v8.2 onwards.
+        */
+      have_dpbcvap = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_DPB_SHIFT) >= ID_AA64ISAR1_DPBCVAP_SUPPORTED;
 
-     /* DPB indicates support for DC CVAP instruction.
-      * Mandatory for v8.2 onwards.
-      */
-     have_dpbcvap = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_DPB_SHIFT) >= ID_AA64ISAR1_DPBCVAP_SUPPORTED;
+      /* DPB indicates support for DC CVADP instruction.
+        * Optional for v8.2.
+        */
+      have_dpbcvadp = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_DPB_SHIFT) >= ID_AA64ISAR1_DPBCVADP_SUPPORTED;
 
-     /* DPB indicates support for DC CVADP instruction.
-      * Optional for v8.2.
-      */
-     have_dpbcvadp = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_DPB_SHIFT) >= ID_AA64ISAR1_DPBCVADP_SUPPORTED;
+      /* LRCPC indicates support for LDA Release Consistent core consistent RCPC model.
+        * Optional for v8.2.
+        */
+      have_lrcpc = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_LRCPC_SHIFT) >= ID_AA64ISAR1_LRCPC_SUPPORTED;
 
-     /* LRCPC indicates support for LDA Release Consistent core consistent RCPC model.
-      * Optional for v8.2.
-      */
-     have_lrcpc = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_LRCPC_SHIFT) >= ID_AA64ISAR1_LRCPC_SUPPORTED;
+      /* JSCVT indicates support for JavaScript conversion instructions.
+        * Optional for v8.2.
+        */
+      have_jscvt = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_JSCVT_SHIFT) >= ID_AA64ISAR1_JSCVT_SUPPORTED;
 
-     /* JSCVT indicates support for JavaScript conversion instructions.
-      * Optional for v8.2.
-      */
-     have_jscvt = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_JSCVT_SHIFT) >= ID_AA64ISAR1_JSCVT_SUPPORTED;
+      /* SB indicates support for the Speculation Barrier instructions.
+        * Optional for v8.0-v8.5.
+        */
+      have_sb = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_SB_SHIFT) >= ID_AA64ISAR1_SB_SUPPORTED;
 
-     /* APA or API indicate support for PAUTH instructions.
-      * Optional for v8.3.
-      */
-     have_pauth = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_APA_SHIFT) >= ID_AA64ISAR1_APA_SUPPORTED;
-     if (!have_pauth) {
-        have_pauth = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_API_SHIFT) >= ID_AA64ISAR1_API_SUPPORTED;
+      /* APA or API indicate support for PAUTH instructions.
+        * Optional for v8.3.
+        */
+      have_pauth = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_APA_SHIFT) >= ID_AA64ISAR1_APA_SUPPORTED;
+      if (!have_pauth) {
+          have_pauth = SYSTEM_REGISTER_FIELD(isar1, ID_AA64ISAR1_API_SHIFT) >= ID_AA64ISAR1_API_SUPPORTED;
+      }
+
+      /* Read ID_AA64PFR0_EL1 attributes */
+
+      /* DIT indicates support for Data Independent Timing instructions.
+        * Required from v8.4 onwards.
+        */
+      have_dit = SYSTEM_REGISTER_FIELD(pfr0, ID_AA64PFR0_DIT_SHIFT) >= ID_AA64PFR0_DIT_SUPPORTED;
+
+      /* VFP16 indicates support for half-precision vector arithmetic.
+        * Optional for v8.2. Must be the same value as FP16. fp and
+        * advsimd are different to the usual isa/fp in that 0 means
+        * that the base features are present and 0xf means that the
+        * features are absent. Normally 0 means that the feature is absent.
+        */
+      unsigned long advsimd = SYSTEM_REGISTER_FIELD(pfr0, ID_AA64PFR0_ADVSIMD_SHIFT);
+      have_vfp16 = advsimd >= ID_AA64PFR0_ADVSIMD_HP_SUPPORTED && advsimd != ID_AA64PFR0_ADVSIMD_NOT_PRESENT;
+
+      /* FP16 indicates support for half-precision scalar arithmetic.
+        * Optional for v8.2. Must be the same value as VFP16.
+        */
+      unsigned long fp = SYSTEM_REGISTER_FIELD(pfr0, ID_AA64PFR0_FP_SHIFT);
+      vg_assert(fp == advsimd);
+      have_fp16 = fp >= ID_AA64PFR0_FP_HP_SUPPORTED && fp != ID_AA64PFR0_FP_NOT_PRESENT;
+     } else {
+#if defined(VGO_darwin)
+      SizeT len = 4;
+      Int val;
+
+#define IS_ENABLED(name) \
+        (VG_(sysctlbyname)(name, &val, &len, NULL, 0) == 0 && val == 1)
+
+      have_fhm = IS_ENABLED("hw.optional.arm.FEAT_FHM");
+      have_dpbcvap = IS_ENABLED("hw.optional.arm.FEAT_DPB");
+      have_dpbcvadp = IS_ENABLED("hw.optional.arm.FEAT_DPB2");
+      have_sha3 = IS_ENABLED("hw.optional.arm.FEAT_SHA3");
+      have_rdm = IS_ENABLED("hw.optional.arm.FEAT_RDM");
+      have_i8mm = IS_ENABLED("hw.optional.arm.FEAT_I8MM");
+      have_atomics = IS_ENABLED("hw.optional.arm.FEAT_LSE");
+      have_bf16 = IS_ENABLED("hw.optional.arm.FEAT_BF16");
+      have_fp16 = IS_ENABLED("hw.optional.arm.FEAT_FP16");
+      have_vfp16 = have_fp16; // FIXME: is that true?
+      have_pauth = IS_ENABLED("hw.optional.arm.FEAT_PAuth");
+      have_lrcpc = IS_ENABLED("hw.optional.arm.FEAT_LRCPC");
+      have_dit = IS_ENABLED("hw.optional.arm.FEAT_DIT");
+      have_sb = IS_ENABLED("hw.optional.arm.FEAT_SB");
+      have_jscvt = IS_ENABLED("hw.optional.arm.FEAT_JSCVT");
+      have_dp = IS_ENABLED("hw.optional.arm.FEAT_DotProd");
+
+#undef IS_ENABLED
+#else
+      return True;
+#endif
      }
-
-     /* Read ID_AA64PFR0_EL1 attributes */
-
-     /* DIT indicates support for Data Independent Timing instructions.
-      * Required from v8.4 onwards.
-      */
-     have_dit = SYSTEM_REGISTER_FIELD(pfr0, ID_AA64PFR0_DIT_SHIFT) >= ID_AA64PFR0_DIT_SUPPORTED;
-
-     /* VFP16 indicates support for half-precision vector arithmetic.
-      * Optional for v8.2. Must be the same value as FP16. fp and
-      * advsimd are different to the usual isa/fp in that 0 means
-      * that the base features are present and 0xf means that the
-      * features are absent. Normally 0 means that the feature is absent.
-      */
-     unsigned long advsimd = SYSTEM_REGISTER_FIELD(pfr0, ID_AA64PFR0_ADVSIMD_SHIFT);
-     have_vfp16 = advsimd >= ID_AA64PFR0_ADVSIMD_HP_SUPPORTED && advsimd != ID_AA64PFR0_ADVSIMD_NOT_PRESENT;
-
-     /* FP16 indicates support for half-precision scalar arithmetic.
-      * Optional for v8.2. Must be the same value as VFP16.
-      */
-     unsigned long fp = SYSTEM_REGISTER_FIELD(pfr0, ID_AA64PFR0_FP_SHIFT);
-     vg_assert(fp == advsimd);
-     have_fp16 = fp >= ID_AA64PFR0_FP_HP_SUPPORTED && fp != ID_AA64PFR0_FP_NOT_PRESENT;
 
      if (have_fhm)        vai.hwcaps |= VEX_HWCAPS_ARM64_FHM;
      if (have_dpbcvap)    vai.hwcaps |= VEX_HWCAPS_ARM64_DPBCVAP;
@@ -2040,10 +2044,8 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_pauth)      vai.hwcaps |= VEX_HWCAPS_ARM64_PAUTH;
      if (have_lrcpc)      vai.hwcaps |= VEX_HWCAPS_ARM64_LRCPC;
      if (have_dit)        vai.hwcaps |= VEX_HWCAPS_ARM64_DIT;
+     if (have_sb)         vai.hwcaps |= VEX_HWCAPS_ARM64_SB;
      if (have_jscvt)      vai.hwcaps |= VEX_HWCAPS_ARM64_JSCVT;
-
-     #undef get_cpu_ftr
-#endif
 
      return True;
    }

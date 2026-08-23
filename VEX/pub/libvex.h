@@ -383,6 +383,10 @@ typedef
       /* ARM64: does the host require us to use the fallback LLSC
          implementation? */
       Bool arm64_requires_fallback_LLSC;
+      /* ARM64: does the host emulate EL1 registers? */
+      Bool arm64_emulate_el1_registers;
+      /* ARM64: does the host allow reads to CTR_EL0? */
+      Bool arm64_ctr_el0_allowed;
    }
    VexArchInfo;
 

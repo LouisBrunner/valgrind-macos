@@ -1277,6 +1277,9 @@ Int VG_(sysctlbyname)(const HChar *name, void *oldp, SizeT *oldlenp, const void 
   Int oid[CTL_MAXNAME];
   SizeT oidlen = sizeof(oid);
   Int res = VG_(sysctl)(by_name_oid, 2, oid, &oidlen, name, VG_(strlen)(name));
+  if (res != 0) {
+    return res;
+  }
   return VG_(sysctl)(oid, oidlen / sizeof(Int), oldp, oldlenp, newp, newlen);
 }
 #endif
@@ -1357,11 +1360,8 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    */
 
 #if defined(VGP_arm64_darwin)
-// see libplatform/src/cachecontrol/arm64/cache.s
-#define MMU_I_CLINE	6		// cache line size as 1<<MMU_I_CLINE (64)
-
    const UInt dcache_line_size_ = 0; // we don't care about that one
-   const UInt icache_line_size_ = (1 << MMU_I_CLINE);
+   const UInt icache_line_size_ = VKI_ICACHE_LINE_SIZE;
 #else
    // Ask what the I and D line sizes are
    ULong read_mrs;
@@ -1482,6 +1482,8 @@ void VG_(flush_dcache) ( void *ptr, SizeT nbytes )
 {
    /* Currently this is only required on ARM64. */
 #  if defined(VGA_arm64)
+   /* Data cache is always coherent on macOS. */
+#   if !defined(VGO_darwin)
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
    Addr cls;
@@ -1498,6 +1500,7 @@ void VG_(flush_dcache) ( void *ptr, SizeT nbytes )
    for (addr = startaddr; addr < endaddr; addr += cls) {
       __asm__ __volatile__("dc cvau, %0" : : "r" (addr));
    }
+#   endif
    __asm__ __volatile__("dsb ish");
 #  endif
 }

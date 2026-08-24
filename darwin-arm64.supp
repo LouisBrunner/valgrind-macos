@@ -962,6 +962,13 @@
    fun:libSystem_initializer
 }
 
+{
+   OSX2600:objc_initializeNonMetaClass_leak
+   Memcheck:Leak
+   ...
+   fun:initializeNonMetaClass
+}
+
 ## Reachable allocations kept around by system libraries (caches, buffers, etc)
 ## which the application cannot do anything about (see #198)
 

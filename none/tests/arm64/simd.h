@@ -57,12 +57,17 @@ static inline float shortToSingle(UShort imm)
    return v.f;
 }
 
-static const char* formatForTest(const char* s) {
+static inline const char* formatForTest(const char* s) {
    static char buf[256];
    char* d = buf;
    while (*s && d < buf + sizeof(buf) - 1) {
-      if (s[0] == '\n' && s[1] == '\t') { *d++ = ';'; s += 2; }
-      else *d++ = *s++;
+      if (s[0] == '\n' && s[1] == '\t') {
+        *d++ = ';';
+        *d++ = ' ';
+        s += 2;
+      } else {
+        *d++ = *s++;
+      }
    }
    *d = 0;
    return buf;

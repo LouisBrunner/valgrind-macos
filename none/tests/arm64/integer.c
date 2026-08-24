@@ -25,7 +25,7 @@ typedef  unsigned char           Bool;
 #define False ((Bool)0)
 #define True  ((Bool)1)
 
-static const char* formatForTest(const char* s) {
+static inline const char* formatForTest(const char* s) {
    static char buf[256];
    char* d = buf;
    while (*s && d < buf + sizeof(buf) - 1) {

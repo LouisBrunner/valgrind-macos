@@ -1482,8 +1482,11 @@ void VG_(flush_dcache) ( void *ptr, SizeT nbytes )
 {
    /* Currently this is only required on ARM64. */
 #  if defined(VGA_arm64)
+#   if defined(VGO_darwin)
    /* Data cache is always coherent on macOS. */
-#   if !defined(VGO_darwin)
+   (void)ptr;
+   (void)nbytes;
+#   else
    Addr startaddr = (Addr) ptr;
    Addr endaddr   = startaddr + nbytes;
    Addr cls;

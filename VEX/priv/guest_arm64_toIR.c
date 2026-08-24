@@ -1124,12 +1124,13 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
    }
 }
 
-#define ILLEGAL_INSTRUCTION(reason) \
-  vex_printf("ARM64 front end: " reason "\n"); \
-  putPC(mkU64(guest_PC_curr_instr)); \
-  dres->jk_StopHere = Ijk_SigILL; \
-  dres->whatNext    = Dis_StopHere; \
-  return True;
+#define ILLEGAL_INSTRUCTION(reason) do { \
+    vex_printf("ARM64 front end: " reason "\n"); \
+    putPC(mkU64(guest_PC_curr_instr)); \
+    dres->jk_StopHere = Ijk_SigILL; \
+    dres->whatNext    = Dis_StopHere; \
+    return True; \
+  } while (0)
 
 /*------------------------------------------------------------*/
 /*--- Helpers for accessing guest registers.               ---*/

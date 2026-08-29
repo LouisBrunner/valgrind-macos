@@ -1268,21 +1268,27 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    i = 1;
 
 #  if defined(VGO_darwin)
+   Bool syscall_estimate = False;
    if (VG_(is_valid_tid)(tid_if_known) &&
       VG_(is_in_syscall)(tid_if_known) &&
       i < max_n_ips) {
-      /* On Darwin and FreeBSD, all the system call stubs have no function
+      /* On Darwin, all the system call stubs have no function
        * prolog.  So instead of top of the stack being a new
        * frame comprising a saved BP and a return address, we
        * just have the return address in the caller's frame.
        * Adjust for this by recording the return address.
        */
-      if (debug)
-         VG_(printf)("     in syscall, use SP-1\n");
-      ips[i] = *(Addr *)uregs.sp - 1;
-      if (sps) sps[i] = uregs.sp;
-      if (fps) fps[i] = uregs.x29;
-      i++;
+      Addr syscall_ip = *(Addr *)uregs.sp - 1;
+      const HChar *syscall_name;
+      if (VG_(get_fnname_raw)(VG_(current_DiEpoch)(), syscall_ip, &syscall_name)) {
+         if (debug)
+            VG_(printf)("     in syscall, use SP-1\n");
+         ips[i] = syscall_ip;
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.x29;
+         i++;
+         syscall_estimate = True;
+      }
    }
 
    /* If we are recording a stack trace, we most likely failed,
@@ -1291,21 +1297,33 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
     * This means normal x29 unwinding will usually miss at least the last frame.
     * So it's messy but the easiest way to get a somewhat sane stack trace is to force x30 in there.
     * This will probably create a lot of false positives but isn't that better that no stack trace at all?
+    * We also check the previous frame for duplicate and replace a faulty SP-1 derived frame, if possible.
     */
    if (uregs.x30 != 0 && uregs.x30 != uregs.pc && i < max_n_ips
       && fp_min <= uregs.x29 && uregs.x29 <= fp_max - 1 * sizeof(UWord)
       && ML_(safe_to_deref)((void*)uregs.x29, 2*sizeof(UWord))
       && ((UWord*)uregs.x29)[1] != uregs.x30) {
       DiEpoch ep = VG_(current_DiEpoch)();
+      Addr found_ip = uregs.x30 - 1;
       const HChar *previous;
       const HChar *potential;
-      if (VG_(get_fnname_raw)(ep, ips[i-1], &previous)
-        && VG_(get_fnname_raw)(ep, uregs.x30 - 1, &potential)
-        && !VG_STREQ(previous, potential)) {
-        ips[i] = uregs.x30 - 1;
-        if (sps) sps[i] = uregs.sp;
-        if (fps) fps[i] = uregs.x29;
-        i++;
+      const HChar *_file;
+      UInt _line;
+      vg_assert(i > 0);
+      Bool has_previous = VG_(get_fnname_raw)(ep, ips[i-1], &previous);
+      Bool has_potential = VG_(get_fnname_raw)(ep, found_ip, &potential);
+      Bool syscall_incomplete = syscall_estimate && !VG_(get_filename_linenum)(ep, ips[i-1], &_file, NULL, &_line);
+      
+      if (has_potential) {
+        if ((!has_previous || !VG_STREQ(previous, potential)) || syscall_incomplete) {
+          if (has_previous && VG_STREQ(previous, potential)) {
+            i -= 1;
+          }
+          ips[i] = found_ip;
+          if (sps) sps[i] = uregs.sp;
+          if (fps) fps[i] = uregs.x29;
+          i++;
+        }
       }
    }
 #endif

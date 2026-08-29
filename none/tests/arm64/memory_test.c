@@ -20,6 +20,22 @@ typedef  unsigned char           Bool;
 #define False ((Bool)0)
 #define True  ((Bool)1)
 
+static inline const char* formatForTest(const char* s) {
+   static char buf[256];
+   char* d = buf;
+   while (*s && d < buf + sizeof(buf) - 1) {
+      if (s[0] == '\n' && s[1] == '\t') {
+        *d++ = ';';
+        *d++ = ' ';
+        s += 2;
+      } else {
+        *d++ = *s++;
+      }
+   }
+   *d = 0;
+   return buf;
+}
+
 static inline UChar randUChar ( void )
 {
    static UInt seed = 80021;
@@ -47,18 +63,18 @@ static ULong randULong ( void )
    ULong nzcv_out; \
    ULong nzcv_in = (carryin ? (1<<29) : 0); \
    __asm__ __volatile__( \
-      "msr nzcv,%3;" \
-      "mov " #RN ",%2;" \
-      instruction ";" \
-      "mov %0," #RD ";" \
-      "mrs %1,nzcv;" \
+      "msr nzcv,%3\n\t" \
+      "mov " #RN ",%2\n\t" \
+      instruction "\n\t" \
+      "mov %0," #RD "\n\t" \
+      "mrs %1,nzcv\n\t" \
       : "=&r" (out), "=&r" (nzcv_out) \
       : "r" (RNval), "r" (nzcv_in) \
       : #RD, #RN, "cc", "memory", "x28"  \
    ); \
    printf("%s :: rd %016llx rn (hidden), " \
           "cin %d, nzcv %08llx %c%c%c%c\n",       \
-      instruction, out, \
+      formatForTest(instruction), out, \
       carryin ? 1 : 0, \
       nzcv_out & 0xffff0000, \
       ((1<<31) & nzcv_out) ? 'N' : ' ', \
@@ -74,19 +90,19 @@ static ULong randULong ( void )
    ULong nzcv_out; \
    ULong nzcv_in = (carryin ? (1<<29) : 0); \
    __asm__ __volatile__( \
-      "msr nzcv,%4;" \
-      "mov " #RM ",%2;" \
-      "mov " #RN ",%3;" \
-      instruction ";" \
-      "mov %0," #RD ";" \
-      "mrs %1,nzcv;" \
+      "msr nzcv,%4\n\t" \
+      "mov " #RM ",%2\n\t" \
+      "mov " #RN ",%3\n\t" \
+      instruction "\n\t" \
+      "mov %0," #RD "\n\t" \
+      "mrs %1,nzcv\n\t" \
       : "=&r" (out), "=&r" (nzcv_out) \
       : "r" (RMval), "r" (RNval), "r" (nzcv_in) \
       : #RD, #RM, #RN, "cc", "memory" \
    ); \
    printf("%s :: rd %016llx rm (hidden), rn (hidden), " \
           "cin %d, nzcv %08llx %c%c%c%c\n",       \
-      instruction, out, \
+      formatForTest(instruction), out, \
       carryin ? 1 : 0, \
       nzcv_out & 0xffff0000, \
       ((1<<31) & nzcv_out) ? 'N' : ' ', \
@@ -140,19 +156,19 @@ printf("LDUR,STUR (immediate, simm9): STR cases are MISSING");
 // TESTINST2_hide2 allows use of x28 as scratch
 printf("LDP,STP (immediate, simm7) (STR cases and wb check is MISSING)\n");
 
-TESTINST2_hide2("ldp x21, x28, [x22], #-24 ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp x21, x28, [x22], #-24 ; eor x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp x21, x28, [x22, #-40]! ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp x21, x28, [x22, #-40]! ; eor x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp x21, x28, [x22, #-40] ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp x21, x28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22], #-24\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22], #-24\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40]!\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40]!\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40]\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp x21, x28, [x22, #-40]\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
 
-TESTINST2_hide2("ldp w21, w28, [x22], #-24 ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp w21, w28, [x22], #-24 ; eor x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp w21, w28, [x22, #-40]! ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp w21, w28, [x22, #-40]! ; eor x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp w21, w28, [x22, #-40] ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldp w21, w28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22], #-24\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22], #-24\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40]!\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40]!\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40]\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldp w21, w28, [x22, #-40]\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
 // This is a bit tricky.  We load the value from just before and
@@ -161,13 +177,13 @@ TESTINST2_hide2("ldp w21, w28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22
 // to check.
 
 printf("LDR (literal, int reg)\n");
-TESTINST2_hide2("nop; nop; nop; xyzzy00: ldr  x21, xyzzy00 - 8; nop; nop; nop", AREA_MID, x21,x22,0);
-TESTINST2_hide2("nop; nop; nop; xyzzy01: ldr  x21, xyzzy01 + 0; nop; nop; nop", AREA_MID, x21,x22,0);
-TESTINST2_hide2("nop; nop; nop; xyzzy02: ldr  x21, xyzzy02 + 8; nop; nop; nop", AREA_MID, x21,x22,0);
+TESTINST2_hide2("nop\n\tnop\n\tnop\n\txyzzy00: ldr  x21, xyzzy00 - 8\n\tnop\n\tnop\n\tnop", AREA_MID, x21,x22,0);
+TESTINST2_hide2("nop\n\tnop\n\tnop\n\txyzzy01: ldr  x21, xyzzy01 + 0\n\tnop\n\tnop\n\tnop", AREA_MID, x21,x22,0);
+TESTINST2_hide2("nop\n\tnop\n\tnop\n\txyzzy02: ldr  x21, xyzzy02 + 8\n\tnop\n\tnop\n\tnop", AREA_MID, x21,x22,0);
 
-TESTINST2_hide2("nop; nop; nop; xyzzy03: ldr  x21, xyzzy03 - 4; nop; nop; nop", AREA_MID, x21,x22,0);
-TESTINST2_hide2("nop; nop; nop; xyzzy04: ldr  x21, xyzzy04 + 0; nop; nop; nop", AREA_MID, x21,x22,0);
-TESTINST2_hide2("nop; nop; nop; xyzzy05: ldr  x21, xyzzy05 + 4; nop; nop; nop", AREA_MID, x21,x22,0);
+TESTINST2_hide2("nop\n\tnop\n\tnop\n\txyzzy03: ldr  x21, xyzzy03 - 4\n\tnop\n\tnop\n\tnop", AREA_MID, x21,x22,0);
+TESTINST2_hide2("nop\n\tnop\n\tnop\n\txyzzy04: ldr  x21, xyzzy04 + 0\n\tnop\n\tnop\n\tnop", AREA_MID, x21,x22,0);
+TESTINST2_hide2("nop\n\tnop\n\tnop\n\txyzzy05: ldr  x21, xyzzy05 + 4\n\tnop\n\tnop\n\tnop", AREA_MID, x21,x22,0);
 
 ////////////////////////////////////////////////////////////////
 printf("{LD,ST}R (integer register) (entirely MISSING)\n");
@@ -284,12 +300,12 @@ printf("STL{R,RH,RB} (entirely MISSING)\n");
 // TESTINST2_hide2 allows use of x28 as scratch
 printf("LDPSW (immediate, simm7)\n");
 
-TESTINST2_hide2("ldpsw x21, x28, [x22], #-24 ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldpsw x21, x28, [x22], #-24 ; eor x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]! ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]! ; eor x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldpsw x21, x28, [x22, #-40] ; add x21,x21,x28", AREA_MID, x21,x22,0);
-TESTINST2_hide2("ldpsw x21, x28, [x22, #-40] ; eor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22], #-24\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22], #-24\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]!\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]!\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]\n\tadd x21,x21,x28", AREA_MID, x21,x22,0);
+TESTINST2_hide2("ldpsw x21, x28, [x22, #-40]\n\teor x21,x21,x28", AREA_MID, x21,x22,0);
 
 } /* end of test_memory_old() */
 
@@ -360,26 +376,27 @@ static void show_block_xor ( UChar* block1, UChar* block2, Int n )
   block[11] = (Long)AREG2VAL; \
   ULong block2[12]; \
   for (i = 0; i < 12; i++) block2[i] = block[i]; \
+  register ULong* blockp0 asm("x0") = &block[0]; /* GCC always uses x0, Clang might use others */ \
   __asm__ __volatile__( \
-  "ldr x13, [%0, #0]  ; " \
-  "ldr x23, [%0, #8]  ; " \
-  "ldr q17, [%0, #16] ; " \
-  "ldr q18, [%0, #32] ; " \
-  "ldr q19, [%0, #48] ; " \
-  "ldr q20, [%0, #64] ; " \
-  "ldr x5,  [%0, #80] ; " \
-  "ldr x6,  [%0, #88] ; " \
-  INSN " ; " \
-  "str x13, [%0, #0]  ; " \
-  "str x23, [%0, #8]  ; " \
-  "str q17, [%0, #16] ; " \
-  "str q18, [%0, #32] ; " \
-  "str q19, [%0, #48] ; " \
-  "str q20, [%0, #64] ; " \
-  "str x5,  [%0, #80] ; " \
-  "str x6,  [%0, #88] ; " \
-  : : "r"(&block[0]) : "x5", "x6", "x13", "x23", \
-                       "v17", "v18", "v19", "v20", "memory", "cc" \
+  "ldr x13, [%0, #0] \n\t" \
+  "ldr x23, [%0, #8] \n\t" \
+  "ldr q17, [%0, #16]\n\t" \
+  "ldr q18, [%0, #32]\n\t" \
+  "ldr q19, [%0, #48]\n\t" \
+  "ldr q20, [%0, #64]\n\t" \
+  "ldr x5,  [%0, #80]\n\t" \
+  "ldr x6,  [%0, #88]\n\t" \
+  INSN "\n\t" \
+  "str x13, [%0, #0] \n\t" \
+  "str x23, [%0, #8] \n\t" \
+  "str q17, [%0, #16]\n\t" \
+  "str q18, [%0, #32]\n\t" \
+  "str q19, [%0, #48]\n\t" \
+  "str q20, [%0, #64]\n\t" \
+  "str x5,  [%0, #80]\n\t" \
+  "str x6,  [%0, #88]\n\t" \
+  : : "r"(blockp0) : "x5", "x6", "x13", "x23", \
+                     "v17", "v18", "v19", "v20", "memory", "cc" \
   ); \
   printf("%s  with  x5 = middle_of_block+%lld,  x6=%lld\n", \
          INSN, (Long)AREG1OFF, (Long)AREG2VAL); \

@@ -11,3 +11,4 @@ argsB: --quiet -l 60 --nx ./self_invalidate
 stdinB: nlself_invalidate.stdinB.gdb
 stdoutB_filter: filter_make_empty
 stderrB_filter: filter_gdb
+cleanup: rm -f garbage.filtered.out

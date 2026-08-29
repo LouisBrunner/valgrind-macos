@@ -1,1 +1,2 @@
 prog: bitfield1
+vgopts: -q

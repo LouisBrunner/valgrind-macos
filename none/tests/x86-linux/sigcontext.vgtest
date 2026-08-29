@@ -1,1 +1,2 @@
 prog: sigcontext
+vgopts: -q

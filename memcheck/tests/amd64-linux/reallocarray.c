@@ -1,10 +1,10 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
 #include <malloc.h>
 #include "../../memcheck.h"
-
 int main(void)
 {
    int *pi = NULL;

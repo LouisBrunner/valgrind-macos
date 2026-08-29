@@ -20,7 +20,6 @@
 
 int main ( void )
 {
-#  if !defined(VGO_darwin) || (DARWIN_VERS >= DARWIN_10_6)
    // Nb: assuming VG_MIN_MALLOC_SZB is 8 or more...
    int* p;
    int  res;
@@ -70,5 +69,4 @@ int main ( void )
    res = PM(&p, 16 * 1024 * 1024, 100);
    assert(0 == res && p && 0 == (long)p % (16 * 1024 * 1024));
    free(p);
-#endif
 }

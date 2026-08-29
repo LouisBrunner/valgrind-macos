@@ -77,6 +77,7 @@ ULong s390x_dirtyhelper_STCKE(ULong *addr);
 void  s390x_dirtyhelper_CUxy(UChar *addr, ULong data, ULong num_bytes);
 ULong s390x_dirtyhelper_vec_op(VexGuestS390XState *guest_state,
                                ULong details);
+ULong s390x_dirtyhelper_DIxBR(VexGuestS390XState *guest_state, ULong packed);
 ULong s390_do_cu12_cu14_helper1(UInt byte1, UInt etf3_and_m3_is_1);
 ULong s390_do_cu12_helper2(UInt byte1, UInt byte2, UInt byte3, UInt byte4,
                            ULong stuff);

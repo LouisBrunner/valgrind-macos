@@ -1,1 +1,2 @@
 prog: cu21
+vgopts: -q

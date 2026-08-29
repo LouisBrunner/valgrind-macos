@@ -1,1 +1,2 @@
 prog: pth_cancel2
+vgopts: -q

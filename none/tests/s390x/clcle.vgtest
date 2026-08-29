@@ -1,1 +1,2 @@
 prog: clcle
+vgopts: -q

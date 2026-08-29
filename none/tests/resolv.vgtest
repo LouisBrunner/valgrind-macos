@@ -2,3 +2,4 @@
 # There is none/tests/solaris/resolv for that purpose.
 prereq: ! ../../tests/os_test solaris && ! ../../tests/os_test darwin
 prog: resolv
+vgopts: -q

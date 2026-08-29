@@ -289,9 +289,22 @@ static IRExpr* qop ( IROp op, IRExpr* a1, IRExpr* a2,
    return IRExpr_Qop(op, a1, a2, a3, a4);
 }
 
+// FIXME: arm64 supports tagged pointers where part of the address space can be used without affecting the pointer.
+// This function handles pointers before they are handed to VG, which does extra stripping for specific cases.
+// Currently only Darwin seem to have an issue with it as it's enabled by default, unlike Linux/FreeBSD.
+// FIXME: LDXR/STXR/CAS-family accesses (IRStmt_LLSC/IRStmt_CAS) bypass loadLE/storeLE and are not covered by this.
+static IRExpr* stripTagBits ( IRExpr* addr )
+{
+#if defined(VGP_arm64_darwin) // FIXME: need to inject archinfo somehow
+   return binop(Iop_And64, addr, mkU64(0x00FFFFFFFFFFFFFFULL));
+#else
+   return addr;
+#endif
+}
+
 static IRExpr* loadLE ( IRType ty, IRExpr* addr )
 {
-   return IRExpr_Load(Iend_LE, ty, addr);
+   return IRExpr_Load(Iend_LE, ty, stripTagBits(addr));
 }
 
 /* Add a statement to the list held by "irbb". */
@@ -307,7 +320,7 @@ static void assign ( IRTemp dst, IRExpr* e )
 
 static void storeLE ( IRExpr* addr, IRExpr* data )
 {
-   stmt( IRStmt_Store(Iend_LE, addr, data) );
+   stmt( IRStmt_Store(Iend_LE, stripTagBits(addr), data) );
 }
 
 //ZZ static void storeGuardedLE ( IRExpr* addr, IRExpr* data, IRTemp guardT )
@@ -1111,6 +1124,13 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
    }
 }
 
+#define ILLEGAL_INSTRUCTION(reason) do { \
+    vex_printf("ARM64 front end: " reason "\n"); \
+    putPC(mkU64(guest_PC_curr_instr)); \
+    dres->jk_StopHere = Ijk_SigILL; \
+    dres->whatNext    = Dis_StopHere; \
+    return True; \
+  } while (0)
 
 /*------------------------------------------------------------*/
 /*--- Helpers for accessing guest registers.               ---*/
@@ -7886,6 +7906,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53800 000 Rt   MRS rT, midr_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380000 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("MIDR_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       IRTemp val = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
@@ -7908,6 +7931,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53800 101 Rt   MRS rT, mpidr_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53800A0 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("MPIDR_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64((1UL<<31)));
       DIP("mrs %s, mpidr_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -7919,6 +7945,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53800 110 Rt   MRS rT, revdir_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53800C0 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("REVDIR_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg32orZR(tt, mkU32(0x0));
       DIP("mrs %s, revdir_el1 (FAKED)\n", nameIReg32orZR(tt));
@@ -7932,6 +7961,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53804 000 Rt   MRS rT, id_aa64pfr0_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380400 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64PFR0_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       IRTemp val = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
@@ -7954,6 +7986,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53804 001 Rt   MRS rT, id_aa64pfr1_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380420 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64PFR1_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x0));
       DIP("mrs %s, id_aa64pfr1_el1 (FAKED)\n", nameIReg32orZR(tt));
@@ -7965,6 +8000,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53804 010 Rt   MRS rT, id_aa64zfr0_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380440 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64ZFR0_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x0));
       DIP("mrs %s, id_aa64zfr0_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -7976,6 +8014,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53805 000 Rt   MRS rT, id_aa64dfr0_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380500 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64DFR0_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x6));
       DIP("mrs %s, id_aa64dfr0_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -7987,6 +8028,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53805 001 Rt   MRS rT, id_aa64dfr1_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380520 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64DFR1_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x0));
       DIP("mrs %s, id_aa64dfr1_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -7998,6 +8042,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53805 100 Rt   MRS rT, id_aa64afr0_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380580 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64AFR0_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x0));
       DIP("mrs %s, id_aa64afr0_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -8009,6 +8056,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53805 101 Rt   MRS rT, id_aa64afr1_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53805A0 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64AFR1_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x0));
       DIP("mrs %s, id_aa64afr1_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -8021,6 +8071,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53806 000 Rt   MRS rT, id_aa64isar0_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380600 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64ISAR0_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       IRTemp val = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
@@ -8043,6 +8096,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53806 001 Rt   MRS rT, id_aa64isar1_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380620 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64ISAR1_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       IRTemp val = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
@@ -8065,6 +8121,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53807 000 Rt   MRS rT, id_aa64mmfr0_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380700 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64MMFR0_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       IRTemp val = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
@@ -8088,6 +8147,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53807 001 Rt   MRS rT, id_aa64mmfr1_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380720 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64MMFR1_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       IRTemp val = newTemp(Ity_I64);
       IRExpr** args = mkIRExprVec_0();
@@ -8109,6 +8171,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       0xD53807 010 Rt   MRS rT, id_aa64mmfr2_el1
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD5380740 /*MRS*/) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("ID_AA64MMFR2_EL1 read encountered on platform without emulation.");
+      }
       UInt tt    = INSN(4,0);
       putIReg64orZR(tt, mkU64(0x0));
       DIP("mrs %s, id_aa64mmfr2_el1 (FAKED)\n", nameIReg64orZR(tt));
@@ -8217,25 +8282,18 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    }
    /* ---- Cases for DCZID_EL0 ----
       This is the data cache zero ID register. It controls whether
-      DC ZVA is supported and if so the block size used. Support reads of it
-      only by passing through to the host.
+      DC ZVA is supported and if so the block size used. Use the values
+      read during startup when calling get_cache_info.
       D5 3B 00 111 Rt  MRS rT, dczid_el0
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B00E0) {
       UInt tt = INSN(4,0);
-      IRTemp   val  = newTemp(Ity_I64);
-      IRExpr** args = mkIRExprVec_0();
-      IRDirty* d    = unsafeIRDirty_1_N (
-                         val,
-                         0/*regparms*/,
-                         "arm64g_dirtyhelper_MRS_DCZID_EL0",
-                         &arm64g_dirtyhelper_MRS_DCZID_EL0,
-                         args
-                      );
-      /* execute the dirty call, dumping the result in val. */
-      stmt( IRStmt_Dirty(d) );
+      ULong val_cached = (archinfo->arm64_data_zero_prohibited ? 0x10 : 0) |
+                         archinfo->arm64_cache_block_size;
+      IRTemp val = newTemp(Ity_I64);
+      assign(val, mkU64(val_cached));
       putIReg64orZR(tt, mkexpr(val));
-      DIP("mrs %s, dczid_el0 (FAKED)\n", nameIReg64orZR(tt));
+      DIP("mrs %s, dczid_el0 (cached)\n", nameIReg64orZR(tt));
       return True;
    }
    /* ---- Cases for CTR_EL0 ----
@@ -8246,6 +8304,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       D5 3B 00 001 Rt  MRS rT, dczid_el0
    */
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD53B0020) {
+      if (!archinfo->arm64_ctr_el0_allowed) {
+        ILLEGAL_INSTRUCTION("ctr_el0 read encountered on platform without support.");
+      }
       UInt tt = INSN(4,0);
       /* Need to generate a value from dMinLine_lg2_szB and
          dMinLine_lg2_szB.  The value in the register is in 32-bit
@@ -8421,6 +8482,10 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
    if ((INSN(31,0) & 0xFFFFFFE0) == 0xD50B7420) {
       /* Round the requested address, in rT, down to the start of the
          containing block. */
+      /* Unless DZP is true */
+      if (archinfo->arm64_data_zero_prohibited) {
+         ILLEGAL_INSTRUCTION("DC ZVA instruction encountered with the DCZID_EL0 DZP flag set.");
+      }
       UInt   tt      = INSN(4,0);
       ULong  clearszB = 1UL << (archinfo->arm64_cache_block_size + 2);
       IRTemp addr    = newTemp(Ity_I64);
@@ -8451,7 +8516,8 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
          Ijk_InvalICache. */
       /* We will always be provided with a valid dMinLine value. */
       vassert(archinfo->arm64_dMinLine_lg2_szB >= 2
-              && archinfo->arm64_dMinLine_lg2_szB <= 17);
+              && archinfo->arm64_dMinLine_lg2_szB <= 17
+              || archinfo->arm64_dMinLine_lg2_szB == 0); // Darwin doesn't need dcache line size to be set
       /* Round the requested address, in rT, down to the start of the
          containing block. */
       UInt   tt      = INSN(4,0);
@@ -8478,6 +8544,9 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       D5 1B 42 A0
     */
    if ((INSN(31, 0) & 0xFFFFFFE0) == 0xD51B42A0) {
+      if (!archinfo->arm64_emulate_el1_registers) {
+        ILLEGAL_INSTRUCTION("APGAKEYLO_EL1 read encountered on platform without emulation.");
+      }
       UInt     tt   = INSN(4,0);
       DIP("mrs %s, apgakeyl0_el1 (ignored)\n", nameIReg64orZR(tt));
       return True;
@@ -9301,6 +9370,7 @@ static IRTemp math_FOLDV ( IRTemp src, IROp op )
       }
       case Iop_Max32Fx4: case Iop_Min32Fx4:
       case Iop_MaxNumF32: case Iop_MinNumF32:
+      case Iop_MaxN32Fx4: case Iop_MinN32Fx4:
       case Iop_Min32Sx4: case Iop_Min32Ux4:
       case Iop_Max32Sx4: case Iop_Max32Ux4: case Iop_Add32x4: {
          IRTemp x3210 = src;
@@ -9326,6 +9396,7 @@ static IRTemp math_FOLDV ( IRTemp src, IROp op )
          assign(res, unop(Iop_ZeroHI96ofV128, mkexpr(max3210)));
          return res;
       }
+      case Iop_MaxN64Fx2: case Iop_MinN64Fx2:
       case Iop_Add64x2: {
          IRTemp x10 = src;
          IRTemp x00 = newTempV128();
@@ -17203,9 +17274,50 @@ Bool disInstr_ARM64_WRK (
             return True;
          }
          /* We don't know what it is. */
+         if (sigill_diag) {
+            vex_printf ("disInstr(arm64): special instruction preamble ");
+            vex_printf ("followed by unknown instruction\n");
+            vex_printf ("  this can happen when inline valgrind.h assembly ");
+            vex_printf ("is optimized (away)\n");
+         }
          return False;
          /*NOTREACHED*/
       }
+   }
+
+   /* Generalized handler for EOR3 instructions. */
+
+   // This pattern identifies the EOR3 instruction class by
+   // masking out the register fields (Rd, Rn, Ra, Rm).
+   if ((insn & 0xFFE08000) == 0xCE000000) {
+      // Extract the four register numbers from the instruction bits
+      UInt rD = INSN(4,0);    // Destination Vd
+      UInt rN = INSN(9,5);    // Source Vn
+      UInt rA = INSN(14,10);  // Source Va
+      UInt rM = INSN(20,16);  // Source Vm
+
+      // Get the VReg contents for the three source registers
+      IRTemp vN = newTemp(Ity_V128);
+      IRTemp vM = newTemp(Ity_V128);
+      IRTemp vA = newTemp(Ity_V128);
+      assign(vN, getQReg128(rN));
+      assign(vM, getQReg128(rM));
+      assign(vA, getQReg128(rA));
+
+      // Perform the three-way XOR by chaining two binary XORs
+      // temp = Vn EOR Vm
+      IRTemp temp = newTemp(Ity_V128);
+      assign(temp, binop(Iop_XorV128, mkexpr(vN), mkexpr(vM)));
+
+      // res = temp EOR Va
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, binop(Iop_XorV128, mkexpr(temp), mkexpr(vA)));
+
+      // Store the final result in the destination register
+      putQReg128(rD, mkexpr(res));
+
+      DIP("eor3 v%u.16b, v%u.16b, v%u.16b, v%u.16b\n", rD, rN, rM, rA);
+      return True;
    }
 
    /* ----------------------------------------------------------- */
@@ -17295,7 +17407,8 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
 
    /* Sanity checks */
    /* (x::UInt - 2) <= 15   ===   x >= 2 && x <= 17 (I hope) */
-   vassert((archinfo->arm64_dMinLine_lg2_szB - 2) <= 15);
+   /* Darwin doesn't need dcache line size to be set */
+   vassert((archinfo->arm64_dMinLine_lg2_szB - 2) <= 15 || archinfo->arm64_dMinLine_lg2_szB == 0);
    vassert((archinfo->arm64_iMinLine_lg2_szB - 2) <= 15);
 
    /* Try to decode */

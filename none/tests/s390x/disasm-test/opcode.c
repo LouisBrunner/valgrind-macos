@@ -1047,8 +1047,8 @@ static const char *opcodes[] = {
    "dxbr    f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",
    "deb     f1,d12(x2,b2)",
    "ddb     f1,d12(x2,b2)",
-   // diebr  not implemented
-   // didbr  not implemented
+   "diebr   f1,f3,f2,m4:{0,1,3,4,5,6,7}",
+   "didbr   f1,f3,f2,m4:{0,1,3,4,5,6,7}",
    "ltebr   f1,f2",
    "ltdbr   f1,f2",
    "ltxbr   f1:{0,1,4,5,8,9,12,13},f2:{0,1,4,5,8,9,12,13}",

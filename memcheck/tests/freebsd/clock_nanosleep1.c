@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
    timert.it_interval.tv_usec = timert.it_value.tv_usec = 100;
    setitimer(ITIMER_REAL, &timert, NULL);
    
-   struct timespec ts_initialized = {0, 1000000};
+   struct timespec ts_initialized = {10, 0};
    int ret;
 
    ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts_initialized,

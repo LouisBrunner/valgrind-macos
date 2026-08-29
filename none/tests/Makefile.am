@@ -100,19 +100,19 @@ noinst_HEADERS = fdleak.h sse4-common.h
 EXTRA_DIST = \
 	allexec32.stdout.exp allexec32.stderr.exp allexec32.vgtest\
 	allexec64.stdout.exp allexec64.stderr.exp allexec64.vgtest\
-	ansi.stderr.exp ansi.vgtest \
-	args.stderr.exp args.stdout.exp args.vgtest \
+	ansi.vgtest \
+	args.stdout.exp args.vgtest \
 	async-sigs.stderr.exp async-sigs.stderr.exp-mips32 \
 	async-sigs.vgtest async-sigs.stderr.exp-freebsd \
 	bigcode.vgtest bigcode.stderr.exp bigcode.stdout.exp \
-	bitfield1.stderr.exp bitfield1.vgtest \
-	bug129866.vgtest bug129866.stderr.exp bug129866.stdout.exp \
-	bug234814.vgtest bug234814.stderr.exp bug234814.stdout.exp \
+	bitfield1.vgtest \
+	bug129866.vgtest bug129866.stdout.exp \
+	bug234814.vgtest bug234814.stdout.exp \
 	bug290061.vgtest \
 	bug491394.vgtest \
 	bug492678.vgtest \
-	bug514094.vgtest bug514094.stderr.exp \
-	closeall.stderr.exp closeall.vgtest \
+	bug514094.vgtest \
+	closeall.vgtest \
 	cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stdout.exp cmdline1.vgtest \
 		cmdline1.stdout.exp-non-linux \
@@ -128,10 +128,9 @@ EXTRA_DIST = \
 	cmdline10.stderr.exp cmdline10.vgtest \
 	cmdline11.stderr.exp cmdline11.vgtest \
 	cmd-with-special.vgtest \
-	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
-	coolo_strlen.stderr.exp coolo_strlen.vgtest \
-	discard.stderr.exp discard.stdout.exp \
+	coolo_strlen.vgtest \
+	discard.stdout.exp \
 	discard.vgtest \
 	double_close_range_xml.stderr.exp \
 	double_close_range_xml.vgtest \
@@ -140,10 +139,10 @@ EXTRA_DIST = \
 	empty-exe.stderr.exp-darwin19 \
 	exec-sigmask.vgtest exec-sigmask.stdout.exp \
 	exec-sigmask.stdout.exp2 exec-sigmask.stdout.exp3 \
-	exec-sigmask.stdout.exp-solaris exec-sigmask.stderr.exp \
+	exec-sigmask.stdout.exp-solaris \
 	execve.vgtest execve.stderr.exp \
 	faultstatus.vgtest faultstatus.stderr.exp faultstatus.stderr.exp-s390x \
-	fcntl_setown.vgtest fcntl_setown.stderr.exp \
+	fcntl_setown.vgtest \
 	fdleak_cat.vgtest \
 	fdleak_cmsg.stderr.exp fdleak_cmsg.vgtest \
 	fdleak_cmsg_xml.stderr.exp-ppc64le \
@@ -173,52 +172,49 @@ EXTRA_DIST = \
 	fdleak_socketpair.stderr.exp fdleak_socketpair.vgtest \
 	fdleak_socketpair_xml.stderr.exp fdleak_socketpair_xml.vgtest \
 		fdleak_socketpair_xml.stderr.exp-illumos \
-	floored.stderr.exp floored.stdout.exp floored.vgtest \
+	floored.stdout.exp floored.vgtest \
 	fork.stdout.exp fork.vgtest \
-	fucomip.stderr.exp fucomip.vgtest \
-	gxx304.stderr.exp gxx304.vgtest \
-	ifunc.stderr.exp ifunc.stdout.exp ifunc.vgtest \
+	fucomip.vgtest \
+	gxx304.vgtest \
+	ifunc.stdout.exp ifunc.vgtest \
 	ioctl_moans.stderr.exp ioctl_moans.vgtest \
 	libvex_test.vgtest \
 	libvexmultiarch_test.vgtest \
-	manythreads.stdout.exp manythreads.stderr.exp manythreads.vgtest \
+	manythreads.stdout.exp manythreads.vgtest \
 	map_unaligned.stderr.exp map_unaligned.vgtest \
 	map_unmap.stderr.exp map_unmap.stdout.exp map_unmap.vgtest \
 	mmap_fcntl_bug.vgtest mmap_fcntl_bug.stderr.exp \
 	mmap_o_direct.vgtest \
-	mq.stderr.exp mq.vgtest \
-	munmap_exe.stderr.exp munmap_exe.vgtest \
-	nestedfns.stderr.exp nestedfns.stdout.exp nestedfns.vgtest \
+	mq.vgtest \
+	munmap_exe.vgtest \
+	nestedfns.stdout.exp nestedfns.vgtest \
 	nocwd.stdout.exp nocwd.stderr.exp nocwd.vgtest \
 	nocwd.stderr.exp-freebsd \
 	nodir.stderr.exp nodir.vgtest \
 		nodir.stderr.exp-freebsd \
-	pending.stdout.exp pending.stderr.exp pending.vgtest \
+	pending.stdout.exp pending.vgtest \
 	ppoll_alarm.vgtest \
 	pselect_alarm.vgtest \
 	pselect_sigmask_null.vgtest \
 	pth_atfork1.stderr.exp pth_atfork1.stdout.exp pth_atfork1.vgtest \
-	pth_blockedsig.stderr.exp \
 	pth_blockedsig.stdout.exp pth_blockedsig.vgtest \
-	pth_cancel1.stderr.exp pth_cancel1.stdout.exp pth_cancel1.vgtest \
-	pth_cancel2.stderr.exp pth_cancel2.vgtest \
-	pth_cvsimple.stderr.exp pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
-	pth_empty.stderr.exp pth_empty.vgtest \
-	pth_exit.stderr.exp pth_exit.vgtest \
-	pth_exit2.stderr.exp pth_exit2.vgtest \
-	pth_mutexspeed.stderr.exp \
+	pth_cancel1.stdout.exp pth_cancel1.vgtest \
+	pth_cancel2.vgtest \
+	pth_cvsimple.stdout.exp pth_cvsimple.vgtest \
+	pth_empty.vgtest \
+	pth_exit.vgtest \
+	pth_exit2.vgtest \
 	pth_mutexspeed.stdout.exp pth_mutexspeed.vgtest \
-	pth_once.stderr.exp pth_once.stdout.exp pth_once.vgtest \
-	pth_rwlock.stderr.exp pth_rwlock.vgtest \
+	pth_once.stdout.exp pth_once.vgtest \
+	pth_rwlock.vgtest \
 	pth_self_kill_9.vgtest \
 	pth_self_kill_15_other.vgtest \
-	pth_stackalign.stderr.exp \
 	pth_stackalign.stdout.exp pth_stackalign.vgtest \
 	pth_2sig.stderr.exp-linux pth_2sig.stderr.exp-solaris pth_2sig.vgtest \
 	pth_term_signal.stderr.exp pth_term_signal.vgtest \
 	rc_option_with_spaces.vgtest \
-	rcrl.stderr.exp rcrl.stdout.exp rcrl.vgtest \
-	readline1.stderr.exp readline1.stdout.exp \
+	rcrl.stdout.exp rcrl.vgtest \
+	readline1.stdout.exp \
 	readline1.vgtest \
 	replaces_malloc_client_req.stdout.exp replaces_malloc_client_req.vgtest \
 	require-text-symbol-1.vgtest \
@@ -228,14 +224,14 @@ EXTRA_DIST = \
 		require-text-symbol-2.stderr.exp-freebsd \
 	require-text-symbol-3.vgtest require-text-symbol-3.stderr.exp \
 	res_search.stdout.exp res_search.vgtest \
-	resolv.stderr.exp resolv.stdout.exp resolv.vgtest \
-	rlimit_nofile.stderr.exp rlimit_nofile.vgtest \
-	rlimit64_nofile.stderr.exp rlimit64_nofile.vgtest \
+	resolv.stdout.exp resolv.vgtest \
+	rlimit_nofile.vgtest \
+	rlimit64_nofile.vgtest \
 	selfrun.stderr.exp selfrun.stdout.exp selfrun.vgtest \
-	sem.stderr.exp sem.vgtest \
-	semlimit.stderr.exp semlimit.vgtest \
-	sha1_test.stderr.exp sha1_test.vgtest \
-	shortpush.stderr.exp shortpush.vgtest \
+	sem.vgtest \
+	semlimit.vgtest \
+	sha1_test.vgtest \
+	shortpush.vgtest \
 	shorts.stderr.exp shorts.vgtest \
 	sigstackgrowth.stdout.exp sigstackgrowth.stderr.exp sigstackgrowth.vgtest \
 	sigsusp.vgtest \
@@ -243,18 +239,18 @@ EXTRA_DIST = \
 	syscall-restart1.vgtest syscall-restart1.stderr.exp \
 	syscall-restart2.vgtest syscall-restart2.stderr.exp \
 	syslog.vgtest \
-	system.stderr.exp system.vgtest \
+	system.vgtest \
 	thread-exits.stderr.exp thread-exits.stdout.exp thread-exits.vgtest \
 	threaded-fork.stderr.exp threaded-fork.stdout.exp threaded-fork.vgtest \
 	threadederrno.stdout.exp threadederrno.vgtest \
 	timer_delete.vgtest \
 	timestamp.stderr.exp timestamp.vgtest \
-	tls.vgtest tls.stderr.exp tls.stdout.exp  \
+	tls.vgtest tls.stdout.exp  \
 	track-fds-exec-children.vgtest \
 	unit_debuglog.stderr.exp unit_debuglog.vgtest \
 	vgprintf.stderr.exp vgprintf.vgtest \
 	vgprintf_nvalgrind.stderr.exp vgprintf_nvalgrind.vgtest \
-	process_vm_readv_writev.stderr.exp process_vm_readv_writev.vgtest \
+	process_vm_readv_writev.vgtest \
 	sigprocmask.vgtest \
 	socket_close.stderr.exp socket_close.vgtest \
 	socket_close_xml.stderr.exp-ppc64le \
@@ -271,7 +267,9 @@ EXTRA_DIST = \
 	track_new.stderr.exp track_new.vgtest track_new.stderr.exp-illumos \
 	track_yes.vgtest track_high.vgtest \
 	track_yes.stderr.exp track_high.stderr.exp \
-	track_bad.vgtest track_bad.stderr.exp
+	track_bad.vgtest track_bad.stderr.exp \
+	valgrind_version.vgtest valgrind_version.stdout.exp \
+	valgrind_version.post.exp
 
 check_PROGRAMS = \
 	args \
@@ -331,7 +329,8 @@ check_PROGRAMS = \
         use_after_close \
 	track_new \
 	track_std \
-	track_bad
+	track_bad \
+	valgrind_version
 
 if HAVE_STATIC_LIBC
 if ! VGCONF_OS_IS_LINUX

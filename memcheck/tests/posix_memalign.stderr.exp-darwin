@@ -1,50 +1,50 @@
 Unsafe allocation with size of zero is implementation-defined
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:32)
+   by 0x........: main (posix_memalign.c:31)
 
 Invalid alignment value: 18446744073709551615 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:40)
+   by 0x........: main (posix_memalign.c:39)
 
 Invalid alignment value: 0 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:42)
+   by 0x........: main (posix_memalign.c:41)
 
 Invalid alignment value: 1 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:44)
+   by 0x........: main (posix_memalign.c:43)
 
 Invalid alignment value: 2 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:46)
+   by 0x........: main (posix_memalign.c:45)
 
 Invalid alignment value: 3 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:48)
+   by 0x........: main (posix_memalign.c:47)
 
 Invalid alignment value: 31 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:53)
+   by 0x........: main (posix_memalign.c:52)
 
 Invalid alignment value: 33 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:58)
+   by 0x........: main (posix_memalign.c:57)
 
 Invalid alignment value: 4095 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:60)
+   by 0x........: main (posix_memalign.c:59)
 
 Invalid alignment value: 4097 (should be non-zero, a power of 2 and a multiple of sizeof(void*))
    at 0x........: malloc_zone_memalign (vg_replace_malloc.c:...)
    by 0x........: posix_memalign (in /...libc...)
-   by 0x........: main (posix_memalign.c:65)
+   by 0x........: main (posix_memalign.c:64)
 

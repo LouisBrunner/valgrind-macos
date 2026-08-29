@@ -1,0 +1,3 @@
+prereq: test -e ./c23_free
+prog: c23_free
+vgopts: -q

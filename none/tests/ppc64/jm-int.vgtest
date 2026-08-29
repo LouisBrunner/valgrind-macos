@@ -1,1 +1,2 @@
 prog: jm-insns -i
+vgopts: -q

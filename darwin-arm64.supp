@@ -26,6 +26,13 @@
 
 # False positives
 
+# See https://bugs.kde.org/show_bug.cgi?id=196528, amd64's OSX1013:pthread_rwlock_init and pth-supp
+{
+   OSX1400:pthread_rwlock_init
+   Memcheck:Cond
+   fun:pthread_rwlock_init
+}
+
 ## Could be a bug: nw_network_agent_copy_dictionary_from_necp doesn't initialize a var correctly
 {
    OSX1400:nw_network_agent_copy_dictionary_from_necp_cond_1
@@ -960,6 +967,13 @@
    Memcheck:Leak
    ...
    fun:libSystem_initializer
+}
+
+{
+   OSX2600:objc_initializeNonMetaClass_leak
+   Memcheck:Leak
+   ...
+   fun:initializeNonMetaClass
 }
 
 ## Reachable allocations kept around by system libraries (caches, buffers, etc)

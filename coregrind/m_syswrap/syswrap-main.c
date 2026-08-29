@@ -1737,6 +1737,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
          // DDD: this breaks exp-ptrcheck.
          VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
                    offsetof(VexGuestX86State, guest_CC_DEP1), sizeof(UInt) );
+         VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+                   offsetof(VexGuestX86State, guest_CC_DEP2), sizeof(UInt) );
          break;
       default:
          vg_assert(0);
@@ -1770,6 +1772,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
          // DDD: this breaks exp-ptrcheck.
          VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
                    offsetof(VexGuestAMD64State, guest_CC_DEP1), sizeof(ULong) );
+         VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+                   offsetof(VexGuestAMD64State, guest_CC_DEP2), sizeof(ULong) );
          break;
       default:
          vg_assert(0);
@@ -1803,6 +1807,8 @@ void putSyscallStatusIntoGuestState ( /*IN*/ ThreadId tid,
          // DDD: this breaks exp-ptrcheck.
          VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
                    offsetof(VexGuestARM64State, guest_CC_DEP1), sizeof(ULong) );
+         VG_TRACK( post_reg_write, Vg_CoreSysCall, tid,
+                   offsetof(VexGuestARM64State, guest_CC_DEP2), sizeof(ULong) );
          break;
       default:
          vg_assert(0);

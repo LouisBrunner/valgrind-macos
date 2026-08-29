@@ -154,9 +154,6 @@ void VG_(sigframe_create)( ThreadId tid,
 
    frame = (struct hacky_sigframe *) sp;
 
-   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler internal frame",
-             (Addr)frame, offsetof(struct hacky_sigframe, vg));
-
    /* save stuff in frame */
    frame->vg.magicPI = MAGIC_PI;
    frame->vg.sigNo_private = siginfo->si_signo;
@@ -165,31 +162,25 @@ void VG_(sigframe_create)( ThreadId tid,
    frame->vg.vex_shadow1 = tst->arch.vex_shadow1;
    frame->vg.vex_shadow2 = tst->arch.vex_shadow2;
 
-   VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid,
-             (Addr)frame, offsetof(struct hacky_sigframe, vg));
-
-   /* Fill in the siginfo and ucontext.  */
+   /* Fill in ucontext */
    VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler frame",
-             (Addr)frame, offsetof(struct hacky_sigframe, uc));
+             (Addr)&frame->uc, sizeof(frame->uc));
 
    synthesize_ucontext(tst, &frame->uc, siguc);
 
    VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid,
-             (Addr)frame, offsetof(struct hacky_sigframe, uc));
+             (Addr)&frame->uc, sizeof(frame->uc));
 
-   /* Track our writes to siginfo */
-   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid,  /* VVVVV */
-             "signal handler siginfo", (Addr)frame,
-             offsetof(struct hacky_sigframe, info));
+   /* Fill in siginfo */
+   VG_TRACK( pre_mem_write, Vg_CoreSignal, tst->tid, "signal handler siginfo",
+             (Addr)&frame->info, sizeof(frame->info));
 
    frame->info = *siginfo;
 
-   VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid, /* ^^^^^ */
-         (Addr)frame, offsetof(struct hacky_sigframe, info));
+   VG_TRACK( post_mem_write, Vg_CoreSignal, tst->tid,
+             (Addr)&frame->info, sizeof(frame->info));
 
    /* Set up stack pointer */
-   // FIXME: not sure about this whole offset thing in the amd64 version...
-   // vg_assert(rsp == (Addr)&frame->returnAddr);
    VG_(set_SP)(tid, sp);
    VG_TRACK( post_reg_write, Vg_CoreSignal, tid, VG_O_STACK_PTR, sizeof(ULong));
 
@@ -197,24 +188,24 @@ void VG_(sigframe_create)( ThreadId tid,
    VG_(set_IP)(tid, (ULong)handler);
    VG_TRACK( post_reg_write, Vg_CoreSignal, tid, VG_O_INSTR_PTR, sizeof(ULong));
 
-   VG_TRACK( pre_mem_write, Vg_CoreSignal, tid, "signal handler frame",
-             (Addr)frame, 1*sizeof(ULong) );
-
    if (flags & VKI_SA_RESTORER)
        tst->arch.vex.guest_X30 = (Addr)restorer;
    else
        tst->arch.vex.guest_X30 = (Addr)&VG_(arm64_darwin_SUBST_FOR_sigreturn);
 
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X30), sizeof(Addr));
+
    tst->arch.vex.guest_X0 = sigNo;
    tst->arch.vex.guest_X1 = (Addr)&frame->info;
    tst->arch.vex.guest_X2 = (Addr)&frame->uc;
 
-   VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
-             (Addr)frame, 1*sizeof(ULong) );
-   VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
-             (Addr)&frame->info, sizeof(frame->info));
-   VG_TRACK( post_mem_write, Vg_CoreSignal, tid,
-             (Addr)&frame->uc, sizeof(frame->uc));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X0), sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X1), sizeof(Addr));
+   VG_TRACK( post_reg_write, Vg_CoreSignal, tid,
+         offsetof(VexGuestARM64State, guest_X2), sizeof(Addr));
 
    if (VG_(clo_trace_signals))
       VG_(message)(Vg_DebugMsg,

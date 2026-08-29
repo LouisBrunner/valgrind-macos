@@ -1,1 +1,2 @@
 prog: cvb
+vgopts: -q

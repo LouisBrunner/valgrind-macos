@@ -1,3 +1,0 @@
-#! /bin/sh
-
-sed 's/special value 7 = nan/special value 7 = -nan/'

@@ -41,6 +41,35 @@ void expand ( V128* dst, char* summary )
    }
 }
 
+#define one_subtest(name, imm8b6) \
+   memset(blockC, 0x55, 80); \
+   memcpy(blockC + 0,  &argL,  16); \
+   memcpy(blockC + 16, &argR,  16); \
+   memcpy(blockC + 32, &rdxIN, 8); \
+   memcpy(blockC + 40, &raxIN, 8); \
+   memcpy(blockC + 48, &rdxIN, 8); \
+   __asm__ __volatile__( \
+      "movupd     0(%0), %%xmm2"           "\n\t" \
+      "movupd     16(%0), %%xmm13"         "\n\t" \
+      "movq       32(%0), %%rdx"           "\n\t" \
+      "movq       40(%0), %%rax"           "\n\t" \
+      "movupd     48(%0), %%xmm0"          "\n\t" \
+      "movl       64(%0), %%ecx"            "\n\t" \
+      "pcmp" #name " $0x" #imm8b6 ", %%xmm2, %%xmm13"  "\n\t" \
+      "movupd     %%xmm0, 48(%0)"          "\n\t" \
+      "movl       %%ecx, 64(%0)"            "\n\t" \
+      "pushfq"                             "\n\t" \
+      "popq       %%r15"                   "\n\t" \
+      "movq       %%r15, 72(%0)"           "\n\t" \
+      : /*out*/  \
+      : /*in*/"r"(blockC)  \
+      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15" \
+   ); \
+   printf("  " #name " $0x" #imm8b6 ":  "); \
+   printf("    xmm0 "); \
+   show_V128( (V128*)(blockC+48) ); \
+   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
+
 void one_test ( char* summL, ULong rdxIN, char* summR, ULong raxIN )
 {
    V128 argL, argR;
@@ -64,240 +93,14 @@ void one_test ( char* summL, ULong rdxIN, char* summR, ULong raxIN )
 
    UChar* blockC = (UChar*)&block[0];
 
-   /* ---------------- ISTRI_4A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpistri $0x4A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  istri $0x4A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ISTRI_0A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpistri $0x0A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  istri $0x0A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ISTRM_4A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpistrm $0x4A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  istrm $0x4A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ISTRM_0A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpistrm $0x0A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  istrm $0x0A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ESTRI_4A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpestri $0x4A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  estri $0x4A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ESTRI_0A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpestri $0x0A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  estri $0x0A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ESTRM_4A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpestrm $0x4A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  estrm $0x4A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-   /* ---------------- ESTRM_0A ---------------- */
-   memset(blockC, 0x55, 80);
-   memcpy(blockC + 0,  &argL,  16);
-   memcpy(blockC + 16, &argR,  16);
-   memcpy(blockC + 24, &rdxIN, 8);
-   memcpy(blockC + 32, &raxIN, 8);
-   memcpy(blockC + 40, &rdxIN, 8);
-   __asm__ __volatile__(
-      "movupd    0(%0), %%xmm2"           "\n\t"
-      "movupd    16(%0), %%xmm13"         "\n\t"
-      "movq      32(%0), %%rdx"           "\n\t"
-      "movq      40(%0), %%rax"           "\n\t"
-      "movupd    48(%0), %%xmm0"          "\n\t"
-      "movw      64(%0), %%cx"            "\n\t"
-      "pcmpestrm $0x0A, %%xmm2, %%xmm13"  "\n\t"
-      "movupd    %%xmm0, 48(%0)"          "\n\t"
-      "movw      %%cx, 64(%0)"            "\n\t"
-      "pushfq"                            "\n\t"
-      "popq      %%r15"                   "\n\t"
-      "movq      %%r15, 72(%0)"           "\n\t"
-      : /*out*/ 
-      : /*in*/"r"(blockC) 
-      : /*trash*/"memory","cc","xmm2","xmm13","xmm0","rdx","rax","rcx","r15"
-   );
-   printf("  estrm $0x0A:  ");
-   printf("    xmm0 ");
-   show_V128( (V128*)(blockC+48) );
-   printf("  rcx %016llx  flags %08llx\n", block[8], block[9] & 0x8D5);
-
-
-
+   one_subtest(istri, 4A)
+   one_subtest(istri, 0A)
+   one_subtest(istrm, 4A)
+   one_subtest(istrm, 0A)
+   one_subtest(estri, 4A)
+   one_subtest(estri, 0A)
+   one_subtest(estrm, 4A)
+   one_subtest(estrm, 0A)
 
 }
 

@@ -48,44 +48,44 @@ main(int argc, char **argv)
 
   for (i = 0; i < COUNT; i++) {
 	  //32bit variant
-	  asm("fmadd %s0, %s1, %s2, %s3\n;" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
+	  asm("fmadd %s0, %s1, %s2, %s3" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
 	  printf("FMADD 32bit: dst = z + x * y\n");
 	  printf("%f = %f + %f * %f\n", dst, z[i], x[i], y[i]);
 	  print_float("dst", dst);
 
 	  // Floating-point negated fused multiply-add
-	  asm("fnmadd %s0, %s1, %s2, %s3\n;" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
+	  asm("fnmadd %s0, %s1, %s2, %s3" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
 	  printf("FNMADD 32bit: dst = -z + (-x) * y\n");
 	  printf("%f = -%f + (-%f) * %f\n", dst, z[i], x[i], y[i]);
 	  print_float("dst", dst);
 
-	  asm("fmsub %s0, %s1, %s2, %s3\n;" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
+	  asm("fmsub %s0, %s1, %s2, %s3" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
 	  printf("FMSUB 32bit: dst = z + (-x) * y\n");
 	  printf("%f = %f + (-%f) * %f\n", dst, z[i], x[i], y[i]);
 	  print_float("dst", dst);
 
-	  asm("fnmsub %s0, %s1, %s2, %s3\n;" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
+	  asm("fnmsub %s0, %s1, %s2, %s3" : "=w"(dst) : "w"(x[i]), "w"(y[i]), "w"(z[i]));
 	  printf("FNMSUB 32bit: dst = -z + x * y\n");
 	  printf("%f = -%f + %f * %f\n", dst, z[i], x[i], y[i]);
 	  print_float("dst", dst);
 
 	  //64bit variant
-	  asm("fmadd %d0, %d1, %d2, %d3\n;" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
+	  asm("fmadd %d0, %d1, %d2, %d3" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
 	  printf("FMADD 64bit: dst = z + x * y\n");
 	  printf("%f = %f + %f * %f\n", ddst, dz[i], dx[i], dy[i]);
 	  print_double("dst", ddst);
 
-	  asm("fnmadd %d0, %d1, %d2, %d3\n;" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
+	  asm("fnmadd %d0, %d1, %d2, %d3" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
 	  printf("FNMADD 64bit: dst = -z + (-x) * y\n");
 	  printf("%f = -%f - %f * %f\n", ddst, dz[i], dx[i], dy[i]);
 	  print_double("dst", ddst);
 
-	  asm("fmsub %d0, %d1, %d2, %d3\n;" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
+	  asm("fmsub %d0, %d1, %d2, %d3" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
 	  printf("FMSUB 64bit: dst = z + (-x) * y\n");
 	  printf("%f = %f + (-%f) * %f\n", ddst, dz[i], dx[i], dy[i]);
 	  print_double("dst", ddst);
 
-	  asm("fnmsub %d0, %d1, %d2, %d3\n;" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
+	  asm("fnmsub %d0, %d1, %d2, %d3" : "=w"(ddst) : "w"(dx[i]), "w"(dy[i]), "w"(dz[i]));
 	  printf("FNMSUB 64bit: dst = -z + x * y\n");
 	  printf("%f = -%f + %f * %f\n", ddst, dz[i], dx[i], dy[i]);
 	  print_double("dst", ddst);

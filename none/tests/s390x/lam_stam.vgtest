@@ -1,1 +1,2 @@
 prog: lam_stam
+vgopts: -q

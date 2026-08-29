@@ -12,3 +12,4 @@ stdinB: hginfo.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_helgrind_monitor
 stderrB_filter_args: hg01_all_ok.c
+cleanup: rm -f garbage.filtered.out

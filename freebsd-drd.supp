@@ -231,9 +231,7 @@
 {
    DRD-FREEBSD15-_MALLOC_POSTFORK
    drd:ConflictingAccess
-   obj:*/lib*/libc.so.7
-   obj:*/lib*/libc.so.7
-   obj:*/lib*/libc.so.7
+   ...
    fun:_malloc_postfork
 }
 

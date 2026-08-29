@@ -76,8 +76,6 @@ static Bool   special_values_initted = False;
 
 static __attribute__((noinline))
 Double negate ( Double d ) { return -d; }
-static __attribute__((noinline))
-Double divf64 ( Double x, Double y ) { return x/y; }
 
 static __attribute__((noinline))
 Double plusZero  ( void ) { return 0.0; }
@@ -90,12 +88,12 @@ static __attribute__((noinline))
 Double minusOne ( void ) { return negate(plusOne()); }
 
 static __attribute__((noinline))
-Double plusInf   ( void ) { return 1.0 / 0.0; }
+Double plusInf   ( void ) { return __builtin_inf(); }
 static __attribute__((noinline))
 Double minusInf  ( void ) { return negate(plusInf()); }
 
 static __attribute__((noinline))
-Double plusNaN  ( void ) { return divf64(plusInf(),plusInf()); }
+Double plusNaN  ( void ) { return __builtin_nan(""); }
 static __attribute__((noinline))
 Double minusNaN ( void ) { return negate(plusNaN()); }
 
@@ -122,7 +120,12 @@ static void ensure_special_values_initted ( void )
    int i;
    printf("\n");
    for (i = 0; i < 10; i++) {
-      printf("special value %d = %e\n", i, special_values[i]);
+      // Darwin and FreeBSD always output "nan" even if signbit is set
+      if (isnan(special_values[i]) && signbit(special_values[i])) {
+         printf("special value %d = -nan\n", i);
+      } else {
+         printf("special value %d = %e\n", i, special_values[i]);
+     }
    }
    printf("\n");
 }

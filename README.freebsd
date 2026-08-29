@@ -220,10 +220,12 @@ syswrap-main.c. The main things that this function does are
 
 i.    Get the syscall arguments with getSyscallArgsFromGuestState. This function
       has special handling for "syscall syscall". Since we want to validate
-      the arguments of the final syscall getSyscallArgsFromGuestState will shuffle
-      the arguments to be in the order of the final syscall (canonical order).
-      In order to be able to distinguish between "syscall syscall" and other syscalls
-      two syscall numbers may be stored, original_sysno and canonical_sysno.
+      the arguments of the final syscall getSyscallArgsFromGuestState will
+      shuffle the arguments to be in the order of the final syscall
+      (canonical order).
+      In order to be able to distinguish between "syscall syscall" and other
+      syscalls two syscall numbers may be stored, original_sysno and
+      canonical_sysno.
       Usually they are the same, only differing for "syscall syscall".
 ii.   Call getSyscallArgLayout. This is always in canonical form. The layout
       indicates whether arguments are in registers or on the stack. On FreeBSD
@@ -233,8 +235,8 @@ ii.   Call getSyscallArgLayout. This is always in canonical form. The layout
       it is a regular syscall or "syscall syscall".
 iii.  Call a pre-syscall tool hook (mainly used for syscall timing by callgrind
       and cachegrind). This uses the args from step i.
-iv.   Call the PRE handler. That uses the arguments fetched in step i and the layout
-      obtained in step ii. The PRE_REG_READX macros use the layout and
+iv.   Call the PRE handler. That uses the arguments fetched in step i and the
+      layout obtained in step ii. The PRE_REG_READX macros use the layout and
       the PRE_MEM_READ/WRITE and ARGX macros use the canonical arguments.
 
 Several things are possible at this point. The PRE may have performed the

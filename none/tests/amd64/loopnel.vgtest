@@ -1,2 +1,3 @@
 prereq: test -e ./loopnel
 prog: loopnel
+vgopts: -q

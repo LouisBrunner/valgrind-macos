@@ -1139,7 +1139,7 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
                   size32 = False;
                   break;
                case Iop_CmpLE32U:
-                  cc = MIPScc_LE;
+                  cc = MIPScc_LS;
                   size32 = True;
                   break;
                case Iop_CmpLE32S:
@@ -1175,10 +1175,10 @@ static HReg iselWordExpr_R_wrk(ISelEnv * env, IRExpr * e)
             MIPSRH *argRH = MIPSRH_Reg(argR);
             /* max (v0, s0)
                ------------
-               slt v1, v0, s0
+               sltu v1, v0, s0
                movn v0, s0, v1 */
 
-            addInstr(env, MIPSInstr_Alu(Malu_SLT, tmp, argL, argRH));
+            addInstr(env, MIPSInstr_Alu(Malu_SLTU, tmp, argL, argRH));
 #if (__mips_isa_rev >= 6)
             {
               HReg r_temp  = newVRegI(env);

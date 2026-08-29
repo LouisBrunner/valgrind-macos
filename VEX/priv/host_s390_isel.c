@@ -125,7 +125,6 @@ typedef struct {
 /* Forward declarations */
 static HReg          s390_isel_int_expr(ISelEnv *, IRExpr *);
 static s390_amode   *s390_isel_amode(ISelEnv *, IRExpr *);
-static s390_amode   *s390_isel_amode_b12_b20(ISelEnv *, IRExpr *);
 static s390_cc_t     s390_isel_cc(ISelEnv *, IRExpr *);
 static HReg          s390_isel_int1_expr(ISelEnv *env, IRExpr *expr);
 static s390_opnd_RMI s390_isel_int_expr_RMI(ISelEnv *, IRExpr *);
@@ -324,6 +323,7 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
 {
    if (expr->tag == Iex_Unop && expr->Iex.Unop.op == Iop_8Uto64 &&
        expr->Iex.Unop.arg->tag == Iex_Const) {
+      /* This actually does occur (look for Iop_8Uto64 in this file). */
       UChar value = expr->Iex.Unop.arg->Iex.Const.con->Ico.U8;
       return s390_amode_b12((Int)value, s390_hreg_gpr(0));
 
@@ -331,6 +331,9 @@ s390_isel_amode_wrk(ISelEnv *env, IRExpr *expr,
       ULong value = expr->Iex.Const.con->Ico.U64;
       if (ulong_fits_unsigned_12bit(value)) {
          return s390_amode_b12((Int)value, s390_hreg_gpr(0));
+      }
+      if (!short_displacement && ulong_fits_signed_20bit(value)) {
+         return s390_amode_b20((Int)value, s390_hreg_gpr(0));
       }
 
    } else if (expr->tag == Iex_Binop && expr->Iex.Binop.op == Iop_Add64) {
@@ -397,39 +400,6 @@ s390_isel_amode_short(ISelEnv *env, IRExpr *expr)
 
    return am;
 }
-
-
-/* Sometimes we must compile an expression into an amode that is either
-   S390_AMODE_B12 or S390_AMODE_B20. An example is the compare-and-swap
-   opcode. These opcodes do not have a variant hat accepts an addressing
-   mode with an index register.
-   Now, in theory we could, when emitting the compare-and-swap insn,
-   hack a, say, BX12 amode into a B12 amode like so:
-
-      r0 = b       # save away base register
-      b  = b + x   # add index register to base register
-      cas(b,d,...) # emit compare-and-swap using b12 amode
-      b  = r0      # restore base register
-
-   Unfortunately, emitting the compare-and-swap insn already utilises r0
-   under the covers, so the trick above is off limits, sadly. */
-static s390_amode *
-s390_isel_amode_b12_b20(ISelEnv *env, IRExpr *expr)
-{
-   s390_amode *am;
-
-   /* Address computation should yield a 64-bit value */
-   vassert(typeOfIRExpr(env->type_env, expr) == Ity_I64);
-
-   am = s390_isel_amode_wrk(env, expr, True, False);
-
-   /* Check post-condition */
-   vassert(s390_amode_is_sane(am) &&
-           (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20));
-
-   return am;
-}
-
 
 /*---------------------------------------------------------*/
 /*--- Helper functions                                  ---*/
@@ -5075,6 +5045,12 @@ s390_isel_stmt(ISelEnv *env, IRStmt *stmt)
       s390_amode *am;
       ULong new_value, old_value, difference;
 
+      /* Peephole optimization:  PUT(...) = GET:I64(...) can be thrown out
+         iff guest state offsets are identical. */
+      if (stmt->Ist.Put.data->tag == Iex_Get &&
+          stmt->Ist.Put.data->Iex.Get.offset == stmt->Ist.Put.offset)
+         return;
+
       /* Detect updates to certain guest registers. We track the contents
          of those registers as long as they contain constants. If the new
          constant is either zero or in the 8-bit neighbourhood of the
@@ -5356,7 +5332,7 @@ no_memcpy_put:
                   doHelperCall. */
                vassert(rloc.pri == RLPri_V128SpRel);
                vassert(addToSp == sizeof(V128));
-               s390_amode* am  = s390_amode_b12(rloc.spOff, s390_hreg_stack_pointer());
+               s390_amode *am  = s390_amode_for_stack_pointer(rloc.spOff);
                addInstr(env, s390_insn_load(sizeof(V128), dst, am));
                add_to_SP(env, addToSp);
                break;
@@ -5371,7 +5347,7 @@ no_memcpy_put:
    case Ist_CAS:
       if (stmt->Ist.CAS.details->oldHi == IRTemp_INVALID) {
          IRCAS *cas = stmt->Ist.CAS.details;
-         s390_amode *op2 = s390_isel_amode_b12_b20(env, cas->addr);
+         s390_amode *op2 = s390_isel_amode(env, cas->addr);
          HReg op3 = s390_isel_int_expr(env, cas->dataLo);  /* new value */
          HReg op1 = s390_isel_int_expr(env, cas->expdLo);  /* expected value */
          HReg old = lookupIRTemp(env, cas->oldLo);
@@ -5384,7 +5360,7 @@ no_memcpy_put:
          return;
       } else {
          IRCAS *cas = stmt->Ist.CAS.details;
-         s390_amode *op2 = s390_isel_amode_b12_b20(env, cas->addr);
+         s390_amode *op2 = s390_isel_amode(env, cas->addr);
          HReg r8, r9, r10, r11, r1;
          HReg op3_high = s390_isel_int_expr(env, cas->dataHi);  /* new value */
          HReg op3_low  = s390_isel_int_expr(env, cas->dataLo);  /* new value */

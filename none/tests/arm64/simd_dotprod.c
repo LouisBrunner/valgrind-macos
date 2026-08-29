@@ -47,11 +47,11 @@ static void showV128 ( V128* v )
          randV128(&block[1]); \
          randV128(&block[2]); \
          __asm__ __volatile__( \
-            "ldr q7, [%0, #0];" \
-            "ldr q8, [%0, #16];" \
-            "ldr q9, [%0, #32];" \
-            #INSN " v9." #SUFFIXD ", v7." #SUFFIXN ", v8." SUFFIXM " ; " \
-            "str q9, [%0, #32];" \
+            "ldr q7, [%0, #0]\n\t" \
+            "ldr q8, [%0, #16]\n\t" \
+            "ldr q9, [%0, #32]\n\t" \
+            #INSN " v9." #SUFFIXD ", v7." #SUFFIXN ", v8." SUFFIXM " \n\t " \
+            "str q9, [%0, #32]\n\t" \
             : : "r"(&block[0]) : "memory", "v7", "v8", "v9" \
          ); \
          printf(#INSN " v9." #SUFFIXD \

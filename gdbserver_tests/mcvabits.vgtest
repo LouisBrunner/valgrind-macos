@@ -11,4 +11,4 @@ argsB: --quiet -l 60 --nx ./t
 stdinB: mcvabits.stdinB.gdb
 stdoutB_filter: filter_gdb
 stderrB_filter: filter_memcheck_monitor
-
+cleanup: rm -f garbage.filtered.out

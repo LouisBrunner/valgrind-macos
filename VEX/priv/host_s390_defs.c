@@ -217,8 +217,6 @@ s390_amode_bx12(Int d, HReg b, HReg x)
    s390_amode *am = LibVEX_Alloc_inline(sizeof(s390_amode));
 
    vassert(fits_unsigned_12bit(d));
-   vassert(hregNumber(b) != 0);
-   vassert(hregNumber(x) != 0);
 
    am->tag = S390_AMODE_BX12;
    am->d = d;
@@ -236,8 +234,6 @@ s390_amode_bx20(Int d, HReg b, HReg x)
    s390_amode *am = LibVEX_Alloc_inline(sizeof(s390_amode));
 
    vassert(fits_signed_20bit(d));
-   vassert(hregNumber(b) != 0);
-   vassert(hregNumber(x) != 0);
 
    am->tag = S390_AMODE_BX20;
    am->d = d;
@@ -266,11 +262,9 @@ s390_amode_for_guest_state(Int offset)
 }
 
 
-/* Construct an AMODE for accessing stack pointer at OFFSET.
-   OFFSET can be at most 3 * sizeof(VexGuestS390XState) + LibVEX_N_SPILL_BYTES
-   which may be too large for a B12 addressing mode.
-   Use a B20 amode as a fallback which will be safe for any offset.
-*/
+/* Construct an AMODE for accessing the stack pointer at OFFSET.
+   Current offset values are small enough such that the following
+   implementation suffices. */
 s390_amode *
 s390_amode_for_stack_pointer(Int offset)
 {
@@ -280,7 +274,7 @@ s390_amode_for_stack_pointer(Int offset)
    if (fits_signed_20bit(offset))
       return s390_amode_b20(offset, s390_hreg_stack_pointer());
 
-   vpanic("invalid stack pointer offset");
+   vpanic("stack pointer offset out of range");
 }
 
 
@@ -380,7 +374,8 @@ s390_amode_is_sane(const s390_amode *am)
              fits_unsigned_12bit(am->d);
 
    case S390_AMODE_B20:
-      return is_virtual_gpr(am->b) && fits_signed_20bit(am->d);
+      return (is_virtual_gpr(am->b) || sameHReg(am->b, s390_hreg_gpr(0))) &&
+              fits_signed_20bit(am->d);
 
    case S390_AMODE_BX12:
       return is_virtual_gpr(am->b) && is_virtual_gpr(am->x) &&
@@ -398,7 +393,8 @@ s390_amode_is_sane(const s390_amode *am)
 static Bool
 s390_amode_is_constant(const s390_amode *am)
 {
-   return am->tag == S390_AMODE_B12 && sameHReg(am->b, s390_hreg_gpr(0));
+   return sameHReg(am->b, s390_hreg_gpr(0)) &&
+          sameHReg(am->x, s390_hreg_gpr(0));
 }
 
 
@@ -5053,8 +5049,6 @@ s390_insn_cas(UChar size, HReg op1, s390_amode *op2, HReg op3, HReg old_mem)
    s390_insn *insn = LibVEX_Alloc_inline(sizeof(s390_insn));
 
    vassert(size == 4 || size == 8);
-   vassert(hregNumber(op2->x) == 0);
-   vassert(op2->tag == S390_AMODE_B12 || op2->tag == S390_AMODE_B20);
 
    insn->tag  = S390_INSN_CAS;
    insn->size = size;
@@ -5076,9 +5070,7 @@ s390_insn_cdas(UChar size, HReg op1_high, HReg op1_low, s390_amode *op2,
    s390_cdas *cdas = LibVEX_Alloc_inline(sizeof(s390_cdas));
 
    vassert(size == 4 || size == 8);
-   vassert(hregNumber(op2->x) == 0);
    vassert(hregNumber(scratch) == 1);  /* r0,r1 used as scratch reg pair */
-   vassert(op2->tag == S390_AMODE_B12 || op2->tag == S390_AMODE_B20);
 
    insn->tag  = S390_INSN_CDAS;
    insn->size = size;
@@ -6177,7 +6169,7 @@ s390_sprintf(HChar *buf, const HChar *fmt, ...)
          continue;
 
       case 'G':     /* %G = guest state @ offset */
-         p += vex_sprintf(p, "guest[%u]", va_arg(args, UInt));
+         p += vex_sprintf(p, "%s", s390_guest_regname(va_arg(args, UInt)));
          continue;
 
       case 'C':     /* %C = condition code */
@@ -6743,7 +6735,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_ELEM_SHRL_INT: op = "v-veshrl"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %R, %A", op, insn->variant.vec_amodeop.dst,
+      s390_sprintf(buf, "%M %R,%R,%A", op, insn->variant.vec_amodeop.dst,
                    insn->variant.vec_amodeop.op1,
                    insn->variant.vec_amodeop.op2);
       break;
@@ -6753,7 +6745,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_SET_ELEM:  op = "v-vsetelem";  break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %A, %R", op, insn->variant.vec_amodeintop.dst,
+      s390_sprintf(buf, "%M %R,%A,%R", op, insn->variant.vec_amodeintop.dst,
                    insn->variant.vec_amodeintop.op2,
                    insn->variant.vec_amodeintop.op3);
       break;
@@ -6814,7 +6806,7 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_FLOAT_COMPARE_LESS: op = "v-vfloatcmpl"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %R, %R", op, insn->variant.vec_binop.dst,
+      s390_sprintf(buf, "%M %R,%R,%R", op, insn->variant.vec_binop.dst,
                    insn->variant.vec_binop.op1, insn->variant.vec_binop.op2);
       break;
 
@@ -6825,13 +6817,13 @@ s390_insn_as_string(const s390_insn *insn)
       case S390_VEC_FLOAT_MSUB: op = "v-vfloatmsub"; break;
       default: goto fail;
       }
-      s390_sprintf(buf, "%M %R, %R, %R, %R", op, insn->variant.vec_triop.dst,
+      s390_sprintf(buf, "%M %R,%R,%R,%R", op, insn->variant.vec_triop.dst,
                    insn->variant.vec_triop.op1, insn->variant.vec_triop.op2,
                    insn->variant.vec_triop.op3);
       break;
 
    case S390_INSN_VEC_REPLICATE:
-      s390_sprintf(buf, "%M %R, %R, %I", "v-vrep",
+      s390_sprintf(buf, "%M %R,%R,%I", "v-vrep",
                    insn->variant.vec_replicate.dst,
                    insn->variant.vec_replicate.op1,
                    insn->variant.vec_replicate.idx);
@@ -8289,7 +8281,7 @@ s390_insn_cc2bool_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
 {
-   UChar r1, r3, b, old;
+   UChar r1, r3, b, x, old;
    Int d;
    s390_amode *am;
 
@@ -8298,31 +8290,49 @@ s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
    old= hregNumber(insn->variant.cas.old_mem);
    am = insn->variant.cas.op2;
    b  = hregNumber(am->b);
+   x  = hregNumber(am->x);
    d  = am->d;
 
-   vassert(am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20);
+   int b_was_zero = b == 0;
+   if (x != 0) {
+      if (b != 0)
+         buf = s390_emit_AGR(buf, b, x);   // b = b + x
+      else
+         b = x;
+   }
 
    switch (insn->size) {
    case 4:
       /* r1 must not be overwritten. So copy it to R0 and let CS clobber it */
       buf = s390_emit_LR(buf, R0, r1);
-      if (am->tag == S390_AMODE_B12)
+      if (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_BX12)
          buf = s390_emit_CS(buf, R0, r3, b, d);
       else
          buf = s390_emit_CSY(buf, R0, r3, b, DISP20(d));
       /* Now copy R0 which has the old memory value to OLD */
-      return s390_emit_LR(buf, old, R0);
+      buf = s390_emit_LR(buf, old, R0);
+      break;
 
    case 8:
       /* r1 must not be overwritten. So copy it to R0 and let CS clobber it */
       buf = s390_emit_LGR(buf, R0, r1);
       buf = s390_emit_CSG(buf, R0, r3, b, DISP20(d));
       /* Now copy R0 which has the old memory value to OLD */
-      return s390_emit_LGR(buf, old, R0);
+      buf = s390_emit_LGR(buf, old, R0);
+      break;
 
    default:
       goto fail;
    }
+
+   if (x != 0) {
+      if (! b_was_zero) {
+         buf = s390_emit_SGR(buf, b, x);
+      } else {
+         /* Nothing to do because b was 0 and that is a scratch reg. */
+      }
+   }
+   return buf;
 
  fail:
    vpanic("s390_insn_cas_emit");
@@ -8333,7 +8343,7 @@ s390_insn_cas_emit(UChar *buf, const s390_insn *insn)
 static UChar *
 s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
 {
-   UChar r1, r1p1, r3, /*r3p1,*/ b, old_high, old_low, scratch;
+   UChar r1, r1p1, r3, /*r3p1,*/ b, x, old_high, old_low, scratch;
    Int d;
    s390_amode *am;
    s390_cdas *cdas = insn->variant.cdas.details;
@@ -8347,10 +8357,17 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
    scratch  = hregNumber(cdas->scratch);
    am = cdas->op2;
    b  = hregNumber(am->b);
+   x  = hregNumber(am->x);
    d  = am->d;
+   int b_was_zero = b == 0;
+   if (x != 0) {
+      if (b != 0)
+         buf = s390_emit_AGR(buf, b, x);   // b = b + x
+      else
+         b = x;
+   }
 
    vassert(scratch == 1);
-   vassert(am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_B20);
 
    switch (insn->size) {
    case 4:
@@ -8359,7 +8376,7 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
       buf = s390_emit_LR(buf, R0, r1);
       buf = s390_emit_LR(buf, scratch, r1p1);
 
-      if (am->tag == S390_AMODE_B12)
+      if (am->tag == S390_AMODE_B12 || am->tag == S390_AMODE_BX12)
          buf = s390_emit_CDS(buf, R0, r3, b, d);
       else
          buf = s390_emit_CDSY(buf, R0, r3, b, DISP20(d));
@@ -8367,7 +8384,7 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
       /* Now copy R0,scratch which has the old memory value to OLD */
       buf = s390_emit_LR(buf, old_high, R0);
       buf = s390_emit_LR(buf, old_low,  scratch);
-      return buf;
+      break;
 
    case 8:
       /* r1, r1+1 must not be overwritten. So copy them to R0,scratch
@@ -8380,11 +8397,20 @@ s390_insn_cdas_emit(UChar *buf, const s390_insn *insn)
       /* Now copy R0,scratch which has the old memory value to OLD */
       buf = s390_emit_LGR(buf, old_high, R0);
       buf = s390_emit_LGR(buf, old_low,  scratch);
-      return buf;
+      break;
 
    default:
       goto fail;
    }
+
+   if (x != 0) {
+      if (! b_was_zero) {
+         buf = s390_emit_SGR(buf, b, x);
+      } else {
+         /* Nothing to do because b was 0 and that is a scratch reg. */
+      }
+   }
+   return buf;
 
  fail:
    vpanic("s390_insn_cdas_emit");

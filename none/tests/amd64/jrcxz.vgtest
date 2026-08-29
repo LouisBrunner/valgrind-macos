@@ -1,2 +1,3 @@
 prereq: test -e jrcxz
 prog: jrcxz
+vgopts: -q

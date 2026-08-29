@@ -1,1 +1,2 @@
 prog: test_gx
+vgopts: -q

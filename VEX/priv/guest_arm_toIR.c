@@ -19041,6 +19041,12 @@ DisResult disInstr_THUMB_WRK (
             dres.jk_StopHere = Ijk_InvalICache;
             goto decode_success;
          }
+         if (sigill_diag) {
+            vex_printf ("disInstr(arm): special instruction preamble ");
+            vex_printf ("followed by unknown instruction\n");
+            vex_printf ("  this can happen when inline valgrind.h assembly ");
+            vex_printf ("is optimized (away)\n");
+         }
          /* We don't know what it is.  Set insn0 so decode_failure
             can print the insn following the Special-insn preamble. */
          insn0 = getUShortLittleEndianly(code+16);

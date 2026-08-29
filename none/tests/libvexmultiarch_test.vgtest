@@ -4,4 +4,4 @@ prog: libvexmultiarch_test
 #     multiarch endness_may_differ   word_size_may_differ
 args: 1         0                    0
 stdout_filter: ../../gdbserver_tests/filter_make_empty
-
+cleanup: rm -f garbage.filtered.out

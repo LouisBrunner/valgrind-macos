@@ -1,2 +1,3 @@
 prereq: ../../tests/os_test solaris || ../../tests/os_test linux
 prog: bug514094
+vgopts: -q

@@ -34,7 +34,12 @@ static void do_fprem ( Res* res, double x, double y )
 
 static void show ( char* s, Res* res )
 {
-  printf("%s -> 0x%04x %f\n", s, (int)res->i, (double)res->d);
+  printf("%s -> 0x%04x ", s, res->i);
+  if (isnan(res->d) && (signbit(res->d))) {
+    printf("-nan\n");
+  } else {
+    printf("%f\n", res->d);
+  }
 }
 
 int main ( void )

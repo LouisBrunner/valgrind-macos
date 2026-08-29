@@ -18,6 +18,7 @@ EXTRA_DIST = \
 	bug513598.vgtest \
 	lock_destroy_report.vgtest lock_destroy_report.stderr.exp \
 	annotate_hbefore.vgtest \
+	annotate_hbefore_fair_sched.vgtest \
 	annotate_rwlock.vgtest annotate_rwlock.stderr.exp \
 	annotate_smart_pointer.vgtest annotate_smart_pointer.stderr.exp \
 	bug322621.vgtest bug322621.stderr.exp \

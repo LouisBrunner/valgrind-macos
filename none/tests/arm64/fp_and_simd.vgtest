@@ -1,3 +1,2 @@
 prog: fp_and_simd
 vgopts: -q
-stdout_filter: filter_nan

@@ -709,6 +709,36 @@ UInt x86g_calculate_condition ( UInt/*X86Condcode*/ cond,
    }
 }
 
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calc_crc32b ( UInt crcIn, UInt b )
+{
+   UInt  i;
+   UInt crc = (b & 0xFFU) ^ crcIn;
+   for (i = 0; i < 8; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78U : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calc_crc32w ( UInt crcIn, UInt w )
+{
+   UInt  i;
+   UInt crc = (w & 0xFFFFU) ^ crcIn;
+   for (i = 0; i < 16; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78U : 0);
+   return crc;
+}
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt x86g_calc_crc32l ( UInt crcIn, UInt l )
+{
+   UInt i;
+   UInt crc = (l & 0xFFFFFFFFU) ^ crcIn;
+   for (i = 0; i < 32; i++)
+      crc = (crc >> 1) ^ ((crc & 1) ? 0x82f63b78U : 0);
+   return crc;
+}
+
 
 /* VISIBLE TO LIBVEX CLIENT */
 UInt LibVEX_GuestX86_get_eflags ( /*IN*/const VexGuestX86State* vex_state )
@@ -2476,7 +2506,8 @@ void x86g_dirtyhelper_CPUID_sse2 ( VexGuestX86State* st )
    address sizes   : 36 bits physical, 48 bits virtual
    power management:
 */
-void x86g_dirtyhelper_CPUID_sse3 ( VexGuestX86State* st )
+void x86g_dirtyhelper_CPUID_sse3 ( VexGuestX86State* st,
+                                   UInt hasLZCNT )
 {
 #  define SET_ABCD(_a,_b,_c,_d)               \
       do { st->guest_EAX = (UInt)(_a);        \
@@ -2490,7 +2521,7 @@ void x86g_dirtyhelper_CPUID_sse3 ( VexGuestX86State* st )
          SET_ABCD(0x0000000a, 0x756e6547, 0x6c65746e, 0x49656e69);
          break;
       case 0x00000001:
-         SET_ABCD(0x000006f6, 0x00020800, 0x0000e3bd, 0xbfebfbff);
+         SET_ABCD(0x000006f6, 0x00020800, 0x0080e3bd, 0xbfebfbff);
          break;
       case 0x00000002:
          SET_ABCD(0x05b0b101, 0x005657f0, 0x00000000, 0x2cb43049);
@@ -2533,9 +2564,13 @@ void x86g_dirtyhelper_CPUID_sse3 ( VexGuestX86State* st )
       case 0x80000000:
          SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80000001:
-         SET_ABCD(0x00000000, 0x00000000, 0x00000001, 0x20100000);
+      case 0x80000001: {
+         UInt ecx_extra = 0;
+         ecx_extra = hasLZCNT ? (1U << 5) : 0;
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001 | ecx_extra,
+                  0x20100000);
          break;
+         }
       case 0x80000002:
          SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);
          break;
@@ -2654,23 +2689,6 @@ void x86g_dirtyhelper_SxDT ( void *address, UInt op ) {
 
 static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
-}
-
-static inline UShort sel16x4_3 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUShort(hi32 >> 16);
-}
-static inline UShort sel16x4_2 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUShort(hi32);
-}
-static inline UShort sel16x4_1 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUShort(lo32 >> 16);
-}
-static inline UShort sel16x4_0 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUShort(lo32);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */

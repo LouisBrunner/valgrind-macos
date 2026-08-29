@@ -27,12 +27,12 @@ typedef  unsigned char           Bool;
    ULong nzcv_out; \
    ULong nzcv_in = (carryin ? (1<<29) : 0); \
    __asm__ __volatile__( \
-      "msr nzcv,%4;" \
-      "mov " #RM ",%2;" \
-      "mov " #RN ",%3;" \
-      instruction ";" \
-      "mov %0," #RD ";" \
-      "mrs %1,nzcv;" \
+      "msr nzcv,%4\n\t" \
+      "mov " #RM ",%2\n\t" \
+      "mov " #RN ",%3\n\t" \
+      instruction "\n\t" \
+      "mov %0," #RD "\n\t" \
+      "mrs %1,nzcv\n\t" \
       : "=&r" (out), "=&r" (nzcv_out) \
       : "r" (RMval), "r" (RNval), "r" (nzcv_in) \
       : #RD, #RM, #RN, "cc", "memory" \

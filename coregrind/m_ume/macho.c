@@ -245,38 +245,44 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
                                                  offset + segcmd->fileoff, 
                                                  filename);
 #if defined(VGA_arm64)
-      if (!sr_isError(res) || VG_(strcmp)(segcmd->segname, "__TEXT")) {
-        check_mmap(res, addr, filesize, "load_segment1");
-      } else {
-        // most of the time, we can't map at 0x100000000 because the kernel doesn't allow it
-        // however, most binaries start their TEXT there, so we need to slide it
-        // we just do a non-fixed mmap and let the kernel decide where to put it
-        // we then calculate the slide and apply it everywhere it's needed
-        VG_(debugLog)(2, "ume",
-          "failed with error %lu (%s), trying floating\n",
-          sr_Err(res), VG_(strerror)(sr_Err(res))
-        );
+      if (sr_isError(res) && !VG_(strcmp)(segcmd->segname, "__TEXT")) {
         unsigned int saved_prot = prot;
+
+        // sometimes the kernel refuses to mmap some files with R-X protection, so we mount with R-- and mprotect back to R-X
         if (sr_Err(res) == VKI_EPERM || sr_Err(res) == VKI_EINVAL) {
-          // sometimes the kernel refuses to mmap some files with R-X protection, so we mount with R-- and mprotect back to R-X
           prot = VKI_PROT_READ;
           VG_(debugLog)(2, "ume",
-            "failure might be due to protection, downgrading from %x to %x (will be restored post mmap through mprotect)\n",
-            saved_prot, prot
+            "failure might be due to protection (%lu / %s), downgrading from %x to %x (will be restored post mmap through mprotect)\n",
+            sr_Err(res), VG_(strerror)(sr_Err(res)), saved_prot, prot
           );
+          res = VG_(am_mmap_named_file_fixed_client)(addr, filesize, prot, fd, 
+                                                     offset + segcmd->fileoff, 
+                                                     filename);
         }
 
-        res = VG_(am_mmap_named_file_fixed_client_flags)(
-            0, filesize, prot, VKI_MAP_PRIVATE,
-            fd, offset + segcmd->fileoff, filename
-        );
+        // most of the time, we can't map at 0x100000000 because the kernel doesn't allow it
+        // however, most binaries start their TEXT there, so we need to slide it
+        // we are already using a slider, calculated using an advisory from the whole file
+        // so we have no choice but do a non-fixed mmap and let the kernel decide where to put it
+        // we can then calculate the slide and apply it everywhere it's needed (and hope we have enough contiguous space)
+        if (sr_isError(res)) {
+          VG_(debugLog)(2, "ume",
+            "failed with error %lu (%s), trying floating\n",
+            sr_Err(res), VG_(strerror)(sr_Err(res))
+          );
+          res = VG_(am_mmap_named_file_fixed_client_flags)(
+              0, filesize, prot, VKI_MAP_PRIVATE,
+              fd, offset + segcmd->fileoff, filename
+          );
+        }
 
         if (sr_isError(res)) {
           check_mmap_float(res, filesize, "load_segment1");
         } else {
           Addr new_addr = sr_Res(res);
-          out_info->text_slide = new_addr - addr;
-          slided_addr += out_info->text_slide;
+          out_info->text_slide = new_addr - segcmd->vmaddr - out_info->linker_offset;
+          slided_addr = new_addr;
+          addr = new_addr;
           VG_(debugLog)(2, "ume",
             "mmap float (file) (%#lx, %lu) succeeded with slide: %#lx\n",
             new_addr, filesize, out_info->text_slide
@@ -295,9 +301,8 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
           }
         }
       }
-#else
-      check_mmap(res, addr, filesize, "load_segment1");
 #endif
+      check_mmap(res, addr, filesize, "load_segment1");
    }
 
    // Record the segment containing the Mach headers themselves
@@ -322,6 +327,59 @@ load_segment(int fd, vki_off_t offset, vki_off_t size,
 
    return 0;
 }
+
+
+#if defined(VGA_arm64)
+/* Computes a candidate slide for the whole image.
+   Returns 0 (no candidate) if no segments were found or no advisory placement could be obtained.
+*/
+static Addr
+compute_text_slide(vki_uint8_t *headers, struct load_command *lcend)
+{
+   Addr lowest = 0;
+   Addr highest = 0;
+   Bool found = False;
+   struct load_command *lc;
+
+   for (
+     lc = (struct load_command *)(headers + sizeof(struct MACH_HEADER));
+     lc < lcend;
+     lc = (struct load_command *)(lc->cmdsize + (vki_uint8_t *)lc)
+   ) {
+      if (lc->cmd != LC_SEGMENT_CMD) {
+         continue;
+      }
+      struct SEGMENT_COMMAND *segcmd = (struct SEGMENT_COMMAND *)lc;
+      if (0 == VG_(strcmp)(segcmd->segname, SEG_PAGEZERO)) {
+         continue;
+      }
+      Addr end = VG_PGROUNDUP(segcmd->vmaddr + segcmd->vmsize);
+      if (!found || segcmd->vmaddr < lowest) {
+         lowest = segcmd->vmaddr;
+      }
+      if (end > highest) {
+         highest = end;
+      }
+      found = True;
+   }
+
+   if (!found) {
+      return 0;
+   }
+
+   Bool ok = False;
+   Addr advised = VG_(am_get_advisory_client_simple)(0, highest - lowest, &ok);
+   if (!ok) {
+      return 0;
+   }
+
+   VG_(debugLog)(2, "ume",
+      "compute_text_slide: span [%#lx, %#lx) (%#lx bytes), advised %#lx, slide %#lx\n",
+      lowest, highest, highest - lowest, advised, advised - lowest);
+
+   return advised - lowest;
+}
+#endif
 
 
 /*
@@ -649,13 +707,18 @@ load_thin_file(int fd, vki_off_t offset, vki_off_t size, unsigned long filetype,
       return -1;
    }
    headers_end = headers + len;
+   lcend = (struct load_command *)(headers + mh.sizeofcmds + sizeof(mh));
 
+#if defined(VGA_arm64)
+   if (filetype == MH_EXECUTE && out_info->text_slide == 0) {
+      out_info->text_slide = compute_text_slide(headers, lcend);
+   }
+#endif
 
    // Map some segments into client memory:
    // LC_SEGMENT    (text, data, etc)
    // UNIXSTACK     (stack)
    // LOAD_DYLINKER (dyld)
-   lcend = (struct load_command *)(headers + mh.sizeofcmds + sizeof(mh));
    for (lc = (struct load_command *)(headers + sizeof(mh));
         lc < lcend;
         lc = (struct load_command *)(lc->cmdsize + (vki_uint8_t *)lc))

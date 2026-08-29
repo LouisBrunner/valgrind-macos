@@ -1,1 +1,2 @@
 prog: lsw
+vgopts: -q

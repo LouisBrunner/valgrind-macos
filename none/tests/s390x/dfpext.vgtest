@@ -1,1 +1,2 @@
 prog: dfpext
+vgopts: -q

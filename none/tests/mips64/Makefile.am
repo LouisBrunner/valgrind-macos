@@ -3,6 +3,13 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
+noinst_HEADERS = \
+	const.h \
+	macro_fpu.h \
+	macro_int.h \
+	macro_load_store.h \
+	rounding_mode.h
+
 EXTRA_DIST = \
 	arithmetic_instruction.stdout.exp-mips64 \
 	arithmetic_instruction.stdout.exp-mips64r2 \
@@ -74,8 +81,7 @@ EXTRA_DIST = \
 	unaligned_load.stdout.exp-BE unaligned_load.stdout.exp-LE \
 	unaligned_load.vgtest \
 	unaligned_load_store.stdout.exp-LE unaligned_load_store.stdout.exp-BE \
-	unaligned_load_store.vgtest \
-	const.h macro_fpu.h macro_int.h macro_load_store.h rounding_mode.h
+	unaligned_load_store.vgtest
 
 check_PROGRAMS = \
 	allexec \

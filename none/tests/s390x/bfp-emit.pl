@@ -202,7 +202,7 @@ sub main
     test_insn("ddbr %f0,%f1");
     test_insn("dxbr %f0,%f1");
 
-    # echo "DIVIDE TO INTEGER"    not implemented
+    # echo "DIVIDE TO INTEGER"    implemented via dirty helper
     # echo "LOAD AND TEST"        insn not mapped one-to-one
 
     header("LOAD COMPLEMENT");

@@ -2017,6 +2017,24 @@ LZO_COMPILE_TIME_ASSERT_HEADER(sizeof(lzo_uintptr_t) >= sizeof(lzo_voidp))
 #  undef HAVE_MEMSET
 #endif
 
+// despite all of the above macro nastiness the code that
+// uses these macros still mixes up undefined and defined to 0
+#if !defined(HAVE_MEMCMP)
+#define HAVE_MEMCMP 0
+#endif
+
+#if !defined(HAVE_MEMCPY)
+#define HAVE_MEMCPY 0
+#endif
+
+#if !defined(HAVE_MEMMOVE)
+#define HAVE_MEMMOVE 0
+#endif
+
+#if !defined(HAVE_MEMSET)
+#define HAVE_MEMSET 0
+#endif
+
 #if !(HAVE_MEMCMP)
 #  undef memcmp
 #  define memcmp(a,b,c)         lzo_memcmp(a,b,c)
@@ -3942,7 +3960,8 @@ match:
                 m_pos -= t >> 2;
                 m_pos -= *ip++ << 2;
 #endif
-                TEST_LB(m_pos); NEED_OP(2);
+                TEST_LB(m_pos);
+                NEED_OP(2);
                 *op++ = *m_pos++; *op++ = *m_pos;
 #endif
                 goto match_done;
@@ -4299,7 +4318,8 @@ first_literal_run:
         m_pos -= t >> 2;
         m_pos -= *ip++ << 2;
 #endif
-        TEST_LB(m_pos); NEED_OP(3);
+        TEST_LB(m_pos);
+        NEED_OP(3);
         *op++ = *m_pos++; *op++ = *m_pos++; *op++ = *m_pos;
 #endif
         goto match_done;
@@ -4355,7 +4375,9 @@ match:
                 }
                 t = (t >> 5) - 1;
 #endif
-                TEST_LB(m_pos); assert(t > 0); NEED_OP(t+3-1);
+                TEST_LB(m_pos);
+                assert(t > 0);
+                NEED_OP(t+3-1);
                 goto copy_match;
 #endif
             }
@@ -4468,7 +4490,8 @@ match:
                 m_pos -= t >> 2;
                 m_pos -= *ip++ << 2;
 #endif
-                TEST_LB(m_pos); NEED_OP(2);
+                TEST_LB(m_pos);
+                NEED_OP(2);
                 *op++ = *m_pos++; *op++ = *m_pos;
 #endif
                 goto match_done;
@@ -4481,7 +4504,9 @@ match:
 
 #else
 
-            TEST_LB(m_pos); assert(t > 0); NEED_OP(t+3-1);
+            TEST_LB(m_pos);
+            assert(t > 0);
+            NEED_OP(t+3-1);
 #if defined(LZO_UNALIGNED_OK_8) && defined(LZO_UNALIGNED_OK_4)
             if (op - m_pos >= 8)
             {

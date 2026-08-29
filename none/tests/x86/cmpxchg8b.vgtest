@@ -1,1 +1,2 @@
 prog: cmpxchg8b
+vgopts: -q

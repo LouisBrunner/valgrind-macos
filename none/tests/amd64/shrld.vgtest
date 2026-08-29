@@ -1,2 +1,3 @@
 prereq: test -e shrld
 prog: shrld
+vgopts: -q

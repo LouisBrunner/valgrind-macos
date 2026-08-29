@@ -1,1 +1,2 @@
 prog: mvc
+vgopts: -q

@@ -3547,7 +3547,7 @@ void amd64g_dirtyhelper_CPUID_avx_and_cx16 ( VexGuestAMD64State* st,
 */
 void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
                                      ULong hasF16C, ULong hasRDRAND,
-                                     ULong hasRDSEED )
+                                     ULong hasRDSEED, ULong hasLZCNT )
 {
    vassert((hasF16C >> 1) == 0ULL);
    vassert((hasRDRAND >> 1) == 0ULL);
@@ -3649,9 +3649,13 @@ void amd64g_dirtyhelper_CPUID_avx2 ( VexGuestAMD64State* st,
       case 0x80000000:
          SET_ABCD(0x80000008, 0x00000000, 0x00000000, 0x00000000);
          break;
-      case 0x80000001:
-         SET_ABCD(0x00000000, 0x00000000, 0x00000021, 0x2c100800);
+      case 0x80000001: {
+         ULong ecx_extra = 0;
+         ecx_extra = hasLZCNT ? (1U << 5) : 0;
+         SET_ABCD(0x00000000, 0x00000000, 0x00000001 | ecx_extra,
+                  0x2c100800);
          break;
+      }
       case 0x80000002:
          SET_ABCD(0x65746e49, 0x2952286c, 0x726f4320, 0x4d542865);
          break;
@@ -4041,23 +4045,6 @@ static inline ULong mk32x2 ( UInt w1, UInt w0 ) {
    return (((ULong)w1) << 32) | ((ULong)w0);
 }
 
-static inline UShort sel16x4_3 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUShort(hi32 >> 16);
-}
-static inline UShort sel16x4_2 ( ULong w64 ) {
-   UInt hi32 = toUInt(w64 >> 32);
-   return toUShort(hi32);
-}
-static inline UShort sel16x4_1 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUShort(lo32 >> 16);
-}
-static inline UShort sel16x4_0 ( ULong w64 ) {
-   UInt lo32 = toUInt(w64);
-   return toUShort(lo32);
-}
-
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 ULong amd64g_calculate_mmx_pmaddwd ( ULong xx, ULong yy )
 {
@@ -4084,22 +4071,6 @@ ULong amd64g_calculate_mmx_psadbw ( ULong xx, ULong yy )
    t += (UInt)abdU8( sel8x8_0(xx), sel8x8_0(yy) );
    t &= 0xFFFF;
    return (ULong)t;
-}
-
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong amd64g_calculate_sse_phminposuw ( ULong sLo, ULong sHi )
-{
-   UShort t, min;
-   UInt   idx;
-   t = sel16x4_0(sLo); if (True)    { min = t; idx = 0; }
-   t = sel16x4_1(sLo); if (t < min) { min = t; idx = 1; }
-   t = sel16x4_2(sLo); if (t < min) { min = t; idx = 2; }
-   t = sel16x4_3(sLo); if (t < min) { min = t; idx = 3; }
-   t = sel16x4_0(sHi); if (t < min) { min = t; idx = 4; }
-   t = sel16x4_1(sHi); if (t < min) { min = t; idx = 5; }
-   t = sel16x4_2(sHi); if (t < min) { min = t; idx = 6; }
-   t = sel16x4_3(sHi); if (t < min) { min = t; idx = 7; }
-   return ((ULong)(idx << 16)) | ((ULong)min);
 }
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */

@@ -1,1 +1,2 @@
 prog: twi_tdi
+vgopts: -q

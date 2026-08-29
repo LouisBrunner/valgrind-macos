@@ -147,50 +147,50 @@ sbcs w3, w4, w5 :: rd 00000000ffffffff rm 0000000080000000, rn 0000000080000000,
 sbcs w3, w4, w5 :: rd 0000000000000000 rm 0000000080000000, rn 0000000080000000, cin 1, nzcv 60000000  ZC 
 bfm x2, x4, #0, #63 :: rd 5555555555555555 rn 5555555555555555, cin 0, nzcv 00000000     
 bfm x2, x4, #0, #63 :: rd aaaaaaaaaaaaaaaa rn aaaaaaaaaaaaaaaa, cin 0, nzcv 00000000     
-cmp x4, x5 ; cset x3, ne :: rd 0000000000000001 rm 0000000000003039, rn 0000000000001a85, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; cset x3, eq :: rd 0000000000000000 rm 0000000000003039, rn 0000000000001a85, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; cset x3, ne :: rd 0000000000000000 rm 000000ab12345678, rn 000000cd12345678, cin 0, nzcv 60000000  ZC 
-cmp w4, w5 ; cset x3, eq :: rd 0000000000000000 rm 000000cd12345678, rn 000000cd12345670, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000020000000 rm db432311d1e3a1d0, rn a6325ae016fbd710, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000000000000 rm 192e7217e1ab63b0, rn fd370f11bfcd4a4a, cin 0, nzcv 00000000     
-cmp x4, x5 ; mrs x3, nzcv :: rd 00000000a0000000 rm fd79baaee550b488, rn 5bc94f0d3ee4863a, cin 0, nzcv a0000000 N C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000080000000 rm c58586ea2c6954df, rn e861540945421773, cin 0, nzcv 80000000 N   
-cmp x4, x5 ; mrs x3, nzcv :: rd 00000000a0000000 rm e51579fec3892795, rn 507865169b052546, cin 0, nzcv a0000000 N C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000090000000 rm 1b834ed5b21de6b5, rn 9a1140d0fd1dbf6c, cin 0, nzcv 90000000 N  V
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000000000000 rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 00000000     
-cmp x4, x5 ; mrs x3, nzcv :: rd 00000000a0000000 rm fc9a9d8be2434f5e, rn 6a13f7db3dfa4a3f, cin 0, nzcv a0000000 N C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000020000000 rm d98d2022a9b876ab, rn a7e754e8ff3a554e, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000080000000 rm 33566e6515990527, rn 3d7e7390195d82e2, cin 0, nzcv 80000000 N   
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000020000000 rm e57b3a514f5207f4, rn 8ef7bac0f0ac903a, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000080000000 rm 9d4a481b12743bf8, rn 9f014e8d2644ee47, cin 0, nzcv 80000000 N   
-cmp x4, x5 ; mrs x3, nzcv :: rd 00000000a0000000 rm efdd33d64e6d6a8b, rn 44e875422d202c19, cin 0, nzcv a0000000 N C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000020000000 rm 5c6c9b2a7f109f5b, rn 568ee275e665f075, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000030000000 rm 9b14b0a4fbbd2c11, rn 6b5bac44aaa93980, cin 0, nzcv 30000000   CV
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000000000000 rm 2e01dd24f43ab651, rn e7d992b63e93eed4, cin 0, nzcv 00000000     
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000020000000 rm f51464d0135fb75c, rn cb60e536ad0b94e9, cin 0, nzcv 20000000   C 
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000080000000 rm ca38ffb7de3bd6b0, rn eef048dd9ed9490c, cin 0, nzcv 80000000 N   
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000000000000 rm 54ec6fe1530c7d86, rn e7aa4d6f69edb5d0, cin 0, nzcv 00000000     
-cmp x4, x5 ; mrs x3, nzcv :: rd 0000000080000000 rm 401b30e3b8b5d629, rn 635a5c613cdb7919, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 00000000a0000000 rm db432311d1e3a1d0, rn a6325ae016fbd710, cin 0, nzcv a0000000 N C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000020000000 rm 192e7217e1ab63b0, rn fd370f11bfcd4a4a, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 00000000a0000000 rm fd79baaee550b488, rn 5bc94f0d3ee4863a, cin 0, nzcv a0000000 N C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000080000000 rm c58586ea2c6954df, rn e861540945421773, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000020000000 rm e51579fec3892795, rn 507865169b052546, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000080000000 rm 1b834ed5b21de6b5, rn 9a1140d0fd1dbf6c, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000020000000 rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 00000000a0000000 rm fc9a9d8be2434f5e, rn 6a13f7db3dfa4a3f, cin 0, nzcv a0000000 N C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000080000000 rm d98d2022a9b876ab, rn a7e754e8ff3a554e, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000080000000 rm 33566e6515990527, rn 3d7e7390195d82e2, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000000000000 rm e57b3a514f5207f4, rn 8ef7bac0f0ac903a, cin 0, nzcv 00000000     
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000080000000 rm 9d4a481b12743bf8, rn 9f014e8d2644ee47, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000020000000 rm efdd33d64e6d6a8b, rn 44e875422d202c19, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000090000000 rm 5c6c9b2a7f109f5b, rn 568ee275e665f075, cin 0, nzcv 90000000 N  V
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000020000000 rm 9b14b0a4fbbd2c11, rn 6b5bac44aaa93980, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 00000000a0000000 rm 2e01dd24f43ab651, rn e7d992b63e93eed4, cin 0, nzcv a0000000 N C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000000000000 rm f51464d0135fb75c, rn cb60e536ad0b94e9, cin 0, nzcv 00000000     
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000020000000 rm ca38ffb7de3bd6b0, rn eef048dd9ed9490c, cin 0, nzcv 20000000   C 
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000080000000 rm 54ec6fe1530c7d86, rn e7aa4d6f69edb5d0, cin 0, nzcv 80000000 N   
-cmp w4, w5 ; mrs x3, nzcv :: rd 0000000030000000 rm 401b30e3b8b5d629, rn 635a5c613cdb7919, cin 0, nzcv 30000000   CV
+cmp x4, x5; cset x3, ne :: rd 0000000000000001 rm 0000000000003039, rn 0000000000001a85, cin 0, nzcv 20000000   C 
+cmp x4, x5; cset x3, eq :: rd 0000000000000000 rm 0000000000003039, rn 0000000000001a85, cin 0, nzcv 20000000   C 
+cmp w4, w5; cset x3, ne :: rd 0000000000000000 rm 000000ab12345678, rn 000000cd12345678, cin 0, nzcv 60000000  ZC 
+cmp w4, w5; cset x3, eq :: rd 0000000000000000 rm 000000cd12345678, rn 000000cd12345670, cin 0, nzcv 20000000   C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000020000000 rm db432311d1e3a1d0, rn a6325ae016fbd710, cin 0, nzcv 20000000   C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000000000000 rm 192e7217e1ab63b0, rn fd370f11bfcd4a4a, cin 0, nzcv 00000000     
+cmp x4, x5; mrs x3, nzcv :: rd 00000000a0000000 rm fd79baaee550b488, rn 5bc94f0d3ee4863a, cin 0, nzcv a0000000 N C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000080000000 rm c58586ea2c6954df, rn e861540945421773, cin 0, nzcv 80000000 N   
+cmp x4, x5; mrs x3, nzcv :: rd 00000000a0000000 rm e51579fec3892795, rn 507865169b052546, cin 0, nzcv a0000000 N C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000090000000 rm 1b834ed5b21de6b5, rn 9a1140d0fd1dbf6c, cin 0, nzcv 90000000 N  V
+cmp x4, x5; mrs x3, nzcv :: rd 0000000000000000 rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 00000000     
+cmp x4, x5; mrs x3, nzcv :: rd 00000000a0000000 rm fc9a9d8be2434f5e, rn 6a13f7db3dfa4a3f, cin 0, nzcv a0000000 N C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000020000000 rm d98d2022a9b876ab, rn a7e754e8ff3a554e, cin 0, nzcv 20000000   C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000080000000 rm 33566e6515990527, rn 3d7e7390195d82e2, cin 0, nzcv 80000000 N   
+cmp x4, x5; mrs x3, nzcv :: rd 0000000020000000 rm e57b3a514f5207f4, rn 8ef7bac0f0ac903a, cin 0, nzcv 20000000   C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000080000000 rm 9d4a481b12743bf8, rn 9f014e8d2644ee47, cin 0, nzcv 80000000 N   
+cmp x4, x5; mrs x3, nzcv :: rd 00000000a0000000 rm efdd33d64e6d6a8b, rn 44e875422d202c19, cin 0, nzcv a0000000 N C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000020000000 rm 5c6c9b2a7f109f5b, rn 568ee275e665f075, cin 0, nzcv 20000000   C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000030000000 rm 9b14b0a4fbbd2c11, rn 6b5bac44aaa93980, cin 0, nzcv 30000000   CV
+cmp x4, x5; mrs x3, nzcv :: rd 0000000000000000 rm 2e01dd24f43ab651, rn e7d992b63e93eed4, cin 0, nzcv 00000000     
+cmp x4, x5; mrs x3, nzcv :: rd 0000000020000000 rm f51464d0135fb75c, rn cb60e536ad0b94e9, cin 0, nzcv 20000000   C 
+cmp x4, x5; mrs x3, nzcv :: rd 0000000080000000 rm ca38ffb7de3bd6b0, rn eef048dd9ed9490c, cin 0, nzcv 80000000 N   
+cmp x4, x5; mrs x3, nzcv :: rd 0000000000000000 rm 54ec6fe1530c7d86, rn e7aa4d6f69edb5d0, cin 0, nzcv 00000000     
+cmp x4, x5; mrs x3, nzcv :: rd 0000000080000000 rm 401b30e3b8b5d629, rn 635a5c613cdb7919, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 00000000a0000000 rm db432311d1e3a1d0, rn a6325ae016fbd710, cin 0, nzcv a0000000 N C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000020000000 rm 192e7217e1ab63b0, rn fd370f11bfcd4a4a, cin 0, nzcv 20000000   C 
+cmp w4, w5; mrs x3, nzcv :: rd 00000000a0000000 rm fd79baaee550b488, rn 5bc94f0d3ee4863a, cin 0, nzcv a0000000 N C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000080000000 rm c58586ea2c6954df, rn e861540945421773, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 0000000020000000 rm e51579fec3892795, rn 507865169b052546, cin 0, nzcv 20000000   C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000080000000 rm 1b834ed5b21de6b5, rn 9a1140d0fd1dbf6c, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 0000000020000000 rm 2b7c5939d7c0f528, rn b73870a5a6630162, cin 0, nzcv 20000000   C 
+cmp w4, w5; mrs x3, nzcv :: rd 00000000a0000000 rm fc9a9d8be2434f5e, rn 6a13f7db3dfa4a3f, cin 0, nzcv a0000000 N C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000080000000 rm d98d2022a9b876ab, rn a7e754e8ff3a554e, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 0000000080000000 rm 33566e6515990527, rn 3d7e7390195d82e2, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 0000000000000000 rm e57b3a514f5207f4, rn 8ef7bac0f0ac903a, cin 0, nzcv 00000000     
+cmp w4, w5; mrs x3, nzcv :: rd 0000000080000000 rm 9d4a481b12743bf8, rn 9f014e8d2644ee47, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 0000000020000000 rm efdd33d64e6d6a8b, rn 44e875422d202c19, cin 0, nzcv 20000000   C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000090000000 rm 5c6c9b2a7f109f5b, rn 568ee275e665f075, cin 0, nzcv 90000000 N  V
+cmp w4, w5; mrs x3, nzcv :: rd 0000000020000000 rm 9b14b0a4fbbd2c11, rn 6b5bac44aaa93980, cin 0, nzcv 20000000   C 
+cmp w4, w5; mrs x3, nzcv :: rd 00000000a0000000 rm 2e01dd24f43ab651, rn e7d992b63e93eed4, cin 0, nzcv a0000000 N C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000000000000 rm f51464d0135fb75c, rn cb60e536ad0b94e9, cin 0, nzcv 00000000     
+cmp w4, w5; mrs x3, nzcv :: rd 0000000020000000 rm ca38ffb7de3bd6b0, rn eef048dd9ed9490c, cin 0, nzcv 20000000   C 
+cmp w4, w5; mrs x3, nzcv :: rd 0000000080000000 rm 54ec6fe1530c7d86, rn e7aa4d6f69edb5d0, cin 0, nzcv 80000000 N   
+cmp w4, w5; mrs x3, nzcv :: rd 0000000030000000 rm 401b30e3b8b5d629, rn 635a5c613cdb7919, cin 0, nzcv 30000000   CV
 ADD imm12
 add x3, x4, #0x876, lsl #0 :: rd 5555555555555dcb rn 5555555555555555, cin 0, nzcv 00000000     
 add x3, x4, #0x876, lsl #0 :: rd 0000000000000875 rn ffffffffffffffff, cin 0, nzcv 00000000     
@@ -330,7 +330,7 @@ movn x27, #0x987, lsl #16 :: rd fffffffff678ffff cin 0, nzcv 00000000
 movn x27, #0x987, lsl #32 :: rd fffff678ffffffff cin 0, nzcv 00000000     
 movn x27, #0x987, lsl #48 :: rd f678ffffffffffff cin 0, nzcv 00000000     
 MOVK
-movn x27, #0xdef, lsl #48 ; movk x27, #0x987, lsl #0 ; movk x27, #0xabc, lsl #32 ; movk x27, #0x5123, lsl #16  :: rd f2100abc51230987 cin 0, nzcv 00000000     
+movn x27, #0xdef, lsl #48; movk x27, #0x987, lsl #0; movk x27, #0xabc, lsl #32; movk x27, #0x5123, lsl #16   :: rd f2100abc51230987 cin 0, nzcv 00000000     
 EXTR(64)
 extr x3, x4, x5, #0 :: rd a6325ae016fbd710 rm db432311d1e3a1d0, rn a6325ae016fbd710, cin 0, nzcv 00000000     
 extr x3, x4, x5, #0 :: rd fd370f11bfcd4a4a rm 192e7217e1ab63b0, rn fd370f11bfcd4a4a, cin 0, nzcv 00000000     
@@ -848,71 +848,71 @@ msub w30,w26,w28,w27 :: rd 00000000597d184d rm d7588df1ecb46297, rn 26557c93f444
 msub w30,w26,w28,w27 :: rd 000000001ef07c10 rm 4f0c54f61ac8f7bd, rn 99b1794bbb4b19cd, ra 52d448b3d56f5369, cin 0, nzcv 00000000     
 msub w30,w26,w28,w27 :: rd 00000000b784c87d rm 5370e6469b1e28ed, rn 0a1925a090f7aaf5, ra a7e754e8ff3a554e, cin 0, nzcv 00000000     
 CS{EL,INC,INV,NEG}(64)
-cmp x17,x18 ; csel x16,x17,x18,eq :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,cc :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,mi :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,vc :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csel x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,eq :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,cc :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,mi :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,vc :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinc x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,eq :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,cc :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,mi :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,vc :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csinv x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,eq :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,cc :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,mi :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,vc :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
-cmp x17,x18 ; csneg x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,eq :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,cc :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,mi :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,vc :: rd 7a6c3d1a51246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csel x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,eq :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,cc :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,mi :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,vc :: rd 7a6c3d1a51246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinc x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,eq :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,cc :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,mi :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,vc :: rd 8593c2e5aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csinv x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,eq :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,ne :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,cc :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,cs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,mi :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,pl :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,vc :: rd 8593c2e5aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
+cmp x17,x18; csneg x16,x17,x18,vs :: rd afa6ef803bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 30000000   CV
 CS{EL,INC,INV,NEG}(32)
-cmp w17,w18 ; csel w16,w17,w18,eq :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,cs :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,pl :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csel w16,w17,w18,vs :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,eq :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,cs :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,pl :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinc w16,w17,w18,vs :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,eq :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,cs :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,pl :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csinv w16,w17,w18,vs :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,eq :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,cs :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,pl :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
-cmp w17,w18 ; csneg w16,w17,w18,vs :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,eq :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,cs :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,pl :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csel w16,w17,w18,vs :: rd 0000000051246495 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,eq :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,cs :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,pl :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinc w16,w17,w18,vs :: rd 0000000051246496 rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,eq :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,cs :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,pl :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csinv w16,w17,w18,vs :: rd 00000000aedb9b6a rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,eq :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,ne :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,cc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,cs :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,mi :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,pl :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,vc :: rd 000000003bc9291c rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
+cmp w17,w18; csneg w16,w17,w18,vs :: rd 00000000aedb9b6b rm afa6ef803bc9291c, rn 7a6c3d1a51246495, cin 0, nzcv 80000000 N   
 ADD/SUB(extended reg)(64)
 add x21,x22,w23,uxtb #0 :: rd a3ca7e66297c4707 rm a3ca7e66297c469b, rn a67e09b8e126596c, cin 0, nzcv 00000000     
 add x21,x22,w23,uxtb #1 :: rd 09fb0ab6a60b350b rm 09fb0ab6a60b34c3, rn 2584971088d90924, cin 0, nzcv 00000000     

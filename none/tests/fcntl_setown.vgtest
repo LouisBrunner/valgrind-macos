@@ -1,1 +1,2 @@
 prog: fcntl_setown
+vgopts: -q

@@ -459,26 +459,16 @@ void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem,
    VG_(sigfillset)(&blockall);
    VG_(sigprocmask)(VKI_SIG_SETMASK, &blockall, NULL);
 
-   /* For 10.7 and earlier, |reuse| appeared to be used as a simple
-      boolean.  In 10.8 and later its name changed to |flags| and has
-      various other bits OR-d into it too, so it's necessary to fish
-      out just the relevant parts.  Hence: */
-#  if DARWIN_VERS <= DARWIN_10_7
-   Bool is_reuse = reuse != 0;
-#  elif DARWIN_VERS > DARWIN_10_7
    Bool is_reuse = (reuse & 0x20000 /* == WQ_FLAG_THREAD_REUSE */) != 0;
-#  else
-#    error "Unsupported Darwin version"
-#  endif
 
    if (is_reuse) {
 
      /* For whatever reason, tst->os_state.pthread appear to have a
         constant offset of 96 on 10.7, but zero on 10.6 and 10.5.  No
         idea why. */
-#      if DARWIN_VERS <= DARWIN_10_6 || DARWIN_VERS >= DARWIN_10_13
+#      if DARWIN_VERS >= DARWIN_10_13
        UWord magic_delta = 0;
-#      elif DARWIN_VERS == DARWIN_10_7 || DARWIN_VERS == DARWIN_10_8
+#      elif DARWIN_VERS == DARWIN_10_8
        UWord magic_delta = 0x60;
 #      elif DARWIN_VERS == DARWIN_10_9 \
             || DARWIN_VERS == DARWIN_10_10 \

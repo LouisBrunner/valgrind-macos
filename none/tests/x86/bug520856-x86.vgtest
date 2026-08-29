@@ -1,0 +1,2 @@
+prog: bug520856-x86
+vgopts: -q

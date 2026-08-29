@@ -134,15 +134,15 @@ static void showV128 ( V128* v )
         randV128(&block[4]); \
         randV128(&block[5]); \
         __asm__ __volatile__( \
-           "mov   x30, #0 ; msr fpsr, x30 ; " \
-           "ldr   q"#VECREG1NO", [%0, #0]  ; " \
-           "ldr   q"#VECREG2NO", [%0, #16] ; " \
-           "ldr   q"#VECREG3NO", [%0, #32] ; " \
-           INSN " ; " \
-           "str   q"#VECREG1NO", [%0, #48] ; " \
-           "str   q"#VECREG2NO", [%0, #64] ; " \
-           "str   q"#VECREG3NO", [%0, #80] ; " \
-           "mrs   x30, fpsr ; str x30, [%0, #96] " \
+           "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+           "ldr   q"#VECREG1NO", [%0, #0] \n\t" \
+           "ldr   q"#VECREG2NO", [%0, #16]\n\t" \
+           "ldr   q"#VECREG3NO", [%0, #32]\n\t" \
+           INSN "\n\t" \
+           "str   q"#VECREG1NO", [%0, #48]\n\t" \
+           "str   q"#VECREG2NO", [%0, #64]\n\t" \
+           "str   q"#VECREG3NO", [%0, #80]\n\t" \
+           "mrs   x30, fpsr\n\tstr x30, [%0, #96] " \
            : : "r"(&block[0]) \
            : "memory", "v"#VECREG1NO, "v"#VECREG2NO, "v"#VECREG3NO, "x30" \
         ); \
@@ -171,15 +171,15 @@ static void showV128 ( V128* v )
      block[1] = *vin0; \
      block[2] = *vin1; \
      __asm__ __volatile__( \
-        "mov   x30, #0 ; msr fpsr, x30 ; " \
-        "ldr   q"#VECREGOUT", [%0, #0]  ; " \
-        "ldr   q"#VECREGIN0", [%0, #16] ; " \
-        "ldr   q"#VECREGIN1", [%0, #32] ; " \
-        INSN " ; " \
-        "str   q"#VECREGOUT", [%0, #48] ; " \
-        "str   q"#VECREGIN0", [%0, #64] ; " \
-        "str   q"#VECREGIN1", [%0, #80] ; " \
-        "mrs   x30, fpsr ; str x30, [%0, #96] " \
+        "mov   x30, #0\n\tmsr fpsr, x30\n\t" \
+        "ldr   q"#VECREGOUT", [%0, #0] \n\t" \
+        "ldr   q"#VECREGIN0", [%0, #16]\n\t" \
+        "ldr   q"#VECREGIN1", [%0, #32]\n\t" \
+        INSN "\n\t" \
+        "str   q"#VECREGOUT", [%0, #48]\n\t" \
+        "str   q"#VECREGIN0", [%0, #64]\n\t" \
+        "str   q"#VECREGIN1", [%0, #80]\n\t" \
+        "mrs   x30, fpsr\n\tstr x30, [%0, #96] " \
         : : "r"(&block[0]) \
         : "memory", "v"#VECREGOUT, "v"#VECREGIN0, "v"#VECREGIN1, "x30" \
      ); \

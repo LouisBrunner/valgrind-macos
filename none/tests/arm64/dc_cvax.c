@@ -12,7 +12,11 @@ int main(void)
    asm volatile("mrs %0, dczid_el0" : "=r" (check_dc_zva));
    asm volatile("dc cvac, %0" :: "r" (buf));
    asm volatile("dc cvau, %0" :: "r" (buf));
+#if defined(__APPLE__)
+   check_dc_cvap = 2 | 1; // both FEAT_DPB & FEAT_DPB2
+#else
    asm volatile("mrs %0, id_aa64isar1_el1" : "=r" (check_dc_cvap));
+#endif
    if (check_dc_cvap & 0x3) {
       asm volatile("add x8, sp, #0x40\n"
                    ".inst 0xd50b7c28\n");

@@ -1,0 +1,29 @@
+diebr (m4=5)
+	7 / 2 = 3  rem=1  cc=0
+	-6 / 2 = -3  rem=-0  cc=0
+	-5 / inf = -0  rem=-5  cc=0
+	inf / 3 = nan  rem=nan  cc=1
+	5 / 0 = nan  rem=nan  cc=1
+	nan / 3 = nan  rem=nan  cc=1
+	3 / nan = nan  rem=nan  cc=1
+	1.4013e-45 / 1 = 0  rem=1.4013e-45  cc=0
+	5 / 9.99995e-41 = 7.9655e-18  rem=3.24493e-07  cc=3
+didbr (m4=5)
+	7 / 2 = 3  rem=1  cc=0
+	-6 / 2 = -3  rem=-0  cc=0
+	-5 / inf = -0  rem=-5  cc=0
+	inf / 3 = nan  rem=nan  cc=1
+	5 / 0 = nan  rem=nan  cc=1
+	nan / 3 = nan  rem=nan  cc=1
+	3 / nan = nan  rem=nan  cc=1
+	1.5e-45 / 1 = 0  rem=1.5e-45  cc=0
+	5 / 1e-40 = 5e+40  rem=3.22535e-16  cc=2
+didbr (m4=1)
+	5 / 2 = 3  rem=-1  cc=0
+	-5 / 2 = -3  rem=1  cc=0
+didbr (m4=4)
+	7 / 4 = 2  rem=-1  cc=0
+	5 / 2 = 2  rem=1  cc=0
+didbr (m4=6)
+	5 / 2 = 3  rem=-1  cc=0
+	5 / -2 = -2  rem=1  cc=0

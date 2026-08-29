@@ -1,1 +1,2 @@
 prog: rcrl
+vgopts: -q

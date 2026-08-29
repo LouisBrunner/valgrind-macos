@@ -31,6 +31,8 @@
 #ifndef __PUB_CORE_MACH_H
 #define __PUB_CORE_MACH_H
 
+#include "config.h" // DAWIN_VERS
+
 #define DARWIN_FAKE_MEMORY_PATH "/dev/macos/internals/"
 
 //--------------------------------------------------------------------

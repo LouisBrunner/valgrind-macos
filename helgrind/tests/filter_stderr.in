@@ -19,14 +19,14 @@ fi |
 
 # And FreeBSD
 if $dir/../../tests/os_test freebsd; then
-   awk -f $dir/filter_freebsd.awk
+   $dir/filter_freebsd.awk
 else
    cat
 fi |
 
 # And Darwin
 if $dir/../../tests/os_test darwin; then
-   awk -f $dir/filter_darwin.awk
+   $dir/filter_darwin.awk
 else
    cat
 fi |

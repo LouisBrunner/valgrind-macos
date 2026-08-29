@@ -8,18 +8,18 @@ ldr x21, [x22], #-24 :: rd f7f6f5f4f3f2f1f0 rn (hidden), cin 0, nzcv 00000000
 ldr x21, [x22, #-40]! :: rd cfcecdcccbcac9c8 rn (hidden), cin 0, nzcv 00000000     
 ldr x21, [x22, #-48] :: rd c7c6c5c4c3c2c1c0 rn (hidden), cin 0, nzcv 00000000     
 LDUR,STUR (immediate, simm9): STR cases are MISSINGLDP,STP (immediate, simm7) (STR cases and wb check is MISSING)
-ldp x21, x28, [x22], #-24 ; add x21,x21,x28 :: rd f7f5f3f1efedebe8 rn (hidden), cin 0, nzcv 00000000     
-ldp x21, x28, [x22], #-24 ; eor x21,x21,x28 :: rd 0808080808080808 rn (hidden), cin 0, nzcv 00000000     
-ldp x21, x28, [x22, #-40]! ; add x21,x21,x28 :: rd a7a5a3a19f9d9b98 rn (hidden), cin 0, nzcv 00000000     
-ldp x21, x28, [x22, #-40]! ; eor x21,x21,x28 :: rd 1818181818181818 rn (hidden), cin 0, nzcv 00000000     
-ldp x21, x28, [x22, #-40] ; add x21,x21,x28 :: rd a7a5a3a19f9d9b98 rn (hidden), cin 0, nzcv 00000000     
-ldp x21, x28, [x22, #-40] ; eor x21,x21,x28 :: rd 1818181818181818 rn (hidden), cin 0, nzcv 00000000     
-ldp w21, w28, [x22], #-24 ; add x21,x21,x28 :: rd 00000001ebe9e7e4 rn (hidden), cin 0, nzcv 00000000     
-ldp w21, w28, [x22], #-24 ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
-ldp w21, w28, [x22, #-40]! ; add x21,x21,x28 :: rd 000000019b999794 rn (hidden), cin 0, nzcv 00000000     
-ldp w21, w28, [x22, #-40]! ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
-ldp w21, w28, [x22, #-40] ; add x21,x21,x28 :: rd 000000019b999794 rn (hidden), cin 0, nzcv 00000000     
-ldp w21, w28, [x22, #-40] ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
+ldp x21, x28, [x22], #-24; add x21,x21,x28 :: rd f7f5f3f1efedebe8 rn (hidden), cin 0, nzcv 00000000     
+ldp x21, x28, [x22], #-24; eor x21,x21,x28 :: rd 0808080808080808 rn (hidden), cin 0, nzcv 00000000     
+ldp x21, x28, [x22, #-40]!; add x21,x21,x28 :: rd a7a5a3a19f9d9b98 rn (hidden), cin 0, nzcv 00000000     
+ldp x21, x28, [x22, #-40]!; eor x21,x21,x28 :: rd 1818181818181818 rn (hidden), cin 0, nzcv 00000000     
+ldp x21, x28, [x22, #-40]; add x21,x21,x28 :: rd a7a5a3a19f9d9b98 rn (hidden), cin 0, nzcv 00000000     
+ldp x21, x28, [x22, #-40]; eor x21,x21,x28 :: rd 1818181818181818 rn (hidden), cin 0, nzcv 00000000     
+ldp w21, w28, [x22], #-24; add x21,x21,x28 :: rd 00000001ebe9e7e4 rn (hidden), cin 0, nzcv 00000000     
+ldp w21, w28, [x22], #-24; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
+ldp w21, w28, [x22, #-40]!; add x21,x21,x28 :: rd 000000019b999794 rn (hidden), cin 0, nzcv 00000000     
+ldp w21, w28, [x22, #-40]!; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
+ldp w21, w28, [x22, #-40]; add x21,x21,x28 :: rd 000000019b999794 rn (hidden), cin 0, nzcv 00000000     
+ldp w21, w28, [x22, #-40]; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
 LDR (literal, int reg)
 nop; nop; nop; xyzzy00: ldr  x21, xyzzy00 - 8; nop; nop; nop :: rd d503201fd503201f rn (hidden), cin 0, nzcv 00000000     
 nop; nop; nop; xyzzy01: ldr  x21, xyzzy01 + 0; nop; nop; nop :: rd d503201f58000015 rn (hidden), cin 0, nzcv 00000000     
@@ -99,12 +99,12 @@ ldarh w21, [x22] :: rd 000000000000f1f0 rn (hidden), cin 0, nzcv 00000000
 ldarb w21, [x22] :: rd 00000000000000f0 rn (hidden), cin 0, nzcv 00000000     
 STL{R,RH,RB} (entirely MISSING)
 LDPSW (immediate, simm7)
-ldpsw x21, x28, [x22], #-24 ; add x21,x21,x28 :: rd ffffffffebe9e7e4 rn (hidden), cin 0, nzcv 00000000     
-ldpsw x21, x28, [x22], #-24 ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
-ldpsw x21, x28, [x22, #-40]! ; add x21,x21,x28 :: rd ffffffff9b999794 rn (hidden), cin 0, nzcv 00000000     
-ldpsw x21, x28, [x22, #-40]! ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
-ldpsw x21, x28, [x22, #-40] ; add x21,x21,x28 :: rd ffffffff9b999794 rn (hidden), cin 0, nzcv 00000000     
-ldpsw x21, x28, [x22, #-40] ; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
+ldpsw x21, x28, [x22], #-24; add x21,x21,x28 :: rd ffffffffebe9e7e4 rn (hidden), cin 0, nzcv 00000000     
+ldpsw x21, x28, [x22], #-24; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
+ldpsw x21, x28, [x22, #-40]!; add x21,x21,x28 :: rd ffffffff9b999794 rn (hidden), cin 0, nzcv 00000000     
+ldpsw x21, x28, [x22, #-40]!; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
+ldpsw x21, x28, [x22, #-40]; add x21,x21,x28 :: rd ffffffff9b999794 rn (hidden), cin 0, nzcv 00000000     
+ldpsw x21, x28, [x22, #-40]; eor x21,x21,x28 :: rd 0000000004040404 rn (hidden), cin 0, nzcv 00000000     
 LDR,STR (immediate, uimm12)ldr  x13, [x5, #24]  with  x5 = middle_of_block+-1,  x6=0
   [  0]  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 
   [ 16]  .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. 

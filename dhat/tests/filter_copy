@@ -2,8 +2,8 @@
 
 # It's impossible to get exact matches for copy counts because even trivial C
 # programs do a few memcpy/strcpy calls. So we allow some fuzzy matching.
-# So we allow 1,000,000..1,009,999 bytes and 1,000..1,099 blocks.
+# So we allow 1,200,000..1,209,999 bytes and 1,200..1,299 blocks.
 
 ./filter_stderr "$@" |
-sed -e "s/1,00.,... bytes in 1,0.. blocks/1,000,... bytes in 1,0.. blocks/"
+sed -e "s/1,20.,... bytes in 1,2.. blocks/1,200,... bytes in 1,2.. blocks/"
 

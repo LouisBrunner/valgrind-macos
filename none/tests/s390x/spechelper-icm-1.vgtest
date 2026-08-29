@@ -1,1 +1,2 @@
 prog: spechelper-icm-1
+vgopts: -q

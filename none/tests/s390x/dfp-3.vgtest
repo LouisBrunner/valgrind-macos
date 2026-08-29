@@ -1,1 +1,2 @@
 prog: dfp-3
+vgopts: -q

@@ -17667,8 +17667,8 @@ static Long dis_PHMINPOSUW_128 ( const VexAbiInfo* vbi, Prefix pfx,
    assign( sLo, unop(Iop_V128to64,   mkexpr(sV)) );
    assign( dLo, mkIRExprCCall(
                    Ity_I64, 0/*regparms*/,
-                   "amd64g_calculate_sse_phminposuw", 
-                   &amd64g_calculate_sse_phminposuw,
+                   "g_calculate_sse_phminposuw",
+                   &g_calculate_sse_phminposuw,
                    mkIRExprVec_2( mkexpr(sLo), mkexpr(sHi) )
          ));
    (isAvx ? putYMMRegLoAndZU : putXMMReg)
@@ -21963,10 +21963,12 @@ Long dis_ESC_0F (
          Bool hasF16C   = (archinfo->hwcaps & VEX_HWCAPS_AMD64_F16C) != 0;
          Bool hasRDRAND = (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDRAND) != 0;
          Bool hasRDSEED = (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDSEED) != 0;
-         args = mkIRExprVec_4(IRExpr_GSPTR(),
+         Bool hasLZCNT  = (archinfo->hwcaps & VEX_HWCAPS_AMD64_LZCNT) != 0;
+         args = mkIRExprVec_5(IRExpr_GSPTR(),
                               mkIRExpr_HWord(hasF16C ? 1 : 0),
                               mkIRExpr_HWord(hasRDRAND ? 1 : 0),
-                              mkIRExpr_HWord(hasRDSEED ? 1 : 0));
+                              mkIRExpr_HWord(hasRDSEED ? 1 : 0),
+                              mkIRExpr_HWord(hasLZCNT ? 1 : 0));
       } else {
          args = mkIRExprVec_1(IRExpr_GSPTR());
       }
@@ -32222,6 +32224,12 @@ DisResult disInstr_AMD64_WRK (
             goto decode_success;
          }
          /* We don't know what it is. */
+         if (sigill_diag) {
+            vex_printf ("vex amd64->IR: special instruction preamble ");
+            vex_printf ("followed by unknown instruction\n");
+            vex_printf ("  this can happen when inline valgrind.h assembly ");
+            vex_printf ("is optimized (away)\n");
+         }
          goto decode_failure;
          /*NOTREACHED*/
       }

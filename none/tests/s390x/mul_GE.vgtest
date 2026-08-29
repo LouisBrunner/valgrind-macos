@@ -1,1 +1,2 @@
 prog: mul_GE
+vgopts: -q

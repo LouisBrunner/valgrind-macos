@@ -7,3 +7,4 @@ progB: vgdb
 argsB: --wait=60 --vgdb-prefix=./vgdb-prefix-mchelp -c help -c help debug -c v.kill
 stdoutB_filter: filter_memcheck_monitor
 stderrB_filter: filter_vgdb
+cleanup: rm -f garbage.filtered.out

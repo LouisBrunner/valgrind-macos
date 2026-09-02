@@ -182,6 +182,8 @@
 #include "guest_generic_x87.h"
 #include "guest_x86_defs.h"
 
+#include "guest_generic_sse.h"
+
 
 /*------------------------------------------------------------*/
 /*--- Globals                                              ---*/
@@ -655,7 +657,7 @@ static IRExpr* mkexpr ( IRTemp tmp )
    return IRExpr_RdTmp(tmp);
 }
 
-static IRExpr* mkU8 ( UInt i )
+static IRExpr* mkU8 ( ULong i )
 {
    vassert(i < 256);
    return IRExpr_Const(IRConst_U8( (UChar)i ));
@@ -667,7 +669,7 @@ static IRExpr* mkU16 ( UInt i )
    return IRExpr_Const(IRConst_U16( (UShort)i ));
 }
 
-static IRExpr* mkU32 ( UInt i )
+static IRExpr* mkU32 ( ULong i )
 {
    return IRExpr_Const(IRConst_U32(i));
 }
@@ -3780,7 +3782,6 @@ static IRExpr* get_FPU_sw ( void )
                        binop(Iop_And32, get_C3210(), mkU32(0x4700))
       ));
 }
-
 
 /* ------------------------------------------------------- */
 /* Given all that stack-mangling junk, we can now go ahead
@@ -7608,33 +7609,6 @@ static void put_sse_roundingmode ( IRExpr* sseround )
    stmt( IRStmt_Put( OFFB_SSEROUND, sseround ) );
 }
 
-/* Break a 128-bit value up into four 32-bit ints. */
-
-static void breakup128to32s ( IRTemp t128,
-			      /*OUTs*/
-                              IRTemp* t3, IRTemp* t2,
-                              IRTemp* t1, IRTemp* t0 )
-{
-   IRTemp hi64 = newTemp(Ity_I64);
-   IRTemp lo64 = newTemp(Ity_I64);
-   assign( hi64, unop(Iop_V128HIto64, mkexpr(t128)) );
-   assign( lo64, unop(Iop_V128to64,   mkexpr(t128)) );
-
-   vassert(t0 && *t0 == IRTemp_INVALID);
-   vassert(t1 && *t1 == IRTemp_INVALID);
-   vassert(t2 && *t2 == IRTemp_INVALID);
-   vassert(t3 && *t3 == IRTemp_INVALID);
-
-   *t0 = newTemp(Ity_I32);
-   *t1 = newTemp(Ity_I32);
-   *t2 = newTemp(Ity_I32);
-   *t3 = newTemp(Ity_I32);
-   assign( *t0, unop(Iop_64to32,   mkexpr(lo64)) );
-   assign( *t1, unop(Iop_64HIto32, mkexpr(lo64)) );
-   assign( *t2, unop(Iop_64to32,   mkexpr(hi64)) );
-   assign( *t3, unop(Iop_64HIto32, mkexpr(hi64)) );
-}
-
 /* Construct a 128-bit value from four 32-bit ints. */
 
 static IRExpr* mk128from32s ( IRTemp t3, IRTemp t2,
@@ -8116,6 +8090,8 @@ static IRTemp math_BSWAP ( IRTemp t1, IRType ty )
    return IRTemp_INVALID;
 }
 
+
+
 /*------------------------------------------------------------*/
 /*--- SSE4.1 BLEND instruction helpers                     ---*/
 /*------------------------------------------------------------*/
@@ -8314,6 +8290,46 @@ static Long dis_xTESTy_128 ( const VexAbiInfo* vbi, UChar sorb, Long delta )
 
    finish_xTESTy ( andV, andnV );
    return delta;
+}
+
+/*------------------------------------------------------------*/
+/*--- SSE4.1 PINSRB instruction helpers                     ---*/
+/*------------------------------------------------------------*/
+
+static IRTemp math_PINSRB_128_x86 ( IRTemp v128, IRTemp u8, UInt imm8 )
+{
+   vassert(imm8 <= 15);
+
+   IRTemp tmp128    = newTemp(Ity_V128);
+   IRTemp halfshift = newTemp(Ity_I64);
+   IRTemp tmpdword = newTemp(Ity_I32);
+
+   // byte within 32-bit lane
+   assign(tmpdword, binop(Iop_Shl32,
+                          unop(Iop_8Uto32, mkexpr(u8)),
+                          mkU8(8 * (imm8 & 3))));
+
+   // which 32-bit half of the 64-bit value
+   if ((imm8 & 4) == 0) {
+      assign(halfshift, binop(Iop_32HLto64, mkU32(0), mkexpr(tmpdword)));
+   } else {
+      assign(halfshift, binop(Iop_32HLto64, mkexpr(tmpdword), mkU32(0)));
+   }
+
+   // which 64-bit half of the V128
+   if ((imm8 & 8) == 0) {
+      assign(tmp128, binop(Iop_64HLtoV128, mkU64(0), mkexpr(halfshift)));
+   } else {
+      assign(tmp128, binop(Iop_64HLtoV128, mkexpr(halfshift), mkU64(0)));
+   }
+
+   // only rewrite one byte, don't touch the rest
+   UShort mask = ~(1 << imm8);
+   IRTemp res  = newTemp(Ity_V128);
+   assign( res, binop(Iop_OrV128,
+                      mkexpr(tmp128),
+                      binop(Iop_AndV128, mkexpr(v128), mkV128(mask))) );
+   return res;
 }
 
 /*------------------------------------------------------------*/
@@ -9754,8 +9770,8 @@ DisResult disInstr_X86_WRK (
                                    nameXMMReg(gregOfRM(modrm)));
       }
 
-      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
-      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
 
 #     define SELD(n) ((n)==0 ? d0 : ((n)==1 ? d1 : ((n)==2 ? d2 : d3)))
 #     define SELS(n) ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
@@ -9853,8 +9869,8 @@ DisResult disInstr_X86_WRK (
                                   nameXMMReg(gregOfRM(modrm)));
       }
 
-      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
-      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
 
       if (hi) {
          putXMMReg( gregOfRM(modrm), mk128from32s( s3, d3, s2, d2 ) );
@@ -10012,7 +10028,7 @@ DisResult disInstr_X86_WRK (
       }
          
       assign( rmode, get_sse_roundingmode() );
-      breakup128to32s( argV, &t3, &t2, &t1, &t0 );
+      breakupV128to32s( argV, &t3, &t2, &t1, &t0 );
 
 #     define CVT(_t)  binop( Iop_F64toF32,                    \
                              mkexpr(rmode),                   \
@@ -10227,7 +10243,7 @@ DisResult disInstr_X86_WRK (
       }
          
       assign( rmode, get_sse_roundingmode() );
-      breakup128to32s( argV, &t3, &t2, &t1, &t0 );
+      breakupV128to32s( argV, &t3, &t2, &t1, &t0 );
 
       /* This is less than ideal.  If it turns out to be a performance
 	 bottleneck it can be improved. */
@@ -10465,7 +10481,7 @@ DisResult disInstr_X86_WRK (
       }
          
       assign( rmode, mkU32((UInt)Irrm_ZERO) );
-      breakup128to32s( argV, &t3, &t2, &t1, &t0 );
+      breakupV128to32s( argV, &t3, &t2, &t1, &t0 );
 
       /* This is less than ideal.  If it turns out to be a performance
 	 bottleneck it can be improved. */
@@ -11279,7 +11295,7 @@ DisResult disInstr_X86_WRK (
          t5 = newTemp(Ity_V128);
          t4 = newTemp(Ity_I16);
          assign(t5, getXMMReg(eregOfRM(modrm)));
-         breakup128to32s( t5, &t3, &t2, &t1, &t0 );
+         breakupV128to32s( t5, &t3, &t2, &t1, &t0 );
          switch (insn[3] & 7) {
             case 0:  assign(t4, unop(Iop_32to16,   mkexpr(t0))); break;
             case 1:  assign(t4, unop(Iop_32HIto16, mkexpr(t0))); break;
@@ -11512,8 +11528,8 @@ DisResult disInstr_X86_WRK (
                                 nameXMMReg(gregOfRM(modrm)));
       }
 
-      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
-      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
 
       assign( t0, binop( Iop_MullU32, mkexpr(d0), mkexpr(s0)) );
       putXMMRegLane64( gregOfRM(modrm), 0, mkexpr(t0) );
@@ -11599,7 +11615,7 @@ DisResult disInstr_X86_WRK (
                                    dis_buf,
                                    nameXMMReg(gregOfRM(modrm)));
       }
-      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
 
 #     define SEL(n) \
                 ((n)==0 ? s0 : ((n)==1 ? s1 : ((n)==2 ? s2 : s3)))
@@ -12157,7 +12173,7 @@ DisResult disInstr_X86_WRK (
          delta += 3+alen;
       }
 
-      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
       putXMMReg( gregOfRM(modrm), 
                  isH ? mk128from32s( s3, s3, s1, s1 )
                      : mk128from32s( s2, s2, s0, s0 ) );
@@ -12219,8 +12235,8 @@ DisResult disInstr_X86_WRK (
       assign( addV, triop(Iop_Add32Fx4, mkexpr(rm), mkexpr(gV), mkexpr(eV)) );
       assign( subV, triop(Iop_Sub32Fx4, mkexpr(rm), mkexpr(gV), mkexpr(eV)) );
 
-      breakup128to32s( addV, &a3, &a2, &a1, &a0 );
-      breakup128to32s( subV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( addV, &a3, &a2, &a1, &a0 );
+      breakupV128to32s( subV, &s3, &s2, &s1, &s0 );
 
       putXMMReg( gregOfRM(modrm), mk128from32s( a3, s2, a1, s0 ));
       goto decode_success;
@@ -12294,8 +12310,8 @@ DisResult disInstr_X86_WRK (
 
       assign( gV, getXMMReg(gregOfRM(modrm)) );
 
-      breakup128to32s( eV, &e3, &e2, &e1, &e0 );
-      breakup128to32s( gV, &g3, &g2, &g1, &g0 );
+      breakupV128to32s( eV, &e3, &e2, &e1, &e0 );
+      breakupV128to32s( gV, &g3, &g2, &g1, &g0 );
 
       assign( leftV,  mk128from32s( e2, e0, g2, g0 ) );
       assign( rightV, mk128from32s( e3, e1, g3, g1 ) );
@@ -13240,6 +13256,113 @@ DisResult disInstr_X86_WRK (
       }
    }
 
+   /* 66 0F 3A 14 /r ib = PEXTRB r/m16, xmm, imm8
+      Extract Byte from xmm, store in mem or zero-extend + store in gen.reg.
+      (XMM) */
+   if ( sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x14 ) {
+
+      modrm = insn[3];
+      delta += 3;
+
+      IRTemp xmm_vec  = newTemp(Ity_V128);
+      IRTemp tmp3, tmp2, tmp1, tmp0;
+      IRTemp sel_lane = newTemp(Ity_I32);
+      IRTemp shr_lane = newTemp(Ity_I32);
+      Int    imm8;
+
+      tmp3 = tmp2 = tmp1 = tmp0 = IRTemp_INVALID;
+      assign( xmm_vec, getXMMReg( gregOfRM( modrm ) ) );
+      breakupV128to32s( xmm_vec, &tmp3, &tmp2, &tmp1, &tmp0 );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8 = (Int)getUChar(delta+1);
+      } else {
+         addr = disAMode( &alen, sorb, delta, dis_buf );
+         imm8 = (Int)getUChar(delta+alen);
+      }
+
+      switch ( (imm8 >> 2) & 3 ) {
+         case 0:  assign( sel_lane, mkexpr(tmp0) ); break;
+         case 1:  assign( sel_lane, mkexpr(tmp1) ); break;
+         case 2:  assign( sel_lane, mkexpr(tmp2) ); break;
+         case 3:  assign( sel_lane, mkexpr(tmp3) ); break;
+         default: vassert(0);
+      }
+
+      assign( shr_lane,
+              binop( Iop_Shr32, mkexpr(sel_lane), mkU8(((imm8 & 3)*8)) ) );
+
+      if ( epartIsReg( modrm ) ) {
+         putIReg( 4, eregOfRM( modrm ),
+                  binop(Iop_And32, mkexpr(shr_lane), mkU32(255)) );
+         delta += 1+1;
+         DIP( "pextrb $%d, %s,%s\n", imm8,
+              nameXMMReg( gregOfRM( modrm ) ),
+              nameIReg( 4, eregOfRM( modrm ) ) );
+      } else {
+         storeLE( mkexpr(addr), unop(Iop_32to8, mkexpr(shr_lane) ) );
+         delta += alen+1;
+         DIP( "pextrb $%d,%s,%s\n",
+              imm8, nameXMMReg( gregOfRM( modrm ) ), dis_buf );
+      }
+
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 15 /r ib = PEXTRW r/m16, xmm, imm8
+      Extract Byte from xmm, store in mem or zero-extend + store in gen.reg.
+      (XMM) */
+   if ( sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x15 ) {
+      modrm = insn[3];
+      delta += 3;
+
+      IRTemp tmp3, tmp2, tmp1, tmp0;
+      tmp3 = tmp2 = tmp1 = tmp0 = IRTemp_INVALID;
+      IRTemp d16   = newTemp( Ity_I16 );
+      IRTemp xmm_vec = newTemp( Ity_V128 );
+      Int    imm8_20;
+      UInt   rG    = gregOfRM( modrm );
+
+      assign( xmm_vec, getXMMReg( gregOfRM( modrm ) ) );
+      breakupV128to32s( xmm_vec, &tmp3, &tmp2, &tmp1, &tmp0 );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_20 = (Int)(getUChar(delta+1) & 7);
+      } else {
+         addr = disAMode( &alen, sorb, delta, dis_buf );
+         imm8_20 = (Int)(getUChar(delta+alen) & 7);
+      }
+
+      switch (imm8_20) {
+         case 0:  assign(d16, unop(Iop_32to16,   mkexpr(tmp0))); break;
+         case 1:  assign(d16, unop(Iop_32HIto16, mkexpr(tmp0))); break;
+         case 2:  assign(d16, unop(Iop_32to16,   mkexpr(tmp1))); break;
+         case 3:  assign(d16, unop(Iop_32HIto16, mkexpr(tmp1))); break;
+         case 4:  assign(d16, unop(Iop_32to16,   mkexpr(tmp2))); break;
+         case 5:  assign(d16, unop(Iop_32HIto16, mkexpr(tmp2))); break;
+         case 6:  assign(d16, unop(Iop_32to16,   mkexpr(tmp3))); break;
+         case 7:  assign(d16, unop(Iop_32HIto16, mkexpr(tmp3))); break;
+         default: vassert(0);
+      }
+
+      if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM( modrm );
+         putIReg( 4, rE, unop(Iop_16Uto32, mkexpr(d16)) );
+         delta += 1+1;
+         DIP( "pextrw $%d, %s,%s\n", imm8_20,
+              nameXMMReg( rG ), nameIReg( 4, rE ) );
+      } else {
+         storeLE( mkexpr(addr), mkexpr(d16) );
+         delta += alen+1;
+         DIP( "pextrw $%d, %s,%s\n", imm8_20, nameXMMReg( rG ), dis_buf );
+      }
+
+      goto decode_success;
+   }
+
+
    /* 66 0F 3A 16 /r ib = PEXTRD reg/mem32, xmm2, imm8
       Extract Doubleword int from xmm reg and store in gen.reg or mem. */
    if ( sz == 2
@@ -13268,6 +13391,190 @@ DisResult disInstr_X86_WRK (
      }
 
      goto decode_success;
+   }
+
+   /* 66 0F 3A 20 /r ib = PINSRB xmm1, r32/m8, imm8
+      Extract byte from r32/m8 and insert into xmm1 */
+   if ( sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x20 ) {
+      Int    imm8;
+      IRTemp new8 = newTemp(Ity_I8);
+      modrm = insn[3];
+      UInt rG = gregOfRM( modrm );
+      if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM( modrm );
+         imm8 = (Int)(insn[3+1] & 0xF);
+         assign( new8, unop(Iop_16to8, getIReg(sz, rE)) );
+         delta += 3+1+1;
+         DIP( "pinsrb $%d,%s,%s\n", imm8,
+              nameIReg(4, rE), nameXMMReg(rG) );
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         imm8 = (Int)(insn[3+alen] & 0xF);
+         assign( new8, loadLE( Ity_I8, mkexpr(addr) ) );
+         delta += 3+alen+1;
+         DIP( "pinsrb $%d,%s,%s\n",
+              imm8, dis_buf, nameXMMReg(rG) );
+      }
+      IRTemp src_vec = newTemp(Ity_V128);
+      assign(src_vec, getXMMReg( gregOfRM( modrm ) ));
+      IRTemp res = math_PINSRB_128_x86( src_vec, new8, imm8 );
+      putXMMReg( rG, mkexpr(res) );
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 21 /r ib = INSERTPS imm8, xmm2/m32, xmm1
+      Insert Packed Single Precision Floating-Point Value (XMM) */
+   if ( sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x21 ) {
+      UInt   imm8;
+      IRTemp d2ins = newTemp(Ity_I32); /* comes from the E part */
+      const IRTemp inval = IRTemp_INVALID;
+      modrm = insn[3];
+      UInt rG = gregOfRM(modrm);
+
+      if ( epartIsReg( modrm ) ) {
+         UInt   rE = eregOfRM(modrm);
+         IRTemp vE = newTemp(Ity_V128);
+         assign( vE, getXMMReg(rE) );
+         IRTemp dsE[4] = { inval, inval, inval, inval };
+         breakupV128to32s( vE, &dsE[3], &dsE[2], &dsE[1], &dsE[0] );
+         imm8 = insn[3+1];
+         d2ins = dsE[(imm8 >> 6) & 3]; /* "imm8_count_s" */
+         delta += 3+1+1;
+         DIP( "insertps $%u, %s,%s\n",
+              imm8, nameXMMReg(rE), nameXMMReg(rG) );
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         assign( d2ins, loadLE( Ity_I32, mkexpr(addr) ) );
+         imm8 = insn[3+alen];
+         delta += 3+alen+1;
+         DIP( "insertps $%u, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg(rG) );
+      }
+
+      IRTemp vG = newTemp(Ity_V128);
+      assign( vG, getXMMReg(rG) );
+
+      putXMMReg( rG, mkexpr(math_INSERTPS( vG, d2ins, imm8 )) );
+      goto decode_success;
+   }
+
+
+   /* 66 0F 3A 17 /r ib = EXTRACTPS reg/mem32, xmm2, imm8 Extract
+      float from xmm reg and store in gen.reg or mem.
+   */
+   if ( sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x17 ) {
+      modrm = insn[3];
+      delta += 3;
+
+      Int imm8_10;
+      UInt   rG         = gregOfRM(modrm);
+      IRTemp xmm_vec    = newTemp(Ity_V128);
+      IRTemp src_dword  = newTemp(Ity_I32);
+      IRTemp tmp3, tmp2, tmp1, tmp0;
+      tmp3 = tmp2 = tmp1 = tmp0 = IRTemp_INVALID;
+
+      assign( xmm_vec, getXMMReg( rG ) );
+      breakupV128to32s( xmm_vec, &tmp3, &tmp2, &tmp1, &tmp0 );
+
+      if ( epartIsReg( modrm ) ) {
+         imm8_10 = (Int)(getUChar(delta+1) & 3);
+      } else {
+         addr = disAMode( &alen, sorb, delta, dis_buf );
+         imm8_10 = (Int)(getUChar(delta+alen) & 3);
+      }
+
+      switch ( imm8_10 ) {
+         case 0:  assign( src_dword, mkexpr(tmp0) ); break;
+         case 1:  assign( src_dword, mkexpr(tmp1) ); break;
+         case 2:  assign( src_dword, mkexpr(tmp2) ); break;
+         case 3:  assign( src_dword, mkexpr(tmp3) ); break;
+         default: vassert(0);
+      }
+
+      if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM( modrm );
+         putIReg( 4, rE, mkexpr(src_dword) );
+         delta += 1+1;
+         DIP( "extractps $%d, %s,%s\n", imm8_10,
+              nameXMMReg( rG ), nameIReg( 4, rE ) );
+      } else {
+         storeLE( mkexpr(addr), mkexpr(src_dword) );
+         delta += alen+1;
+         DIP( "extractps $%d, %s,%s\n", imm8_10,
+              nameXMMReg( rG ), dis_buf );
+      }
+
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 20 /r ib = PINSRB xmm1, r32/m8, imm8
+      Extract byte from r32/m8 and insert into xmm1 */
+   if ( sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x20 ) {
+      Int    imm8;
+      IRTemp new8 = newTemp(Ity_I8);
+      modrm = insn[3];
+      UInt rG = gregOfRM( modrm );
+      if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM( modrm );
+         imm8 = (Int)(insn[3+1] & 0xF);
+         assign( new8, unop(Iop_16to8, getIReg(sz, rE)) );
+         delta += 3+1+1;
+         DIP( "pinsrb $%d,%s,%s\n", imm8,
+              nameIReg(4, rE), nameXMMReg(rG) );
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         imm8 = (Int)(insn[3+alen] & 0xF);
+         assign( new8, loadLE( Ity_I8, mkexpr(addr) ) );
+         delta += 3+alen+1;
+         DIP( "pinsrb $%d,%s,%s\n",
+              imm8, dis_buf, nameXMMReg(rG) );
+      }
+      IRTemp src_vec = newTemp(Ity_V128);
+      assign(src_vec, getXMMReg( gregOfRM( modrm ) ));
+      IRTemp res = math_PINSRB_128_x86( src_vec, new8, imm8 );
+      putXMMReg( rG, mkexpr(res) );
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 21 /r ib = INSERTPS imm8, xmm2/m32, xmm1
+      Insert Packed Single Precision Floating-Point Value (XMM) */
+   if ( sz == 2
+        && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x21 ) {
+      UInt   imm8;
+      IRTemp d2ins = newTemp(Ity_I32); /* comes from the E part */
+      const IRTemp inval = IRTemp_INVALID;
+      modrm = insn[3];
+      UInt rG = gregOfRM(modrm);
+
+      if ( epartIsReg( modrm ) ) {
+         UInt   rE = eregOfRM(modrm);
+         IRTemp vE = newTemp(Ity_V128);
+         assign( vE, getXMMReg(rE) );
+         IRTemp dsE[4] = { inval, inval, inval, inval };
+         breakupV128to32s( vE, &dsE[3], &dsE[2], &dsE[1], &dsE[0] );
+         imm8 = insn[3+1];
+         d2ins = dsE[(imm8 >> 6) & 3]; /* "imm8_count_s" */
+         delta += 3+1+1;
+         DIP( "insertps $%u, %s,%s\n",
+              imm8, nameXMMReg(rE), nameXMMReg(rG) );
+      } else {
+         addr = disAMode( &alen, sorb, delta+3, dis_buf );
+         assign( d2ins, loadLE( Ity_I32, mkexpr(addr) ) );
+         imm8 = insn[3+alen];
+         delta += 3+alen+1;
+         DIP( "insertps $%u, %s,%s\n", 
+              imm8, dis_buf, nameXMMReg(rG) );
+      }
+
+      IRTemp vG = newTemp(Ity_V128);
+      assign( vG, getXMMReg(rG) );
+
+      putXMMReg( rG, mkexpr(math_INSERTPS( vG, d2ins, imm8 )) );
+      goto decode_success;
    }
 
 
@@ -13324,6 +13631,127 @@ DisResult disInstr_X86_WRK (
                                getXMMReg( gregOfRM(modrm) ),
                                mkV128(mask) ) ) );
 
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 40 /r ib = DPPS xmm1, xmm2/m128, imm8
+      Dot Product of Packed Single Precision Floating-Point Values (XMM) */
+   if ( sz == 2 && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x40 ) {
+      modrm = insn[3];
+      Int    imm8;
+      IRTemp src_vec = newTemp(Ity_V128);
+      IRTemp dst_vec = newTemp(Ity_V128);
+      UInt   rG      = gregOfRM(modrm);
+      assign( dst_vec, getXMMReg( rG ) );
+
+      if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM(modrm);
+         imm8 = (Int)insn[3+1];
+         assign( src_vec, getXMMReg(rE) );
+         delta += 3+1+1;
+         DIP( "dpps $%d, %s,%s\n",
+              imm8, nameXMMReg(rE), nameXMMReg(rG) );
+      } else {
+         addr = disAMode( &alen, sorb, delta + 3, dis_buf);
+         gen_SEGV_if_not_16_aligned( addr );
+         assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)insn[3+alen];
+         delta += 3+alen+1;
+         DIP( "dpps $%d, %s,%s\n",
+              imm8, dis_buf, nameXMMReg(rG) );
+      }
+
+      IRTemp tmp_prod_vec = newTemp(Ity_V128);
+      IRTemp prod_vec     = newTemp(Ity_V128);
+      IRTemp sum_vec      = newTemp(Ity_V128);
+      IRTemp rm           = newTemp(Ity_I32);
+      IRTemp v3, v2, v1, v0;
+      v3 = v2 = v1 = v0   = IRTemp_INVALID;
+      UShort imm8_perms[16] = { 0x0000, 0x000F, 0x00F0, 0x00FF, 0x0F00,
+                                0x0F0F, 0x0FF0, 0x0FFF, 0xF000, 0xF00F,
+                                0xF0F0, 0xF0FF, 0xFF00, 0xFF0F, 0xFFF0,
+                                0xFFFF };
+
+      assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+      assign( tmp_prod_vec,
+              binop( Iop_AndV128,
+                     triop( Iop_Mul32Fx4,
+                            mkexpr(rm), mkexpr(dst_vec), mkexpr(src_vec) ),
+                     mkV128( imm8_perms[((imm8 >> 4)& 15)] ) ) );
+      breakupV128to32s( tmp_prod_vec, &v3, &v2, &v1, &v0 );
+      assign( prod_vec, mk128from32s( v3, v1, v2, v0 ) );
+
+      assign( sum_vec, triop( Iop_Add32Fx4,
+                              mkexpr(rm),
+                              binop( Iop_InterleaveHI32x4,
+                                     mkexpr(prod_vec), mkexpr(prod_vec) ),
+                              binop( Iop_InterleaveLO32x4,
+                                     mkexpr(prod_vec), mkexpr(prod_vec) )));
+
+      IRTemp res = newTemp(Ity_V128);
+      assign( res, binop( Iop_AndV128,
+                          triop( Iop_Add32Fx4,
+                                 mkexpr(rm),
+                                 binop(Iop_InterleaveHI32x4,
+                                       mkexpr(sum_vec), mkexpr(sum_vec)),
+                                 binop(Iop_InterleaveLO32x4,
+                                       mkexpr(sum_vec), mkexpr(sum_vec))),
+                          mkV128( imm8_perms[ (imm8 & 15) ] ) ) );
+
+      putXMMReg( rG, mkexpr(res) );
+      goto decode_success;
+   }
+
+   /* 66 0F 3A 41 /r ib = DPPD xmm1, xmm2/m128, imm8
+      Dot Product of Packed Double Precision Floating-Point Values (XMM) */
+   if (sz == 2 && insn[0] == 0x0F && insn[1] == 0x3A && insn[2] == 0x41) {
+      modrm = insn[3];
+      Int    imm8;
+      IRTemp src_vec = newTemp(Ity_V128);
+      IRTemp dst_vec = newTemp(Ity_V128);
+      UInt   rG      = gregOfRM(modrm);
+      assign( dst_vec, getXMMReg( rG ) );
+
+      if ( epartIsReg( modrm ) ) {
+         UInt rE = eregOfRM(modrm);
+         imm8 = (Int)(insn[3+1]);
+         assign( src_vec, getXMMReg(rE) );
+         delta += 3+1+1;
+         DIP( "dppd $%d, %s,%s\n",
+              imm8, nameXMMReg(rE), nameXMMReg(rG) );
+      } else {
+         addr = disAMode( &alen, sorb, delta + 3, dis_buf );
+         gen_SEGV_if_not_16_aligned( addr );
+         assign( src_vec, loadLE( Ity_V128, mkexpr(addr) ) );
+         imm8 = (Int)(insn[3+alen]);
+         delta += 3+alen+1;
+         DIP( "dppd $%d, %s,%s\n",
+              imm8, dis_buf, nameXMMReg(rG) );
+         }
+
+      UShort imm8_perms[4] = { 0x0000, 0x00FF, 0xFF00, 0xFFFF };
+      IRTemp and_vec = newTemp(Ity_V128);
+      IRTemp sum_vec = newTemp(Ity_V128);
+      IRTemp rm      = newTemp(Ity_I32);
+      assign( rm, get_FAKE_roundingmode() ); /* XXXROUNDINGFIXME */
+      assign( and_vec, binop( Iop_AndV128,
+                              triop( Iop_Mul64Fx2,
+                                     mkexpr(rm),
+                                     mkexpr(dst_vec), mkexpr(src_vec) ),
+                              mkV128( imm8_perms[ ((imm8 >> 4) & 3) ] ) ) );
+
+      assign( sum_vec, binop( Iop_Add64F0x2,
+                              binop( Iop_InterleaveHI64x2,
+                                     mkexpr(and_vec), mkexpr(and_vec) ),
+                              binop( Iop_InterleaveLO64x2,
+                                     mkexpr(and_vec), mkexpr(and_vec) ) ) );
+      IRTemp res = newTemp(Ity_V128);
+      assign(res, binop( Iop_AndV128,
+                         binop( Iop_InterleaveLO64x2,
+                                mkexpr(sum_vec), mkexpr(sum_vec) ),
+                         mkV128( imm8_perms[ (imm8 & 3) ] ) ) );
+
+      putXMMReg( rG, mkexpr(res) );
       goto decode_success;
    }
 
@@ -13423,8 +13851,8 @@ DisResult disInstr_X86_WRK (
          DIP("pmuldq %s,%s\n", dis_buf, nameXMMReg(rG));
       }
 
-      breakup128to32s( dV, &d3, &d2, &d1, &d0 );
-      breakup128to32s( sV, &s3, &s2, &s1, &s0 );
+      breakupV128to32s( dV, &d3, &d2, &d1, &d0 );
+      breakupV128to32s( sV, &s3, &s2, &s1, &s0 );
       assign(t0, binop(Iop_64HLtoV128,
                        binop( Iop_MullS32, mkexpr(d2), mkexpr(s2)),
                        binop( Iop_MullS32, mkexpr(d0), mkexpr(s0)) ));
@@ -13774,6 +14202,39 @@ DisResult disInstr_X86_WRK (
                            mkU8(8)) );
 
       goto decode_success;
+   }
+   /* 66 0F 38 21 /r = PMOVSXBD xmm1, xmm2/m32
+         Packed Move with Sign Extend from Byte to DWord (XMM) */
+   if (sz == 2
+       && insn[0] == 0x0F && insn[1] == 0x38
+       && insn[2] == 0x21) {
+       IRTemp srcVec = newTemp(Ity_V128);
+       modrm         = insn[3];
+       UInt   rG     = gregOfRM(modrm);
+       if ( epartIsReg(modrm) ) {
+           UInt rE = eregOfRM(modrm);
+           assign( srcVec, getXMMReg(rE) );
+           delta += 1 + 3;
+           DIP( "pmovsxbd %s,%s\n", nameXMMReg(rE), nameXMMReg(rG) );
+       } else {
+           addr = disAMode( &alen, sorb, delta + 3, dis_buf);
+           assign( srcVec,
+                  unop( Iop_32UtoV128, loadLE( Ity_I32, mkexpr(addr) ) ) );
+           delta += alen + 3;
+           DIP( "pmovsxbd %s,%s\n", dis_buf, nameXMMReg(rG) );
+       }
+       putXMMReg( rG,
+                 binop(Iop_SarN32x4,
+                       binop(Iop_ShlN32x4,
+                             binop(Iop_InterleaveLO8x16,
+                                   IRExpr_Const(IRConst_V128(0)),
+                                   binop(Iop_InterleaveLO8x16,
+                                         IRExpr_Const(IRConst_V128(0)),
+                                         mkexpr(srcVec))),
+                             mkU8(24)),
+                       mkU8(24)) );
+
+       goto decode_success;
    }
 
    /* 66 0F 3A 0B /r ib = ROUNDSD imm8, xmm2/m64, xmm1

@@ -1098,6 +1098,7 @@ configure~
 /memcheck/tests/amd64/insn-pmovmskb
 /memcheck/tests/amd64/insn-pcmpistri
 /memcheck/tests/amd64/pcmpgt
+/memcheck/tests/amd64/pcmpistri
 /memcheck/tests/amd64/sh-mem-vec128
 /memcheck/tests/amd64/sh-mem-vec256
 /memcheck/tests/amd64/xsave-avx
@@ -1374,6 +1375,7 @@ configure~
 /memcheck/tests/x86/int3-x86
 /memcheck/tests/x86/more_x86_fp
 /memcheck/tests/x86/pcmpgt
+/memcheck/tests/x86/pcmpistri32
 /memcheck/tests/x86/pushfpopf
 /memcheck/tests/x86/pushfw_x86
 /memcheck/tests/x86/pushpopmem
@@ -2436,6 +2438,7 @@ none/tests/freebsd/bug499212
 /none/tests/x86/Makefile.in
 /none/tests/x86/movbe
 /none/tests/x86/movx
+/none/tests/x86/pcmpxstrx32
 /none/tests/x86/pushpopseg
 /none/tests/x86/rcl_assert
 /none/tests/x86/sbbmisc

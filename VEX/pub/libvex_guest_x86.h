@@ -183,6 +183,7 @@ typedef
       U128  guest_XMM5;
       U128  guest_XMM6;
       U128  guest_XMM7;
+      U128  guest_XMM8;
 
       /* Segment registers. */
       UShort guest_CS;

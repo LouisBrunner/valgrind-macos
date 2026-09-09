@@ -169,6 +169,13 @@ extern VexEmNote
 extern VexEmNote 
             x86g_dirtyhelper_FLDENV ( VexGuestX86State*, HWord );
 
+extern UInt x86g_dirtyhelper_PCMPxSTRx ( 
+          VexGuestX86State* gst,
+          HWord opc4_and_imm,
+          HWord gstOffL, HWord gstOffR,
+          HWord edxIN, HWord eaxIN
+       );
+
 
 /*---------------------------------------------------------*/
 /*--- Condition code stuff                              ---*/

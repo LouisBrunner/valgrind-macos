@@ -67,6 +67,7 @@ EXTRA_DIST = \
 	movx.stdout.exp movx.vgtest \
 	movbe.stdout.exp movbe.vgtest \
 	pushpopseg.stdout.exp pushpopseg.vgtest \
+	pcmpxstrx32.stdout.exp pcmpxstrx32.vgtest \
 	sbbmisc.stdout.exp sbbmisc.vgtest \
 	shift_ndep.stdout.exp shift_ndep.vgtest \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
@@ -122,7 +123,7 @@ if BUILD_SSSE3_TESTS
 endif
 if BUILD_SSE42_X86_TESTS
    check_PROGRAMS += sse4-x86 \
-	crc32
+	crc32 pcmpxstrx32
 endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32

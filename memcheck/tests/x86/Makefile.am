@@ -29,7 +29,9 @@ EXTRA_DIST = \
 	more_x86_fp.stdout.exp more_x86_fp.vgtest \
 	fprem.stdout.exp fprem.vgtest \
 	xor-undef-x86.stderr.exp xor-undef-x86.stdout.exp \
-	xor-undef-x86.vgtest
+	xor-undef-x86.vgtest \
+	pcmpistri32.vgtest
+
 
 check_PROGRAMS = \
 	bug152022 \
@@ -55,6 +57,9 @@ if HAVE_CXX17
 check_PROGRAMS += bug487993
 bug487993_SOURCES = bug487993.cpp
 bug487993_CXXFLAGS = ${AM_CXXFLAGS} -std=c++17
+endif
+if BUILD_SSE42_X86_TESTS
+check_PROGRAMS += pcmpistri32
 endif
 
 # fpeflags must use these flags -- bug only occurred with them.

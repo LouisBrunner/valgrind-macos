@@ -168,6 +168,7 @@
 #include "guest_generic_bb_to_IR.h"
 #include "guest_generic_x87.h"
 #include "guest_amd64_defs.h"
+#include "guest_generic_sse.h"
 
 
 /*------------------------------------------------------------*/
@@ -9694,45 +9695,6 @@ static void put_sse_roundingmode ( IRExpr* sseround )
                      unop(Iop_32Uto64,sseround) ) );
 }
 
-/* Break a V128-bit value up into four 32-bit ints. */
-
-static void breakupV128to32s ( IRTemp t128,
-                               /*OUTs*/
-                               IRTemp* t3, IRTemp* t2,
-                               IRTemp* t1, IRTemp* t0 )
-{
-   IRTemp hi64 = newTemp(Ity_I64);
-   IRTemp lo64 = newTemp(Ity_I64);
-   assign( hi64, unop(Iop_V128HIto64, mkexpr(t128)) );
-   assign( lo64, unop(Iop_V128to64,   mkexpr(t128)) );
-
-   vassert(t0 && *t0 == IRTemp_INVALID);
-   vassert(t1 && *t1 == IRTemp_INVALID);
-   vassert(t2 && *t2 == IRTemp_INVALID);
-   vassert(t3 && *t3 == IRTemp_INVALID);
-
-   *t0 = newTemp(Ity_I32);
-   *t1 = newTemp(Ity_I32);
-   *t2 = newTemp(Ity_I32);
-   *t3 = newTemp(Ity_I32);
-   assign( *t0, unop(Iop_64to32,   mkexpr(lo64)) );
-   assign( *t1, unop(Iop_64HIto32, mkexpr(lo64)) );
-   assign( *t2, unop(Iop_64to32,   mkexpr(hi64)) );
-   assign( *t3, unop(Iop_64HIto32, mkexpr(hi64)) );
-}
-
-/* Construct a V128-bit value from four 32-bit ints. */
-
-static IRExpr* mkV128from32s ( IRTemp t3, IRTemp t2,
-                               IRTemp t1, IRTemp t0 )
-{
-   return
-      binop( Iop_64HLtoV128,
-             binop(Iop_32HLto64, mkexpr(t3), mkexpr(t2)),
-             binop(Iop_32HLto64, mkexpr(t1), mkexpr(t0))
-   );
-}
-
 /* Break a 64-bit value up into four 16-bit ints. */
 
 static void breakup64to16s ( IRTemp t64,
@@ -18881,29 +18843,6 @@ static IRTemp math_PINSRQ_128 ( IRTemp v128, IRTemp u64, UInt imm8 )
                        binop( Iop_AndV128, mkexpr(v128), mkV128(mask) ) ) );
    return res;
 }
-
-
-static IRTemp math_INSERTPS ( IRTemp dstV, IRTemp toInsertD, UInt imm8 )
-{
-   const IRTemp inval = IRTemp_INVALID;
-   IRTemp dstDs[4] = { inval, inval, inval, inval };
-   breakupV128to32s( dstV, &dstDs[3], &dstDs[2], &dstDs[1], &dstDs[0] );
-
-   vassert(imm8 <= 255);
-   dstDs[(imm8 >> 4) & 3] = toInsertD; /* "imm8_count_d" */
-
-   UInt imm8_zmask = (imm8 & 15);
-   IRTemp zero_32 = newTemp(Ity_I32);
-   assign( zero_32, mkU32(0) );
-   IRTemp resV = newTemp(Ity_V128);
-   assign( resV, mkV128from32s( 
-                    ((imm8_zmask & 8) == 8) ? zero_32 : dstDs[3], 
-                    ((imm8_zmask & 4) == 4) ? zero_32 : dstDs[2], 
-                    ((imm8_zmask & 2) == 2) ? zero_32 : dstDs[1], 
-                    ((imm8_zmask & 1) == 1) ? zero_32 : dstDs[0]) );
-   return resV;
-}
-
 
 static Long dis_PEXTRB_128_GtoE ( const VexAbiInfo* vbi, Prefix pfx,
                                   Long delta, Bool isAvx )

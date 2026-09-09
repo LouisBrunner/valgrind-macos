@@ -1,0 +1,210 @@
+
+edx 0000000000000000  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000000  argR aaaaaaaaaaaaaaaa00aaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000000  ecx 00000006  flags 00000881
+  istri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000000  flags 00000881
+  istrm $0x4A:      xmm0 000000000000000000ffffffffffffff  ecx 55555555  flags 00000881
+  istrm $0x0A:      xmm0 0000000000000000000000000000007f  ecx 55555555  flags 00000881
+  estri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 000008c1
+
+edx 0000000000000000  argL 00000000000000000000000000000000  eax 0000000000000000  argR aaaaaaaaaaaaaaaa00aaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 000000c1
+  istri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000007  flags 000000c1
+  istrm $0x4A:      xmm0 ffffffffffffffffff00000000000000  ecx 55555555  flags 000000c1
+  istrm $0x0A:      xmm0 0000000000000000000000000000ff80  ecx 55555555  flags 000000c1
+  estri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 000008c1
+
+edx 0000000000000000  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000000  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 000008c1
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000000  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 000000c1
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000005  flags 000000c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffffff0000000000  ecx 55555555  flags 000000c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffe0  ecx 55555555  flags 000000c1
+
+edx 0000000000000000  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000000  ecx 0000000f  flags 000000c1
+  estri $0x0A:      xmm0 55555555555555555555555500000000  ecx 00000006  flags 000000c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffff000000000000  ecx 55555555  flags 000000c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffc0  ecx 55555555  flags 000000c1
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffff00ffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffdf  ecx 55555555  flags 000008c1
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 000000000000000f  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ff00000000000000000000ffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000801f  ecx 55555555  flags 000008c1
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000010  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 00000004  flags 00000841
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000841
+  estrm $0x4A:      xmm0 0000000000000000000000ffffffffff  ecx 55555555  flags 00000841
+  estrm $0x0A:      xmm0 0000000000000000000000000000001f  ecx 55555555  flags 00000841
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000011  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 00000004  flags 00000841
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000841
+  estrm $0x4A:      xmm0 0000000000000000000000ffffffffff  ecx 55555555  flags 00000841
+  estrm $0x0A:      xmm0 0000000000000000000000000000001f  ecx 55555555  flags 00000841
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 00000000fffffffa  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffff00ffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffdf  ecx 55555555  flags 000008c1
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 00000000fffffff1  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ff00000000000000000000ffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000801f  ecx 55555555  flags 000008c1
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 00000000fffffff0  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 00000004  flags 00000841
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000841
+  estrm $0x4A:      xmm0 0000000000000000000000ffffffffff  ecx 55555555  flags 00000841
+  estrm $0x0A:      xmm0 0000000000000000000000000000001f  ecx 55555555  flags 00000841
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 00000000ffffffef  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 00000004  flags 00000841
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000841
+  estrm $0x4A:      xmm0 0000000000000000000000ffffffffff  ecx 55555555  flags 00000841
+  estrm $0x0A:      xmm0 0000000000000000000000000000001f  ecx 55555555  flags 00000841
+
+edx 0000000000000005  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000005  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 55555555555555555555555500000005  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffff00ffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffdf  ecx 55555555  flags 000008c1
+
+edx 000000000000000f  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 5555555555555555555555550000000f  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 5555555555555555555555550000000f  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 5555555555555555555555550000000f  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 5555555555555555555555550000000f  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ff000000000000000000ffffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000803f  ecx 55555555  flags 000008c1
+
+edx 0000000000000010  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000010  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000010  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000010  ecx 00000005  flags 00000881
+  estri $0x0A:      xmm0 55555555555555555555555500000010  ecx 00000000  flags 00000881
+  estrm $0x4A:      xmm0 00000000000000000000ffffffffffff  ecx 55555555  flags 00000881
+  estrm $0x0A:      xmm0 0000000000000000000000000000003f  ecx 55555555  flags 00000881
+
+edx 0000000000000011  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 55555555555555555555555500000011  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 55555555555555555555555500000011  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 55555555555555555555555500000011  ecx 00000005  flags 00000881
+  estri $0x0A:      xmm0 55555555555555555555555500000011  ecx 00000000  flags 00000881
+  estrm $0x4A:      xmm0 00000000000000000000ffffffffffff  ecx 55555555  flags 00000881
+  estrm $0x0A:      xmm0 0000000000000000000000000000003f  ecx 55555555  flags 00000881
+
+edx 00000000fffffffb  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 555555555555555555555555fffffffb  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 555555555555555555555555fffffffb  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 555555555555555555555555fffffffb  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 555555555555555555555555fffffffb  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ffffffffffffffffffff00ffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000ffdf  ecx 55555555  flags 000008c1
+
+edx 00000000fffffff1  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 555555555555555555555555fffffff1  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 555555555555555555555555fffffff1  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 555555555555555555555555fffffff1  ecx 0000000f  flags 000008c1
+  estri $0x0A:      xmm0 555555555555555555555555fffffff1  ecx 00000000  flags 000008c1
+  estrm $0x4A:      xmm0 ff000000000000000000ffffffffffff  ecx 55555555  flags 000008c1
+  estrm $0x0A:      xmm0 0000000000000000000000000000803f  ecx 55555555  flags 000008c1
+
+edx 00000000fffffff0  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 555555555555555555555555fffffff0  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 555555555555555555555555fffffff0  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 555555555555555555555555fffffff0  ecx 00000005  flags 00000881
+  estri $0x0A:      xmm0 555555555555555555555555fffffff0  ecx 00000000  flags 00000881
+  estrm $0x4A:      xmm0 00000000000000000000ffffffffffff  ecx 55555555  flags 00000881
+  estrm $0x0A:      xmm0 0000000000000000000000000000003f  ecx 55555555  flags 00000881
+
+edx 00000000ffffffef  argL aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  eax 0000000000000006  argR aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  istri $0x4A:      xmm0 555555555555555555555555ffffffef  ecx 0000000f  flags 00000801
+  istri $0x0A:      xmm0 555555555555555555555555ffffffef  ecx 00000000  flags 00000801
+  istrm $0x4A:      xmm0 ffffffffffffffffffffffffffffffff  ecx 55555555  flags 00000801
+  istrm $0x0A:      xmm0 0000000000000000000000000000ffff  ecx 55555555  flags 00000801
+  estri $0x4A:      xmm0 555555555555555555555555ffffffef  ecx 00000005  flags 00000881
+  estri $0x0A:      xmm0 555555555555555555555555ffffffef  ecx 00000000  flags 00000881
+  estrm $0x4A:      xmm0 00000000000000000000ffffffffffff  ecx 55555555  flags 00000881
+  estrm $0x0A:      xmm0 0000000000000000000000000000003f  ecx 55555555  flags 00000881

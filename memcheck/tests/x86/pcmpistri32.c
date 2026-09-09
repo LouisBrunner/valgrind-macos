@@ -1,0 +1,1 @@
+../amd64/pcmpistri.c

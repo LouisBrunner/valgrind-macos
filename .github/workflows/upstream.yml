@@ -12,7 +12,7 @@ env:
 jobs:
   sync-upstream:
     name: Sync upstream branch
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
       actions: write
@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
-          git remote add upstream git://sourceware.org/git/valgrind.git
+          git remote add upstream https://sourceware.org/git/valgrind.git
           git fetch --tags upstream master
         shell: bash
       - name: Configure git credentials
@@ -44,7 +44,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
   upstream-merge-pr:
     name: Merge upstream changes into main
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout local `main` branch (us)
         uses: actions/checkout@v7
@@ -53,7 +56,7 @@ jobs:
           fetch-depth: 0
       - name: Checkout upstream `master` branch (them)
         run: |
-          git remote add upstream git://sourceware.org/git/valgrind.git
+          git remote add upstream https://sourceware.org/git/valgrind.git
           git fetch upstream master
         shell: bash
       - name: Configure git credentials

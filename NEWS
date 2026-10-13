@@ -83,6 +83,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 525478  Valgrind's vgdb extended-remote mode broken on aarch64
 526075  Tool link fails against a libgcc built without optimisation:
         undefined reference to _Unwind_Resume / __gcc_personality_v0
+527258  PPC: Fix r10 collision in 8-argument dirty helper calls
 
 
 To see details of a given bug, visit

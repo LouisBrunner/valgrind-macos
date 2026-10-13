@@ -1744,8 +1744,8 @@ void ppPPCInstr ( const PPCInstr* i, Bool mode64 )
          vex_printf("if (%s) ", showPPCCondCode(i->Pin.Call.cond));
       }
       vex_printf("{ ");
-      ppLoadImm(hregPPC_GPR10(mode64), i->Pin.Call.target, mode64);
-      vex_printf(" ; mtctr r10 ; bctrl [");
+      ppLoadImm(hregPPC_GPR12(mode64), i->Pin.Call.target, mode64);
+      vex_printf(" ; mtctr r12 ; bctrl [");
       for (n = 0; n < 32; n++) {
          if (i->Pin.Call.argiregs & (1<<n)) {
             vex_printf("r%d", n);
@@ -2565,10 +2565,14 @@ void getRegUsage_PPCInstr ( HRegUsage* u, const PPCInstr* i, Bool mode64 )
 
       /* Finally, there is the issue that the insn trashes a
          register because the literal target address has to be
-         loaded into a register.  %r10 seems a suitable victim.
-         (Can't use %r0, as some insns interpret it as value zero). */
-      addHRegUse(u, HRmWrite, hregPPC_GPR10(mode64));
-      /* Upshot of this is that the assembler really must use %r10,
+         loaded into a register.  We use %r12: it is volatile and
+         outside the argument-passing range (r3..r10), so it cannot
+         collide with an argument.  In mode32 %r12 is allocatable and
+         is already declared as a caller-save Write above.  In mode64
+         %r12 is not available to the register allocator at all, so
+         nothing needs to be declared.  (Can't use %r0, as some insns
+         interpret it as value zero.)
+         Upshot of this is that the assembler really must use %r12,
          and no other, as a destination temporary. */
       return;
    }
@@ -4549,9 +4553,15 @@ Int emit_PPCInstr ( /*MB_MOD*/Bool* is_profInc,
          goto bad;
       }
       PPCCondCode cond  = i->Pin.Call.cond;
-      UInt        r_dst = 10;
-      /* As per detailed comment for Pin_Call in
-         getRegUsage_PPCInstr above, %r10 is used as an address temp */
+      UInt        r_dst = 12;
+      /* As per detailed comment for Pin_Call in getRegUsage_PPCInstr
+         above, %r12 is used as the address temp.  It is volatile in
+         both PPC32 and PPC64 ABIs and is outside the argument-passing
+         register range (r3..r10), so it never collides with an
+         argument.  On PPC64 ELFv2 it is also the architectural
+         function-entry-address register at the global entry point,
+         so loading the call target there before bctrl matches the
+         ABI convention for indirect calls.                            */
 
       /* jump over the following insns if condition does not hold */
       UChar* ptmp = NULL;

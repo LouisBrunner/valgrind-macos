@@ -10,7 +10,23 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
 * ==================== CORE CHANGES ===================
 
+* There is a new client request
+
+  - VALGRIND_RUNNING_VERSION returns the Valgrind version that
+    the guest executable is running under. The value returned
+    is a decimal value in the form Mmm where M is the major
+    version and mm is the minor version. For instance, this
+    release returns 328. Returns 0 if the executable is not
+    running under Valgrind, or is running under a version older
+    than 3.28.
+
+* Support for zstd compressed debug sections has been updated
+  to zstd version 1.5.7.
+
 * ================== PLATFORM CHANGES =================
+
+* macOS 10.14 Mojave (x86) is now supported, thanks to the addition
+  of SSE4.1 support on x86.
 
 * ==================== TOOL CHANGES ===================
 

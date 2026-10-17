@@ -1089,6 +1089,7 @@
 /memcheck/tests/amd64/Makefile
 /memcheck/tests/amd64/Makefile.in
 /memcheck/tests/amd64/more_x87_fp
+/memcheck/tests/amd64/partial_bitfield_cmp
 /memcheck/tests/amd64/shr_edx
 /memcheck/tests/amd64/sse_memory
 /memcheck/tests/amd64/xor-undef-amd64

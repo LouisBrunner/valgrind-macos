@@ -80,6 +80,10 @@ typedef enum {
    // Expensive (exact) integer EQ and NE
    UNDEF_CMP_EQ_NE,
 
+   // Expensive (exact) unsigned integer LT and LE
+   UNDEF_CMP_LT_U,
+   UNDEF_CMP_LE_U,
+
    // Expensive (exact) integer addition and subtraction
    UNDEF_INT_ADD,
    UNDEF_INT_SUB,

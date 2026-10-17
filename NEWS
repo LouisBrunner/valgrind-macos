@@ -78,6 +78,8 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 523096  Add INSERTPS, PINSRB, PINSRW SSE4.1 support for x86
 523097  Add EXTRACTPS, PEXTRB, PEXTRW SSE4.1 support for x86
 523375  Fix none/tests/amd64/pcmpxstrx64.c
+523434  Memcheck: false "Conditional jump depends on uninitialised value"
+        for unsigned compares of partially-defined words (clang bitfield idiom)
 523626  Fix sse4-x86 test fails when valgrind compiled with clang
 523843  Ensure the stack alignment in doHelperCall [x86]
 524312  Add support for illumos spawn(2)

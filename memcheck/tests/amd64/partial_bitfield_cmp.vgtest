@@ -1,0 +1,2 @@
+prog: partial_bitfield_cmp
+vgopts: -q

@@ -188,6 +188,9 @@ typedef
       DetailLevel dl_CmpEQ32_CmpNE32;
       DetailLevel dl_CmpEQ16_CmpNE16;
       DetailLevel dl_CmpEQ8_CmpNE8;
+      // For unsigned Cmp{LT,LE}{64,32}U, only DLcheap and DLexpensive
+      // are allowed.
+      DetailLevel dl_CmpLTU_CmpLEU;
    }
    DetailLevelByOp;
 
@@ -202,6 +205,7 @@ static void DetailLevelByOp__set_all ( /*OUT*/DetailLevelByOp* dlbo,
    dlbo->dl_CmpEQ32_CmpNE32 = dl;
    dlbo->dl_CmpEQ16_CmpNE16 = dl;
    dlbo->dl_CmpEQ8_CmpNE8   = dl;
+   dlbo->dl_CmpLTU_CmpLEU   = dl;
 }
 
 static void DetailLevelByOp__check_sanity ( const DetailLevelByOp* dlbo )
@@ -218,6 +222,8 @@ static void DetailLevelByOp__check_sanity ( const DetailLevelByOp* dlbo )
              || dlbo->dl_CmpEQ16_CmpNE16 == DLexpensive);
    tl_assert(dlbo->dl_CmpEQ8_CmpNE8 == DLcheap
              || dlbo->dl_CmpEQ8_CmpNE8 == DLexpensive);
+   tl_assert(dlbo->dl_CmpLTU_CmpLEU == DLcheap
+             || dlbo->dl_CmpLTU_CmpLEU == DLexpensive);
 }
 
 static UInt DetailLevelByOp__count ( const DetailLevelByOp* dlbo,
@@ -232,6 +238,7 @@ static UInt DetailLevelByOp__count ( const DetailLevelByOp* dlbo,
    n += (dlbo->dl_CmpEQ32_CmpNE32 == dl  ? 1 : 0);
    n += (dlbo->dl_CmpEQ16_CmpNE16 == dl  ? 1 : 0);
    n += (dlbo->dl_CmpEQ8_CmpNE8 == dl    ? 1 : 0);
+   n += (dlbo->dl_CmpLTU_CmpLEU == dl    ? 1 : 0);
    return n;
 }
 
@@ -1414,6 +1421,76 @@ static IRAtom* expensiveCmpEQorNE ( MCEnv*  mce,
       = mkPCastTo( mce, Ity_I1, improved );
 
    return final_cast;
+}
+
+/* --------- Semi-accurate interpretation of unsigned CmpLT/CmpLE. --------- */
+
+/* The cheap rule for unsigned comparisons -- UifU the operands' V bits and
+   PCast the lot -- says the result is undefined if any input bit is.  That is
+   needlessly pessimistic for the common idiom of testing a bitfield that
+   shares a storage unit with never-written bits.  clang compiles
+   `(word >> 48) != 0` into `word >=u 1<<48`; because the constant has 48
+   trailing zeroes no low bit of word can change the answer, yet the cheap
+   rule taints the branch and Memcheck reports it.
+
+   Instead, bound each operand by the two extremal instantiations of its
+   undefined bits:
+
+      xmax = xx | vxx          xmin = xmax ^ vxx   ( == xx & ~vxx )
+
+   The comparison comes out True for some instantiation iff it holds for the
+   most favourable pair, and False for some instantiation iff it fails for the
+   least favourable pair.  It is undefined exactly when both are reachable:
+
+      x <u  y   undefined iff  (xmin <u  ymax) && (ymin <=u xmax)
+      x <=u y   undefined iff  (xmin <=u ymax) && (ymin <u  xmax)
+
+   Costs 7 IROps and needs no Not: four bit ops, two compares and an And1.
+   Both operands are read twice, so this is only done when the caller has
+   opted into expensive checks. */
+static IRAtom* expensiveCmpLTorLEU ( MCEnv*  mce,
+                                     IRType  ty,
+                                     IRAtom* vxx, IRAtom* vyy,
+                                     IRAtom* xx,  IRAtom* yy,
+                                     Bool    isLE )
+{
+   IROp opOR, opXOR, opCmpLT, opCmpLE;
+   IRAtom *xmax, *xmin, *ymax, *ymin, *canBeTrue, *canBeFalse;
+
+   tl_assert(isShadowAtom(mce,vxx));
+   tl_assert(isShadowAtom(mce,vyy));
+   tl_assert(isOriginalAtom(mce,xx));
+   tl_assert(isOriginalAtom(mce,yy));
+   tl_assert(sameKindedAtoms(vxx,xx));
+   tl_assert(sameKindedAtoms(vyy,yy));
+
+   switch (ty) {
+      case Ity_I32:
+         opOR = Iop_Or32; opXOR = Iop_Xor32;
+         opCmpLT = Iop_CmpLT32U; opCmpLE = Iop_CmpLE32U;
+         break;
+      case Ity_I64:
+         opOR = Iop_Or64; opXOR = Iop_Xor64;
+         opCmpLT = Iop_CmpLT64U; opCmpLE = Iop_CmpLE64U;
+         break;
+      default:
+         VG_(tool_panic)("expensiveCmpLTorLEU");
+   }
+
+   xmax = assignNew('V', mce, ty, binop(opOR,  xx, vxx));
+   xmin = assignNew('V', mce, ty, binop(opXOR, xmax, vxx));
+   ymax = assignNew('V', mce, ty, binop(opOR,  yy, vyy));
+   ymin = assignNew('V', mce, ty, binop(opXOR, ymax, vyy));
+
+   canBeTrue
+      = assignNew('V', mce, Ity_I1,
+                  binop(isLE ? opCmpLE : opCmpLT, xmin, ymax));
+   canBeFalse
+      = assignNew('V', mce, Ity_I1,
+                  binop(isLE ? opCmpLT : opCmpLE, ymin, xmax));
+
+   return assignNew('V', mce, Ity_I1,
+                    binop(Iop_And1, canBeTrue, canBeFalse));
 }
 
 /* Check if we can know, despite the uncertain bits, that xx is greater than yy.
@@ -4957,9 +5034,15 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_ExpCmpNE64:
          return expensiveCmpEQorNE(mce,Ity_I64, vatom1,vatom2, atom1,atom2 );
 
+      case Iop_CmpLE64U: case Iop_CmpLT64U:
+         if (mce->dlbo.dl_CmpLTU_CmpLEU == DLexpensive)
+            return expensiveCmpLTorLEU(mce, Ity_I64, vatom1, vatom2,
+                                       atom1, atom2,
+                                       toBool(op == Iop_CmpLE64U));
+         return mkPCastTo(mce, Ity_I1, mkUifU64(mce, vatom1,vatom2));
+
       cheap_cmp64:
-      case Iop_CmpLE64S: case Iop_CmpLE64U: 
-      case Iop_CmpLT64U: case Iop_CmpLT64S:
+      case Iop_CmpLE64S: case Iop_CmpLT64S:
          return mkPCastTo(mce, Ity_I1, mkUifU64(mce, vatom1,vatom2));
 
       ////---- CmpXX32
@@ -4973,9 +5056,15 @@ IRAtom* expr2vbits_Binop ( MCEnv* mce,
       case Iop_ExpCmpNE32:
          return expensiveCmpEQorNE(mce,Ity_I32, vatom1,vatom2, atom1,atom2 );
 
+      case Iop_CmpLE32U: case Iop_CmpLT32U:
+         if (mce->dlbo.dl_CmpLTU_CmpLEU == DLexpensive)
+            return expensiveCmpLTorLEU(mce, Ity_I32, vatom1, vatom2,
+                                       atom1, atom2,
+                                       toBool(op == Iop_CmpLE32U));
+         return mkPCastTo(mce, Ity_I1, mkUifU32(mce, vatom1,vatom2));
+
       cheap_cmp32:
-      case Iop_CmpLE32S: case Iop_CmpLE32U: 
-      case Iop_CmpLT32U: case Iop_CmpLT32S:
+      case Iop_CmpLE32S: case Iop_CmpLT32S:
          return mkPCastTo(mce, Ity_I1, mkUifU32(mce, vatom1,vatom2));
 
       ////---- CmpXX16
@@ -8888,12 +8977,18 @@ IRSB* MC_(instrument) ( VgCallbackClosure* closure,
       mce.dlbo.dl_Add32           = DLauto;
       mce.dlbo.dl_CmpEQ16_CmpNE16 = DLexpensive;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
+      // clang lowers a `bitfield != 0` test that shares a storage word with
+      // never-written bits to `word >=u 1<<k`; the cheap rule taints the
+      // branch (llvm/llvm-project#194147).  The extremal rule is exact.
+      mce.dlbo.dl_CmpLTU_CmpLEU   = DLexpensive;
 #     elif defined(VGA_amd64)
       mce.dlbo.dl_Add32           = DLexpensive;
       mce.dlbo.dl_Add64           = DLauto;
       mce.dlbo.dl_CmpEQ16_CmpNE16 = DLexpensive;
       mce.dlbo.dl_CmpEQ32_CmpNE32 = DLexpensive;
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;
+      // See the x86 note above (llvm/llvm-project#194147).
+      mce.dlbo.dl_CmpLTU_CmpLEU   = DLexpensive;
 #     elif defined(VGA_ppc64le)
       // Needed by (at least) set_AV_CR6() in the front end.
       mce.dlbo.dl_CmpEQ64_CmpNE64 = DLexpensive;

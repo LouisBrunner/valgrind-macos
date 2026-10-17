@@ -198,6 +198,18 @@ check_result_for_binary(const irop_t *op, const test_data_t *data)
                                        opnd1->value, opnd2->value);
       break;
 
+   case UNDEF_CMP_LT_U:
+      expected_vbits = cmp_lt_le_u_vbits(0/*!isLE*/,
+                                         opnd1->vbits, opnd2->vbits,
+                                         opnd1->value, opnd2->value);
+      break;
+
+   case UNDEF_CMP_LE_U:
+      expected_vbits = cmp_lt_le_u_vbits(1/*isLE*/,
+                                         opnd1->vbits, opnd2->vbits,
+                                         opnd1->value, opnd2->value);
+      break;
+
    case UNDEF_INT_ADD:
       expected_vbits = int_add_or_sub_vbits(1/*isAdd*/,
                                             opnd1->vbits, opnd2->vbits,

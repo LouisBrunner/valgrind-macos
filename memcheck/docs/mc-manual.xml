@@ -1158,8 +1158,8 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       <para>Controls whether Memcheck should employ more precise but also
         more expensive (time consuming) instrumentation when checking the
         definedness of certain values.  In particular, this affects the
-        instrumentation of integer adds, subtracts and equality
-        comparisons.</para>
+        instrumentation of integer adds, subtracts, equality comparisons
+        and unsigned less-than and less-than-or-equal comparisons.</para>
       <para>Selecting <option>--expensive-definedness-checks=yes</option>
         causes Memcheck to use the most accurate analysis possible.  This
         minimises false error rates but can cause up to 30% performance

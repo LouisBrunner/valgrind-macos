@@ -1188,6 +1188,30 @@ int_add_or_sub_vbits(int isAdd,
    return res;
 }
 
+/* Deal with precise unsigned CmpLT and CmpLE.  The result is undefined only
+   if some choice of the undefined bits makes the comparison true and another
+   makes it false. */
+vbits_t
+cmp_lt_le_u_vbits(int isLE,
+                  vbits_t vbits1, vbits_t vbits2, value_t val1, value_t val2)
+{
+   uint64_t vaa = 0, aa = 0, vbb = 0, bb = 0;
+   get_binary_vbits_and_vals64(&vaa, &aa, &vbb, &bb,
+                               vbits1, vbits2, val1, val2);
+
+   uint64_t a_min = min_vbits(vaa, aa);
+   uint64_t b_min = min_vbits(vbb, bb);
+   uint64_t a_max = max_vbits(vaa, aa);
+   uint64_t b_max = max_vbits(vbb, bb);
+
+   int can_be_true  = isLE ? a_min <= b_max : a_min < b_max;
+   int can_be_false = isLE ? a_max > b_min  : a_max >= b_min;
+
+   vbits_t res = { .num_bits = 1 };
+   res.bits.u32 = can_be_true && can_be_false;
+   return res;
+}
+
 /* Deal with precise CmpGTsbxe.
  *
  * b is the number of bits per element and e is the number of elements.  x is

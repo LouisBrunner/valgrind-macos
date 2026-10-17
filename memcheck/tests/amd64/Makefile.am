@@ -20,6 +20,8 @@ EXTRA_DIST = \
 	insn-pmovmskb.vgtest insn-pmovmskb.stdout.exp insn-pmovmskb.stderr.exp \
 		insn-pmovmskb.stderr.exp-clang \
 	more_x87_fp.stdout.exp more_x87_fp.vgtest \
+	partial_bitfield_cmp.vgtest partial_bitfield_cmp.stdout.exp \
+		partial_bitfield_cmp.stderr.exp \
 	pcmpgt.stderr.exp pcmpgt.vgtest \
 	rh2257546_128.vgtest rh2257546_128.stdout.exp \
 	rh2257546_256.vgtest rh2257546_256.stdout.exp \
@@ -46,6 +48,7 @@ check_PROGRAMS = \
 	fxsave-amd64 \
 	insn-bsfl \
 	insn-pmovmskb \
+	partial_bitfield_cmp \
 	pcmpgt \
 	rh2257546_128 \
 	sh-mem-vec128 \

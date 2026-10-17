@@ -2297,34 +2297,46 @@ void do_client_request ( ThreadId tid )
          break;
 
       default:
-       my_default:
-	 if (os_client_request(tid, arg)) {
-	    // do nothing, os_client_request() handled it
-         } else if (VG_(needs).client_requests) {
-	    UWord ret;
+      my_default:
+         {
+            // Allow for requests in core, but defined by tools, which
+            // have 0 and 0 in their two high bytes.
+            HChar c1 = (arg[0] >> 24) & 0xff;
+            HChar c2 = (arg[0] >> 16) & 0xff;
+            if (c1 == 0) c1 = '_';
+            if (c2 == 0) c2 = '_';
 
-            if (VG_(clo_verbosity) > 2)
-               VG_(printf)("client request: code %lx,  addr %p,  len %lu\n",
-                           arg[0], (void*)arg[1], arg[2] );
+            if (os_client_request(tid, arg)) {
+               // do nothing, os_client_request() handled it
+            } else if (VG_(needs).client_requests) {
+               UWord ret;
+               Bool handled = False;
+               static Bool whined_have_client_requests = False;
 
-	    if ( VG_TDICT_CALL(tool_handle_client_request, tid, arg, &ret) )
-	       SET_CLREQ_RETVAL(tid, ret);
-         } else {
-	    static Bool whined = False;
+               if ( VG_TDICT_CALL(tool_handle_client_request, tid, arg, &ret) ) {
+                  SET_CLREQ_RETVAL(tid, ret);
+                  handled = True;
+               }
 
-	    if (!whined && VG_(clo_verbosity) > 2) {
-               // Allow for requests in core, but defined by tools, which
-               // have 0 and 0 in their two high bytes.
-               HChar c1 = (arg[0] >> 24) & 0xff;
-               HChar c2 = (arg[0] >> 16) & 0xff;
-               if (c1 == 0) c1 = '_';
-               if (c2 == 0) c2 = '_';
-	       VG_(message)(Vg_UserMsg, "Warning:\n"
-                   "  unhandled client request: 0x%lx (%c%c+0x%lx).  Perhaps\n"
-		   "  VG_(needs).client_requests should be set?\n",
-			    arg[0], c1, c2, arg[0] & 0xffff);
-	       whined = True;
-	    }
+               if (VG_(clo_verbosity) > 3 && handled)
+                  VG_(printf)("client request: code %lx,  addr %p,  len %lu\n",
+                              arg[0], (void*)arg[1], arg[2] );
+               if (!whined_have_client_requests && VG_(clo_verbosity) > 2 && !handled) {
+                  VG_(message)(Vg_UserMsg, "Warning:\n"
+                                           "  unhandled client request: 0x%lx (%c%c+0x%lx).\n",
+                                           arg[0], c1, c2, arg[0] & 0xffff);
+                  whined_have_client_requests = True;
+               }
+            } else {
+               static Bool whined_no_client_requests = False;
+               if (!whined_no_client_requests && VG_(clo_verbosity) > 2) {
+                  VG_(message)(Vg_UserMsg, "Warning:\n"
+                      "  unhandled client request: 0x%lx (%c%c+0x%lx).  Perhaps\n"
+                      "  VG_(needs).client_requests should be set?\n",
+                      arg[0], c1, c2, arg[0] & 0xffff);
+                  whined_no_client_requests = True;
+               }
+            }
          }
          break;
    }

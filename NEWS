@@ -86,7 +86,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
         undefined reference to _Unwind_Resume / __gcc_personality_v0
 527258  PPC: Fix r10 collision in 8-argument dirty helper calls
 527283  Add support for illumos close_range
-
+527268  Clean up unhandled client request traces
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX

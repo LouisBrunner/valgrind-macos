@@ -152,6 +152,7 @@ EXTRA_DIST = \
 	clo_redzone_default.stderr.exp clo_redzone_128.stderr.exp \
 	close_range.vgtest close_range.stderr.exp \
 	close_range.stderr.exp.linux \
+	close_range.stderr.exp.illumos \
 	cond_ld.vgtest cond_ld.stderr.exp-arm \
 		cond_ld.stderr.exp-64bit-non-arm \
 		cond_ld.stderr.exp-32bit-non-arm \

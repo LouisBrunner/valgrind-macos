@@ -96,6 +96,15 @@
 //#define __NR_fstatfs                    SYS_fstatfs
 #define __NR_pgrpsys                    SYS_pgrpsys
 //#define __NR_uucopystr                  SYS_uucopystr
+#if defined(__illumos__)
+/* Not present in the headers of older illumos systems. Defining it there
+   lets valgrind built on such a system still handle the syscall when run on
+   a newer one, where libc's closefrom(3C) depends on it. */
+#if !defined(SYS_close_range)
+#define SYS_close_range                 41
+#endif /* !SYS_close_range */
+#define __NR_close_range                SYS_close_range
+#endif /* __illumos__ */
 #define __NR_pipe                       SYS_pipe
 #define __NR_times                      SYS_times
 //#define __NR_profil                     SYS_profil

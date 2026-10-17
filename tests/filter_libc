@@ -7,6 +7,7 @@ while (<>)
 {
     s/ __getsockname / getsockname /;
     s/ __sigaction / sigaction /;
+    s/__close_range/close_range/;
     s/ __GI___/ __/;
     s/ __([a-z]*)_nocancel / $1 /;
 

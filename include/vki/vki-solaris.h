@@ -118,6 +118,16 @@ typedef uint32_t vki_u32;
 #define VKI_R_OK R_OK
 #define VKI_W_OK W_OK
 #define VKI_X_OK X_OK
+#if defined(__illumos__)
+/* Not present in the headers of older illumos systems. */
+#if defined(CLOSE_RANGE_CLOEXEC)
+#define VKI_CLOSE_RANGE_CLOEXEC CLOSE_RANGE_CLOEXEC
+#define VKI_CLOSE_RANGE_CLOFORK CLOSE_RANGE_CLOFORK
+#else
+#define VKI_CLOSE_RANGE_CLOEXEC (1 << 0)
+#define VKI_CLOSE_RANGE_CLOFORK (1 << 1)
+#endif /* CLOSE_RANGE_CLOEXEC */
+#endif /* __illumos__ */
 
 
 #include <bsm/audit.h>

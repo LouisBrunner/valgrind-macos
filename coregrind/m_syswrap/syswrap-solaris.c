@@ -931,6 +931,9 @@ DECL_TEMPLATE(solaris, sys_frealpathat);
 DECL_TEMPLATE(solaris, sys_stty);
 DECL_TEMPLATE(solaris, sys_gtty);
 DECL_TEMPLATE(solaris, sys_pgrpsys);
+#if defined(__illumos__)
+DECL_TEMPLATE(solaris, sys_close_range);
+#endif /* __illumos__ */
 DECL_TEMPLATE(solaris, sys_pipe);
 DECL_TEMPLATE(solaris, sys_faccessat);
 DECL_TEMPLATE(solaris, sys_mknodat);
@@ -3228,6 +3231,102 @@ PRE(sys_pgrpsys)
       break;
    }
 }
+
+#if defined(__illumos__)
+PRE(sys_close_range)
+{
+   /* int close_range(unsigned int low, unsigned int high, int flags); */
+
+   /* Interpret the arguments as 32-bit values even on 64-bit architecture. */
+   UInt low = (UInt) ARG1;
+   UInt high = (UInt) ARG2;
+   Int fdflags = (Int) ARG3;
+
+   PRINT("sys_close_range ( %u, %u, %d )", low, high, fdflags);
+   PRE_REG_READ3(long, "close_range", unsigned int, low, unsigned int, high,
+                 int, flags);
+
+   if (low > high ||
+       (fdflags & ~(VKI_CLOSE_RANGE_CLOEXEC | VKI_CLOSE_RANGE_CLOFORK)) != 0) {
+      SET_STATUS_Failure(VKI_EINVAL);
+      return;
+   }
+
+   /* Valgrind's own file descriptors live at or above VG_(fd_hard_limit) and
+      must not be closed or have their flags altered. A high value of
+      UINT_MAX, as used by closefrom(3C), is the common case. */
+   if (high >= VG_(fd_hard_limit))
+      high = VG_(fd_hard_limit) - 1;
+
+   if (low > high) {
+      SET_STATUS_Success(0);
+      return;
+   }
+
+   vg_assert(VG_(log_output_sink).fd == -1 ||
+             VG_(log_output_sink).fd >= VG_(fd_hard_limit));
+   vg_assert(VG_(xml_output_sink).fd == -1 ||
+             VG_(xml_output_sink).fd >= VG_(fd_hard_limit));
+
+   /* If doing -d style logging (which is to fd = 2 = stderr), don't allow
+      that filedes to be closed. */
+   if (VG_(debugLog_getLevel)() > 0 && low <= 2 && high >= 2) {
+      SysRes res = VG_(mk_SysRes_Success)(0);
+      if (low < 2)
+         res = VG_(do_syscall3)(__NR_close_range, low, 1, fdflags);
+      if (!sr_isError(res) && high > 2)
+         res = VG_(do_syscall3)(__NR_close_range, 3, high, fdflags);
+      SET_STATUS_from_SysRes(res);
+   } else {
+      SET_STATUS_from_SysRes(VG_(do_syscall3)(__NR_close_range, low, high,
+                                              fdflags));
+   }
+}
+
+POST(sys_close_range)
+{
+   UInt low = (UInt) ARG1;
+   UInt high = (UInt) ARG2;
+   Bool wide = False;
+
+   /* With CLOSE_RANGE_CLOEXEC or CLOSE_RANGE_CLOFORK, the descriptors have
+      their flags set rather than being closed. */
+   if ((Int) ARG3 != 0)
+      return;
+
+   if (high >= VG_(fd_hard_limit)) {
+      high = VG_(fd_hard_limit) - 1;
+      wide = True;
+   }
+   if (low > high)
+      return;
+
+   /* door_record_revoke() unlinks and frees the record so start the walk
+      again after each one. */
+   OpenDoor *d = doors_recorded;
+   while (d != NULL) {
+      if (d->fd >= 0 && (UInt) d->fd >= low && (UInt) d->fd <= high) {
+         door_record_revoke(tid, d->fd);
+         d = doors_recorded;
+      } else {
+         d = d->next;
+      }
+   }
+
+   if (!VG_(clo_track_fds))
+      return;
+
+   /* If the range is too wide, don't loop through all of it. */
+   if (wide) {
+      ML_(record_fd_close_range)(tid, low);
+   } else {
+      for (UInt fd = low; fd <= high; fd++) {
+         if (fd != 2 || VG_(debugLog_getLevel)() == 0)
+            ML_(record_fd_close)(tid, fd);
+      }
+   }
+}
+#endif /* __illumos__ */
 
 PRE(sys_pipe)
 {
@@ -11611,6 +11710,9 @@ static SyscallTableEntry syscall_table[] = {
 #endif /* SOLARIS_OLD_SYSCALLS */
    GENX_(__NR_kill,                 sys_kill),                  /*  37 */
    SOLX_(__NR_pgrpsys,              sys_pgrpsys),               /*  39 */
+#if defined(__illumos__)
+   SOLXY(__NR_close_range,          sys_close_range),           /*  41 */
+#endif /* __illumos__ */
    SOLXY(__NR_pipe,                 sys_pipe),                  /*  42 */
    GENXY(__NR_times,                sys_times),                 /*  43 */
    SOLX_(__NR_faccessat,            sys_faccessat),             /*  45 */

@@ -1,0 +1,16 @@
+Conditional jump or move depends on uninitialised value(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:92)
+
+Syscall param close_range(low) contains uninitialised byte(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:92)
+
+Syscall param close_range(high) contains uninitialised byte(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:92)
+
+Syscall param close_range(flags) contains uninitialised byte(s)
+   at 0x........: close_range (in /...libc...)
+   by 0x........: main (close_range.c:92)
+

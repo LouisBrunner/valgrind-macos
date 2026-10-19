@@ -87,6 +87,7 @@ are not entered into bugzilla tend to get forgotten about or ignored.
 526075  Tool link fails against a libgcc built without optimisation:
         undefined reference to _Unwind_Resume / __gcc_personality_v0
 526648  --track-fds=yes with forkpty() causes a false positive
+526974  Fix do_mremap() retval for old_size > VMA size
 527258  PPC: Fix r10 collision in 8-argument dirty helper calls
 527283  Add support for illumos close_range
 527268  Clean up unhandled client request traces

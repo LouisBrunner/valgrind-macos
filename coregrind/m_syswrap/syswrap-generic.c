@@ -345,7 +345,7 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
       single segment, fail. */
    old_seg = VG_(am_find_nsegment)( old_addr );
    if (old_addr < old_seg->start || old_addr+old_len-1 > old_seg->end)
-      goto eINVAL;
+      goto eFAULT;
    if (old_seg->kind != SkAnonC && old_seg->kind != SkFileC 
        && old_seg->kind != SkShmC)
       goto eINVAL;
@@ -540,6 +540,8 @@ SysRes do_mremap( Addr old_addr, SizeT old_len,
    return VG_(mk_SysRes_Error)( VKI_EINVAL );
   eNOMEM:
    return VG_(mk_SysRes_Error)( VKI_ENOMEM );
+  eFAULT:
+   return VG_(mk_SysRes_Error)( VKI_EFAULT );
 
 #  undef MIN_SIZET
 }

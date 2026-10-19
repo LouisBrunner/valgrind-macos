@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	brk-overflow1.stderr.exp brk-overflow1.vgtest \
 	brk-overflow2.stderr.exp brk-overflow2.vgtest \
 	bug498317.supp bug498317.vgtest \
+	bug526648.vgtest \
 	bug506910.vgtest \
 	clonev.stdout.exp clonev.vgtest \
 	getdents_filter.stdout.exp getdents_filter.vgtest \
@@ -31,6 +32,7 @@ check_PROGRAMS = \
 	brk-overflow1 \
 	brk-overflow2 \
 	bug498317 \
+	bug526648 \
 	clonev \
 	getdents_filter \
 	mremap \

@@ -449,6 +449,7 @@ struct vki_termios {
 #define VKI_TCSBRKP	0x5425
 #define VKI_TIOCGPTN	_VKI_IOR('T',0x30, unsigned int)
 #define VKI_TIOCSPTLCK	_VKI_IOW('T',0x31, int)
+#define VKI_TIOCGPTPEER _VKI_IO('T', 0x41) /* Safely open the slave */
 
 #define VKI_FIONCLEX    0x5450
 #define VKI_FIOCLEX     0x5451

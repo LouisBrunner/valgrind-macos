@@ -645,6 +645,7 @@ struct vki_termios {
 //#define VKI_TIOCGSID		0x5429  /* Return the session ID of FD */
 #define VKI_TIOCGPTN		_VKI_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
 #define VKI_TIOCSPTLCK		_VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
+#define VKI_TIOCGPTPEER         _VKI_IO('T', 0x41) /* Safely open the slave */
 
 //#define VKI_TIOCSERCONFIG	0x5453
 //#define VKI_TIOCSERGWILD	0x5454

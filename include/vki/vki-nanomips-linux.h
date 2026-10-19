@@ -279,6 +279,7 @@
 #define VKI_TIOCCONS    _VKI_IOW('t', 120, int)
 #define VKI_TIOCGPTN    _VKI_IOR('T',0x30, unsigned int)
 #define VKI_TIOCSPTLCK  _VKI_IOW('T',0x31, int)
+#define VKI_TIOCGPTPEER _VKI_IO('T', 0x41) /* Safely open the slave */
 
 #define VKI_TIOCPKT_DATA       0x00    /* data packet */
 #define VKI_TIOCPKT_FLUSHREAD  0x01    /* flush packet */

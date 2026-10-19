@@ -650,6 +650,7 @@ struct vki_termios {
 #define VKI_TIOCGPTN        _VKI_IOR('T',0x30, unsigned int) 
                             /* Get Pty Number (of pty-mux device) */
 #define VKI_TIOCSPTLCK      _VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
+#define VKI_TIOCGPTPEER     _VKI_IO('T', 0x41) /* Safely open the slave */
 #define VKI_FIOASYNC        _VKI_IOW('f', 125, int)
 #define VKI_TIOCSERGETLSR   0x5459 /* Get line status register */
 #define VKI_TIOCGICOUNT	    0x545D /* read serial port inline interrupt counts */

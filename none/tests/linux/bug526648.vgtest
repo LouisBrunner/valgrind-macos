@@ -1,0 +1,2 @@
+prog: bug526648
+vgopts: -q --track-fds=bad

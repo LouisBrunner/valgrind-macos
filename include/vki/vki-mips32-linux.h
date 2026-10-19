@@ -631,6 +631,7 @@ extern unsigned int __VKI_invalid_size_argument_for_IOC;
 #define VKI_TIOCGSID	0x7416  /* Return the session ID of FD */
 #define VKI_TIOCGPTN	_VKI_IOR('T',0x30, unsigned int) /* Get Pty Number (of pty-mux device) */
 #define VKI_TIOCSPTLCK	_VKI_IOW('T',0x31, int)  /* Lock/unlock Pty */
+#define VKI_TIOCGPTPEER _VKI_IO('T', 0x41) /* Safely open the slave */
 
 /* I hope the range from 0x5480 on is free ... */
 #define VKI_TIOCSCTTY		0x5480		/* become controlling tty */

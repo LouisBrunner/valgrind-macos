@@ -8042,6 +8042,8 @@ PRE(sys_ioctl)
    case VKI_TIOCSPTLCK: /* Lock/unlock Pty */
       PRE_MEM_READ( "ioctl(TIOCSPTLCK)", ARG3, sizeof(int) );
       break;
+   case VKI_TIOCGPTPEER: /* Safely open the slave */
+      break;
    case VKI_FIONBIO:
       PRE_MEM_READ( "ioctl(FIONBIO)",    ARG3, sizeof(int) );
       break;
@@ -11350,6 +11352,10 @@ POST(sys_ioctl)
    case VKI_TIOCSCTTY:
       break;
    case VKI_TIOCSPTLCK: /* Lock/unlock Pty */
+      break;
+   case VKI_TIOCGPTPEER: /* Safely open the slave */
+      if (VG_(clo_track_fds))
+         ML_(record_fd_open_nameless)(tid, RES);
       break;
    case VKI_FIONBIO:
       break;

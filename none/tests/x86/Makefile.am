@@ -162,6 +162,7 @@ if VGCONF_OS_IS_DARWIN
 AM_CFLAGS += -mdynamic-no-pic
 endif
 
+bug520856_x86_LDADD	= @LDFLAG_NO_PIE@
 cpuid_SOURCES 		= cpuid_c.c cpuid_s.S
 fb_test_i386_LDADD	= -lm
 # fpu_lazy_eflags must use these flags -- the bug only occurred with them.

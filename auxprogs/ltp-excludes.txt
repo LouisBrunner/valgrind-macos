@@ -38,3 +38,5 @@ mallinfo2_01
 # LTP_TIMEOUT_MUL set to some relatively high value.  Let's just
 # skip it here.
 shmctl05
+# The following one is long running and memory demanding.
+setsockopt11

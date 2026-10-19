@@ -1,0 +1,36 @@
+commit 1255a3be50a69950607ed76fd2e9566189447f7a
+Author: Martin Cermak <mcermak@redhat.com>
+Date:   Thu Oct 15 10:22:14 2026 +0200
+
+    mremap03: Remove redundant SAFE_MUNMAP()
+    
+    Commit 88cfde5fbc14b23f673b81855127448a519679c0 introduced a regression
+    in the setup() function of the mremap03 testcase.  The goal is to pass
+    a bad_addr to the mremap() syscall.
+    
+    The original version of the setup() function did generate the bad_addr
+    using tst_get_bad_addr().  This gives a mapped address which is not
+    accessible (PROT_NONE).  The new version of the test does the same, but
+    unmaps that address right after that.  Valgrind flags that as an error.
+    
+    This patch restores the original behavior of the setup() function.
+    
+    Link: https://lore.kernel.org/ltp/as9x2R-9IQb7vjn7@toolbx/
+    Fixes: 88cfde5fbc ("mremap03: Convert to new API")
+    Reviewed-by: Andrea Cervesato <andrea.cervesato@suse.com>
+    Reviewed-by: Petr Vorel <pvorel@suse.cz>
+    Signed-off-by: Martin Cermak <mcermak@redhat.com>
+    Signed-off-by: Petr Vorel <pvorel@suse.cz>
+
+diff --git a/testcases/kernel/syscalls/mremap/mremap03.c b/testcases/kernel/syscalls/mremap/mremap03.c
+index 4e647cdca..6003657d4 100644
+--- a/testcases/kernel/syscalls/mremap/mremap03.c
++++ b/testcases/kernel/syscalls/mremap/mremap03.c
+@@ -35,7 +35,6 @@ static void setup(void)
+ 	newsize = 2 * memsize;
+ 
+ 	bad_addr = tst_get_bad_addr(NULL);
+-	SAFE_MUNMAP(bad_addr, page_size);
+ }
+ 
+ static void run(void)

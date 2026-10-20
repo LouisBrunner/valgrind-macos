@@ -82,7 +82,7 @@
 
    IN_GLIBCPP_V3
       If defined, this file defines only __cxa_demangle() and
-      __gcclibcxx_demangle_callback(), and no other publically visible
+      __gcclibcxx_demangle_callback(), and no other publicly visible
       functions or variables.
 
    STANDALONE_DEMANGLER
@@ -3283,7 +3283,7 @@ d_compact_number (struct d_info *di)
   else if (d_peek_char (di) == 'n')
     return -1;
   else
-    num = d_number (di) + 1;
+    num = d_number (di) + 1u;
 
   if (num < 0 || ! d_check_char (di, '_'))
     return -1;
@@ -5623,7 +5623,7 @@ d_print_comp_inner (struct d_print_info *dpi, int options,
 		const struct d_component_stack *dcse;
 		int found_self_or_parent = 0;
 
-		/* This traversal is reentering SUB as a substition.
+		/* This traversal is reentering SUB as a substitution.
 		   If we are not beneath SUB or DC in the tree then we
 		   need to restore SUB's template stack temporarily.  */
 		for (dcse = dpi->component_stack; dcse != NULL;
@@ -6423,7 +6423,7 @@ d_print_comp (struct d_print_info *dpi, int options,
   dpi->recursion--;
 }
 
-/* Print a Java dentifier.  For Java we try to handle encoded extended
+/* Print a Java identifier.  For Java we try to handle encoded extended
    Unicode characters.  The C++ ABI doesn't mention Unicode encoding,
    so we don't it for C++.  Characters are encoded as
    __U<hex-char>+_.  */

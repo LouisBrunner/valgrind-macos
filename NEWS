@@ -1,4 +1,4 @@
-Release 3.28.0 (?? Oct 2026)
+Release 3.28.0.RC1 (20 Oct 2026)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
@@ -112,7 +112,7 @@ To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
 where XXXXXX is the bug number as listed above.
 
-(3.28.0.RC1: ?? Oct 2026)
+(3.28.0.RC1: 20 Oct 2026)
 
 
 Release 3.27.0 (20 Apr 2026)

@@ -25,8 +25,23 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
 * ================== PLATFORM CHANGES =================
 
+* x86: Support for SSE4.1 and SSE4.2 instructions has been ported from
+  AMD64 to (32bit) x86. Valgrind will now advertise support for
+  SSE4.1, SSE4.2, POPCNT and LZCNT through cpuid emulation if the host
+  cpu supports those instruction sets (e.g. when 32bit x86 code runs
+  on x86_64).
+
+* arm64: Add support for the EOR3 instruction.
+
+* s390x: Implement DIDBR and DIEBR instructions.
+
 * macOS 10.14 Mojave (x86) is now supported, thanks to the addition
   of SSE4.1 support on x86.
+
+* linux ioctl UFFDIO_* are recognized for userfaultfd support. Add
+  support for the open_tree_attr syscall.
+
+* The Linux Test Project (LTP) v20260930 was integrated.
 
 * ==================== TOOL CHANGES ===================
 

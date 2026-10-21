@@ -18,6 +18,9 @@ while (<>)
     # From assembler functions
     s/\(syscall-template.S:.*\)$/(in \/...libc...)/;
 
+    # syscalls that can be cancelled
+    s/\(sysdep-cancel.h:.*\)$/(in \/...libc...)/;
+
     # Filter out dynamic loader
     s/ \(in \/.*ld-.*so\)$//;
 

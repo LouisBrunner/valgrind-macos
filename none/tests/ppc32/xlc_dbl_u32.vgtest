@@ -1,1 +1,2 @@
 prog: xlc_dbl_u32
+vgopts: -q

@@ -25,7 +25,8 @@ void check_addr(char *p)
     read(fd, &entry, sizeof(entry));
     // Bit 58 pte is a guard region (since 6.15) (see madvise (2) man page)
     printf("page 0x%lx, is guardpage: %lu, present: %lu\n",
-           (unsigned long)p, ((entry >> 58) & 1), ((entry >> 63) & 1));
+           (unsigned long)p, (unsigned long)((entry >> 58) & 1),
+           (unsigned long)((entry >> 63) & 1));
 
     // attempt accessing the address
     // if ((open(p, O_RDONLY) == -1) && errno == EFAULT)

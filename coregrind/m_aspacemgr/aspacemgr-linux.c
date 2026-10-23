@@ -1107,7 +1107,7 @@ static void guard_page_install ( Addr addr ) {
    Addr addr_aligned = addr & ~(VKI_PAGE_SIZE - 1);
    if (nguardpages_used >= VG_N_GUARDS) {
       VG_(printf)("Use --max-guard-pages=INT to specify a larger number of\n"
-                  "guard pages and rerun valgrind\n");
+                  "guard pages (current %u) and rerun valgrind\n", VG_N_GUARDS);
       VG_(core_panic)("Max number of guard pages is too low");
    }
    // bisect

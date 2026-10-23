@@ -326,9 +326,10 @@ extern Word VG_(clo_main_stacksize);
 #define MAX_THREADS_DEFAULT 500
 extern UInt VG_(clo_max_threads);
 
-/* The maximum number of madvise guard pages we support. */
+/* The maximum number of madvise guard pages we support
+   (16 pages per thread). */
 #if defined(VGO_linux)
-#define MAX_GUARDS_DEFAULT 500
+#define MAX_GUARDS_DEFAULT (MAX_THREADS_DEFAULT * 16)
 extern UInt VG_(clo_max_guard_pages);
 #endif
 

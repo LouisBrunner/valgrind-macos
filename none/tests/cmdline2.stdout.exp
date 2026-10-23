@@ -166,7 +166,7 @@ usage: valgrind [options] prog-and-args
     --max-threads=<number>     maximum number of threads that valgrind can
                                handle [500]
     --max-guard-pages=<number> maximum number of madvise guard pages that
-                               valgrind can handle [500]
+                               valgrind can handle [8000]
 
   user options for Nulgrind:
     (none)

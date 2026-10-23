@@ -521,11 +521,12 @@ static void process_option (Clo_Mode mode,
    // Set up VG_(clo_max_threads); needed for VG_(tl_pre_clo_init)
    else if VG_INT_CLOM(cloE, arg, "--max-threads", VG_(clo_max_threads)) {
 #if defined(VGO_linux)
-      // VG_(clo_max_guard_pages) defaults to VG_(clo_max_threads)
+      // VG_(clo_max_guard_pages) defaults to VG_(clo_max_threads) * 16
       // unless explititly set otherwise - below.  With glibc upstream
       // commit a6fbe36b7f31 and others, a guard page is installed for
-      // each new thread.
-      VG_(clo_max_guard_pages) = VG_(clo_max_threads);
+      // each new thread. And 16 pages on arm64, see
+      // https://sourceware.org/bugzilla/show_bug.cgi?id=26691
+      VG_(clo_max_guard_pages) = VG_(clo_max_threads) * 16;
 #endif
    }
 #if defined(VGO_linux)
@@ -1376,11 +1377,12 @@ Int valgrind_main ( Int argc, HChar **argv, HChar **envp )
       }
       if VG_INT_CLOM(cloE, argv[i], "--max-threads", VG_(clo_max_threads)) {
 #if defined(VGO_linux)
-         // VG_(clo_max_guard_pages) defaults to VG_(clo_max_threads)
+         // VG_(clo_max_guard_pages) defaults to VG_(clo_max_threads) * 16
          // unless explititly set otherwise - below.  With glibc upstream
          // commit a6fbe36b7f31 and others, a guard page is installed for
-         // each new thread.
-         VG_(clo_max_guard_pages) = VG_(clo_max_threads);
+         // each new thread. And 16 pages on arm64, see
+         // https://sourceware.org/bugzilla/show_bug.cgi?id=26691
+         VG_(clo_max_guard_pages) = VG_(clo_max_threads) * 16;
 #endif
       }
 #if defined(VGO_linux)

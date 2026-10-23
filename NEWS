@@ -147,11 +147,11 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
   glibc 2.42+ (with linux 6.13+) uses MADV_GUARD_INSTALL to setup
   stack guard pages. These lightweight guard pages are now supported
-  under valgrind. By default, Valgrind can handle to up to 500 madvise
+  under valgrind. By default, Valgrind can handle to up to 8000 madvise
   guard pages. With thread heavy workloads the default value might not
   be sufficient. Use --max-guard-pages=N to provide a different limit.
   If --max-guard-pages is not set explicitly, then it will default to
-  the --max-threads setting.
+  the --max-threads setting (which defaults to 500) times 16.
 
 * --num-callers now has a minimum value of 2.
 

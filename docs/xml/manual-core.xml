@@ -1828,17 +1828,17 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
 
   <varlistentry id="opt.max-guard-pages" xreflabel="--max-guard-pages">
     <term>
-      <option><![CDATA[--max-guard-pages=<number> [default: 500] ]]></option>
+      <option><![CDATA[--max-guard-pages=<number> [default: 8000] ]]></option>
     </term>
     <listitem>
-      <para>By default, Valgrind can handle to up to 500 madvise
+      <para>By default, Valgrind can handle to up to 8000 madvise
       guard pages.  With thread heavy workloads the default value
       might not be sufficient. Use this option to provide a different
       limit. E.g.
-      <computeroutput>--max-guard-pages=3000</computeroutput>.
+      <computeroutput>--max-guard-pages=12000</computeroutput>.
       If <computeroutput>--max-guard-pages</computeroutput> is not
       set explicitly, then it will default to the 
-      <computeroutput>--max-threads</computeroutput> setting.
+      <computeroutput>--max-threads</computeroutput> setting times 16.
       </para>
     </listitem>
   </varlistentry>

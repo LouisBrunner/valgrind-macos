@@ -14,9 +14,11 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Sonoma (amd64 only).
 
 * ==================== TOOL CHANGES ===================
 
-398569  invalid reads reported in libarmmem memcmp when using strings
-
 * ==================== FIXED BUGS =====================
+
+398569  invalid reads reported in libarmmem memcmp when using strings
+527723  configure fails when cross-compiling 3.28.0: cannot run test
+        program (arm64 dotprod/crypto probes)
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us

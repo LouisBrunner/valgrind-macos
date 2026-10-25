@@ -1,2 +1,3 @@
+prereq: test -x v8crypto
 prog: v8crypto
 vgopts: -q

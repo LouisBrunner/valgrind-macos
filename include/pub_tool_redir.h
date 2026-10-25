@@ -271,6 +271,11 @@
 #  error "Unknown platform"
 #endif
 
+// Raspberry Pi has a separate library for "copies and fills"
+#if defined(VGP_arm_linux)
+#  define  VG_Z_LIBARMMEM_SONAME  libarmmemZa           // libarmmem*
+#endif
+
 /* --- Sonames of the GNU C++ library. --- */
 
 // Valid on all platforms(?)

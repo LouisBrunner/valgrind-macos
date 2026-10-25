@@ -515,6 +515,9 @@ static inline void my_exit ( int x )
      || defined(VGPV_mips32_linux_android)
   STRLEN(NONE, __dl_strlen); /* in /system/bin/linker */
 # endif
+#if defined(VGP_arm_linux)
+ STRLEN(VG_Z_LIBARMMEM_SONAME, strlen)
+#endif
 
 #elif defined(VGO_freebsd)
  STRLEN(VG_Z_LIBC_SONAME,   strlen)
@@ -1167,6 +1170,10 @@ static inline void my_exit ( int x )
  */
  MEMCPY(NONE, ZuintelZufastZumemcpy)
 
+#if defined(VGP_arm_linux)
+ MEMCPY(VG_Z_LIBARMMEM_SONAME,  memcpy)
+#endif
+
 #elif defined(VGO_freebsd)
  MEMCPY(VG_Z_LIBC_SONAME,  memcpy)
  MEMCPY(VG_Z_LD_ELF_SO_1, memcpy)
@@ -1233,6 +1240,10 @@ static inline void my_exit ( int x )
  MEMCMP(VG_Z_LIBC_SONAME, __memcmp_sse4_1)
  MEMCMP(VG_Z_LIBC_SONAME, bcmp)
  MEMCMP(VG_Z_LD_SO_1,     bcmp)
+
+#if defined(VGP_arm_linux)
+ MEMCMP(VG_Z_LIBARMMEM_SONAME, memcmp)
+#endif
 
 #elif defined(VGO_freebsd)
  MEMCMP(VG_Z_LIBC_SONAME,  memcmp)
@@ -1395,6 +1406,10 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  MEMSET(VG_Z_LIBC_SONAME, memset)
 
+#if defined(VGP_arm_linux)
+ MEMSET(VG_Z_LIBARMMEM_SONAME, memset)
+#endif
+
 #elif defined(VGO_freebsd)
  MEMSET(VG_Z_LIBC_SONAME,   memset)
  MEMSET(VG_Z_LD_ELF_SO_1,   memset)
@@ -1429,6 +1444,10 @@ static inline void my_exit ( int x )
     arches MEMCPY_OK_FOR_FORWARD_MEMMOVE is set, which might cause memmove
     to call memcpy.  */
  MEMMOVE(VG_Z_LD64_SO_1, memmove)
+
+#if defined(VGP_arm_linux)
+ MEMMOVE(VG_Z_LIBARMMEM_SONAME, memmove)
+#endif
 
 #elif defined(VGO_freebsd)
  MEMMOVE(VG_Z_LD_ELF_SO_1,   memmove)
@@ -1711,6 +1730,11 @@ static inline void my_exit ( int x )
  GLIBC25_MEMPCPY(VG_Z_LD_SO_1,     mempcpy) /* ld.so.1 */
  GLIBC25_MEMPCPY(VG_Z_LD_LINUX_SO_3, mempcpy) /* ld-linux.so.3 */
  GLIBC25_MEMPCPY(VG_Z_LD_LINUX_X86_64_SO_2, mempcpy) /* ld-linux-x86-64.so.2 */
+
+#if defined(VGP_arm_linux)
+ GLIBC25_MEMPCPY(VG_Z_LIBARMMEM_SONAME, mempcpy)
+ GLIBC25_MEMPCPY(VG_Z_LIBARMMEM_SONAME, __mempcpy)
+#endif
 
 #elif defined(VGO_freebsd)
  GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)

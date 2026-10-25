@@ -1,3 +1,38 @@
+Release 3.29.0 (?? Apr 2027)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This release supports X86/Linux, AMD64/Linux, ARM32/Linux, ARM64/Linux,
+PPC32/Linux, PPC64BE/Linux, PPC64LE/Linux, S390X/Linux, MIPS32/Linux,
+MIPS64/Linux, RISCV64/Linux, ARM/Android, ARM64/Android, MIPS32/Android,
+X86/Android, X86/Solaris, AMD64/Solaris, X86/macOS, AMD64/macOS.
+X86/FreeBSD, AMD64/FreeBSD and ARM64/FreeBSD. There is preliminary support
+for nanoMIPS/Linux. macOS is supported up to version 13 Sonoma (amd64 only).
+
+* ==================== CORE CHANGES ===================
+
+* ================== PLATFORM CHANGES =================
+
+* ==================== TOOL CHANGES ===================
+
+398569  invalid reads reported in libarmmem memcmp when using strings
+
+* ==================== FIXED BUGS =====================
+
+The following bugs have been fixed or resolved.  Note that "n-i-bz"
+stands for "not in bugzilla" -- that is, a bug that was reported to us
+but never got a bugzilla entry.  We encourage you to file bugs in
+bugzilla (https://bugs.kde.org/enter_bug.cgi?product=valgrind) rather
+than mailing the developers (or mailing lists) directly -- bugs that
+are not entered into bugzilla tend to get forgotten about or ignored.
+
+
+To see details of a given bug, visit
+  https://bugs.kde.org/show_bug.cgi?id=XXXXXX
+where XXXXXX is the bug number as listed above.
+
+(3.29.0.RC1: ?? Apr 2027)
+
+
 Release 3.28.0 (23 Oct 2026)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -43,13 +78,15 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Ventura (amd64 only).
 
 * The Linux Test Project (LTP) v20260930 was integrated.
 
+* illumos: added syscall wrappers for close_range and spawn(2). 
+
 * ==================== TOOL CHANGES ===================
 
 * The massif ms_print script used to view results as text has a new
   --peak-only option. This is intended for use in Continuous Integration
   systems, making peak memory usage easier to parse.
 
-* ==================== FIXED BUGS ====================
+* ==================== FIXED BUGS =====================
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us

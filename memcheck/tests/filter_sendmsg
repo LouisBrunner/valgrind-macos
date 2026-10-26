@@ -2,4 +2,5 @@
 
 ./filter_stderr "$@" |
 sed -e "s/frame #./frame #.../" \
-    -e "/by 0x........: sendmsg (in \/...libc...)/d"
+    -e "/by 0x........: sendmsg (in \/...libc...)/d" \
+    -e "s#_kevent.S:[0-9]*#in /...libc...#"

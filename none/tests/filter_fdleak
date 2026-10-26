@@ -66,6 +66,7 @@ perl -p -e 's/ _close / close /;s/ _openat / creat /;s/ _write/ write/;s/interne
 sed '/by 0x........: close (in \/...libc...)/d' |
 sed '/by 0x........: creat (in \/...libc...)/d' |
 sed '/by 0x........: write (in \/...libc...)/d' |
+sed 's#_kevent.S:[0-9]*#in /...libc...#' |
 
 # Stack traces showing where fds were created have lots of variations:
 # different numbers of entries, line numbers or not depending on whether

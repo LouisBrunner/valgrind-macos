@@ -1780,9 +1780,7 @@ static const HChar *name_for_fcntl(UWord cmd) {
       F(F_GETPATH);
       F(F_PATHPKG_CHECK);
       F(F_ADDSIGS);
-#     if DARWIN_VERS >= DARWIN_10_9
       F(F_ADDFILESIGS);
-#     endif
 #     if DARWIN_VERS >= DARWIN_10_11
       F(F_ADDFILESIGS_FOR_DYLD_SIM);
       F(F_BARRIERFSYNC);

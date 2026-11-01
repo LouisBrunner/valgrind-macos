@@ -38,6 +38,7 @@ version 13 Sonoma (amd64 only).
 528056  none/tests/fdleak_ipv4 is flaky: forked child output interleaves
         with parent
 528086  prctl(PR_GET_AUXV) returns the tool's auxv instead of the client's
+528176  drd/tests/pth_detached3 crashes with glibc 2.43
 528276  In Solaris 11.4, socketpair passed two descriptors as argument
         and not as an array of ints
 528534  Solaris: allow missing RW PR_LOADs in ML_(read_elf_object)

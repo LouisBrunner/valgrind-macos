@@ -28,8 +28,6 @@ int main(int argc, char** argv)
   /* Invoke pthread_detach() with an invalid thread ID. */
 #ifdef VGO_freebsd
   pthread_detach((pthread_t)12345);
-#else
-  pthread_detach((pthread_t)((uintptr_t)thread + 8));
 #endif
 
   fprintf(stderr, "Finished.\n");

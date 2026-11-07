@@ -2526,7 +2526,7 @@ HChar* ML_(find_name_of_pdb_file)( const HChar* pename )
                 + VG_(strlen)(egrep) + VG_(strlen)(tmpname)
                 + 100/*misc*/;
    HChar* cmd = ML_(dinfo_zalloc)("di.readpe.fnopf.cmd", cmdlen);
-   VG_(sprintf)(cmd, "%s -c \"%s '%s' | %s '\\.pdb$|\\.PDB$' >> %s\"",
+   VG_(sprintf)(cmd, "%s -c '%s \"%s\" | %s \"\\.pdb$|\\.PDB$\" >> %s'",
                      sh, strings, pename, egrep, tmpname);
    vg_assert(cmd[cmdlen-1] == 0);
    if (0) VG_(printf)("QQQQQQQQ: %s\n", cmd);

@@ -1337,9 +1337,9 @@ Bool ML_(read_macho_debug_info)( struct _DebugInfo* di )
                                      + 32 /* misc */ );
      VG_(strcpy)(cmd, dsymutil);
      if (0) VG_(strcat)(cmd, "--verbose ");
-     VG_(strcat)(cmd, "\"");
+     VG_(strcat)(cmd, "'");
      VG_(strcat)(cmd, di->fsm.filename);
-     VG_(strcat)(cmd, "\"");
+     VG_(strcat)(cmd, "'");
      if (VG_(clo_verbosity) > 0) {
         VG_(message)(Vg_DebugMsg, "run: %s\n", cmd);
      }

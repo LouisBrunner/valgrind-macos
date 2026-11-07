@@ -149,20 +149,20 @@ all-local: default.supp include/vgversion.h
 
 clean-local:
 	rm -rf $(inplacedir) include/vgversion.h
-	find . -name '*.vgtest.log' -print0 | xargs -r -0 rm
-	find . -name '*.vgtest.trs' -print0 | xargs -r -0 rm
-	find . -name test-suite.log -print0 | xargs -r -0 rm
+	find . -name '*.vgtest.log' -delete
+	find . -name '*.vgtest.trs' -delete
+	find . -name test-suite.log -delete
 	rm -f test-suite-overall.log
-	find . -name '*.stdout.out'    -print0 | xargs -r -0 rm
-	find . -name '*.stderr.out'    -print0 | xargs -r -0 rm
-	find . -name '*.stdoutB.out'   -print0 | xargs -r -0 rm
-	find . -name '*.stderrB.out'   -print0 | xargs -r -0 rm
-	find . -name '*.post.out'      -print0 | xargs -r -0 rm
-	find . -name '*.stdout.diff*'  -print0 | xargs -r -0 rm
-	find . -name '*.stderr.diff*'  -print0 | xargs -r -0 rm
-	find . -name '*.stdoutB.diff*' -print0 | xargs -r -0 rm
-	find . -name '*.stderrB.diff*' -print0 | xargs -r -0 rm
-	find . -name '*.post.diff*'    -print0 | xargs -r -0 rm
+	find . -name '*.stdout.out'    -delete
+	find . -name '*.stderr.out'    -delete
+	find . -name '*.stdoutB.out'   -delete
+	find . -name '*.stderrB.out'   -delete
+	find . -name '*.post.out'      -delete
+	find . -name '*.stdout.diff*'  -delete
+	find . -name '*.stderr.diff*'  -delete
+	find . -name '*.stdoutB.diff*' -delete
+	find . -name '*.stderrB.diff*' -delete
+	find . -name '*.post.diff*'    -delete
 
 # Need config.h in the installed tree, since some files depend on it
 pkginclude_HEADERS = config.h

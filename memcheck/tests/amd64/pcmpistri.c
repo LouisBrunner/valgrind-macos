@@ -4,14 +4,12 @@
 
 int main(int argc, char *argv[])
 {
-    const char *s = strdup("hello, world");
+    __attribute__((aligned(16))) char s[] = "hello, world";
     int result;
 
     asm("movdqa (%1),%%xmm0\n"
         "pcmpistri $0x3a,%%xmm0,%%xmm0\n"
         : "=c" (result) : "r" (s) : "xmm0");
-
-    free((void *)s);
 
     return result;
 }

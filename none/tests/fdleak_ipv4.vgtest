@@ -1,4 +1,4 @@
 prog: fdleak_ipv4
-vgopts: --track-fds=yes
+vgopts: --track-fds=yes --child-silent-after-fork=yes
 stderr_filter: filter_fdleak
 args: < /dev/null

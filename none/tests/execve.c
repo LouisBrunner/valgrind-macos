@@ -14,11 +14,7 @@ int main(int argc, char **argv)
       char *const v_null[] = { NULL };
       char *const v_minus_one[] = { (char *const) -1, NULL };
 
-#if defined(VGO_solaris)
-      const char *exe = "/bin/true";
-#elif defined(VGO_darwin)
-      const char *exe = "/usr/bin/true";
-#elif defined(VGO_freebsd)
+#if defined(VGO_darwin) || defined(VGO_freebsd)
       const char *exe = "/usr/bin/true";
 #else
       const char *exe = "/bin/true";
@@ -28,8 +24,11 @@ int main(int argc, char **argv)
 	 doesn't actually exists, so execve doesn't accidentally succeeds.  */
       if (execve("/%/", NULL, NULL) >= 0)
 	printf ("WHAT?");
+      /* Solaris 11.4 libc dereferences argv in 'shell_can_be_avoided()' */
+#if !defined(VGO_solaris) || defined(__illumos__)
       if (execve("/%/", (void *)-1, NULL) >= 0)
 	printf ("WHAT?");
+#endif
       if (execve("/%/", v_null, NULL) >= 0)
 	printf ("WHAT?");
       if (execve("/%/", v_null, v_null) >= 0)

@@ -2520,9 +2520,7 @@ int main(void)
    GO(SYS_so_socket, "5s 1m");
    SY(SYS_so_socket, x0, x0, x0, x0 + 1, x0); FAIL;
 
-   /* SYS_so_socketpair         231 */
-   GO(SYS_so_socketpair, "1s 1m");
-   SY(SYS_so_socketpair, x0); FAIL;
+   /* SYS_so_socketpair: tested separately for each syscall ABI. */
 
    /* SYS_bind                  232 */
    GO(SYS_bind, "4s 0m");

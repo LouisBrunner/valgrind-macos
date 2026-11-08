@@ -1328,6 +1328,8 @@
 /memcheck/tests/solaris/scalar_modctl_modnvl
 /memcheck/tests/solaris/scalar_obsolete
 /memcheck/tests/solaris/scalar_shm_new
+/memcheck/tests/solaris/scalar_socketpair
+/memcheck/tests/solaris/scalar_socketpair_legacy
 /memcheck/tests/solaris/scalar_spawn
 /memcheck/tests/solaris/scalar_system_stats
 /memcheck/tests/solaris/scalar_tsol_clearance

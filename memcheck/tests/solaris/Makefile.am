@@ -32,6 +32,8 @@ EXTRA_DIST = \
 	name_service_door.stdout.exp name_service_door.vgtest \
 	pkcs11.stderr.exp-illumos pkcs11.stderr.exp-solaris pkcs11.vgtest \
 	scalar.stderr.exp scalar.vgtest \
+	scalar_socketpair_fds.stderr.exp scalar_socketpair_fds.vgtest \
+	scalar_socketpair_legacy.stderr.exp scalar_socketpair_legacy.vgtest \
 	scalar_auditon_stat.stderr.exp scalar_auditon_stat.vgtest \
 	scalar_crypto.stderr.exp scalar_crypto.vgtest \
 	scalar_frealpathat.stderr.exp scalar_frealpathat.vgtest \
@@ -81,6 +83,7 @@ check_PROGRAMS = \
 	name_service_door \
 	pkcs11 \
 	scalar \
+	scalar_socketpair \
 	scalar_ioctl \
 	sendfilev \
 	shmat \

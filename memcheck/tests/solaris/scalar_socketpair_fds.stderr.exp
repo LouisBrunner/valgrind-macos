@@ -1,0 +1,9 @@
+---------------------------------------------------------
+231:       SYS_so_socketpair 2s 0m
+---------------------------------------------------------
+Syscall param socketpair(fd1) contains uninitialised byte(s)
+   ...
+
+Syscall param socketpair(fd2) contains uninitialised byte(s)
+   ...
+

@@ -11232,6 +11232,14 @@ POST(sys_so_socket)
 
 PRE(sys_so_socketpair)
 {
+#if defined(SOLARIS_SOCKETPAIR_TAKES_FDS)
+   /* The syscall connects two existing descriptors and returns no new ones. */
+   PRINT("sys_so_socketpair ( %ld, %ld )", SARG1, SARG2);
+   PRE_REG_READ2(long, "socketpair", int, fd1, int, fd2);
+   if (!ML_(fd_allowed)(ARG1, "socketpair", tid, False)
+       || !ML_(fd_allowed)(ARG2, "socketpair", tid, False))
+      SET_STATUS_Failure(VKI_EBADF);
+#else
    /* int so_socketpair(int sv[2]); */
    /* This syscall is used to connect two already created sockets together. */
    PRINT("sys_so_socketpair ( %#lx )", ARG1);
@@ -11245,10 +11253,14 @@ PRE(sys_so_socketpair)
       else if (!ML_(fd_allowed)(fds[1], "socketpair", tid, False))
          SET_STATUS_Failure(VKI_EBADF);
    }
+#endif
 }
 
 POST(sys_so_socketpair)
 {
+   /* The new ABI connects existing descriptors and writes no output array.
+      Only the legacy ABI needs memory and descriptor bookkeeping here. */
+#if !defined(SOLARIS_SOCKETPAIR_TAKES_FDS)
    /* The kernel can return new file descriptors, in such a case we have to
       validate them. */
    int *fds = (int*)ARG1;
@@ -11274,6 +11286,7 @@ POST(sys_so_socketpair)
       ML_(record_fd_open_nameless)(tid, fds[0]);
       ML_(record_fd_open_nameless)(tid, fds[1]);
    }
+#endif
 }
 
 PRE(sys_bind)

@@ -1,0 +1,5 @@
+prereq: test -e scalar_socketpair && ./scalar_socketpair --legacy
+prog: scalar_socketpair
+vgopts: -q
+stderr_filter: filter_scalar
+stderr_filter_args: libc

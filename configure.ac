@@ -5213,6 +5213,22 @@ solaris_pt_sunwdtrace_thrp=no
 AC_MSG_RESULT([no])
 ])
 
+# Newer Solaris connects two existing descriptors instead of reading an array.
+AC_MSG_CHECKING([if so_socketpair takes two descriptors (Solaris-specific)])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
+#include <errno.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+]], [[
+    return syscall(SYS_so_socketpair, -1, -1) != -1 || errno != EBADF;
+]])], [
+AC_MSG_RESULT([yes])
+AC_DEFINE([SOLARIS_SOCKETPAIR_TAKES_FDS], 1,
+          [Define to 1 if so_socketpair takes two file descriptors.])
+], [
+AC_MSG_RESULT([no])
+])
+
 else
 AM_CONDITIONAL(SOLARIS_HAVE_SYS_CRYPTO_IOCTL_H, false)
 AM_CONDITIONAL(SOLARIS_SUN_STUDIO_AS, false)

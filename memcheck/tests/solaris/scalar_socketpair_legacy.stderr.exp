@@ -1,0 +1,10 @@
+---------------------------------------------------------
+231:       SYS_so_socketpair 1s 1m
+---------------------------------------------------------
+Syscall param socketpair(sv) contains uninitialised byte(s)
+   ...
+
+Syscall param socketpair(sv) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

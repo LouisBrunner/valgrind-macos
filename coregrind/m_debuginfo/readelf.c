@@ -2461,6 +2461,11 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
                          di->data_avma,
                          di->data_avma + di->data_size - 1);
             TRACE_SYMTAB("acquiring .data bias = %#lx\n", (UWord)di->data_bias);
+         } else if (!inrw) {
+            /* This can happen on Solaris 11.4 where libsocket and
+               libnsl were merged into libc and those libraries now
+               just redirect to libc. */
+            TRACE_SYMTAB("ignoring .data section: no rw mapping\n");
          } else {
             BAD(".data");
          }

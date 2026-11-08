@@ -23,6 +23,9 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Sonoma (amd64 only).
         program (arm64 dotprod/crypto probes)
 527590  illumos: memcheck/tests/x86/pcmpistri32 crashes
 527905  fb_test_i386 fails to build on i686
+528056  none/tests/fdleak_ipv4 is flaky: forked child output interleaves
+        with parent
+528086  prctl(PR_GET_AUXV) returns the tool's auxv instead of the client's
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us

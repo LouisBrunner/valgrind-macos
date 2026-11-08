@@ -2804,6 +2804,8 @@ struct vki_vt_consize {
 #define VKI_PR_SET_TAGGED_ADDR_CTRL	55
 #define VKI_PR_GET_TAGGED_ADDR_CTRL	56
 
+#define VKI_PR_GET_AUXV			0x41555856
+
 //----------------------------------------------------------------------
 // From linux-2.6.19/include/linux/usbdevice_fs.h
 //----------------------------------------------------------------------

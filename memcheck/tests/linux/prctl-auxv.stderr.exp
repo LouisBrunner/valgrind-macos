@@ -1,0 +1,5 @@
+Syscall param prctl(get-auxv) points to unaddressable byte(s)
+   ...
+   by 0x........: main (prctl-auxv.c:91)
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+

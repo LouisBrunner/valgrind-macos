@@ -1,0 +1,3 @@
+prereq: ./prctl-auxv supported
+prog: prctl-auxv
+vgopts: -q

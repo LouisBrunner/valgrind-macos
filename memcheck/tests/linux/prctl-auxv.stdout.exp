@@ -1,0 +1,9 @@
+full copy returns the size: yes
+matches the initial stack: yes
+matches /proc/self/auxv: yes
+AT_EXECFN names this program: yes
+truncated copy: ok
+arg4 != 0: EINVAL
+arg5 != 0: EINVAL
+NULL buffer: EFAULT
+read-only buffer: EFAULT

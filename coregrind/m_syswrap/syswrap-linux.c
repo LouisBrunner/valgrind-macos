@@ -1584,6 +1584,33 @@ PRE(sys_prctl)
    case VKI_PR_CAPBSET_DROP:
       PRE_REG_READ2(int, "prctl", int, option, int, capability);
       break;
+   case VKI_PR_GET_AUXV: {
+      /* Like /proc/self/auxv, return the client's auxv, not the tool's. */
+      PRE_REG_READ5(int, "prctl", int, option, void *, auxv,
+                    unsigned long, size, unsigned long, arg4,
+                    unsigned long, arg5);
+      *flags &= ~SfMayBlock;
+      SysRes res = VG_(do_syscall5)(__NR_prctl, VKI_PR_GET_AUXV, 0, 0,
+                                    ARG4, ARG5);
+      if (sr_isError(res)) {
+         SET_STATUS_from_SysRes(res);
+         break;
+      }
+      Long auxv_size = VG_(fsize)(VG_(cl_auxv_fd));
+      vg_assert(auxv_size > 0);
+      SizeT len = VG_MIN((SizeT)ARG3, (SizeT)auxv_size);
+      if (len > 0) {
+         PRE_MEM_WRITE("prctl(get-auxv)", ARG2, len);
+         res = VG_(pread)(VG_(cl_auxv_fd), (void *)(Addr)ARG2, len, 0);
+         if (sr_isError(res) || sr_Res(res) != len) {
+            SET_STATUS_Failure(VKI_EFAULT);
+            break;
+         }
+         POST_MEM_WRITE(ARG2, len);
+      }
+      SET_STATUS_Success(auxv_size);
+      break;
+   }
    default:
       PRE_REG_READ5(long, "prctl",
                     int, option, unsigned long, arg2, unsigned long, arg3,

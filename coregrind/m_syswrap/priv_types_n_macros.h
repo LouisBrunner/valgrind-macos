@@ -609,7 +609,7 @@ static inline UWord getERR ( SyscallStatus* st ) {
     } else { \
       Addr here = layout->s_sysno + VG_(get_SP)(tid); \
       VG_(tdict).track_pre_mem_read(Vg_CoreSysCallArgInMem, tid, "(syscallno)",  \
-                                    here, sizeof(RegWord);                       \
+                                    here, sizeof(RegWord));                      \
     } \
   } while (0)
 #else

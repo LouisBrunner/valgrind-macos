@@ -151,7 +151,8 @@
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
 
-Bool ML_(is_elf_object_file)( const void* image, SizeT n_image, Bool rel_ok )
+Bool ML_(is_elf_object_file)( const void* image, SizeT n_image, Bool rel_ok,
+                              Bool allow_no_phdr )
 {
    const ElfXX_Ehdr* ehdr = image;
    Int ok = 1;
@@ -172,7 +173,11 @@ Bool ML_(is_elf_object_file)( const void* image, SizeT n_image, Bool rel_ok )
    ok &= (ehdr->e_version == EV_CURRENT);
    ok &= (ehdr->e_shstrndx != SHN_UNDEF);
    ok &= (ehdr->e_shoff != 0 && ehdr->e_shnum != 0);
-   ok &= ((ehdr->e_phoff != 0 && ehdr->e_phnum != 0)
+   // On FreeBSD 14 and earlier
+   // phoff and phnum can be 0 for split debug files
+   // see https://bugs.kde.org/show_bug.cgi?id=528630
+   ok &= (allow_no_phdr
+          || (ehdr->e_phoff != 0 && ehdr->e_phnum != 0)
           || ehdr->e_type == ET_REL);
 
    return ok ? True : False;
@@ -181,7 +186,7 @@ Bool ML_(is_elf_object_file)( const void* image, SizeT n_image, Bool rel_ok )
 
 /* The same thing, but operating on a DiImage instead. */
 
-static Bool is_elf_object_file_by_DiImage( DiImage* img, Bool rel_ok )
+static Bool is_elf_object_file_by_DiImage( DiImage* img, Bool rel_ok, Bool allow_no_phdr )
 {
    /* Be sure this doesn't make the frame too big. */
    vg_assert(sizeof(ElfXX_Ehdr) <= 512);
@@ -191,7 +196,7 @@ static Bool is_elf_object_file_by_DiImage( DiImage* img, Bool rel_ok )
       return False;
 
    ML_(img_get)(&ehdr, img, 0, sizeof(ehdr));
-   return ML_(is_elf_object_file)( &ehdr, sizeof(ehdr), rel_ok );
+   return ML_(is_elf_object_file)( &ehdr, sizeof(ehdr), rel_ok, allow_no_phdr );
 }
 
 
@@ -1147,7 +1152,7 @@ void read_elf_symtab__ppc64be_linux(
 static
 void read_and_set_osrel(DiImage* img)
 {
-    if (is_elf_object_file_by_DiImage(img, False)) {
+    if (is_elf_object_file_by_DiImage(img, False, False)) {
        Word i;
 
        ElfXX_Ehdr ehdr;
@@ -1219,7 +1224,7 @@ HChar* find_buildid(DiImage* img, Bool rel_ok, Bool search_shdrs)
    HChar* buildid = NULL;
 
 #  ifdef NT_GNU_BUILD_ID
-   if (is_elf_object_file_by_DiImage(img, rel_ok)) {
+   if (is_elf_object_file_by_DiImage(img, rel_ok, False)) {
       Word i;
 
       ElfXX_Ehdr ehdr;
@@ -2026,7 +2031,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
 
    /* Ok, the object image is available.  Now verify that it is a
       valid ELF .so or executable image. */
-   ok = is_elf_object_file_by_DiImage(mimg, False);
+   ok = is_elf_object_file_by_DiImage(mimg, False, False);
    if (!ok) {
       ML_(symerr)(di, True, "Invalid ELF Header");
       goto out;
@@ -3078,7 +3083,7 @@ Bool ML_(read_elf_debug) ( struct _DebugInfo* di )
 
  /* Ok, the object image is available.  Now verify that it is a
       valid ELF .so or executable image. */
-   ok = is_elf_object_file_by_DiImage(mimg, False);
+   ok = is_elf_object_file_by_DiImage(mimg, False, False);
    if (!ok) {
       ML_(symerr)(di, True, "Invalid ELF Header");
       goto out;
@@ -3318,7 +3323,13 @@ Bool ML_(read_elf_debug) ( struct _DebugInfo* di )
       /* TOPLEVEL */
       /* If we were successful in finding a debug image, pull various
          SVMA/bias/size and image addresses out of it. */
-      if (dimg != NULL && is_elf_object_file_by_DiImage(dimg, False)) {
+      Bool allow_no_phdr;
+#if defined(VGO_freebsd)
+      allow_no_phdr = True;
+#else
+      allow_no_phdr = False;
+#endif
+      if (dimg != NULL && is_elf_object_file_by_DiImage(dimg, False, allow_no_phdr)) {
 
          /* Pull out and validate program header and section header info */
          DiOffT      ehdr_dioff = 0;
@@ -3340,10 +3351,16 @@ Bool ML_(read_elf_debug) ( struct _DebugInfo* di )
          PtrdiffT rx_dbias = 0;
          Addr     rw_dsvma_limit = 0;
          PtrdiffT rw_dbias = 0;
+         Bool     rw_phdr_required;
+#if defined(VGO_freebsd)
+         rw_phdr_required = (phdr_dnent != 0) || di->fsm.dbgname;
+#else
+         rw_phdr_required = (phdr_dnent != 0);
+#endif
 
          Bool need_symtab, need_dwarf2, need_dwarf1;
 
-         if (phdr_dnent == 0
+         if (!rw_phdr_required
              || !ML_(img_valid)(dimg, phdr_dioff,
                                 phdr_dnent * phdr_dent_szB)) {
             ML_(symerr)(di, True,
@@ -3620,7 +3637,7 @@ Bool ML_(read_elf_debug) ( struct _DebugInfo* di )
       /* TOPLEVEL */
       /* If we were successful in finding alternate debug image, pull various
          size and image addresses out of it. */
-      if (aimg != NULL && is_elf_object_file_by_DiImage(aimg, True)) {
+      if (aimg != NULL && is_elf_object_file_by_DiImage(aimg, True, False)) {
 
          /* Pull out and validate program header and section header info */
          DiOffT      ehdr_aioff = 0;
@@ -3894,7 +3911,7 @@ Bool ML_(check_elf_and_get_rw_loads) ( Int fd, const HChar* filename,
       return False;
    }
 
-   ok = is_elf_object_file_by_DiImage(mimg, False);
+   ok = is_elf_object_file_by_DiImage(mimg, False, False);
    if (!ok) {
       goto out;
    }

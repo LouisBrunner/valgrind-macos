@@ -29,6 +29,7 @@ for nanoMIPS/Linux. macOS is supported up to version 13 Sonoma (amd64 only).
 528276  In Solaris 11.4, socketpair passed two descriptors as argument
         and not as an array of ints
 528534  Solaris: allow missing RW PR_LOADs in ML_(read_elf_object)
+528630  FreeBSD: split debug files can have ELF program headers number set to 0
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"
 stands for "not in bugzilla" -- that is, a bug that was reported to us

@@ -42,7 +42,7 @@
 /* Identify an ELF object file by peering at the first few bytes of
    it. */
 extern Bool ML_(is_elf_object_file)( const void* image, SizeT n_image,
-                                     Bool rel_ok );
+                                     Bool rel_ok, Bool allow_no_phdr );
 
 /* Read the ELF binary specified by DI.  For the object/exe specified
    by the SegInfo, find ELF sections, then read the symbols, line number

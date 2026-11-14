@@ -1471,4 +1471,35 @@ struct vki_kpersona_info {
 #define VKI_ICACHE_LINE_SIZE (1 << VKI_MMU_I_CLINE)
 #endif
 
+
+#include <sys/kdebug.h>
+
+#if DARWIN_VERS < DARWIN_10_11
+#define KDBG_CLASS_MASK   (0xff000000)
+#define KDBG_CLASS_OFFSET (24)
+#define KDBG_CLASS_MAX    (0xff)
+
+#define KDBG_SUBCLASS_MASK   (0x00ff0000)
+#define KDBG_SUBCLASS_OFFSET (16)
+#define KDBG_SUBCLASS_MAX    (0xff)
+
+#define KDBG_CSC_MASK   (0xffff0000)
+#define KDBG_CSC_OFFSET (KDBG_SUBCLASS_OFFSET)
+
+#define KDBG_CODE_MASK   (0x0000fffc)
+#define KDBG_CODE_OFFSET (2)
+#define KDBG_CODE_MAX    (0x3fff)
+
+#define KDBG_EVENTID_MASK (0xfffffffc)
+
+#define KDBG_EXTRACT_CLASS(Debugid) \
+        ((uint8_t)(((Debugid) & KDBG_CLASS_MASK) >> KDBG_CLASS_OFFSET))
+#define KDBG_EXTRACT_SUBCLASS(Debugid) \
+        ((uint8_t)(((Debugid) & KDBG_SUBCLASS_MASK) >> KDBG_SUBCLASS_OFFSET))
+#define KDBG_EXTRACT_CSC(Debugid) \
+        ((uint16_t)(((Debugid) & KDBG_CSC_MASK) >> KDBG_CSC_OFFSET))
+#define KDBG_EXTRACT_CODE(Debugid) \
+        ((uint16_t)(((Debugid) & KDBG_CODE_MASK) >> KDBG_CODE_OFFSET))
+#endif
+
 #endif

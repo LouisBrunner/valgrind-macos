@@ -67,7 +67,6 @@
 #include <mach/mach.h>
 #include <mach/mach_vm.h>
 #include <semaphore.h>
-#include <sys/kdebug.h>
 /* --- !!! --- EXTERNAL HEADERS end --- !!! --- */
 
 #define msgh_request_port      msgh_remote_port
@@ -735,9 +734,6 @@ void VG_(show_open_ports)(void)
    VG_(message)(Vg_UserMsg, "\n");
 }
 
-/* helpers used by PRE(kdebug_trace_string) added in OSX 10.11 */
-#if DARWIN_VERS >= DARWIN_10_11
-
 /* ---------------------------------------------------------------------
    kdebug helpers
    ------------------------------------------------------------------ */
@@ -919,8 +915,6 @@ static const HChar *kdebug_debugid(ULong did)
 
   return buf;
 }
-
-#endif
 
 
 /* ---------------------------------------------------------------------

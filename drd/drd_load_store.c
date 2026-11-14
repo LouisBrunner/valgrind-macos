@@ -49,7 +49,7 @@
 #define STACK_POINTER_OFFSET OFFSET_arm64_XSP
 #elif defined(VGA_s390x)
 #define STACK_POINTER_OFFSET OFFSET_s390x_r15
-#elif defined(VGA_mips32) || defined(VGA_nanomips)
+#elif defined(VGA_mips32)
 #define STACK_POINTER_OFFSET OFFSET_mips32_r29
 #elif defined(VGA_mips64)
 #define STACK_POINTER_OFFSET OFFSET_mips64_r29

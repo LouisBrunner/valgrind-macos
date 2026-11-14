@@ -52,7 +52,6 @@ noinst_HEADERS = \
 	priv/guest_s390_defs.h \
 	priv/guest_mips_defs.h \
 	priv/mips_defs.h \
-	priv/guest_nanomips_defs.h \
 	priv/guest_riscv64_defs.h \
 	priv/host_generic_regs.h \
 	priv/host_generic_simd64.h \
@@ -69,8 +68,6 @@ noinst_HEADERS = \
 	priv/s390_disasm.h \
 	priv/s390_defs.h \
 	priv/host_mips_defs.h \
-	priv/host_nanomips_defs.h \
-	priv/common_nanomips_defs.h \
 	priv/host_riscv64_defs.h \
 	priv/objdump/dis-asm.h \
 	priv/objdump/s390.h \
@@ -160,8 +157,6 @@ LIBVEX_SOURCES_COMMON = \
 	priv/guest_mips_helpers.c \
 	priv/guest_mipsdsp_toIR.c \
 	priv/guest_mips_toIR.c \
-	priv/guest_nanomips_helpers.c \
-	priv/guest_nanomips_toIR.c \
 	priv/guest_riscv64_helpers.c \
 	priv/guest_riscv64_toIR.c \
 	priv/host_generic_regs.c \
@@ -185,9 +180,7 @@ LIBVEX_SOURCES_COMMON = \
 	priv/host_s390_defs.c \
 	priv/host_s390_isel.c \
 	priv/host_mips_defs.c \
-	priv/host_nanomips_defs.c \
 	priv/host_mips_isel.c \
-	priv/host_nanomips_isel.c \
 	priv/host_riscv64_defs.c \
 	priv/host_riscv64_isel.c \
 	priv/objdump/dis-init.c \

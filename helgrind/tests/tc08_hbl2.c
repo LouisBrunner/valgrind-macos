@@ -70,8 +70,6 @@
 #else
 #  define PLAT_mips32_linux 1
 #endif
-#elif defined(__linux__) && defined(__nanomips__)
-#  define PLAT_nanomips_linux 1
 #elif defined(__linux__) && defined(__riscv) && (__riscv_xlen == 64)
 #  define PLAT_riscv64_linux 1
 #elif defined(__sun__) && defined(__i386__)
@@ -145,18 +143,6 @@
       : /*out*/ : /*in*/ "r"(&(_lval))              \
       : /*trash*/ "t0", "t1", "memory"              \
         )
-#elif defined(PLAT_nanomips_linux)
-#  define INC(_lval,_lqual)                         \
-     __asm__ __volatile__ (                         \
-      "1:\n"                                        \
-      "        move $t0, %0\n"                      \
-      "        ll $t1, 0($t0)\n"                    \
-      "        addiu $t1, $t1, 1\n"                 \
-      "        sc $t1, 0($t0)\n"                    \
-      "        beqc $t1, $zero, 1b\n"               \
-      : /*out*/ : /*in*/ "r"(&(_lval))              \
-      : /*trash*/ "$t0", "$t1", "memory"            \
-   )
 #elif defined(PLAT_riscv64_linux)
 #  define INC(_lval,_lqual)                         \
      __asm__ __volatile__ (                         \

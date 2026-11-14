@@ -39,10 +39,9 @@
 #define ARCH_mipsx    (ARCH_mips32 | ARCH_mips64)    // ARCH_mips does not work
 #define ARCH_ALL      0x00FF    // OR of all above
 
-/* FIXME: Add support for nanomips, arm, and riscv.
+/* FIXME: Add support for arm and riscv.
    When doing so ARCH_ALL needs to be adjusted */
 #if 0
-#define ARCH_nanomips 0x0100
 #define ARCH_arm      0x0200
 #define ARCH_arm64    0x0400
 #define ARCH_riscv64  0x0800

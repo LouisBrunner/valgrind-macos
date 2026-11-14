@@ -1006,8 +1006,7 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
 
    /* Invalidate any in-flight LL/SC transactions, in the case that we're
       using the fallback LL/SC implementation.  See bugs 344524 and 369459. */
-#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
-      || defined(VGP_nanomips_linux)
+#  if defined(VGP_mips32_linux) || defined(VGP_mips64_linux)
    tst->arch.vex.guest_LLaddr = (RegWord)(-1);
 #  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    tst->arch.vex.guest_LLSC_SIZE = 0;
@@ -1854,7 +1853,7 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined (VGA_s390x)
 #  define VG_CLREQ_ARGS       guest_r2
 #  define VG_CLREQ_RET        guest_r3
-#elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
 #  define VG_CLREQ_ARGS       guest_r12
 #  define VG_CLREQ_RET        guest_r11
 #elif defined(VGA_riscv64)

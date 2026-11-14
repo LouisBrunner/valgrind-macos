@@ -174,12 +174,6 @@ extern Char* VG_(mips64_linux_REDIR_FOR_index)( const Char*, Int );
 extern UInt  VG_(mips64_linux_REDIR_FOR_strlen)( void* );
 #endif
 
-#if defined(VGP_nanomips_linux)
-extern Addr  VG_(nanomips_linux_SUBST_FOR_rt_sigreturn);
-extern Char* VG_(nanomips_linux_REDIR_FOR_index)( const Char*, Int );
-extern UInt  VG_(nanomips_linux_REDIR_FOR_strlen)( void* );
-#endif
-
 #if defined(VGP_riscv64_linux)
 extern Addr   VG_(riscv64_linux_SUBST_FOR_rt_sigreturn);
 extern HChar* VG_(riscv64_linux_REDIR_FOR_index)( const HChar*, Int );

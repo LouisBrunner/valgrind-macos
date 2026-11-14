@@ -57,7 +57,6 @@
 #include "host_arm64_defs.h"
 #include "host_s390_defs.h"
 #include "host_mips_defs.h"
-#include "host_nanomips_defs.h"
 #include "host_riscv64_defs.h"
 
 #include "guest_generic_bb_to_IR.h"
@@ -68,7 +67,6 @@
 #include "guest_ppc_defs.h"
 #include "guest_s390_defs.h"
 #include "guest_mips_defs.h"
-#include "guest_nanomips_defs.h"
 #include "guest_riscv64_defs.h"
 
 #include "host_generic_simd128.h"
@@ -156,14 +154,6 @@
 #else
 #define MIPS64FN(f) NULL
 #define MIPS64ST(f) vassert(0)
-#endif
-
-#if defined(VGA_nanomips) || defined(VEXMULTIARCH)
-#define NANOMIPSFN(f) f
-#define NANOMIPSST(f) f
-#else
-#define NANOMIPSFN(f) NULL
-#define NANOMIPSST(f) vassert(0)
 #endif
 
 #if defined(VGA_riscv64) || defined(VEXMULTIARCH)
@@ -540,24 +530,6 @@ IRSB* LibVEX_FrontEnd ( /*MOD*/ VexTranslateArgs* vta,
          vassert(sizeof( ((VexGuestMIPS64State*)0)->guest_NRADDR ) == 8);
          break;
 
-      case VexArchNANOMIPS:
-         preciseMemExnsFn
-            = NANOMIPSFN(guest_mips32_state_requires_precise_mem_exns);
-         disInstrFn              = NANOMIPSFN(disInstr_nanoMIPS);
-         specHelper              = NANOMIPSFN(guest_mips32_spechelper);
-         guest_layout            = NANOMIPSFN(&mips32Guest_layout);
-         offB_CMSTART            = offsetof(VexGuestMIPS32State,guest_CMSTART);
-         offB_CMLEN              = offsetof(VexGuestMIPS32State,guest_CMLEN);
-         offB_GUEST_IP           = offsetof(VexGuestMIPS32State,guest_PC);
-         szB_GUEST_IP            = sizeof( ((VexGuestMIPS32State*)0)->guest_PC );
-         vassert(vta->archinfo_guest.endness == VexEndnessLE
-                 || vta->archinfo_guest.endness == VexEndnessBE);
-         vassert(0 == sizeof(VexGuestMIPS32State) % LibVEX_GUEST_STATE_ALIGN);
-         vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_CMSTART) == 4);
-         vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_CMLEN  ) == 4);
-         vassert(sizeof( ((VexGuestMIPS32State*)0)->guest_NRADDR ) == 4);
-         break;
-
       case VexArchRISCV64:
          preciseMemExnsFn
             = RISCV64FN(guest_riscv64_state_requires_precise_mem_exns);
@@ -904,14 +876,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          offB_HOST_EvC_FAILADDR = offsetof(VexGuestMIPS64State,host_EvC_FAILADDR);
          break;
 
-      case VexArchNANOMIPS:
-         preciseMemExnsFn
-            = NANOMIPSFN(guest_mips32_state_requires_precise_mem_exns);
-         guest_sizeB            = sizeof(VexGuestMIPS32State);
-         offB_HOST_EvC_COUNTER  = offsetof(VexGuestMIPS32State,host_EvC_COUNTER);
-         offB_HOST_EvC_FAILADDR = offsetof(VexGuestMIPS32State,host_EvC_FAILADDR);
-         break;
-
       case VexArchRISCV64:
          preciseMemExnsFn
             = RISCV64FN(guest_riscv64_state_requires_precise_mem_exns);
@@ -1073,23 +1037,6 @@ static void libvex_BackEnd ( const VexTranslateArgs *vta,
          ppReg        = CAST_TO_TYPEOF(ppReg) MIPS64FN(ppHRegMIPS);
          iselSB       = MIPS64FN(iselSB_MIPS);
          emit         = CAST_TO_TYPEOF(emit) MIPS64FN(emit_MIPSInstr);
-         vassert(vta->archinfo_host.endness == VexEndnessLE
-                 || vta->archinfo_host.endness == VexEndnessBE);
-         break;
-
-      case VexArchNANOMIPS:
-         mode64       = False;
-         rRegUniv     = NANOMIPSFN(getRRegUniverse_NANOMIPS(mode64));
-         getRegUsage
-            = CAST_TO_TYPEOF(getRegUsage) NANOMIPSFN(getRegUsage_NANOMIPSInstr);
-         mapRegs      = CAST_TO_TYPEOF(mapRegs) NANOMIPSFN(mapRegs_NANOMIPSInstr);
-         genSpill     = CAST_TO_TYPEOF(genSpill) NANOMIPSFN(genSpill_NANOMIPS);
-         genReload    = CAST_TO_TYPEOF(genReload) NANOMIPSFN(genReload_NANOMIPS);
-         genMove      = CAST_TO_TYPEOF(genMove) NANOMIPSFN(genMove_NANOMIPS);
-         ppInstr      = CAST_TO_TYPEOF(ppInstr) NANOMIPSFN(ppNANOMIPSInstr);
-         ppReg        = CAST_TO_TYPEOF(ppReg) NANOMIPSFN(ppHRegNANOMIPS);
-         iselSB       = NANOMIPSFN(iselSB_NANOMIPS);
-         emit         = CAST_TO_TYPEOF(emit) NANOMIPSFN(emit_NANOMIPSInstr);
          vassert(vta->archinfo_host.endness == VexEndnessLE
                  || vta->archinfo_host.endness == VexEndnessBE);
          break;
@@ -1350,11 +1297,6 @@ VexInvalRange LibVEX_Chain ( VexArch     arch_host,
                                            place_to_chain,
                                            disp_cp_chain_me_EXPECTED,
                                            place_to_jump_to, True/*!mode64*/));
-      case VexArchNANOMIPS:
-         NANOMIPSST(return chainXDirect_NANOMIPS(endness_host,
-                                                 place_to_chain,
-                                                 disp_cp_chain_me_EXPECTED,
-                                                 place_to_jump_to));
       case VexArchRISCV64:
          RISCV64ST(return chainXDirect_RISCV64(endness_host,
                                                place_to_chain,
@@ -1417,11 +1359,6 @@ VexInvalRange LibVEX_UnChain ( VexArch     arch_host,
                                              place_to_unchain,
                                              place_to_jump_to_EXPECTED,
                                              disp_cp_chain_me, True/*!mode64*/));
-      case VexArchNANOMIPS:
-         NANOMIPSST(return unchainXDirect_NANOMIPS(endness_host,
-                                                 place_to_unchain,
-                                                 place_to_jump_to_EXPECTED,
-                                                 disp_cp_chain_me));
       case VexArchRISCV64:
          RISCV64ST(return unchainXDirect_RISCV64(endness_host,
                                                  place_to_unchain,
@@ -1455,8 +1392,6 @@ Int LibVEX_evCheckSzB ( VexArch    arch_host )
             MIPS32ST(cached = evCheckSzB_MIPS()); break;
          case VexArchMIPS64:
             MIPS64ST(cached = evCheckSzB_MIPS()); break;
-         case VexArchNANOMIPS:
-            NANOMIPSST(cached = evCheckSzB_NANOMIPS()); break;
          case VexArchRISCV64:
             RISCV64ST(cached = evCheckSzB_RISCV64()); break;
          default:
@@ -1499,9 +1434,6 @@ VexInvalRange LibVEX_PatchProfInc ( VexArch    arch_host,
       case VexArchMIPS64:
          MIPS64ST(return patchProfInc_MIPS(endness_host, place_to_patch,
                                            location_of_counter, True/*!mode64*/));
-      case VexArchNANOMIPS:
-         NANOMIPSST(return patchProfInc_NANOMIPS(endness_host, place_to_patch,
-                                                 location_of_counter));
       case VexArchRISCV64:
          RISCV64ST(return patchProfInc_RISCV64(endness_host, place_to_patch,
                                                location_of_counter));
@@ -1607,7 +1539,6 @@ const HChar* LibVEX_ppVexArch ( VexArch arch )
       case VexArchS390X:    return "S390X";
       case VexArchMIPS32:   return "MIPS32";
       case VexArchMIPS64:   return "MIPS64";
-      case VexArchNANOMIPS: return "NANOMIPS";
       case VexArchRISCV64:  return "RISCV64";
       default:              return "VexArch???";
    }
@@ -1673,7 +1604,6 @@ static IRType arch_word_size (VexArch arch)
       case VexArchX86:
       case VexArchARM:
       case VexArchMIPS32:
-      case VexArchNANOMIPS:
       case VexArchPPC32:
          return Ity_I32;
 
@@ -2300,11 +2230,6 @@ static void check_hwcaps ( VexArch arch, UInt hwcaps )
             default:
                invalid_hwcaps(arch, hwcaps, "Unsupported baseline\n");
          }
-
-      case VexArchNANOMIPS:
-         if (hwcaps == 0)
-            return;
-         invalid_hwcaps(arch, hwcaps, "Unsupported baseline\n");
 
       case VexArchRISCV64:
          if (hwcaps == 0)

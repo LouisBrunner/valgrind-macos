@@ -59,7 +59,6 @@ typedef
       VexArchS390X,
       VexArchMIPS32,
       VexArchMIPS64,
-      VexArchNANOMIPS,
       VexArchRISCV64,
    }
    VexArch;

@@ -63,7 +63,6 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-posixtypes-s390x-linux.h \
 	vki/vki-posixtypes-mips32-linux.h \
 	vki/vki-posixtypes-mips64-linux.h \
-	vki/vki-posixtypes-nanomips-linux.h \
 	vki/vki-posixtypes-riscv64-linux.h \
 	vki/vki-amd64-linux.h		\
 	vki/vki-arm64-linux.h		\
@@ -77,7 +76,6 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-s390x-linux.h		\
 	vki/vki-mips32-linux.h		\
 	vki/vki-mips64-linux.h		\
-	vki/vki-nanomips-linux.h	\
 	vki/vki-riscv64-linux.h		\
 	vki/vki-scnums-amd64-linux.h	\
 	vki/vki-scnums-arm64-linux.h	\
@@ -89,7 +87,6 @@ nobase_pkginclude_HEADERS = \
 	vki/vki-scnums-s390x-linux.h	\
 	vki/vki-scnums-mips32-linux.h	\
 	vki/vki-scnums-mips64-linux.h	\
-	vki/vki-scnums-nanomips-linux.h	\
 	vki/vki-scnums-riscv64-linux.h	\
 	vki/vki-scnums-darwin.h         \
 	vki/vki-scnums-solaris.h	\

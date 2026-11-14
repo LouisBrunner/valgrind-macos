@@ -865,8 +865,6 @@ void valgrind_initialize_target(void)
    mips32_init_architecture(&the_low_target);
 #elif defined(VGA_mips64)
    mips64_init_architecture(&the_low_target);
-#elif defined(VGA_nanomips)
-   nanomips_init_architecture(&the_low_target);
 #elif defined(VGA_riscv64)
    riscv64_init_architecture(&the_low_target);
 #else

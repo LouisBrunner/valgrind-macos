@@ -1791,8 +1791,7 @@ static HChar* readlink_path (const HChar *path)
 
    while (tries > 0) {
       SysRes res;
-#if defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-    || defined(VGP_riscv64_linux)
+#if defined(VGP_arm64_linux) || defined(VGP_riscv64_linux)
       res = VG_(do_syscall4)(__NR_readlinkat, VKI_AT_FDCWD,
                                               (UWord)path, (UWord)buf, bufsiz);
 #elif defined(VGO_linux) || defined(VGO_darwin) || defined(VGO_freebsd)
@@ -2728,8 +2727,7 @@ Bool ML_(read_elf_object) ( struct _DebugInfo* di )
 #     if defined(VGP_x86_linux) || defined(VGP_amd64_linux) \
          || defined(VGP_arm_linux) || defined (VGP_s390x_linux) \
          || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
-         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-         || defined(VGP_riscv64_linux) \
+         || defined(VGP_arm64_linux) || defined(VGP_riscv64_linux) \
          || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
          || defined(VGP_x86_freebsd) || defined(VGP_amd64_freebsd) \
          || defined(VGP_arm64_freebsd)

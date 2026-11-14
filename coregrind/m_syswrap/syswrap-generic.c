@@ -3248,7 +3248,6 @@ PRE(sys_sync)
    PRE_REG_READ0(long, "sync");
 }
 
-#if !defined(VGP_nanomips_linux)
 PRE(sys_fstatfs)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -3280,7 +3279,6 @@ POST(sys_fstatfs64)
 {
    POST_MEM_WRITE( ARG3, ARG2 );
 }
-#endif
 
 PRE(sys_getsid)
 {
@@ -3889,7 +3887,7 @@ PRE(sys_fchmod)
       SET_STATUS_Failure( VKI_EBADF );
 }
 
-#if !defined(VGP_nanomips_linux) && !defined (VGO_freebsd)
+#if !defined(VGO_freebsd)
 PRE(sys_newfstat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -3907,7 +3905,7 @@ POST(sys_newfstat)
 #endif
 
 #if !defined(VGO_solaris) && !defined(VGP_arm64_linux) && \
-    !defined(VGP_nanomips_linux) && !defined(VGP_riscv64_linux)
+    !defined(VGP_riscv64_linux)
 static vki_sigset_t fork_saved_mask;
 
 // In Linux, the sys_fork() function varies across architectures, but we
@@ -4624,7 +4622,7 @@ PRE(sys_link)
    PRE_MEM_RASCIIZ( "link(newpath)", ARG2);
 }
 
-#if !defined(VGP_nanomips_linux) && !defined(VGO_freebsd)
+#if !defined(VGO_freebsd)
 PRE(sys_newlstat)
 {
    PRINT("sys_newlstat ( %#" FMT_REGWORD "x(%s), %#" FMT_REGWORD "x )", ARG1,
@@ -5341,7 +5339,7 @@ PRE(sys_setuid)
    PRE_REG_READ1(long, "setuid", vki_uid_t, uid);
 }
 
-#if !defined(VGP_nanomips_linux) && !defined(VGO_freebsd)
+#if !defined(VGO_freebsd)
 PRE(sys_newstat)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -5358,7 +5356,6 @@ POST(sys_newstat)
 }
 #endif
 
-#if !defined(VGP_nanomips_linux)
 PRE(sys_statfs)
 {
    FUSE_COMPATIBLE_MAY_BLOCK();
@@ -5387,7 +5384,6 @@ POST(sys_statfs64)
 {
    POST_MEM_WRITE( ARG3, ARG2 );
 }
-#endif
 
 PRE(sys_symlink)
 {

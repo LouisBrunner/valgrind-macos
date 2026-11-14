@@ -74,8 +74,6 @@ __attribute__((noinline)) static void get_guest_arch(VexArch    *ga)
    *ga = VexArchMIPS32;
 #elif defined(VGA_mips64)
    *ga = VexArchMIPS64;
-#elif defined(VGA_nanomips)
-   *ga = VexArchNANOMIPS;
 #elif defined(VGA_riscv64)
    *ga = VexArchRISCV64;
 #else
@@ -98,7 +96,6 @@ static VexEndness arch_endness (VexArch va) {
    case VexArchS390X:  return VexEndnessBE;
    case VexArchMIPS32:
    case VexArchMIPS64:
-   case VexArchNANOMIPS:
       /* mips32/64 supports BE or LE, but at compile time.
          If mips64 is compiled on a non mips system, the VEX lib
          is missing bit and pieces of code related to endianness.
@@ -110,7 +107,7 @@ static VexEndness arch_endness (VexArch va) {
          VexArch ga;
          get_guest_arch( &ga);
 
-         if (ga == VexArchMIPS64 || ga == VexArchMIPS32 || ga == VexArchNANOMIPS)
+         if (ga == VexArchMIPS64 || ga == VexArchMIPS32)
             return running_endness();
          else
             return VexEndnessBE;
@@ -141,7 +138,6 @@ static UInt arch_hwcaps (VexArch va) {
    case VexArchMIPS32: return VEX_PRID_COMP_MIPS;
    case VexArchMIPS64: return VEX_PRID_COMP_MIPS | VEX_MIPS_HOST_FR;
 #endif
-   case VexArchNANOMIPS: return 0;
    case VexArchRISCV64: return 0;
    default: failure_exit();
    }
@@ -159,7 +155,6 @@ static Bool mode64 (VexArch va) {
    case VexArchS390X:  return True;
    case VexArchMIPS32: return False;
    case VexArchMIPS64: return True;
-   case VexArchNANOMIPS: return False;
    case VexArchRISCV64: return True;
    default: failure_exit();
    }

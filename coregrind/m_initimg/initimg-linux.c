@@ -909,7 +909,6 @@ Addr setup_client_stack( void*  init_sp,
 #        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) \
             && !defined(VGP_ppc64le_linux) \
             && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) \
-            && !defined(VGP_nanomips_linux) \
             && !defined(VGP_s390x_linux) \
             && !defined(VGP_riscv64_linux)
          case AT_SYSINFO_EHDR: {
@@ -1327,7 +1326,7 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
       process startup. */
 #define PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP 1
 
-#  elif defined(VGP_mips32_linux) || defined(VGP_nanomips_linux)
+#  elif defined(VGP_mips32_linux)
    vg_assert(0 == sizeof(VexGuestMIPS32State) % LibVEX_GUEST_STATE_ALIGN);
    /* Zero out the initial state, and set up the simulated FPU in a
       sane way. */
@@ -1341,12 +1340,10 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_PC = iifii.initial_client_IP;
    arch->vex.guest_r31 = iifii.initial_client_SP;
 
-#  if !defined(VGP_nanomips_linux)
    if (iifii.arch_elf_state.overall_fp_mode == VKI_FP_FR1) {
       arch->vex.guest_CP0_status |= MIPS_CP0_STATUS_FR;
    }
 
-#  endif
 #  elif defined(VGP_mips64_linux)
    vg_assert(0 == sizeof(VexGuestMIPS64State) % LibVEX_GUEST_STATE_ALIGN);
    /* Zero out the initial state, and set up the simulated FPU in a

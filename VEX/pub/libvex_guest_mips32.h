@@ -189,9 +189,6 @@ typedef
       /*  1016 */ UInt guest_MSACSR;
 
       /*  1020 */ UInt _padding3;
-
-      /*  1024 */ ULong guest_LLdata64;
-      /*  1032 */ ULong _padding4;
 } VexGuestMIPS32State;
 
 _Static_assert(sizeof(VexGuestMIPS32State)%16 == 0, "sizeof VexGuestMIPS32State is not a multiple of 16");

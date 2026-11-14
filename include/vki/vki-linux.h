@@ -95,8 +95,6 @@
 #  include "vki-posixtypes-mips32-linux.h"
 #elif defined(VGA_mips64)
 #  include "vki-posixtypes-mips64-linux.h"
-#elif defined(VGA_nanomips)
-#  include "vki-posixtypes-nanomips-linux.h"
 #elif defined(VGA_riscv64)
 #  include "vki-posixtypes-riscv64-linux.h"
 #else
@@ -176,7 +174,7 @@ typedef int __vki_kernel_mqd_t;
 //----------------------------------------------------------------------
 
 struct vki_ustat {
-#if defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
+#if defined(VGA_mips32) || defined(VGA_mips64)
 	long			f_tfree;
 #else
 	int			f_tfree;
@@ -244,8 +242,6 @@ typedef unsigned int	        vki_uint;
 #  include "vki-mips32-linux.h"
 #elif defined(VGA_mips64)
 #  include "vki-mips64-linux.h"
-#elif defined(VGA_nanomips)
-#  include "vki-nanomips-linux.h"
 #elif defined(VGA_riscv64)
 #  include "vki-riscv64-linux.h"
 #else

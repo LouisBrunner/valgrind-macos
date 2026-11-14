@@ -136,7 +136,7 @@ void VG_(get_UnwindStartRegs) ( /*OUT*/UnwindStartRegs* regs,
       = VG_(threads)[tid].arch.vex.guest_v6.w64[0];
    regs->misc.S390X.r_f7
       = VG_(threads)[tid].arch.vex.guest_v7.w64[0];
-#  elif defined(VGA_mips32) || defined(VGP_nanomips_linux)
+#  elif defined(VGA_mips32)
    regs->r_pc = VG_(threads)[tid].arch.vex.guest_PC;
    regs->r_sp = VG_(threads)[tid].arch.vex.guest_r29;
    regs->misc.MIPS32.r30
@@ -311,7 +311,7 @@ static void apply_to_GPs_of_tid(ThreadId tid, void (*f)(ThreadId,
    (*f)(tid, "r13", vex->guest_r13);
    (*f)(tid, "r14", vex->guest_r14);
    (*f)(tid, "r15", vex->guest_r15);
-#elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGP_nanomips_linux)
+#elif defined(VGA_mips32) || defined(VGA_mips64)
    (*f)(tid, "r0" , vex->guest_r0 );
    (*f)(tid, "r1" , vex->guest_r1 );
    (*f)(tid, "r2" , vex->guest_r2 );
@@ -2185,26 +2185,6 @@ Bool VG_(machine_get_hwcaps)( void )
      return True;
    }
 
-#elif defined(VGP_nanomips_linux)
-   {
-     va = VexArchNANOMIPS;
-     vai.hwcaps = 0;
-
-#    if defined(VKI_LITTLE_ENDIAN)
-     vai.endness = VexEndnessLE;
-#    elif defined(VKI_BIG_ENDIAN)
-     vai.endness = VexEndnessBE;
-#    else
-     vai.endness = VexEndness_INVALID;
-#    endif
-
-     VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
-
-     VG_(machine_get_cache_info)(&vai);
-
-     return True;
-   }
-
 #elif defined(VGA_riscv64)
    {
      va = VexArchRISCV64;
@@ -2352,7 +2332,7 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
    /* ARM64 always has Neon, AFAICS. */
    return 16;
 
-#  elif defined(VGA_mips32) || defined(VGP_nanomips_linux)
+#  elif defined(VGA_mips32)
    /* The guest state implies 4, but that can't really be true, can
       it? */
    return 8;
@@ -2380,7 +2360,7 @@ void* VG_(fnptr_to_fnentry)( void* f )
       || defined(VGP_s390x_linux) || defined(VGP_mips32_linux) \
       || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
       || defined(VGP_x86_solaris) || defined(VGP_amd64_solaris) \
-      || defined(VGP_nanomips_linux) || defined(VGP_riscv64_linux)
+      || defined(VGP_riscv64_linux)
    return f;
 #  elif defined(VGP_ppc64be_linux)
    /* ppc64-linux uses the AIX scheme, in which f is a pointer to a

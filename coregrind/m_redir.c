@@ -1732,21 +1732,6 @@ void VG_(redir_initialise) ( void )
 #     endif
    }
 
-# elif defined(VGP_nanomips_linux)
-   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
-
-      add_hardwired_spec(
-         "ld.so.1", "strlen",
-         (Addr)&VG_(nanomips_linux_REDIR_FOR_strlen),
-         complain_about_stripped_glibc_ldso
-      );
-      add_hardwired_spec(
-         "ld.so.1", "index",
-         (Addr)&VG_(nanomips_linux_REDIR_FOR_index),
-         complain_about_stripped_glibc_ldso
-      );
-   }
-
 #  elif defined(VGP_riscv64_linux)
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       add_hardwired_spec(

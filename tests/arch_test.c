@@ -33,7 +33,6 @@ char* all_archs[] = {
    "s390x",
    "mips32",
    "mips64",
-   "nanomips",
    "riscv64",
    NULL
 };
@@ -77,9 +76,6 @@ static Bool go(char* arch)
 
 #elif defined(VGP_mips64_linux)
    if ( 0 == strcmp( arch, "mips64" ) ) return True;
-
-#elif defined(VGP_nanomips_linux)
-   if ( 0 == strcmp( arch, "nanomips" ) ) return True;
 
 #elif defined(VGP_riscv64_linux)
    if ( 0 == strcmp( arch, "riscv64" ) ) return True;

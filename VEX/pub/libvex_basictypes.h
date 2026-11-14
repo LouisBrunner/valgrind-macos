@@ -193,10 +193,6 @@ typedef  unsigned long HWord;
 #   define VEX_HOST_WORDSIZE 4
 #   define VEX_REGPARM(_n) /* */
 
-#elif defined(__nanomips__) && (__nanomips != 64)
-#   define VEX_HOST_WORDSIZE 4
-#   define VEX_REGPARM(_n) /* */
-
 #elif defined(__riscv) && (__riscv_xlen == 64)
 #   define VEX_HOST_WORDSIZE 8
 #   define VEX_REGPARM(_n) /* */

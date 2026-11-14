@@ -55,7 +55,6 @@
 /auxprogs/getoff-ppc64le-linux
 /auxprogs/getoff-mips32-linux
 /auxprogs/getoff-mips64-linux
-/auxprogs/getoff-nanomips-linux
 /auxprogs/getoff-riscv64-linux
 /auxprogs/getoff-amd64-solaris
 /auxprogs/getoff-x86-solaris
@@ -2025,17 +2024,6 @@
 /none/tests/mips64/test_math
 /none/tests/mips64/unaligned_load
 /none/tests/mips64/unaligned_load_store
-
-# /none/tests/nanomips/
-/none/tests/nanomips/Makefile
-/none/tests/nanomips/Makefile.in
-/none/tests/nanomips/.deps
-/none/tests/nanomips/arithmetic
-/none/tests/nanomips/bits
-/none/tests/nanomips/branches
-/none/tests/nanomips/load_store
-/none/tests/nanomips/move
-/none/tests/nanomips/pc_instructions
 
 # /none/tests/ppc32/
 /none/tests/ppc32/*.stderr.diff

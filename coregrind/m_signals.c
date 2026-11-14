@@ -627,22 +627,6 @@ VgHashTable *ht_sigchld_ignore = NULL;
         (srP)->misc.MIPS64.r28 = (uc)->uc_mcontext.sc_regs[28]; \
       }
 
-#elif defined(VGP_nanomips_linux)
-#  define VG_UCONTEXT_INSTR_PTR(uc)   ((UWord)(((uc)->uc_mcontext.sc_pc)))
-#  define VG_UCONTEXT_STACK_PTR(uc)   ((UWord)((uc)->uc_mcontext.sc_regs[29]))
-#  define VG_UCONTEXT_FRAME_PTR(uc)   ((uc)->uc_mcontext.sc_regs[30])
-#  define VG_UCONTEXT_SYSCALL_NUM(uc) ((uc)->uc_mcontext.sc_regs[2])
-#  define VG_UCONTEXT_SYSCALL_SYSRES(uc)                               \
-      VG_(mk_SysRes_nanomips_linux)((uc)->uc_mcontext.sc_regs[4])
-
-#  define VG_UCONTEXT_TO_UnwindStartRegs(srP, uc)               \
-      { (srP)->r_pc = (uc)->uc_mcontext.sc_pc;                  \
-        (srP)->r_sp = (uc)->uc_mcontext.sc_regs[29];            \
-        (srP)->misc.MIPS32.r30 = (uc)->uc_mcontext.sc_regs[30]; \
-        (srP)->misc.MIPS32.r31 = (uc)->uc_mcontext.sc_regs[31]; \
-        (srP)->misc.MIPS32.r28 = (uc)->uc_mcontext.sc_regs[28]; \
-      }
-
 #elif defined(VGP_riscv64_linux)
 #  define VG_UCONTEXT_INSTR_PTR(uc)       ((uc)->uc_mcontext.sc_regs.pc)
 #  define VG_UCONTEXT_STACK_PTR(uc)       ((uc)->uc_mcontext.sc_regs.sp)
@@ -1076,14 +1060,6 @@ extern void my_sigreturn(void);
    "   syscall\n" \
    ".previous\n"
 
-#elif defined(VGP_nanomips_linux)
-#  define _MY_SIGRETURN(name) \
-    ".text\n" \
-   "my_sigreturn:\n" \
-   "   li $t4, " #name "\n" \
-   "   syscall[32]\n" \
-   ".previous\n"
-
 #elif defined(VGP_riscv64_linux)
 /* Not used on riscv64. */
 #  define _MY_SIGRETURN(name) \
@@ -1206,8 +1182,7 @@ static void handle_SCSS_change ( Bool force_update )
          vg_assert(ksa_old.sa_flags 
                    == skss_old.skss_per_sig[sig].skss_flags);
 #        if !defined(VGP_ppc32_linux) && !defined(VGP_mips32_linux) && \
-            !defined(VGP_mips64_linux) && !defined(VGP_nanomips_linux) && \
-            !defined(VGP_riscv64_linux) && \
+            !defined(VGP_mips64_linux) && !defined(VGP_riscv64_linux) && \
             !defined(VGP_x86_darwin) && !defined(VGP_amd64_darwin) && \
             !defined(VGO_solaris) && !defined(VGO_freebsd)
          vg_assert(ksa_old.sa_restorer == my_sigreturn);
@@ -2347,8 +2322,8 @@ void VG_(synth_sigtrap)(ThreadId tid)
 // Synthesise a SIGFPE.
 void VG_(synth_sigfpe)(ThreadId tid, UInt code)
 {
-// Only tested on mips32, mips64, s390x and nanomips.
-#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x) && !defined(VGA_nanomips)
+// Only tested on mips32, mips64, and s390x
+#if !defined(VGA_mips32) && !defined(VGA_mips64) && !defined(VGA_s390x)
    vg_assert(0);
 #else
    vki_siginfo_t info;
@@ -3225,8 +3200,7 @@ void VG_(sigstartup_actions) ( void )
       /* Get the old host action */
       ret = VG_(sigaction)(i, NULL, &sa);
 
-#     if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin) \
-      || defined(VGP_nanomips_linux)
+#     if defined(VGP_x86_darwin) || defined(VGP_amd64_darwin)
       /* apparently we may not even ask about the disposition of these
          signals, let alone change them */
       if (ret != 0 && (i == VKI_SIGKILL || i == VKI_SIGSTOP))

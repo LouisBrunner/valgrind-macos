@@ -40,7 +40,6 @@ platforms:
 - S390X/Linux
 - MIPS32/Linux
 - MIPS64/Linux
-- nanoMIPS/Linux
 - X86/Solaris
 - AMD64/Solaris
 - X86/FreeBSD

@@ -65,10 +65,6 @@
 #define EM_PPC64 21
 #endif
 
-#ifndef EM_NANOMIPS
-#define EM_NANOMIPS 249
-#endif
-
 #ifndef E_MIPS_ABI_O32
 #define E_MIPS_ABI_O32 0x00001000
 #endif
@@ -260,12 +256,6 @@ static const char *select_platform(const char *clientname)
                  (header.ehdr32.e_flags & E_MIPS_ABI2)) {
                platform = "mips64-linux";
             }
-            else
-            if (header.ehdr32.e_machine == EM_NANOMIPS &&
-                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
-               platform = "nanomips-linux";
-            }
          }
          else if (header.c[EI_DATA] == ELFDATA2MSB) {
             if (header.ehdr32.e_machine == EM_PPC &&
@@ -286,12 +276,6 @@ static const char *select_platform(const char *clientname)
                  header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX) &&
                  (header.ehdr32.e_flags & E_MIPS_ABI2)) {
                platform = "mips64-linux";
-            }
-            else
-            if (header.ehdr32.e_machine == EM_NANOMIPS &&
-                (header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_SYSV ||
-                 header.ehdr32.e_ident[EI_OSABI] == ELFOSABI_LINUX)) {
-               platform = "nanomips-linux";
             }
          }
 
@@ -427,7 +411,6 @@ int main(int argc, char** argv, char** envp)
        (0==strcmp(VG_PLATFORM,"s390x-linux"))  ||
        (0==strcmp(VG_PLATFORM,"mips32-linux")) ||
        (0==strcmp(VG_PLATFORM,"mips64-linux")) ||
-       (0==strcmp(VG_PLATFORM,"nanomips-linux")) ||
        (0==strcmp(VG_PLATFORM,"riscv64-linux")))
       default_platform = VG_PLATFORM;
 #  elif defined(VGO_solaris)

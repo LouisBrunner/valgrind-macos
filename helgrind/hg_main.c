@@ -2112,7 +2112,7 @@ void evh__HG_PTHREAD_MUTEX_INIT_POST( ThreadId tid,
                                       void* mutex, Word mbRec )
 {
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_MUTEX_INIT_POST(ctid=%d, mbRec=%ld, %p)\n",
+      VG_(printf)("evh__HG_PTHREAD_MUTEX_INIT_POST(ctid=%d, mbRec=%ld, %p)\n",
                   (Int)tid, mbRec, (void*)mutex );
    tl_assert(mbRec == 0 || mbRec == 1);
    maybe_warn_lock_reinit( (Addr)mutex, "pthread_mutex_init" );
@@ -2120,7 +2120,7 @@ void evh__HG_PTHREAD_MUTEX_INIT_POST( ThreadId tid,
                                           (Addr)mutex, tid );
    lk->explicit_init = True;
    if (HG_(clo_sanity_flags) & SCE_LOCKS)
-      all__sanity_check("evh__hg_PTHREAD_MUTEX_INIT_POST");
+      all__sanity_check("evh__HG_PTHREAD_MUTEX_INIT_POST");
 }
 
 static
@@ -2130,7 +2130,7 @@ void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex,
    Thread* thr;
    Lock*   lk;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_MUTEX_DESTROY_PRE"
+      VG_(printf)("evh__HG_PTHREAD_MUTEX_DESTROY_PRE"
                   "(ctid=%d, %p, isInit=%d)\n", 
                   (Int)tid, (void*)mutex, (Int)mutex_is_init );
 
@@ -2178,7 +2178,7 @@ void evh__HG_PTHREAD_MUTEX_DESTROY_PRE( ThreadId tid, void* mutex,
 
   out:
    if (HG_(clo_sanity_flags) & SCE_LOCKS)
-      all__sanity_check("evh__hg_PTHREAD_MUTEX_DESTROY_PRE");
+      all__sanity_check("evh__HG_PTHREAD_MUTEX_DESTROY_PRE");
 }
 
 static void evh__HG_PTHREAD_MUTEX_LOCK_PRE ( ThreadId tid,
@@ -2189,7 +2189,7 @@ static void evh__HG_PTHREAD_MUTEX_LOCK_PRE ( ThreadId tid,
    Thread* thr;
    Lock*   lk;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_MUTEX_LOCK_PRE(ctid=%d, mutex=%p)\n", 
+      VG_(printf)("evh__HG_PTHREAD_MUTEX_LOCK_PRE(ctid=%d, mutex=%p)\n",
                   (Int)tid, (void*)mutex );
 
    tl_assert(isTryLock == 0 || isTryLock == 1);
@@ -2261,7 +2261,7 @@ static void evh__HG_PTHREAD_MUTEX_UNLOCK_POST ( ThreadId tid, void* mutex )
    // only called if the real library call succeeded - so mutex is sane
    Thread* thr;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_MUTEX_UNLOCK_POST(ctid=%d, mutex=%p)\n", 
+      VG_(printf)("evh__HG_PTHREAD_MUTEX_UNLOCK_POST(ctid=%d, mutex=%p)\n",
                   (Int)tid, (void*)mutex );
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */
@@ -2287,7 +2287,7 @@ static void evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE( ThreadId tid,
       and take a dependence edge.  Otherwise, do nothing. */
 
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE"
+      VG_(printf)("evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_PRE"
                   "(ctid=%d, slock=%p)\n", 
                   (Int)tid, (void*)slock );
 
@@ -2314,7 +2314,7 @@ static void evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST( ThreadId tid,
       nothing. */
 
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_SPIN_INIT_OR_UNLOCK_POST"
+      VG_(printf)("evh__HG_PTHREAD_SPIN_INIT_OR_UNLOCK_POST"
                   "(ctid=%d, slock=%p)\n", 
                   (Int)tid, (void*)slock );
 
@@ -2538,7 +2538,7 @@ static Bool evh__HG_PTHREAD_COND_WAIT_PRE ( ThreadId tid,
    CVInfo* cvi;
 
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_COND_WAIT_PRE"
+      VG_(printf)("evh__HG_PTHREAD_COND_WAIT_PRE"
                   "(ctid=%d, cond=%p, mutex=%p)\n", 
                   (Int)tid, (void*)cond, (void*)mutex );
 
@@ -2608,7 +2608,7 @@ static void evh__HG_PTHREAD_COND_WAIT_POST ( ThreadId tid,
 
    if (HG_(clo_show_events) >= 1)
       VG_(printf)("evh__HG_PTHREAD_COND_WAIT_POST"
-                  "(ctid=%d, cond=%p, mutex=%p)\n, timeout=%d",
+                  "(ctid=%d, cond=%p, mutex=%p), timeout=%d\n",
                   (Int)tid, (void*)cond, (void*)mutex, (Int)timeout );
 
    thr = map_threads_maybe_lookup( tid );
@@ -2686,13 +2686,13 @@ static
 void evh__HG_PTHREAD_RWLOCK_INIT_POST( ThreadId tid, void* rwl )
 {
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_RWLOCK_INIT_POST(ctid=%d, %p)\n",
+      VG_(printf)("evh__HG_PTHREAD_RWLOCK_INIT_POST(ctid=%d, %p)\n",
                   (Int)tid, (void*)rwl );
    maybe_warn_lock_reinit( (Addr)rwl, "pthread_rwlock_init" );
    Lock* lk = map_locks_lookup_or_create( LK_rdwr, (Addr)rwl, tid );
    lk->explicit_init = True;
    if (HG_(clo_sanity_flags) & SCE_LOCKS)
-      all__sanity_check("evh__hg_PTHREAD_RWLOCK_INIT_POST");
+      all__sanity_check("evh__HG_PTHREAD_RWLOCK_INIT_POST");
 }
 
 static
@@ -2701,7 +2701,7 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
    Thread* thr;
    Lock*   lk;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_RWLOCK_DESTROY_PRE(ctid=%d, %p)\n", 
+      VG_(printf)("evh__HG_PTHREAD_RWLOCK_DESTROY_PRE(ctid=%d, %p)\n",
                   (Int)tid, (void*)rwl );
 
    thr = map_threads_maybe_lookup( tid );
@@ -2739,7 +2739,7 @@ void evh__HG_PTHREAD_RWLOCK_DESTROY_PRE( ThreadId tid, void* rwl )
    }
 
    if (HG_(clo_sanity_flags) & SCE_LOCKS)
-      all__sanity_check("evh__hg_PTHREAD_RWLOCK_DESTROY_PRE");
+      all__sanity_check("evh__HG_PTHREAD_RWLOCK_DESTROY_PRE");
 }
 
 static 
@@ -2752,7 +2752,7 @@ void evh__HG_PTHREAD_RWLOCK_LOCK_PRE ( ThreadId tid,
    Thread* thr;
    Lock*   lk;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_RWLOCK_LOCK_PRE(ctid=%d, isW=%d, %p)\n", 
+      VG_(printf)("evh__HG_PTHREAD_RWLOCK_LOCK_PRE(ctid=%d, isW=%d, %p)\n",
                   (Int)tid, (Int)isW, (void*)rwl );
 
    tl_assert(isW == 0 || isW == 1); /* assured us by wrapper */
@@ -2776,7 +2776,7 @@ void evh__HG_PTHREAD_RWLOCK_LOCK_POST ( ThreadId tid, void* rwl, Word isW )
    // only called if the real library call succeeded - so mutex is sane
    Thread* thr;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_RWLOCK_LOCK_POST(ctid=%d, isW=%d, %p)\n", 
+      VG_(printf)("evh__HG_PTHREAD_RWLOCK_LOCK_POST(ctid=%d, isW=%d, %p)\n",
                   (Int)tid, (Int)isW, (void*)rwl );
 
    tl_assert(isW == 0 || isW == 1); /* assured us by wrapper */
@@ -2810,7 +2810,7 @@ static void evh__HG_PTHREAD_RWLOCK_UNLOCK_POST ( ThreadId tid, void* rwl )
    // only called if the real library call succeeded - so mutex is sane
    Thread* thr;
    if (HG_(clo_show_events) >= 1)
-      VG_(printf)("evh__hg_PTHREAD_RWLOCK_UNLOCK_POST(ctid=%d, rwl=%p)\n", 
+      VG_(printf)("evh__HG_PTHREAD_RWLOCK_UNLOCK_POST(ctid=%d, rwl=%p)\n",
                   (Int)tid, (void*)rwl );
    thr = map_threads_maybe_lookup( tid );
    tl_assert(thr); /* cannot fail - Thread* must already exist */

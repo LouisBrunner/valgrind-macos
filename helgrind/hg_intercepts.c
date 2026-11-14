@@ -1532,11 +1532,13 @@ static int pthread_cond_timedwait_WRK(pthread_cond_t* cond,
                  struct timespec *reltime) {
       return pthread_cond_timedwait_WRK(cond, mutex, reltime, ETIME);
    }
+#if defined(__illumos__)
    PTH_FUNC(int, pthreadZucondZutimedwait, // pthread_cond_timedwait
                  pthread_cond_t* cond, pthread_mutex_t* mutex,
                  struct timespec* abstime) {
       return pthread_cond_timedwait_WRK(cond, mutex, abstime, ETIMEDOUT);
    }
+#endif
 #else
 #  error "Unsupported OS"
 #endif

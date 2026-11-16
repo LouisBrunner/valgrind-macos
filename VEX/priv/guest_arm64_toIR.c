@@ -8058,7 +8058,10 @@ Bool dis_ARM64_branch_etc(/*MB_OUT*/DisResult* dres, UInt insn,
       putPC(mkU64( guest_PC_curr_instr + 4 ));
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_FlushDCache;
-      DIP("dc cvau, %s\n", nameIReg64orZR(tt));
+      DIP("dc %s, %s\n",
+          (INSN(11,8) == 0xA ? "cvac" : INSN(11,8) == 0xB ? "cvau"
+           : INSN(11,8) == 0xC ? "cvap" : INSN(11,8) == 0xD ? "cvadp"
+           : "civac"), nameIReg64orZR(tt));
       return True;
    }
 

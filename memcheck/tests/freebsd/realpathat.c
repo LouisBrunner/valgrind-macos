@@ -24,7 +24,7 @@ int main(void)
    free(bad_int2);
    
    // ugly
-   char * bad_buf = malloc(100);
+   char * bad_buf = malloc(PATH_MAX);
    char* bad_buf2 = strdup(self_path);
    free(bad_buf);
    free(bad_buf2);

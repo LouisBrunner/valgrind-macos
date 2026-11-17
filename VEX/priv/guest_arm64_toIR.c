@@ -15348,7 +15348,8 @@ Bool dis_AdvSIMD_fp_conditional_select(/*MB_OUT*/DisResult* dres, UInt insn)
 
 
 static
-Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
+Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn,
+                                       const VexArchInfo* archinfo)
 {
    /* 31  28    23 21 20     14    9 4
       000 11110 ty 1  opcode 10000 n d
@@ -15371,10 +15372,15 @@ Bool dis_AdvSIMD_fp_data_proc_1_source(/*MB_OUT*/DisResult* dres, UInt insn)
       /* -------- 0x,000010: FNEG  d_d, s_s, h_h --- */
       /* -------- 0x,000011: FSQRT d_d, s_s, h_h --- */
       IRType ity;
-      if (ty == X01) ity = Ity_F64;
-      else if (ty == X00) ity = Ity_F32;
-      else if (ty == X11) ity = Ity_F16;
-      else vassert(0);
+      if (ty == X01)
+         ity = Ity_F64;
+      else if (ty == X00)
+         ity = Ity_F32;
+      else if (ty == X11
+               && (archinfo->hwcaps & VEX_HWCAPS_ARM64_FP16) != 0)
+         ity = Ity_F16;
+      else
+         return False; /* Illegal size.  */
       IRTemp src = newTemp(ity);
       IRTemp res = newTemp(ity);
       const HChar* nm = "??";
@@ -16298,7 +16304,7 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_conditional_select(dres, insn);
    if (UNLIKELY(ok)) return True;
-   ok = dis_AdvSIMD_fp_data_proc_1_source(dres, insn);
+   ok = dis_AdvSIMD_fp_data_proc_1_source(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_AdvSIMD_fp_data_proc_2_source(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;

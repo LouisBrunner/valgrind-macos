@@ -6,17 +6,20 @@
 
 int main(void)
 {
-    struct statfs mbuf[128];
     int fs_count;
 
     if ((fs_count = getfsstat (NULL, 0, MNT_NOWAIT)) != -1 )
     {
+        struct statfs* mbuf = malloc(fs_count*sizeof(*mbuf));
+
         getfsstat (mbuf, fs_count * sizeof(mbuf[0]), MNT_NOWAIT);
 
         for ( int i = 0; i < fs_count; ++i)
         {
             printf("mount from name %s\n", mbuf[i].f_mntfromname);
         }
+
+        free(mbuf);
     }
  
     // now some bad uses

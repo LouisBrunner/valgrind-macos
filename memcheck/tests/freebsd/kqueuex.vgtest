@@ -1,4 +1,4 @@
-prereq: ./toucher1
+prereq: kldstat -m mqueuefs > /dev/null 2>&1 && ./toucher1
 prog: kqueue
 args: /tmp/touch_file
 vgopts: -q

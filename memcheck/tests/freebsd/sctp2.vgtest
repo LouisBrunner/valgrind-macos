@@ -1,2 +1,2 @@
-prereq: kldstat -m sctp > /dev/null
+prereq: kldstat -m sctp  > /dev/null 2>&1
 prog: sctp2

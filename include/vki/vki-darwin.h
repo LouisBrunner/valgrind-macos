@@ -1471,4 +1471,18 @@ struct vki_kpersona_info {
 #define VKI_ICACHE_LINE_SIZE (1 << VKI_MMU_I_CLINE)
 #endif
 
+
+#include <sys/kdebug.h>
+
+#if DARWIN_VERS >= DARWIN_10_11
+#define VKI_KDBG_EVENTID_MASK       KDBG_EVENTID_MASK
+#define VKI_KDBG_EXTRACT_CLASS(did) KDBG_EXTRACT_CLASS(did)
+#else
+#define VKI_KDBG_CLASS_MASK         (0xff000000)
+#define VKI_KDBG_CLASS_OFFSET       (24)
+#define VKI_KDBG_EVENTID_MASK       (0xfffffffc)
+#define VKI_KDBG_EXTRACT_CLASS(did) \
+        ((uint8_t)(((did) & VKI_KDBG_CLASS_MASK) >> VKI_KDBG_CLASS_OFFSET))
+#endif
+
 #endif

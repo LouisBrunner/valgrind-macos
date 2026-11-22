@@ -57,9 +57,8 @@
 {
    DRD-UNWIND1
    drd:ConflictingAccess
+   ...
    fun:_Unwind_GetCFA
-   obj:*/lib*/libthr.so.3
-   obj:*/lib*/libgcc_s.so.1
 }
 {
    DRD-UNWIND2

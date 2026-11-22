@@ -7,7 +7,7 @@ int main(void)
 
    /* SYS_pdfork                  518 */
    GO(SYS_pdfork, "2s 0m");
-   SY(SYS_pdfork, x0+1, x0+12); FAIL;
+   SY(SYS_pdfork, x0+1, x0+9999); FAIL;
 
    return(0);
 }

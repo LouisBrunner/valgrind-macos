@@ -1,25 +1,11 @@
 #! /bin/sh
 
-gsed -E 's#_fstatfs.S:[0-9]+#in /...libc...#' |
-gsed -E 's#fstatfs.S:[0-9]+#in /...libc...#' |
-gsed -E 's#_statfs.S:[0-9]+#in /...libc...#' |
-gsed -E 's#statfs.S:[0-9]+#in /...libc...#' |
-gsed -E 's#_fstat.S:[0-9]+#in /...libc...#' |
-gsed -E 's#fstat.S:[0-9]+#in /...libc...#' |
-gsed -E 's#.*_fstatat \(_fstatat.S:[0-9]+\)#   ...#' |
-gsed -E 's#.*fstatat \(fstatat.S:[0-9]+\)#   ...#' |
-gsed '/by 0x........: stat (in \/...libc...)/d;/by 0x........: fstat (in \/...libc...)/d;/by 0x........: fstatat (in \/...libc...)/d' |
-gsed '/by 0x........: statfs (in \/...libc...)/d;/by 0x........: fstatfs (in \/...libc...)/d' |
-gsed 's/at 0x........: fstatat (in \/...libc...)/.../' |
+../filter_stderr "$@" |
 
-gsed 's/: fstatfs/: __sys_fstatfs/' |
-gsed 's/: statfs/: _statfs/' |
-gsed 's/: fstat/: __sys_fstat/' |
-
-# fox x86 compatibility
-
+# for x86 compatibility
 gsed 's/bytes inside a block of size 208 free/bytes inside a block of size 224 free/' |
 
-../filter_stderr "$@"
+# there is always one, FreeBSD 14 and earlier without libc debug info
+gsed 's#.*fstatat (in /...libc...)#   ...#'
 
 exit 0

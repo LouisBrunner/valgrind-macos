@@ -29,19 +29,31 @@ while (<>)
     s/\(below main\) \(.+\)$/(below main)/;
     s/start \(in \/usr\/lib\/system\/libdyld.dylib\)/(below main)/;
 
-    # libc on x86 FreeBSD
+    #  FreeBSD: various forms of _start
     s#_start1 \(src/lib/csu/i386/crt1_c.c.*#(below main)#;
     s#__libc_start1 \(in /...libc...\)#(below main)#;
-
-    # FreeBSD, depending on whether debug packages are
-    # installed or if it is a build with debug info turned on
-    # (like CURRENT)
-    s#: (\w+) \(\1\.S:\d+\)#: $1 (in /...libc...)#;
-    # not all follow that pattern so need to be done explicitly
-    s#\(.*/lib/libsys/libsys_.*\)#(in /...libc...)#;
-    s#\(.*/lib/libc/sys/.*\.c:\d+\)#(in /...libc...)#;
     s#__libc_start1 \(.*lib/libc/csu/libc_start1\.c:\d+\)#(below main)#;
+
+    # FreeBSD, if debuginfo is not installed then syscall wrappers
+    # display as fstatat (in /lib/libsys.so.7) [libc.so.7 for older FreeBSDs]
+    # which get converted to /...libc...
+    # If debuginfo is installed then that will be
+    # syscall_name (syscall_name.S:4)
+    # we can detect that repetition to produce the same pattern
+    s#: (\w+) \(\1\.S:\d+\)#: $1 (in /...libc...)#;
+    # some inconsistencies with stat syscalls prior to FreeBSD 15
+    s#: __sys_(\w+) \(_\1\.S:\d+\)#: $1 (in /...libc...)#;
+    # not all follow that pattern so need to be done explicitly
+    # for sigwait
+    s#\(.*/lib/libsys/libsys_.*\)#(in /...libc...)#;
+    # for open
+    s#\(.*/lib/libc/sys/.*\.c:\d+\)#(in /...libc...)#;
     s#src/lib/libc/net/sctp_sys_calls.c:\d+#???:#;
+    # These three were renamed in FreeBSD 15
+    s#__sys_fstatfs#fstatfs#;
+    s#__sys_fstat#fstat#;
+    # need a space so as not to match syscall names in scalar
+    s# _statfs# statfs#;
 
     # on Illumos
     s#_start_crt \(in .*#(below main)#;

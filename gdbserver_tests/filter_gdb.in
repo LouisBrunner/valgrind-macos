@@ -190,6 +190,7 @@ s/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../
 /^   from \/lib64.*\/libc.so.*$/d
 /^   from \/lib64.*\/.*\/libc.so.*$/d
 /^   from \/lib64.*\/.*\/libc-.*.so/d
+s/ from \/lib\/libsys.so.*//
 s/ from \/lib\/libc\.so.*//
 
 #       and yet another (gdb 7.0 way) to get a system call

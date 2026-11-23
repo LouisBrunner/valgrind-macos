@@ -75,9 +75,6 @@
 # Overall, that's not a big deal.
 # However, requiring dyld to be present is a problem as it usually appears
 # in the address space where we want to put the client binary.
-# FIXME: We currently have a hardcoded hack to handle this but it should be using `$ala` instead.
-# The biggest challenge of all is fixing up the binary to be dynamic and respect `$ala`.
-# FIXME: This is currently unsolved.
 
 use warnings;
 use strict;
@@ -154,16 +151,6 @@ my $cmd = "/usr/bin/ld";
 if ($archstr eq "arm64") {
     $cmd = "$cmd -Z -L../coregrind -lmySystem -lmydyld";
     $cmd = "$cmd -segaddr __TEXT $ala";
-    # macOS 26's linker forces PIE and no longer honours -image_base, which
-    # otherwise would have kept __DATA_CONST/__DATA contiguous with __TEXT.
-    # Without explicit addresses those segments fall back to the default PIE
-    # base (below __TEXT) and the linker rejects them as "out of order".
-    if (@DARWIN_VERS@ >= 260000) {
-        my $data_const_ala = (Math::BigInt->new($ala) + Math::BigInt->new("0x10000000"))->as_hex();
-        my $data_ala        = (Math::BigInt->new($ala) + Math::BigInt->new("0x20000000"))->as_hex();
-        $cmd = "$cmd -segaddr __DATA_CONST $data_const_ala";
-        $cmd = "$cmd -segaddr __DATA $data_ala";
-    }
     # we add roughly ~30 bytes when using install_name_tool so we pad the header by 256 bytes to be safe
     $cmd = "$cmd -headerpad 256";
 } else {
@@ -171,11 +158,19 @@ if ($archstr eq "arm64") {
     $cmd = "$cmd -image_base $ala";
 }
 
-# Xcode 16 through 25 are completely borked and crash when you use -segaddr so
-# we rollback to the old linker in the meantime. Xcode 26+ removed
-# -ld_classic entirely (it's silently ignored), so there's nothing to roll
-# back to there; we instead work around the new linker above.
-if (@DARWIN_VERS@ >= 140000 && @DARWIN_VERS@ < 260000) {
+# Xcode 26+ stopped supporting the long deprecated -ld_classic so we use another trick.
+if (@DARWIN_VERS@ >= 260000) {
+    # bit of a hack (again), to force the segments to follow each other
+    $cmd = "$cmd -no_fixup_chains -x86_64_layout_emulation";
+    # suppresses a warning
+    $cmd = "$cmd -segalign 8000";
+    # dyld always loads libsharedcache.dylib but adding our own block that
+    $cmd = "$cmd -lobjc.A";
+    # DYLD_LIBRARY_PATH invalidates the cached loaders, otherwise dyld loads the system libraries from cache instead of the dummies
+    $cmd = "$cmd -dyld_env DYLD_LIBRARY_PATH=\@executable_path:\@executable_path/../coregrind";
+
+# Xcode 16-25 is completely borked and crashes when you use -segaddr so we rollback to the old linker in the meantime.
+} elsif (@DARWIN_VERS@ >= 140000) {
     $cmd = "$cmd -ld_classic";
 
 # If we're building with clang (viz, the C compiler as specified

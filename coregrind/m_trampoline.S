@@ -1539,6 +1539,107 @@ VG_(arm64_darwin_REDIR_FOR_strlcat):
   mov x0, x6
   ret
 
+.globl VG_(arm64_darwin_REDIR_FOR_strlcpy)
+VG_(arm64_darwin_REDIR_FOR_strlcpy):
+  mov x3, 0
+.L70:
+  ldrb w4, [x1, x3]
+  cbz w4, .L73
+  add x5, x3, 1
+  cmp x5, x2
+  b.hs .L71
+  strb w4, [x0, x3]
+  add x3, x3, 1
+  b .L70
+.L71:
+  cbz x2, .L72
+  strb wzr, [x0, x3]
+.L72:
+  add x3, x3, 1
+  ldrb w4, [x1, x3]
+  cbnz w4, .L72
+  mov x0, x3
+  ret
+.L73:
+  cbz x2, .L74
+  strb wzr, [x0, x3]
+.L74:
+  mov x0, x3
+  ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strnlen)
+VG_(arm64_darwin_REDIR_FOR_strnlen):
+  mov x2, 0
+.L83:
+  cmp x2, x1
+  b.hs .L84
+  ldrb w3, [x0, x2]
+  cbz w3, .L84
+  add x2, x2, 1
+  b .L83
+.L84:
+  mov x0, x2
+  ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_memchr)
+VG_(arm64_darwin_REDIR_FOR_memchr):
+  and w1, w1, 0xff
+.L85:
+  cbz x2, .L86
+  ldrb w3, [x0]
+  cmp w3, w1
+  b.eq .L87
+  add x0, x0, 1
+  sub x2, x2, 1
+  b .L85
+.L86:
+  mov x0, 0
+.L87:
+  ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strncpy)
+VG_(arm64_darwin_REDIR_FOR_strncpy):
+  mov x3, 0
+.L88:
+  cmp x3, x2
+  b.hs .L90
+  ldrb w4, [x1, x3]
+  strb w4, [x0, x3]
+  add x3, x3, 1
+  cbnz w4, .L88
+.L89:
+  cmp x3, x2
+  b.hs .L90
+  strb wzr, [x0, x3]
+  add x3, x3, 1
+  b .L89
+.L90:
+  ret
+
+.globl VG_(arm64_darwin_REDIR_FOR_strstr)
+VG_(arm64_darwin_REDIR_FOR_strstr):
+  ldrb w2, [x1]
+  cbz w2, .L95
+.L91:
+  ldrb w3, [x0]
+  cbz w3, .L94
+  mov x4, 0
+.L92:
+  ldrb w5, [x1, x4]
+  cbz w5, .L95
+  ldrb w6, [x0, x4]
+  cmp w5, w6
+  b.ne .L93
+  add x4, x4, 1
+  b .L92
+.L93:
+  add x0, x0, 1
+  b .L91
+.L94:
+  mov x0, 0
+.L95:
+  ret
+
 .globl VG_(arm64_darwin_REDIR_FOR_arc4random)
 VG_(arm64_darwin_REDIR_FOR_arc4random):
 	/* not very random, hope dyld won't mind */

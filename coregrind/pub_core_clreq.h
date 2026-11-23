@@ -51,6 +51,9 @@ typedef
       /* Add a target for an indirect function redirection. */
       VG_USERREQ__ADD_IFUNC_TARGET  = 0x3104,
 
+      /* Load the debuginfo of a dylib from the dyld shared cache. */
+      VG_USERREQ__DYLD_CACHE_LOAD   = 0x3105,
+
    } Vg_InternalClientRequest;
 
 

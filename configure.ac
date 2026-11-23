@@ -548,6 +548,7 @@ case "${host_os}" in
       AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
       AC_ADD_DARWIN_VERS([DARWIN_15_04], 150400, [DARWIN_VERS value for macOS 15.4])
       AC_ADD_DARWIN_VERS([DARWIN_26_00], 260000, [DARWIN_VERS value for macOS / iOS 26])
+      AC_ADD_DARWIN_VERS([DARWIN_27_00], 270000, [DARWIN_VERS value for macOS / iOS 27])
 
       AC_DEFINE([SDK_10_XX], 101200, [SDK_VERS value for Xcode SDK earlier than macOS 10.13 / iOS 11])
       AC_DEFINE([SDK_10_13], 101300, [SDK_VERS value for Xcode SDK macOS 10.13 / iOS 11])
@@ -560,7 +561,7 @@ case "${host_os}" in
       AC_DEFINE([SDK_14_0], 140000, [SDK_VERS value for Xcode SDK macOS 14.0 / iOS 17])
       AC_DEFINE([SDK_15_0], 150000, [SDK_VERS value for Xcode SDK macOS 15.0 / iOS 18])
       AC_DEFINE([SDK_26_0], 260000, [SDK_VERS value for Xcode SDK macOS / iOS 26])
-      AC_DEFINE([SDK_27_0], 270000, [SDK_VERS value for Xcode SDK macOS / iOS 26.6])
+      AC_DEFINE([SDK_27_0], 270000, [SDK_VERS value for Xcode SDK macOS / iOS 27])
 
       # Substitute the Xcode include path detected earlier
       AC_SUBST(SDK_INC_DIR, [$xcodedir_inc])
@@ -660,9 +661,13 @@ case "${host_os}" in
           AC_MSG_RESULT([Darwin 25.x (${kernel}) / macOS & iOS 26 (Tahoe)])
           DARWIN_VERS=$DARWIN_26_00
           ;;
+        *-27.*)
+          AC_MSG_RESULT([Darwin 27.x (${kernel}) / macOS & iOS 27 (Golden Gate)])
+          DARWIN_VERS=$DARWIN_27_00
+          ;;
         *)
           AC_MSG_RESULT([unsupported (${darwin_platform} ${kernel})])
-          AC_MSG_ERROR([Valgrind works on Darwin 12.x-25.x (Mac OS X 10.8-10.11, macOS 10.12-15.0, iOS 6-18 and macOS/iOS 26)])
+          AC_MSG_ERROR([Valgrind works on Darwin 12.x-25.x (Mac OS X 10.8-10.11, macOS 10.12-15.0, iOS 6-18 and macOS/iOS 27)])
           ;;
       esac
 

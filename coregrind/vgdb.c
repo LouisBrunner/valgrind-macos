@@ -1247,7 +1247,7 @@ int fork_and_exec_valgrind (int argc, char **argv, const char *working_dir,
    // We will use a pipe to track what the child does,
    // so we can report failure.
    int pipefd[2];
-#ifdef HAVE_PIPE2
+#if defined(HAVE_PIPE2) && !defined(VGO_darwin)
    if (pipe2 (pipefd, O_CLOEXEC) == -1) {
       err = errno;
       perror ("pipe2 failed");

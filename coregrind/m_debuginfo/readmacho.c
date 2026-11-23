@@ -208,15 +208,15 @@ static DiSlice map_image_aboard ( DebugInfo* di, /* only for err msgs */
    DiSlice sli = DiSlice_INVALID;
 
    /* First off, try to map the thing in. */
-   DiImage* mimg;
+   DiImage* mimg = NULL;
 
    if (rx_map != NULL) {
      // FIXME: basically, we make a slice from the place where the mach_header is until the end of the memory space
      // unfortunately, all the data needed for parsing from the DSC is spread across many places in memory
      // and there is no way to know for sure the size of the DSC perfectly, so this is the best method at the moment
      // and it's _very_ unsafe
-#if (DARWIN_VERS >= DARWIN_10_15)
-     mimg = ML_(img_from_memory)(rx_map->avma, MACH_DSC_END - rx_map->avma, filename);
+#if (DARWIN_VERS >= DARWIN_11_00)
+     mimg = ML_(img_from_memory)(rx_map->avma, VG_(dyld_cache_get_end)() - rx_map->avma, filename);
 #endif
    } else {
      mimg = ML_(img_from_local_file)(filename);

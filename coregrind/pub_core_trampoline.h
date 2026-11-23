@@ -160,6 +160,14 @@ extern void* VG_(arm64_darwin_REDIR_FOR_strcat)( void*, void * );
 extern char* VG_(arm64_darwin_REDIR_FOR_strcpy)( char *s1, char *s2 );
 extern SizeT VG_(arm64_darwin_REDIR_FOR_strlcat)( char *s1, const char *s2,
                                                   SizeT size );
+extern SizeT VG_(arm64_darwin_REDIR_FOR_strlcpy)( char *s1, const char *s2,
+                                                  SizeT size );
+extern char* VG_(arm64_darwin_REDIR_FOR_strchr)( const char *s, int c );
+extern SizeT VG_(arm64_darwin_REDIR_FOR_strnlen)( const char *s, SizeT maxlen );
+extern void* VG_(arm64_darwin_REDIR_FOR_memchr)( const void *s, int c, SizeT n );
+extern char* VG_(arm64_darwin_REDIR_FOR_strncpy)( char *s1, const char *s2,
+                                                  SizeT n );
+extern char* VG_(arm64_darwin_REDIR_FOR_strstr)( const char *s1, const char *s2 );
 extern UInt VG_(arm64_darwin_REDIR_FOR_arc4random)( void );
 #endif
 

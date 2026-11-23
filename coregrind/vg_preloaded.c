@@ -292,6 +292,46 @@ void VG_REPLACE_FUNCTION_ZU(libSystemZdZaZddylib, arc4random_addrandom)(unsigned
     // but don't care if it's initialized
 }
 
+/* ---------------------------------------------------------------------
+   Darwin DSC support
+   ------------------------------------------------------------------ */
+
+#if DARWIN_VERS >= DARWIN_11_00
+#include <mach-o/dyld.h>
+#define DYLD_IMAGE_ADDING 0
+
+typedef struct {
+    const void* imageLoadAddress;
+    const char* imageFilePath;
+    UWord       imageFileModDate;
+} dyld_image_info;
+
+static void dyld_cache_load_images(int mode, unsigned int count, const dyld_image_info* infos)
+{
+    unsigned int i;
+
+    if (mode == DYLD_IMAGE_ADDING) {
+        for (i = 0; i < count; i++) {
+            VALGRIND_DO_CLIENT_REQUEST_STMT(VG_USERREQ__DYLD_CACHE_LOAD,
+                                            infos[i].imageFilePath, 0, 0, 0, 0);
+        }
+    }
+}
+
+// lldb_image_notifier is only exported since macOS ~13
+void VG_WRAP_FUNCTION_ZU(dyld, lldb_image_notifier)
+   (int mode, unsigned int count, const dyld_image_info* infos);
+void VG_WRAP_FUNCTION_ZU(dyld, lldb_image_notifier)
+   (int mode, unsigned int count, const dyld_image_info* infos)
+{
+    OrigFn fn;
+    VALGRIND_GET_ORIG_FN(fn);
+    dyld_cache_load_images(mode, count, infos);
+    CALL_FN_v_WWW(fn, mode, count, infos);
+}
+
+#endif
+
 #elif defined(VGO_freebsd)
 
 void * VG_NOTIFY_ON_LOAD(ifunc_wrapper) (void);

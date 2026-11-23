@@ -166,6 +166,7 @@ configure~
 /coregrind/*.a
 /coregrind/*.dSYM
 /coregrind/*.so
+/coregrind/libobjc.A.dylib
 /coregrind/.deps
 /coregrind/fixup_macho_loadcmds
 /coregrind/link_tool_exe_aix5

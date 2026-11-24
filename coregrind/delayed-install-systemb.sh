@@ -10,16 +10,18 @@
 # Therefore it is only used on macOS (Darwin), specifically for arm64 support.
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <link> [args...]"
-    exit 1
+	echo "Usage: $0 <target> <link> [args...]"
+	exit 1
 fi
+target="$1"
+shift
 
-echo "disb: $@"
-$@
-if [ $? -ne 0 ]; then
-    exit $?
+echo "disb: $*"
+"$@" -o "$target"
+result=$?
+if [ ${result} -ne 0 ]; then
+	exit ${result}
 fi
-cmd="install_name_tool -id /usr/lib/libSystem.B.dylib libmySystem.so"
+cmd="install_name_tool -id /usr/lib/libSystem.B.dylib ${target}"
 echo "disb: $cmd"
-$cmd
-exit $?
+exec $cmd

@@ -533,35 +533,40 @@ case "${host_os}" in
         AC_DEFINE_UNQUOTED([$1], [$$1], [DARWIN_VERS value for $3])
         AC_SUBST($1)
       ])
-      AC_ADD_DARWIN_VERS([DARWIN_10_8], 100800, [DARWIN_VERS value for Mac OS X 10.8 / iOS 6])
-      AC_ADD_DARWIN_VERS([DARWIN_10_9], 100900, [DARWIN_VERS value for Mac OS X 10.9 / iOS 7])
-      AC_ADD_DARWIN_VERS([DARWIN_10_10], 101000, [DARWIN_VERS value for Mac OS X 10.10 / iOS 8])
-      AC_ADD_DARWIN_VERS([DARWIN_10_11], 101100, [DARWIN_VERS value for Mac OS X 10.11 / iOS 9])
-      AC_ADD_DARWIN_VERS([DARWIN_10_12], 101200, [DARWIN_VERS value for macOS 10.12 / iOS 10])
-      AC_ADD_DARWIN_VERS([DARWIN_10_13], 101300, [DARWIN_VERS value for macOS 10.13 / iOS 11])
-      AC_ADD_DARWIN_VERS([DARWIN_10_14], 101400, [DARWIN_VERS value for macOS 10.14 / iOS 12])
-      AC_ADD_DARWIN_VERS([DARWIN_10_15], 101500, [DARWIN_VERS value for macOS 10.15 / iOS 13])
-      AC_ADD_DARWIN_VERS([DARWIN_11_00], 110000, [DARWIN_VERS value for macOS 11.0 / iOS 14])
-      AC_ADD_DARWIN_VERS([DARWIN_12_00], 120000, [DARWIN_VERS value for macOS 12.0 / iOS 15])
-      AC_ADD_DARWIN_VERS([DARWIN_13_00], 130000, [DARWIN_VERS value for macOS 13.0 / iOS 16])
-      AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [DARWIN_VERS value for macOS 14.0 / iOS 17])
-      AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [DARWIN_VERS value for macOS 15.0 / iOS 18])
-      AC_ADD_DARWIN_VERS([DARWIN_15_04], 150400, [DARWIN_VERS value for macOS 15.4])
-      AC_ADD_DARWIN_VERS([DARWIN_26_00], 260000, [DARWIN_VERS value for macOS / iOS 26])
-      AC_ADD_DARWIN_VERS([DARWIN_27_00], 270000, [DARWIN_VERS value for macOS / iOS 27])
+      AC_ADD_DARWIN_VERS([DARWIN_10_8], 100800, [Mac OS X 10.8 / iOS 6])
+      AC_ADD_DARWIN_VERS([DARWIN_10_9], 100900, [Mac OS X 10.9 / iOS 7])
+      AC_ADD_DARWIN_VERS([DARWIN_10_10], 101000, [Mac OS X 10.10 / iOS 8])
+      AC_ADD_DARWIN_VERS([DARWIN_10_11], 101100, [Mac OS X 10.11 / iOS 9])
+      AC_ADD_DARWIN_VERS([DARWIN_10_12], 101200, [macOS 10.12 / iOS 10])
+      AC_ADD_DARWIN_VERS([DARWIN_10_13], 101300, [macOS 10.13 / iOS 11])
+      AC_ADD_DARWIN_VERS([DARWIN_10_14], 101400, [macOS 10.14 / iOS 12])
+      AC_ADD_DARWIN_VERS([DARWIN_10_15], 101500, [macOS 10.15 / iOS 13])
+      AC_ADD_DARWIN_VERS([DARWIN_11_00], 110000, [macOS 11.0 / iOS 14])
+      AC_ADD_DARWIN_VERS([DARWIN_12_00], 120000, [macOS 12.0 / iOS 15])
+      AC_ADD_DARWIN_VERS([DARWIN_13_00], 130000, [macOS 13.0 / iOS 16])
+      AC_ADD_DARWIN_VERS([DARWIN_14_00], 140000, [macOS 14.0 / iOS 17])
+      AC_ADD_DARWIN_VERS([DARWIN_15_00], 150000, [macOS 15.0 / iOS 18])
+      AC_ADD_DARWIN_VERS([DARWIN_15_04], 150400, [macOS 15.4])
+      AC_ADD_DARWIN_VERS([DARWIN_26_00], 260000, [macOS / iOS 26])
+      AC_ADD_DARWIN_VERS([DARWIN_27_00], 270000, [macOS / iOS 27])
 
-      AC_DEFINE([SDK_10_XX], 101200, [SDK_VERS value for Xcode SDK earlier than macOS 10.13 / iOS 11])
-      AC_DEFINE([SDK_10_13], 101300, [SDK_VERS value for Xcode SDK macOS 10.13 / iOS 11])
-      AC_DEFINE([SDK_10_14], 101400, [SDK_VERS value for Xcode SDK macOS 10.14 / iOS 12])
-      AC_DEFINE([SDK_10_14_6], 101406, [SDK_VERS value for Xcode SDK macOS 10.14.6 / iOS 12])
-      AC_DEFINE([SDK_10_15], 101500, [SDK_VERS value for Xcode SDK macOS 10.15 / iOS 13])
-      AC_DEFINE([SDK_11_0], 110000, [SDK_VERS value for Xcode SDK macOS 11.0 / iOS 14])
-      AC_DEFINE([SDK_12_0], 120000, [SDK_VERS value for Xcode SDK macOS 12.0 / iOS 15])
-      AC_DEFINE([SDK_13_0], 130000, [SDK_VERS value for Xcode SDK macOS 13.0 / iOS 16])
-      AC_DEFINE([SDK_14_0], 140000, [SDK_VERS value for Xcode SDK macOS 14.0 / iOS 17])
-      AC_DEFINE([SDK_15_0], 150000, [SDK_VERS value for Xcode SDK macOS 15.0 / iOS 18])
-      AC_DEFINE([SDK_26_0], 260000, [SDK_VERS value for Xcode SDK macOS / iOS 26])
-      AC_DEFINE([SDK_27_0], 270000, [SDK_VERS value for Xcode SDK macOS / iOS 27])
+      AC_DEFUN([AC_ADD_SDK_VERS],[
+        $1=$2
+        AC_DEFINE([$1], $2, [SDK_VERS value for Xcode SDK $3])
+        AC_SUBST($1)
+      ])
+      AC_ADD_SDK_VERS([SDK_10_XX], 101200, [earlier than macOS 10.13 / iOS 11])
+      AC_ADD_SDK_VERS([SDK_10_13], 101300, [macOS 10.13 / iOS 11])
+      AC_ADD_SDK_VERS([SDK_10_14], 101400, [macOS 10.14 / iOS 12])
+      AC_ADD_SDK_VERS([SDK_10_14_6], 101406, [macOS 10.14.6 / iOS 12])
+      AC_ADD_SDK_VERS([SDK_10_15], 101500, [macOS 10.15 / iOS 13])
+      AC_ADD_SDK_VERS([SDK_11_0], 110000, [macOS 11.0 / iOS 14])
+      AC_ADD_SDK_VERS([SDK_12_0], 120000, [macOS 12.0 / iOS 15])
+      AC_ADD_SDK_VERS([SDK_13_0], 130000, [macOS 13.0 / iOS 16])
+      AC_ADD_SDK_VERS([SDK_14_0], 140000, [macOS 14.0 / iOS 17])
+      AC_ADD_SDK_VERS([SDK_15_0], 150000, [macOS 15.0 / iOS 18])
+      AC_ADD_SDK_VERS([SDK_26_0], 260000, [macOS / iOS 26])
+      AC_ADD_SDK_VERS([SDK_27_0], 270000, [macOS / iOS 27])
 
       # Substitute the Xcode include path detected earlier
       AC_SUBST(SDK_INC_DIR, [$xcodedir_inc])
@@ -717,46 +722,46 @@ case "${host_os}" in
       fi
       case "${darwin_platform}-${sdkversion}" in
         macosx-10.13*|iphoneos-11.*)
-          AC_DEFINE([SDK_VERS], SDK_10_13, [SDK version])
+          SDK_VERS=$SDK_10_13
           ;;
         macosx-10.14.6)
-          AC_DEFINE([SDK_VERS], SDK_10_14_6, [SDK version])
+          SDK_VERS=$SDK_10_14_6
           ;;
         macosx-10.14*|iphoneos-12.*)
-          AC_DEFINE([SDK_VERS], SDK_10_14, [SDK version])
+          SDK_VERS=$SDK_10_14
           ;;
         macosx-10.15*|iphoneos-13.*)
-          AC_DEFINE([SDK_VERS], SDK_10_15, [SDK version])
+          SDK_VERS=$SDK_10_15
           ;;
         macosx-11.*|iphoneos-14.*)
-          AC_DEFINE([SDK_VERS], SDK_11_0, [SDK version])
+          SDK_VERS=$SDK_11_0
           ;;
         macosx-12.*|iphoneos-15.*)
-          AC_DEFINE([SDK_VERS], SDK_12_0, [SDK version])
+          SDK_VERS=$SDK_12_0
           ;;
         macosx-13.*|iphoneos-16.*)
-          AC_DEFINE([SDK_VERS], SDK_13_0, [SDK version])
+          SDK_VERS=$SDK_13_0
           ;;
         macosx-14.*|iphoneos-17.*)
-          AC_DEFINE([SDK_VERS], SDK_14_0, [SDK version])
+          SDK_VERS=$SDK_14_0
           ;;
         macosx-15.*|iphoneos-18.*)
-          AC_DEFINE([SDK_VERS], SDK_15_0, [SDK version])
+          SDK_VERS=$SDK_15_0
           ;;
         *-26.*)
-          AC_DEFINE([SDK_VERS], SDK_26_0, [SDK version])
+          SDK_VERS=$SDK_26_0
           ;;
         *-27.*)
-          AC_DEFINE([SDK_VERS], SDK_27_0, [SDK version])
+          SDK_VERS=$SDK_27_0
           ;;
         legacy)
-          AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
+          SDK_VERS=$SDK_10_XX
           ;;
         macosx-10.5*|macosx-10.6*|macosx-10.7*|macosx-10.8*|macosx-10.9*|macosx-10.10*|macosx-10.11*|macosx-10.12*)
-          AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
+          SDK_VERS=$SDK_10_XX
           ;;
         iphoneos-4.*|iphoneos-5.*|iphoneos-6.*|iphoneos-7.*|iphoneos-8.*|iphoneos-9.*|iphoneos-10.*)
-          AC_DEFINE([SDK_VERS], SDK_10_XX, [SDK version])
+          SDK_VERS=$SDK_10_XX
           ;;
         *)
           AC_MSG_RESULT([unsupported (${sdkversion})])
@@ -764,6 +769,8 @@ case "${host_os}" in
           ;;
       esac
       AC_MSG_RESULT([${sdkversion}])
+      AC_DEFINE_UNQUOTED([SDK_VERS], [$SDK_VERS], [SDK version])
+      AC_SUBST(SDK_VERS)
       ;;
 
      solaris2.11*)

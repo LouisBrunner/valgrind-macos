@@ -1384,5 +1384,26 @@ struct vki_kpersona_info {
    vki_uid_t    persona_uid;
 } __attribute__((packed));
 
+// From darwin-xnu/bsd/sys/spawn_internal.h
+
+struct vki_user__posix_spawn_args_desc {
+        vki_size_t     attr_size;
+        user_addr_t     attrp;
+        vki_size_t     file_actions_size;
+        user_addr_t     file_actions;
+        vki_size_t     port_actions_size;
+        user_addr_t     port_actions;
+        vki_size_t     mac_extensions_size;
+        user_addr_t     mac_extensions;
+        vki_size_t     coal_info_size;
+        user_addr_t     coal_info;
+        vki_size_t     persona_info_size;
+        user_addr_t     persona_info;
+        vki_size_t     posix_cred_info_size;
+        user_addr_t     posix_cred_info;
+        vki_size_t     subsystem_root_path_size;
+        user_addr_t     subsystem_root_path;
+};
+
 
 #endif

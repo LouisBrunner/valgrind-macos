@@ -47,6 +47,7 @@ version 13 Sonoma (amd64 only).
 528740  Reset of FreeBSD syscall regtest filters
 528741  FreeBSD: add support for sysarch 130 (AMD64_GET_GSBASE)
 528837  Removing the nanoMIPS/Linux port
+529369  Darwin: fix posix_spawn syscall wrapper
 
 
 The following bugs have been fixed or resolved.  Note that "n-i-bz"

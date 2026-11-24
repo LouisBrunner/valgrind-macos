@@ -553,10 +553,7 @@ Syscall param posix_spawn(pid) contains uninitialised byte(s)
 Syscall param posix_spawn(path) contains uninitialised byte(s)
    ...
 
-Syscall param posix_spawn(file_actions) contains uninitialised byte(s)
-   ...
-
-Syscall param posix_spawn(attrp) contains uninitialised byte(s)
+Syscall param posix_spawn(adesc) contains uninitialised byte(s)
    ...
 
 Syscall param posix_spawn(argv) contains uninitialised byte(s)
@@ -621,13 +618,13 @@ Syscall param shmctl(IPC_STAT, buf) points to unaddressable byte(s)
 -----------------------------------------------------
 x2000108(264):          __NR_shmdt 1s 0m
 -----------------------------------------------------
-
 Syscall param shmdt(shmaddr) contains uninitialised byte(s)
    ...
 
 -----------------------------------------------------
 x2000109(265):         __NR_shmget 3s 0m
 -----------------------------------------------------
+
 Syscall param shmget(key) contains uninitialised byte(s)
    ...
 

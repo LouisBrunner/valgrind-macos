@@ -525,7 +525,6 @@ PRE(sys_fork)
 // generic
 
 // SYS_open 5
-// generic
 // int open(const char *path, int flags, mode_t mode);
 PRE(sys_open)
 {

@@ -17,7 +17,7 @@ env:
 
 jobs:
   build_various_platforms:
-    timeout-minutes: 120
+    timeout-minutes: ${{ matrix.timeout || 120 }}
     strategy:
       fail-fast: false
       matrix:
@@ -32,10 +32,14 @@ jobs:
           - xcode-27
         include:
           - run-tests: true
+          - os: ubuntu-24.04
+            timeout: 30
           - os: macos-15 # fully unsupported
             run-tests: false
           - os: macos-15-intel # crashes, is it actually virtualized on top of arm64?
             run-tests: false
+          - os: macos-26-intel
+            timeout: 240
           - os: xcode-27
             label: macos-27
 

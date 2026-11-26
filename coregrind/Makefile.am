@@ -174,13 +174,13 @@ mach_defs += \
   @SDK_INC_DIR@/mach/vm_map.defs
 
 if VGCONF_ARCHS_INCLUDE_ARM64
-noinst_PROGRAMS += libmySystem.so libmydyld.so libmyobjc.so
+noinst_PROGRAMS += libmySystem.so libmydyld.so libobjc.A.dylib
 
-libmyobjc_so_SOURCES = m_mach/dummy_objc.c
-libmyobjc_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-libmyobjc_so_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-libmyobjc_so_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
-libmyobjc_so_LDFLAGS = -dynamiclib -install_name /usr/lib/libobjc.A.dylib
+libobjc_A_dylib_SOURCES = m_mach/dummy_objc.c
+libobjc_A_dylib_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libobjc_A_dylib_CFLAGS = $(AM_CFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libobjc_A_dylib_CCASFLAGS = $(AM_CCASFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)
+libobjc_A_dylib_LDFLAGS = -dynamiclib -install_name /usr/lib/libobjc.A.dylib
 
 libmySystem_so_SOURCES = m_mach/dummy_systemb.c
 libmySystem_so_CPPFLAGS = $(AM_CPPFLAGS_@VGCONF_PLATFORM_PRI_CAPS@)

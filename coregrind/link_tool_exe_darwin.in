@@ -156,7 +156,7 @@ if ($archstr eq "arm64") {
 
     if (@DARWIN_VERS@ >= @DARWIN_27_00@) {
       # dyld always loads libsharedcache.dylib but adding our own libobjc.A blocks that
-      $cmd = "$cmd -lmyobjc";
+      $cmd = "$cmd -lobjc.A";
       # DYLD_LIBRARY_PATH invalidates the cached loaders, otherwise dyld loads the system libraries from cache instead of the dummies
       $cmd = "$cmd -dyld_env DYLD_LIBRARY_PATH=\@executable_path/../coregrind";
     }
@@ -216,14 +216,14 @@ if ($r != 0) {
 
 if ($archstr eq "arm64") {
     my %libs = (
-        "libmySystem" => "/usr/lib/libSystem.B.dylib",
-        "libmydyld"   => "/usr/lib/system/libdyld.dylib",
-        "libmyobjc"   => "/usr/lib/libobjc.A.dylib"
+        "libmySystem.so"  => "/usr/lib/libSystem.B.dylib",
+        "libmydyld.so"    => "/usr/lib/system/libdyld.dylib",
+        "libobjc.A.dylib" => "/usr/lib/libobjc.A.dylib"
     );
     # need to adjust the load commands otherwise the kernel will load the ACTUAL dylibs
     # (which defeats the whole purpose of making our own system libraries)
     foreach my $lib (keys %libs) {
-        $cmd = "install_name_tool -change $libs{$lib} \@rpath/$lib.so $outname";
+        $cmd = "install_name_tool -change $libs{$lib} \@rpath/$lib $outname";
         print "link_tool_exe_darwin: $cmd\n";
         $r = system($cmd);
         if ($r != 0) {

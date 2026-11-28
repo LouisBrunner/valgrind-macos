@@ -2138,6 +2138,13 @@ void do_client_request ( ThreadId tid )
          SET_CLREQ_RETVAL( tid, 0);
          break; }
 
+#if defined(VGO_darwin) && DARWIN_VERS >= DARWIN_11_00
+      case VG_USERREQ__DYLD_CACHE_LOAD:
+         VG_(dyld_cache_load_library)( (const HChar*)arg[1] );
+         SET_CLREQ_RETVAL( tid, 0 );
+         break;
+#endif
+
       case VG_USERREQ__STACK_REGISTER: {
          UWord sid = VG_(register_stack)((Addr)arg[1], (Addr)arg[2]);
          SET_CLREQ_RETVAL( tid, sid );

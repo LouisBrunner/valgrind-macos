@@ -4633,7 +4633,7 @@ static void parse_procselfmaps (
 
 #if defined(VGA_arm64)
       if (ret) {
-        if (endswith(name, "/libmySystem.so") || endswith(name, "/libmydyld.so")) {
+        if (endswith(name, "/libmySystem.so") || endswith(name, "/libmydyld.so") || endswith(name, "/libmyobjc.so")) {
           // not only do we not want to track these, we want to unmmap them completely
           // otherwise they clutter the address space and make macOS 15+ fail
           // during client loading
@@ -4645,6 +4645,11 @@ static void parse_procselfmaps (
         }
       }
 #endif
+
+      // this means the space is unused
+      if (depth > 0 && info.protection == 0 && info.object_id == 0 && info.ref_count == 0) {
+         continue;
+      }
 
       if (addr > last  &&  record_gap) {
          (*record_gap)(last, addr - last);

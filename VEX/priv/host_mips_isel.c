@@ -6363,19 +6363,19 @@ static HReg iselFltExpr_wrk(ISelEnv * env, IRExpr * e)
                   break;
 #else
                case Iop_MAddF32:
-                  op = has_msa ? MSA_FMADD : Mfp_MADDS;
+                  op = has_msa ? (Int)MSA_FMADD : Mfp_MADDS;
                   type = MSA_F_WH;
                   break;
                case Iop_MAddF64:
-                  op = has_msa ? MSA_FMADD : Mfp_MADDD;
+                  op = has_msa ? (Int)MSA_FMADD : Mfp_MADDD;
                   type = MSA_F_DW;
                   break;
                case Iop_MSubF32:
-                  op = has_msa ? MSA_FMSUB : Mfp_MSUBS;
+                  op = has_msa ? (Int)MSA_FMSUB : Mfp_MSUBS;
                   type = MSA_F_WH;
                   break;
                case Iop_MSubF64:
-                  op = has_msa ? MSA_FMSUB : Mfp_MSUBD;
+                  op = has_msa ? (Int)MSA_FMSUB : Mfp_MSUBD;
                   type = MSA_F_DW;
                   break;
 #endif

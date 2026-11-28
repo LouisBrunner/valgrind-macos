@@ -16,3 +16,5 @@ memcheck/tests/error_counts
 # seen on macOS 26
 memcheck/tests/leak-autofreepool-4
 memcheck/tests/badfree-2trace
+# seen on macOS 26-27
+none/tests/fdleak_fcntl_xml

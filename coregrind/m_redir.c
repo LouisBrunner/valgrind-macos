@@ -1673,16 +1673,58 @@ void VG_(redir_initialise) ( void )
    if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
       add_hardwired_spec("dyld", "strcmp",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strcmp), NULL);
+      add_hardwired_spec("dyld", "_platform_strcmp",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strcmp), NULL);
+      add_hardwired_spec("dyld", "_platform_strcmp_noMTE",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strcmp), NULL);
+      add_hardwired_spec("dyld", "_platform_strcmp$VARIANT$MTE",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strcmp), NULL);
       add_hardwired_spec("dyld", "strncmp",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strncmp), NULL);
+      add_hardwired_spec("dyld", "_platform_strncmp",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strncmp), NULL);
       add_hardwired_spec("dyld", "strlen",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strlen), NULL);
+      add_hardwired_spec("dyld", "_platform_strlen",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strlen), NULL);
       add_hardwired_spec("dyld", "strcat",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strcat), NULL);
       add_hardwired_spec("dyld", "strcpy",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strcpy), NULL);
+      add_hardwired_spec("dyld", "_platform_strcpy",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strcpy), NULL);
       add_hardwired_spec("dyld", "strlcat",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_strlcat), NULL);
+      add_hardwired_spec("dyld", "_platform_strlcat",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strlcat), NULL);
+      add_hardwired_spec("dyld", "strlcpy",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strlcpy), NULL);
+      add_hardwired_spec("dyld", "_platform_strlcpy",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strlcpy), NULL);
+      add_hardwired_spec("dyld", "strncpy",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strncpy), NULL);
+      add_hardwired_spec("dyld", "_platform_strncpy",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strncpy), NULL);
+      add_hardwired_spec("dyld", "strchr",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strchr), NULL);
+      add_hardwired_spec("dyld", "_platform_strchr",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strchr), NULL);
+      add_hardwired_spec("dyld", "_platform_strchr$VARIANT$Base",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strchr), NULL);
+      add_hardwired_spec("dyld", "strnlen",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strnlen), NULL);
+      add_hardwired_spec("dyld", "_platform_strnlen",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strnlen), NULL);
+      add_hardwired_spec("dyld", "memchr",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_memchr), NULL);
+      add_hardwired_spec("dyld", "_platform_memchr",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_memchr), NULL);
+      add_hardwired_spec("dyld", "_platform_memchr$VARIANT$Base",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_memchr), NULL);
+      add_hardwired_spec("dyld", "strstr",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strstr), NULL);
+      add_hardwired_spec("dyld", "_platform_strstr",
+                         (Addr)&VG_(arm64_darwin_REDIR_FOR_strstr), NULL);
       // DDD: #warning fixme rdar://6166275
       add_hardwired_spec("dyld", "arc4random",
                          (Addr)&VG_(arm64_darwin_REDIR_FOR_arc4random), NULL);

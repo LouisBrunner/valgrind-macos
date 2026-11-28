@@ -7,7 +7,7 @@
    This file is part of Valgrind, a dynamic binary instrumentation
    framework.
 
-   Copyright (c) 2020-2025 Louis Brunner <louis.brunner.fr@gmail.com>
+   Copyright (c) 2020-2025 Louis Brunner <valgrind@e.lbrunner.net>
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as
@@ -58,19 +58,31 @@
 # define MACH_HEADER mach_header_64
 # define MAGIC MH_MAGIC_64
 
+// Libraries mask
+# define LIB_MALLOC   1 << 0
+# define LIB_C        1 << 1
+# define LIB_PLATFORM 1 << 2
+# define LIB_KERNEL   1 << 3
+
 static void output_text_debug_info(const dyld_cache_image_text_info* textInfo);
 static void output_debug_info(const dyld_cache_header* dyld_cache);
 
 typedef struct {
   const dyld_cache_header* header;
   Addr slide;
+  Addr end;
+  UInt libs_loaded;
   Bool tried;
+  Bool checked;
 } DYLDCache;
 
 static DYLDCache dyld_cache = {
   .header = NULL,
   .slide = 0,
+  .end = 0,
+  .libs_loaded = 0,
   .tried = False,
+  .checked = False,
 };
 
 static Addr calculate_relative(const dyld_cache_header * header, Addr offset) {
@@ -129,6 +141,9 @@ static int try_to_init_header(Addr address) {
       mapping->initProt
     );
     ML_(notify_core_and_tool_of_mmap)(map_addr, mapping->size, mapping->initProt, VKI_MAP_PRIVATE | VKI_MAP_ANONYMOUS, -1, 0);
+    if (map_addr + mapping->size > dyld_cache.end) {
+      dyld_cache.end = map_addr + mapping->size;
+    }
   }
 
   if (dyld_cache.header->mappingOffset >= __offsetof(dyld_cache_header, dynamicDataMaxSize) && header->dynamicDataMaxSize > 0) {
@@ -213,6 +228,10 @@ Addr VG_(dyld_cache_get_slide)(void) {
   return dyld_cache.slide;
 }
 
+Addr VG_(dyld_cache_get_end)(void) {
+  return dyld_cache.end;
+}
+
 static int ensure_init(void) {
   if (dyld_cache.header != NULL) {
     return 1;
@@ -231,12 +250,15 @@ static int ensure_init(void) {
     );
     return 0;
   }
+
+  // Since macOS ~13, we can rely on override lldb_image_notifier
+#if DARWIN_VERS <= DARWIN_13_00
   // We currently detect if dyld is loading/using a library by checking if stat64 fails.
   // However, dyld doesn't seem to call stat64 for all of them anymore.
-  // All arm64 binaries are executables but some x86 ones might not be so let's avoid them just to be safe.
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_kernel.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_pthread.dylib");
   VG_(dyld_cache_load_library)("/usr/lib/system/libsystem_platform.dylib");
+#endif
 
   return 1;
 }
@@ -322,7 +344,35 @@ int VG_(dyld_cache_load_library)(const HChar* path) {
 
   VG_(debugLog)(2, "dyld_cache", "image fully loaded: %s\n", path);
 
+  if (VG_(strstr)(path, "/libsystem_malloc.dylib") != NULL) {
+    dyld_cache.libs_loaded |= LIB_MALLOC;
+  } else if (VG_(strstr)(path, "/libsystem_c.dylib") != NULL) {
+    dyld_cache.libs_loaded |= LIB_C;
+  } else if (VG_(strstr)(path, "/libsystem_platform.dylib") != NULL) {
+    dyld_cache.libs_loaded |= LIB_PLATFORM;
+  } else if (VG_(strstr)(path, "/libsystem_kernel.dylib") != NULL) {
+    dyld_cache.libs_loaded |= LIB_KERNEL;
+  }
+
   return 1;
+}
+
+void VG_(dyld_cache_sanity_check)(void) {
+  if (dyld_cache.checked || dyld_cache.header == NULL) {
+    return;
+  }
+  dyld_cache.checked = True;
+
+  if (dyld_cache.libs_loaded != (LIB_MALLOC | LIB_C | LIB_PLATFORM | LIB_KERNEL)) {
+    VG_(dmsg)(
+      "WARNING: not all required symbols were loaded from the dyld shared cache"
+      " (malloc=%d, libc=%d, platform=%d, kernel=%d)\n",
+      (dyld_cache.libs_loaded & LIB_MALLOC) != 0,
+      (dyld_cache.libs_loaded & LIB_C) != 0,
+      (dyld_cache.libs_loaded & LIB_PLATFORM) != 0,
+      (dyld_cache.libs_loaded & LIB_KERNEL) != 0
+    );
+  }
 }
 
 static void output_text_debug_info(const dyld_cache_image_text_info* textInfo) {

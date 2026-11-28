@@ -2444,6 +2444,10 @@ PRE(bsdthread_register)
 #endif
    ARG1 = (Word)&pthread_hijack_asm;
    ARG2 = (Word)&wqthread_hijack_asm;
+
+#if DARWIN_VERS >= DARWIN_11_00
+   VG_(dyld_cache_sanity_check)();
+#endif
 }
 
 PRE(workq_open)

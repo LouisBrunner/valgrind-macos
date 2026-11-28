@@ -4,20 +4,25 @@ This repository contains a version of Valgrind including a few patches to improv
 
 ## Status
 
-| Version                     | x86 | amd64 | arm64 | ppc    |
-| --------------------------- | --- | ----- | ----- | ------ |
-| macOS 10.13 and earlier[^1] | ✅  | ✅    | -     | ❌[^3] |
-| macOS 10.14 (Mojave)        | ✅  | ✅    | -     | -      |
-| macOS 10.15 (Catalina)      | ✅  | ✅    | -     | -      |
-| macOS 11 (Big Sur)          | -   | ✅    | ✅    | -      |
-| macOS 12 (Monterey)         | -   | ✅    | ✅    | -      |
-| macOS 13 (Ventura)          | -   | ✅    | ✅    | -      |
-| macOS 14 (Sonoma)           | -   | ✅    | ✅    | -      |
-| macOS 15 (Sequoia)          | -   | ✅    | ~[^2] | -      |
-| macOS 26 (Tahoe)            | -   | ✅    | ✅    | -      |
+| Version                     | x86 | amd64  | arm64 | ppc    |
+| --------------------------- | --- | ------ | ----- | ------ |
+| macOS 10.13 and earlier[^1] | ✅  | ✅     | -     | ❌[^3] |
+| macOS 10.14 (Mojave)        | ✅  | ✅     | -     | -      |
+| macOS 10.15 (Catalina)      | ✅  | ✅     | -     | -      |
+| macOS 11 (Big Sur)          | -   | ✅     | ✅    | -      |
+| macOS 12 (Monterey)         | -   | ✅     | ✅    | -      |
+| macOS 13 (Ventura)          | -   | ✅[^4] | ✅    | -      |
+| macOS 14 (Sonoma)           | -   | ✅     | ✅    | -      |
+| macOS 15 (Sequoia)          | -   | ✅     | ~[^2] | -      |
+| macOS 26 (Tahoe)            | -   | ✅     | ✅    | -      |
+| macOS 27 (Golden Gate)      | -   | -      | ✅    | -      |
 
 [^1]: Supported as part of upstream Valgrind
+
+[^4]: x86/amd64 versions of macOS 13 and earlier are now supported by upstream Valgrind
+
 [^2]: macOS 15 arm64 is experimental ([#123](https://github.com/LouisBrunner/valgrind-macos/issues/123))
+
 [^3]: PowerPC is unsupported ([#62](https://github.com/LouisBrunner/valgrind-macos/issues/62))
 
 ## Usage

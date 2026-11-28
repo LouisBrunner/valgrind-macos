@@ -75,9 +75,6 @@
 # Overall, that's not a big deal.
 # However, requiring dyld to be present is a problem as it usually appears
 # in the address space where we want to put the client binary.
-# FIXME: We currently have a hardcoded hack to handle this but it should be using `$ala` instead.
-# The biggest challenge of all is fixing up the binary to be dynamic and respect `$ala`.
-# FIXME: This is currently unsolved.
 
 use warnings;
 use strict;
@@ -156,14 +153,27 @@ if ($archstr eq "arm64") {
     $cmd = "$cmd -segaddr __TEXT $ala";
     # we add roughly ~30 bytes when using install_name_tool so we pad the header by 256 bytes to be safe
     $cmd = "$cmd -headerpad 256";
+
+    if (@DARWIN_VERS@ >= @DARWIN_27_00@) {
+      # dyld always loads libsharedcache.dylib but adding our own libobjc.A blocks that
+      $cmd = "$cmd -lobjc.A";
+      # DYLD_LIBRARY_PATH invalidates the cached loaders, otherwise dyld loads the system libraries from cache instead of the dummies
+      $cmd = "$cmd -dyld_env DYLD_LIBRARY_PATH=\@executable_path/../coregrind";
+    }
 } else {
     $cmd = "$cmd -static";
     $cmd = "$cmd -image_base $ala";
 }
 
-# Xcode 16 is completely borked and crashes when you use -segaddr so we rollback to
-# the old linker in the meantime
-if (@DARWIN_VERS@ >= 140000) {
+# Xcode 26+ stopped supporting the long deprecated -ld_classic so we use another trick.
+if (@DARWIN_VERS@ >= @DARWIN_27_00@ || @SDK_VERS@ >= @SDK_27_0@) {
+    # bit of a hack (again), to force the segments to follow each other
+    $cmd = "$cmd -no_fixup_chains -x86_64_layout_emulation";
+    # suppresses a warning
+    $cmd = "$cmd -segalign 8000";
+
+# Xcode 16-25 is completely borked and crashes when you use -segaddr so we rollback to the old linker in the meantime.
+} elsif (@DARWIN_VERS@ >= @DARWIN_14_00@) {
     $cmd = "$cmd -ld_classic";
 
 # If we're building with clang (viz, the C compiler as specified
@@ -205,19 +215,20 @@ if ($r != 0) {
 }
 
 if ($archstr eq "arm64") {
+    my %libs = (
+        "libmySystem.so"  => "/usr/lib/libSystem.B.dylib",
+        "libmydyld.so"    => "/usr/lib/system/libdyld.dylib",
+        "libobjc.A.dylib" => "/usr/lib/libobjc.A.dylib"
+    );
     # need to adjust the load commands otherwise the kernel will load the ACTUAL dylibs
     # (which defeats the whole purpose of making our own system libraries)
-    $cmd = "install_name_tool -change /usr/lib/libSystem.B.dylib \@rpath/libmySystem.so $outname";
-    print "link_tool_exe_darwin: $cmd\n";
-    $r = system($cmd);
-    if ($r != 0) {
-        exit 1;
-    }
-    $cmd = "install_name_tool -change /usr/lib/system/libdyld.dylib \@rpath/libmydyld.so $outname";
-    print "link_tool_exe_darwin: $cmd\n";
-    $r = system($cmd);
-    if ($r != 0) {
-        exit 1;
+    foreach my $lib (keys %libs) {
+        $cmd = "install_name_tool -change $libs{$lib} \@rpath/$lib $outname";
+        print "link_tool_exe_darwin: $cmd\n";
+        $r = system($cmd);
+        if ($r != 0) {
+            exit 1;
+        }
     }
     # finally add the rpath to the binary, this allows us to support the file structure
     # when valgrind is installed and when used in-place

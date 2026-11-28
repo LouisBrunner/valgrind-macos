@@ -39,7 +39,7 @@ jobs:
           - os: macos-15-intel # crashes, is it actually virtualized on top of arm64?
             run-tests: false
           - os: macos-26-intel
-            timeout: 240
+            timeout: 180
           - os: xcode-27
             label: macos-27
 

@@ -4646,6 +4646,11 @@ static void parse_procselfmaps (
       }
 #endif
 
+      // this means the space is unused
+      if (depth > 0 && info.protection == 0 && info.object_id == 0 && info.ref_count == 0) {
+         continue;
+      }
+
       if (addr > last  &&  record_gap) {
          (*record_gap)(last, addr - last);
       }
